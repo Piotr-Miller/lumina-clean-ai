@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "PowerShell(Join-Path *)",
+      "PowerShell(10x doctor *)",
+      "PowerShell(npm install *)",
+      "PowerShell(10x *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Set-Clipboard *)",
+      "PowerShell(gh api *)",
+      "PowerShell(try { $r = Invoke-RestMethod -Uri 'https://api.github.com/repos/przeprogramowani/10x-astro-starter' -Headers @{ 'User-Agent' = 'bootstrap-recency-check' } -ErrorAction Stop; Write-Output \"pushed_at=$\\($r.pushed_at\\)\"; Write-Output \"default_branch=$\\($r.default_branch\\)\"; Write-Output \"stargazers=$\\($r.stargazers_count\\)\" } catch { Write-Output \"error: $\\($_.Exception.Message\\)\" })",
+      "Bash(npm audit *)",
+      "Bash(echo \"FIX_EXIT=$?\")",
+      "Bash(10x --version)",
+      "Bash(npm view *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git status *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Read",
+      "Edit",
+      "Write"
+    ],
+    "ask": [
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(git push *)",
+      "Bash(git push)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)"
+    ]
+  }
+}
