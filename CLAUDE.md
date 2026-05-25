@@ -53,7 +53,7 @@ Full server-side rendering (`output: "server"` in astro.config.mjs). All pages a
 
 - **Astro components** for static content/layout; **React components** only when interactivity is needed.
 - **shadcn/ui**: components live in `src/components/ui/`, "new-york" style variant. Install new ones with `npx shadcn@latest add [name]`.
-- **Services/helpers** go in `src/lib/` (or `src/lib/services/` for extracted business logic).
+- **Services/helpers** go in `src/lib/` (or `src/lib/services/<feature>.service.ts` for extracted business logic, e.g. `src/lib/services/photo-upload.service.ts`).
 
 (See Hard rules above for `cn()` usage, the `@/*` path alias, API route conventions, Supabase migration naming, `types.ts`, and React directives.)
 

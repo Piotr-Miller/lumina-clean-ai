@@ -27,16 +27,18 @@
       "Bash(git stash *)",
       "Read",
       "Edit",
-      "Write"
+      "Write",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Source\\\\Trainings\\\\AI\\\\10xDevs\\\\LuminaClean_AI\" -Force | Where-Object {$_.Name -match \"\\\\.cursor|\\\\.windsurfrules|\\\\.clinerules|\\\\.mcp\\\\.json|AGENTS\\\\.md|copilot-instructions\"} | Select-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Source\\\\Trainings\\\\AI\\\\10xDevs\\\\LuminaClean_AI\" -Directory | Where-Object {$_.Name -match \"\\\\.github|\\\\.claude|context|supabase\"} | Select-Object Name)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)"
     ],
     "ask": [
       "Bash(curl *)",
       "Bash(wget *)",
       "Bash(git push *)",
       "Bash(git push)"
-    ],
-    "deny": [
-      "Bash(rm -rf *)"
     ]
   }
 }
