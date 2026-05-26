@@ -5,7 +5,7 @@ project_name: lumina-clean-ai
 hints:
   language_family: js
   team_size: solo
-  deployment_target: cloudflare-pages
+  deployment_target: cloudflare-workers
   ci_provider: github-actions
   ci_default_flow: auto-deploy-on-merge
   bootstrapper_confidence: first-class
@@ -28,8 +28,9 @@ default for `(web, js)` and bundles every load-bearing capability in one
 opinionated piece: Supabase covers auth, Postgres, private storage with RLS,
 and the realtime channel that satisfies FR-010 without bolting on a delivery
 subsystem; Astro + React + TypeScript + Tailwind handle the upload UI, the
-before/after slider, and the client-side Local engine; Cloudflare Pages is the
-cheapest path to first deploy. All four agent-friendly gates pass and
+before/after slider, and the client-side Local engine; Cloudflare Workers is the
+cheapest path to first deploy (the `@astrojs/cloudflare` adapter v13+ targets
+Workers, not Pages). All four agent-friendly gates pass and
 scaffolding confidence is first-class. One scaffolding-time watch-item: the
 edge runtime constrains long-running tasks, so the Cloud AI denoising job will
 need to run on an external worker (Cloudflare Worker, Fly machine, or
