@@ -104,17 +104,21 @@ create policy jobs_insert_own
 -- Grants
 -- ---------------------------------------------------------------------------
 -- Defense in depth: Supabase applies blanket SELECT/INSERT/UPDATE/DELETE/...
--- grants to anon, authenticated, and service_role on public tables by default
--- (via default privileges seeded by the auth/postgrest bootstrap). Revoke them
--- so privileges are explicit: anon has nothing, authenticated has the minimum
--- the RLS policies above can act on, service_role bypasses RLS anyway.
+-- grants to anon, authenticated, AND service_role on public tables by default
+-- (via default privileges seeded by the auth/postgrest bootstrap). Revoke
+-- them on the public-facing roles so their privileges are explicit and
+-- minimal. service_role's blanket grants are intentionally LEFT INTACT — it
+-- has BYPASSRLS but still needs table-level grants to read/write (grants and
+-- RLS are orthogonal gates in Postgres), and revoking them breaks every
+-- admin-client code path (createPhotoJob, markJobSucceeded, S-04 Edge Fn).
 
-revoke all on public.jobs from anon, authenticated, service_role;
+revoke all on public.jobs from anon, authenticated;
 
 grant select, insert on public.jobs to authenticated;
--- service_role intentionally has no grants here; it relies on bypass-RLS.
 -- anon intentionally has no grants here; combined with no anon RLS policies,
 -- there is no path from an anon JWT to a row in this table.
+-- service_role keeps its full blanket grants (not re-listed here; they are
+-- the Supabase default).
 
 -- ---------------------------------------------------------------------------
 -- Realtime publication

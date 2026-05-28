@@ -415,22 +415,22 @@ All six cases in `tests/jobs.rls.test.ts` (Phase 4) plus the end-to-end smoke in
 
 #### Automated
 
-- [x] 3.1 `npm run lint` passes
-- [x] 3.2 `npm run build` passes (env field type-checks)
-- [x] 3.3 `npx astro check` reports no type errors
+- [x] 3.1 `npm run lint` passes — 8e9b81b
+- [x] 3.2 `npm run build` passes (env field type-checks) — 8e9b81b
+- [x] 3.3 `npx astro check` reports no type errors — 8e9b81b
 
 #### Manual
 
-- [ ] 3.4 `createAdminClient` carries the JSDoc warning
-- [ ] 3.5 `src/types.ts` exports `PhotoJob`, `PhotoJobStatus`, and the three DTOs at the canonical path
+- [x] 3.4 `createAdminClient` carries the JSDoc warning — 8e9b81b
+- [x] 3.5 `src/types.ts` exports `PhotoJob`, `PhotoJobStatus`, and the three DTOs at the canonical path — 8e9b81b
 
 ### Phase 4: Vitest harness + automated RLS and signed-URL tests
 
 #### Automated
 
-- [ ] 4.1 `npm test` passes (all six cases green) against `npx supabase start`
-- [ ] 4.2 `npm run lint` passes (tests conform to lint rules)
-- [ ] 4.3 `npm run build` passes
+- [x] 4.1 `npm test` passes (all six cases green) against `npx supabase start`
+- [x] 4.2 `npm run lint` passes (tests conform to lint rules)
+- [x] 4.3 `npm run build` passes
 
 #### Manual
 
