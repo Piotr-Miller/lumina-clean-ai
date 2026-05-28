@@ -440,9 +440,9 @@ All six cases in `tests/jobs.rls.test.ts` (Phase 4) plus the end-to-end smoke in
 
 #### Automated
 
-- [x] 5.1 `npx tsx scripts/f01-smoke.ts` exits 0 against `npx supabase start`
+- [x] 5.1 `npx tsx scripts/f01-smoke.ts` exits 0 against `npx supabase start` — 42414fe
 
 #### Manual
 
-- [x] 5.2 Supabase Studio confirms no source object remains and the row sits at status `succeeded`
-- [x] 5.3 Script output shows Realtime event firing within ~1-2 seconds of `markJobSucceeded`
+- [x] 5.2 Supabase Studio confirms no source object remains and the row sits at status `succeeded` — 42414fe
+- [x] 5.3 Script output shows Realtime event firing within ~1-2 seconds of `markJobSucceeded` — 42414fe
