@@ -403,21 +403,21 @@ All six cases in `tests/jobs.rls.test.ts` (Phase 4) plus the end-to-end smoke in
 
 #### Automated
 
-- [x] 2.1 `npx supabase db reset` applies both migrations cleanly
-- [x] 2.2 `npm run lint` passes
-- [x] 2.3 `npm run build` passes
+- [x] 2.1 `npx supabase db reset` applies both migrations cleanly — e9b8983
+- [x] 2.2 `npm run lint` passes — e9b8983
+- [x] 2.3 `npm run build` passes — e9b8983
 
 #### Manual
 
-- [ ] 2.4 Migration file diff reviewed for bucket privacy, mime types, prefix-RLS, no anon policies
+- [x] 2.4 Migration file diff reviewed for bucket privacy, mime types, prefix-RLS, no anon policies — e9b8983
 
 ### Phase 3: Service-role wiring, shared types, photo-job service
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` passes
-- [ ] 3.2 `npm run build` passes (env field type-checks)
-- [ ] 3.3 `npx astro check` reports no type errors
+- [x] 3.1 `npm run lint` passes
+- [x] 3.2 `npm run build` passes (env field type-checks)
+- [x] 3.3 `npx astro check` reports no type errors
 
 #### Manual
 
