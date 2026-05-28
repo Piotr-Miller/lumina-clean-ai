@@ -428,21 +428,21 @@ All six cases in `tests/jobs.rls.test.ts` (Phase 4) plus the end-to-end smoke in
 
 #### Automated
 
-- [x] 4.1 `npm test` passes (all six cases green) against `npx supabase start`
-- [x] 4.2 `npm run lint` passes (tests conform to lint rules)
-- [x] 4.3 `npm run build` passes
+- [x] 4.1 `npm test` passes (all six cases green) against `npx supabase start` — dce2c43
+- [x] 4.2 `npm run lint` passes (tests conform to lint rules) — dce2c43
+- [x] 4.3 `npm run build` passes — dce2c43
 
 #### Manual
 
-- [ ] 4.4 `tests/README.md` walkthrough succeeds from a clean shell
+- [x] 4.4 `tests/README.md` walkthrough succeeds from a clean shell — dce2c43
 
 ### Phase 5: Manual end-to-end smoke (including Realtime)
 
 #### Automated
 
-- [ ] 5.1 `npx tsx scripts/f01-smoke.ts` exits 0 against `npx supabase start`
+- [x] 5.1 `npx tsx scripts/f01-smoke.ts` exits 0 against `npx supabase start`
 
 #### Manual
 
-- [ ] 5.2 Supabase Studio confirms no source object remains and the row sits at status `succeeded`
-- [ ] 5.3 Script output shows Realtime event firing within ~1-2 seconds of `markJobSucceeded`
+- [x] 5.2 Supabase Studio confirms no source object remains and the row sits at status `succeeded`
+- [x] 5.3 Script output shows Realtime event firing within ~1-2 seconds of `markJobSucceeded`

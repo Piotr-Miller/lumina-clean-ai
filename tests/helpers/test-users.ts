@@ -43,6 +43,12 @@ export async function createTestUser(emailPrefix = "test"): Promise<TestUser> {
   const client = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: `Bearer ${jwt}` } },
   });
+  // HTTP header auth above is sufficient for REST (PostgREST reads the
+  // Authorization header), but the Realtime WebSocket connection has its
+  // own auth channel and would otherwise connect as anon — making RLS see
+  // `auth.uid() = null` and silently dropping every UPDATE/DELETE event
+  // for this user. setAuth attaches the JWT to the Realtime client too.
+  await client.realtime.setAuth(jwt);
 
   return { id: created.user.id, email, password, jwt, client };
 }

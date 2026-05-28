@@ -121,9 +121,17 @@ grant select, insert on public.jobs to authenticated;
 -- the Supabase default).
 
 -- ---------------------------------------------------------------------------
--- Realtime publication
+-- Realtime publication + replica identity
 -- ---------------------------------------------------------------------------
 -- S-04 subscribes to row updates over Supabase Realtime under a user JWT.
 -- The SELECT policy above scopes the published rows per subscriber.
+--
+-- REPLICA IDENTITY FULL is required for Realtime to deliver UPDATE/DELETE
+-- events to RLS-scoped subscribers: Supabase Realtime evaluates the RLS
+-- SELECT policy against the OLD row to decide whether to push the event,
+-- and the default replica identity (primary key only) doesn't carry enough
+-- row data for that check. Without this line, UPDATE events fire in WAL
+-- but never reach user-JWT subscribers (silent drop).
 
+alter table public.jobs replica identity full;
 alter publication supabase_realtime add table public.jobs;
