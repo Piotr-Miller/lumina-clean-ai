@@ -390,22 +390,22 @@ All six cases in `tests/jobs.rls.test.ts` (Phase 4) plus the end-to-end smoke in
 
 #### Automated
 
-- [x] 1.1 `npx supabase db reset` applies the migration cleanly
-- [x] 1.2 `npm run lint` passes
-- [x] 1.3 `npm run build` passes
-- [x] 1.4 Scripted psql sanity check confirms anon can neither SELECT nor INSERT into jobs
+- [x] 1.1 `npx supabase db reset` applies the migration cleanly — d88bbe4
+- [x] 1.2 `npm run lint` passes — d88bbe4
+- [x] 1.3 `npm run build` passes — d88bbe4
+- [x] 1.4 Scripted psql sanity check confirms anon can neither SELECT nor INSERT into jobs — d88bbe4
 
 #### Manual
 
-- [ ] 1.5 Migration file diff reviewed for RLS, grants, and publication line
+- [x] 1.5 Migration file diff reviewed for RLS, grants, and publication line — d88bbe4
 
 ### Phase 2: Private Storage bucket + storage.objects RLS
 
 #### Automated
 
-- [ ] 2.1 `npx supabase db reset` applies both migrations cleanly
-- [ ] 2.2 `npm run lint` passes
-- [ ] 2.3 `npm run build` passes
+- [x] 2.1 `npx supabase db reset` applies both migrations cleanly
+- [x] 2.2 `npm run lint` passes
+- [x] 2.3 `npm run build` passes
 
 #### Manual
 
