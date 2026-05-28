@@ -57,7 +57,10 @@
       "Bash(echo)",
       "Bash(echo \"=== GET / still 200? ===\")",
       "Bash(echo \"=== POST /api/auth/signin with bogus creds \\(expect a real auth error, not 500\\) ===\")",
-      "PowerShell(Rename-Item -Path \"c:\\\\Source\\\\Trainings\\\\AI\\\\10xDevs\\\\LuminaClean_AI\\\\WRANGLER_AUTH.md\" -NewName \"WRANGLER.md\")"
+      "PowerShell(Rename-Item -Path \"c:\\\\Source\\\\Trainings\\\\AI\\\\10xDevs\\\\LuminaClean_AI\\\\WRANGLER_AUTH.md\" -NewName \"WRANGLER.md\")",
+      "Bash(gh issue *)",
+      "Bash(gh repo *)",
+      "Bash(gh label *)"
     ],
     "deny": [
       "Bash(rm -rf *)"
