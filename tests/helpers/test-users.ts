@@ -68,7 +68,9 @@ export async function deleteTestUser(userId: string): Promise<void> {
     .list(userId, { limit: 1000 });
   if (dirListError) {
     // eslint-disable-next-line no-console
-    console.warn(`deleteTestUser: failed to list photos/${userId}/: ${dirListError.message} — objects may leak across runs`);
+    console.warn(
+      `deleteTestUser: failed to list photos/${userId}/: ${dirListError.message} — objects may leak across runs`,
+    );
   }
   const allPaths: string[] = [];
   for (const dir of jobDirs ?? []) {
@@ -77,10 +79,12 @@ export async function deleteTestUser(userId: string): Promise<void> {
       .list(`${userId}/${dir.name}`, { limit: 1000 });
     if (fileListError) {
       // eslint-disable-next-line no-console
-      console.warn(`deleteTestUser: failed to list photos/${userId}/${dir.name}/: ${fileListError.message} — objects may leak across runs`);
+      console.warn(
+        `deleteTestUser: failed to list photos/${userId}/${dir.name}/: ${fileListError.message} — objects may leak across runs`,
+      );
       continue;
     }
-    for (const file of files ?? []) {
+    for (const file of files) {
       allPaths.push(`${userId}/${dir.name}/${file.name}`);
     }
   }
