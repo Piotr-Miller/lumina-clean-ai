@@ -64,8 +64,7 @@ export async function createPhotoJob(
  * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
  */
 export async function markJobSucceeded(admin: SupabaseClient, cmd: MarkJobSucceededCommand): Promise<void> {
-  // SELECT the source_path before the UPDATE so we know what to delete
-  // even if the row's mutated state would lose that information.
+  // Caller supplies jobId only; source_path lives on the row.
   const { data: row, error: readError } = await admin
     .from(JOBS_TABLE)
     .select("source_path")

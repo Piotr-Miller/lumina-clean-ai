@@ -156,8 +156,13 @@ async function main(): Promise<void> {
     }
 
     log("→ verifying source object was deleted");
-    const { data: files } = await admin.storage.from(PHOTOS_BUCKET).list(`${user.id}/${job.jobId}`);
-    const sourceStillThere = files?.some((f) => f.name === "source.jpg") ?? false;
+    const { data: files, error: listError } = await admin.storage
+      .from(PHOTOS_BUCKET)
+      .list(`${user.id}/${job.jobId}`);
+    if (listError) {
+      throw new Error(`failed to list Storage prefix to verify source deletion: ${listError.message}`);
+    }
+    const sourceStillThere = files.some((f) => f.name === "source.jpg");
     if (sourceStillThere) {
       throw new Error("source object still present in Storage after markJobSucceeded");
     }

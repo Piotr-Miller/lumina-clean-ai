@@ -46,14 +46,12 @@ create table public.jobs (
 -- ---------------------------------------------------------------------------
 
 -- Owner queries (history, current job lookup) hit (user_id, created_at desc).
+-- Also serves the S-05 daily-cap query:
+--   COUNT(*) WHERE user_id = $1 AND created_at >= today AND status <> 'failed'.
+-- The leading user_id makes this a tight range scan; a separate non-user-scoped
+-- partial index would scan all users' rows in the time range before filtering.
 create index jobs_user_id_created_at_idx
   on public.jobs (user_id, created_at desc);
-
--- S-05 daily-cap query: COUNT(*) WHERE created_at >= today AND status <> 'failed'.
--- Partial index keeps the count cheap (failed rows do not count toward the cap).
-create index jobs_daily_cap_idx
-  on public.jobs (created_at desc)
-  where status <> 'failed';
 
 -- ---------------------------------------------------------------------------
 -- updated_at auto-touch trigger

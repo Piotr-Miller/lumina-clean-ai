@@ -86,9 +86,10 @@ describe("public.jobs RLS + photo-job service", () => {
       status: "queued",
       source_path: "anon/none.jpg",
     });
-    // Either RLS denial (42501) or grant-layer denial — both are correct.
+    // After the explicit revoke from anon, the grant layer denies before
+    // RLS evaluates — Postgres returns SQLSTATE 42501 (insufficient_privilege).
     expect(error).not.toBeNull();
-    expect(error?.code === "42501" || error?.code === "401").toBe(true);
+    expect(error?.code).toBe("42501");
   });
 
   it("anon cannot read Storage objects", async () => {
