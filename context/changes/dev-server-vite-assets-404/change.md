@@ -1,7 +1,7 @@
 ---
 change_id: dev-server-vite-assets-404
 title: npm run dev 404s Vite client assets, so React islands never hydrate
-status: implementing
+status: implemented
 created: 2026-05-29
 updated: 2026-05-29
 archived_at: null

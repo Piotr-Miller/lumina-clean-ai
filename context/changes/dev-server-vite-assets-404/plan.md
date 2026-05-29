@@ -253,11 +253,11 @@ for routine dev.
 
 #### Automated
 
-- [x] 2.1 `npm run build` succeeds
-- [x] 2.2 Prettier clean on touched files (wrangler.jsonc, lessons.md); eslint N/A for these file types
+- [x] 2.1 `npm run build` succeeds — 9a27d24
+- [x] 2.2 Prettier clean on touched files (wrangler.jsonc, lessons.md); eslint N/A for these file types — 9a27d24
 
 #### Manual
 
-- [x] 2.3 `npx wrangler dev`: SSR pages render, /_astro/* assets load, islands hydrate
-- [x] 2.4 Unauthenticated `/dashboard` redirects to sign-in (middleware still runs under assets-first)
-- [x] 2.5 Existing API route (POST /api/auth/signin) returns JSON from the Worker, proving Worker execution under assets-first routing
+- [x] 2.3 `npx wrangler dev`: SSR pages render, /_astro/* assets load, islands hydrate — 9a27d24
+- [x] 2.4 Unauthenticated `/dashboard` redirects to sign-in (middleware still runs under assets-first) — 9a27d24
+- [x] 2.5 Existing API route (POST /api/auth/signin) returns JSON from the Worker, proving Worker execution under assets-first routing — 9a27d24
