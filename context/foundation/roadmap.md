@@ -55,7 +55,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Backend / API:** partial — only auth endpoints (`src/pages/api/auth/{signin,signout,signup}.ts`); no zod validation, no `src/lib/services/`, no product API routes.
 - **Data:** absent — no `supabase/migrations/`, no application tables (jobs/photos/usage), no active Storage bucket (`supabase/config.toml` has commented-out examples only), no entity types in `src/types.ts`.
 - **Auth:** partial — SSR client (`src/lib/supabase.ts`), middleware with `PROTECTED_ROUTES=["/dashboard"]` (`src/middleware.ts`), sign-in/up/out endpoints and auth pages present; **password reset (FR-015) absent**.
-- **Deploy / infra:** present — `wrangler.jsonc` with both Workers fixes already applied (`disable_nodejs_process_v2`, `run_worker_first: true`) and `observability.enabled: true`; CI (`.github/workflows/ci.yml`) runs lint+build only (no deploy step).
+- **Deploy / infra:** present — `wrangler.jsonc` with `disable_nodejs_process_v2` and `observability.enabled: true`; CI (`.github/workflows/ci.yml`) runs lint+build only (no deploy step). (`run_worker_first: true` was in the 2026-05-26 baseline but was removed in `dev-server-vite-assets-404` — it routed Vite's dev asset requests through the workerd SSR app, breaking client-asset serving and React island hydration under `npm run dev`.)
 - **Observability:** partial — platform-level `observability.enabled` is set; no app-level logging or error-tracking library.
 
 ## Foundations
