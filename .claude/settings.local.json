@@ -66,7 +66,16 @@
       "Bash(echo \"=== full server log ===\")",
       "Bash(grep -Ei \"error|invalid hook|reload|ready\" \"C:\\\\Users\\\\prmi\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Source-Trainings-AI-10xDevs-LuminaClean-AI\\\\25d9425e-f7f6-4165-b033-987aee4f7c87\\\\tasks\\\\bkhmz5ulr.output\")",
       "Bash(head)",
-      "Bash(echo \"=== fetch first island script ===\")"
+      "Bash(echo \"=== fetch first island script ===\")",
+      "Bash(echo \"=== 1. signup \\(auto-confirmed locally\\) ===\")",
+      "Bash(echo \"=== 2. request reset ===\")",
+      "Bash(echo \"=== 3. inbucket mailbox 'resettest' ===\")",
+      "Bash(echo \"=== 1. signup ===\")",
+      "Bash(echo \"=== 3. inbucket: latest message for 'resettest' ===\")",
+      "Bash(echo \"=== email HTML body \\(link\\) ===\")",
+      "Bash(echo \"=== link\\(s\\) in email \\(verify vs confirm\\) ===\")",
+      "Bash(grep -oiE '\\(http[^\" \\\\\\\\]*?\\(verify|confirm\\)[^\" \\\\\\\\]*\\)')",
+      "Bash(echo \"=== full recovery link \\(HTML-decoded\\) ===\")"
     ],
     "deny": [
       "Bash(rm -rf *)"

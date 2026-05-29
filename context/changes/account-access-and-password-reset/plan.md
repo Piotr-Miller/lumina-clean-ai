@@ -300,17 +300,17 @@ No data migration. Config changes to `supabase/config.toml` apply on `npx supaba
 
 #### Automated
 
-- [x] 2.1 Type checking passes
-- [x] 2.2 Linting passes on touched files
-- [x] 2.3 Unit tests pass for extracted validation/helper logic
+- [x] 2.1 Type checking passes — 5fa5798
+- [x] 2.2 Linting passes on touched files — 5fa5798
+- [x] 2.3 Unit tests pass for extracted validation/helper logic — 5fa5798
 
 #### Manual
 
-- [x] 2.4 Recovery link lands on `/auth/reset-password` with an active session
-- [x] 2.5 Valid new password → redirect to `/` signed in; new password works on next sign-in
-- [x] 2.6 Mismatched/too-short passwords blocked
-- [x] 2.7 Expired/used/invalid link redirects to forgot-password with an error
-- [x] 2.8 Direct visit to `/auth/reset-password` without a session redirects to forgot-password
+- [x] 2.4 Recovery link lands on `/auth/reset-password` with an active session — 5fa5798
+- [x] 2.5 Valid new password → redirect to `/` signed in; new password works on next sign-in — 5fa5798
+- [x] 2.6 Mismatched/too-short passwords blocked — 5fa5798
+- [x] 2.7 Expired/used/invalid link redirects to forgot-password with an error — 5fa5798
+- [x] 2.8 Direct visit to `/auth/reset-password` without a session redirects to forgot-password — 5fa5798
 
 ### Phase 3: Production email + NFR verification
 
