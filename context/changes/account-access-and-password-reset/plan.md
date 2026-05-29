@@ -285,32 +285,32 @@ No data migration. Config changes to `supabase/config.toml` apply on `npx supaba
 
 #### Automated
 
-- [x] 1.1 Type checking passes (touched files)
-- [x] 1.2 Linting passes on touched files (CRLF-safe, scoped)
-- [x] 1.3 `supabase/config.toml` parses with the new recovery template section
+- [x] 1.1 Type checking passes (touched files) — 7c5b9ea
+- [x] 1.2 Linting passes on touched files (CRLF-safe, scoped) — 7c5b9ea
+- [x] 1.3 `supabase/config.toml` parses with the new recovery template section — 7c5b9ea
 
 #### Manual
 
-- [x] 1.4 "Forgot password?" link navigates to `/auth/forgot-password`
-- [x] 1.5 Known email shows generic success
-- [x] 1.6 Unknown email shows the same generic success (no enumeration)
-- [x] 1.7 Inbucket email link targets `/auth/confirm?token_hash=…&type=recovery&next=/auth/reset-password`
+- [x] 1.4 "Forgot password?" link navigates to `/auth/forgot-password` — 7c5b9ea
+- [x] 1.5 Known email shows generic success — 7c5b9ea
+- [x] 1.6 Unknown email shows the same generic success (no enumeration) — 7c5b9ea
+- [x] 1.7 Inbucket email link targets `/auth/confirm?token_hash=…&type=recovery&next=/auth/reset-password` — 7c5b9ea
 
 ### Phase 2: Confirm + set-new-password leg
 
 #### Automated
 
-- [ ] 2.1 Type checking passes
-- [ ] 2.2 Linting passes on touched files
-- [ ] 2.3 Unit tests pass for extracted validation/helper logic
+- [x] 2.1 Type checking passes
+- [x] 2.2 Linting passes on touched files
+- [x] 2.3 Unit tests pass for extracted validation/helper logic
 
 #### Manual
 
-- [ ] 2.4 Recovery link lands on `/auth/reset-password` with an active session
-- [ ] 2.5 Valid new password → redirect to `/` signed in; new password works on next sign-in
-- [ ] 2.6 Mismatched/too-short passwords blocked
-- [ ] 2.7 Expired/used/invalid link redirects to forgot-password with an error
-- [ ] 2.8 Direct visit to `/auth/reset-password` without a session redirects to forgot-password
+- [x] 2.4 Recovery link lands on `/auth/reset-password` with an active session
+- [x] 2.5 Valid new password → redirect to `/` signed in; new password works on next sign-in
+- [x] 2.6 Mismatched/too-short passwords blocked
+- [x] 2.7 Expired/used/invalid link redirects to forgot-password with an error
+- [x] 2.8 Direct visit to `/auth/reset-password` without a session redirects to forgot-password
 
 ### Phase 3: Production email + NFR verification
 

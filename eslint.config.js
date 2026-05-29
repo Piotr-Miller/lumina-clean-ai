@@ -65,6 +65,12 @@ const astroConfig = tseslint.config({
     "astro/no-set-html-directive": "error",
     "astro/no-unused-css-selector": "warn",
     "astro/prefer-class-list-directive": "warn",
+    // astro-eslint-parser wraps frontmatter in an implicit function whose
+    // top-level `return` (e.g. `return Astro.redirect(...)` guards) has no
+    // parent node, which crashes this typed rule's checkReturnStatement.
+    // The frontmatter runs server-side once per request, so the void-return
+    // misuse this rule guards against does not apply to .astro files.
+    "@typescript-eslint/no-misused-promises": "off",
   },
 });
 
