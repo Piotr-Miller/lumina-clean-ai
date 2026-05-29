@@ -243,35 +243,35 @@ None — no data, no schema. `Welcome.astro` is retained but unreferenced from `
 
 #### Automated
 
-- [x] 1.1 Unit tests for validateImageFile / buildGammaLut / deriveDownloadName pass
-- [x] 1.2 Type checking passes (astro check / build)
-- [x] 1.3 Lint passes on touched files
+- [x] 1.1 Unit tests for validateImageFile / buildGammaLut / deriveDownloadName pass — 1e450f3
+- [x] 1.2 Type checking passes (astro check / build) — 1e450f3
+- [x] 1.3 Lint passes on touched files — 1e450f3
 
 ### Phase 2: Reusable UI shell components
 
 #### Automated
 
-- [x] 2.1 Type checking passes
-- [x] 2.2 Lint passes on touched files
+- [x] 2.1 Type checking passes — 1e450f3
+- [x] 2.2 Lint passes on touched files — 1e450f3
 
 #### Manual
 
-- [x] 2.3 Components render without console errors (verified in Phase 3)
-- [x] 2.4 Slider draggable by pointer and movable by keyboard
+- [x] 2.3 Components render without console errors (verified in Phase 3) — 1e450f3
+- [x] 2.4 Slider draggable by pointer and movable by keyboard — 1e450f3
 
 ### Phase 3: Orchestration & page integration
 
 #### Automated
 
-- [x] 3.1 All unit tests pass
-- [x] 3.2 Production build succeeds
-- [x] 3.3 Lint passes on touched files
+- [x] 3.1 All unit tests pass — 1e450f3
+- [x] 3.2 Production build succeeds — 1e450f3
+- [x] 3.3 Lint passes on touched files — 1e450f3
 
 #### Manual
 
-- [x] 3.4 Night JPG enhances with visible improvement within ~2s
-- [x] 3.5 Before/after slider reveal works (pointer + keyboard)
-- [x] 3.6 Download is full-res in source format
-- [x] 3.7 PNG works; HEIC rejected with message; oversize/wrong-type show inline errors
-- [x] 3.8 Usable at ≤400px mobile portrait
-- [x] 3.9 Spinner visible during processing
+- [x] 3.4 Night JPG enhances with visible improvement within ~2s — 1e450f3
+- [x] 3.5 Before/after slider reveal works (pointer + keyboard) — 1e450f3
+- [x] 3.6 Download is full-res in source format — 1e450f3
+- [x] 3.7 PNG works; HEIC rejected with message; oversize/wrong-type show inline errors — 1e450f3
+- [x] 3.8 Usable at ≤400px mobile portrait — 1e450f3
+- [x] 3.9 Spinner visible during processing — 1e450f3
