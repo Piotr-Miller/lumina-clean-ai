@@ -239,25 +239,25 @@ for routine dev.
 
 #### Automated
 
-- [x] 1.1 run_worker_first absent (`grep -q` exits non-zero) and dev server starts without a config-parse error
-- [x] 1.2 `/@vite/client`, `/@id/astro:scripts/before-hydration.js`, `/src/styles/global.css` return 200 under `npm run dev`
-- [x] 1.3 `/auth/signin` returns 200 under `npm run dev`
+- [x] 1.1 run_worker_first absent (`grep -q` exits non-zero) and dev server starts without a config-parse error — b5d6d27
+- [x] 1.2 `/@vite/client`, `/@id/astro:scripts/before-hydration.js`, `/src/styles/global.css` return 200 under `npm run dev` — b5d6d27
+- [x] 1.3 `/auth/signin` returns 200 under `npm run dev` — b5d6d27
 
 #### Manual
 
-- [x] 1.4 Sign-in form hydrates and is interactive in browser; no /@vite or /src 404s in network tab
-- [x] 1.5 A second island (local-engine / dashboard) hydrates
-- [x] 1.6 No hydration / Invalid hook call errors in terminal or console
+- [x] 1.4 Sign-in form hydrates and is interactive in browser; no /@vite or /src 404s in network tab — b5d6d27
+- [x] 1.5 A second island (local-engine / dashboard) hydrates — b5d6d27
+- [x] 1.6 No hydration / Invalid hook call errors in terminal or console — b5d6d27
 
 ### Phase 2: Verify production parity & capture the lesson
 
 #### Automated
 
-- [ ] 2.1 `npm run build` succeeds
-- [ ] 2.2 Prettier clean on touched files (wrangler.jsonc, lessons.md); eslint N/A for these file types
+- [x] 2.1 `npm run build` succeeds
+- [x] 2.2 Prettier clean on touched files (wrangler.jsonc, lessons.md); eslint N/A for these file types
 
 #### Manual
 
-- [ ] 2.3 `npx wrangler dev`: SSR pages render, /_astro/* assets load, islands hydrate
-- [ ] 2.4 Unauthenticated `/dashboard` redirects to sign-in (middleware still runs under assets-first)
-- [ ] 2.5 Existing API route (POST /api/auth/signin) returns JSON from the Worker, proving Worker execution under assets-first routing
+- [x] 2.3 `npx wrangler dev`: SSR pages render, /_astro/* assets load, islands hydrate
+- [x] 2.4 Unauthenticated `/dashboard` redirects to sign-in (middleware still runs under assets-first)
+- [x] 2.5 Existing API route (POST /api/auth/signin) returns JSON from the Worker, proving Worker execution under assets-first routing
