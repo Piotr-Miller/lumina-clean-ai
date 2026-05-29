@@ -60,7 +60,13 @@
       "PowerShell(Rename-Item -Path \"c:\\\\Source\\\\Trainings\\\\AI\\\\10xDevs\\\\LuminaClean_AI\\\\WRANGLER_AUTH.md\" -NewName \"WRANGLER.md\")",
       "Bash(gh issue *)",
       "Bash(gh repo *)",
-      "Bash(gh label *)"
+      "Bash(gh label *)",
+      "Bash(cd \"C:/Source/Trainings/AI/10xDevs/LuminaClean_AI\")",
+      "Bash(sleep 2)",
+      "Bash(echo \"=== full server log ===\")",
+      "Bash(grep -Ei \"error|invalid hook|reload|ready\" \"C:\\\\Users\\\\prmi\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Source-Trainings-AI-10xDevs-LuminaClean-AI\\\\25d9425e-f7f6-4165-b033-987aee4f7c87\\\\tasks\\\\bkhmz5ulr.output\")",
+      "Bash(head)",
+      "Bash(echo \"=== fetch first island script ===\")"
     ],
     "deny": [
       "Bash(rm -rf *)"
