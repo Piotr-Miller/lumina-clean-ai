@@ -1,11 +1,11 @@
 ---
 change_id: local-engine-enhance-flow
 title: "Local (Canvas) engine: upload → enhance → compare → download"
-status: impl_reviewed
+status: archived
 created: 2026-05-28
 updated: 2026-05-29
 review_round: 0
-archived_at: null
+archived_at: 2026-05-29T12:57:05Z
 ---
 
 ## Notes

@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-29
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -30,7 +30,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | ID    | Change ID                          | Outcome (user can …)                                                  | Prerequisites | PRD refs                                  | Status   |
 | ----- | ---------------------------------- | --------------------------------------------------------------------- | ------------- | ----------------------------------------- | -------- |
 | F-01  | photo-jobs-data-and-storage        | (foundation) private photo storage + job records with RLS in place    | —             | NFR: private source / 24h retention; Access Control | ready    |
-| S-01  | local-engine-enhance-flow          | upload a photo, enhance it locally, compare before/after, download    | —             | US-02; FR-001, FR-005, FR-008, FR-011, FR-012 | ready    |
+| S-01  | local-engine-enhance-flow          | upload a photo, enhance it locally, compare before/after, download    | —             | US-02; FR-001, FR-005, FR-008, FR-011, FR-012 | done     |
 | S-02  | account-access-and-password-reset  | sign up, sign in, sign out, and reset a forgotten password            | —             | FR-002, FR-003, FR-004, FR-015            | ready    |
 | S-03  | gated-cloud-upload                 | switch to Cloud AI (sign-in gated) and submit a photo for processing  | F-01, S-01    | US-01; FR-005, FR-006, FR-007             | proposed |
 | S-04  | cloud-ai-realtime-result           | see the Cloud-AI result pushed in real time, before/after + download  | S-03          | US-01; FR-009, FR-010, FR-011, FR-012     | proposed |
@@ -87,7 +87,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - HEIC decoding strategy (PRD Open Question #1) — Owner: TBD (early spike). Block: no. Ship JPG/PNG first; HEIC via detect-and-reject or a client polyfill can follow without blocking this slice.
   - Does gamma + Gaussian blur read as "less noisy" rather than just "blurrier"? (FR-008 Socrates note) — Owner: TBD (visual spike). Block: no. Local is intentionally rough; it only needs a visible improvement.
 - **Risk:** Lowest-risk slice, sequenced first because it has zero prerequisites and builds the shared UI shell (upload control, before/after slider, download) that S-03/S-04 reuse — building it once here avoids duplicating it on the cloud path. Also delivers a Secondary success criterion and the anonymous-acquisition funnel, so it is not throwaway pre-pipeline work.
-- **Status:** ready
+- **Status:** done
 
 ### S-02: Account access — sign-up, sign-in, sign-out, password reset
 
@@ -175,4 +175,4 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 
 ## Done
 
-(Empty on first generation. `/10x-archive` appends an entry here — and flips that item's `Status` to `done` — when a change whose `Change ID` matches the item is archived. Do NOT pre-populate.)
+- **S-01: an anonymous visitor can upload a photo (JPG/PNG), run the client-side Local engine (Canvas gamma correction + Gaussian blur), compare the result against the original with a before/after slider, and download it — entirely in the browser, no network round-trip after load.** — Archived 2026-05-29 → `context/archive/2026-05-28-local-engine-enhance-flow/`. Lesson: —.
