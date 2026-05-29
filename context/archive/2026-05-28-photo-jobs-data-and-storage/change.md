@@ -1,11 +1,11 @@
 ---
 change_id: photo-jobs-data-and-storage
 title: Private photo storage + job records with RLS
-status: impl_reviewed
+status: archived
 created: 2026-05-28
-updated: 2026-05-28
+updated: 2026-05-29
 review_round: 3
-archived_at: null
+archived_at: 2026-05-29T12:59:52Z
 ---
 
 ## Notes

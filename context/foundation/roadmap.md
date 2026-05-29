@@ -29,7 +29,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 
 | ID    | Change ID                          | Outcome (user can …)                                                  | Prerequisites | PRD refs                                  | Status   |
 | ----- | ---------------------------------- | --------------------------------------------------------------------- | ------------- | ----------------------------------------- | -------- |
-| F-01  | photo-jobs-data-and-storage        | (foundation) private photo storage + job records with RLS in place    | —             | NFR: private source / 24h retention; Access Control | ready    |
+| F-01  | photo-jobs-data-and-storage        | (foundation) private photo storage + job records with RLS in place    | —             | NFR: private source / 24h retention; Access Control | done     |
 | S-01  | local-engine-enhance-flow          | upload a photo, enhance it locally, compare before/after, download    | —             | US-02; FR-001, FR-005, FR-008, FR-011, FR-012 | done     |
 | S-02  | account-access-and-password-reset  | sign up, sign in, sign out, and reset a forgotten password            | —             | FR-002, FR-003, FR-004, FR-015            | ready    |
 | S-03  | gated-cloud-upload                 | switch to Cloud AI (sign-in gated) and submit a photo for processing  | F-01, S-01    | US-01; FR-005, FR-006, FR-007             | proposed |
@@ -71,7 +71,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** This is the "invest deeply" data layer (per the framing interview): privacy and 24h retention are launch guardrails, so RLS correctness and bucket privacy must be right before any cloud upload path touches them. Sequenced first because the entire Cloud AI path depends on it; getting RLS wrong here is the most expensive thing to discover late.
-- **Status:** ready
+- **Status:** done
 
 ## Slices
 
@@ -175,4 +175,5 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 
 ## Done
 
+- **F-01: (foundation) a private Supabase Storage bucket and a jobs/predictions table exist with per-user RLS, signed-upload capability, a 24-hour source-retention policy, and shared entity/DTO types in `src/types.ts`. Not user-visible on its own.** — Archived 2026-05-29 → `context/archive/2026-05-28-photo-jobs-data-and-storage/`. Lesson: —.
 - **S-01: an anonymous visitor can upload a photo (JPG/PNG), run the client-side Local engine (Canvas gamma correction + Gaussian blur), compare the result against the original with a before/after slider, and download it — entirely in the browser, no network round-trip after load.** — Archived 2026-05-29 → `context/archive/2026-05-28-local-engine-enhance-flow/`. Lesson: —.
