@@ -1,8 +1,18 @@
 ---
-import Welcome from "@/components/Welcome.astro";
+import EnhanceWorkspace from "@/components/enhance/EnhanceWorkspace";
 import Layout from "@/layouts/Layout.astro";
 ---
 
-<Layout>
-  <Welcome />
+<Layout title="LuminaClean AI — fix your night photos">
+  <main class="bg-cosmic min-h-screen px-4 py-10 text-white sm:py-16">
+    <div class="mx-auto max-w-2xl text-center">
+      <h1 class="text-3xl font-bold sm:text-4xl">Fix your night photos</h1>
+      <p class="mt-3 text-white/70">
+        Upload a dark, grainy shot and brighten it instantly — right in your browser. No account needed.
+      </p>
+    </div>
+    <div class="mt-8">
+      <EnhanceWorkspace client:load />
+    </div>
+  </main>
 </Layout>
