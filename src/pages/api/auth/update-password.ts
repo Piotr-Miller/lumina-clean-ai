@@ -22,6 +22,18 @@ export const POST: APIRoute = async (context) => {
     return context.redirect(`/auth/reset-password?error=${encodeURIComponent("Supabase is not configured")}`);
   }
 
+  // No recovery session → the link was never consumed or has expired. Bounce
+  // to forgot-password with friendly copy instead of leaking a raw Supabase
+  // "Auth session missing!" error (mirrors the reset-password.astro guard).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return context.redirect(
+      `/auth/forgot-password?error=${encodeURIComponent("That reset link has expired. Please request a new one.")}`,
+    );
+  }
+
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
     return context.redirect(`/auth/reset-password?error=${encodeURIComponent(error.message)}`);
