@@ -14,6 +14,16 @@ Authentication → URL Configuration). They mirror the local `supabase/config.to
 wiring established in Phases 1–2. They must be applied by the project owner; they are
 not expressible in the repo.
 
+> **MVP launch decision (2026-05-30).** Custom SMTP is **deferred to a future
+> deployment/infrastructure slice** and is **not** a blocker for S-02. For MVP launch the
+> reset flow is proven end-to-end against **Supabase's built-in email sender** — a single
+> one-off reset is enough to verify the loop (link → set new password → signed-in session).
+> The built-in sender's ~2–4 emails/hr cap is the accepted known constraint until the infra
+> slice lands; combined with the silent-swallow tradeoff (§2.3), a normal one-off reset is
+> unaffected, while sustained/high-frequency reset volume must wait for custom SMTP. The §1.1
+> SMTP settings below are therefore the **target for that future slice**, not a Phase-3
+> done-criterion. (Manual check 3.2 is verified via the built-in sender accordingly.)
+
 ### 1.1 SMTP provider
 
 - **Provider:** Resend (recommended — agent-friendly docs, simple verified-domain flow).
@@ -41,6 +51,24 @@ Authentication → Email Templates → **Reset Password**, set the body so the l
 This is the load-bearing contract — the `token_hash` + `type=recovery` query is what
 `/auth/confirm` consumes via `verifyOtp`, and `next` is hardcoded to the in-app
 set-new-password page. Keep it byte-identical to the local template.
+
+> **Required even with the built-in sender — not part of the SMTP deferral.** This
+> template lives in the dashboard (Authentication → Email Templates → Reset Password) and
+> is configured independently of *who sends* the mail. The built-in sender is fine; the
+> default *template* is not.
+>
+> **Symptom if not applied (observed 2026-05-30, manual check 3.2):** the recovery link
+> resolves to `{{ .SiteURL }}/?code=<uuid>` — i.e. the deployed app **home page** (the
+> "Fix your night photos" slider), with no set-new-password form. That is Supabase's
+> **default** recovery template (`{{ .ConfirmationURL }}`, the PKCE `?code=` flow landing
+> on the site root), which this app does **not** handle — there is no code-exchange route
+> at `/`, so no recovery session is established and the user just sees the landing page.
+>
+> **Fix:** set the dashboard Reset-Password template body to the exact `token_hash` link
+> above so the link targets `/auth/confirm?...&type=recovery&next=/auth/reset-password`.
+> No application code change is needed — the token_hash flow (`/auth/confirm` →
+> `verifyOtp` → `/auth/reset-password`) is already deployed and was verified locally in
+> Phase 2. Re-run check 3.2 after applying the template.
 
 ### 1.3 URL configuration (dashboard)
 
@@ -99,6 +127,25 @@ user who exceeds `email_sent` gets **no email and no UI signal**. Mitigations:
 Confirm before launch that the chosen provider's send limit is comfortably above any
 realistic per-user reset frequency.
 
+### 2.4 Observed production behavior (2026-05-30, manual check 3.3)
+
+> **Local `config.toml` ≠ production.** The `[auth.rate_limit]` values in §2.1 govern the
+> **local** `supabase start` stack only. The deployed (hosted) project enforces the rate
+> limits configured in its **dashboard** (Authentication → Rate Limits), which default
+> higher and differ by plan/region. So the prod thresholds are not the §2.1 numbers.
+>
+> **Result:** rapid wrong-password sign-in attempts on the deployed app were eventually
+> rejected with **"Request rate limit reached"** — the credential-stuffing guard **is
+> enforced in production**. It did not trip within the first ~10 attempts; the effective
+> threshold is higher than the local `sign_in_sign_ups = 30` value, consistent with the
+> hosted plan's larger window. A legitimate user who mistypes a few times is unaffected
+> (no early lockout), and the cap is time-windowed/per-IP, not a permanent account lock —
+> **the NFR holds**: a few mistakes don't lock anyone out, brute force at scale is rejected.
+>
+> **Action:** if the hosted threshold is judged too permissive for launch, lower
+> `sign_in_sign_ups` (and related limits) in the **dashboard** Rate Limits section — this
+> is a hosted setting, not a `config.toml` change. No app code is involved.
+
 ---
 
 ## 3. Manual verification checklist (run against production)
@@ -109,3 +156,38 @@ realistic per-user reset frequency.
    throttled; then a correct attempt by the legitimate user still succeeds (no permanent
    lockout).
 3. This document records the rate-limit posture and the SMTP/URL settings (✓ on write).
+
+---
+
+## 4. Verification outcome (2026-05-30)
+
+**3.2 — PASS (via built-in sender).** After the dashboard Reset-Password template was
+switched from the default `{{ .ConfirmationURL }}` to the `token_hash` link (§1.2), the
+full production loop completed: emailed recovery link → `/auth/confirm` (`verifyOtp`) →
+`/auth/reset-password` form → new password saved → signed-in redirect. Verified on the
+deployed Worker using Supabase's **built-in email sender** (no custom SMTP), consistent
+with the MVP launch decision in §1.
+
+Observations from the run:
+
+- **Built-in email rate cap was actually hit** mid-verification — repeated test requests
+  during template iteration exhausted the ~2–4/hr built-in allowance, and (per the §2.3
+  silent-swallow tradeoff) the endpoint still showed generic success while no mail was
+  sent. Concrete evidence that the custom-SMTP infra slice (Parked in `roadmap.md`) is
+  the right call before real user volume.
+- **Emailed link is `token_hash=pkce_…`** (the `@supabase/ssr` PKCE flow). It verified
+  successfully **in the same browser** that requested the reset (the code-verifier cookie
+  was present). **Known limitation:** clicking the emailed link on a *different*
+  device/browser has no verifier cookie and will fail `verifyOtp` → bounce to
+  forgot-password. A future improvement (with the SMTP slice) can move to a non-PKCE
+  emailed token or an explicit code-exchange route. For no-email / cross-browser testing,
+  use `scripts/generate-recovery-link.ts` (Admin `generateLink` → plain-hash token).
+- **Trailing-slash Site URL** produced a `…workers.dev//auth/confirm` double slash in the
+  link; routing **tolerated** it (the loop still completed), so it is cosmetic, not fatal.
+  Recommend trimming the Site URL trailing slash anyway for clean links.
+- **Link reuse** → "That reset link is invalid or has expired. Please request a new one."
+  Correct one-time-use behavior (matches Phase 2 manual check 2.7).
+
+**3.3 — PASS.** Credential-stuffing throttle confirmed in production ("Request rate limit
+reached" after sustained wrong-password attempts), with no early lockout of a legitimate
+user — see §2.4. NFR satisfied.

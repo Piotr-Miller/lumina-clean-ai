@@ -172,6 +172,8 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 - **History UI (FR-013, nice-to-have).** Why parked: PRD §Non-Goals — job data persists (needed for the Realtime push in S-04), but the user-facing history list view is deferred to v2.
 - **Formal anti-bot defense (Turnstile / WAF / CAPTCHA).** Why parked: PRD §Non-Goals — v1 relies on auth-gating + the daily cap + observation.
 - **Offline functionality.** Why parked: PRD §Non-Goals — not a committed product property.
+- **Custom production email / SMTP (Resend + verified domain).** Why parked: deferred from S-02 Phase 3 (2026-05-30). The password-reset flow is verified end-to-end on Supabase's built-in email sender for MVP launch; the built-in sender's ~2–4 emails/hr cap is the accepted known constraint. A future deployment/infra slice configures a custom SMTP provider (Resend) with a verified sending domain + SPF/DKIM so reset/notification email scales past that cap. Settings target documented in `context/changes/account-access-and-password-reset/phase-3-production-and-nfr.md` §1.1. NOTE: the custom recovery email **template** (§1.2) and prod URL config (§1.3) are NOT part of this deferral — they are required for the reset link to resolve at all and must be applied in the dashboard regardless of sender.
+- **Global, always-reachable "Sign out" control.** Why parked: out of scope for S-02. Today Sign out renders only on `/` (the Topbar, mounted solely in `Welcome.astro`) and on `/dashboard` — it is unreachable from `/auth/*` and any page without the Topbar. A small follow-up either folds the Topbar into the shared `Layout` or adds a global nav so Sign out is reachable everywhere.
 
 ## Done
 
