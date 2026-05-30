@@ -1,9 +1,10 @@
 ---
 change_id: account-access-and-password-reset
 title: "Complete account access incl. password reset"
-status: impl_reviewed
+status: archived
 created: 2026-05-29
 updated: 2026-05-30
+archived_at: 2026-05-30T22:12:27Z
 review_round: 0
 ---
 
