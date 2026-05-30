@@ -316,10 +316,10 @@ No data migration. Config changes to `supabase/config.toml` apply on `npx supaba
 
 #### Automated
 
-- [ ] 3.1 `supabase/config.toml` still parses if values were tuned
+- [x] 3.1 `supabase/config.toml` still parses if values were tuned
 
 #### Manual
 
 - [ ] 3.2 Production reset email delivers via configured SMTP and completes the loop on the deployed URL
 - [ ] 3.3 Rapid wrong-password attempts are throttled without locking out a legit user
-- [ ] 3.4 Rate-limit posture and SMTP/URL settings documented
+- [x] 3.4 Rate-limit posture and SMTP/URL settings documented
