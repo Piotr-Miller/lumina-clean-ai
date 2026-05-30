@@ -15,7 +15,8 @@
  * SECURITY: this uses the service-role key (RLS bypass) and prints a live,
  * one-time recovery token to stdout. Run it locally, use the link promptly,
  * and don't paste the output anywhere shared. The link is single-use and
- * expires per the project's OTP expiry (1h).
+ * expires per the project's OTP expiry (1h). Note it also lingers in your
+ * shell history and terminal scrollback — clear them if the machine is shared.
  *
  * Usage (PowerShell, pointing at the PROD project):
  *   $env:SUPABASE_URL="https://<project-ref>.supabase.co"
@@ -25,6 +26,7 @@
  * Optional: override the app origin the link points at (defaults to prod):
  *   $env:APP_ORIGIN="http://127.0.0.1:4321"   # e.g. to test against local dev
  */
+/* eslint-disable no-console -- CLI ops utility: stdout/stderr is its interface */
 import { createAdminClient } from "../src/lib/supabase-admin";
 
 const DEFAULT_APP_ORIGIN = "https://lumina-clean-ai.pmiller-software.workers.dev";
@@ -61,9 +63,9 @@ if (error) {
   fail(`generateLink failed: ${error.message} (does a user with this email exist in the project?)`);
 }
 
-const hashedToken = data?.properties?.hashed_token;
+const hashedToken = data.properties.hashed_token;
 if (!hashedToken) {
-  fail(`No hashed_token in response. Raw properties: ${JSON.stringify(data?.properties)}`);
+  fail(`No hashed_token in response. Raw properties: ${JSON.stringify(data.properties)}`);
 }
 
 const confirmUrl = `${appOrigin}/auth/confirm?token_hash=${hashedToken}&type=recovery&next=/auth/reset-password`;

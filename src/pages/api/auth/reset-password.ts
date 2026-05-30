@@ -5,7 +5,8 @@ export const prerender = false;
 
 export const POST: APIRoute = async (context) => {
   const form = await context.request.formData();
-  const email = form.get("email") as string;
+  const emailValue = form.get("email");
+  const email = typeof emailValue === "string" ? emailValue : "";
 
   const supabase = createClient(context.request.headers, context.cookies);
 
