@@ -386,13 +386,13 @@ One new migration (the `queued` Database Webhook trigger). No changes to the `jo
 
 #### Automated
 
-- [x] 0.1 Spike script runs and prints latency + output URL
+- [x] 0.1 Spike script runs and prints latency + output URL — 3d5a7fd
 
 #### Manual
 
-- [x] 0.2 Warm < 30s; cold/idle latency recorded with go/no-go on ≤30s p95
-- [x] 0.3 Color JPG in → usable color image out
-- [x] 0.4 spike-findings.md records version hash, gamma/strength defaults, SLA verdict
+- [x] 0.2 Warm < 30s; cold/idle latency recorded with go/no-go on ≤30s p95 — 3d5a7fd
+- [x] 0.3 Color JPG in → usable color image out — 3d5a7fd
+- [x] 0.4 spike-findings.md records version hash, gamma/strength defaults, SLA verdict — 3d5a7fd
 
 ### Phase 1: Service-layer groundwork
 

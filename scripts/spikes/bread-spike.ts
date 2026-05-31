@@ -38,7 +38,9 @@ async function main(): Promise<void> {
   // Tune without editing code: GAMMA (≤1.5 brighten) / STRENGTH (≤0.2 denoise).
   const gamma = Number(process.env.GAMMA ?? "1.5");
   const strength = Number(process.env.STRENGTH ?? "0.05");
-  console.log(`Bread spike → version ${BREAD_VERSION.slice(0, 12)}…  gamma=${gamma} strength=${strength}  image: ${imageUrl}`);
+  console.log(
+    `Bread spike → version ${BREAD_VERSION.slice(0, 12)}…  gamma=${gamma} strength=${strength}  image: ${imageUrl}`,
+  );
 
   const wallStart = Date.now();
 
@@ -80,7 +82,8 @@ async function main(): Promise<void> {
   console.log(`wall-clock  : ${(wallMs / 1000).toFixed(1)}s  (client perceived, incl. polling)`);
   if (queueMs !== null) console.log(`queue/boot  : ${(queueMs / 1000).toFixed(1)}s  (created→started ≈ cold-start)`);
   if (predictMs !== null) console.log(`predict     : ${(predictMs / 1000).toFixed(1)}s  (started→completed)`);
-  if (prediction.metrics?.predict_time) console.log(`predict_time: ${prediction.metrics.predict_time}s (Replicate metric)`);
+  if (prediction.metrics?.predict_time)
+    console.log(`predict_time: ${prediction.metrics.predict_time}s (Replicate metric)`);
   console.log("────────────────────────────────");
   console.log("→ Open the output URL: is it a usable COLOR enhanced image? Record warm/cold in spike-findings.md.");
 }
