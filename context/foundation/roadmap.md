@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-05-30
+updated: 2026-05-31
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -32,7 +32,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | F-01  | photo-jobs-data-and-storage        | (foundation) private photo storage + job records with RLS in place    | —             | NFR: private source / 24h retention; Access Control | done     |
 | S-01  | local-engine-enhance-flow          | upload a photo, enhance it locally, compare before/after, download    | —             | US-02; FR-001, FR-005, FR-008, FR-011, FR-012 | done     |
 | S-02  | account-access-and-password-reset  | sign up, sign in, sign out, and reset a forgotten password            | —             | FR-002, FR-003, FR-004, FR-015            | done     |
-| S-03  | gated-cloud-upload                 | switch to Cloud AI (sign-in gated) and submit a photo for processing  | F-01, S-01    | US-01; FR-005, FR-006, FR-007             | proposed |
+| S-03  | gated-cloud-upload                 | switch to Cloud AI (sign-in gated) and submit a photo for processing  | F-01, S-01    | US-01; FR-005, FR-006, FR-007             | done     |
 | S-04  | cloud-ai-realtime-result           | see the Cloud-AI result pushed in real time, before/after + download  | S-03          | US-01; FR-009, FR-010, FR-011, FR-012     | proposed |
 | S-05  | cloud-daily-cap                    | get a clear message when the global daily cloud cap is reached        | S-04          | FR-014                                    | proposed |
 
@@ -114,7 +114,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - HEIC decoding for the cloud upload path (PRD Open Question #1) — Owner: TBD (shared with S-01). Block: no.
   - Replicate API token / account provisioning — Owner: user/team (self-resolvable, so an unknown, not a blocker). Block: no.
 - **Risk:** Depends on S-01 for the upload/toggle UI shell and on F-01 for private storage + job records. The engine toggle (FR-006) only becomes meaningful once both engines coexist, so it lands here as Cloud joins Local. Splitting the cloud vertical at the upload boundary keeps this plannable and isolates the storage/RLS/gating concerns from the riskier pipeline in S-04.
-- **Status:** proposed
+- **Status:** done
 
 ### S-04: Cloud AI result delivered in real time (NORTH STAR)
 
@@ -180,3 +180,4 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 - **F-01: (foundation) a private Supabase Storage bucket and a jobs/predictions table exist with per-user RLS, signed-upload capability, a 24-hour source-retention policy, and shared entity/DTO types in `src/types.ts`. Not user-visible on its own.** — Archived 2026-05-29 → `context/archive/2026-05-28-photo-jobs-data-and-storage/`. Lesson: —.
 - **S-01: an anonymous visitor can upload a photo (JPG/PNG), run the client-side Local engine (Canvas gamma correction + Gaussian blur), compare the result against the original with a before/after slider, and download it — entirely in the browser, no network round-trip after load.** — Archived 2026-05-29 → `context/archive/2026-05-28-local-engine-enhance-flow/`. Lesson: —.
 - **S-02: a visitor can create an account with email + password, sign in and out, and recover a forgotten password via an email-based reset flow.** — Archived 2026-05-30 → `context/archive/2026-05-29-account-access-and-password-reset/`. Lesson: —.
+- **S-03: a user can switch the engine toggle to Cloud AI (anonymous visitors are prompted to sign in, never silently denied), and a signed-in user can submit the loaded photo for cloud processing — the source is uploaded to the private bucket and a job record is created.** — Archived 2026-05-31 → `context/archive/2026-05-31-gated-cloud-upload/`. Lesson: —.
