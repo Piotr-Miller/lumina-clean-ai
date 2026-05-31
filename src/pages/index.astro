@@ -1,6 +1,8 @@
 ---
 import EnhanceWorkspace from "@/components/enhance/EnhanceWorkspace";
 import Layout from "@/layouts/Layout.astro";
+
+const { user } = Astro.locals;
 ---
 
 <Layout title="LuminaClean AI — fix your night photos">
@@ -12,7 +14,7 @@ import Layout from "@/layouts/Layout.astro";
       </p>
     </div>
     <div class="mt-8">
-      <EnhanceWorkspace client:load />
+      <EnhanceWorkspace client:load isAuthenticated={Boolean(user)} />
     </div>
   </main>
 </Layout>
