@@ -38,7 +38,17 @@ export interface CreatePhotoJobCommand {
   mimeType: "image/jpeg" | "image/png" | "image/heic";
 }
 
-/** Output of {@link createPhotoJob}. The client uses `uploadUrl` + `uploadToken` with `uploadToSignedUrl`. */
+/**
+ * Request body for `POST /api/enhance/cloud/create-job`. `userId` is NOT part
+ * of the body — the route derives it from the session. HEIC is excluded
+ * (S-03 only sends JPG/PNG). Mirrored by `createPhotoJobRequestSchema`.
+ */
+export interface CreatePhotoJobRequest {
+  fileExtension: "jpg" | "png";
+  mimeType: "image/jpeg" | "image/png";
+}
+
+/** Output of {@link createPhotoJob}. S-03 uploads with raw PUT to the absolute `uploadUrl`. */
 export interface CreatePhotoJobResponse {
   jobId: string;
   uploadUrl: string;

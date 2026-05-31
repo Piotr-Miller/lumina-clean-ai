@@ -7,7 +7,7 @@ const JOBS_TABLE = "jobs";
 /**
  * Mint a one-shot signed upload URL for a new photo source object and
  * insert the matching `queued` row in `public.jobs`. The client then PUTs
- * the file directly to the signed URL via `uploadToSignedUrl`.
+ * the file directly to the absolute signed URL.
  *
  * The signed URL is **one-shot**: if the client retries the upload (e.g.,
  * after a network failure), the caller must invoke `createPhotoJob` again

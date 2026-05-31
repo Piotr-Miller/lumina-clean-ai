@@ -1,9 +1,9 @@
 /**
  * Engine seam for LuminaClean's photo enhancement.
  *
- * A light Strategy interface every engine satisfies. S-01 ships only the
- * client-side Local engine; S-03 plugs a Cloud engine in behind the same
- * `ImageEngine` contract without reworking the orchestration layer.
+ * A light Strategy interface for synchronous, Blob-returning enhancement.
+ * S-01 ships the client-side Local engine through this contract; S-03 keeps
+ * `EngineId` shared but forks Cloud into submit-then-wait orchestration.
  */
 
 /** Engine identity. Local ships in S-01; "cloud" is reserved for S-03. */
