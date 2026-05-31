@@ -1,7 +1,7 @@
 ---
 change_id: gated-cloud-upload
 title: "Gated engine toggle + Cloud AI submission"
-status: implemented
+status: impl_reviewed
 created: 2026-05-31
 updated: 2026-05-31
 review_round: 1

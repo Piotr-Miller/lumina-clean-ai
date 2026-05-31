@@ -104,4 +104,37 @@ describe("submitCloudJob", () => {
       "This photo is too large to upload (max 25 MB). Try a smaller copy.",
     );
   });
+
+  it("maps a 403 from the signed-URL PUT to a rejected-link message", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          jobId: "job-4",
+          uploadUrl: "https://x/u/j/source.jpg?token=t",
+          uploadToken: "t",
+          sourcePath: "u/j/source.jpg",
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 403 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(submitCloudJob(jpeg())).rejects.toThrow("The upload link was rejected. Please try again.");
+  });
+
+  it("falls back to a generic message when the route error body is not JSON", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response("<html>502</html>", { status: 502 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(submitCloudJob(jpeg())).rejects.toThrow("Couldn't start Cloud processing. Please try again.");
+  });
+
+  it("maps a network-layer fetch failure to a connection message", async () => {
+    const fetchMock = vi.fn().mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(submitCloudJob(jpeg())).rejects.toThrow(
+      "Couldn't reach Cloud AI — check your connection and try again.",
+    );
+  });
 });

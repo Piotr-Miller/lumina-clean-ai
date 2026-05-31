@@ -49,6 +49,17 @@ function uploadErrorMessage(status: number): string {
   return "Upload failed. Please try again.";
 }
 
+const NETWORK_MESSAGE = "Couldn't reach Cloud AI — check your connection and try again.";
+
+/** `fetch` that maps a network-layer rejection (offline, DNS) to friendly copy instead of the raw `TypeError`. */
+async function safeFetch(input: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch {
+    throw new Error(NETWORK_MESSAGE);
+  }
+}
+
 /**
  * Submit `file` for cloud processing. Resolves with the created `jobId`
  * (used by S-04's Realtime subscription); throws an `Error` whose message is
@@ -57,7 +68,7 @@ function uploadErrorMessage(status: number): string {
 export async function submitCloudJob(file: File): Promise<{ jobId: string }> {
   const body = deriveRequest(file);
 
-  const res = await fetch(CREATE_JOB_ENDPOINT, {
+  const res = await safeFetch(CREATE_JOB_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -68,7 +79,7 @@ export async function submitCloudJob(file: File): Promise<{ jobId: string }> {
 
   const job = (await res.json()) as CreatePhotoJobResponse;
 
-  const put = await fetch(job.uploadUrl, {
+  const put = await safeFetch(job.uploadUrl, {
     method: "PUT",
     headers: { "Content-Type": body.mimeType },
     body: file,
