@@ -244,16 +244,16 @@ No schema or data migration — S-03 reuses F-01's tables, bucket, and RLS uncha
 
 #### Automated
 
-- [x] 2.1 Type checking passes: `npx astro check`
-- [x] 2.2 Build succeeds: `npm run build`
-- [x] 2.3 Linting passes on touched files (prettier --write then eslint)
-- [x] 2.4 Unit tests pass (`npx vitest run tests/cloud-upload.client.test.ts`): helper body/extension + error envelope + PUT Content-Type (global fetch mocked); auth-validation + image-helpers tests still green
+- [x] 2.1 Type checking passes: `npx astro check` — d0e4578
+- [x] 2.2 Build succeeds: `npm run build` — d0e4578
+- [x] 2.3 Linting passes on touched files (prettier --write then eslint) — d0e4578
+- [x] 2.4 Unit tests pass (`npx vitest run tests/cloud-upload.client.test.ts`): helper body/extension + error envelope + PUT Content-Type (global fetch mocked); auth-validation + image-helpers tests still green — d0e4578
 
 #### Manual
 
-- [x] 2.5 Anon gating: toggle to Cloud shows inline sign-in panel, no Submit, photo preserved; toggle back restores Enhance
-- [x] 2.6 Signed-in submit: "Submitted" state appears; `queued` row + source object exist
-- [x] 2.7 Local enhance unchanged (slider + download work)
-- [x] 2.8 HEIC selection shows reject message (both engines)
-- [x] 2.9 No anon bypass path to cloud submit (UI gate + route 401)
-- [x] 2.10 Flow works under both `npm run dev` and `npm run build && npx wrangler dev`
+- [x] 2.5 Anon gating: toggle to Cloud shows inline sign-in panel, no Submit, photo preserved; toggle back restores Enhance — d0e4578
+- [x] 2.6 Signed-in submit: "Submitted" state appears; `queued` row + source object exist — d0e4578
+- [x] 2.7 Local enhance unchanged (slider + download work) — d0e4578
+- [x] 2.8 HEIC selection shows reject message (both engines) — d0e4578
+- [x] 2.9 No anon bypass path to cloud submit (UI gate + route 401) — d0e4578
+- [x] 2.10 Flow works under both `npm run dev` and `npm run build && npx wrangler dev` — d0e4578
