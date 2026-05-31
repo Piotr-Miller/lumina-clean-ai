@@ -1,5 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CreatePhotoJobCommand, CreatePhotoJobResponse, MarkJobSucceededCommand } from "@/types";
+import type {
+  CreatePhotoJobCommand,
+  CreatePhotoJobResponse,
+  MarkJobFailedCommand,
+  MarkJobProcessingCommand,
+  MarkJobSucceededCommand,
+  MarkPendingJobFailedCommand,
+  PhotoJob,
+} from "@/types";
 
 const PHOTOS_BUCKET = "photos";
 const JOBS_TABLE = "jobs";
@@ -95,4 +103,117 @@ export async function markJobSucceeded(admin: SupabaseClient, cmd: MarkJobSuccee
     // eslint-disable-next-line no-console
     console.warn(`markJobSucceeded: source delete for job ${cmd.jobId} (${sourcePath}) failed: ${removeError.message}`);
   }
+}
+
+/**
+ * Read a single job row by id (including `source_path` / `user_id`), or `null`
+ * when no row matches. The Edge Function `/start` route uses this to resolve
+ * the source object before minting the Replicate input URL.
+ *
+ * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
+ */
+export async function getJobById(admin: SupabaseClient, jobId: string): Promise<PhotoJob | null> {
+  const { data, error } = (await admin.from(JOBS_TABLE).select("*").eq("id", jobId).maybeSingle()) as {
+    data: PhotoJob | null;
+    error: { message: string } | null;
+  };
+  if (error) {
+    throw new Error(`getJobById: failed to read job ${jobId}: ${error.message}`);
+  }
+  return data;
+}
+
+/**
+ * Mark a job as `processing` and (optionally) store the Replicate prediction
+ * id used later as the `/callback` integrity cross-check. No timestamps beyond
+ * the DB-trigger-owned `updated_at` are touched (the job is still in flight).
+ *
+ * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
+ */
+export async function markJobProcessing(admin: SupabaseClient, cmd: MarkJobProcessingCommand): Promise<void> {
+  const { error } = await admin
+    .from(JOBS_TABLE)
+    .update({
+      status: "processing",
+      replicate_prediction_id: cmd.replicatePredictionId ?? null,
+    })
+    .eq("id", cmd.jobId);
+  if (error) {
+    throw new Error(`markJobProcessing: failed to update job ${cmd.jobId}: ${error.message}`);
+  }
+}
+
+/**
+ * Mark a job as `failed` with an error code/message and stamp `completed_at`.
+ * No source cleanup in v1 (failed jobs are out of scope for retention; mirrors
+ * {@link markJobSucceeded}'s documented limitation).
+ *
+ * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
+ */
+export async function markJobFailed(admin: SupabaseClient, cmd: MarkJobFailedCommand): Promise<void> {
+  const { error } = await admin
+    .from(JOBS_TABLE)
+    .update({
+      status: "failed",
+      error_code: cmd.errorCode,
+      error_message: cmd.errorMessage,
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", cmd.jobId);
+  if (error) {
+    throw new Error(`markJobFailed: failed to update job ${cmd.jobId}: ${error.message}`);
+  }
+}
+
+/**
+ * Owner-scoped, race-safe transition to `failed` for the client watchdog's
+ * timeout route. A SINGLE guarded UPDATE flips the row only when it is still
+ * `queued`/`processing` AND owned by `userId`; the `select` makes the affected
+ * rows observable so the boolean return distinguishes "flipped to failed" from
+ * "already terminal" (a Replicate success that landed first is left untouched —
+ * no read-then-write race).
+ *
+ * Returns `true` iff a row was actually transitioned.
+ *
+ * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
+ */
+export async function markPendingJobFailedForOwner(
+  admin: SupabaseClient,
+  cmd: MarkPendingJobFailedCommand,
+): Promise<boolean> {
+  const { data, error } = await admin
+    .from(JOBS_TABLE)
+    .update({
+      status: "failed",
+      error_code: cmd.errorCode,
+      error_message: cmd.errorMessage,
+      completed_at: new Date().toISOString(),
+    })
+    .eq("id", cmd.jobId)
+    .eq("user_id", cmd.userId)
+    .in("status", ["queued", "processing"])
+    .select("id");
+  if (error) {
+    throw new Error(`markPendingJobFailedForOwner: failed to update job ${cmd.jobId}: ${error.message}`);
+  }
+  return data.length > 0;
+}
+
+/**
+ * Mint a short-TTL signed READ URL for a private `photos` object. The Edge
+ * Function `/start` route passes this as Bread's `image` input (Replicate needs
+ * a fetchable URL); the browser re-mints a result URL on demand.
+ *
+ * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
+ */
+export async function createSignedReadUrl(
+  admin: SupabaseClient,
+  path: string,
+  expiresInSeconds: number,
+): Promise<string> {
+  const { data, error } = await admin.storage.from(PHOTOS_BUCKET).createSignedUrl(path, expiresInSeconds);
+  if (error) {
+    throw new Error(`createSignedReadUrl: failed to sign ${path}: ${error.message}`);
+  }
+  return data.signedUrl;
 }

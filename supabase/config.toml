@@ -376,6 +376,13 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# S-04 cloud pipeline Edge Function. Both invokers (the DB webhook and the
+# Replicate callback) carry no Supabase user JWT, so JWT verification is off —
+# the function authenticates calls itself (DB_WEBHOOK_SECRET bearer for /start,
+# Replicate signature for /callback).
+[functions.enhance]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

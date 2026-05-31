@@ -398,14 +398,14 @@ One new migration (the `queued` Database Webhook trigger). No changes to the `jo
 
 #### Automated
 
-- [ ] 1.1 Type checking passes: `npx astro check`
-- [ ] 1.2 Linting passes on touched files
-- [ ] 1.3 Unit tests pass: helpers payloads + `buildBreadInput` mapping/version
+- [x] 1.1 Type checking passes: `npx astro check`
+- [x] 1.2 Linting passes on touched files
+- [x] 1.3 Unit tests pass: helpers payloads + `buildBreadInput` mapping/version
 
 #### Manual
 
-- [ ] 1.4 Flag + secret placeholders in `.env.example`; `verify_jwt = false` in config.toml
-- [ ] 1.5 `npm run build` succeeds
+- [x] 1.4 Flag + secret placeholders in `.env.example`; `verify_jwt = false` in config.toml
+- [x] 1.5 `npm run build` succeeds
 
 ### Phase 2: Pipeline kickoff — Edge Function /start + DB webhook
 
