@@ -14,7 +14,18 @@ import type { CreatePhotoJobRequest } from "@/types";
  * Kept free of any `astro:env/server` import so it loads under the Vitest
  * Node environment (Lesson #4).
  */
-export const createPhotoJobRequestSchema = z.object({
-  fileExtension: z.enum(["jpg", "png"]),
-  mimeType: z.enum(["image/jpeg", "image/png"]),
-}) satisfies z.ZodType<CreatePhotoJobRequest>;
+/** The one valid mimeType per fileExtension. Used to reject mismatched bodies. */
+const EXTENSION_MIME: Record<CreatePhotoJobRequest["fileExtension"], CreatePhotoJobRequest["mimeType"]> = {
+  jpg: "image/jpeg",
+  png: "image/png",
+};
+
+export const createPhotoJobRequestSchema = z
+  .object({
+    fileExtension: z.enum(["jpg", "png"]),
+    mimeType: z.enum(["image/jpeg", "image/png"]),
+  })
+  .refine((body) => EXTENSION_MIME[body.fileExtension] === body.mimeType, {
+    message: "fileExtension and mimeType must correspond (jpg↔image/jpeg, png↔image/png).",
+    path: ["mimeType"],
+  });

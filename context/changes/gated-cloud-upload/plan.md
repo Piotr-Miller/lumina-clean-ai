@@ -228,17 +228,17 @@ No schema or data migration — S-03 reuses F-01's tables, bucket, and RLS uncha
 
 #### Automated
 
-- [x] 1.1 `zod` resolves: `npm ls zod` shows it installed
-- [x] 1.2 Type checking passes: `npx astro check`
-- [x] 1.3 Build succeeds: `npm run build`
-- [x] 1.4 Linting passes on touched files (prettier --write then eslint)
-- [x] 1.5 Unit tests pass (`npx vitest run tests/cloud-create-job-schema.test.ts`): schema accepts valid jpg/png, rejects missing fields / HEIC / unknown MIME
+- [x] 1.1 `zod` resolves: `npm ls zod` shows it installed — 9a25805
+- [x] 1.2 Type checking passes: `npx astro check` — 9a25805
+- [x] 1.3 Build succeeds: `npm run build` — 9a25805
+- [x] 1.4 Linting passes on touched files (prettier --write then eslint) — 9a25805
+- [x] 1.5 Unit tests pass (`npx vitest run tests/cloud-create-job-schema.test.ts`): schema accepts valid jpg/png, rejects missing fields / HEIC / unknown MIME — 9a25805
 
 #### Manual
 
-- [x] 1.6 No-session POST returns 401 with `{ error: { code, message } }` (no `status` field)
-- [x] 1.7 Malformed body (non-JSON or invalid fields) returns 400 `invalid_body`
-- [x] 1.8 Signed-in valid body returns 200 with `{ jobId, uploadUrl, uploadToken, sourcePath }` + `queued` row appears
+- [x] 1.6 No-session POST returns 401 with `{ error: { code, message } }` (no `status` field) — 9a25805
+- [x] 1.7 Malformed body (non-JSON or invalid fields) returns 400 `invalid_body` — 9a25805
+- [x] 1.8 Signed-in valid body returns 200 with `{ jobId, uploadUrl, uploadToken, sourcePath }` + `queued` row appears — 9a25805
 
 ### Phase 2: Client — engine toggle, sign-in gating, cloud orchestration
 

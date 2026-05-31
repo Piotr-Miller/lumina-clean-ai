@@ -28,6 +28,11 @@ describe("createPhotoJobRequestSchema", () => {
     expect(createPhotoJobRequestSchema.safeParse({ fileExtension: "jpg", mimeType: "image/gif" }).success).toBe(false);
   });
 
+  it("rejects a fileExtension/mimeType mismatch", () => {
+    expect(createPhotoJobRequestSchema.safeParse({ fileExtension: "jpg", mimeType: "image/png" }).success).toBe(false);
+    expect(createPhotoJobRequestSchema.safeParse({ fileExtension: "png", mimeType: "image/jpeg" }).success).toBe(false);
+  });
+
   it("rejects a non-object body", () => {
     expect(createPhotoJobRequestSchema.safeParse("nope").success).toBe(false);
   });
