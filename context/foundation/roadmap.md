@@ -150,7 +150,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-01       | photo-jobs-data-and-storage        | Private photo storage + job records with RLS            | yes                   | Run `/10x-plan photo-jobs-data-and-storage`. Unlocks the Cloud AI path. |
 | S-01       | local-engine-enhance-flow          | Local (Canvas) engine: upload → enhance → compare → download | yes              | Run `/10x-plan local-engine-enhance-flow`. Builds the shared UI shell. |
 | S-02       | account-access-and-password-reset  | Complete account access incl. password reset            | yes                   | Run `/10x-plan account-access-and-password-reset`. Independent track. |
-| S-03       | gated-cloud-upload                 | Gated engine toggle + Cloud AI submission               | no                    | Blocked on F-01 + S-01. |
+| S-03       | gated-cloud-upload                 | Gated engine toggle + Cloud AI submission               | done                  | Archived 2026-05-31 → `context/archive/2026-05-31-gated-cloud-upload/`. Issue #4. |
 | S-04       | cloud-ai-realtime-result           | Async Cloud AI pipeline + Realtime result delivery      | no                    | North star. Blocked on S-03; central cold-start risk. |
 | S-05       | cloud-daily-cap                    | Global daily cap on Cloud AI requests                   | no                    | Blocked on S-04; land immediately after to bound cost. |
 

@@ -115,11 +115,24 @@ repo. They can be deleted manually at any time.
 | F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1) | `photo-jobs-data-and-storage`       | ready    | `roadmap` `foundation` `status:ready` |
 | S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2) | `local-engine-enhance-flow`         | ready    | `roadmap` `slice` `status:ready` |
 | S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3) | `account-access-and-password-reset` | ready    | `roadmap` `slice` `status:ready` |
-| S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4) | `gated-cloud-upload`                | proposed | `roadmap` `slice` `status:proposed` |
+| S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4) | `gated-cloud-upload`                | done     | `roadmap` `slice` `status:proposed` |
 | S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5) | `cloud-ai-realtime-result`          | proposed | `roadmap` `slice` `status:proposed` `north-star` |
 | S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | `cloud-daily-cap`                   | proposed | `roadmap` `slice` `status:proposed` |
 
 ⭐ = north star (validation milestone).
+
+## Status updates (post-creation)
+
+Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" note below).
+
+| Date       | Roadmap ID | Issue | Action |
+| ---------- | ---------- | ----- | ------ |
+| 2026-05-29 | F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1) | closed on archive |
+| 2026-05-29 | S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2) | closed on archive |
+| 2026-05-30 | S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3) | closed on archive |
+| 2026-05-31 | S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4) | closed on archive (commit 42d4141) |
+
+> The F-01/S-01/S-02 rows are recorded for completeness based on their archive dates; this log section was introduced with the S-03 archive (2026-05-31).
 
 ## Not done (optional follow-ups)
 
