@@ -398,27 +398,27 @@ One new migration (the `queued` Database Webhook trigger). No changes to the `jo
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npx astro check`
-- [x] 1.2 Linting passes on touched files
-- [x] 1.3 Unit tests pass: helpers payloads + `buildBreadInput` mapping/version
+- [x] 1.1 Type checking passes: `npx astro check` — 03a05d5
+- [x] 1.2 Linting passes on touched files — 03a05d5
+- [x] 1.3 Unit tests pass: helpers payloads + `buildBreadInput` mapping/version — 03a05d5
 
 #### Manual
 
-- [x] 1.4 Flag + secret placeholders in `.env.example`; `verify_jwt = false` in config.toml
-- [x] 1.5 `npm run build` succeeds
+- [x] 1.4 Flag + secret placeholders in `.env.example`; `verify_jwt = false` in config.toml — 03a05d5
+- [x] 1.5 `npm run build` succeeds — 03a05d5
 
 ### Phase 2: Pipeline kickoff — Edge Function /start + DB webhook
 
 #### Automated
 
-- [ ] 2.1 Migration applies cleanly against local Supabase
-- [ ] 2.2 Edge Function serves locally (`supabase functions serve enhance`) — `deno.json` import map resolves shared helpers
+- [x] 2.1 Migration applies cleanly against local Supabase
+- [x] 2.2 Edge Function serves locally (`supabase functions serve enhance`) — `deno.json` import map resolves shared helpers
 
 #### Manual
 
-- [ ] 2.3 Flag on: inserting a `queued` job → `processing` + Bread prediction created with stored `replicate_prediction_id`
-- [ ] 2.4 Flag off: job stays `queued`, no Replicate call
-- [ ] 2.5 `/start` without the correct bearer returns 401
+- [x] 2.3 Flag on: inserting a `queued` job → `processing` + Bread prediction created with stored `replicate_prediction_id`
+- [x] 2.4 Flag off: job stays `queued`, no Replicate call
+- [x] 2.5 `/start` without the correct bearer returns 401
 
 ### Phase 3: Pipeline completion — Edge Function /callback
 

@@ -76,6 +76,11 @@ const astroConfig = tseslint.config({
 
 export default tseslint.config(
   includeIgnoreFile(gitignorePath),
+  // Supabase Edge Functions run under Deno (URL imports, `Deno.*` globals, a
+  // deno.json import map) — they are not part of the Astro/tsc project graph.
+  // Linting them with the typed projectService would error; they have their own
+  // runtime. Excluded from tsconfig too (see tsconfig.json "exclude").
+  { ignores: ["supabase/functions/**"] },
   baseConfig,
   reactConfig,
   eslintPluginAstro.configs["flat/recommended"],
