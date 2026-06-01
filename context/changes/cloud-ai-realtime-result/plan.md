@@ -411,14 +411,14 @@ One new migration (the `queued` Database Webhook trigger). No changes to the `jo
 
 #### Automated
 
-- [x] 2.1 Migration applies cleanly against local Supabase
-- [x] 2.2 Edge Function serves locally (`supabase functions serve enhance`) — `deno.json` import map resolves shared helpers
+- [x] 2.1 Migration applies cleanly against local Supabase — 9d890e4
+- [x] 2.2 Edge Function serves locally (`supabase functions serve enhance`) — `deno.json` import map resolves shared helpers — 9d890e4
 
 #### Manual
 
-- [x] 2.3 Flag on: inserting a `queued` job → `processing` + Bread prediction created with stored `replicate_prediction_id`
-- [x] 2.4 Flag off: job stays `queued`, no Replicate call
-- [x] 2.5 `/start` without the correct bearer returns 401
+- [x] 2.3 Flag on: inserting a `queued` job → `processing` + Bread prediction created with stored `replicate_prediction_id` — 9d890e4
+- [x] 2.4 Flag off: job stays `queued`, no Replicate call — 9d890e4
+- [x] 2.5 `/start` without the correct bearer returns 401 — 9d890e4
 
 ### Phase 3: Pipeline completion — Edge Function /callback
 
