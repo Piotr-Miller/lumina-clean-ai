@@ -23,7 +23,7 @@ const SIGNATURE_VERSION = "v1";
 /** Cap on persisted/returned error text (matches the function's own bound). */
 const MAX_ERROR_MESSAGE_CHARS = 300;
 
-function base64ToBytes(b64: string): Uint8Array {
+function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
   const binary = atob(b64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -72,7 +72,7 @@ export async function verifyReplicateSignature(params: VerifyReplicateSignatureP
   if (!webhookId || !webhookTimestamp || !webhookSignature || !signingSecret) return false;
 
   const secretB64 = signingSecret.replace(/^whsec_/, "");
-  let keyBytes: Uint8Array;
+  let keyBytes: Uint8Array<ArrayBuffer>;
   try {
     keyBytes = base64ToBytes(secretB64);
   } catch {

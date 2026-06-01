@@ -1,8 +1,25 @@
 ---
 import EnhanceWorkspace from "@/components/enhance/EnhanceWorkspace";
 import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+import { SUPABASE_URL, SUPABASE_KEY } from "astro:env/server";
 
 const { user } = Astro.locals;
+
+// The browser island subscribes to its own job row via Realtime (S-04). It
+// needs the publishable URL + anon key and a short-lived user JWT. The access
+// token is read only when signed in — anonymous visitors use the Local engine
+// and never subscribe. The anon key is publishable (RLS-gated).
+let accessToken: string | null = null;
+if (user) {
+  const supabase = createClient(Astro.request.headers, Astro.cookies);
+  if (supabase) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    accessToken = session?.access_token ?? null;
+  }
+}
 ---
 
 <Layout title="LuminaClean AI — fix your night photos">
@@ -14,7 +31,13 @@ const { user } = Astro.locals;
       </p>
     </div>
     <div class="mt-8">
-      <EnhanceWorkspace client:load isAuthenticated={Boolean(user)} />
+      <EnhanceWorkspace
+        client:load
+        isAuthenticated={Boolean(user)}
+        supabaseUrl={SUPABASE_URL ?? null}
+        supabaseAnonKey={SUPABASE_KEY ?? null}
+        accessToken={accessToken}
+      />
     </div>
   </main>
 </Layout>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CheckCircle2, CircleAlert, CloudUpload, RotateCcw, Sparkles } from "lucide-react";
 import type { EngineId } from "@/lib/engines/types";
 import { Button } from "@/components/ui/button";
+import { useCloudJob } from "@/components/hooks/useCloudJob";
 import { useCloudSubmit } from "@/components/hooks/useCloudSubmit";
 import { useLocalEnhance } from "@/components/hooks/useLocalEnhance";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
@@ -13,6 +14,12 @@ import { ImageUploader } from "./ImageUploader";
 interface EnhanceWorkspaceProps {
   /** Whether the current visitor has a session. Drives the Cloud sign-in gate. */
   isAuthenticated: boolean;
+  /** Publishable Supabase URL for the browser Realtime client (S-04); `null` if unresolved. */
+  supabaseUrl: string | null;
+  /** Publishable anon key (RLS-gated) for the browser Realtime client; `null` if unresolved. */
+  supabaseAnonKey: string | null;
+  /** Short-lived user JWT for the Realtime subscription; `null` for anonymous visitors. */
+  accessToken: string | null;
 }
 
 const SECONDARY_BUTTON = "border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white";
@@ -25,11 +32,22 @@ const SECONDARY_BUTTON = "border-white/20 bg-white/10 text-white hover:bg-white/
  * active engine's status, so switching engines preserves the loaded photo but
  * never shows one engine's result alongside the other's action.
  */
-export default function EnhanceWorkspace({ isAuthenticated }: EnhanceWorkspaceProps) {
+export default function EnhanceWorkspace({
+  isAuthenticated,
+  supabaseUrl,
+  supabaseAnonKey,
+  accessToken,
+}: EnhanceWorkspaceProps) {
   const enhancer = useLocalEnhance();
   const [engine, setEngine] = useState<EngineId>("local");
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const cloudSubmit = useCloudSubmit(sourceFile);
+  const cloudJob = useCloudJob({
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+    accessToken,
+    jobId: cloudSubmit.jobId,
+  });
 
   const localProcessing = enhancer.status === "processing";
   const cloudSubmitting = cloudSubmit.status === "submitting";
@@ -169,12 +187,17 @@ export default function EnhanceWorkspace({ isAuthenticated }: EnhanceWorkspacePr
             </div>
           )}
 
-          {/* CLOUD — submitted (S-03 terminal; S-04 will replace this with the live result) */}
+          {/* CLOUD — submitted. S-04 phase 4 surfaces the live Realtime status here
+              (raw transitions); phase 5 replaces this with the result render + failure UX. */}
           {engine === "cloud" && isAuthenticated && cloudSubmit.status === "submitted" && (
             <div className="flex flex-col items-center gap-3 text-center">
               <p className="flex items-center gap-2 text-sm text-emerald-300">
                 <CheckCircle2 className="size-4" />
                 Submitted for Cloud processing — your enhanced result will appear here once ready.
+              </p>
+              {/* Live job status pushed via Realtime (proves the JWT-scoped subscription). */}
+              <p className="text-xs text-white/60" data-testid="cloud-job-status">
+                Status: {cloudJob.status ?? "processing"}
               </p>
               <Button type="button" variant="outline" onClick={handleReset} className={`gap-2 ${SECONDARY_BUTTON}`}>
                 <RotateCcw className="size-4" />

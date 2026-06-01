@@ -424,29 +424,29 @@ One new migration (the `queued` Database Webhook trigger). No changes to the `jo
 
 #### Automated
 
-- [x] 3.1 Unit test: signature-verify + payload→action mapping (valid/invalid, succeeded/failed)
-- [x] 3.2 Edge Function still serves locally
+- [x] 3.1 Unit test: signature-verify + payload→action mapping (valid/invalid, succeeded/failed) — 7a0b531
+- [x] 3.2 Edge Function still serves locally — 7a0b531
 
 #### Manual
 
-- [x] 3.3 Real completion → job `succeeded`, `result_path` set, result object exists, source deleted
-- [x] 3.4 Forced failure → job `failed` with `error_code`/`error_message`
-- [x] 3.5 Invalid signature → 401, no mutation
-- [x] 3.6 End-to-end (no client): submit → row `succeeded` with result object within budget
+- [x] 3.3 Real completion → job `succeeded`, `result_path` set, result object exists, source deleted — 7a0b531
+- [x] 3.4 Forced failure → job `failed` with `error_code`/`error_message` — 7a0b531
+- [x] 3.5 Invalid signature → 401, no mutation — 7a0b531
+- [x] 3.6 End-to-end (no client): submit → row `succeeded` with result object within budget — 7a0b531
 
 ### Phase 4: Realtime subscription plumbing
 
 #### Automated
 
-- [ ] 4.1 Type checking passes: `npx astro check`
-- [ ] 4.2 Linting passes on touched files
-- [ ] 4.3 Build succeeds: `npm run build`
+- [x] 4.1 Type checking passes: `npx astro check`
+- [x] 4.2 Linting passes on touched files
+- [x] 4.3 Build succeeds: `npm run build`
 
 #### Manual
 
-- [ ] 4.4 Signed-in submit: workspace observably transitions on the pushed `succeeded`/`failed` event (JWT-scoped subscription receives it)
-- [ ] 4.5 Channel unsubscribes on Start-over + unmount (no duplicate handlers)
-- [ ] 4.6 No access token → no subscription attempt
+- [x] 4.4 Signed-in submit: workspace observably transitions on the pushed `succeeded`/`failed` event (JWT-scoped subscription receives it)
+- [x] 4.5 Channel unsubscribes on Start-over + unmount (no duplicate handlers)
+- [x] 4.6 No access token → no subscription attempt
 
 ### Phase 5: Result render + failure UX
 

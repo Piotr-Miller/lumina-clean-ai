@@ -7,6 +7,8 @@ type CloudStatus = "idle" | "submitting" | "submitted" | "error";
 export interface CloudSubmitState {
   status: CloudStatus;
   error: string | null;
+  /** The created job's id, captured on submit — drives the Realtime subscription (S-04). */
+  jobId: string | null;
   submit: () => Promise<void>;
   reset: () => void;
 }
@@ -27,6 +29,7 @@ const GENERIC_FAILURE_MESSAGE = "Couldn't submit to Cloud AI. Please try again."
 export function useCloudSubmit(file: File | null): CloudSubmitState {
   const [status, setStatus] = useState<CloudStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
 
   const submit = useCallback(async () => {
     if (!file) {
@@ -43,7 +46,8 @@ export function useCloudSubmit(file: File | null): CloudSubmitState {
     setStatus("submitting");
     setError(null);
     try {
-      await submitCloudJob(file);
+      const result = await submitCloudJob(file);
+      setJobId(result.jobId);
       setStatus("submitted");
     } catch (err) {
       setStatus("error");
@@ -54,7 +58,8 @@ export function useCloudSubmit(file: File | null): CloudSubmitState {
   const reset = useCallback(() => {
     setStatus("idle");
     setError(null);
+    setJobId(null);
   }, []);
 
-  return { status, error, submit, reset };
+  return { status, error, jobId, submit, reset };
 }
