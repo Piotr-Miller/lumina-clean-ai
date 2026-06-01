@@ -26,10 +26,18 @@ import {
   getJobById,
   markJobFailed,
   markJobProcessing,
+  markJobSucceeded,
 } from "../../../src/lib/services/photo-job.service.ts";
+import type { ReplicatePredictionPayload } from "../../../src/lib/services/replicate-webhook.ts";
+import {
+  mapPredictionToOutcome,
+  resultExtensionFromContentType,
+  verifyReplicateSignature,
+} from "../../../src/lib/services/replicate-webhook.ts";
 
 const SOURCE_URL_TTL_SECONDS = 300;
 const REPLICATE_PREDICTIONS_URL = "https://api.replicate.com/v1/predictions";
+const PHOTOS_BUCKET = "photos";
 // Cap how much Replicate error text we persist/return: the body can echo the
 // signed source URL, and error_message is read by the owner. Bound it.
 const MAX_ERROR_DETAIL_CHARS = 300;
@@ -83,6 +91,29 @@ function enhanceFunctionBaseUrl(): string {
   return `${supabaseUrl.replace(/\/$/, "")}/functions/v1/enhance`;
 }
 
+// Rewrite a signed Storage URL's origin to a publicly reachable host when a
+// public tunnel is configured. Locally the injected SUPABASE_URL is an internal
+// Docker host (http://kong:8000) that Replicate cannot fetch, so the signed
+// source URL must be re-pointed at the same public tunnel used for the callback.
+// We reuse EDGE_FUNCTION_URL's origin as that tunnel root (the storage and
+// function paths ride the same tunnel rooted at the API port), avoiding a second
+// env var — and the `SUPABASE_*` prefix, which Edge Functions reserve. The
+// signed token is bound to the object PATH (not the host), so swapping the
+// origin is safe. In prod EDGE_FUNCTION_URL is unset and SUPABASE_URL is already
+// public, so this is a no-op.
+function toPublicStorageUrl(signedUrl: string): string {
+  const fnUrl = Deno.env.get("EDGE_FUNCTION_URL");
+  if (!fnUrl) return signedUrl;
+  // Rebuild from origin + path + query. Do NOT mutate `target.host`/`.protocol`
+  // piecemeal: the WHATWG `host` setter leaves a pre-existing port in place when
+  // the new host carries none, so an internal `kong:8000` origin would yield
+  // `<tunnel>:8000` — unreachable (ngrok serves 443). origin already encodes
+  // protocol + host + correct port.
+  const publicOrigin = new URL(fnUrl).origin;
+  const target = new URL(signedUrl);
+  return `${publicOrigin}${target.pathname}${target.search}`;
+}
+
 async function handleStart(req: Request): Promise<Response> {
   // 1. Authenticate the DB-webhook call (shared bearer; no Supabase JWT).
   const expectedSecret = Deno.env.get("DB_WEBHOOK_SECRET");
@@ -125,7 +156,11 @@ async function handleStart(req: Request): Promise<Response> {
     }
 
     // Replicate fetches the source itself, so it needs a short-TTL public URL.
-    const signedSourceUrl = await createSignedReadUrl(admin, job.source_path, SOURCE_URL_TTL_SECONDS);
+    // Locally the signed URL carries the internal `kong` host; rewrite its
+    // origin to the public tunnel (no-op in prod). See toPublicStorageUrl.
+    const signedSourceUrl = toPublicStorageUrl(
+      await createSignedReadUrl(admin, job.source_path, SOURCE_URL_TTL_SECONDS),
+    );
     const callbackUrl = `${enhanceFunctionBaseUrl()}/callback?jobId=${encodeURIComponent(jobId)}`;
 
     // Replicate requires the webhook to be a public HTTPS URL. In prod the
@@ -184,6 +219,111 @@ async function handleStart(req: Request): Promise<Response> {
   }
 }
 
+async function handleCallback(req: Request): Promise<Response> {
+  // 1. Read the RAW body before parsing — the signature is over the exact bytes
+  //    Replicate sent; re-serializing parsed JSON would break verification.
+  const rawBody = await req.text();
+
+  // 2. Verify the Replicate (svix) webhook signature. Invalid → 401, no mutation.
+  const signingSecret = Deno.env.get("REPLICATE_WEBHOOK_SIGNING_SECRET");
+  if (!signingSecret) {
+    return jsonResponse(500, {
+      error: { code: "misconfigured", message: "REPLICATE_WEBHOOK_SIGNING_SECRET not set" },
+    });
+  }
+  const signatureValid = await verifyReplicateSignature({
+    webhookId: req.headers.get("webhook-id") ?? "",
+    webhookTimestamp: req.headers.get("webhook-timestamp") ?? "",
+    webhookSignature: req.headers.get("webhook-signature") ?? "",
+    body: rawBody,
+    signingSecret,
+  });
+  if (!signatureValid) {
+    return jsonResponse(401, { error: { code: "unauthorized", message: "invalid webhook signature" } });
+  }
+
+  // 3. Resolve the job: `jobId` comes from the callback query string (set by
+  //    /start); the payload's prediction id is cross-checked below.
+  const jobId = new URL(req.url).searchParams.get("jobId");
+  if (!jobId) {
+    return jsonResponse(400, { error: { code: "invalid_body", message: "missing jobId" } });
+  }
+
+  let payload: ReplicatePredictionPayload;
+  try {
+    payload = JSON.parse(rawBody) as ReplicatePredictionPayload;
+  } catch {
+    return jsonResponse(400, { error: { code: "invalid_body", message: "malformed JSON" } });
+  }
+
+  const admin = buildAdminClient();
+
+  try {
+    const job = await getJobById(admin, jobId);
+    // Past signature verification, always 200 so Replicate stops retrying a
+    // request we've already (idempotently) decided not to act on.
+    if (!job) {
+      return jsonResponse(200, { ignored: "job_not_found" });
+    }
+    // Integrity cross-check: the payload's prediction id must match the id
+    // /start stored on the row. A mismatch is a stale/replayed completion for a
+    // different prediction — ignore without mutating.
+    if (payload.id && job.replicate_prediction_id && payload.id !== job.replicate_prediction_id) {
+      return jsonResponse(200, { ignored: "prediction_id_mismatch" });
+    }
+    // Idempotency: a row already terminal (Replicate retry, or the client
+    // watchdog failed it first) must not be re-processed.
+    if (job.status === "succeeded" || job.status === "failed") {
+      return jsonResponse(200, { ignored: "already_terminal" });
+    }
+
+    const outcome = mapPredictionToOutcome(payload);
+    if (outcome.kind === "ignore") {
+      return jsonResponse(200, { ignored: `status_${payload.status ?? "unknown"}` });
+    }
+    if (outcome.kind === "failed") {
+      await markJobFailed(admin, { jobId, errorCode: "replicate_failed", errorMessage: outcome.errorMessage });
+      return jsonResponse(200, { jobId, status: "failed" });
+    }
+
+    // Success: download Bread's output and store it as the result object.
+    const outputRes = await fetch(outcome.outputUrl);
+    if (!outputRes.ok) {
+      throw new Error(`failed to fetch Replicate output (${outputRes.status})`);
+    }
+    const contentType = outputRes.headers.get("content-type");
+    const bytes = new Uint8Array(await outputRes.arrayBuffer());
+    const ext = resultExtensionFromContentType(contentType, outcome.outputUrl);
+    const resultPath = `${job.user_id}/${job.id}/result.${ext}`;
+    const { error: uploadError } = await admin.storage.from(PHOTOS_BUCKET).upload(resultPath, bytes, {
+      contentType: contentType ?? "image/jpeg",
+      upsert: true,
+    });
+    if (uploadError) {
+      throw new Error(`failed to upload result to ${resultPath}: ${uploadError.message}`);
+    }
+    // Flip terminal + delete the source (24h-retention enforcement) via the
+    // shared helper — the same writer the app uses, no inline status update.
+    await markJobSucceeded(admin, { jobId, resultPath, replicatePredictionId: payload.id });
+    return jsonResponse(200, { jobId, status: "succeeded", resultPath });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    // Record the failure on the row (the client's source of truth), then still
+    // 200 so Replicate stops retrying a deterministic processing error (e.g. a
+    // dead output URL). Best-effort: a failed markJobFailed is swallowed.
+    try {
+      await markJobFailed(admin, {
+        jobId,
+        errorCode: "callback_failed",
+        errorMessage: message.slice(0, MAX_ERROR_DETAIL_CHARS),
+      });
+    } catch {
+      // swallow — the row may be unreachable; the 200 below still acks Replicate
+    }
+    return jsonResponse(200, { jobId, status: "failed", error: { code: "callback_failed", message } });
+  }
+}
+
 Deno.serve(async (req) => {
   const { pathname } = new URL(req.url);
 
@@ -192,7 +332,9 @@ Deno.serve(async (req) => {
   if (req.method === "POST" && pathname.endsWith("/start")) {
     return await handleStart(req);
   }
+  if (req.method === "POST" && pathname.endsWith("/callback")) {
+    return await handleCallback(req);
+  }
 
-  // /callback lands in Phase 3.
   return jsonResponse(404, { error: { code: "not_found", message: "unknown route" } });
 });

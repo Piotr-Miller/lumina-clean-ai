@@ -424,15 +424,15 @@ One new migration (the `queued` Database Webhook trigger). No changes to the `jo
 
 #### Automated
 
-- [ ] 3.1 Unit test: signature-verify + payload→action mapping (valid/invalid, succeeded/failed)
-- [ ] 3.2 Edge Function still serves locally
+- [x] 3.1 Unit test: signature-verify + payload→action mapping (valid/invalid, succeeded/failed)
+- [x] 3.2 Edge Function still serves locally
 
 #### Manual
 
-- [ ] 3.3 Real completion → job `succeeded`, `result_path` set, result object exists, source deleted
-- [ ] 3.4 Forced failure → job `failed` with `error_code`/`error_message`
-- [ ] 3.5 Invalid signature → 401, no mutation
-- [ ] 3.6 End-to-end (no client): submit → row `succeeded` with result object within budget
+- [x] 3.3 Real completion → job `succeeded`, `result_path` set, result object exists, source deleted
+- [x] 3.4 Forced failure → job `failed` with `error_code`/`error_message`
+- [x] 3.5 Invalid signature → 401, no mutation
+- [x] 3.6 End-to-end (no client): submit → row `succeeded` with result object within budget
 
 ### Phase 4: Realtime subscription plumbing
 
