@@ -30,12 +30,30 @@ import {
 
 const SOURCE_URL_TTL_SECONDS = 300;
 const REPLICATE_PREDICTIONS_URL = "https://api.replicate.com/v1/predictions";
+// Cap how much Replicate error text we persist/return: the body can echo the
+// signed source URL, and error_message is read by the owner. Bound it.
+const MAX_ERROR_DETAIL_CHARS = 300;
 
 function jsonResponse(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+// Length-safe constant-time compare via fixed-length SHA-256 digests — avoids
+// leaking the webhook secret through early-exit timing on the bearer check.
+async function constantTimeEquals(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [ha, hb] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(a)),
+    crypto.subtle.digest("SHA-256", enc.encode(b)),
+  ]);
+  const va = new Uint8Array(ha);
+  const vb = new Uint8Array(hb);
+  let diff = 0;
+  for (let i = 0; i < va.length; i++) diff |= va[i] ^ vb[i];
+  return diff === 0;
 }
 
 // Service-role client built from the auto-injected runtime env. Bypasses RLS —
@@ -72,7 +90,7 @@ async function handleStart(req: Request): Promise<Response> {
     return jsonResponse(500, { error: { code: "misconfigured", message: "DB_WEBHOOK_SECRET not set" } });
   }
   const authHeader = req.headers.get("Authorization") ?? "";
-  if (authHeader !== `Bearer ${expectedSecret}`) {
+  if (!(await constantTimeEquals(authHeader, `Bearer ${expectedSecret}`))) {
     return jsonResponse(401, { error: { code: "unauthorized", message: "invalid webhook bearer" } });
   }
 
@@ -140,7 +158,7 @@ async function handleStart(req: Request): Promise<Response> {
     });
 
     if (!predictionRes.ok) {
-      const detail = await predictionRes.text();
+      const detail = (await predictionRes.text()).slice(0, MAX_ERROR_DETAIL_CHARS);
       throw new Error(`Replicate predictions.create failed (${predictionRes.status}): ${detail}`);
     }
 
