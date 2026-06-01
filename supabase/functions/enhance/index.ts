@@ -38,6 +38,14 @@ import {
 const SOURCE_URL_TTL_SECONDS = 300;
 const REPLICATE_PREDICTIONS_URL = "https://api.replicate.com/v1/predictions";
 const PHOTOS_BUCKET = "photos";
+// Kickoff-race backstop: the DB webhook fires /start on the `queued` INSERT, but
+// the client PUTs the source object only AFTER create-job returns. When the
+// function is warm, /start can run before the upload lands and createSignedReadUrl
+// 404s ("Object not found"). Retry a bounded number of times to absorb that race;
+// ~4.5s total, well inside pg_net's fire-and-forget window. Any non-404 signing
+// error fails fast.
+const SOURCE_SIGN_MAX_ATTEMPTS = 6;
+const SOURCE_SIGN_RETRY_DELAY_MS = 750;
 // Cap how much Replicate error text we persist/return: the body can echo the
 // signed source URL, and error_message is read by the owner. Bound it.
 const MAX_ERROR_DETAIL_CHARS = 300;
@@ -114,6 +122,33 @@ function toPublicStorageUrl(signedUrl: string): string {
   return `${publicOrigin}${target.pathname}${target.search}`;
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// A "not found" signing failure means the client's source upload hasn't landed
+// yet (the kickoff race). Distinguish it from real errors so only the race is
+// retried.
+function isObjectNotFound(err: unknown): boolean {
+  return err instanceof Error && /object not found/i.test(err.message);
+}
+
+// Sign the source READ URL, retrying ONLY while the object is still missing
+// (upload in flight). See SOURCE_SIGN_MAX_ATTEMPTS for the rationale.
+async function signSourceWithRetry(admin: ReturnType<typeof buildAdminClient>, sourcePath: string): Promise<string> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= SOURCE_SIGN_MAX_ATTEMPTS; attempt++) {
+    try {
+      return await createSignedReadUrl(admin, sourcePath, SOURCE_URL_TTL_SECONDS);
+    } catch (err) {
+      lastErr = err;
+      if (!isObjectNotFound(err) || attempt === SOURCE_SIGN_MAX_ATTEMPTS) break;
+      await delay(SOURCE_SIGN_RETRY_DELAY_MS);
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
 async function handleStart(req: Request): Promise<Response> {
   // 1. Authenticate the DB-webhook call (shared bearer; no Supabase JWT).
   const expectedSecret = Deno.env.get("DB_WEBHOOK_SECRET");
@@ -156,11 +191,11 @@ async function handleStart(req: Request): Promise<Response> {
     }
 
     // Replicate fetches the source itself, so it needs a short-TTL public URL.
-    // Locally the signed URL carries the internal `kong` host; rewrite its
-    // origin to the public tunnel (no-op in prod). See toPublicStorageUrl.
-    const signedSourceUrl = toPublicStorageUrl(
-      await createSignedReadUrl(admin, job.source_path, SOURCE_URL_TTL_SECONDS),
-    );
+    // signSourceWithRetry absorbs the kickoff race (upload may still be in
+    // flight when a warm /start runs). Locally the signed URL carries the
+    // internal `kong` host; rewrite its origin to the public tunnel (no-op in
+    // prod). See toPublicStorageUrl.
+    const signedSourceUrl = toPublicStorageUrl(await signSourceWithRetry(admin, job.source_path));
     const callbackUrl = `${enhanceFunctionBaseUrl()}/callback?jobId=${encodeURIComponent(jobId)}`;
 
     // Replicate requires the webhook to be a public HTTPS URL. In prod the
