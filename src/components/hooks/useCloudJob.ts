@@ -64,6 +64,7 @@ export function useCloudJob({ url, anonKey, accessToken, jobId }: UseCloudJobArg
           "postgres_changes",
           { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${jobId}` },
           (payload) => {
+            if (cancelled) return;
             setStatus(payload.new.status);
             setResultPath(payload.new.result_path);
             setErrorMessage(payload.new.error_message);
@@ -78,9 +79,16 @@ export function useCloudJob({ url, anonKey, accessToken, jobId }: UseCloudJobArg
       setStatus(null);
       setResultPath(null);
       setErrorMessage(null);
+      // Tear down the channel AND this run's client socket. `unsubscribe()`
+      // alone leaves the WebSocket open (heartbeating) until GC, so every
+      // Start-over/resubmit would orphan a socket; `removeChannel` +
+      // `realtime.disconnect()` releases both. `disconnect()` is also called
+      // unconditionally to cover teardown before `setAuth` resolved (channel
+      // never assigned, but the socket may already be connecting).
       if (channel) {
-        void channel.unsubscribe();
+        void client.removeChannel(channel);
       }
+      void client.realtime.disconnect();
     };
   }, [url, anonKey, accessToken, jobId]);
 
