@@ -37,6 +37,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-05  | cloud-daily-cap                    | get a clear message when the global daily cloud cap is reached        | S-04          | FR-014                                    | proposed |
 | S-06  | account-session-ux                 | sign out from anywhere; never land on the login form while already signed in | S-02          | FR-004; session-hygiene NFR               | proposed |
 | S-07  | production-deployment              | use the live app on Cloudflare (Local + auth public; cloud behind a flag) | S-04          | MVP success: deployed & accessible        | proposed |
+| S-08  | cloud-job-retention-cleanup        | trust uploaded sources are gone within 24h even on failed/abandoned jobs | F-01, S-04    | NFR: source not retained beyond 24h       | proposed |
 
 ## Streams
 
@@ -44,7 +45,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 
 | Stream | Theme                          | Chain                              | Note                                                                                          |
 | ------ | ------------------------------ | ---------------------------------- | --------------------------------------------------------------------------------------------- |
-| A      | Cloud AI path (the core bet)   | `F-01` → `S-03` → `S-04` → `S-05`  | Risk-first spine; surfaces the pipeline + cold-start risk at `S-04` (north star). Reuses Stream B's UI shell at `S-03`. |
+| A      | Cloud AI path (the core bet)   | `F-01` → `S-03` → `S-04` → `S-05`  | Risk-first spine; surfaces the pipeline + cold-start risk at `S-04` (north star). Reuses Stream B's UI shell at `S-03`. `S-08` (24h-retention cleanup) hangs off this spine — prereq `F-01`/`S-04`, independent of and parallel with `S-05`. |
 | B      | Local engine & shared UI shell | `S-01`                             | Anonymous funnel + builds the upload / before-after slider / download shell reused by `S-03`. Joins Stream A at `S-03`. |
 | C      | Account access                 | `S-02` → `S-06`                    | Auth-completion + UX polish (global sign-out, redirect authed off `/auth/*`, optional idle-timeout). Independent of the Cloud path; parallel with everything. |
 | D      | Release / infra                | `S-07`                             | Production deployment / go-live on Cloudflare + prod Supabase. Prereq `S-04`; ships cloud behind a flag (OFF until `S-05`). Parallel with `S-05` and `S-06`. |
@@ -142,20 +143,21 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-02, S-06, S-07
 - **Blockers:** —
 - **Unknowns:**
-  - Where the cap is enforced — SQL count on an RLS-gated table vs a check inside the Edge Function — Owner: TBD. Block: no.
+  - Where the cap is enforced — SQL count on an RLS-gated table vs a check inside the Edge Function — Owner: TBD. Block: no. **Recommendation:** enforce in the `create-job` route (pre-insert `COUNT`), not the Edge Function — it rejects before any storage/model work AND keeps S-07's `/callback` hardening and S-08's `markJobFailed` cleanup collision-free (S-05 then only adds a count helper in `photo-job.service.ts`, a different function).
 - **Risk:** You cannot cap an invocation path that doesn't exist yet, so this follows S-04 — but it should land immediately after, because cloud cost is unbounded in the gap. Per-user limits are explicitly out of scope (v2); v1 enforces only this global cap plus the provider billing alert as backstop.
 - **Status:** proposed
 
 ### S-06: Account / session UX completion
 
-- **Outcome:** a signed-in user can sign out from anywhere in the app (not only from `/` and `/dashboard`), is redirected to home instead of being shown the login form while already authenticated, and — optionally — is signed out after a configured idle period.
+- **Outcome:** a signed-in user can sign out from anywhere in the app (not only from `/` and `/dashboard`), is redirected to home instead of being shown the login form while already authenticated, is — optionally — signed out after a configured idle period, and can complete a password reset from a different device/browser than the one that requested it.
 - **Change ID:** account-session-ux
-- **PRD refs:** FR-004 (sign out reachable); session-hygiene NFR (idle timeout, optional)
+- **PRD refs:** FR-004 (sign out reachable); FR-015 (cross-device password reset); session-hygiene NFR (idle timeout, optional)
 - **Prerequisites:** S-02
 - **Parallel with:** S-04, S-05, S-07 (fully independent — touches no Cloud-path code)
 - **Blockers:** —
 - **Unknowns:**
   - Desired idle window, and whether to ship idle-timeout at all in v1 — Owner: product. Block: no. Supabase session timeboxing / `inactivity_timeout` is a hosted **Pro-plan** feature (works locally via `config.toml`); ship the global sign-out + auth-redirect fixes regardless and treat idle-timeout as a deferrable sub-item.
+  - **Cross-device password reset (folded in 2026-06-03):** the S-02 reset link is PKCE same-browser-only — opening the email on another device/browser fails `verifyOtp` and bounces to forgot-password (documented in the archived S-02 phase-3 doc, untracked until now). Fix = move to a non-PKCE emailed token or an explicit code-exchange route. Owner: TBD. Block: no. Loosely tied to the parked prod-SMTP item but scoped here.
 - **Risk:** Low. Pure auth-UX / middleware / config — touches the Topbar/Layout (or a global nav), `src/middleware.ts`, and optionally `supabase/config.toml`. **Zero overlap with the Cloud path** (no `jobs`, no Edge Function, no cap logic), so it is explicitly independent of and non-colliding with S-05. Bundles the parked S-02 follow-ups (global Sign-out reachability + redirect-authenticated-off-`/auth/*`) surfaced 2026-06-02; closes the "I'm logged in but staring at a login form" confusion before the product is shown to users.
 - **Status:** proposed
 
@@ -170,7 +172,20 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Prod Realtime enablement + prod DB-webhook URL (`https://<ref>.supabase.co/functions/v1/enhance`) and `EDGE_FUNCTION_URL` config — Owner: TBD. Block: no.
   - Whether to flip `CLOUD_PIPELINE_ENABLED` ON at launch — gated on S-05 (runbook sequencing, not a code dependency).
-- **Risk:** Separate ops surface (Supabase + Cloudflare) with its own runbook. **Independent of S-05**: different files (CI / `wrangler.jsonc` / prod-config + Edge Function deploy vs S-05's cap logic in the submit path + `jobs` count), no code dependency — only the flag-flip-to-ON is sequenced after S-05. Folds in the parked **source-URL-TTL fix** (a cold boot >300s expires the signed source URL → the prediction fails at the source-fetch step) as a go-live prerequisite. The flag stays OFF in prod until S-05 lands, so cloud spend stays bounded.
+- **Risk:** Separate ops surface (Supabase + Cloudflare) with its own runbook. **Independent of S-05**: different files (CI / `wrangler.jsonc` / prod-config + Edge Function deploy vs S-05's cap logic in the submit path + `jobs` count), no code dependency — only the flag-flip-to-ON is sequenced after S-05. Folds in the parked **source-URL-TTL fix** (a cold boot >300s expires the signed source URL → the prediction fails at the source-fetch step) as a go-live prerequisite. **Also folds in the never-resolved S-04 phase-3 `/callback` hardening cluster** (webhook-timestamp replay window; `AbortSignal.timeout` + a size cap on the output/create fetches; output-host allowlist for SSRF defense-in-depth; delete the orphaned result object on a late row-update failure) — pre-prod hardening of the publicly-exposed callback before the flag flips ON. The flag stays OFF in prod until S-05 lands, so cloud spend stays bounded.
+- **Status:** proposed
+
+### S-08: 24h-retention cleanup for failed / abandoned cloud jobs
+
+- **Outcome:** an uploaded source object is removed within the 24h privacy window even when the job does NOT succeed — on a `failed` job (pipeline error / timeout) and on an abandoned `queued` job whose client upload never completed — closing the gap where today only the success path (`markJobSucceeded`) deletes the source.
+- **Change ID:** cloud-job-retention-cleanup
+- **PRD refs:** NFR (uploaded source not retained beyond 24h — a launch privacy guardrail); Access Control (private source)
+- **Prerequisites:** F-01, S-04
+- **Parallel with:** S-05, S-06, S-07
+- **Blockers:** —
+- **Unknowns:**
+  - Abandoned-`queued` rows (client PUT never landed) have no terminal event — decide the trigger (reuse the existing client timeout/watchdog path, or a bounded lightweight sweep) — Owner: TBD. Block: no.
+- **Risk:** Closes a privacy-NFR gap that THREE archived slices each punted and none owned: F-01 (`markJobFailed` deletes nothing — "re-evaluated in v2"), S-03 (abandoned `queued` rows + orphaned PUT objects hand-waved to "S-04/S-05", which never took it), and S-04 (result-object orphan if the row UPDATE fails after upload — phase-3 review F5). **Scope guard:** inline approach only — delete the source in `markJobFailed` + the timeout route, and delete the orphaned result on late-failure — **NOT** a `pg_cron` reaper (explicitly an MVP non-goal). Independent of S-05: shares only `photo-job.service.ts`, and a *different* function (`markJobFailed`) from S-05's count helper — no hard collision (see S-05's enforcement-point recommendation).
 - **Status:** proposed
 
 ## Backlog Handoff
@@ -184,7 +199,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-04       | cloud-ai-realtime-result           | Async Cloud AI pipeline + Realtime result delivery      | done                  | Archived 2026-06-02 → `context/archive/2026-05-31-cloud-ai-realtime-result/`. Issue #5. |
 | S-05       | cloud-daily-cap                    | Global daily cap on Cloud AI requests                   | yes                   | S-04 done; land immediately after to bound cost. |
 | S-06       | account-session-ux                 | Account/session UX: global sign-out + redirect authed off /auth/* | yes                   | Independent of S-05 (auth UI/middleware/config; zero cloud-path overlap). Bundles parked S-02 follow-ups. |
-| S-07       | production-deployment              | Production deployment / go-live (Cloudflare + prod Supabase) | yes                   | Prereq S-04 (done). Independent of S-05; cloud ships flag-OFF until S-05. Folds in source-URL-TTL fix. |
+| S-07       | production-deployment              | Production deployment / go-live (Cloudflare + prod Supabase) | yes                   | Prereq S-04 (done). Independent of S-05; cloud ships flag-OFF until S-05. Folds in source-URL-TTL fix + /callback hardening. |
+| S-08       | cloud-job-retention-cleanup        | 24h-retention cleanup for failed/abandoned cloud jobs | yes                   | Prereq F-01/S-04 (done). Closes privacy-NFR gap punted by F-01/S-03/S-04. Inline delete-on-failure, NOT pg_cron. Independent of S-05. |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 

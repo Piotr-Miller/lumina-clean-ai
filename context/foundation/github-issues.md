@@ -120,10 +120,13 @@ repo. They can be deleted manually at any time.
 | S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | `cloud-daily-cap`                   | proposed | `roadmap` `slice` `status:proposed` |
 | S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7) | `account-session-ux`                | ready    | `roadmap` `slice` `status:ready` |
 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8) | `production-deployment`             | ready    | `roadmap` `slice` `status:ready` |
+| S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9) | `cloud-job-retention-cleanup`       | ready    | `roadmap` `slice` `status:ready` |
 
 ⭐ = north star (validation milestone).
 
 > **S-06 (#7) + S-07 (#8) added 2026-06-03** (after S-04 archived) — two new MVP slices, both independent of and non-colliding with S-05. Created via `gh issue create --body-file` (labels `roadmap` `slice` `status:ready`, since prerequisites S-02/S-04 are done). Not part of the original 2026-05-26 batch documented above.
+>
+> **2026-06-03 (retrospective gaps from S-01→S-04):** added **S-08 (#9)** `cloud-job-retention-cleanup` — a privacy-NFR cleanup gap that F-01/S-03/S-04 each punted and none owned. Also **extended the bodies of #7** (folded in cross-device password reset, FR-015) and **#8** (folded in the S-04 `/callback` hardening cluster) via `gh issue edit --body-file`. All three remain independent of S-05.
 
 ## Status updates (post-creation)
 
