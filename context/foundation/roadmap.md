@@ -50,6 +50,8 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | C      | Account access                 | `S-02` → `S-06`                    | Auth-completion + UX polish (global sign-out, redirect authed off `/auth/*`, optional idle-timeout). Independent of the Cloud path; parallel with everything. |
 | D      | Release / infra                | `S-07`                             | Production deployment / go-live on Cloudflare + prod Supabase. Prereq `S-04`; ships cloud behind a flag (OFF until `S-05`). Parallel with `S-05` and `S-06`. |
 
+> **Planned execution (2026-06-03):** the one concurrent pair is **S-05 ∥ S-06** (zero shared files → collision-free). **S-07** then **S-08** follow **sequentially** — both touch the Edge Function `/callback`, so they are deliberately not parallelized with each other. (The `Parallel with` fields in each slice denote dependency-independence — what *could* run together — not the chosen order.)
+
 ## Baseline
 
 What's already in place in the codebase as of `2026-05-26` (auto-researched + user-confirmed).
@@ -172,7 +174,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Prod Realtime enablement + prod DB-webhook URL (`https://<ref>.supabase.co/functions/v1/enhance`) and `EDGE_FUNCTION_URL` config — Owner: TBD. Block: no.
   - Whether to flip `CLOUD_PIPELINE_ENABLED` ON at launch — gated on S-05 (runbook sequencing, not a code dependency).
-- **Risk:** Separate ops surface (Supabase + Cloudflare) with its own runbook. **Independent of S-05**: different files (CI / `wrangler.jsonc` / prod-config + Edge Function deploy vs S-05's cap logic in the submit path + `jobs` count), no code dependency — only the flag-flip-to-ON is sequenced after S-05. Folds in the parked **source-URL-TTL fix** (a cold boot >300s expires the signed source URL → the prediction fails at the source-fetch step) as a go-live prerequisite. **Also folds in the never-resolved S-04 phase-3 `/callback` hardening cluster** (webhook-timestamp replay window; `AbortSignal.timeout` + a size cap on the output/create fetches; output-host allowlist for SSRF defense-in-depth; delete the orphaned result object on a late row-update failure) — pre-prod hardening of the publicly-exposed callback before the flag flips ON. The flag stays OFF in prod until S-05 lands, so cloud spend stays bounded.
+- **Risk:** Separate ops surface (Supabase + Cloudflare) with its own runbook. **Independent of S-05**: different files (CI / `wrangler.jsonc` / prod-config + Edge Function deploy vs S-05's cap logic in the submit path + `jobs` count), no code dependency — only the flag-flip-to-ON is sequenced after S-05. Folds in the parked **source-URL-TTL fix** (a cold boot >300s expires the signed source URL → the prediction fails at the source-fetch step) as a go-live prerequisite. **Also folds in the never-resolved S-04 phase-3 `/callback` hardening cluster** (webhook-timestamp replay window; `AbortSignal.timeout` + a size cap on the output/create fetches; output-host allowlist for SSRF defense-in-depth) — pre-prod hardening of the publicly-exposed callback before the flag flips ON. (The result-object orphan on a late `/callback` failure is owned by **S-08**, not here.) The flag stays OFF in prod until S-05 lands, so cloud spend stays bounded.
 - **Status:** proposed
 
 ### S-08: 24h-retention cleanup for failed / abandoned cloud jobs
