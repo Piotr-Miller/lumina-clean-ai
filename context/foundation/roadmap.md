@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-02
+updated: 2026-06-03
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -35,6 +35,8 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-03  | gated-cloud-upload                 | switch to Cloud AI (sign-in gated) and submit a photo for processing  | F-01, S-01    | US-01; FR-005, FR-006, FR-007             | done     |
 | S-04  | cloud-ai-realtime-result           | see the Cloud-AI result pushed in real time, before/after + download  | S-03          | US-01; FR-009, FR-010, FR-011, FR-012     | done     |
 | S-05  | cloud-daily-cap                    | get a clear message when the global daily cloud cap is reached        | S-04          | FR-014                                    | proposed |
+| S-06  | account-session-ux                 | sign out from anywhere; never land on the login form while already signed in | S-02          | FR-004; session-hygiene NFR               | proposed |
+| S-07  | production-deployment              | use the live app on Cloudflare (Local + auth public; cloud behind a flag) | S-04          | MVP success: deployed & accessible        | proposed |
 
 ## Streams
 
@@ -44,7 +46,8 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | ------ | ------------------------------ | ---------------------------------- | --------------------------------------------------------------------------------------------- |
 | A      | Cloud AI path (the core bet)   | `F-01` → `S-03` → `S-04` → `S-05`  | Risk-first spine; surfaces the pipeline + cold-start risk at `S-04` (north star). Reuses Stream B's UI shell at `S-03`. |
 | B      | Local engine & shared UI shell | `S-01`                             | Anonymous funnel + builds the upload / before-after slider / download shell reused by `S-03`. Joins Stream A at `S-03`. |
-| C      | Account access                 | `S-02`                             | Independent auth-completion track (adds the missing password reset); parallel with everything. |
+| C      | Account access                 | `S-02` → `S-06`                    | Auth-completion + UX polish (global sign-out, redirect authed off `/auth/*`, optional idle-timeout). Independent of the Cloud path; parallel with everything. |
+| D      | Release / infra                | `S-07`                             | Production deployment / go-live on Cloudflare + prod Supabase. Prereq `S-04`; ships cloud behind a flag (OFF until `S-05`). Parallel with `S-05` and `S-06`. |
 
 ## Baseline
 
@@ -136,11 +139,38 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Change ID:** cloud-daily-cap
 - **PRD refs:** FR-014; Access Control (cloud gated to signed-in users within the cap)
 - **Prerequisites:** S-04
-- **Parallel with:** S-02
+- **Parallel with:** S-02, S-06, S-07
 - **Blockers:** —
 - **Unknowns:**
   - Where the cap is enforced — SQL count on an RLS-gated table vs a check inside the Edge Function — Owner: TBD. Block: no.
 - **Risk:** You cannot cap an invocation path that doesn't exist yet, so this follows S-04 — but it should land immediately after, because cloud cost is unbounded in the gap. Per-user limits are explicitly out of scope (v2); v1 enforces only this global cap plus the provider billing alert as backstop.
+- **Status:** proposed
+
+### S-06: Account / session UX completion
+
+- **Outcome:** a signed-in user can sign out from anywhere in the app (not only from `/` and `/dashboard`), is redirected to home instead of being shown the login form while already authenticated, and — optionally — is signed out after a configured idle period.
+- **Change ID:** account-session-ux
+- **PRD refs:** FR-004 (sign out reachable); session-hygiene NFR (idle timeout, optional)
+- **Prerequisites:** S-02
+- **Parallel with:** S-04, S-05, S-07 (fully independent — touches no Cloud-path code)
+- **Blockers:** —
+- **Unknowns:**
+  - Desired idle window, and whether to ship idle-timeout at all in v1 — Owner: product. Block: no. Supabase session timeboxing / `inactivity_timeout` is a hosted **Pro-plan** feature (works locally via `config.toml`); ship the global sign-out + auth-redirect fixes regardless and treat idle-timeout as a deferrable sub-item.
+- **Risk:** Low. Pure auth-UX / middleware / config — touches the Topbar/Layout (or a global nav), `src/middleware.ts`, and optionally `supabase/config.toml`. **Zero overlap with the Cloud path** (no `jobs`, no Edge Function, no cap logic), so it is explicitly independent of and non-colliding with S-05. Bundles the parked S-02 follow-ups (global Sign-out reachability + redirect-authenticated-off-`/auth/*`) surfaced 2026-06-02; closes the "I'm logged in but staring at a login form" confusion before the product is shown to users.
+- **Status:** proposed
+
+### S-07: Production deployment / go-live
+
+- **Outcome:** the app is deployed and publicly accessible on Cloudflare (Workers), with the prod Supabase project fully wired — migrations applied, Edge Function `enhance` deployed, Realtime enabled, secrets + DB-webhook settings set — plus a CI deploy step. The Cloud AI pipeline ships behind `CLOUD_PIPELINE_ENABLED=OFF`, so Local engine + auth are live immediately and cloud is switched on later by a single flag flip (once S-05's cap exists).
+- **Change ID:** production-deployment
+- **PRD refs:** MVP success criterion "Deployed and accessible on Cloudflare Pages"; deploy/infra NFR
+- **Prerequisites:** S-04
+- **Parallel with:** S-05, S-06
+- **Blockers:** Cloudflare account + Supabase prod project + Replicate token provisioning (user/team — self-resolvable, so an unknown not a hard blocker).
+- **Unknowns:**
+  - Prod Realtime enablement + prod DB-webhook URL (`https://<ref>.supabase.co/functions/v1/enhance`) and `EDGE_FUNCTION_URL` config — Owner: TBD. Block: no.
+  - Whether to flip `CLOUD_PIPELINE_ENABLED` ON at launch — gated on S-05 (runbook sequencing, not a code dependency).
+- **Risk:** Separate ops surface (Supabase + Cloudflare) with its own runbook. **Independent of S-05**: different files (CI / `wrangler.jsonc` / prod-config + Edge Function deploy vs S-05's cap logic in the submit path + `jobs` count), no code dependency — only the flag-flip-to-ON is sequenced after S-05. Folds in the parked **source-URL-TTL fix** (a cold boot >300s expires the signed source URL → the prediction fails at the source-fetch step) as a go-live prerequisite. The flag stays OFF in prod until S-05 lands, so cloud spend stays bounded.
 - **Status:** proposed
 
 ## Backlog Handoff
@@ -152,7 +182,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-02       | account-access-and-password-reset  | Complete account access incl. password reset            | yes                   | Run `/10x-plan account-access-and-password-reset`. Independent track. |
 | S-03       | gated-cloud-upload                 | Gated engine toggle + Cloud AI submission               | done                  | Archived 2026-05-31 → `context/archive/2026-05-31-gated-cloud-upload/`. Issue #4. |
 | S-04       | cloud-ai-realtime-result           | Async Cloud AI pipeline + Realtime result delivery      | done                  | Archived 2026-06-02 → `context/archive/2026-05-31-cloud-ai-realtime-result/`. Issue #5. |
-| S-05       | cloud-daily-cap                    | Global daily cap on Cloud AI requests                   | no                    | Blocked on S-04; land immediately after to bound cost. |
+| S-05       | cloud-daily-cap                    | Global daily cap on Cloud AI requests                   | yes                   | S-04 done; land immediately after to bound cost. |
+| S-06       | account-session-ux                 | Account/session UX: global sign-out + redirect authed off /auth/* | yes                   | Independent of S-05 (auth UI/middleware/config; zero cloud-path overlap). Bundles parked S-02 follow-ups. |
+| S-07       | production-deployment              | Production deployment / go-live (Cloudflare + prod Supabase) | yes                   | Prereq S-04 (done). Independent of S-05; cloud ships flag-OFF until S-05. Folds in source-URL-TTL fix. |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 
