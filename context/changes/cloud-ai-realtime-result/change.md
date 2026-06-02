@@ -1,7 +1,7 @@
 ---
 change_id: cloud-ai-realtime-result
 title: "Async Cloud AI pipeline + Realtime result delivery"
-status: implemented
+status: impl_reviewed
 created: 2026-05-31
 updated: 2026-06-02
 review_round: 2
