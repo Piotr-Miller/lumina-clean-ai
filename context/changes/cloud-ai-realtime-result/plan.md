@@ -452,15 +452,15 @@ One new migration (the `queued` Database Webhook trigger). No changes to the `jo
 
 #### Automated
 
-- [x] 5.1 Type checking passes: `npx astro check`
-- [x] 5.2 Build succeeds: `npm run build`
-- [x] 5.3 Linting passes on touched files
-- [x] 5.4 Unit tests pass: result-URL→Blob + dimension-decode adapters; existing tests green
+- [x] 5.1 Type checking passes: `npx astro check` — c182248
+- [x] 5.2 Build succeeds: `npm run build` — c182248
+- [x] 5.3 Linting passes on touched files — c182248
+- [x] 5.4 Unit tests pass: result-URL→Blob + dimension-decode adapters; existing tests green — c182248
 
 #### Manual
 
-- [x] 5.5 Happy path: submit → "Enhancing…" → before/after slider + download via Realtime, no refresh, within budget
-- [x] 5.6 Failure: forced failure → error line + Try again/Start over; Try again starts a fresh job
-- [x] 5.7 Timeout: callback suppressed → ~60s watchdog → `failed` + timeout error (route rejects non-owner / already-terminal)
-- [x] 5.8 Anonymous never subscribes; Local flow + HEIC reject unchanged
-- [x] 5.9 Full flow works under `npm run dev` and `npm run build && npx wrangler dev`
+- [x] 5.5 Happy path: submit → "Enhancing…" → before/after slider + download via Realtime, no refresh, within budget — c182248
+- [x] 5.6 Failure: forced failure → error line + Try again/Start over; Try again starts a fresh job — c182248
+- [x] 5.7 Timeout: callback suppressed → ~60s watchdog → `failed` + timeout error (route rejects non-owner / already-terminal) — c182248
+- [x] 5.8 Anonymous never subscribes; Local flow + HEIC reject unchanged — c182248
+- [x] 5.9 Full flow works under `npm run dev` and `npm run build && npx wrangler dev` — c182248
