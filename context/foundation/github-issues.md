@@ -116,7 +116,7 @@ repo. They can be deleted manually at any time.
 | S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2) | `local-engine-enhance-flow`         | ready    | `roadmap` `slice` `status:ready` |
 | S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3) | `account-access-and-password-reset` | ready    | `roadmap` `slice` `status:ready` |
 | S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4) | `gated-cloud-upload`                | done     | `roadmap` `slice` `status:proposed` |
-| S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5) | `cloud-ai-realtime-result`          | proposed | `roadmap` `slice` `status:proposed` `north-star` |
+| S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5) | `cloud-ai-realtime-result`          | done     | `roadmap` `slice` `status:proposed` `north-star` |
 | S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | `cloud-daily-cap`                   | proposed | `roadmap` `slice` `status:proposed` |
 
 ⭐ = north star (validation milestone).

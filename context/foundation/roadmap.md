@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-05-31
+updated: 2026-06-02
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -33,7 +33,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-01  | local-engine-enhance-flow          | upload a photo, enhance it locally, compare before/after, download    | —             | US-02; FR-001, FR-005, FR-008, FR-011, FR-012 | done     |
 | S-02  | account-access-and-password-reset  | sign up, sign in, sign out, and reset a forgotten password            | —             | FR-002, FR-003, FR-004, FR-015            | done     |
 | S-03  | gated-cloud-upload                 | switch to Cloud AI (sign-in gated) and submit a photo for processing  | F-01, S-01    | US-01; FR-005, FR-006, FR-007             | done     |
-| S-04  | cloud-ai-realtime-result           | see the Cloud-AI result pushed in real time, before/after + download  | S-03          | US-01; FR-009, FR-010, FR-011, FR-012     | proposed |
+| S-04  | cloud-ai-realtime-result           | see the Cloud-AI result pushed in real time, before/after + download  | S-03          | US-01; FR-009, FR-010, FR-011, FR-012     | done     |
 | S-05  | cloud-daily-cap                    | get a clear message when the global daily cloud cap is reached        | S-04          | FR-014                                    | proposed |
 
 ## Streams
@@ -128,7 +128,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Cloud model cold-start vs the ≤30s p95 guardrail (PRD Open Question #2) — Owner: TBD (measure on the real model early). Block: no, but this is the central risk: if violated, choose a warm-up strategy, a model swap, or relax the SLA.
   - Async webhook chain failure handling — what the user sees if a webhook never returns (infrastructure.md pre-mortem) — Owner: TBD. Block: no. Needs a timeout/dead-letter path + a user-facing error.
 - **Risk:** This is the riskiest assumption and the north star — sequenced as early as its prerequisites allow so the pipeline + cold-start question is answered before more is built on top. The pipeline runs on Supabase (a separate ops surface from the Cloudflare frontend), so its failure modes need their own runbook. **Cost note:** until S-05 lands, real Replicate calls are uncapped — keep this slice behind a flag / non-public until the cap ships immediately after. `/10x-plan` will likely split this into (a) pipeline + Replicate integration and (b) Realtime push + result render.
-- **Status:** proposed
+- **Status:** done
 
 ### S-05: Cloud cost protection — global daily cap
 
@@ -151,7 +151,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-01       | local-engine-enhance-flow          | Local (Canvas) engine: upload → enhance → compare → download | yes              | Run `/10x-plan local-engine-enhance-flow`. Builds the shared UI shell. |
 | S-02       | account-access-and-password-reset  | Complete account access incl. password reset            | yes                   | Run `/10x-plan account-access-and-password-reset`. Independent track. |
 | S-03       | gated-cloud-upload                 | Gated engine toggle + Cloud AI submission               | done                  | Archived 2026-05-31 → `context/archive/2026-05-31-gated-cloud-upload/`. Issue #4. |
-| S-04       | cloud-ai-realtime-result           | Async Cloud AI pipeline + Realtime result delivery      | no                    | North star. Blocked on S-03; central cold-start risk. |
+| S-04       | cloud-ai-realtime-result           | Async Cloud AI pipeline + Realtime result delivery      | done                  | Archived 2026-06-02 → `context/archive/2026-05-31-cloud-ai-realtime-result/`. Issue #5. |
 | S-05       | cloud-daily-cap                    | Global daily cap on Cloud AI requests                   | no                    | Blocked on S-04; land immediately after to bound cost. |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
@@ -186,3 +186,4 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 - **S-01: an anonymous visitor can upload a photo (JPG/PNG), run the client-side Local engine (Canvas gamma correction + Gaussian blur), compare the result against the original with a before/after slider, and download it — entirely in the browser, no network round-trip after load.** — Archived 2026-05-29 → `context/archive/2026-05-28-local-engine-enhance-flow/`. Lesson: —.
 - **S-02: a visitor can create an account with email + password, sign in and out, and recover a forgotten password via an email-based reset flow.** — Archived 2026-05-30 → `context/archive/2026-05-29-account-access-and-password-reset/`. Lesson: —.
 - **S-03: a user can switch the engine toggle to Cloud AI (anonymous visitors are prompted to sign in, never silently denied), and a signed-in user can submit the loaded photo for cloud processing — the source is uploaded to the private bucket and a job record is created.** — Archived 2026-05-31 → `context/archive/2026-05-31-gated-cloud-upload/`. Lesson: —.
+- **S-04: once a photo is submitted, the async pipeline (Database webhook → Supabase Edge Function → Replicate prediction with webhook callback) runs, and the enhanced result is pushed to the page via Supabase Realtime — appearing in the before/after slider with download, no manual refresh — within ~30s p95.** — Archived 2026-06-02 → `context/archive/2026-05-31-cloud-ai-realtime-result/`. Lesson: two-phase Realtime watchdog (catch-up read on SUBSCRIBED + re-check before failing) and cold-boot TTL sizing (see lessons.md).
