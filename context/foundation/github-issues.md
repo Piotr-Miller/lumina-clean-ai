@@ -118,8 +118,12 @@ repo. They can be deleted manually at any time.
 | S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4) | `gated-cloud-upload`                | done     | `roadmap` `slice` `status:proposed` |
 | S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5) | `cloud-ai-realtime-result`          | done     | `roadmap` `slice` `status:proposed` `north-star` |
 | S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | `cloud-daily-cap`                   | proposed | `roadmap` `slice` `status:proposed` |
+| S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7) | `account-session-ux`                | ready    | `roadmap` `slice` `status:ready` |
+| S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8) | `production-deployment`             | ready    | `roadmap` `slice` `status:ready` |
 
 ⭐ = north star (validation milestone).
+
+> **S-06 (#7) + S-07 (#8) added 2026-06-03** (after S-04 archived) — two new MVP slices, both independent of and non-colliding with S-05. Created via `gh issue create --body-file` (labels `roadmap` `slice` `status:ready`, since prerequisites S-02/S-04 are done). Not part of the original 2026-05-26 batch documented above.
 
 ## Status updates (post-creation)
 
