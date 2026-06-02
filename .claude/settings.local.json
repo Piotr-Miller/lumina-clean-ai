@@ -107,7 +107,13 @@
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('status:',d.get\\('status'\\)\\); print\\('image:',d.get\\('input',{}\\).get\\('image',''\\)\\); print\\('started:',d.get\\('started_at'\\),'completed:',d.get\\('completed_at'\\)\\); print\\('error:',d.get\\('error'\\)\\); print\\('logs_tail:',repr\\(\\(d.get\\('logs'\\) or ''\\)[-200:]\\)\\)\")",
       "Bash(echo \"=== job row \\(final\\) ===\")",
       "Bash(echo \"=== storage listing for {uid}/{jobId}/ \\(expect result.*, NO source.*\\) ===\")",
-      "Bash(python -c \"import sys,json; [print\\(' -',o['name'],'\\('+str\\(o.get\\('metadata',{}\\).get\\('size'\\)\\)+' bytes, '+str\\(o.get\\('metadata',{}\\).get\\('mimetype'\\)\\)+'\\)'\\) for o in json.load\\(sys.stdin\\)]\")"
+      "Bash(python -c \"import sys,json; [print\\(' -',o['name'],'\\('+str\\(o.get\\('metadata',{}\\).get\\('size'\\)\\)+' bytes, '+str\\(o.get\\('metadata',{}\\).get\\('mimetype'\\)\\)+'\\)'\\) for o in json.load\\(sys.stdin\\)]\")",
+      "Bash(echo \"--- function reachable THROUGH the tunnel? \\(expect 401 from /start bearer check\\) ---\")",
+      "Bash(head -c 120 /tmp/r)",
+      "Bash(echo \"--- storage path through the tunnel \\(expect a Supabase error, NOT ngrok HTML\\) ---\")",
+      "Bash(head -c 160 /tmp/r2)",
+      "Bash(echo \"-\")",
+      "Bash(echo 'port __TRACKED_VAR__: __TRACKED_VAR__')"
     ],
     "deny": [
       "Bash(rm -rf *)"
