@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, CircleAlert, CloudUpload, RotateCcw, Sparkles } from "lucide-react";
+import { CircleAlert, CloudUpload, RotateCcw, Sparkles } from "lucide-react";
 import type { EngineId } from "@/lib/engines/types";
 import { Button } from "@/components/ui/button";
 import { useCloudJob } from "@/components/hooks/useCloudJob";
@@ -47,6 +47,7 @@ export default function EnhanceWorkspace({
     anonKey: supabaseAnonKey,
     accessToken,
     jobId: cloudSubmit.jobId,
+    sourceFileName: sourceFile?.name ?? null,
   });
 
   const localProcessing = enhancer.status === "processing";
@@ -62,6 +63,29 @@ export default function EnhanceWorkspace({
     downloadName !== null &&
     resultWidth !== null &&
     resultHeight !== null;
+
+  // Destructured to local consts so the `cloudResultReady` `&&` chain narrows
+  // the nullable fields to non-null inside the JSX (property accesses on
+  // `cloudJob` would re-widen) — mirrors the `localResultReady` pattern.
+  const {
+    phase: cloudPhase,
+    afterUrl: cloudAfterUrl,
+    resultBlob: cloudBlob,
+    resultWidth: cloudWidth,
+    resultHeight: cloudHeight,
+    downloadName: cloudDownloadName,
+    errorMessage: cloudError,
+    coldStartHint: cloudColdStartHint,
+  } = cloudJob;
+  const cloudResultReady =
+    engine === "cloud" &&
+    isAuthenticated &&
+    cloudPhase === "succeeded" &&
+    cloudAfterUrl !== null &&
+    cloudBlob !== null &&
+    cloudDownloadName !== null &&
+    cloudWidth !== null &&
+    cloudHeight !== null;
 
   function handleAccepted(file: File, objectUrl: string) {
     setSourceFile(file);
@@ -84,14 +108,23 @@ export default function EnhanceWorkspace({
 
       {sourceUrl && (
         <div className="flex flex-col items-center gap-4">
-          {/* Local result swaps the preview for the slider; every other state shows the plain preview.
-              `localResultReady` already narrows resultUrl/resultWidth/resultHeight to non-null. */}
+          {/* A ready Local OR Cloud result swaps the preview for the slider; every other
+              state shows the plain preview. The `*ResultReady` flags already narrow the
+              respective resultUrl/width/height to non-null. */}
           {localResultReady ? (
             <BeforeAfterSlider
               beforeSrc={sourceUrl}
               afterSrc={resultUrl}
               width={resultWidth}
               height={resultHeight}
+              alt="Your photo"
+            />
+          ) : cloudResultReady ? (
+            <BeforeAfterSlider
+              beforeSrc={sourceUrl}
+              afterSrc={cloudAfterUrl}
+              width={cloudWidth}
+              height={cloudHeight}
               alt="Your photo"
             />
           ) : (
@@ -187,23 +220,52 @@ export default function EnhanceWorkspace({
             </div>
           )}
 
-          {/* CLOUD — submitted. S-04 phase 4 surfaces the live Realtime status here
-              (raw transitions); phase 5 replaces this with the result render + failure UX. */}
+          {/* CLOUD — submitted. The live pipeline status (pushed via Realtime) drives the
+              terminal UX: a spinner while processing, the result download once succeeded
+              (the slider is rendered above), or the error + Try again/Start over on
+              failure/timeout. `cloudResultReady` narrows cloudBlob/cloudDownloadName to non-null. */}
           {engine === "cloud" && isAuthenticated && cloudSubmit.status === "submitted" && (
-            <div className="flex flex-col items-center gap-3 text-center">
-              <p className="flex items-center gap-2 text-sm text-emerald-300">
-                <CheckCircle2 className="size-4" />
-                Submitted for Cloud processing — your enhanced result will appear here once ready.
-              </p>
-              {/* Live job status pushed via Realtime (proves the JWT-scoped subscription). */}
-              <p className="text-xs text-white/60" data-testid="cloud-job-status">
-                Status: {cloudJob.status ?? "processing"}
-              </p>
-              <Button type="button" variant="outline" onClick={handleReset} className={`gap-2 ${SECONDARY_BUTTON}`}>
-                <RotateCcw className="size-4" />
-                Start over
-              </Button>
-            </div>
+            <>
+              {cloudResultReady ? (
+                <div className="flex flex-wrap justify-center gap-3">
+                  <DownloadButton blob={cloudBlob} filename={cloudDownloadName} />
+                  <Button type="button" variant="outline" onClick={handleReset} className={`gap-2 ${SECONDARY_BUTTON}`}>
+                    <RotateCcw className="size-4" />
+                    Start over
+                  </Button>
+                </div>
+              ) : cloudPhase === "failed" ? (
+                <div className="flex flex-wrap justify-center gap-3">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      void cloudSubmit.submit();
+                    }}
+                  >
+                    <RotateCcw className="size-4" />
+                    Try again
+                  </Button>
+                  <Button type="button" variant="outline" onClick={handleReset} className={SECONDARY_BUTTON}>
+                    Start over
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <p className="flex items-center gap-2 text-sm text-white/80">
+                    <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Enhancing in the cloud…
+                  </p>
+                  {/* Progressive cold-start reassurance — only after the wait looks like a model boot. */}
+                  {cloudColdStartHint && (
+                    <p className="text-xs text-white/50">The first run after idle can take up to ~2 minutes.</p>
+                  )}
+                  <Button type="button" variant="outline" onClick={handleReset} className={`gap-2 ${SECONDARY_BUTTON}`}>
+                    <RotateCcw className="size-4" />
+                    Start over
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
@@ -215,10 +277,12 @@ export default function EnhanceWorkspace({
           {enhancer.error}
         </p>
       )}
-      {engine === "cloud" && cloudSubmit.error && (
+      {/* Submit-stage errors (e.g. upload rejected) and pipeline/timeout/load errors
+          never coexist; show whichever is set. */}
+      {engine === "cloud" && (cloudSubmit.error ?? cloudError) && (
         <p className="mt-3 flex items-center justify-center gap-1 text-sm text-red-300" role="alert">
           <CircleAlert className="size-4" />
-          {cloudSubmit.error}
+          {cloudSubmit.error ?? cloudError}
         </p>
       )}
     </div>

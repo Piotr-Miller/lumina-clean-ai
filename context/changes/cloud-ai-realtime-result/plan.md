@@ -438,29 +438,29 @@ One new migration (the `queued` Database Webhook trigger). No changes to the `jo
 
 #### Automated
 
-- [x] 4.1 Type checking passes: `npx astro check`
-- [x] 4.2 Linting passes on touched files
-- [x] 4.3 Build succeeds: `npm run build`
+- [x] 4.1 Type checking passes: `npx astro check` — d802419
+- [x] 4.2 Linting passes on touched files — d802419
+- [x] 4.3 Build succeeds: `npm run build` — d802419
 
 #### Manual
 
-- [x] 4.4 Signed-in submit: workspace observably transitions on the pushed `succeeded`/`failed` event (JWT-scoped subscription receives it)
-- [x] 4.5 Channel unsubscribes on Start-over + unmount (no duplicate handlers)
-- [x] 4.6 No access token → no subscription attempt
+- [x] 4.4 Signed-in submit: workspace observably transitions on the pushed `succeeded`/`failed` event (JWT-scoped subscription receives it) — d802419
+- [x] 4.5 Channel unsubscribes on Start-over + unmount (no duplicate handlers) — d802419
+- [x] 4.6 No access token → no subscription attempt — d802419
 
 ### Phase 5: Result render + failure UX
 
 #### Automated
 
-- [ ] 5.1 Type checking passes: `npx astro check`
-- [ ] 5.2 Build succeeds: `npm run build`
-- [ ] 5.3 Linting passes on touched files
-- [ ] 5.4 Unit tests pass: result-URL→Blob + dimension-decode adapters; existing tests green
+- [x] 5.1 Type checking passes: `npx astro check`
+- [x] 5.2 Build succeeds: `npm run build`
+- [x] 5.3 Linting passes on touched files
+- [x] 5.4 Unit tests pass: result-URL→Blob + dimension-decode adapters; existing tests green
 
 #### Manual
 
-- [ ] 5.5 Happy path: submit → "Enhancing…" → before/after slider + download via Realtime, no refresh, within budget
-- [ ] 5.6 Failure: forced failure → error line + Try again/Start over; Try again starts a fresh job
-- [ ] 5.7 Timeout: callback suppressed → ~60s watchdog → `failed` + timeout error (route rejects non-owner / already-terminal)
-- [ ] 5.8 Anonymous never subscribes; Local flow + HEIC reject unchanged
-- [ ] 5.9 Full flow works under `npm run dev` and `npm run build && npx wrangler dev`
+- [x] 5.5 Happy path: submit → "Enhancing…" → before/after slider + download via Realtime, no refresh, within budget
+- [x] 5.6 Failure: forced failure → error line + Try again/Start over; Try again starts a fresh job
+- [x] 5.7 Timeout: callback suppressed → ~60s watchdog → `failed` + timeout error (route rejects non-owner / already-terminal)
+- [x] 5.8 Anonymous never subscribes; Local flow + HEIC reject unchanged
+- [x] 5.9 Full flow works under `npm run dev` and `npm run build && npx wrangler dev`
