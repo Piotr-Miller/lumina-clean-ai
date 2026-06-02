@@ -30,7 +30,7 @@ Notes: No plan drift across any phase. The only deviation from the plan's litera
 - **Location**: src/components/hooks/useCloudJob.ts:137-145 (failByTimeout fetch)
 - **Detail**: The watchdog's `POST /api/enhance/cloud/timeout` has no `AbortController` tied to the effect cleanup. If the component unmounts (Start-over) just as `failByTimeout` fires, the request still completes in the background. It is owner-scoped + idempotent, the `.catch` swallows errors, and no state is set from the response — so it is benign, just an untracked in-flight request.
 - **Fix**: Thread an `AbortController`, abort it in the effect cleanup, and pass its `signal` to the fetch. (Or accept as-is given idempotency.)
-- **Decision**: PENDING
+- **Decision**: FIXED — AbortController added; `signal` passed to the timeout fetch; `abort.abort()` in the effect cleanup.
 
 ### F2 — No .catch on realtime.setAuth()
 
@@ -40,7 +40,7 @@ Notes: No plan drift across any phase. The only deviation from the plan's litera
 - **Location**: src/components/hooks/useCloudJob.ts (the `client.realtime.setAuth(accessToken).then(...)` chain)
 - **Detail**: If `setAuth` rejects (token/transport issue), the subscription silently never establishes; the watchdog then correctly fails the job, but the root cause presents as a generic timeout rather than a diagnosable auth/transport error.
 - **Fix**: Add a `.catch` on the `setAuth` chain that `console.warn`s (with the `eslint-disable-next-line no-console` the repo uses elsewhere) so a token/transport failure is visible.
-- **Decision**: PENDING
+- **Decision**: FIXED — `setAuth(accessToken).then(...).catch(...)` now logs a rejected setAuth/subscribe via `console.warn` instead of failing silently.
 
 ### F3 — decodeDimensions has no load timeout
 
@@ -50,4 +50,4 @@ Notes: No plan drift across any phase. The only deviation from the plan's litera
 - **Location**: src/lib/services/cloud-result.client.ts:23-34 (decodeDimensions)
 - **Detail**: A signed result URL that never fires `onload`/`onerror` would leave the promise pending forever. Very low risk (short-TTL signed URL, reliable browser image loading) and consistent with the existing `useLocalEnhance.decodeImage` pattern.
 - **Fix**: Optional — none needed; matches existing repo pattern.
-- **Decision**: PENDING
+- **Decision**: SKIPPED — matches the existing `useLocalEnhance.decodeImage` pattern; very low risk (short-TTL signed URL). Adding a one-off timeout here would diverge from the shared decode idiom.

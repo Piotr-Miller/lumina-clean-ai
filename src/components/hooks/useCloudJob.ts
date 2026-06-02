@@ -130,6 +130,10 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
       hint?: ReturnType<typeof setTimeout>;
       processing?: ReturnType<typeof setTimeout>;
     } = {};
+    // Aborts the in-flight timeout POST on teardown so a Start-over/unmount
+    // doesn't leave an untracked request running (the route is idempotent, so
+    // the abort is just hygiene, not correctness).
+    const abort = new AbortController();
     const client = createBrowserClient(url, anonKey, accessToken);
 
     const failByTimeout = () => {
@@ -141,9 +145,10 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId }),
+        signal: abort.signal,
       }).catch(() => {
-        // Best-effort: the user already sees the timeout; a failed POST just
-        // leaves the row pending for an operator sweep.
+        // Best-effort: the user already sees the timeout; a failed/aborted POST
+        // just leaves the row pending for an operator sweep.
       });
     };
 
@@ -213,29 +218,39 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
     // Lesson #3: the Realtime WebSocket authenticates separately from REST —
     // `setAuth(jwt)` must resolve BEFORE `.subscribe()`, or the RLS-scoped
     // UPDATE is silently dropped (connects as anon, `auth.uid()` is null).
-    void client.realtime.setAuth(accessToken).then(() => {
-      if (cancelled) return;
-      channel = client
-        .channel(`job-${jobId}`)
-        .on<JobUpdateRow>(
-          "postgres_changes",
-          { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${jobId}` },
-          (payload) => {
-            applyStatus(payload.new.status, payload.new.result_path, payload.new.error_message);
-          },
-        )
-        .subscribe((subStatus) => {
-          // Catch-up read once the channel is live: the subscription delivers
-          // only future events, but the row may already have advanced before
-          // now. (Re)reading on every SUBSCRIBED also re-syncs after a reconnect.
-          if (subStatus !== REALTIME_SUBSCRIBE_STATES.SUBSCRIBED || cancelled) return;
-          void syncFromRead();
-        });
-    });
+    void client.realtime
+      .setAuth(accessToken)
+      .then(() => {
+        if (cancelled) return;
+        channel = client
+          .channel(`job-${jobId}`)
+          .on<JobUpdateRow>(
+            "postgres_changes",
+            { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${jobId}` },
+            (payload) => {
+              applyStatus(payload.new.status, payload.new.result_path, payload.new.error_message);
+            },
+          )
+          .subscribe((subStatus) => {
+            // Catch-up read once the channel is live: the subscription delivers
+            // only future events, but the row may already have advanced before
+            // now. (Re)reading on every SUBSCRIBED also re-syncs after a reconnect.
+            if (subStatus !== REALTIME_SUBSCRIBE_STATES.SUBSCRIBED || cancelled) return;
+            void syncFromRead();
+          });
+      })
+      .catch((err: unknown) => {
+        // A rejected setAuth (or a throw while wiring the channel) means the
+        // subscription never establishes; the watchdog still fails the job, but
+        // surface the real cause so it isn't misread as a generic timeout.
+        // eslint-disable-next-line no-console
+        console.warn("useCloudJob: realtime setAuth/subscribe failed:", err instanceof Error ? err.message : err);
+      });
 
     return () => {
       cancelled = true;
       clearTimers();
+      abort.abort(); // cancel any in-flight timeout POST
       // Reset live state so a stale status/result never bleeds into the next job.
       setStatus(null);
       setResultPath(null);
