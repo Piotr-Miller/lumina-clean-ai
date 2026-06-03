@@ -192,15 +192,15 @@ No data or schema changes. Pure code (middleware + layout) and file deletions. R
 
 #### Automated
 
-- [x] 2.1 Build passes (`npm run build`)
-- [x] 2.2 Lint passes on `src/layouts/Layout.astro` + `src/pages/dashboard.astro` (scoped)
-- [x] 2.3 No dangling `Welcome`/`Topbar` imports under `src/`
+- [x] 2.1 Build passes (`npm run build`) — 0e10b74
+- [x] 2.2 Lint passes on `src/layouts/Layout.astro` + `src/pages/dashboard.astro` (scoped) — 0e10b74
+- [x] 2.3 No dangling `Welcome`/`Topbar` imports under `src/` — 0e10b74
 
 #### Manual
 
-- [x] 2.4 Signed in: working Sign-out nav on `/`, `/dashboard`, `/auth/*`; Sign-out lands on `/`
-- [x] 2.5 Signed out: nav shows Sign in / Sign up
-- [x] 2.6 `/dashboard` shows exactly one Sign-out control
-- [x] 2.7 Nav looks intentional (own background) on cosmic + auth pages; no collision
-- [x] 2.8 Anon on `/`: header nav + CloudSignInPrompt coexist without redundancy/collision
-- [x] 2.9 Mobile-portrait: nav usable, no overflow/overlap
+- [x] 2.4 Signed in: working Sign-out nav on `/`, `/dashboard`, `/auth/*`; Sign-out lands on `/` — 0e10b74
+- [x] 2.5 Signed out: nav shows Sign in / Sign up — 0e10b74
+- [x] 2.6 `/dashboard` shows exactly one Sign-out control — 0e10b74
+- [x] 2.7 Nav looks intentional (own background) on cosmic + auth pages; no collision — 0e10b74
+- [x] 2.8 Anon on `/`: header nav + CloudSignInPrompt coexist without redundancy/collision — 0e10b74
+- [x] 2.9 Mobile-portrait: nav usable, no overflow/overlap — 0e10b74
