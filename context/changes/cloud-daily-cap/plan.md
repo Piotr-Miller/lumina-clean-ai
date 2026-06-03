@@ -208,25 +208,25 @@ No schema migration. The cap is enforced entirely in application code against th
 
 #### Automated
 
-- [x] 1.1 Type checking passes (`npx astro check` / `npm run build`)
-- [x] 1.2 Lint passes on touched files (prettier --write then eslint, this phase's files only)
-- [x] 1.3 `isOverDailyCap` unit test passes (pure, no DB): cap=0 kill-switch + `>=` boundary
-- [x] 1.4 Count-predicate test passes (live local Supabase, requires `npx supabase start`, not CI): date boundary + status × prediction_id matrix + zero rows
+- [x] 1.1 Type checking passes (`npx astro check` / `npm run build`) — 2688d2a
+- [x] 1.2 Lint passes on touched files (prettier --write then eslint, this phase's files only) — 2688d2a
+- [x] 1.3 `isOverDailyCap` unit test passes (pure, no DB): cap=0 kill-switch + `>=` boundary — 2688d2a
+- [x] 1.4 Count-predicate test passes (live local Supabase, requires `npx supabase start`, not CI): date boundary + status × prediction_id matrix + zero rows — 2688d2a
 
 #### Manual
 
-- [x] 1.5 Seeded-rows call to the helper returns the expected billable count against local Supabase (by-hand equivalent of 1.4)
+- [x] 1.5 Seeded-rows call to the helper returns the expected billable count against local Supabase (by-hand equivalent of 1.4) — 2688d2a
 
 ### Phase 2: Route enforcement + user-facing rejection (API/client layer)
 
 #### Automated
 
-- [ ] 2.1 Type checking passes (`npx astro check` / `npm run build`)
-- [ ] 2.2 Lint passes on touched files (prettier --write then eslint, this phase's files only)
-- [ ] 2.3 Client test passes (429 `daily_cap_reached` → mapped cap message via `submitCloudJob`)
+- [x] 2.1 Type checking passes (`npx astro check` / `npm run build`)
+- [x] 2.2 Lint passes on touched files (prettier --write then eslint, this phase's files only)
+- [x] 2.3 Client test passes (429 `daily_cap_reached` → mapped cap message via `submitCloudJob`)
 
 #### Manual
 
 - [ ] 2.4 Route wiring — cap=1: second submit rejected with message, no row/object created; below-cap submit still works end-to-end
-- [ ] 2.5 Cap=0 kill-switch rejects the first submission
-- [ ] 2.6 `failed`+NULL id does not consume quota; `failed`+non-NULL id does
+- [x] 2.5 Cap=0 kill-switch rejects the first submission
+- [x] 2.6 `failed`+NULL id does not consume quota; `failed`+non-NULL id does
