@@ -35,7 +35,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-03  | gated-cloud-upload                 | switch to Cloud AI (sign-in gated) and submit a photo for processing  | F-01, S-01    | US-01; FR-005, FR-006, FR-007             | done     |
 | S-04  | cloud-ai-realtime-result           | see the Cloud-AI result pushed in real time, before/after + download  | S-03          | US-01; FR-009, FR-010, FR-011, FR-012     | done     |
 | S-05  | cloud-daily-cap                    | get a clear message when the global daily cloud cap is reached        | S-04          | FR-014                                    | proposed |
-| S-06  | account-session-ux                 | sign out from anywhere; never land on the login form while already signed in | S-02          | FR-004; session-hygiene NFR               | proposed |
+| S-06  | account-session-ux                 | sign out from anywhere; never land on the login form while already signed in | S-02          | FR-004; session-hygiene NFR               | done     |
 | S-07  | production-deployment              | use the live app on Cloudflare (Local + auth public; cloud behind a flag) | S-04          | MVP success: deployed & accessible        | proposed |
 | S-08  | cloud-job-retention-cleanup        | trust uploaded sources are gone within 24h even on failed/abandoned jobs | F-01, S-04    | NFR: source not retained beyond 24h       | proposed |
 
@@ -161,7 +161,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Desired idle window, and whether to ship idle-timeout at all in v1 — Owner: product. Block: no. Supabase session timeboxing / `inactivity_timeout` is a hosted **Pro-plan** feature (works locally via `config.toml`); ship the global sign-out + auth-redirect fixes regardless and treat idle-timeout as a deferrable sub-item.
   - **Cross-device password reset (folded in 2026-06-03):** the S-02 reset link is PKCE same-browser-only — opening the email on another device/browser fails `verifyOtp` and bounces to forgot-password (documented in the archived S-02 phase-3 doc, untracked until now). Fix = move to a non-PKCE emailed token or an explicit code-exchange route. Owner: TBD. Block: no. Loosely tied to the parked prod-SMTP item but scoped here.
 - **Risk:** Low. Pure auth-UX / middleware / config — touches the Topbar/Layout (or a global nav), `src/middleware.ts`, and optionally `supabase/config.toml`. **Zero overlap with the Cloud path** (no `jobs`, no Edge Function, no cap logic), so it is explicitly independent of and non-colliding with S-05. Bundles the parked S-02 follow-ups (global Sign-out reachability + redirect-authenticated-off-`/auth/*`) surfaced 2026-06-02; closes the "I'm logged in but staring at a login form" confusion before the product is shown to users.
-- **Status:** proposed
+- **Status:** done
 
 ### S-07: Production deployment / go-live
 
@@ -200,7 +200,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-03       | gated-cloud-upload                 | Gated engine toggle + Cloud AI submission               | done                  | Archived 2026-05-31 → `context/archive/2026-05-31-gated-cloud-upload/`. Issue #4. |
 | S-04       | cloud-ai-realtime-result           | Async Cloud AI pipeline + Realtime result delivery      | done                  | Archived 2026-06-02 → `context/archive/2026-05-31-cloud-ai-realtime-result/`. Issue #5. |
 | S-05       | cloud-daily-cap                    | Global daily cap on Cloud AI requests                   | yes                   | S-04 done; land immediately after to bound cost. |
-| S-06       | account-session-ux                 | Account/session UX: global sign-out + redirect authed off /auth/* | yes                   | Independent of S-05 (auth UI/middleware/config; zero cloud-path overlap). Bundles parked S-02 follow-ups. |
+| S-06       | account-session-ux                 | Account/session UX: global sign-out + redirect authed off /auth/* | done                  | Archived 2026-06-03 → `context/archive/2026-06-03-account-session-ux/`. Issue #7. |
 | S-07       | production-deployment              | Production deployment / go-live (Cloudflare + prod Supabase) | yes                   | Prereq S-04 (done). Independent of S-05; cloud ships flag-OFF until S-05. Folds in source-URL-TTL fix + /callback hardening. |
 | S-08       | cloud-job-retention-cleanup        | 24h-retention cleanup for failed/abandoned cloud jobs | yes                   | Prereq F-01/S-04 (done). Closes privacy-NFR gap punted by F-01/S-03/S-04. Inline delete-on-failure, NOT pg_cron. Independent of S-05. |
 
@@ -237,3 +237,4 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 - **S-02: a visitor can create an account with email + password, sign in and out, and recover a forgotten password via an email-based reset flow.** — Archived 2026-05-30 → `context/archive/2026-05-29-account-access-and-password-reset/`. Lesson: —.
 - **S-03: a user can switch the engine toggle to Cloud AI (anonymous visitors are prompted to sign in, never silently denied), and a signed-in user can submit the loaded photo for cloud processing — the source is uploaded to the private bucket and a job record is created.** — Archived 2026-05-31 → `context/archive/2026-05-31-gated-cloud-upload/`. Lesson: —.
 - **S-04: once a photo is submitted, the async pipeline (Database webhook → Supabase Edge Function → Replicate prediction with webhook callback) runs, and the enhanced result is pushed to the page via Supabase Realtime — appearing in the before/after slider with download, no manual refresh — within ~30s p95.** — Archived 2026-06-02 → `context/archive/2026-05-31-cloud-ai-realtime-result/`. Lesson: two-phase Realtime watchdog (catch-up read on SUBSCRIBED + re-check before failing) and cold-boot TTL sizing (see lessons.md).
+- **S-06: a signed-in user can sign out from anywhere in the app (not only from `/` and `/dashboard`), is redirected to home instead of being shown the login form while already authenticated, is — optionally — signed out after a configured idle period, and can complete a password reset from a different device/browser than the one that requested it.** — Archived 2026-06-03 → `context/archive/2026-06-03-account-session-ux/`. Lesson: —.

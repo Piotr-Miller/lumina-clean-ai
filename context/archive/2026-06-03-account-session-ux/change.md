@@ -1,9 +1,10 @@
 ---
 change_id: account-session-ux
 title: "Account/session UX: global sign-out + redirect authed off /auth/*"
-status: implemented
+status: archived
 created: 2026-06-03
 updated: 2026-06-03
+archived_at: 2026-06-03T20:51:36Z
 ---
 
 ## Notes
