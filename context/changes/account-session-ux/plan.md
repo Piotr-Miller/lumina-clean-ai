@@ -177,30 +177,30 @@ No data or schema changes. Pure code (middleware + layout) and file deletions. R
 
 #### Automated
 
-- [x] 1.1 Build passes (`npm run build`)
-- [x] 1.2 Lint passes on `src/middleware.ts` (prettier + eslint, scoped)
+- [x] 1.1 Build passes (`npm run build`) — 877d6c7
+- [x] 1.2 Lint passes on `src/middleware.ts` (prettier + eslint, scoped) — 877d6c7
 
 #### Manual
 
-- [x] 1.3 Signed in, `/auth/signin|signup|forgot-password` each redirect to `/`
-- [x] 1.4 Signed out, those three pages render forms normally
-- [x] 1.5 Full password reset still works end-to-end (recovery pages not bounced)
-- [x] 1.6 `/auth/confirm-email` reachable after sign-up (not redirected)
-- [x] 1.7 `/dashboard` still redirects a signed-out user to `/auth/signin`
+- [x] 1.3 Signed in, `/auth/signin|signup|forgot-password` each redirect to `/` — 877d6c7
+- [x] 1.4 Signed out, those three pages render forms normally — 877d6c7
+- [x] 1.5 Full password reset still works end-to-end (recovery pages not bounced) — 877d6c7
+- [x] 1.6 `/auth/confirm-email` reachable after sign-up (not redirected) — 877d6c7
+- [x] 1.7 `/dashboard` still redirects a signed-out user to `/auth/signin` — 877d6c7
 
 ### Phase 2: Global nav in Layout + retire dead components
 
 #### Automated
 
-- [ ] 2.1 Build passes (`npm run build`)
-- [ ] 2.2 Lint passes on `src/layouts/Layout.astro` + `src/pages/dashboard.astro` (scoped)
-- [ ] 2.3 No dangling `Welcome`/`Topbar` imports under `src/`
+- [x] 2.1 Build passes (`npm run build`)
+- [x] 2.2 Lint passes on `src/layouts/Layout.astro` + `src/pages/dashboard.astro` (scoped)
+- [x] 2.3 No dangling `Welcome`/`Topbar` imports under `src/`
 
 #### Manual
 
-- [ ] 2.4 Signed in: working Sign-out nav on `/`, `/dashboard`, `/auth/*`; Sign-out lands on `/`
-- [ ] 2.5 Signed out: nav shows Sign in / Sign up
-- [ ] 2.6 `/dashboard` shows exactly one Sign-out control
-- [ ] 2.7 Nav looks intentional (own background) on cosmic + auth pages; no collision
-- [ ] 2.8 Anon on `/`: header nav + CloudSignInPrompt coexist without redundancy/collision
-- [ ] 2.9 Mobile-portrait: nav usable, no overflow/overlap
+- [x] 2.4 Signed in: working Sign-out nav on `/`, `/dashboard`, `/auth/*`; Sign-out lands on `/`
+- [x] 2.5 Signed out: nav shows Sign in / Sign up
+- [x] 2.6 `/dashboard` shows exactly one Sign-out control
+- [x] 2.7 Nav looks intentional (own background) on cosmic + auth pages; no collision
+- [x] 2.8 Anon on `/`: header nav + CloudSignInPrompt coexist without redundancy/collision
+- [x] 2.9 Mobile-portrait: nav usable, no overflow/overlap

@@ -114,7 +114,12 @@
       "Bash(head -c 160 /tmp/r2)",
       "Bash(echo \"-\")",
       "Bash(echo 'port __TRACKED_VAR__: __TRACKED_VAR__')",
-      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);console.log\\('total:',j.total,'returned:',\\(j.messages||[]\\).length\\);\\(j.messages||[]\\).slice\\(0,5\\).forEach\\(m=>console.log\\(' -',m.ID,'| to:',JSON.stringify\\(m.To\\),'| subj:',m.Subject\\)\\)}\\)\")"
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);console.log\\('total:',j.total,'returned:',\\(j.messages||[]\\).length\\);\\(j.messages||[]\\).slice\\(0,5\\).forEach\\(m=>console.log\\(' -',m.ID,'| to:',JSON.stringify\\(m.To\\),'| subj:',m.Subject\\)\\)}\\)\")",
+      "Bash(cd \"C:/Source/Trainings/AI/10xDevs/10xaccount-session-ux\")",
+      "Bash(echo \"=== Dev server \\(localhost:4321\\) ===\")",
+      "Bash(echo ' / -> HTTP __TRACKED_VAR__')",
+      "Bash(echo \" DOWN\")",
+      "Bash(echo \" nav live \\(brand present\\): $\\(curl -s --max-time 5 http://localhost:4321/)"
     ],
     "deny": [
       "Bash(rm -rf *)"

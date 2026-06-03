@@ -1,0 +1,38 @@
+---
+// Global header nav, rendered by Layout on every page. Reads the current user
+// from middleware-populated Astro.locals (no prop threading). Context-aware:
+// authed -> email + Dashboard + Sign out; anon -> Sign in + Sign up.
+const { user } = Astro.locals;
+---
+
+<header
+  class="flex items-center justify-between gap-3 border-b border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80 backdrop-blur-xl sm:px-8"
+>
+  <a href="/" class="font-semibold tracking-tight text-white transition-colors hover:text-purple-200">
+    LuminaClean AI
+  </a>
+  {
+    user ? (
+      <div class="flex items-center gap-3 sm:gap-4">
+        <span class="hidden max-w-[12rem] truncate text-blue-100/70 sm:inline">{user.email}</span>
+        <a href="/dashboard" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+          Dashboard
+        </a>
+        <form method="POST" action="/api/auth/signout">
+          <button type="submit" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+            Sign out
+          </button>
+        </form>
+      </div>
+    ) : (
+      <div class="flex items-center gap-3 sm:gap-4">
+        <a href="/auth/signin" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+          Sign in
+        </a>
+        <a href="/auth/signup" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+          Sign up
+        </a>
+      </div>
+    )
+  }
+</header>
