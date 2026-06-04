@@ -121,12 +121,15 @@ repo. They can be deleted manually at any time.
 | S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7) | `account-session-ux`                | done     | `roadmap` `slice` `status:ready` |
 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8) | `production-deployment`             | ready    | `roadmap` `slice` `status:ready` |
 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9) | `cloud-job-retention-cleanup`       | ready    | `roadmap` `slice` `status:ready` |
+| S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`         | ready    | `roadmap` `slice` `status:ready` |
 
 ⭐ = north star (validation milestone).
 
 > **S-06 (#7) + S-07 (#8) added 2026-06-03** (after S-04 archived) — two new MVP slices, both independent of and non-colliding with S-05. Created via `gh issue create --body-file` (labels `roadmap` `slice` `status:ready`, since prerequisites S-02/S-04 are done). Not part of the original 2026-05-26 batch documented above.
 >
 > **2026-06-03 (retrospective gaps from S-01→S-04):** added **S-08 (#9)** `cloud-job-retention-cleanup` — a privacy-NFR cleanup gap that F-01/S-03/S-04 each punted and none owned. Also **extended the bodies of #7** (folded in cross-device password reset, FR-015) and **#8** (folded in the S-04 `/callback` hardening cluster) via `gh issue edit --body-file`. All three remain independent of S-05.
+>
+> **2026-06-04 (promoted from Parked):** added **S-09 (#12)** `cloud-source-url-ttl-fix` — the cold-boot source signed-URL expiry (a Replicate cold boot >300s expires the source READ URL before the model fetches it → prediction fails at the source-fetch step). Previously a Parked bullet folded into S-07; promoted to its own v1 slice because it is a go-live prerequisite for the cloud path. Created via `gh issue create --body-file` (labels `roadmap` `slice` `status:ready`; prereq S-04 done). Issue number jumped to **#12** (#10/#11 were PRs — GitHub shares the issue/PR number space). Independent of S-07/S-08 (touches the source-signing path, not `/callback`); the `CLOUD_PIPELINE_ENABLED` flip-ON gate is now **S-05 + S-08 + S-09**. The S-07 body (#8) still references the TTL fix as a flip-ON prerequisite — now satisfied by #12 rather than folded into #8.
 
 ## Status updates (post-creation)
 
