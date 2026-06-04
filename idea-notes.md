@@ -12,7 +12,7 @@ Night and low-light photos taken on mobile devices suffer from heavy digital noi
 - Simple user account system for storing jobs and gating cloud usage (Supabase Auth + RLS)
 - Before / After comparison slider for the processed result
 - Async cloud pipeline: signed upload → Database Webhook → Edge Function → Replicate prediction with webhook callback → Supabase Realtime push to frontend
-- Basic cost protection: RLS-gated cloud access + SQL rate limiting (max 20 AI ops / user / 24h)
+- Basic cost protection: RLS-gated cloud access + SQL rate limiting (global cap of 50 cloud AI ops / day across all users, resetting at 00:00 UTC; configurable via `CLOUD_DAILY_CAP`)
 
 ### What is NOT in MVP Scope
 
@@ -33,5 +33,5 @@ Night and low-light photos taken on mobile devices suffer from heavy digital noi
 - Local engine produces a visible improvement (brighter, less noisy) on a sample night photo
 - Toggle switches between engines seamlessly — cloud result is noticeably better than local
 - Unauthenticated users can use the local engine; cloud requires login
-- Rate limit correctly blocks the 21st cloud request within 24h
+- Rate limit correctly blocks the 51st cloud request within a UTC day (global cap, all users combined)
 - Deployed and accessible on Cloudflare Pages
