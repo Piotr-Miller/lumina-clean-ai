@@ -56,6 +56,48 @@ export async function createPhotoJob(
 }
 
 /**
+ * Count today's *billable* cloud jobs across ALL users, for the S-05 global
+ * daily cap (PRD FR-014). "Today" is the current UTC calendar day. A job
+ * counts unless it is a pre-model failure — i.e. excluded only when
+ * `status = 'failed' AND replicate_prediction_id IS NULL` (a failure that
+ * never reached Replicate, so it cost nothing). Everything that did or will
+ * likely invoke the model — `queued`/`processing`/`succeeded`, plus `failed`
+ * rows that retain a `replicate_prediction_id` — is counted.
+ *
+ * The predicate is the De Morgan form of `NOT (failed AND id IS NULL)`:
+ * `status <> 'failed' OR replicate_prediction_id IS NOT NULL`.
+ *
+ * This is a global (cross-user) count, so it MUST run via the service-role
+ * `admin` client (RLS would otherwise scope it to one user). `admin` must be
+ * built via `createAdminClient` (server-only, bypasses RLS).
+ */
+export async function countCloudJobsToday(admin: SupabaseClient): Promise<number> {
+  const now = new Date();
+  const utcDayStartIso = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString();
+
+  // `head: true` returns only the count (data is null); read `count`, not data.
+  const { count, error } = await admin
+    .from(JOBS_TABLE)
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", utcDayStartIso)
+    .or("status.neq.failed,replicate_prediction_id.not.is.null");
+  if (error) {
+    throw new Error(`countCloudJobsToday: failed to count today's cloud jobs: ${error.message}`);
+  }
+  return count ?? 0;
+}
+
+/**
+ * Pure over-cap decision for the create-job guard. `count >= cap` so a cap of
+ * `0` rejects the first request (operator kill-switch) and `cap - 1` is the
+ * last allowed slot. Kept env-free and side-effect-free so it is unit-testable
+ * without loading the route (which imports `astro:env/server`).
+ */
+export function isOverDailyCap(count: number, cap: number): boolean {
+  return count >= cap;
+}
+
+/**
  * Mark a job as `succeeded` and delete its source object from Storage in
  * the same call. This is the foundation's enforcement point for the PRD
  * ≤24h source-retention NFR — every successful job triggers source cleanup

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { createPhotoJob, markJobSucceeded } from "@/lib/services/photo-job.service";
+import { countCloudJobsToday, createPhotoJob, markJobSucceeded } from "@/lib/services/photo-job.service";
 import { supabaseAdmin, supabaseAnonKey, supabaseUrl } from "./env";
 import { createTestUser, deleteTestUser, type TestUser } from "./helpers/test-users";
 
@@ -215,5 +215,72 @@ describe("public.jobs RLS + photo-job service", () => {
     // Source object is gone.
     const { data: after } = await supabaseAdmin.storage.from(PHOTOS_BUCKET).list(`${user.id}/${created.jobId}`);
     expect(after?.some((f) => f.name === "source.jpg")).toBe(false);
+  });
+});
+
+describe("countCloudJobsToday (S-05 global daily-cap count)", () => {
+  const created: TestUser[] = [];
+
+  afterEach(async () => {
+    for (const u of created) {
+      await deleteTestUser(u.id);
+    }
+    created.length = 0;
+  });
+
+  async function makeUser(prefix?: string): Promise<TestUser> {
+    const u = await createTestUser(prefix);
+    created.push(u);
+    return u;
+  }
+
+  // Direct admin insert of a job row with a controlled status / prediction-id /
+  // created_at — bypasses the storage path so we can assert the count predicate
+  // in isolation. source_path is NOT NULL, so a placeholder is supplied.
+  async function seedJob(
+    userId: string,
+    status: "queued" | "processing" | "succeeded" | "failed",
+    replicatePredictionId: string | null,
+    createdAtIso?: string,
+  ): Promise<void> {
+    const row: Record<string, unknown> = {
+      user_id: userId,
+      status,
+      source_path: `${userId}/seed/source.jpg`,
+      replicate_prediction_id: replicatePredictionId,
+    };
+    if (createdAtIso) row.created_at = createdAtIso;
+    const { error } = await supabaseAdmin.from("jobs").insert(row);
+    expect(error).toBeNull();
+  }
+
+  it("counts only billable jobs created today, excluding pre-model failures and earlier days", async () => {
+    const user = await makeUser("cap-count");
+
+    // The count is global; measure the delta so pre-existing rows don't break it.
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    await seedJob(user.id, "queued", null); // billable (in flight)
+    await seedJob(user.id, "processing", "pred-a"); // billable (model started)
+    await seedJob(user.id, "succeeded", "pred-b"); // billable (completed)
+    await seedJob(user.id, "failed", "pred-c"); // billable (reached model, then failed)
+    await seedJob(user.id, "failed", null); // EXCLUDED (pre-model failure)
+    await seedJob(user.id, "queued", null, yesterday); // EXCLUDED (earlier UTC day)
+
+    const after = await countCloudJobsToday(supabaseAdmin);
+    expect(after - before).toBe(4);
+  });
+
+  it("returns the baseline (delta 0) when a user has only pre-model failures today", async () => {
+    const user = await makeUser("cap-count-zero");
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    await seedJob(user.id, "failed", null);
+    await seedJob(user.id, "failed", null);
+
+    const after = await countCloudJobsToday(supabaseAdmin);
+    expect(after - before).toBe(0);
   });
 });

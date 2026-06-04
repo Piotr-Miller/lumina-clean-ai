@@ -20,6 +20,7 @@ const CREATE_JOB_ENDPOINT = "/api/enhance/cloud/create-job";
 const ROUTE_MESSAGES: Record<string, string> = {
   unauthorized: "Please sign in to use Cloud AI.",
   invalid_body: "This photo can't be sent to Cloud AI — please use a JPG or PNG.",
+  daily_cap_reached: "The daily Cloud AI limit has been reached. Try the Local engine, or come back tomorrow.",
   internal_error: "Cloud processing is temporarily unavailable. Please try again.",
 };
 

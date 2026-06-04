@@ -77,6 +77,16 @@ describe("submitCloudJob", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("maps a 429 daily_cap_reached from the route to the cap message and never PUTs", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ error: { code: "daily_cap_reached" } }, 429));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(submitCloudJob(jpeg())).rejects.toThrow(
+      "The daily Cloud AI limit has been reached. Try the Local engine, or come back tomorrow.",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("maps a 500 internal_error from the route to an unavailable message", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ error: { code: "internal_error" } }, 500));
     vi.stubGlobal("fetch", fetchMock);

@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
-import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "astro:env/server";
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CLOUD_DAILY_CAP } from "astro:env/server";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { createPhotoJob } from "@/lib/services/photo-job.service";
+import { countCloudJobsToday, createPhotoJob, isOverDailyCap } from "@/lib/services/photo-job.service";
 import { createPhotoJobRequestSchema } from "@/lib/services/photo-job.schema";
 
 export const prerender = false;
@@ -54,6 +54,24 @@ export const POST: APIRoute = async (context) => {
 
   try {
     const admin = createAdminClient({ url: SUPABASE_URL, serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY });
+
+    // Global daily cap (PRD FR-014): reject before any signed URL / storage /
+    // Replicate work. The cap value is the route's concern (env); the count +
+    // boundary decision live in the env-free service helpers. `cap = 0` rejects
+    // every submission (operator kill-switch). A count-query throw falls through
+    // to the outer catch → 500.
+    if (isOverDailyCap(await countCloudJobsToday(admin), CLOUD_DAILY_CAP)) {
+      return json(
+        {
+          error: {
+            code: "daily_cap_reached",
+            message: "The daily Cloud AI limit has been reached. Please try again tomorrow.",
+          },
+        },
+        429,
+      );
+    }
+
     const result = await createPhotoJob(admin, {
       userId: user.id,
       fileExtension: parsed.data.fileExtension,

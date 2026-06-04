@@ -22,6 +22,10 @@ export default defineConfig({
       // Cost guard for the S-04 cloud pipeline. OFF in prod until S-05's daily
       // cap lands; the Edge Function `/start` route no-ops when this is false.
       CLOUD_PIPELINE_ENABLED: envField.boolean({ context: "server", access: "secret", default: false }),
+      // S-05 global daily cap: max Cloud AI jobs (across all users) per UTC day.
+      // create-job rejects with 429 daily_cap_reached once reached. 0 disables
+      // cloud entirely (operator kill-switch).
+      CLOUD_DAILY_CAP: envField.number({ context: "server", access: "secret", default: 50 }),
     },
   },
 });
