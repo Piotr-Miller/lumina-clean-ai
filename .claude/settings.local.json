@@ -119,7 +119,8 @@
       "Bash(echo \"=== Dev server \\(localhost:4321\\) ===\")",
       "Bash(echo ' / -> HTTP __TRACKED_VAR__')",
       "Bash(echo \" DOWN\")",
-      "Bash(echo \" nav live \\(brand present\\): $\\(curl -s --max-time 5 http://localhost:4321/)"
+      "Bash(echo \" nav live \\(brand present\\): $\\(curl -s --max-time 5 http://localhost:4321/)",
+      "Bash(rm .git/COMMIT_EDITMSG_FIX.txt)"
     ],
     "deny": [
       "Bash(rm -rf *)"
