@@ -140,6 +140,7 @@ Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" n
 | 2026-05-31 | S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4) | closed on archive (commit 42d4141) |
 | 2026-06-02 | S-04       | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5) | closed on archive (commit bebad84) |
 | 2026-06-03 | S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7) | closed on archive |
+| 2026-06-04 | S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | closed on archive (commit 0130a79) |
 
 > The F-01/S-01/S-02 rows are recorded for completeness based on their archive dates; this log section was introduced with the S-03 archive (2026-05-31).
 
