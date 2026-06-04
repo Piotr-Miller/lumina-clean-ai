@@ -221,12 +221,12 @@ No schema migration. The cap is enforced entirely in application code against th
 
 #### Automated
 
-- [x] 2.1 Type checking passes (`npx astro check` / `npm run build`)
-- [x] 2.2 Lint passes on touched files (prettier --write then eslint, this phase's files only)
-- [x] 2.3 Client test passes (429 `daily_cap_reached` → mapped cap message via `submitCloudJob`)
+- [x] 2.1 Type checking passes (`npx astro check` / `npm run build`) — f4d2093
+- [x] 2.2 Lint passes on touched files (prettier --write then eslint, this phase's files only) — f4d2093
+- [x] 2.3 Client test passes (429 `daily_cap_reached` → mapped cap message via `submitCloudJob`) — f4d2093
 
 #### Manual
 
-- [ ] 2.4 Route wiring — cap=1: second submit rejected with message, no row/object created; below-cap submit still works end-to-end
-- [x] 2.5 Cap=0 kill-switch rejects the first submission
-- [x] 2.6 `failed`+NULL id does not consume quota; `failed`+non-NULL id does
+- [x] 2.4 Route wiring — cap=1: second submit rejected with message, no row/object created; below-cap submit still works end-to-end — f4d2093
+- [x] 2.5 Cap=0 kill-switch rejects the first submission — f4d2093
+- [x] 2.6 `failed`+NULL id does not consume quota; `failed`+non-NULL id does — f4d2093

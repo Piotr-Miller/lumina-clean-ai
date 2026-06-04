@@ -1,8 +1,8 @@
 change_id: cloud-daily-cap
 title: "Global daily cap on Cloud AI requests"
-status: implementing
+status: implemented
 created: 2026-06-03
-updated: 2026-06-03
+updated: 2026-06-04
 ---
 
 ## Notes
