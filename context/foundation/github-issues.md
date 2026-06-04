@@ -117,7 +117,7 @@ repo. They can be deleted manually at any time.
 | S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3) | `account-access-and-password-reset` | ready    | `roadmap` `slice` `status:ready` |
 | S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4) | `gated-cloud-upload`                | done     | `roadmap` `slice` `status:proposed` |
 | S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5) | `cloud-ai-realtime-result`          | done     | `roadmap` `slice` `status:proposed` `north-star` |
-| S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | `cloud-daily-cap`                   | proposed | `roadmap` `slice` `status:proposed` |
+| S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | `cloud-daily-cap`                   | done     | `roadmap` `slice` `status:proposed` |
 | S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7) | `account-session-ux`                | done     | `roadmap` `slice` `status:ready` |
 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8) | `production-deployment`             | ready    | `roadmap` `slice` `status:ready` |
 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9) | `cloud-job-retention-cleanup`       | ready    | `roadmap` `slice` `status:ready` |
