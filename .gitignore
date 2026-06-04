@@ -26,3 +26,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# claude code transient scheduled-task lock (harness artifact)
+.claude/scheduled_tasks.lock
