@@ -20,9 +20,16 @@ ships **OFF**; the local engine + auth are live. Flip-ON is a separate, gated ev
 - **Worker** secrets (set once via `wrangler secret put`, persist across deploys):
   `CLOUD_PIPELINE_ENABLED=false`, `CLOUD_DAILY_CAP=0` (operator kill-switch),
   plus `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
-- **Edge Function** secrets: `CLOUD_PIPELINE_ENABLED=false` (+ `SUPABASE_URL`,
-  `SUPABASE_SERVICE_ROLE_KEY`, `DB_WEBHOOK_SECRET`, `REPLICATE_API_TOKEN`,
-  `REPLICATE_WEBHOOK_SIGNING_SECRET`).
+- **Edge Function** secrets (verified `supabase secrets list` 2026-06-05): only the
+  **auto-injected** Supabase defaults are present (`SUPABASE_URL`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL`,
+  `SUPABASE_JWKS`, `SUPABASE_PUBLISHABLE_KEYS`, `SUPABASE_SECRET_KEYS`). The custom
+  cloud-pipeline secrets (`CLOUD_PIPELINE_ENABLED`, `DB_WEBHOOK_SECRET`,
+  `REPLICATE_API_TOKEN`, `REPLICATE_WEBHOOK_SIGNING_SECRET`) are **NOT set** —
+  intentionally deferred to the flip-ON runbook (deferred-ledger 2.6c). Safe because
+  `/start` checks `Deno.env.get("CLOUD_PIPELINE_ENABLED") !== "true"`, so an **unset**
+  flag → `{skipped: "cloud_pipeline_disabled"}` no-op (`index.ts:183`). **Flip-ON must
+  set all four.**
 - **Behavior with cloud OFF:** a cloud submission inserts a `queued` job; the Edge
   Function `/start` reads `CLOUD_PIPELINE_ENABLED`, returns
   `200 {skipped: "cloud_pipeline_disabled"}`, and leaves the job `queued`. No

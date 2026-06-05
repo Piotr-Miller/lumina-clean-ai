@@ -364,9 +364,9 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 #### Manual
 
 - [x] 2.3 Dashboard: `jobs`, `photos` bucket, Realtime publication on `public.jobs` — 95a1084
-- [ ] 2.4 `current_setting('app.settings.edge_function_url')` returns prod `/enhance` URL
+- [~] 2.4 `current_setting('app.settings.edge_function_url')` returns prod `/enhance` URL — **DEFERRED** to flip-ON (hosted-Supabase blocks custom-GUC `ALTER DATABASE`; not a go-live blocker, cloud OFF). See `deferred-2.4-db-webhook-settings.md`.
 - [ ] 2.5 Prod `site_url` + redirect URLs set; recovery template saved
-- [ ] 2.6 All Edge Function + Worker secrets present (cloud `false` / `0`); GitHub repo secrets present
+- [x] 2.6 All Edge Function + Worker secrets present (cloud `false` / `0`); GitHub repo secrets present — Worker: all 5 set (`wrangler secret list`, incl. `CLOUD_PIPELINE_ENABLED=false`/`CLOUD_DAILY_CAP=0`). Edge Function: auto-injected `SUPABASE_URL`/`SERVICE_ROLE_KEY` present; custom cloud secrets deferred to flip-ON (ledger 2.6c; unset flag = OFF, verified `index.ts:183`). GitHub: 6 repo secrets set.
 
 ### Phase 3: CI Deploy Pipeline
 
