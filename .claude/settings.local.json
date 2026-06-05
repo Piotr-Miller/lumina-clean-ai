@@ -124,7 +124,9 @@
       "Bash(echo \"=== jobs table check ===\")",
       "Bash(echo \"\")",
       "Bash(tail -25)",
-      "Bash(echo \"=== REST retry ===\")"
+      "Bash(echo \"=== REST retry ===\")",
+      "Bash(echo 'homepage: __CMDSUB_OUTPUT__')",
+      "Bash(echo 'title: __CMDSUB_OUTPUT__')"
     ],
     "deny": [
       "Bash(rm -rf *)"
