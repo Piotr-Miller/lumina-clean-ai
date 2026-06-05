@@ -120,7 +120,11 @@
       "Bash(echo ' / -> HTTP __TRACKED_VAR__')",
       "Bash(echo \" DOWN\")",
       "Bash(echo \" nav live \\(brand present\\): $\\(curl -s --max-time 5 http://localhost:4321/)",
-      "Bash(rm .git/COMMIT_EDITMSG_FIX.txt)"
+      "Bash(rm .git/COMMIT_EDITMSG_FIX.txt)",
+      "Bash(echo \"=== jobs table check ===\")",
+      "Bash(echo \"\")",
+      "Bash(tail -25)",
+      "Bash(echo \"=== REST retry ===\")"
     ],
     "deny": [
       "Bash(rm -rf *)"
