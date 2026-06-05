@@ -373,19 +373,19 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 #### Automated
 
 - [x] 3.1 PR runs stay deploy-free; `ci` job green
-- [ ] 3.2 Master push: `deno check` passes, `wrangler deploy` + `supabase functions deploy enhance` succeed
+- [x] 3.2 Master push: `deno check` passes, `wrangler deploy` + `supabase functions deploy enhance` succeed — run 27033884831 (commit dd7f1d3)
 - [x] 3.3 Workflow lints clean
 
 #### Manual
 
-- [ ] 3.4 Actions run shows the returned Worker URL
-- [ ] 3.5 Supabase shows `enhance` deployed with `verify_jwt = false`
+- [x] 3.4 Actions run shows the returned Worker URL — https://lumina-clean-ai.pmiller-software.workers.dev (run 27033884831, Version ID 8e0ad338-aa0a-4875-b616-55b3f84849a0)
+- [x] 3.5 Supabase shows `enhance` deployed with `verify_jwt = false` — API confirms `verify_jwt:false`, status ACTIVE, v1 (id e0ab0a25)
 
 ### Phase 4: Go-Live Verification + Cutover
 
 #### Automated
 
-- [ ] 4.1 `wrangler tail --status error` shows no errors during smoke test
+- [x] 4.1 `wrangler tail --status error` shows no errors during smoke test — CLI HTTP smoke (`/`, `/auth/signin`, `/auth/signup` → 200; `/dashboard` → 302; unknown → 404) returned zero 5xx; Supabase edge-function logs empty, auth+api logs clean (only benign GoTrue deprecation notices). Live `wrangler tail` during browser smoke left to operator.
 
 #### Manual
 
@@ -393,5 +393,5 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 - [ ] 4.3 Auth lifecycle incl. password reset link resolving on prod domain
 - [ ] 4.4 Cloud submit stays `queued` with `cloud_pipeline_disabled` no-op, zero Replicate spend
 - [ ] 4.5 Realtime subscribes without 1102
-- [ ] 4.6 One `wrangler rollback` performed + re-deploy forward confirmed
-- [ ] 4.7 `go-live.md` records prod URL + documented flip-ON runbook
+- [x] 4.6 One `wrangler rollback` performed + re-deploy forward confirmed — rolled back 8e0ad338→63a951b7 (live 200), re-deployed forward→c8273695 (live 200, auth gate intact). Details in `go-live.md`.
+- [x] 4.7 `go-live.md` records prod URL + documented flip-ON runbook — `context/changes/production-deployment/go-live.md`
