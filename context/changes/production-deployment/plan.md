@@ -358,12 +358,12 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 
 #### Automated
 
-- [ ] 2.1 `supabase db push` reports all migrations applied
-- [ ] 2.2 `wrangler whoami` + `supabase projects list` resolve
+- [x] 2.1 `supabase db push` reports all migrations applied
+- [x] 2.2 `wrangler whoami` + `supabase projects list` resolve
 
 #### Manual
 
-- [ ] 2.3 Dashboard: `jobs`, `photos` bucket, Realtime publication on `public.jobs`
+- [x] 2.3 Dashboard: `jobs`, `photos` bucket, Realtime publication on `public.jobs`
 - [ ] 2.4 `current_setting('app.settings.edge_function_url')` returns prod `/enhance` URL
 - [ ] 2.5 Prod `site_url` + redirect URLs set; recovery template saved
 - [ ] 2.6 All Edge Function + Worker secrets present (cloud `false` / `0`); GitHub repo secrets present
