@@ -285,11 +285,13 @@ async function readBodyCapped(res: Response, maxBytes: number): Promise<Uint8Arr
     const { done, value } = await reader.read();
     if (done) break;
     if (!value) continue;
-    total += value.byteLength;
-    if (total > maxBytes) {
+    // Check BEFORE accumulating so the bound is strict — never hold more than
+    // maxBytes resident (the over-cap chunk is neither counted nor retained).
+    if (total + value.byteLength > maxBytes) {
       await reader.cancel();
       throw new Error(`Replicate output exceeds ${maxBytes}-byte cap`);
     }
+    total += value.byteLength;
     chunks.push(value);
   }
   const out = new Uint8Array(total);
@@ -303,8 +305,15 @@ async function readBodyCapped(res: Response, maxBytes: number): Promise<Uint8Arr
 
 async function handleCallback(req: Request): Promise<Response> {
   // 1. Read the RAW body before parsing — the signature is over the exact bytes
-  //    Replicate sent; re-serializing parsed JSON would break verification.
-  const rawBody = await req.text();
+  //    Replicate sent; re-serializing parsed JSON would break verification. Wrap
+  //    the read so a mid-body client abort returns a controlled 400 instead of
+  //    throwing out of the handler unhandled (no JSON envelope, no row update).
+  let rawBody: string;
+  try {
+    rawBody = await req.text();
+  } catch {
+    return jsonResponse(400, { error: { code: "invalid_body", message: "failed to read request body" } });
+  }
 
   // 2. Verify the Replicate (svix) webhook signature. Invalid → 401, no mutation.
   const signingSecret = Deno.env.get("REPLICATE_WEBHOOK_SIGNING_SECRET");

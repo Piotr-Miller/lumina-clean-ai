@@ -149,6 +149,11 @@ describe("isAllowedOutputUrl", () => {
     expect(isAllowedOutputUrl("https://notreplicate.delivery/out.png")).toBe(false);
   });
 
+  it("rejects a userinfo-spoofed URL (the real host is the part after @)", () => {
+    expect(isAllowedOutputUrl("https://replicate.delivery@evil.com/out.png")).toBe(false);
+    expect(isAllowedOutputUrl("https://user:pass@evil.com/replicate.delivery")).toBe(false);
+  });
+
   it("rejects an unparseable URL (never throws)", () => {
     expect(isAllowedOutputUrl("not a url")).toBe(false);
     expect(isAllowedOutputUrl("")).toBe(false);

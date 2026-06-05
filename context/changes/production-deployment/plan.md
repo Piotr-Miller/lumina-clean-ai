@@ -343,15 +343,15 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `npm run test`
-- [x] 1.2 Replay-window + allowlist cases covered and green
+- [x] 1.1 Unit tests pass: `npm run test` — efd831f
+- [x] 1.2 Replay-window + allowlist cases covered and green — efd831f
 - [ ] 1.3 Edge Function type-checks: `deno check supabase/functions/enhance/index.ts`
-- [x] 1.4 Lint passes on touched files (prettier + eslint)
+- [x] 1.4 Lint passes on touched files (prettier + eslint) — efd831f
 
 #### Manual
 
-- [x] 1.5 `supabase functions serve`: stale-timestamp callback rejected, fresh processed
-- [x] 1.6 Disallowed-host `outputUrl` fails the job with no outbound fetch
+- [x] 1.5 `supabase functions serve`: stale-timestamp callback rejected, fresh processed — efd831f
+- [x] 1.6 Disallowed-host `outputUrl` fails the job with no outbound fetch — efd831f
 - [ ] 1.7 Normal success path still stores the result object
 
 ### Phase 2: Provision Production Infrastructure (Runbook)
