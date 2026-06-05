@@ -30,6 +30,8 @@ import {
 } from "../../../src/lib/services/photo-job.service.ts";
 import type { ReplicatePredictionPayload } from "../../../src/lib/services/replicate-webhook.ts";
 import {
+  isAllowedOutputUrl,
+  isWebhookTimestampFresh,
   mapPredictionToOutcome,
   resultExtensionFromContentType,
   verifyReplicateSignature,
@@ -49,6 +51,11 @@ const SOURCE_SIGN_RETRY_DELAY_MS = 750;
 // Cap how much Replicate error text we persist/return: the body can echo the
 // signed source URL, and error_message is read by the owner. Bound it.
 const MAX_ERROR_DETAIL_CHARS = 300;
+// /callback output-download bounds: a slow or oversized response must not hang or
+// OOM the function. 30s is generous for a CDN image fetch; 25 MB mirrors the
+// photos bucket limit, so a legitimate Bread output always fits.
+const OUTPUT_FETCH_TIMEOUT_MS = 30_000;
+const MAX_OUTPUT_BYTES = 25 * 1024 * 1024;
 
 function jsonResponse(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
@@ -254,6 +261,46 @@ async function handleStart(req: Request): Promise<Response> {
   }
 }
 
+// Download a response body into memory bounded by `maxBytes`, to bound PEAK
+// memory (not just the stored object). A present Content-Length is pre-checked so
+// an oversized response is rejected before reading; then the body stream is read
+// chunk-by-chunk and aborted the moment the running total exceeds the cap, so a
+// missing or lying header is still bounded. (A plain `arrayBuffer()` would buffer
+// the whole body first, defeating the cap.)
+async function readBodyCapped(res: Response, maxBytes: number): Promise<Uint8Array> {
+  const declared = res.headers.get("content-length");
+  if (declared) {
+    const len = Number(declared);
+    if (Number.isFinite(len) && len > maxBytes) {
+      throw new Error(`Replicate output exceeds ${maxBytes}-byte cap (Content-Length ${len})`);
+    }
+  }
+  const reader = res.body?.getReader();
+  if (!reader) {
+    throw new Error("Replicate output response had no readable body");
+  }
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new Error(`Replicate output exceeds ${maxBytes}-byte cap`);
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out;
+}
+
 async function handleCallback(req: Request): Promise<Response> {
   // 1. Read the RAW body before parsing — the signature is over the exact bytes
   //    Replicate sent; re-serializing parsed JSON would break verification.
@@ -275,6 +322,13 @@ async function handleCallback(req: Request): Promise<Response> {
   });
   if (!signatureValid) {
     return jsonResponse(401, { error: { code: "unauthorized", message: "invalid webhook signature" } });
+  }
+  // Replay guard: a valid signature over a stale timestamp is a replay (the
+  // timestamp is part of the signed content). Reject with the same uniform 401;
+  // log the distinct reason so the gate that failed is visible.
+  if (!isWebhookTimestampFresh(req.headers.get("webhook-timestamp") ?? "")) {
+    console.warn("enhance/callback: rejecting webhook outside the freshness window (replay guard)");
+    return jsonResponse(401, { error: { code: "unauthorized", message: "stale webhook timestamp" } });
   }
 
   // 3. Resolve the job: `jobId` comes from the callback query string (set by
@@ -321,13 +375,22 @@ async function handleCallback(req: Request): Promise<Response> {
       return jsonResponse(200, { jobId, status: "failed" });
     }
 
-    // Success: download Bread's output and store it as the result object.
-    const outputRes = await fetch(outcome.outputUrl);
+    // SSRF guard: only fetch Replicate's real output CDN. A payload that passed
+    // signature verification could still carry an attacker-influenced output URL;
+    // reject anything that isn't https `*.replicate.delivery` BEFORE the fetch.
+    if (!isAllowedOutputUrl(outcome.outputUrl)) {
+      throw new Error(`refusing to fetch output from a disallowed host: ${outcome.outputUrl}`);
+    }
+
+    // Success: download Bread's output and store it as the result object. Bound
+    // the download (30s timeout + 25 MB cap) so a slow or oversized response
+    // can't hang or OOM the function.
+    const outputRes = await fetch(outcome.outputUrl, { signal: AbortSignal.timeout(OUTPUT_FETCH_TIMEOUT_MS) });
     if (!outputRes.ok) {
       throw new Error(`failed to fetch Replicate output (${outputRes.status})`);
     }
     const contentType = outputRes.headers.get("content-type");
-    const bytes = new Uint8Array(await outputRes.arrayBuffer());
+    const bytes = await readBodyCapped(outputRes, MAX_OUTPUT_BYTES);
     const ext = resultExtensionFromContentType(contentType, outcome.outputUrl);
     const resultPath = `${job.user_id}/${job.id}/result.${ext}`;
     const { error: uploadError } = await admin.storage.from(PHOTOS_BUCKET).upload(resultPath, bytes, {

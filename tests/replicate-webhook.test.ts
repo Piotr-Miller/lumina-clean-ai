@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  isAllowedOutputUrl,
+  isWebhookTimestampFresh,
   mapPredictionToOutcome,
   resultExtensionFromContentType,
   verifyReplicateSignature,
+  WEBHOOK_TOLERANCE_SECONDS,
 } from "@/lib/services/replicate-webhook";
 
 /**
@@ -96,6 +99,59 @@ describe("verifyReplicateSignature", () => {
       signingSecret: VECTOR.signingSecret,
     });
     expect(ok).toBe(false);
+  });
+});
+
+describe("isWebhookTimestampFresh", () => {
+  // Inject a fixed clock so the assertions don't depend on wall time.
+  const now = 1_700_000_000;
+
+  it("accepts a timestamp at the current second", () => {
+    expect(isWebhookTimestampFresh(String(now), now)).toBe(true);
+  });
+
+  it("accepts skew within ±tolerance in both directions", () => {
+    expect(isWebhookTimestampFresh(String(now - WEBHOOK_TOLERANCE_SECONDS), now)).toBe(true);
+    expect(isWebhookTimestampFresh(String(now + WEBHOOK_TOLERANCE_SECONDS), now)).toBe(true);
+    expect(isWebhookTimestampFresh(String(now - 60), now)).toBe(true);
+  });
+
+  it("rejects a stale (replayed) past timestamp beyond tolerance", () => {
+    expect(isWebhookTimestampFresh(String(now - WEBHOOK_TOLERANCE_SECONDS - 1), now)).toBe(false);
+  });
+
+  it("rejects a future timestamp beyond tolerance", () => {
+    expect(isWebhookTimestampFresh(String(now + WEBHOOK_TOLERANCE_SECONDS + 1), now)).toBe(false);
+  });
+
+  it("rejects a missing or unparseable timestamp (never throws)", () => {
+    expect(isWebhookTimestampFresh("", now)).toBe(false);
+    expect(isWebhookTimestampFresh("not-a-number", now)).toBe(false);
+  });
+});
+
+describe("isAllowedOutputUrl", () => {
+  it("accepts https *.replicate.delivery and the apex host", () => {
+    expect(isAllowedOutputUrl("https://pbxt.replicate.delivery/abc/out.png")).toBe(true);
+    expect(isAllowedOutputUrl("https://replicate.delivery/out.jpg")).toBe(true);
+  });
+
+  it("rejects a non-https scheme", () => {
+    expect(isAllowedOutputUrl("http://pbxt.replicate.delivery/out.png")).toBe(false);
+  });
+
+  it("rejects a disallowed host", () => {
+    expect(isAllowedOutputUrl("https://evil.example.com/out.png")).toBe(false);
+  });
+
+  it("rejects a look-alike host that only contains the allowed domain", () => {
+    expect(isAllowedOutputUrl("https://replicate.delivery.evil.com/out.png")).toBe(false);
+    expect(isAllowedOutputUrl("https://notreplicate.delivery/out.png")).toBe(false);
+  });
+
+  it("rejects an unparseable URL (never throws)", () => {
+    expect(isAllowedOutputUrl("not a url")).toBe(false);
+    expect(isAllowedOutputUrl("")).toBe(false);
   });
 });
 

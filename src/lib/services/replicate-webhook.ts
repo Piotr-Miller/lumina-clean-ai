@@ -103,6 +103,32 @@ export async function verifyReplicateSignature(params: VerifyReplicateSignatureP
   return false;
 }
 
+/**
+ * Replay tolerance: reject a callback whose `webhook-timestamp` is more than this
+ * many seconds from server time, in EITHER direction (clock skew, not just
+ * past-dated). The timestamp is part of the signed content, so a valid signature
+ * over a stale timestamp is exactly a replay — this is the gate that closes it.
+ */
+export const WEBHOOK_TOLERANCE_SECONDS = 300;
+
+/**
+ * Freshness check for the svix `webhook-timestamp` (Unix seconds, as a string).
+ * Returns `false` (never throws) for a missing/unparseable timestamp or one
+ * outside ±`WEBHOOK_TOLERANCE_SECONDS` of `nowSeconds`. Kept as a sibling guard
+ * (not folded into `verifyReplicateSignature`) so signature verification stays a
+ * pure byte-level check, and so this gate is independently unit-testable with an
+ * injected clock. `nowSeconds` defaults to the wall clock (global in Deno + Node).
+ */
+export function isWebhookTimestampFresh(
+  webhookTimestamp: string,
+  nowSeconds: number = Math.floor(Date.now() / 1000),
+): boolean {
+  if (!webhookTimestamp) return false;
+  const ts = Number(webhookTimestamp);
+  if (!Number.isFinite(ts)) return false;
+  return Math.abs(nowSeconds - ts) <= WEBHOOK_TOLERANCE_SECONDS;
+}
+
 /** Subset of Replicate's prediction webhook payload the `/callback` route acts on. */
 export interface ReplicatePredictionPayload {
   id?: string;
@@ -188,4 +214,22 @@ export function resultExtensionFromContentType(contentType: string | null, outpu
     }
   }
   return "jpg";
+}
+
+/**
+ * SSRF guard for the `/callback` output download: only fetch Replicate's real
+ * output CDN. Accepts an `https:` URL whose host is `replicate.delivery` or any
+ * `*.replicate.delivery` subdomain; rejects any other host, non-https scheme, or
+ * unparseable URL. Pure (no I/O), so it is unit-testable from Vitest without the
+ * Deno runtime; the Edge Function imports it by relative path and calls it before
+ * the fetch.
+ */
+export function isAllowedOutputUrl(raw: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return false;
+  }
+  return u.protocol === "https:" && (u.hostname === "replicate.delivery" || u.hostname.endsWith(".replicate.delivery"));
 }
