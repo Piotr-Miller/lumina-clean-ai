@@ -131,6 +131,8 @@ repo. They can be deleted manually at any time.
 >
 > **2026-06-04 (promoted from Parked):** added **S-09 (#12)** `cloud-source-url-ttl-fix` — the cold-boot source signed-URL expiry (a Replicate cold boot >300s expires the source READ URL before the model fetches it → prediction fails at the source-fetch step). Previously a Parked bullet folded into S-07; promoted to its own v1 slice because it is a go-live prerequisite for the cloud path. Created via `gh issue create --body-file` (labels `roadmap` `slice` `status:ready`; prereq S-04 done). Issue number jumped to **#12** (#10/#11 were PRs — GitHub shares the issue/PR number space). Independent of S-07/S-08 (touches the source-signing path, not `/callback`); the `CLOUD_PIPELINE_ENABLED` flip-ON gate is now **S-05 + S-08 + S-09**. The S-07 body (#8) was synced the same day via `gh issue edit --body-file`: the TTL fix is now described as owned by S-09/#12 (a flip-ON prerequisite) rather than folded into #8, and the flip-ON gate in #8 was widened to **S-05 + S-08 + S-09**.
 
+> **2026-06-05 (non-roadmap chore):** added **#13** `ci-wrangler-action-node24` — a CI maintenance follow-up to bump `cloudflare/wrangler-action@v3` to a Node.js 24-compatible version before GitHub's Node 20 deadline (forced 2026-06-16, removed 2026-09-16). Surfaced as a `deploy`-job deprecation annotation during the S-07 production-deployment go-live (run 27033884831). Not a roadmap slice, so it carries the new `chore` label (not `roadmap`/`slice`) and is intentionally absent from the roadmap→issue mapping table above. Change folder: `context/changes/ci-wrangler-action-node24/`.
+
 ## Status updates (post-creation)
 
 Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" note below).
