@@ -11,6 +11,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "test": "vitest run",
+    "test:unit": "vitest run --exclude '**/jobs.rls.test.ts'",
     "test:watch": "vitest"
   },
   "dependencies": {

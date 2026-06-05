@@ -372,9 +372,9 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 
 #### Automated
 
-- [ ] 3.1 PR runs stay deploy-free; `ci` job green
+- [x] 3.1 PR runs stay deploy-free; `ci` job green
 - [ ] 3.2 Master push: `deno check` passes, `wrangler deploy` + `supabase functions deploy enhance` succeed
-- [ ] 3.3 Workflow lints clean
+- [x] 3.3 Workflow lints clean
 
 #### Manual
 
