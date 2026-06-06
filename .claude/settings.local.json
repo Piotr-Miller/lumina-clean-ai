@@ -126,7 +126,8 @@
       "Bash(tail -25)",
       "Bash(echo \"=== REST retry ===\")",
       "Bash(echo 'homepage: __CMDSUB_OUTPUT__')",
-      "Bash(echo 'title: __CMDSUB_OUTPUT__')"
+      "Bash(echo 'title: __CMDSUB_OUTPUT__')",
+      "Bash(echo '=== __TRACKED_VAR__ luminacleanai.com ===')"
     ],
     "deny": [
       "Bash(rm -rf *)"
