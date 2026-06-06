@@ -4,6 +4,12 @@ Production cutover record for the `production-deployment` change. Cloud AI pipel
 ships **OFF**; the local engine + auth are live. Flip-ON is a separate, gated event
 (see below).
 
+> 📋 **Manual / external configuration** (Cloudflare, Supabase, Resend, GitHub, Google) —
+> the dashboard setup the app **requires to run** — is recorded in
+> [`context/foundation/production-config.md`](../../foundation/production-config.md).
+> That file is the durable home for it (survives this change's archival); this go-live
+> record is the point-in-time cutover log.
+
 ## Production endpoints
 
 | Surface | Value |

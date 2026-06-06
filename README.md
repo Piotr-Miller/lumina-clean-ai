@@ -166,6 +166,8 @@ npx wrangler deploy
 
 Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`.
 
+> **Production requires manual configuration that is not in this repo** — custom domain + DNS (Cloudflare), Supabase auth URLs + custom SMTP, Resend, and GitHub Actions secrets. The deployed Worker serves, but the **MVP** (accounts, auth email, branded domain) does not function from a clone alone. The full required setup is recorded in [`context/foundation/production-config.md`](context/foundation/production-config.md).
+
 ## CI
 
 GitHub Actions runs lint + build on every push and PR to `master`. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets in GitHub for the build step.

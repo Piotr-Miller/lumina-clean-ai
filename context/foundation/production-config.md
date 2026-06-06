@@ -1,0 +1,105 @@
+# Production Configuration & Manual Setup Record
+
+Durable inventory of all **external / dashboard configuration** for LuminaClean
+production — the things that live in Cloudflare, Supabase, Resend, GitHub, and Google,
+**not** in the codebase. Keep this updated when prod config changes.
+
+> ⚠️ **These are runtime prerequisites for the MVP, not after-the-fact notes.** The
+> deployed Worker serves, but without this external configuration the production **MVP**
+> does **not** function — auth redirects, email (sign-up confirmation + password reset),
+> the branded domain/TLS, and CI deploy all depend on it. A fresh clone of the repo is
+> **not** enough to run the prod MVP; this file is the missing half. Treat it as required
+> reading before touching or re-provisioning production.
+
+> **No secret values here.** Only names, locations, and non-sensitive identifiers
+> (refs, account IDs, hostnames, URLs). Actual keys/tokens/passwords live in their
+> respective vaults (Worker secrets, Supabase secrets, GitHub secrets, Resend, a
+> password manager) — never in the repo.
+
+Last updated: **2026-06-06**.
+
+---
+
+## 1. Domain & Cloudflare
+
+- **Domain:** `luminacleanai.com` — registered at **Cloudflare Registrar** 2026-06-06; DNS managed in Cloudflare. Exact brand match for "LuminaClean AI".
+- **Cloudflare account ID:** `9b645f82fe0122394111985d936e5844`
+- **Worker:** `lumina-clean-ai`
+  - **Custom domain:** `luminacleanai.com` (root) — attached 2026-06-06, Cloudflare auto-created proxied DNS + TLS. `www` **not yet** attached (optional).
+  - **workers.dev alias:** `lumina-clean-ai.pmiller-software.workers.dev` — same Worker, still active. **Teardown = issue #14** (`disable-workers-dev-subdomain`), after go-live testing.
+  - **Bindings:** `SESSION` (KV namespace), `IMAGES` (Images), `ASSETS` (static `./dist`). `observability.enabled = true`. Config in `wrangler.jsonc`.
+- **DNS records** (added by Resend "Auto configure", DNS-only):
+  | Host | Type | Purpose | Value (summary) |
+  | --- | --- | --- | --- |
+  | `send` | TXT | SPF | `v=spf1 include:amazonses.com ~all` |
+  | `resend._domainkey` | TXT | DKIM | `p=MIGf…` (Resend/SES key) |
+  | `send` | MX | bounce/return-path | `10 feedback-smtp.eu-west-1.amazonses.com` |
+  | `_dmarc` | TXT | DMARC | **not set** — optional, add `v=DMARC1; p=none;` later for deliverability |
+  | `luminacleanai.com` / `www` | (managed) | Worker custom domain | proxied → Worker `lumina-clean-ai` |
+
+## 2. Supabase — environments
+
+Two separate projects (same org `cqbfrshdnawpivbapygc`). The deployed app uses **prod only**.
+
+### Prod — `luminaclean-prod`
+- **Ref:** `tebdkqpgjjypdethpezo` · **Region:** eu-west-3 · URL `https://tebdkqpgjjypdethpezo.supabase.co`
+- **Auth → URL config:** Site URL `https://luminacleanai.com`; Redirect URLs `https://luminacleanai.com/**`
+- **Auth email:** **custom SMTP via Resend** (see §3). Recovery template = contents of `supabase/templates/recovery.html` pasted into the **Reset Password** template (editing unlocked once custom SMTP was set).
+- **Edge Function `enhance`:** ACTIVE, v1, `verify_jwt = false` (id `e0ab0a25`).
+- **Worker runtime secrets** (set via `wrangler secret put`, names only):
+  `CLOUD_PIPELINE_ENABLED=false`, `CLOUD_DAILY_CAP=0`, `SUPABASE_URL`, `SUPABASE_KEY` (publishable `sb_publishable_…`), `SUPABASE_SERVICE_ROLE_KEY`.
+- **Edge Function secrets:** only auto-injected Supabase defaults present. Custom cloud secrets (`CLOUD_PIPELINE_ENABLED`, `DB_WEBHOOK_SECRET`, `REPLICATE_API_TOKEN`, `REPLICATE_WEBHOOK_SIGNING_SECRET`) **deferred to flip-ON** (ledger 2.6c). Cloud ships OFF.
+- **DB-webhook GUCs** (`app.settings.edge_function_url` / `db_webhook_secret`): **not set** — deferred to flip-ON (hosted-Supabase custom-GUC limit; see `deferred-2.4-db-webhook-settings.md`).
+
+### Dev — `luminaclean-dev` (renamed from `lumina-clean-ai` on 2026-06-06)
+- **Ref:** `gwaviaozehxmyjjcioxy` · **Region:** eu-central-2
+- **Auth → URL config:** Site URL `http://localhost:4321`; Redirect URLs `http://localhost:4321/**`, `http://127.0.0.1:4321/**`, `http://127.0.0.1:8787/**`
+- Used only for local development (`npm run dev` / `wrangler dev`). Not wired to prod.
+
+## 3. Resend (transactional / auth email)
+
+- **Domain:** `luminacleanai.com` — **Verified** (Auto configure via Cloudflare). Sending region **eu-west-1**.
+- **API key:** name `supabase-smtp` (value stored in Supabase prod SMTP config; not here).
+- **SMTP settings** (used by Supabase prod custom SMTP):
+  - Host `smtp.resend.com` · Port `465` · Username `resend` · Password = the Resend API key
+  - From `no-reply@luminacleanai.com` · Sender name `LuminaClean AI`
+- **Logs:** Resend → Emails (delivery/bounce status) for debugging.
+- Default Supabase auth rate limit after custom SMTP (~30/h) — adjust in Auth → Rate Limits if needed.
+
+## 4. GitHub repo secrets (CI deploy — `Piotr-Miller/lumina-clean-ai`)
+
+Names only (Settings → Secrets and variables → Actions):
+`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` (`9b645f82fe0122394111985d936e5844`),
+`SUPABASE_ACCESS_TOKEN` (Supabase PAT, named `luminaclean-prod`, expires **2026-07-05** — rotate before),
+`SUPABASE_PROJECT_REF` (`tebdkqpgjjypdethpezo`), `SUPABASE_URL`, `SUPABASE_KEY`.
+
+## 5. Google Safe Browsing / Search Console
+
+- `luminacleanai.com` flagged **"Deceptive pages"** (social engineering) on first login — assessed **false positive** (new domain + login form; Search Console listed **no sample URLs**).
+- Domain **verified in Google Search Console** (DNS TXT). **Review requested 2026-06-06** (deceptive/phishing reviews ~1 day; browser warnings clear within ~72h). Don't re-submit while pending.
+
+## 6. Local dev environment
+
+- Node via **fnm**; PowerShell profile now auto-activates it (`fnm env --use-on-cd`). Project Node pinned by `.nvmrc` (22.x).
+- `wrangler` `4.98.0` (devDependency).
+
+---
+
+## Credential inventory (names + location, NEVER values)
+
+| Credential | Where it lives | Notes |
+| --- | --- | --- |
+| Cloudflare API token (CI) | GitHub secret `CLOUDFLARE_API_TOKEN` | scoped for Workers deploy |
+| Supabase PAT | GitHub secret `SUPABASE_ACCESS_TOKEN` | name `luminaclean-prod`, expires 2026-07-05 |
+| Supabase service-role key (prod) | Worker secret `SUPABASE_SERVICE_ROLE_KEY` + Edge Function auto-inject | RLS bypass — high privilege |
+| Supabase publishable key (prod) | Worker secret `SUPABASE_KEY` + GitHub secret | `sb_publishable_…`, safe to expose |
+| Resend API key | Supabase prod SMTP password; Resend dashboard | name `supabase-smtp` |
+| Replicate token + webhook secret + DB webhook secret | **not set yet** (flip-ON) | needed only when cloud flips ON |
+
+## Pending / follow-ups
+
+- **Safe Browsing review** — awaiting Google (requested 2026-06-06).
+- **#14** — disable workers.dev once branded domain is established.
+- **DMARC** — optional TXT for deliverability.
+- **Flip-ON** (S-05+S-08+S-09) — set Edge Function + Worker cloud secrets, DB-webhook GUCs. See `go-live.md` flip-ON runbook.
+- **`www`** subdomain — optionally attach + redirect to apex.
