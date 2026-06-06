@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-04
+updated: 2026-06-06
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -36,7 +36,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-04  | cloud-ai-realtime-result           | see the Cloud-AI result pushed in real time, before/after + download  | S-03          | US-01; FR-009, FR-010, FR-011, FR-012     | done     |
 | S-05  | cloud-daily-cap                    | get a clear message when the global daily cloud cap is reached        | S-04          | FR-014                                    | done     |
 | S-06  | account-session-ux                 | sign out from anywhere; never land on the login form while already signed in | S-02          | FR-004; session-hygiene NFR               | done     |
-| S-07  | production-deployment              | use the live app on Cloudflare (Local + auth public; cloud behind a flag) | S-04          | MVP success: deployed & accessible        | proposed |
+| S-07  | production-deployment              | use the live app on Cloudflare (Local + auth public; cloud behind a flag) | S-04          | MVP success: deployed & accessible        | done     |
 | S-08  | cloud-job-retention-cleanup        | trust uploaded sources are gone within 24h even on failed/abandoned jobs | F-01, S-04    | NFR: source not retained beyond 24h       | proposed |
 | S-09  | cloud-source-url-ttl-fix           | (reliability) cloud jobs survive a slow Replicate cold boot without source-URL expiry | S-04          | MVP success: cloud flow works end-to-end (NFR reliability) | proposed |
 
@@ -176,7 +176,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Prod Realtime enablement + prod DB-webhook URL (`https://<ref>.supabase.co/functions/v1/enhance`) and `EDGE_FUNCTION_URL` config — Owner: TBD. Block: no.
   - Whether to flip `CLOUD_PIPELINE_ENABLED` ON at launch — gated on **S-05, S-08, AND S-09** (runbook sequencing, not a code dependency). S-05 bounds cloud spend (daily cap); S-08 closes the 24h source-retention privacy guardrail for failed/abandoned jobs; S-09 fixes the source-URL TTL so a slow cold boot doesn't fail the prediction. Flipping ON before S-08 ships would leak failed/abandoned sources past 24h in prod (privacy NFR); before S-09 ships, cold-boot cloud jobs fail at the source-fetch step (reliability).
 - **Risk:** Separate ops surface (Supabase + Cloudflare) with its own runbook. **Independent of S-05**: different files (CI / `wrangler.jsonc` / prod-config + Edge Function deploy vs S-05's cap logic in the submit path + `jobs` count), no code dependency — only the flag-flip-to-ON is sequenced after S-05. The **source-URL-TTL fix** (a cold boot >300s expires the signed source URL → the prediction fails at the source-fetch step) is now tracked as its own slice **S-09** and is a go-live prerequisite for the cloud path — it must land (and the cloud flow re-validate against a slow cold boot) before `CLOUD_PIPELINE_ENABLED` flips ON. **Also folds in the never-resolved S-04 phase-3 `/callback` hardening cluster** (webhook-timestamp replay window; `AbortSignal.timeout` + a size cap on the output/create fetches; output-host allowlist for SSRF defense-in-depth) — pre-prod hardening of the publicly-exposed callback before the flag flips ON. (The result-object orphan on a late `/callback` failure is owned by **S-08**, not here.) The flag stays OFF in prod until **S-05 (spend bound), S-08 (24h-retention cleanup), and S-09 (source-URL TTL fix) all land** — S-05 alone bounds cost but leaves the failed/abandoned-source privacy gap (S-08) and the cold-boot source-expiry reliability gap (S-09) open, so the flip-ON gate requires all three.
-- **Status:** proposed
+- **Status:** done
 
 ### S-08: 24h-retention cleanup for failed / abandoned cloud jobs
 
@@ -217,7 +217,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-04       | cloud-ai-realtime-result           | Async Cloud AI pipeline + Realtime result delivery      | done                  | Archived 2026-06-02 → `context/archive/2026-05-31-cloud-ai-realtime-result/`. Issue #5. |
 | S-05       | cloud-daily-cap                    | Global daily cap on Cloud AI requests                   | done                  | Archived 2026-06-04 → `context/archive/2026-06-03-cloud-daily-cap/`. Issue #6. |
 | S-06       | account-session-ux                 | Account/session UX: global sign-out + redirect authed off /auth/* | done                  | Archived 2026-06-03 → `context/archive/2026-06-03-account-session-ux/`. Issue #7. |
-| S-07       | production-deployment              | Production deployment / go-live (Cloudflare + prod Supabase) | yes                   | Prereq S-04 (done). Independent of S-05; cloud ships flag-OFF until S-05 + S-08 + S-09. Folds in /callback hardening (source-URL-TTL fix promoted out to S-09). |
+| S-07       | production-deployment              | Production deployment / go-live (Cloudflare + prod Supabase) | done                  | Archived 2026-06-06 → `context/archive/2026-06-04-production-deployment/`. Issue #8. |
 | S-08       | cloud-job-retention-cleanup        | 24h-retention cleanup for failed/abandoned cloud jobs | yes                   | Prereq F-01/S-04 (done). Closes privacy-NFR gap punted by F-01/S-03/S-04. Inline delete-on-failure, NOT pg_cron. Independent of S-05. |
 | S-09       | cloud-source-url-ttl-fix           | Source signed-URL TTL fix (cold-boot reliability)     | yes                   | Prereq S-04 (done). Promoted from Parked 2026-06-04. v1 go-live prerequisite for the cloud path; must land + re-validate before the `CLOUD_PIPELINE_ENABLED` flip-ON. Surgical Edge-Function change; independent of S-05/S-08. |
 
@@ -256,3 +256,4 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 - **S-04: once a photo is submitted, the async pipeline (Database webhook → Supabase Edge Function → Replicate prediction with webhook callback) runs, and the enhanced result is pushed to the page via Supabase Realtime — appearing in the before/after slider with download, no manual refresh — within ~30s p95.** — Archived 2026-06-02 → `context/archive/2026-05-31-cloud-ai-realtime-result/`. Lesson: two-phase Realtime watchdog (catch-up read on SUBSCRIBED + re-check before failing) and cold-boot TTL sizing (see lessons.md).
 - **S-06: a signed-in user can sign out from anywhere in the app (not only from `/` and `/dashboard`), is redirected to home instead of being shown the login form while already authenticated, is — optionally — signed out after a configured idle period, and can complete a password reset from a different device/browser than the one that requested it.** — Archived 2026-06-03 → `context/archive/2026-06-03-account-session-ux/`. Lesson: —.
 - **S-05: a Cloud AI request that would exceed the global daily cap is rejected before the cloud model is invoked, with a clear user-facing message; the bill is structurally bounded.** — Archived 2026-06-04 → `context/archive/2026-06-03-cloud-daily-cap/`. Lesson: —.
+- **S-07: the app is deployed and publicly accessible on Cloudflare (Workers) on a branded custom domain (luminacleanai.com), with the prod Supabase project (luminaclean-prod) wired — migrations applied, Edge Function `enhance` deployed, auth + Resend email live; the Cloud AI pipeline ships flag-OFF (`CLOUD_PIPELINE_ENABLED=false`, `CLOUD_DAILY_CAP=0`), flip-ON gated on S-05+S-08+S-09.** — Archived 2026-06-06 → `context/archive/2026-06-04-production-deployment/`. Lesson: a fresh prod Supabase project doesn't auto-repoint the Worker — verify which project the deployed app talks to (lessons.md); DB-webhook custom-GUC + callback success-path hardening (F8/F9) deferred to flip-ON.
