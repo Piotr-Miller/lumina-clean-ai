@@ -37,7 +37,15 @@ import {
   verifyReplicateSignature,
 } from "../../../src/lib/services/replicate-webhook.ts";
 
-const SOURCE_URL_TTL_SECONDS = 300;
+// Source READ URL TTL (S-09). Replicate (Cog) fetches this URL at `predict()`
+// start — AFTER the container cold-boots, which can exceed several minutes
+// (>300s observed under platform load, well past Phase-0's ~135s). The URL is
+// fixed at prediction creation and CANNOT be re-minted, so it must still be
+// valid when a cold worker finally fetches it: size it to cover queue + cold
+// boot + Replicate's 30-min run window. 3600s (Supabase imposes no practical
+// TTL cap). Privacy is bounded by the source being deleted on terminal state
+// (24h retention); a 300s TTL was the cold-boot reliability gap S-09 closes.
+const SOURCE_URL_TTL_SECONDS = 3600;
 const REPLICATE_PREDICTIONS_URL = "https://api.replicate.com/v1/predictions";
 const PHOTOS_BUCKET = "photos";
 // Kickoff-race backstop: the DB webhook fires /start on the `queued` INSERT, but
