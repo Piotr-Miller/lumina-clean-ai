@@ -48,6 +48,7 @@ Two separate projects (same org `cqbfrshdnawpivbapygc`). The deployed app uses *
 - **Edge Function `enhance`:** ACTIVE, v1, `verify_jwt = false` (id `e0ab0a25`).
 - **Worker runtime secrets** (set via `wrangler secret put`, names only):
   `CLOUD_PIPELINE_ENABLED=false`, `CLOUD_DAILY_CAP=0`, `SUPABASE_URL`, `SUPABASE_KEY` (publishable `sb_publishable_…`), `SUPABASE_SERVICE_ROLE_KEY`.
+  - ⚠️ **`SUPABASE_URL`/`KEY`/`SERVICE_ROLE_KEY` MUST point to `tebdkqpgjjypdethpezo` (prod).** They were initially set in May against the dev project (before prod existed), and the deployed app silently used **dev** until they were **repointed to prod on 2026-06-06**. Build-time `SUPABASE_URL`/`KEY` (GitHub/CI) are separate and do NOT drive runtime. **Verify:** `curl https://luminacleanai.com/ | grep -o '[a-z]\{20\}\.supabase\.co'` must show `tebdkqpgjjypdethpezo`. See `lessons.md` ("A new prod Supabase project does NOT repoint the deployed Worker").
 - **Edge Function secrets:** only auto-injected Supabase defaults present. Custom cloud secrets (`CLOUD_PIPELINE_ENABLED`, `DB_WEBHOOK_SECRET`, `REPLICATE_API_TOKEN`, `REPLICATE_WEBHOOK_SIGNING_SECRET`) **deferred to flip-ON** (ledger 2.6c). Cloud ships OFF.
 - **DB-webhook GUCs** (`app.settings.edge_function_url` / `db_webhook_secret`): **not set** — deferred to flip-ON (hosted-Supabase custom-GUC limit; see `deferred-2.4-db-webhook-settings.md`).
 
