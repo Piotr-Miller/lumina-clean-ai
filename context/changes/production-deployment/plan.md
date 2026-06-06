@@ -389,9 +389,9 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 
 #### Manual
 
-- [ ] 4.2 Anon Local engine end-to-end on prod URL
+- [x] 4.2 Anon Local engine end-to-end on prod URL — verified 2026-06-06 (anonymous, incognito): dark JPG → Local enhance → visibly brighter result + before/after slider + download, no login.
 - [x] 4.3 Auth lifecycle incl. password reset link resolving on prod domain — verified 2026-06-06: sign-up → confirm email → sign in, and forgot-password → reset email (custom `recovery.html`) → new password; both via Resend on `luminacleanai.com`.
-- [ ] 4.4 Cloud submit stays `queued` with `cloud_pipeline_disabled` no-op, zero Replicate spend
-- [ ] 4.5 Realtime subscribes without 1102
+- [x] 4.4 Cloud submit stays `queued` with `cloud_pipeline_disabled` no-op, zero Replicate spend — verified 2026-06-06 (HAR + Replicate): with `CLOUD_DAILY_CAP` temporarily 50 (flag still false), two cloud submits created jobs that stayed `queued`, never reached `processing`, and were closed `failed` by the 30s watchdog; Replicate dashboard showed zero predictions. Cap restored to `0` after. (cap=0 path independently returns 429.)
+- [x] 4.5 Realtime subscribes without 1102 — verified 2026-06-06 (HAR): browser subscribed to `realtime:job-<id>` on `tebdkqpgjjypdethpezo`; `phx_reply status:ok` + `system "Subscribed to PostgreSQL" status:ok`; zero `1102` / `CHANNEL_ERROR` across two job sessions.
 - [x] 4.6 One `wrangler rollback` performed + re-deploy forward confirmed — rolled back 8e0ad338→63a951b7 (live 200), re-deployed forward→c8273695 (live 200, auth gate intact). Details in `go-live.md`.
 - [x] 4.7 `go-live.md` records prod URL + documented flip-ON runbook — `context/changes/production-deployment/go-live.md`

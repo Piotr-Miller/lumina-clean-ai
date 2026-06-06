@@ -96,9 +96,9 @@ npm run build && npx wrangler deploy
 | # | Check | Status |
 | --- | --- | --- |
 | 4.1 | No errors during smoke (HTTP smoke + Supabase logs) | ✅ |
-| 4.2 | Anon local-engine E2E on prod | ⏳ operator (browser) |
+| 4.2 | Anon local-engine E2E on prod | ✅ verified 2026-06-06 |
 | 4.3 | Auth lifecycle incl. password-reset link on prod domain | ✅ verified 2026-06-06 (Resend SMTP) |
-| 4.4 | Cloud submit stays `queued` (`cloud_pipeline_disabled`), zero Replicate spend | ⏳ operator (authed session) |
-| 4.5 | Realtime subscribes without 1102 | ⏳ operator (browser) |
+| 4.4 | Cloud submit stays `queued` (`cloud_pipeline_disabled`), zero Replicate spend | ✅ verified 2026-06-06 (HAR + Replicate; cap restored to 0) |
+| 4.5 | Realtime subscribes without 1102 | ✅ verified 2026-06-06 (HAR: subscribe status ok, no 1102) |
 | 4.6 | `wrangler rollback` performed + re-deploy forward | ✅ (63a951b7 → c8273695) |
 | 4.7 | This document | ✅ |
