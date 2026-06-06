@@ -345,14 +345,14 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 
 - [x] 1.1 Unit tests pass: `npm run test` — efd831f
 - [x] 1.2 Replay-window + allowlist cases covered and green — efd831f
-- [ ] 1.3 Edge Function type-checks: `deno check supabase/functions/enhance/index.ts`
+- [x] 1.3 Edge Function type-checks: `deno check supabase/functions/enhance/index.ts` — passes in CI: the `deploy` job runs `deno check supabase/functions/enhance/index.ts` and was green in run 27033884831.
 - [x] 1.4 Lint passes on touched files (prettier + eslint) — efd831f
 
 #### Manual
 
 - [x] 1.5 `supabase functions serve`: stale-timestamp callback rejected, fresh processed — efd831f
 - [x] 1.6 Disallowed-host `outputUrl` fails the job with no outbound fetch — efd831f
-- [ ] 1.7 Normal success path still stores the result object
+- [~] 1.7 Normal success path still stores the result object — **DEFERRED** to flip-ON: the `/callback` success path only fires when cloud is ON (Replicate completes → callback stores the result). Cloud ships OFF (Replicate unconfigured), so it can't be exercised end-to-end now. Result-storage logic is covered by `replicate-webhook.test.ts` (29 unit tests, green); verify the live success path at flip-ON (same gate as 2.4 / 2.6c).
 
 ### Phase 2: Provision Production Infrastructure (Runbook)
 
