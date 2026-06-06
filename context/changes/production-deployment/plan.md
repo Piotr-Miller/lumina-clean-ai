@@ -365,7 +365,7 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 
 - [x] 2.3 Dashboard: `jobs`, `photos` bucket, Realtime publication on `public.jobs` — 95a1084
 - [~] 2.4 `current_setting('app.settings.edge_function_url')` returns prod `/enhance` URL — **DEFERRED** to flip-ON (hosted-Supabase blocks custom-GUC `ALTER DATABASE`; not a go-live blocker, cloud OFF). See `deferred-2.4-db-webhook-settings.md`.
-- [~] 2.5 Prod `site_url` + redirect URLs set; recovery template saved — **Site URL + redirects** on `https://luminacleanai.com` (custom domain added 2026-06-06; confirm prod switched from the temp workers.dev value). **Recovery template DEFERRED** to the Resend custom-SMTP setup (free-tier template lock since 2026-06-03; needs SMTP to unlock). See `go-live.md` → "Domain, DNS & environments".
+- [x] 2.5 Prod `site_url` + redirect URLs set; recovery template saved — Site URL + redirects on `https://luminacleanai.com`; **Resend custom SMTP live** on `luminaclean-prod`; `recovery.html` saved in the Reset Password template. Verified end-to-end 2026-06-06 (signup-confirm + password-reset emails both deliver via Resend and complete on prod).
 - [x] 2.6 All Edge Function + Worker secrets present (cloud `false` / `0`); GitHub repo secrets present — Worker: all 5 set (`wrangler secret list`, incl. `CLOUD_PIPELINE_ENABLED=false`/`CLOUD_DAILY_CAP=0`). Edge Function: auto-injected `SUPABASE_URL`/`SERVICE_ROLE_KEY` present; custom cloud secrets deferred to flip-ON (ledger 2.6c; unset flag = OFF, verified `index.ts:183`). GitHub: 6 repo secrets set.
 
 ### Phase 3: CI Deploy Pipeline
@@ -390,7 +390,7 @@ Prove the live deployment meets the S-07 success criteria with cloud OFF, and do
 #### Manual
 
 - [ ] 4.2 Anon Local engine end-to-end on prod URL
-- [ ] 4.3 Auth lifecycle incl. password reset link resolving on prod domain
+- [x] 4.3 Auth lifecycle incl. password reset link resolving on prod domain — verified 2026-06-06: sign-up → confirm email → sign in, and forgot-password → reset email (custom `recovery.html`) → new password; both via Resend on `luminacleanai.com`.
 - [ ] 4.4 Cloud submit stays `queued` with `cloud_pipeline_disabled` no-op, zero Replicate spend
 - [ ] 4.5 Realtime subscribes without 1102
 - [x] 4.6 One `wrangler rollback` performed + re-deploy forward confirmed — rolled back 8e0ad338→63a951b7 (live 200), re-deployed forward→c8273695 (live 200, auth gate intact). Details in `go-live.md`.

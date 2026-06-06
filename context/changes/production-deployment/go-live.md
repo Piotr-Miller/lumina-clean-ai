@@ -34,7 +34,7 @@ ships **OFF**; the local engine + auth are live. Flip-ON is a separate, gated ev
   | Prod | `luminaclean-prod` | `tebdkqpgjjypdethpezo` | `https://luminacleanai.com` ⚠️ confirm switched from the temporary workers.dev value set in 2.5 Step A | `https://luminacleanai.com/**` |
 
   The dev project is **not** wired to production — the deployed app uses only `luminaclean-prod`. (Project *name* is a display label; ref/URL/keys are unchanged by the rename.)
-- **Auth email (prod) — still deferred, now unblocking:** the default Supabase sender can't edit templates (free-tier project created after the **2026-06-03** template-lock change) and only delivers to team addresses. With the domain now in hand, the path is **Resend custom SMTP** (verify `luminacleanai.com` → SMTP in Supabase → unlocks template editing → save `recovery.html` → real password-reset email). **In progress.** Interim admin/test reset works via `scripts/generate-recovery-link.ts` (no email).
+- **Auth email (prod) — RESOLVED 2026-06-06:** **Resend custom SMTP is live** on `luminaclean-prod` (verified domain `luminacleanai.com`, From `no-reply@luminacleanai.com`). The free-tier template lock (project created after 2026-06-03) and the team-only default sender are both bypassed by custom SMTP. Verified end-to-end: signup confirmation (default Supabase template) **and** password reset (custom `recovery.html`, `token_hash` → `/auth/confirm`) both deliver via Resend and complete on the prod domain. (DMARC still optional; `scripts/generate-recovery-link.ts` remains an admin/no-email fallback.)
 - **Google Safe Browsing:** on first login, `luminacleanai.com` was flagged **"Deceptive pages"** (social engineering) — a **false positive** (new domain + login form; Search Console Security Issues listed **no sample URLs**). Domain verified in Search Console; **review requested 2026-06-06** (deceptive/phishing reviews ~1 day; warnings clear within ~72h). Don't re-submit while pending; hold off sharing the URL widely until cleared.
 - **Incident — app pointed at the wrong Supabase project (2026-06-06):** the deployed Worker was still talking to the **dev** project (`gwaviaozehxmyjjcioxy`) — its `SUPABASE_URL`/`KEY`/`SERVICE_ROLE_KEY` were set in May (before `luminaclean-prod` existed) and never updated. Symptoms: test signup landed in dev (no user in prod), confirmation email never arrived, Resend logs empty — even though all prod config (SMTP/template/Site URL) was correct on `luminaclean-prod`. **Fix:** re-set the three Worker secrets to `tebdkqpgjjypdethpezo` + redeploy; verified the served HTML now exposes the prod ref. Rule captured in `context/foundation/lessons.md`.
 
@@ -97,7 +97,7 @@ npm run build && npx wrangler deploy
 | --- | --- | --- |
 | 4.1 | No errors during smoke (HTTP smoke + Supabase logs) | ✅ |
 | 4.2 | Anon local-engine E2E on prod | ⏳ operator (browser) |
-| 4.3 | Auth lifecycle incl. password-reset link on prod domain | ⏳ operator (browser + email) |
+| 4.3 | Auth lifecycle incl. password-reset link on prod domain | ✅ verified 2026-06-06 (Resend SMTP) |
 | 4.4 | Cloud submit stays `queued` (`cloud_pipeline_disabled`), zero Replicate spend | ⏳ operator (authed session) |
 | 4.5 | Realtime subscribes without 1102 | ⏳ operator (browser) |
 | 4.6 | `wrangler rollback` performed + re-deploy forward | ✅ (63a951b7 → c8273695) |
