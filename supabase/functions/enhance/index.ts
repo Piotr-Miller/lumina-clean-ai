@@ -66,7 +66,10 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
 
 // Length-safe constant-time compare via fixed-length SHA-256 digests — avoids
 // leaking the webhook secret through early-exit timing on the bearer check.
-async function constantTimeEquals(a: string, b: string): Promise<boolean> {
+// Named `digestEquals` to distinguish it from the char-level constant-time
+// compare in replicate-webhook.ts (`charConstantTimeEquals`) — same intent,
+// different guarantees, so the two must not be confused at a call site.
+async function digestEquals(a: string, b: string): Promise<boolean> {
   const enc = new TextEncoder();
   const [ha, hb] = await Promise.all([
     crypto.subtle.digest("SHA-256", enc.encode(a)),
@@ -160,10 +163,10 @@ async function handleStart(req: Request): Promise<Response> {
   // 1. Authenticate the DB-webhook call (shared bearer; no Supabase JWT).
   const expectedSecret = Deno.env.get("DB_WEBHOOK_SECRET");
   if (!expectedSecret) {
-    return jsonResponse(500, { error: { code: "misconfigured", message: "DB_WEBHOOK_SECRET not set" } });
+    return jsonResponse(500, { error: { code: "internal_error", message: "DB_WEBHOOK_SECRET not set" } });
   }
   const authHeader = req.headers.get("Authorization") ?? "";
-  if (!(await constantTimeEquals(authHeader, `Bearer ${expectedSecret}`))) {
+  if (!(await digestEquals(authHeader, `Bearer ${expectedSecret}`))) {
     return jsonResponse(401, { error: { code: "unauthorized", message: "invalid webhook bearer" } });
   }
 
@@ -319,7 +322,7 @@ async function handleCallback(req: Request): Promise<Response> {
   const signingSecret = Deno.env.get("REPLICATE_WEBHOOK_SIGNING_SECRET");
   if (!signingSecret) {
     return jsonResponse(500, {
-      error: { code: "misconfigured", message: "REPLICATE_WEBHOOK_SIGNING_SECRET not set" },
+      error: { code: "internal_error", message: "REPLICATE_WEBHOOK_SIGNING_SECRET not set" },
     });
   }
   const signatureValid = await verifyReplicateSignature({
@@ -363,10 +366,17 @@ async function handleCallback(req: Request): Promise<Response> {
     if (!job) {
       return jsonResponse(200, { ignored: "job_not_found" });
     }
-    // Integrity cross-check: the payload's prediction id must match the id
-    // /start stored on the row. A mismatch is a stale/replayed completion for a
-    // different prediction — ignore without mutating.
-    if (payload.id && job.replicate_prediction_id && payload.id !== job.replicate_prediction_id) {
+    // Integrity cross-check (fail-closed): the payload's prediction id must be
+    // PRESENT and equal the id /start stored on the row. A mismatch is a
+    // stale/replayed completion for a different prediction; a missing payload id
+    // — or a row with no stored prediction id (which /start always sets on a
+    // `processing` job) — is anomalous, so refuse to mutate rather than trust an
+    // unverifiable completion. (Defense-in-depth behind the HMAC gate.)
+    if (!payload.id || !job.replicate_prediction_id || payload.id !== job.replicate_prediction_id) {
+      console.warn(
+        `enhance/callback: prediction-id cross-check failed ` +
+          `(payload=${payload.id ?? "none"}, stored=${job.replicate_prediction_id ?? "none"}) — ignoring`,
+      );
       return jsonResponse(200, { ignored: "prediction_id_mismatch" });
     }
     // Idempotency: a row already terminal (Replicate retry, or the client
@@ -391,9 +401,11 @@ async function handleCallback(req: Request): Promise<Response> {
       throw new Error(`refusing to fetch output from a disallowed host: ${outcome.outputUrl}`);
     }
 
-    // Success: download Bread's output and store it as the result object. Bound
-    // the download (30s timeout + 25 MB cap) so a slow or oversized response
-    // can't hang or OOM the function.
+    // Success: download Bread's output and store it as the result object. The
+    // AbortSignal.timeout bounds the WHOLE download — connection, headers, AND the
+    // streamed body read (an abort errors the in-flight reader.read()), so a slow
+    // trickle can't outlive the 30s budget; readBodyCapped independently caps size
+    // at 25 MB so a missing/lying Content-Length can't OOM the function.
     const outputRes = await fetch(outcome.outputUrl, { signal: AbortSignal.timeout(OUTPUT_FETCH_TIMEOUT_MS) });
     if (!outputRes.ok) {
       throw new Error(`failed to fetch Replicate output (${outputRes.status})`);

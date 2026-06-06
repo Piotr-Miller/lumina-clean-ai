@@ -1,9 +1,9 @@
 ---
 id: production-deployment
 roadmap_id: S-07
-status: implementing
+status: impl_reviewed
 created: 2026-06-04
-updated: 2026-06-05
+updated: 2026-06-06
 issue: 8
 ---
 

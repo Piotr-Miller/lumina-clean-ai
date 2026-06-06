@@ -57,10 +57,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      # Edge Function → Supabase. --use-api forces API bundling (no Docker on
-      # the runner) deterministically; the deploy honors config.toml verify_jwt=false.
-      - run: |
-          npm i -g supabase
-          supabase functions deploy enhance --use-api --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+      # Edge Function → Supabase. Use the version-pinned supabase CLI from
+      # devDependencies via npx (deterministic — no unpinned global install).
+      # --use-api forces API bundling (no Docker on the runner); the deploy
+      # honors config.toml verify_jwt=false.
+      - run: npx supabase functions deploy enhance --use-api --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

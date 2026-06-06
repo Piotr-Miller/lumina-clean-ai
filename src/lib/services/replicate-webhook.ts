@@ -37,11 +37,13 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 /**
- * Constant-time string comparison — avoids leaking the expected signature
- * through early-exit timing. A length mismatch still walks the longer string so
- * timing doesn't reveal the expected length.
+ * Char-level constant-time string comparison — avoids leaking the expected
+ * signature through early-exit timing. A length mismatch still walks the longer
+ * string so timing doesn't reveal the expected length. Named `charConstantTimeEquals`
+ * to distinguish it from the digest-based `digestEquals` in the Edge Function
+ * (`enhance/index.ts`) — same intent, different guarantees, must not be confused.
  */
-function constantTimeEquals(a: string, b: string): boolean {
+function charConstantTimeEquals(a: string, b: string): boolean {
   const len = Math.max(a.length, b.length);
   let diff = a.length ^ b.length;
   for (let i = 0; i < len; i++) {
@@ -91,12 +93,12 @@ export async function verifyReplicateSignature(params: VerifyReplicateSignatureP
 
   // The header may carry several space-delimited signatures (key rotation).
   // Match the base64 portion of any `v1,<sig>` entry in constant time.
-  for (const entry of webhookSignature.split(" ")) {
+  for (const entry of webhookSignature.trim().split(/\s+/)) {
     const comma = entry.indexOf(",");
     if (comma === -1) continue;
     const version = entry.slice(0, comma);
     const candidate = entry.slice(comma + 1);
-    if (version === SIGNATURE_VERSION && constantTimeEquals(candidate, expected)) {
+    if (version === SIGNATURE_VERSION && charConstantTimeEquals(candidate, expected)) {
       return true;
     }
   }
