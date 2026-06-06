@@ -133,6 +133,8 @@ repo. They can be deleted manually at any time.
 
 > **2026-06-05 (non-roadmap chore):** added **#13** `ci-wrangler-action-node24` — a CI maintenance follow-up to bump `cloudflare/wrangler-action@v3` to a Node.js 24-compatible version before GitHub's Node 20 deadline (forced 2026-06-16, removed 2026-09-16). Surfaced as a `deploy`-job deprecation annotation during the S-07 production-deployment go-live (run 27033884831). Not a roadmap slice, so it carries the new `chore` label (not `roadmap`/`slice`) and is intentionally absent from the roadmap→issue mapping table above. Change folder: `context/changes/ci-wrangler-action-node24/`.
 
+> **2026-06-06 (non-roadmap chore):** added **#14** `disable-workers-dev-subdomain` — infra/branding follow-up to disable the default `workers.dev` route once `luminacleanai.com` (custom domain added 2026-06-06) is the established prod URL, so prod is served only at the branded domain. Deferred until after S-07 go-live testing (workers.dev still referenced during cutover). `chore` label; absent from the roadmap→issue table. Change folder: `context/changes/disable-workers-dev-subdomain/`.
+
 ## Status updates (post-creation)
 
 Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" note below).
