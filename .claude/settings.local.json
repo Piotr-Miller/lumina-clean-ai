@@ -127,7 +127,9 @@
       "Bash(echo \"=== REST retry ===\")",
       "Bash(echo 'homepage: __CMDSUB_OUTPUT__')",
       "Bash(echo 'title: __CMDSUB_OUTPUT__')",
-      "Bash(echo '=== __TRACKED_VAR__ luminacleanai.com ===')"
+      "Bash(echo '=== __TRACKED_VAR__ luminacleanai.com ===')",
+      "Bash(gh run *)",
+      "Bash(echo \"=== homepage supabase ref \\(forced edge IP\\) ===\")"
     ],
     "deny": [
       "Bash(rm -rf *)"
