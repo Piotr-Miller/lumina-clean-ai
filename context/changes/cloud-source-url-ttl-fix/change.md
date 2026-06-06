@@ -1,7 +1,7 @@
 ---
 id: cloud-source-url-ttl-fix
 roadmap_id: S-09
-status: preparing
+status: plan_reviewed
 created: 2026-06-06
 updated: 2026-06-06
 issue: 12
