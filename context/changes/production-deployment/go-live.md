@@ -77,6 +77,8 @@ ships **OFF**; the local engine + auth are live. Flip-ON is a separate, gated ev
 5. **Reverse (kill-switch):** set Worker `CLOUD_DAILY_CAP=0` (instant pre-insert
    reject) and/or `CLOUD_PIPELINE_ENABLED=false` on both Worker and Edge Function.
 
+**Code-hardening pre-reqs before flip-ON** (from `reviews/impl-review.md`): **F9** — status-guard `markJobSucceeded` against the client watchdog (avoid a `failed → succeeded` resurrection race); **F8** — orphan-source cleanup sweep (S-08). (F1 fail-closed prediction-id cross-check and F4 bounded output read are already done.)
+
 ## Rollback procedure
 
 Reverts the **Worker + static assets ONLY** — NOT migrations or the Edge Function

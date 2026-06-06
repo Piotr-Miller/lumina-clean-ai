@@ -8,6 +8,7 @@
 - **Findings**: 0 critical · 3 warnings · 5 observations
 - **Triage (2026-06-06)**: F1–F7 FIXED; F8 DEFERRED to S-08/flip-ON. Verified: 87/87 unit tests green; `index.ts` type-check via CI `deno check`.
 - **Re-review (2026-06-06, commit `1e79656`)**: independent verification of the F1–F7 fixes → **APPROVED, 0 new findings**. Confirmed happy paths intact, no dangling `constantTimeEquals` refs in code, F4's AbortSignal-bounds-streamed-read comment is factually correct, `npx supabase` resolves the pinned devDep, YAML valid. No regressions introduced.
+- **Forced full re-run (2026-06-06)**: plan drift = full MATCH (no drift/missing/extra); safety boundary re-confirmed sound. Surfaced **one new warning F9** (markJobSucceeded TOCTOU resurrection race) → **DEFERRED to flip-ON**, and **F10** (prettier endOfLine) → **SKIPPED** (the suggested `"lf"` would regress Windows local lint; `"auto"` is correct). Verdict **APPROVED** (1 non-blocking, pre-flip-ON warning).
 
 ## Verdicts
 
@@ -107,3 +108,23 @@
 - **Detail**: If Storage `remove` fails after the row flips `succeeded`, the source is orphaned (only a console.warn). Known MVP limitation; no sweeper. Only relevant once cloud is ON.
 - **Fix**: Track a retention/cleanup sweep for flip-ON (gestured at in S-08).
 - **Decision**: DEFERRED (2026-06-06) — to S-08 / flip-ON. Out of MVP scope; only relevant once cloud is ON.
+
+### F9 — markJobSucceeded can resurrect a watchdog-failed row (TOCTOU)
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🔎 MEDIUM — design call (succeeded-vs-failed precedence)
+- **Dimension**: Safety & Quality (reliability/data race)
+- **Location**: src/lib/services/photo-job.service.ts:116-148 (+ enhance/index.ts:384 read → :426 write)
+- **Detail**: `/callback` reads `job.status` (idempotency guard) then `markJobSucceeded` does an unconditional id-only UPDATE. If the client watchdog's guarded `markPendingJobFailedForOwner` commits between the read and the write, the callback overwrites `failed` → `succeeded`. The watchdog write is status-guarded; this one isn't. Only reachable when cloud is ON (flip-ON).
+- **Fix**: Make `markJobSucceeded` a `processing`-guarded UPDATE (or check affected rows), handling the upload/source-delete ordering so a watchdog-failed row isn't left inconsistent (result uploaded + source deleted but status=failed). Needs a design call (client treats "succeeded wins").
+- **Decision**: DEFERRED (2026-06-06) — to flip-ON, with the other cloud-path hardening (F1/F4/F8). Not reachable at cloud-OFF go-live.
+
+### F10 — Prettier endOfLine "auto" vs .gitattributes eol=lf
+
+- **Severity**: OBSERVATION
+- **Impact**: 🏃 LOW
+- **Dimension**: Pattern Consistency
+- **Location**: .prettierrc.json:7
+- **Detail**: A re-run agent suggested `"auto"` → `"lf"`. But `"lf"` would re-introduce the Windows-CRLF `Delete ␍` lint errors that `"auto"` was deliberately chosen to fix (working tree is CRLF via core.autocrlf; `.gitattributes` enforces LF only in git/on checkout).
+- **Fix**: None — keep `"auto"`.
+- **Decision**: SKIPPED (2026-06-06) — `"auto"` is the correct choice for this repo; the suggestion would regress local lint.
