@@ -8,12 +8,28 @@ ships **OFF**; the local engine + auth are live. Flip-ON is a separate, gated ev
 
 | Surface | Value |
 | --- | --- |
-| App (Cloudflare Worker) | https://lumina-clean-ai.pmiller-software.workers.dev |
+| App — primary domain | **https://luminacleanai.com** (custom domain on the Worker, added 2026-06-06; HTTP 200 + valid TLS verified) |
+| App — workers.dev alias | https://lumina-clean-ai.pmiller-software.workers.dev (same Worker; teardown tracked in issue #14) |
 | Worker name | `lumina-clean-ai` |
 | Worker Version ID (go-live) | `8e0ad338-aa0a-4875-b616-55b3f84849a0` (CI deploy); current live `c8273695` after the 4.6 rollback drill re-deploy. Future master pushes mint new versions. |
-| Supabase project | `tebdkqpgjjypdethpezo` (`https://tebdkqpgjjypdethpezo.supabase.co`) |
+| Supabase project (prod) | `luminaclean-prod` — ref `tebdkqpgjjypdethpezo` (`https://tebdkqpgjjypdethpezo.supabase.co`) |
 | Edge Function | `enhance` — ACTIVE, v1 (`verify_jwt = false`), id `e0ab0a25` |
 | First prod deploy | CI run [27033884831](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/27033884831), commit `dd7f1d3` |
+
+## Domain, DNS & environments (2026-06-06)
+
+- **Domain purchased:** `luminacleanai.com` — registered at **Cloudflare Registrar** on 2026-06-06 (exact brand match for "LuminaClean AI"). DNS managed in Cloudflare.
+- **Custom domain on the Worker:** `luminacleanai.com` attached to Worker `lumina-clean-ai` (Cloudflare auto-created the proxied DNS record + TLS cert). Verified serving the app (HTTP 200, valid cert; `/dashboard` → 302 `/auth/signin` on the new host). `www` not yet attached (optional). The `workers.dev` URL stays an alias of the same prod Worker — disabling it is a follow-up chore (**issue #14**, `disable-workers-dev-subdomain`).
+- **Supabase environments (renamed for clarity 2026-06-06):**
+
+  | Env | Project name | Ref | Site URL | Redirect URLs |
+  | --- | --- | --- | --- | --- |
+  | Dev | `luminaclean-dev` (was `lumina-clean-ai`) | `gwaviaozehxmyjjcioxy` | `http://localhost:4321` | `localhost:4321/**`, `127.0.0.1:4321/**`, `127.0.0.1:8787/**` |
+  | Prod | `luminaclean-prod` | `tebdkqpgjjypdethpezo` | `https://luminacleanai.com` ⚠️ confirm switched from the temporary workers.dev value set in 2.5 Step A | `https://luminacleanai.com/**` |
+
+  The dev project is **not** wired to production — the deployed app uses only `luminaclean-prod`. (Project *name* is a display label; ref/URL/keys are unchanged by the rename.)
+- **Auth email (prod) — still deferred, now unblocking:** the default Supabase sender can't edit templates (free-tier project created after the **2026-06-03** template-lock change) and only delivers to team addresses. With the domain now in hand, the path is **Resend custom SMTP** (verify `luminacleanai.com` → SMTP in Supabase → unlocks template editing → save `recovery.html` → real password-reset email). **In progress.** Interim admin/test reset works via `scripts/generate-recovery-link.ts` (no email).
+- **Google Safe Browsing:** on first login, `luminacleanai.com` was flagged **"Deceptive pages"** (social engineering) — a **false positive** (new domain + login form; Search Console Security Issues listed **no sample URLs**). Domain verified in Search Console; **review requested 2026-06-06** (deceptive/phishing reviews ~1 day; warnings clear within ~72h). Don't re-submit while pending; hold off sharing the URL widely until cleared.
 
 ## Cloud state at go-live: OFF
 
