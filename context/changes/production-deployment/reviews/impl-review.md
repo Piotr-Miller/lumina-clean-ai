@@ -7,6 +7,7 @@
 - **Verdict**: NEEDS ATTENTION (none block the cloud-OFF go-live; F1/F3/F4/F8 are flip-ON pre-reqs — for S-07 as shipped, effectively APPROVED)
 - **Findings**: 0 critical · 3 warnings · 5 observations
 - **Triage (2026-06-06)**: F1–F7 FIXED; F8 DEFERRED to S-08/flip-ON. Verified: 87/87 unit tests green; `index.ts` type-check via CI `deno check`.
+- **Re-review (2026-06-06, commit `1e79656`)**: independent verification of the F1–F7 fixes → **APPROVED, 0 new findings**. Confirmed happy paths intact, no dangling `constantTimeEquals` refs in code, F4's AbortSignal-bounds-streamed-read comment is factually correct, `npx supabase` resolves the pinned devDep, YAML valid. No regressions introduced.
 
 ## Verdicts
 
