@@ -13,6 +13,32 @@ const PHOTOS_BUCKET = "photos";
 const JOBS_TABLE = "jobs";
 
 /**
+ * Best-effort delete of a private `photos` object, shared by every terminal
+ * transition. Swallows storage errors with a `console.warn` — an orphaned
+ * object is an operator-cleanup concern, never a user-facing failure — and
+ * never throws. `admin` must be a service-role client (bypasses RLS); paths are
+ * server-derived (`${userId}/${jobId}/...`), so no owner scoping is needed.
+ * Deleting an absent object is a harmless no-op.
+ */
+async function bestEffortRemove(admin: SupabaseClient, path: string, label: string): Promise<void> {
+  const { error } = await admin.storage.from(PHOTOS_BUCKET).remove([path]);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.warn(`${label}: object delete for ${path} failed: ${error.message}`);
+  }
+}
+
+/** Delete a job's source object (best-effort). See {@link bestEffortRemove}. */
+export async function deleteJobSource(admin: SupabaseClient, sourcePath: string): Promise<void> {
+  await bestEffortRemove(admin, sourcePath, "deleteJobSource");
+}
+
+/** Delete a job's result object (best-effort). See {@link bestEffortRemove}. */
+export async function deleteJobResult(admin: SupabaseClient, resultPath: string): Promise<void> {
+  await bestEffortRemove(admin, resultPath, "deleteJobResult");
+}
+
+/**
  * Mint a one-shot signed upload URL for a new photo source object and
  * insert the matching `queued` row in `public.jobs`. The client then PUTs
  * the file directly to the absolute signed URL.
@@ -98,33 +124,24 @@ export function isOverDailyCap(count: number, cap: number): boolean {
 }
 
 /**
- * Mark a job as `succeeded` and delete its source object from Storage in
- * the same call. This is the foundation's enforcement point for the PRD
- * ≤24h source-retention NFR — every successful job triggers source cleanup
- * via this helper.
+ * Transition a job to `succeeded` (guarded: only a live `processing` row) and
+ * delete its source object — the enforcement point for the ≤24h source-retention
+ * NFR. Returns `true` iff the row was actually flipped.
  *
- * Ordering: row UPDATE first, then Storage delete. If the Storage delete
- * fails, the row stays at `succeeded` (the user-visible result is intact);
- * a missed source delete is an operator-cleanup concern, not a user-facing
- * error. A console.warn captures the orphan for later sweeps.
+ * A single guarded UPDATE (`.eq("status","processing")`) closes the F9 TOCTOU
+ * race: if the client watchdog already flipped the row to `failed`, this no-ops
+ * (returns `false`) instead of resurrecting it, and the caller (`/callback`)
+ * cleans up the result it uploaded. `processing` ONLY (not `[queued,processing]`)
+ * is safe + intentional — a `queued` row can't match `/callback`'s fail-closed
+ * prediction-id cross-check, so it never reaches here.
  *
- * Failed jobs are out of scope for source cleanup in v1 (documented v1
- * limitation; re-evaluated alongside Admin role in v2).
+ * Source delete fires only on a confirmed flip (best-effort; a missed delete is
+ * an operator-cleanup concern, not a user-facing error).
  *
  * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
  */
-export async function markJobSucceeded(admin: SupabaseClient, cmd: MarkJobSucceededCommand): Promise<void> {
-  // Caller supplies jobId only; source_path lives on the row.
-  const { data: row, error: readError } = await admin
-    .from(JOBS_TABLE)
-    .select("source_path")
-    .eq("id", cmd.jobId)
-    .single();
-  if (readError) {
-    throw new Error(`markJobSucceeded: job ${cmd.jobId} not found: ${readError.message}`);
-  }
-
-  const { error: updateError } = await admin
+export async function markJobSucceeded(admin: SupabaseClient, cmd: MarkJobSucceededCommand): Promise<boolean> {
+  const { data, error } = (await admin
     .from(JOBS_TABLE)
     .update({
       status: "succeeded",
@@ -132,19 +149,20 @@ export async function markJobSucceeded(admin: SupabaseClient, cmd: MarkJobSuccee
       replicate_prediction_id: cmd.replicatePredictionId ?? null,
       completed_at: new Date().toISOString(),
     })
-    .eq("id", cmd.jobId);
-  if (updateError) {
-    throw new Error(`markJobSucceeded: failed to update job ${cmd.jobId}: ${updateError.message}`);
+    .eq("id", cmd.jobId)
+    .eq("status", "processing")
+    .select("source_path")) as {
+    data: { source_path: string }[] | null;
+    error: { message: string } | null;
+  };
+  if (error) {
+    throw new Error(`markJobSucceeded: failed to update job ${cmd.jobId}: ${error.message}`);
   }
-
-  const sourcePath = row.source_path as string;
-  const { error: removeError } = await admin.storage.from(PHOTOS_BUCKET).remove([sourcePath]);
-  if (removeError) {
-    // Intentional: orphaned source is an operator-cleanup concern, not a
-    // user-facing error. The user-visible result_path is intact.
-    // eslint-disable-next-line no-console
-    console.warn(`markJobSucceeded: source delete for job ${cmd.jobId} (${sourcePath}) failed: ${removeError.message}`);
+  const row = data?.[0];
+  if (row) {
+    await deleteJobSource(admin, row.source_path);
   }
+  return Boolean(row);
 }
 
 /**
@@ -186,14 +204,17 @@ export async function markJobProcessing(admin: SupabaseClient, cmd: MarkJobProce
 }
 
 /**
- * Mark a job as `failed` with an error code/message and stamp `completed_at`.
- * No source cleanup in v1 (failed jobs are out of scope for retention; mirrors
- * {@link markJobSucceeded}'s documented limitation).
+ * Guarded transition to `failed` with an error code/message + `completed_at`,
+ * and delete the source object when (and only when) the row actually flips.
+ * Only a still-pending row (`queued`/`processing`) transitions; a no-op on an
+ * already-terminal row skips the delete. Returns `true` iff a row was flipped
+ * (callers may ignore it). Closes the failed-path half of the ≤24h
+ * source-retention NFR (S-08).
  *
  * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
  */
-export async function markJobFailed(admin: SupabaseClient, cmd: MarkJobFailedCommand): Promise<void> {
-  const { error } = await admin
+export async function markJobFailed(admin: SupabaseClient, cmd: MarkJobFailedCommand): Promise<boolean> {
+  const { data, error } = (await admin
     .from(JOBS_TABLE)
     .update({
       status: "failed",
@@ -201,10 +222,20 @@ export async function markJobFailed(admin: SupabaseClient, cmd: MarkJobFailedCom
       error_message: cmd.errorMessage,
       completed_at: new Date().toISOString(),
     })
-    .eq("id", cmd.jobId);
+    .eq("id", cmd.jobId)
+    .in("status", ["queued", "processing"])
+    .select("id, source_path")) as {
+    data: { id: string; source_path: string }[] | null;
+    error: { message: string } | null;
+  };
   if (error) {
     throw new Error(`markJobFailed: failed to update job ${cmd.jobId}: ${error.message}`);
   }
+  const row = data?.[0];
+  if (row) {
+    await deleteJobSource(admin, row.source_path);
+  }
+  return Boolean(row);
 }
 
 /**
@@ -213,7 +244,8 @@ export async function markJobFailed(admin: SupabaseClient, cmd: MarkJobFailedCom
  * `queued`/`processing` AND owned by `userId`; the `select` makes the affected
  * rows observable so the boolean return distinguishes "flipped to failed" from
  * "already terminal" (a Replicate success that landed first is left untouched —
- * no read-then-write race).
+ * no read-then-write race). On a confirmed flip the source object is deleted
+ * (S-08: the browser-open client-timeout half of the ≤24h source-retention NFR).
  *
  * Returns `true` iff a row was actually transitioned.
  *
@@ -223,7 +255,7 @@ export async function markPendingJobFailedForOwner(
   admin: SupabaseClient,
   cmd: MarkPendingJobFailedCommand,
 ): Promise<boolean> {
-  const { data, error } = await admin
+  const { data, error } = (await admin
     .from(JOBS_TABLE)
     .update({
       status: "failed",
@@ -234,11 +266,18 @@ export async function markPendingJobFailedForOwner(
     .eq("id", cmd.jobId)
     .eq("user_id", cmd.userId)
     .in("status", ["queued", "processing"])
-    .select("id");
+    .select("id, source_path")) as {
+    data: { id: string; source_path: string }[] | null;
+    error: { message: string } | null;
+  };
   if (error) {
     throw new Error(`markPendingJobFailedForOwner: failed to update job ${cmd.jobId}: ${error.message}`);
   }
-  return data.length > 0;
+  const row = data?.[0];
+  if (row) {
+    await deleteJobSource(admin, row.source_path);
+  }
+  return Boolean(row);
 }
 
 /**

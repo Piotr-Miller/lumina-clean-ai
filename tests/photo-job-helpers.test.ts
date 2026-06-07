@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   createSignedReadUrl,
+  deleteJobResult,
+  deleteJobSource,
   getJobById,
   markJobFailed,
   markJobProcessing,
+  markJobSucceeded,
   markPendingJobFailedForOwner,
 } from "@/lib/services/photo-job.service";
 
@@ -48,10 +51,22 @@ function makeQueryBuilder(result: { data?: unknown; error?: unknown }) {
   return { builder, calls };
 }
 
-function makeAdmin(result: { data?: unknown; error?: unknown }) {
+function makeAdmin(result: { data?: unknown; error?: unknown }, storageResult: { error?: unknown } = { error: null }) {
   const { builder, calls } = makeQueryBuilder(result);
-  const admin = { from: () => builder } as unknown as SupabaseClient;
-  return { admin, calls };
+  // Records every storage.remove([...]) call so delete-on-flip is assertable.
+  const removed: string[][] = [];
+  const admin = {
+    from: () => builder,
+    storage: {
+      from: () => ({
+        remove: (paths: string[]) => {
+          removed.push(paths);
+          return Promise.resolve(storageResult);
+        },
+      }),
+    },
+  } as unknown as SupabaseClient;
+  return { admin, calls, removed };
 }
 
 describe("getJobById", () => {
@@ -97,27 +112,93 @@ describe("markJobProcessing", () => {
 });
 
 describe("markJobFailed", () => {
-  it("sets failed + error fields + completed_at, scoped by id", async () => {
-    const { admin, calls } = makeAdmin({ error: null });
-    await markJobFailed(admin, { jobId: "job-1", errorCode: "replicate_failed", errorMessage: "bad output" });
+  it("flips a pending row → failed, deletes the source, returns true (status-guarded)", async () => {
+    const { admin, calls, removed } = makeAdmin({
+      data: [{ id: "job-1", source_path: "u-1/job-1/source.jpg" }],
+      error: null,
+    });
+    const flipped = await markJobFailed(admin, {
+      jobId: "job-1",
+      errorCode: "replicate_failed",
+      errorMessage: "bad output",
+    });
+    expect(flipped).toBe(true);
     const payload = calls.updatePayload as Record<string, unknown>;
     expect(payload.status).toBe("failed");
     expect(payload.error_code).toBe("replicate_failed");
     expect(payload.error_message).toBe("bad output");
     expect(typeof payload.completed_at).toBe("string");
     expect(payload).not.toHaveProperty("updated_at");
-    expect(calls.eqs).toEqual([["id", "job-1"]]);
+    expect(calls.eqs).toContainEqual(["id", "job-1"]);
+    expect(calls.inFilter).toEqual(["status", ["queued", "processing"]]);
+    expect(calls.selectCols).toBe("id, source_path");
+    expect(removed).toEqual([["u-1/job-1/source.jpg"]]);
+  });
+
+  it("returns false and skips the delete when no row flips (already terminal)", async () => {
+    const { admin, removed } = makeAdmin({ data: [], error: null });
+    const flipped = await markJobFailed(admin, { jobId: "job-1", errorCode: "x", errorMessage: "y" });
+    expect(flipped).toBe(false);
+    expect(removed).toEqual([]);
   });
 
   it("throws when the update errors", async () => {
-    const { admin } = makeAdmin({ error: { message: "fail" } });
+    const { admin } = makeAdmin({ data: null, error: { message: "fail" } });
     await expect(markJobFailed(admin, { jobId: "job-1", errorCode: "x", errorMessage: "y" })).rejects.toThrow(/fail/);
   });
 });
 
+describe("markJobSucceeded", () => {
+  it("flips a processing row → succeeded, deletes the source, returns true (F9 guard)", async () => {
+    const { admin, calls, removed } = makeAdmin({ data: [{ source_path: "u-1/job-1/source.jpg" }], error: null });
+    const flipped = await markJobSucceeded(admin, {
+      jobId: "job-1",
+      resultPath: "u-1/job-1/result.jpg",
+      replicatePredictionId: "pred-9",
+    });
+    expect(flipped).toBe(true);
+    const payload = calls.updatePayload as Record<string, unknown>;
+    expect(payload.status).toBe("succeeded");
+    expect(payload.result_path).toBe("u-1/job-1/result.jpg");
+    expect(payload.replicate_prediction_id).toBe("pred-9");
+    expect(typeof payload.completed_at).toBe("string");
+    expect(calls.eqs).toContainEqual(["id", "job-1"]);
+    expect(calls.eqs).toContainEqual(["status", "processing"]);
+    expect(calls.selectCols).toBe("source_path");
+    expect(removed).toEqual([["u-1/job-1/source.jpg"]]);
+  });
+
+  it("returns false and skips the delete when the row isn't processing (lost race)", async () => {
+    const { admin, removed } = makeAdmin({ data: [], error: null });
+    const flipped = await markJobSucceeded(admin, { jobId: "job-1", resultPath: "u-1/job-1/result.jpg" });
+    expect(flipped).toBe(false);
+    expect(removed).toEqual([]);
+  });
+
+  it("throws when the update errors", async () => {
+    const { admin } = makeAdmin({ data: null, error: { message: "boom" } });
+    await expect(markJobSucceeded(admin, { jobId: "job-1", resultPath: "r" })).rejects.toThrow(/boom/);
+  });
+});
+
+describe("deleteJobSource / deleteJobResult", () => {
+  it("remove the given path and never throw on a storage error", async () => {
+    const { admin, removed } = makeAdmin({ error: null });
+    await deleteJobSource(admin, "u-1/j/source.jpg");
+    await deleteJobResult(admin, "u-1/j/result.jpg");
+    expect(removed).toEqual([["u-1/j/source.jpg"], ["u-1/j/result.jpg"]]);
+
+    const { admin: failing } = makeAdmin({ error: null }, { error: { message: "gone" } });
+    await expect(deleteJobSource(failing, "p")).resolves.toBeUndefined();
+  });
+});
+
 describe("markPendingJobFailedForOwner", () => {
-  it("flips a pending row and returns true (owner- + status-guarded)", async () => {
-    const { admin, calls } = makeAdmin({ data: [{ id: "job-1" }], error: null });
+  it("flips a pending row, deletes the source, returns true (owner- + status-guarded)", async () => {
+    const { admin, calls, removed } = makeAdmin({
+      data: [{ id: "job-1", source_path: "u-1/job-1/source.jpg" }],
+      error: null,
+    });
     const flipped = await markPendingJobFailedForOwner(admin, {
       jobId: "job-1",
       userId: "u-1",
@@ -132,11 +213,12 @@ describe("markPendingJobFailedForOwner", () => {
     expect(calls.eqs).toContainEqual(["id", "job-1"]);
     expect(calls.eqs).toContainEqual(["user_id", "u-1"]);
     expect(calls.inFilter).toEqual(["status", ["queued", "processing"]]);
-    expect(calls.selectCols).toBe("id");
+    expect(calls.selectCols).toBe("id, source_path");
+    expect(removed).toEqual([["u-1/job-1/source.jpg"]]);
   });
 
-  it("returns false when no row was affected (already terminal)", async () => {
-    const { admin } = makeAdmin({ data: [], error: null });
+  it("returns false and skips the delete when no row was affected (already terminal)", async () => {
+    const { admin, removed } = makeAdmin({ data: [], error: null });
     const flipped = await markPendingJobFailedForOwner(admin, {
       jobId: "job-1",
       userId: "u-1",
@@ -144,6 +226,7 @@ describe("markPendingJobFailedForOwner", () => {
       errorMessage: "late",
     });
     expect(flipped).toBe(false);
+    expect(removed).toEqual([]);
   });
 
   it("throws when the update errors", async () => {

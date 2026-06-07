@@ -192,13 +192,18 @@ describe("public.jobs RLS + photo-job service", () => {
     const { data: before } = await supabaseAdmin.storage.from(PHOTOS_BUCKET).list(`${user.id}/${created.jobId}`);
     expect(before?.some((f) => f.name === "source.jpg")).toBe(true);
 
+    // markJobSucceeded is status-guarded (F9): it only flips a live `processing`
+    // row, so advance past `queued` first (the /start step does this in prod).
+    await supabaseAdmin.from("jobs").update({ status: "processing" }).eq("id", created.jobId);
+
     // Act.
     const resultPath = `${user.id}/${created.jobId}/result.jpg`;
-    await markJobSucceeded(supabaseAdmin, {
+    const flipped = await markJobSucceeded(supabaseAdmin, {
       jobId: created.jobId,
       resultPath,
       replicatePredictionId: "test-prediction-id",
     });
+    expect(flipped).toBe(true);
 
     // Row state.
     const { data: row, error: readError } = await supabaseAdmin

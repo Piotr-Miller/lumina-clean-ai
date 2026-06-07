@@ -75,8 +75,8 @@ export interface MarkJobProcessingCommand {
 
 /**
  * Input to {@link markJobFailed}. Called by S-04's Edge Function on a pipeline
- * error or a failed Replicate prediction. No source cleanup in v1 (failed jobs
- * are out of scope for retention; mirrors {@link markJobSucceeded}'s note).
+ * error or a failed Replicate prediction. On a confirmed flip the source object
+ * is deleted (S-08: the failed-path half of the ≤24h source-retention NFR).
  */
 export interface MarkJobFailedCommand {
   jobId: string;
