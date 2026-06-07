@@ -15,7 +15,7 @@ export interface CloudJobState {
   status: PhotoJobStatus | null;
   /**
    * True once the wait has run long enough to look like a cold model boot
-   * (Phase-0: first run after idle ≈ 2 min). Drives a reassurance line so a long
+   * (Phase-0: ~2 min typical, >300s under load). Drives a reassurance line so a long
    * spinner doesn't read as "stuck"; warm runs (~5s) never trip it.
    */
   coldStartHint: boolean;
@@ -220,7 +220,7 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
 
     // Phase 1 of the watchdog: the row must leave `queued` quickly (re-checked).
     timers.queued = setTimeout(onQueuedDeadline, QUEUED_WATCHDOG_MS);
-    // Progressive reassurance: a cold first-run after idle can take ~2 min.
+    // Progressive reassurance: a cold first-run after idle can take a few minutes.
     timers.hint = setTimeout(() => {
       if (cancelled || terminal) return;
       setColdStartHint(true);
