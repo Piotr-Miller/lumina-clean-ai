@@ -15,9 +15,10 @@ const JOBS_TABLE = "jobs";
 // Stale-pending sweep bounds (S-08 Phase 3). A non-terminal row older than this
 // is treated as a browser-closed stall no inline hook can reach: the client
 // watchdog never fired (tab gone) and no `/callback` will arrive. 1h sits far
-// above the 5-min processing watchdog + worst cold-boot ceiling (~135s) yet far
-// below the 24h retention window, so the sweep never flips a legitimately
-// in-flight job.
+// above the 5-min processing watchdog + the worst observed cold-boot tail
+// (>300s under platform load, per the SOURCE_URL_TTL note in enhance/index.ts)
+// + Replicate's ~30-min run window, yet far below the 24h retention window — so
+// the sweep never flips a legitimately in-flight job.
 const STALE_PENDING_JOB_MS = 3_600_000;
 // Per-call ceiling on how many stale rows one create-job sweep reclaims. Keeps
 // the best-effort pass cheap; a larger backlog drains over subsequent submits
