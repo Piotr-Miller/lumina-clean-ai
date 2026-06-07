@@ -1,10 +1,10 @@
 ---
 change_id: cloud-job-retention-cleanup
 title: 24h-retention cleanup for failed/abandoned cloud jobs
-status: impl_reviewed
+status: archived
 created: 2026-06-07
 updated: 2026-06-07
-archived_at: null
+archived_at: 2026-06-07T21:05:39Z
 plan_reviewed_pass: 2
 ---
 
