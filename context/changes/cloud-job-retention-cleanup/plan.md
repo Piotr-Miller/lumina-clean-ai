@@ -271,11 +271,11 @@ None — no schema/enum/data change. Reuses `failed` with a new `error_code` str
 #### Automated
 
 - [ ] 2.1 `deno check supabase/functions/enhance/index.ts` passes (CI deploy job)
-- [ ] 2.2 `npm run build` passes
+- [x] 2.2 `npm run build` passes
 
 #### Manual
 
-- [ ] 2.3 Review confirms lost-race + catch both delete the uploaded result; source handled by guarded `markJobFailed`; `/start` create fetch has `AbortSignal.timeout`
+- [x] 2.3 Review confirms lost-race + catch both delete the uploaded result; source handled by guarded `markJobFailed`; `/start` create fetch has `AbortSignal.timeout`
 
 ### Phase 3: Bounded create-job sweep for browser-closed stalls
 

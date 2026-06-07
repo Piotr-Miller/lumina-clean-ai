@@ -23,6 +23,7 @@ import { createClient } from "@supabase/supabase-js";
 import { BREAD_VERSION, buildBreadInput } from "../../../src/lib/services/bread.ts";
 import {
   createSignedReadUrl,
+  deleteJobResult,
   getJobById,
   markJobFailed,
   markJobProcessing,
@@ -244,6 +245,10 @@ async function handleStart(req: Request): Promise<Response> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(predictionBody),
+      // Bound the kickoff POST so a hung Replicate API call can't stall the
+      // invocation with the row stuck `processing` (#2). Reuse the 30s output
+      // budget, mirroring the /callback output fetch.
+      signal: AbortSignal.timeout(OUTPUT_FETCH_TIMEOUT_MS),
     });
 
     if (!predictionRes.ok) {
@@ -368,6 +373,11 @@ async function handleCallback(req: Request): Promise<Response> {
 
   const admin = buildAdminClient();
 
+  // Hoisted to the handler scope so both the lost-race branch and the catch can
+  // clean up an uploaded result that would otherwise orphan (F5/F9). Set only
+  // after a successful upload below; `null` means nothing to clean.
+  let resultPath: string | null = null;
+
   try {
     const job = await getJobById(admin, jobId);
     // Past signature verification, always 200 so Replicate stops retrying a
@@ -422,7 +432,7 @@ async function handleCallback(req: Request): Promise<Response> {
     const contentType = outputRes.headers.get("content-type");
     const bytes = await readBodyCapped(outputRes, MAX_OUTPUT_BYTES);
     const ext = resultExtensionFromContentType(contentType, outcome.outputUrl);
-    const resultPath = `${job.user_id}/${job.id}/result.${ext}`;
+    resultPath = `${job.user_id}/${job.id}/result.${ext}`;
     const { error: uploadError } = await admin.storage.from(PHOTOS_BUCKET).upload(resultPath, bytes, {
       contentType: contentType ?? "image/jpeg",
       upsert: true,
@@ -431,11 +441,23 @@ async function handleCallback(req: Request): Promise<Response> {
       throw new Error(`failed to upload result to ${resultPath}: ${uploadError.message}`);
     }
     // Flip terminal + delete the source (24h-retention enforcement) via the
-    // shared helper — the same writer the app uses, no inline status update.
-    await markJobSucceeded(admin, { jobId, resultPath, replicatePredictionId: payload.id });
+    // shared guarded helper — the same writer the app uses, no inline status
+    // update. `markJobSucceeded` is guarded on `status = processing` (F9), so a
+    // `false` return means the client watchdog (or a retry) terminalized the row
+    // mid-callback: the result we just uploaded would orphan, so delete it (F5).
+    const flipped = await markJobSucceeded(admin, { jobId, resultPath, replicatePredictionId: payload.id });
+    if (!flipped) {
+      await deleteJobResult(admin, resultPath);
+      return jsonResponse(200, { jobId, status: "ignored", reason: "row_already_terminal" });
+    }
     return jsonResponse(200, { jobId, status: "succeeded", resultPath });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    // If the result was already uploaded before the throw, delete it so it never
+    // orphans (F5). The source is handled by the now-guarded markJobFailed below.
+    if (resultPath) {
+      await deleteJobResult(admin, resultPath);
+    }
     // Record the failure on the row (the client's source of truth), then still
     // 200 so Replicate stops retrying a deterministic processing error (e.g. a
     // dead output URL). Best-effort: a failed markJobFailed is swallowed.
