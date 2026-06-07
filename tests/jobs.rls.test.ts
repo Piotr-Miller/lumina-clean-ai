@@ -221,6 +221,48 @@ describe("public.jobs RLS + photo-job service", () => {
     const { data: after } = await supabaseAdmin.storage.from(PHOTOS_BUCKET).list(`${user.id}/${created.jobId}`);
     expect(after?.some((f) => f.name === "source.jpg")).toBe(false);
   });
+
+  it("markJobSucceeded no-ops on a non-processing row (F9 guard blocks resurrection)", async () => {
+    const user = await makeUser("f9guard");
+
+    const created = await createPhotoJob(supabaseAdmin, {
+      userId: user.id,
+      fileExtension: "jpg",
+      mimeType: "image/jpeg",
+    });
+    const put = await fetch(created.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "image/jpeg" },
+      body: tinyJpegPayload() as BodyInit,
+    });
+    expect(put.status).toBeGreaterThanOrEqual(200);
+    expect(put.status).toBeLessThan(300);
+
+    // Simulate the client watchdog winning the race: the row is already `failed`
+    // when /callback's markJobSucceeded runs. The F9 guard (.eq status processing)
+    // must NOT resurrect it to succeeded, and must NOT delete the source.
+    await supabaseAdmin.from("jobs").update({ status: "failed", error_code: "timeout" }).eq("id", created.jobId);
+
+    const flipped = await markJobSucceeded(supabaseAdmin, {
+      jobId: created.jobId,
+      resultPath: `${user.id}/${created.jobId}/result.jpg`,
+      replicatePredictionId: "test-prediction-id",
+    });
+    expect(flipped).toBe(false);
+
+    // Row stays failed; success fields are NOT written.
+    const { data: row } = await supabaseAdmin
+      .from("jobs")
+      .select("status, result_path")
+      .eq("id", created.jobId)
+      .single();
+    expect(row?.status).toBe("failed");
+    expect(row?.result_path).toBeNull();
+
+    // Source object is untouched (the winning failed-path delete owns it, not this no-op).
+    const { data: after } = await supabaseAdmin.storage.from(PHOTOS_BUCKET).list(`${user.id}/${created.jobId}`);
+    expect(after?.some((f) => f.name === "source.jpg")).toBe(true);
+  });
 });
 
 describe("countCloudJobsToday (S-05 global daily-cap count)", () => {

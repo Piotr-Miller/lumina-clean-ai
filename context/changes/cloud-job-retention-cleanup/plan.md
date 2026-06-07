@@ -258,13 +258,13 @@ None — no schema/enum/data change. Reuses `failed` with a new `error_code` str
 
 #### Automated
 
-- [x] 1.1 `npm run test:unit` passes incl. new delete-on-confirmed-transition + `markJobSucceeded`-guard tests
-- [x] 1.2 `npm run lint` passes (touched files)
-- [x] 1.3 `npm run build` passes
+- [x] 1.1 `npm run test:unit` passes incl. new delete-on-confirmed-transition + `markJobSucceeded`-guard tests — ee88ada
+- [x] 1.2 `npm run lint` passes (touched files) — ee88ada
+- [x] 1.3 `npm run build` passes — ee88ada
 
 #### Manual
 
-- [x] 1.4 Review confirms all terminal transitions guarded; every delete gated on a confirmed flip; shared primitive preserves swallow-and-warn
+- [x] 1.4 Review confirms all terminal transitions guarded; every delete gated on a confirmed flip; shared primitive preserves swallow-and-warn — ee88ada
 
 ### Phase 2: Edge Function — `/callback` result-orphan cleanup + `/start` timeout
 
