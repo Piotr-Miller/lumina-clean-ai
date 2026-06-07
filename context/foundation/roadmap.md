@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-06
+updated: 2026-06-07
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -38,7 +38,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-06  | account-session-ux                 | sign out from anywhere; never land on the login form while already signed in | S-02          | FR-004; session-hygiene NFR               | done     |
 | S-07  | production-deployment              | use the live app on Cloudflare (Local + auth public; cloud behind a flag) | S-04          | MVP success: deployed & accessible        | done     |
 | S-08  | cloud-job-retention-cleanup        | trust uploaded sources are gone within 24h even on failed/abandoned jobs | F-01, S-04    | NFR: source not retained beyond 24h       | proposed |
-| S-09  | cloud-source-url-ttl-fix           | (reliability) cloud jobs survive a slow Replicate cold boot without source-URL expiry | S-04          | MVP success: cloud flow works end-to-end (NFR reliability) | proposed |
+| S-09  | cloud-source-url-ttl-fix           | (reliability) cloud jobs survive a slow Replicate cold boot without source-URL expiry | S-04          | MVP success: cloud flow works end-to-end (NFR reliability) | done     |
 
 ## Streams
 
@@ -205,7 +205,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Fix shape — raise the source TTL (~900s) vs sign the source URL lazily (only once the model is about to fetch) — Owner: TBD. Block: no. Raising the TTL is the one-line option; lazy signing is more robust but larger. Re-validate either against a slow (>300s) cold boot.
   - Right TTL ceiling vs the privacy posture — a longer-lived signed READ URL is a (small) wider exposure window for the private source; keep it as short as the worst observed cold boot allows. Owner: TBD. Block: no.
 - **Risk:** Low and surgical — surfaced during S-04 Phase-5 E2E. The Edge Function (`supabase/functions/enhance/index.ts`) signs the source READ URL for `SOURCE_URL_TTL_SECONDS = 300`; a Replicate cold boot exceeding 300s (observed under platform load, well past Phase-0's ~135s) expires the URL before the model fetches it → the prediction dies at the source-fetch step with a 400. A genuine prod reliability gap, **not** account-specific. Lives in S-04's Edge Function (Phase 2/3 surface), so it was tracked in Parked rather than reopening S-04; promoted to its own slice (2026-06-04) because it is a v1 go-live prerequisite for the cloud path, not optional polish. See [[size-client-timeouts-and-provider-fetched-signed-url-ttls-to-the-external-models-cold-boot-ceiling-not-its-warm-latency]] in `lessons.md`.
-- **Status:** proposed
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -220,7 +220,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-06       | account-session-ux                 | Account/session UX: global sign-out + redirect authed off /auth/* | done                  | Archived 2026-06-03 → `context/archive/2026-06-03-account-session-ux/`. Issue #7. |
 | S-07       | production-deployment              | Production deployment / go-live (Cloudflare + prod Supabase) | done                  | Archived 2026-06-06 → `context/archive/2026-06-04-production-deployment/`. Issue #8. |
 | S-08       | cloud-job-retention-cleanup        | 24h-retention cleanup for failed/abandoned cloud jobs | yes                   | Prereq F-01/S-04 (done). Closes privacy-NFR gap punted by F-01/S-03/S-04. Inline delete-on-failure, NOT pg_cron. Independent of S-05. |
-| S-09       | cloud-source-url-ttl-fix           | Source signed-URL TTL fix (cold-boot reliability)     | yes                   | Prereq S-04 (done). Promoted from Parked 2026-06-04. v1 go-live prerequisite for the cloud path; must land + re-validate before the `CLOUD_PIPELINE_ENABLED` flip-ON. Surgical Edge-Function change; independent of S-05/S-08. |
+| S-09       | cloud-source-url-ttl-fix           | Source signed-URL TTL fix (cold-boot reliability)     | done                  | Archived 2026-06-07 → `context/archive/2026-06-06-cloud-source-url-ttl-fix/`. Issue #12. |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 
@@ -258,3 +258,4 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 - **S-06: a signed-in user can sign out from anywhere in the app (not only from `/` and `/dashboard`), is redirected to home instead of being shown the login form while already authenticated, is — optionally — signed out after a configured idle period, and can complete a password reset from a different device/browser than the one that requested it.** — Archived 2026-06-03 → `context/archive/2026-06-03-account-session-ux/`. Lesson: —.
 - **S-05: a Cloud AI request that would exceed the global daily cap is rejected before the cloud model is invoked, with a clear user-facing message; the bill is structurally bounded.** — Archived 2026-06-04 → `context/archive/2026-06-03-cloud-daily-cap/`. Lesson: —.
 - **S-07: the app is deployed and publicly accessible on Cloudflare (Workers) on a branded custom domain (luminacleanai.com), with the prod Supabase project (luminaclean-prod) wired — migrations applied, Edge Function `enhance` deployed, auth + Resend email live; the Cloud AI pipeline ships flag-OFF (`CLOUD_PIPELINE_ENABLED=false`, `CLOUD_DAILY_CAP=0`), flip-ON gated on S-05+S-08+S-09.** — Archived 2026-06-06 → `context/archive/2026-06-04-production-deployment/`. Lesson: a fresh prod Supabase project doesn't auto-repoint the Worker — verify which project the deployed app talks to (lessons.md); DB-webhook custom-GUC + callback success-path hardening (F8/F9) deferred to flip-ON.
+- **S-09: a Cloud AI job survives a slow Replicate cold boot — the source READ URL the Edge Function signs (raised to `SOURCE_URL_TTL_SECONDS = 3600`) no longer expires before the model fetches it on cold starts that exceed the old 300s; the client processing watchdog is raised to 5 min to match.** — Archived 2026-06-07 → `context/archive/2026-06-06-cloud-source-url-ttl-fix/`. Lesson: size provider-fetched signed-URL TTLs + client watchdogs to the cold-boot ceiling, not warm latency (lessons.md); live >300s re-validation deferred to flip-ON (D.1).

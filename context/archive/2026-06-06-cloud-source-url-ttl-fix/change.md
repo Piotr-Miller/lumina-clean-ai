@@ -1,7 +1,8 @@
 ---
 id: cloud-source-url-ttl-fix
 roadmap_id: S-09
-status: impl_reviewed
+status: archived
+archived_at: 2026-06-07T12:23:04Z
 created: 2026-06-06
 updated: 2026-06-07
 issue: 12

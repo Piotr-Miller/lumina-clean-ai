@@ -121,7 +121,7 @@ repo. They can be deleted manually at any time.
 | S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7) | `account-session-ux`                | done     | `roadmap` `slice` `status:ready` |
 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8) | `production-deployment`             | done     | `roadmap` `slice` `status:ready` |
 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9) | `cloud-job-retention-cleanup`       | ready    | `roadmap` `slice` `status:ready` |
-| S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`         | ready    | `roadmap` `slice` `status:ready` |
+| S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`         | done     | `roadmap` `slice` `status:ready` |
 
 ⭐ = north star (validation milestone).
 
@@ -149,6 +149,7 @@ Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" n
 | 2026-06-03 | S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7) | closed on archive |
 | 2026-06-04 | S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | closed on archive (commit 0130a79) |
 | 2026-06-06 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8) | closed on archive |
+| 2026-06-07 | S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | closed on archive |
 
 > The F-01/S-01/S-02 rows are recorded for completeness based on their archive dates; this log section was introduced with the S-03 archive (2026-05-31).
 
