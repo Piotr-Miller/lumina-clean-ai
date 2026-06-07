@@ -175,14 +175,14 @@ None — constant + copy changes only; no schema/data/API change. Worker/Edge ru
 
 #### Automated
 
-- [x] 2.1 `npm run test:unit` passes incl. new `tests/cloud-timings.test.ts`
-- [x] 2.2 `npm run lint` passes
-- [x] 2.3 `npm run build` passes
+- [x] 2.1 `npm run test:unit` passes incl. new `tests/cloud-timings.test.ts` — 6fec89e
+- [x] 2.2 `npm run lint` passes — 6fec89e
+- [x] 2.3 `npm run build` passes — 6fec89e
 
 #### Manual
 
-- [x] 2.4 Cold-start reassurance copy renders the updated wait in dev
-- [x] 2.5 No regression in existing cloud-job render/subscribe behavior
+- [x] 2.4 Cold-start reassurance copy renders the updated wait in dev — 6fec89e
+- [x] 2.5 No regression in existing cloud-job render/subscribe behavior — 6fec89e
 
 ### Deferred (flip-ON gate — not run in this change)
 
