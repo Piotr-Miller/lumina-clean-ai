@@ -281,13 +281,13 @@ None — no schema/enum/data change. Reuses `failed` with a new `error_code` str
 
 #### Automated
 
-- [x] 3.1 `npm run test:unit` passes incl. sweep tests (owner-scope, threshold, `SWEEP_MAX`, no-op)
-- [x] 3.2 `npm run lint` passes (touched files)
-- [x] 3.3 `npm run build` passes
+- [x] 3.1 `npm run test:unit` passes incl. sweep tests (owner-scope, threshold, `SWEEP_MAX`, no-op) — 52ae3f8
+- [x] 3.2 `npm run lint` passes (touched files) — 52ae3f8
+- [x] 3.3 `npm run build` passes — 52ae3f8
 
 #### Manual
 
-- [x] 3.4 Review confirms sweep is owner-scoped, bounded (+log), best-effort (never blocks create-job), threshold above the watchdog window
+- [x] 3.4 Review confirms sweep is owner-scoped, bounded (+log), best-effort (never blocks create-job), threshold above the watchdog window — 52ae3f8
 
 ### Deferred (flip-ON gate — not run in this change)
 
