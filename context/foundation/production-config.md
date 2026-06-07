@@ -16,7 +16,7 @@ production — the things that live in Cloudflare, Supabase, Resend, GitHub, and
 > respective vaults (Worker secrets, Supabase secrets, GitHub secrets, Resend, a
 > password manager) — never in the repo.
 
-Last updated: **2026-06-06**.
+Last updated: **2026-06-07**.
 
 ---
 
@@ -77,7 +77,7 @@ Names only (Settings → Secrets and variables → Actions):
 ## 5. Google Safe Browsing / Search Console
 
 - `luminacleanai.com` flagged **"Deceptive pages"** (social engineering) on first login — assessed **false positive** (new domain + login form; Search Console listed **no sample URLs**).
-- Domain **verified in Google Search Console** (DNS TXT). **Review requested 2026-06-06** (deceptive/phishing reviews ~1 day; browser warnings clear within ~72h). Don't re-submit while pending.
+- Domain **verified in Google Search Console** (DNS TXT). Review requested 2026-06-06; **PASSED 2026-06-07** — Google confirmed the site no longer contains links to harmful sites or downloads and is **removing the user-visible warnings** (propagates over a few hours, browsers clear within ~72h). The "Deceptive pages" flag was a confirmed **false positive**, now cleared.
 
 ## 6. Local dev environment
 
@@ -99,7 +99,7 @@ Names only (Settings → Secrets and variables → Actions):
 
 ## Pending / follow-ups
 
-- **Safe Browsing review** — awaiting Google (requested 2026-06-06).
+- ~~**Safe Browsing review**~~ — **RESOLVED 2026-06-07**: Google review passed, "Deceptive pages" false positive cleared, warnings being removed.
 - **#14** — disable workers.dev once branded domain is established.
 - **DMARC** — optional TXT for deliverability.
 - **Flip-ON** (S-05+S-08+S-09) — set Edge Function + Worker cloud secrets, DB-webhook GUCs. See `go-live.md` flip-ON runbook.
