@@ -4,7 +4,12 @@ import { createClient } from "@/lib/supabase";
 export const prerender = false;
 
 export const POST: APIRoute = async (context) => {
-  const form = await context.request.formData();
+  let form: FormData;
+  try {
+    form = await context.request.formData();
+  } catch {
+    return context.redirect(`/auth/signup?error=${encodeURIComponent("Invalid request. Please try again.")}`);
+  }
   const email = form.get("email") as string;
   const password = form.get("password") as string;
 

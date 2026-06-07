@@ -5,7 +5,12 @@ import { validateNewPassword } from "@/lib/auth-validation";
 export const prerender = false;
 
 export const POST: APIRoute = async (context) => {
-  const form = await context.request.formData();
+  let form: FormData;
+  try {
+    form = await context.request.formData();
+  } catch {
+    return context.redirect(`/auth/reset-password?error=${encodeURIComponent("Invalid request. Please try again.")}`);
+  }
   const password = form.get("password") as string;
   const confirmPassword = form.get("confirmPassword") as string;
 
