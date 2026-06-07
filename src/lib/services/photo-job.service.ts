@@ -12,6 +12,18 @@ import type {
 const PHOTOS_BUCKET = "photos";
 const JOBS_TABLE = "jobs";
 
+// Stale-pending sweep bounds (S-08 Phase 3). A non-terminal row older than this
+// is treated as a browser-closed stall no inline hook can reach: the client
+// watchdog never fired (tab gone) and no `/callback` will arrive. 1h sits far
+// above the 5-min processing watchdog + worst cold-boot ceiling (~135s) yet far
+// below the 24h retention window, so the sweep never flips a legitimately
+// in-flight job.
+const STALE_PENDING_JOB_MS = 3_600_000;
+// Per-call ceiling on how many stale rows one create-job sweep reclaims. Keeps
+// the best-effort pass cheap; a larger backlog drains over subsequent submits
+// (surfaced via console.warn — no silent cap).
+const SWEEP_MAX = 100;
+
 /**
  * Best-effort delete of a private `photos` object, shared by every terminal
  * transition. Swallows storage errors with a `console.warn` — an orphaned
@@ -278,6 +290,111 @@ export async function markPendingJobFailedForOwner(
     await deleteJobSource(admin, row.source_path);
   }
   return Boolean(row);
+}
+
+/**
+ * Owner-scoped, bounded, best-effort reclaim of the caller's OWN stale
+ * non-terminal jobs (and their source objects) — the one ≤24h-retention case no
+ * inline terminal hook reaches: a browser-closed stall where the client watchdog
+ * never fired and no `/callback` will arrive. Selects up to `max` of the caller's
+ * `queued`/`processing` rows older than `staleMs` (oldest first), flips them to
+ * `failed` (`error_code: "abandoned"`) in one guarded UPDATE, and deletes all
+ * their sources in a SINGLE batched `storage.remove`. Returns the swept count;
+ * warns when it hits `max` (no silent cap — more may remain, draining on later
+ * submits). **Never throws** — a sweep fault must never block job creation.
+ *
+ * Cap interaction (intended): flipping a pre-model abandoned row
+ * (`replicate_prediction_id IS NULL`) to `failed` releases its daily-cap slot,
+ * since {@link countCloudJobsToday} excludes `failed AND prediction_id IS NULL`
+ * (a job that never invoked Replicate cost nothing). Rows that reached Replicate
+ * stay counted. The sweep thus makes the cap tally *more* accurate.
+ *
+ * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
+ */
+export async function sweepStalePendingJobsForOwner(
+  admin: SupabaseClient,
+  userId: string,
+  opts?: { staleMs?: number; max?: number },
+): Promise<number> {
+  const staleMs = opts?.staleMs ?? STALE_PENDING_JOB_MS;
+  const max = opts?.max ?? SWEEP_MAX;
+  try {
+    const thresholdIso = new Date(Date.now() - staleMs).toISOString();
+
+    // 1. Find the caller's stale non-terminal rows (oldest first, bounded).
+    const { data: stale, error: selectError } = (await admin
+      .from(JOBS_TABLE)
+      .select("id, source_path")
+      .eq("user_id", userId)
+      .in("status", ["queued", "processing"])
+      .lt("created_at", thresholdIso)
+      .order("created_at", { ascending: true })
+      .limit(max)) as {
+      data: { id: string; source_path: string }[] | null;
+      error: { message: string } | null;
+    };
+    if (selectError) {
+      throw new Error(selectError.message);
+    }
+    const rows = stale ?? [];
+    if (rows.length === 0) {
+      return 0;
+    }
+
+    // 2. Guarded flip → failed for exactly those ids — still owner-scoped AND
+    //    still non-terminal, so a row that terminalized between the select and
+    //    here (a late /callback, the watchdog) is left untouched. The `select`
+    //    drives the source deletes off the rows that actually flipped.
+    const ids = rows.map((r) => r.id);
+    const { data: flipped, error: updateError } = (await admin
+      .from(JOBS_TABLE)
+      .update({
+        status: "failed",
+        error_code: "abandoned",
+        error_message: "Reclaimed: job stalled past the retention window with no terminal event.",
+        completed_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
+      .in("id", ids)
+      .in("status", ["queued", "processing"])
+      .select("source_path")) as {
+      data: { source_path: string }[] | null;
+      error: { message: string } | null;
+    };
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+    const flippedRows = flipped ?? [];
+
+    // 3. SINGLE batched delete for all flipped sources (supabase-js `.remove()`
+    //    takes a path array). Absent objects are harmless no-ops. Best-effort:
+    //    a storage error is warned, never thrown.
+    const sourcePaths = flippedRows.map((r) => r.source_path).filter(Boolean);
+    if (sourcePaths.length > 0) {
+      const { error: removeError } = await admin.storage.from(PHOTOS_BUCKET).remove(sourcePaths);
+      if (removeError) {
+        // eslint-disable-next-line no-console
+        console.warn(`sweepStalePendingJobsForOwner: source batch delete failed: ${removeError.message}`);
+      }
+    }
+
+    const sweptCount = flippedRows.length;
+    if (sweptCount >= max) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `sweepStalePendingJobsForOwner: hit the ${max}-row cap for user ${userId} — ` +
+          `more stale rows may remain and will drain on subsequent submits.`,
+      );
+    }
+    return sweptCount;
+  } catch (err) {
+    // Best-effort: never block job creation. Log and report zero swept.
+    // eslint-disable-next-line no-console
+    console.warn(
+      `sweepStalePendingJobsForOwner: sweep failed for user ${userId}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return 0;
+  }
 }
 
 /**

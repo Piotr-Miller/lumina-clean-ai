@@ -271,23 +271,23 @@ None — no schema/enum/data change. Reuses `failed` with a new `error_code` str
 #### Automated
 
 - [ ] 2.1 `deno check supabase/functions/enhance/index.ts` passes (CI deploy job)
-- [x] 2.2 `npm run build` passes
+- [x] 2.2 `npm run build` passes — 2a66545
 
 #### Manual
 
-- [x] 2.3 Review confirms lost-race + catch both delete the uploaded result; source handled by guarded `markJobFailed`; `/start` create fetch has `AbortSignal.timeout`
+- [x] 2.3 Review confirms lost-race + catch both delete the uploaded result; source handled by guarded `markJobFailed`; `/start` create fetch has `AbortSignal.timeout` — 2a66545
 
 ### Phase 3: Bounded create-job sweep for browser-closed stalls
 
 #### Automated
 
-- [ ] 3.1 `npm run test:unit` passes incl. sweep tests (owner-scope, threshold, `SWEEP_MAX`, no-op)
-- [ ] 3.2 `npm run lint` passes (touched files)
-- [ ] 3.3 `npm run build` passes
+- [x] 3.1 `npm run test:unit` passes incl. sweep tests (owner-scope, threshold, `SWEEP_MAX`, no-op)
+- [x] 3.2 `npm run lint` passes (touched files)
+- [x] 3.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 3.4 Review confirms sweep is owner-scoped, bounded (+log), best-effort (never blocks create-job), threshold above the watchdog window
+- [x] 3.4 Review confirms sweep is owner-scoped, bounded (+log), best-effort (never blocks create-job), threshold above the watchdog window
 
 ### Deferred (flip-ON gate — not run in this change)
 

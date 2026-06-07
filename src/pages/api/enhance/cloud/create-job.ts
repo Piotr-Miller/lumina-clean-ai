@@ -1,7 +1,12 @@
 import type { APIRoute } from "astro";
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CLOUD_DAILY_CAP } from "astro:env/server";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { countCloudJobsToday, createPhotoJob, isOverDailyCap } from "@/lib/services/photo-job.service";
+import {
+  countCloudJobsToday,
+  createPhotoJob,
+  isOverDailyCap,
+  sweepStalePendingJobsForOwner,
+} from "@/lib/services/photo-job.service";
 import { createPhotoJobRequestSchema } from "@/lib/services/photo-job.schema";
 
 export const prerender = false;
@@ -54,6 +59,22 @@ export const POST: APIRoute = async (context) => {
 
   try {
     const admin = createAdminClient({ url: SUPABASE_URL, serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY });
+
+    // Best-effort retention sweep (S-08 Phase 3): reclaim THIS caller's own
+    // browser-closed stale jobs + their sources before doing new work. Runs
+    // BEFORE the cap count on purpose — flipping a pre-model abandoned row frees
+    // its daily-cap slot, so the subsequent count is more accurate. The helper is
+    // internally fail-safe; this guard is belt-and-suspenders so a sweep fault
+    // can never affect the cap check or createPhotoJob.
+    try {
+      await sweepStalePendingJobsForOwner(admin, user.id);
+    } catch (sweepErr) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "create-job: stale-job sweep failed (non-fatal):",
+        sweepErr instanceof Error ? sweepErr.message : sweepErr,
+      );
+    }
 
     // Global daily cap (PRD FR-014): reject before any signed URL / storage /
     // Replicate work. The cap value is the route's concern (env); the count +

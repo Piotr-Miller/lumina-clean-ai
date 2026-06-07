@@ -9,6 +9,7 @@ import {
   markJobProcessing,
   markJobSucceeded,
   markPendingJobFailedForOwner,
+  sweepStalePendingJobsForOwner,
 } from "@/lib/services/photo-job.service";
 
 /**
@@ -234,6 +235,166 @@ describe("markPendingJobFailedForOwner", () => {
     await expect(
       markPendingJobFailedForOwner(admin, { jobId: "j", userId: "u", errorCode: "t", errorMessage: "m" }),
     ).rejects.toThrow(/denied/);
+  });
+});
+
+describe("sweepStalePendingJobsForOwner", () => {
+  /**
+   * Sweep-specific admin stub: the helper runs a SELECT chain
+   * (`.select().eq().in().lt().order().limit()`) then a separate UPDATE chain
+   * (`.update().eq().in().in().select()`), each resolving to a DIFFERENT result,
+   * plus one batched `storage.remove(paths)`. The SELECT chain terminates by
+   * awaiting `.limit()`; the UPDATE chain terminates by awaiting the builder
+   * after its trailing `.select()` (thenable → updateResult). A `phase` flag
+   * routes `.select()` to the right recorder.
+   */
+  function makeSweepAdmin(opts: {
+    selectResult: { data?: unknown; error?: unknown };
+    updateResult?: { data?: unknown; error?: unknown };
+    removeResult?: { error?: unknown };
+  }) {
+    const calls = {
+      selectCols: undefined as unknown,
+      updateSelectCols: undefined as unknown,
+      updatePayload: undefined as unknown,
+      eqs: [] as [string, unknown][],
+      ins: [] as [string, unknown[]][],
+      lt: undefined as [string, unknown] | undefined,
+      order: undefined as [string, unknown] | undefined,
+      limit: undefined as unknown,
+    };
+    const removed: string[][] = [];
+    let phase: "select" | "update" = "select";
+
+    const builder: Record<string, unknown> = {
+      select(cols: unknown) {
+        if (phase === "select") calls.selectCols = cols;
+        else calls.updateSelectCols = cols;
+        return builder;
+      },
+      update(payload: unknown) {
+        phase = "update";
+        calls.updatePayload = payload;
+        return builder;
+      },
+      eq(col: string, val: unknown) {
+        calls.eqs.push([col, val]);
+        return builder;
+      },
+      in(col: string, vals: unknown[]) {
+        calls.ins.push([col, vals]);
+        return builder;
+      },
+      lt(col: string, val: unknown) {
+        calls.lt = [col, val];
+        return builder;
+      },
+      order(col: string, cfg: unknown) {
+        calls.order = [col, cfg];
+        return builder;
+      },
+      // Terminates the SELECT chain — resolve the select-phase result.
+      limit(n: unknown) {
+        calls.limit = n;
+        return Promise.resolve(opts.selectResult);
+      },
+      // Terminates the UPDATE chain — `await builder` after the trailing
+      // `.select("source_path")` resolves the update-phase result.
+      then(onF: (v: unknown) => unknown, onR?: (e: unknown) => unknown) {
+        return Promise.resolve(opts.updateResult ?? { data: [], error: null }).then(onF, onR);
+      },
+    };
+    const admin = {
+      from: () => builder,
+      storage: {
+        from: () => ({
+          remove: (paths: string[]) => {
+            removed.push(paths);
+            return Promise.resolve(opts.removeResult ?? { error: null });
+          },
+        }),
+      },
+    } as unknown as SupabaseClient;
+    return { admin, calls, removed };
+  }
+
+  it("selects the owner's stale non-terminal rows, flips them, batch-deletes sources", async () => {
+    const { admin, calls, removed } = makeSweepAdmin({
+      selectResult: {
+        data: [
+          { id: "j-1", source_path: "u-1/j-1/source.jpg" },
+          { id: "j-2", source_path: "u-1/j-2/source.png" },
+        ],
+        error: null,
+      },
+      updateResult: {
+        data: [{ source_path: "u-1/j-1/source.jpg" }, { source_path: "u-1/j-2/source.png" }],
+        error: null,
+      },
+    });
+
+    const swept = await sweepStalePendingJobsForOwner(admin, "u-1");
+    expect(swept).toBe(2);
+
+    // Owner- + status-scoped select, oldest-first, bounded.
+    expect(calls.selectCols).toBe("id, source_path");
+    expect(calls.eqs).toContainEqual(["user_id", "u-1"]);
+    expect(calls.ins).toContainEqual(["status", ["queued", "processing"]]);
+    expect(calls.lt?.[0]).toBe("created_at");
+    expect(calls.order).toEqual(["created_at", { ascending: true }]);
+    expect(calls.limit).toBe(100);
+
+    // Guarded flip → failed/abandoned for exactly the selected ids.
+    const payload = calls.updatePayload as Record<string, unknown>;
+    expect(payload.status).toBe("failed");
+    expect(payload.error_code).toBe("abandoned");
+    expect(typeof payload.error_message).toBe("string");
+    expect(typeof payload.completed_at).toBe("string");
+    expect(calls.ins).toContainEqual(["id", ["j-1", "j-2"]]);
+    expect(calls.updateSelectCols).toBe("source_path");
+
+    // SINGLE batched remove of all flipped sources (not a per-row loop).
+    expect(removed).toEqual([["u-1/j-1/source.jpg", "u-1/j-2/source.png"]]);
+  });
+
+  it("is a no-op (no update, no remove, returns 0) when nothing is stale", async () => {
+    const { admin, calls, removed } = makeSweepAdmin({ selectResult: { data: [], error: null } });
+    const swept = await sweepStalePendingJobsForOwner(admin, "u-1");
+    expect(swept).toBe(0);
+    expect(calls.updatePayload).toBeUndefined();
+    expect(removed).toEqual([]);
+  });
+
+  it("respects the max bound (limit + count) and never exceeds it", async () => {
+    const rows = [
+      { id: "j-1", source_path: "u-1/j-1/source.jpg" },
+      { id: "j-2", source_path: "u-1/j-2/source.jpg" },
+    ];
+    const { admin, calls } = makeSweepAdmin({
+      selectResult: { data: rows, error: null },
+      updateResult: { data: rows.map((r) => ({ source_path: r.source_path })), error: null },
+    });
+    const swept = await sweepStalePendingJobsForOwner(admin, "u-1", { max: 2 });
+    expect(calls.limit).toBe(2);
+    expect(swept).toBe(2);
+  });
+
+  it("honours a custom staleMs threshold and is owner-scoped on the flip", async () => {
+    const { admin, calls } = makeSweepAdmin({
+      selectResult: { data: [{ id: "j-9", source_path: "u-2/j-9/source.jpg" }], error: null },
+      updateResult: { data: [{ source_path: "u-2/j-9/source.jpg" }], error: null },
+    });
+    await sweepStalePendingJobsForOwner(admin, "u-2", { staleMs: 1000 });
+    // The flip carries the owner guard AND the still-non-terminal status guard.
+    expect(calls.eqs).toContainEqual(["user_id", "u-2"]);
+    expect(calls.ins).toContainEqual(["status", ["queued", "processing"]]);
+    expect(calls.lt?.[0]).toBe("created_at");
+  });
+
+  it("never throws and returns 0 when the select errors (best-effort)", async () => {
+    const { admin, removed } = makeSweepAdmin({ selectResult: { data: null, error: { message: "db down" } } });
+    await expect(sweepStalePendingJobsForOwner(admin, "u-1")).resolves.toBe(0);
+    expect(removed).toEqual([]);
   });
 });
 
