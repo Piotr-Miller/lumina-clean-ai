@@ -59,14 +59,25 @@ const RESULT_URL_TTL_SECONDS = 300;
  * which is the proof the pipeline engaged:
  *  - QUEUED→PROCESSING must be quick; if the row never reaches `processing` the
  *    webhook never fired / the flag is off / `/start` died — fail fast.
- *  - Once `processing`, Replicate has the job and a ~135s cold boot is "slow but
+ *  - Once `processing`, Replicate has the job and a cold boot is "slow but
  *    working", so allow a much longer budget (ceiling + predict + callback +
- *    result fetch) before declaring a stall.
+ *    result fetch) before declaring a stall. Cold boots >300s were observed
+ *    under platform load, so the budget is 300s (5 min) — above that tail with
+ *    margin.
+ *
+ * This `processing` budget is a UX-patience timeout (fail a truly-stuck job to a
+ * clear retry), deliberately DECOUPLED from — and shorter than — the Edge
+ * Function's 3600s source signed-URL TTL (`SOURCE_URL_TTL_SECONDS`). The TTL is
+ * sized generously so the source URL is never the failure cause; this watchdog
+ * is a separate concern and must not be "aligned" to it.
+ *
+ * Exported so `tests/cloud-timings.test.ts` can assert the design invariants
+ * (reassurance before fail; two-phase ordering; cold-boot floor).
  */
-const QUEUED_WATCHDOG_MS = 30_000;
-const PROCESSING_WATCHDOG_MS = 180_000;
+export const QUEUED_WATCHDOG_MS = 30_000;
+export const PROCESSING_WATCHDOG_MS = 300_000;
 /** Show the cold-start reassurance line if still waiting after this. */
-const SLOW_HINT_MS = 25_000;
+export const SLOW_HINT_MS = 25_000;
 const TIMEOUT_ENDPOINT = "/api/enhance/cloud/timeout";
 
 const TIMEOUT_MESSAGE = "Cloud processing took too long. Please try again.";

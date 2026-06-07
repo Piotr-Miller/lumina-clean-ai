@@ -257,7 +257,7 @@ export default function EnhanceWorkspace({
                   </p>
                   {/* Progressive cold-start reassurance — only after the wait looks like a model boot. */}
                   {cloudColdStartHint && (
-                    <p className="text-xs text-white/50">The first run after idle can take up to ~2 minutes.</p>
+                    <p className="text-xs text-white/50">The first run after idle can take a few minutes.</p>
                   )}
                   <Button type="button" variant="outline" onClick={handleReset} className={`gap-2 ${SECONDARY_BUTTON}`}>
                     <RotateCcw className="size-4" />

@@ -164,25 +164,25 @@ None — constant + copy changes only; no schema/data/API change. Worker/Edge ru
 
 #### Automated
 
-- [x] 1.1 `deno check supabase/functions/enhance/index.ts` passes (CI deploy job; `deno` not on local PATH — install locally or use the supabase-bundled deno)
-- [x] 1.2 `npm run lint` passes (touched files)
+- [x] 1.1 `deno check supabase/functions/enhance/index.ts` passes (CI deploy job; `deno` not on local PATH — install locally or use the supabase-bundled deno) — 167ac4f
+- [x] 1.2 `npm run lint` passes (touched files) — 167ac4f
 
 #### Manual
 
-- [x] 1.3 Review confirms `SOURCE_URL_TTL_SECONDS = 3600` + rationale comment (>300s tail, un-re-mintable)
+- [x] 1.3 Review confirms `SOURCE_URL_TTL_SECONDS = 3600` + rationale comment (>300s tail, un-re-mintable) — 167ac4f
 
 ### Phase 2: Client — watchdog + cold-start UX + regression guard
 
 #### Automated
 
-- [ ] 2.1 `npm run test:unit` passes incl. new `tests/cloud-timings.test.ts`
-- [ ] 2.2 `npm run lint` passes
-- [ ] 2.3 `npm run build` passes
+- [x] 2.1 `npm run test:unit` passes incl. new `tests/cloud-timings.test.ts`
+- [x] 2.2 `npm run lint` passes
+- [x] 2.3 `npm run build` passes
 
 #### Manual
 
-- [ ] 2.4 Cold-start reassurance copy renders the updated wait in dev
-- [ ] 2.5 No regression in existing cloud-job render/subscribe behavior
+- [x] 2.4 Cold-start reassurance copy renders the updated wait in dev
+- [x] 2.5 No regression in existing cloud-job render/subscribe behavior
 
 ### Deferred (flip-ON gate — not run in this change)
 
