@@ -16,6 +16,10 @@ production — the things that live in Cloudflare, Supabase, Resend, GitHub, and
 > respective vaults (Worker secrets, Supabase secrets, GitHub secrets, Resend, a
 > password manager) — never in the repo.
 
+> **Companion:** [`manual-setup-runbook.md`](./manual-setup-runbook.md) is the _procedure_
+> (ordered "do this, then this" wire-up actions per service). This file is the _state record_
+> (the concrete refs/IDs and what's currently set). Use them together.
+
 Last updated: **2026-06-08**.
 
 ---
