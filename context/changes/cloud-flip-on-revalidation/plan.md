@@ -291,7 +291,7 @@ No migration unless the prod GUC direct-connection attempt is denied; the fallba
 #### Automated
 
 - [ ] 4.1 Prod GUC probe returns prod `edge_function_url` + `secret_set = true` (direct-connection or fallback)
-- [ ] 4.2 If fallback migration used: `supabase db reset` clean + `d1-retention-check.ts` still green
+- [x] 4.2 If fallback migration used: `supabase db reset` clean + `d1-retention-check.ts` still green — GUC→Vault migration 20260608120000; reset clean, Vault trigger proven (correct Bearer POST to /start, 500-not-401 = auth accepted), harness PASS
 
 #### Manual
 
