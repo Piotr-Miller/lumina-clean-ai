@@ -255,24 +255,24 @@ No migration unless the prod GUC direct-connection attempt is denied; the fallba
 
 #### Automated
 
-- [x] 1.1 `supabase status` up; `supabase db reset` applies migrations incl. `jobs_enqueue_webhook` trigger
-- [x] 1.2 GUC probe returns the local `edge_function_url` + `secret_set = true`
+- [x] 1.1 `supabase status` up; `supabase db reset` applies migrations incl. `jobs_enqueue_webhook` trigger — 319c978
+- [x] 1.2 GUC probe returns the local `edge_function_url` + `secret_set = true` — 319c978
 
 #### Manual
 
-- [x] 1.3 Authenticated local submit INSERTs `queued` and `/start` fires (functions-serve logs); token-less run ends `failed` at predictions.create with source deleted (expected)
+- [x] 1.3 Authenticated local submit INSERTs `queued` and `/start` fires (functions-serve logs); token-less run ends `failed` at predictions.create with source deleted (expected) — 319c978
 - [ ] 1.4 `local-runbook.md` reproduces setup from a clean `supabase start`
 
 ### Phase 2: Deterministic retention assertions (harness-driven)
 
 #### Automated
 
-- [ ] 2.1 `npx tsx scripts/spikes/d1-retention-check.ts` exits 0 — 2a failed-source-delete, 2b sweep + cap-slot release, 2c-i late-callback idempotency (`already_terminal`, no resurrection) all PASS
-- [ ] 2.2 Re-run is green twice (idempotent, no cross-run residue)
+- [x] 2.1 `npx tsx scripts/spikes/d1-retention-check.ts` exits 0 — 2a failed-source-delete, 2b sweep + cap-slot release, 2c-i late-callback idempotency (`already_terminal`, no resurrection) all PASS
+- [x] 2.2 Re-run is green twice (idempotent, no cross-run residue)
 
 #### Manual
 
-- [ ] 2.3 Studio spot-check confirms one assertion's storage state (object truly absent)
+- [x] 2.3 Studio spot-check confirms one assertion's storage state (object truly absent)
 
 ### Phase 3: Live happy-path + cold-boot
 
