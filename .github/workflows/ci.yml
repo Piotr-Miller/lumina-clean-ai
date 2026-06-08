@@ -48,7 +48,9 @@ jobs:
       # `wrangler secret put` (Phase 2 #5) and persist across deploys, so
       # CLOUD_PIPELINE_ENABLED=false / CLOUD_DAILY_CAP=0 stay authoritative.
       # The build still needs SUPABASE_URL/SUPABASE_KEY as build-time env.
-      - uses: cloudflare/wrangler-action@v3
+      # v4 runs on Node 24 (v3 was Node 20 — forced off by GitHub 2026-06-16) and
+      # defaults to Wrangler v4, matching the project's wrangler 4.x devDependency.
+      - uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
