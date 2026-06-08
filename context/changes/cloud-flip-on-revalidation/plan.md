@@ -255,12 +255,12 @@ No migration unless the prod GUC direct-connection attempt is denied; the fallba
 
 #### Automated
 
-- [ ] 1.1 `supabase status` up; `supabase db reset` applies migrations incl. `jobs_enqueue_webhook` trigger
-- [ ] 1.2 GUC probe returns the local `edge_function_url` + `secret_set = true`
+- [x] 1.1 `supabase status` up; `supabase db reset` applies migrations incl. `jobs_enqueue_webhook` trigger
+- [x] 1.2 GUC probe returns the local `edge_function_url` + `secret_set = true`
 
 #### Manual
 
-- [ ] 1.3 Authenticated local submit INSERTs `queued` and `/start` fires (functions-serve logs); token-less run ends `failed` at predictions.create with source deleted (expected)
+- [x] 1.3 Authenticated local submit INSERTs `queued` and `/start` fires (functions-serve logs); token-less run ends `failed` at predictions.create with source deleted (expected)
 - [ ] 1.4 `local-runbook.md` reproduces setup from a clean `supabase start`
 
 ### Phase 2: Deterministic retention assertions (harness-driven)

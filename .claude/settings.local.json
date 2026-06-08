@@ -129,7 +129,8 @@
       "Bash(echo 'title: __CMDSUB_OUTPUT__')",
       "Bash(echo '=== __TRACKED_VAR__ luminacleanai.com ===')",
       "Bash(gh run *)",
-      "Bash(echo \"=== homepage supabase ref \\(forced edge IP\\) ===\")"
+      "Bash(echo \"=== homepage supabase ref \\(forced edge IP\\) ===\")",
+      "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(s\\);console.log\\('API_URL='+\\(j.API_URL||j.api_url\\)\\);console.log\\('SERVICE_ROLE_KEY_len='+\\(\\(j.SERVICE_ROLE_KEY||j.service_role_key||''\\).length\\)\\)}catch\\(e\\){console.log\\('parse failed:',e.message\\)}}\\)\")"
     ],
     "deny": [
       "Bash(rm -rf *)"
