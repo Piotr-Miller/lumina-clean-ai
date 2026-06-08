@@ -267,12 +267,12 @@ No migration unless the prod GUC direct-connection attempt is denied; the fallba
 
 #### Automated
 
-- [x] 2.1 `npx tsx scripts/spikes/d1-retention-check.ts` exits 0 — 2a failed-source-delete, 2b sweep + cap-slot release, 2c-i late-callback idempotency (`already_terminal`, no resurrection) all PASS
-- [x] 2.2 Re-run is green twice (idempotent, no cross-run residue)
+- [x] 2.1 `npx tsx scripts/spikes/d1-retention-check.ts` exits 0 — 2a failed-source-delete, 2b sweep + cap-slot release, 2c-i late-callback idempotency (`already_terminal`, no resurrection) all PASS — d4b9b1e
+- [x] 2.2 Re-run is green twice (idempotent, no cross-run residue) — d4b9b1e
 
 #### Manual
 
-- [x] 2.3 Studio spot-check confirms one assertion's storage state (object truly absent)
+- [x] 2.3 Studio spot-check confirms one assertion's storage state (object truly absent) — d4b9b1e
 
 ### Phase 3: Live happy-path + cold-boot
 
