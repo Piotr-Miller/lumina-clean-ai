@@ -290,13 +290,13 @@ No migration unless the prod GUC direct-connection attempt is denied; the fallba
 
 #### Automated
 
-- [x] 4.1 Prod GUC probe returns prod `edge_function_url` + `secret_set = true` (direct-connection or fallback) — resolved via Vault (not GUC): prod Vault `edge_function_url` + `db_webhook_secret` both `is_set=true`
+- [x] 4.1 Prod GUC probe returns prod `edge_function_url` + `secret_set = true` (direct-connection or fallback) — resolved via Vault (not GUC): prod Vault `edge_function_url` + `db_webhook_secret` both `is_set=true` — 095653a
 - [x] 4.2 If fallback migration used: `supabase db reset` clean + `d1-retention-check.ts` still green — GUC→Vault migration 20260608120000; reset clean, Vault trigger proven (correct Bearer POST to /start, 500-not-401 = auth accepted), harness PASS — bca351d
 
 #### Manual
 
-- [x] 4.3 One real prod cloud job completes `queued→processing→succeeded` (source gone, result present) — luminacleanai.com submit succeeded, result downloaded; prod SQL `result_objs=1, source_objs=0`
-- [x] 4.4 Prod submit beyond `CLOUD_DAILY_CAP=3` returns `daily_cap_reached` (429) — "The daily Cloud AI limit has been reached" observed
-- [x] 4.5 Prod retention spot-check: a watchdog-timed-out (or abandoned) prod job flips `failed` and its source is removed — induced via RGBA PNG (Bread rejects 4-channel input) → `status=failed`, `source_objs=0`
-- [x] 4.6 Operator gate: leave-ON vs kill-switch decided + applied — **leave ON, `CLOUD_DAILY_CAP=3` (go-live)**
-- [x] 4.7 `results.md` + `production-config.md` + `roadmap.md` updated; D.1 closed — + lessons.md (F1 signing secret, F2 EDGE_FUNCTION_URL)
+- [x] 4.3 One real prod cloud job completes `queued→processing→succeeded` (source gone, result present) — luminacleanai.com submit succeeded, result downloaded; prod SQL `result_objs=1, source_objs=0` — 095653a
+- [x] 4.4 Prod submit beyond `CLOUD_DAILY_CAP=3` returns `daily_cap_reached` (429) — "The daily Cloud AI limit has been reached" observed — 095653a
+- [x] 4.5 Prod retention spot-check: a watchdog-timed-out (or abandoned) prod job flips `failed` and its source is removed — induced via RGBA PNG (Bread rejects 4-channel input) → `status=failed`, `source_objs=0` — 095653a
+- [x] 4.6 Operator gate: leave-ON vs kill-switch decided + applied — **leave ON, `CLOUD_DAILY_CAP=3` (go-live)** — 095653a
+- [x] 4.7 `results.md` + `production-config.md` + `roadmap.md` updated; D.1 closed — + lessons.md (F1 signing secret, F2 EDGE_FUNCTION_URL) — 095653a
