@@ -1,7 +1,7 @@
 ---
 change_id: cloud-flip-on-revalidation
 title: Cloud flip-ON re-validation (D.1 — live retention + cold-boot checks)
-status: implemented
+status: impl_reviewed
 created: 2026-06-07
 updated: 2026-06-08
 archived_at: null
