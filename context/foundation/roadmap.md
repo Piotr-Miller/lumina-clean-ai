@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-07
+updated: 2026-06-08
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -40,6 +40,8 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-08  | cloud-job-retention-cleanup        | trust uploaded sources are gone within 24h even on failed/abandoned jobs | F-01, S-04    | NFR: source not retained beyond 24h       | done |
 | S-09  | cloud-source-url-ttl-fix           | (reliability) cloud jobs survive a slow Replicate cold boot without source-URL expiry | S-04          | MVP success: cloud flow works end-to-end (NFR reliability) | done     |
 
+> **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
+
 ## Streams
 
 Navigation aid — groups items that share a Prerequisites chain. Canonical ordering still lives in the dependency graph below; this table is the proposed reading order across parallel tracks.
@@ -49,7 +51,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | A      | Cloud AI path (the core bet)   | `F-01` → `S-03` → `S-04` → `S-05`  | Risk-first spine; surfaces the pipeline + cold-start risk at `S-04` (north star). Reuses Stream B's UI shell at `S-03`. `S-08` (24h-retention cleanup) and `S-09` (source-URL TTL fix) both hang off this spine — prereq `F-01`/`S-04` (S-09: `S-04`), independent of and parallel with `S-05`. |
 | B      | Local engine & shared UI shell | `S-01`                             | Anonymous funnel + builds the upload / before-after slider / download shell reused by `S-03`. Joins Stream A at `S-03`. |
 | C      | Account access                 | `S-02` → `S-06`                    | Auth-completion + UX polish (global sign-out, redirect authed off `/auth/*`, optional idle-timeout). Independent of the Cloud path; parallel with everything. |
-| D      | Release / infra                | `S-07`                             | Production deployment / go-live on Cloudflare + prod Supabase. Prereq `S-04`; ships cloud behind a flag (OFF until `S-05`, `S-08`, **and** `S-09`). Parallel with `S-05` and `S-06`. |
+| D      | Release / infra                | `S-07`                             | Production deployment / go-live on Cloudflare + prod Supabase. Prereq `S-04`; shipped cloud behind a flag (OFF until `S-05`, `S-08`, **and** `S-09`). **Flip-ON executed 2026-06-08 (D.1) — cloud now LIVE** (`CLOUD_DAILY_CAP=3`). Parallel with `S-05` and `S-06`. |
 
 > **Planned execution (2026-06-03; updated 2026-06-04):** the one concurrent pair is **S-05 ∥ S-06** (zero shared files → collision-free). **S-07** then **S-08** follow **sequentially** — both touch the Edge Function `/callback`, so they are deliberately not parallelized with each other. **S-09** (source-URL TTL fix) is independent of `/callback` (it touches the source-signing path) and so does not collide with S-07/S-08, but it is a **go-live prerequisite for the cloud path**: it must land and re-validate before `CLOUD_PIPELINE_ENABLED` flips ON (alongside S-05 and S-08 in that flip-ON gate). (The `Parallel with` fields in each slice denote dependency-independence — what *could* run together — not the chosen order.)
 
@@ -260,4 +262,4 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 - **S-07: the app is deployed and publicly accessible on Cloudflare (Workers) on a branded custom domain (luminacleanai.com), with the prod Supabase project (luminaclean-prod) wired — migrations applied, Edge Function `enhance` deployed, auth + Resend email live; the Cloud AI pipeline ships flag-OFF (`CLOUD_PIPELINE_ENABLED=false`, `CLOUD_DAILY_CAP=0`), flip-ON gated on S-05+S-08+S-09.** — Archived 2026-06-06 → `context/archive/2026-06-04-production-deployment/`. Lesson: a fresh prod Supabase project doesn't auto-repoint the Worker — verify which project the deployed app talks to (lessons.md); DB-webhook custom-GUC + callback success-path hardening (F8/F9) deferred to flip-ON.
 - **S-09: a Cloud AI job survives a slow Replicate cold boot — the source READ URL the Edge Function signs (raised to `SOURCE_URL_TTL_SECONDS = 3600`) no longer expires before the model fetches it on cold starts that exceed the old 300s; the client processing watchdog is raised to 5 min to match.** — Archived 2026-06-07 → `context/archive/2026-06-06-cloud-source-url-ttl-fix/`. Lesson: size provider-fetched signed-URL TTLs + client watchdogs to the cold-boot ceiling, not warm latency (lessons.md); live >300s re-validation deferred to flip-ON (D.1).
 - **S-08: an uploaded source object is removed within the 24h privacy window even when the job does NOT succeed — on a `failed` job (pipeline error / timeout) and on an abandoned `queued` job whose client upload never completed — closing the gap where today only the success path (`markJobSucceeded`) deletes the source.** — Archived 2026-06-07 → `context/archive/2026-06-07-cloud-job-retention-cleanup/`. Lesson: —.
-- **Cloud flip-ON (D.1 — the S-05 + S-08 + S-09 gate) — executed 2026-06-08:** `CLOUD_PIPELINE_ENABLED` flipped ON in prod, `CLOUD_DAILY_CAP=3`; retention + cold-boot re-validated end-to-end on luminacleanai.com. GUC→Vault webhook migration; two config findings fixed (real Replicate account signing secret + a required explicit `EDGE_FUNCTION_URL`). See `context/changes/cloud-flip-on-revalidation/results.md`.
+- **Cloud flip-ON (D.1 — the S-05 + S-08 + S-09 gate) — executed 2026-06-08:** `CLOUD_PIPELINE_ENABLED` flipped ON in prod, `CLOUD_DAILY_CAP=3` (kill-switch `=0`); retention + cold-boot re-validated end-to-end on luminacleanai.com. GUC→Vault webhook migration; two config findings fixed (real Replicate account signing secret + a required explicit `EDGE_FUNCTION_URL`); `DB_WEBHOOK_SECRET` rotated. Archived 2026-06-08 → `context/archive/2026-06-07-cloud-flip-on-revalidation/`. Lesson: self-signing harness can't catch a wrong provider secret; hosted Edge `SUPABASE_URL` isn't public-https → set `EDGE_FUNCTION_URL` (lessons.md).
