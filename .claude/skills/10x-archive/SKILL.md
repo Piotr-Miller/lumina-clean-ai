@@ -183,36 +183,20 @@ If no warnings were queued, skip the prompt and proceed directly.
    7. **Stage it into the archive commit** — only if `git` is available **and** `ROADMAP_PREDIRTY` (sub-step 2) was empty. Then run `git add context/foundation/roadmap.md` so the roadmap close lands in the same commit as the rename + stamp. If `ROADMAP_PREDIRTY` was non-empty, the file already had uncommitted edits; leave the roadmap close in the working tree and print `⚠ context/foundation/roadmap.md had pre-existing uncommitted changes — closed roadmap item <ID> in the working tree but did NOT stage it. Commit it yourself.` If `git` is unavailable, the edit just stays in the working tree (the pre-flight already warned).
    8. Remember `<ID>` and `<Outcome>` for the confirmation output.
 
-6. **Sync downstream trackers** — best effort; isolated like step 5 (the md edits never block, never roll back, and never prompt; only the live GitHub mutation in 6b prompts once). Skip the whole step silently if step 5 found no roadmap match — with no `<ID>` there is nothing to sync.
-
-   **6a. Refresh status in other tracking md files.**
-   1. `context/foundation/roadmap.md` **`## Backlog Handoff`** table: if a row's **Change ID** cell equals `<change-id>`, set its "Ready for `/10x-plan`" cell to `done` and its **Notes** cell to `Archived <today> → \`<DEST>/\`.` (append `Issue #<n>.` when the number is known from 6a.2). Skip if the table or row is absent.
-   2. `context/foundation/github-issues.md` (if present): in the final-mapping table, set the **Status** cell of the row whose **Change ID** equals `<change-id>` to `done`. Then, under a `## Status updates` section (create one at end of file if absent, with a `| Date | Roadmap ID | Issue | Action |` header), append `| <today> | <ID> | #<n> | <action> |` where `<action>` is filled by 6b (`archived (commit <sha>); issue close pending` until 6b resolves). Capture `#<n>` (the issue number) from this mapping row for use in 6a.1 and 6b. Skip silently if the file is absent.
-   3. Stage each touched file that was NOT pre-dirty (same predirty rule as step 5.7) so it lands in the archive commit; if pre-dirty, leave it in the working tree and note it.
-
-   **6b. Sync the matching GitHub issue** — outward-facing mutation, so it is gated behind a single confirmation.
-   1. Only attempt if `gh` is available (`gh auth status` succeeds) and an issue number `#<n>` was resolved in 6a.2 (or via `gh issue list --state open --search "<ID>"`). Otherwise skip and note "no issue resolved".
-   2. Prompt once via `AskUserQuestion` — `Sync GitHub issue #<n> for <change-id>?` with options: `Close with comment` / `Comment only` / `Skip`.
-   3. **Close with comment** → `gh issue close <n> --comment "Archived <today> → \`<DEST>/\` (commit <sha>). Closed by /10x-archive."`. **Comment only** → `gh issue comment <n> --body "Archived <today> → \`<DEST>/\` (commit <sha>)."`. **Skip** → leave the issue untouched.
-   4. Any `gh` failure is non-fatal: print a warning, continue. Record the outcome and reconcile the `github-issues.md` status-update row from 6a.2 (e.g. `closed on archive (commit <sha>)`); since this edit may land after the archive commit, stage+commit it together with the issue-sync result or note it as a trailing working-tree edit.
-   5. Remember the issue action for the confirmation output.
-
-7. **Commit the archive.** Author one commit:
+6. **Commit the archive.** Author one commit:
 
    ```bash
    git commit -m "$(cat <<'EOF'
    chore(archive): close <change-id>
-
-   Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
    EOF
    )"
    ```
 
-   No body — the subject is mechanical and the diff (rename + frontmatter stamp, the roadmap close when one matched, plus the step-6 tracker refreshes) is self-explanatory. Never pass `--no-verify` or signing-bypass flags. If a pre-commit hook fails, fix the underlying issue and create a NEW commit.
+   No body — the subject is mechanical and the diff (rename + frontmatter stamp, plus the roadmap close when one matched) is self-explanatory. Never pass `--no-verify` or signing-bypass flags. If a pre-commit hook fails, fix the underlying issue and create a NEW commit.
 
    Skip this step entirely if `git` is unavailable or the repo is not a git repo (the pre-flight already warned).
 
-8. **Print confirmation**:
+7. **Print confirmation**:
 
 ```
 ✓ Archived <change-id>
@@ -224,8 +208,6 @@ change.md updated:
   updated:      <today>
 
 roadmap.md:     closed <ID> "<Outcome>"  →  Status: done, entry added to ## Done    ← print only when a roadmap item matched; omit this line otherwise
-trackers:       backlog-handoff row → done; github-issues.md mapping → done    ← print only when step 6a touched a file; omit otherwise
-github issue:   #<n> <closed with comment | commented | skipped>    ← print only when step 6b ran; omit otherwise
 
 Committed as: <short SHA> chore(archive): close <change-id>
 
@@ -237,14 +219,12 @@ The folder is now read-only by convention. To start a new change: /10x-new <new-
 - Any unexpected filesystem error during the move leaves the source folder in place — the staged `change.md` edits land before the move, so on partial failure the user sees `status: archived` in `context/changes/<change-id>/change.md` but the folder is still in `context/changes/`. `/10x-status` will surface this as a `status drift: archived in wrong folder` warning. Re-running `/10x-archive` is safe: the resolution check at the top will detect `status: archived` and ask the user to inspect manually.
 - Do NOT attempt rollback — the change.md edits are intent-marking, and partial state is recoverable by hand.
 - The roadmap-close step ("Move and stamp" step 5) is isolated: any failure there is caught, noted in the confirmation output, and skipped. It never aborts the archive and never triggers rollback. A half-applied roadmap edit is recoverable by hand.
-- The tracker-sync step ("Move and stamp" step 6) is likewise isolated and best-effort. The md refreshes (6a) never block; the GitHub mutation (6b) is the only outward-facing action and is gated behind a one-time confirmation prompt — never closes or comments on an issue without explicit consent. Any `gh` failure is non-fatal.
 
 ## What this skill does NOT do
 
 - Does not append SHAs to Progress items — `/10x-implement` is the sole writer of the SHA suffix at phase end. The archive gate enforces SHA presence as a warn-only signal (see soft-warning check 4); it never rewrites a SHA-less row.
 - Does not run `pnpm test` / `pnpm build` / `pnpm ci:local` as a gate — the gate is lenient warn-only by design.
 - Does not push. The archive commit lands locally; `git push` is the user's call.
-- Does not rewrite the roadmap beyond closing the one matched item and refreshing its trackers. When `context/foundation/roadmap.md` has an item whose `Change ID` equals the archived `<change-id>`, this skill flips that item's `Status` (At-a-glance cell + `### <ID>:` body line + Backlog Handoff row, per step 6a), appends one `## Done` bullet, and bumps the `updated:` date. It never reorders slices, recomputes the dependency graph, edits unrelated items, or creates a roadmap that doesn't exist. No match (or no roadmap file) → roadmap untouched.
-- Does not mutate GitHub silently. Step 6b syncs the matching issue (close/comment) only after an explicit confirmation prompt, only when `gh` is authenticated and an issue number resolves. It also keeps `context/foundation/github-issues.md` in sync (status cell + a `## Status updates` row). No issue match / no `gh` → GitHub untouched.
+- Does not rewrite the roadmap beyond closing the one matched item. When `context/foundation/roadmap.md` has an item whose `Change ID` equals the archived `<change-id>`, this skill flips only that item's `Status` (table cell + `### <ID>:` body line), appends one `## Done` bullet, and bumps the `updated:` date. It never reorders slices, recomputes the dependency graph, edits other items, or creates a roadmap that doesn't exist. No match (or no roadmap file) → roadmap untouched.
 - Does not write to `context/archive/<...>/` after the move; archived folders are read-only by convention. Other 10x skills (`/10x-research`, `/10x-frame`, `/10x-plan`, `/10x-plan-review`, `/10x-implement`, `/10x-impl-review`, `/10x-tdd`, `/10x-auto-implement`) refuse when a resolved path starts with `context/archive/`.
 - Does not unarchive. To revisit an archived change, open a new change with `/10x-new` and reference the archived folder for context.
