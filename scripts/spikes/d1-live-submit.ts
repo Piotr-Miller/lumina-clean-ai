@@ -29,14 +29,24 @@ const MAX_WAIT_MS = 6 * 60 * 1000; // cold boot can be multi-minute (S-09)
 const admin = createClient(API_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+interface JobRow {
+  status: string;
+  result_path: string | null;
+  error_code: string | null;
+  error_message: string | null;
+  replicate_prediction_id: string | null;
+}
+
 async function objectExists(path: string): Promise<boolean> {
   const slash = path.lastIndexOf("/");
-  const { data, error } = await admin.storage.from(BUCKET).list(path.slice(0, slash));
-  return error || !data ? false : data.some((o) => o.name === path.slice(slash + 1));
+  const { data } = await admin.storage.from(BUCKET).list(path.slice(0, slash));
+  return (data ?? []).some((o) => o.name === path.slice(slash + 1));
 }
-async function readJob(jobId: string): Promise<Record<string, unknown> | null> {
-  const { data } = await admin.from("jobs").select("*").eq("id", jobId).maybeSingle();
-  return data as Record<string, unknown> | null;
+async function readJob(jobId: string): Promise<JobRow | null> {
+  const { data } = (await admin.from("jobs").select("*").eq("id", jobId).maybeSingle()) as {
+    data: JobRow | null;
+  };
+  return data;
 }
 
 async function main() {
@@ -67,36 +77,38 @@ async function main() {
   if (up.error) throw new Error(`source upload: ${up.error.message}`);
   console.log(`source uploaded ${Date.now() - t0}ms after create`);
 
-  let job: Record<string, unknown> | null = null;
+  let job: JobRow | null = null;
   let last = "";
   const deadline = Date.now() + MAX_WAIT_MS;
   while (Date.now() < deadline) {
     await sleep(POLL_MS);
     job = await readJob(jobId);
     if (job && job.status !== last) {
-      console.log(`  [${Math.round((Date.now() - t0) / 1000)}s] status=${job.status}${job.replicate_prediction_id ? ` pred=${job.replicate_prediction_id}` : ""}`);
-      last = job.status as string;
+      const pred = job.replicate_prediction_id ? ` pred=${job.replicate_prediction_id}` : "";
+      console.log(`  [${Math.round((Date.now() - t0) / 1000)}s] status=${job.status}${pred}`);
+      last = job.status;
     }
     if (job && (job.status === "succeeded" || job.status === "failed")) break;
   }
 
   const secs = Math.round((Date.now() - t0) / 1000);
-  const resultPresent = typeof job?.result_path === "string" && (await objectExists(job.result_path as string));
+  const resultPresent = typeof job?.result_path === "string" && (await objectExists(job.result_path));
   const sourceGone = !(await objectExists(sourcePath));
   console.log("\n--- RESULT ---");
-  console.log(`status:                ${job?.status}`);
+  console.log(`status:                ${job?.status ?? "(none)"}`);
   console.log(`secs_to_terminal:      ${secs}  (${secs > 90 ? "COLD boot" : "warm"})`);
   console.log(`result_path:           ${job?.result_path ?? "(none)"}`);
   console.log(`result object present: ${resultPresent}`);
   console.log(`source object deleted: ${sourceGone}`);
-  if (job?.error_code) console.log(`error:                 ${job.error_code} — ${String(job.error_message ?? "").slice(0, 160)}`);
+  if (job?.error_code)
+    console.log(`error:                 ${job.error_code} — ${(job.error_message ?? "").slice(0, 160)}`);
 
   const pass = job?.status === "succeeded" && resultPresent && sourceGone;
   console.log(`\n3.2 ${pass ? "PASS" : "FAIL"} — live queued→processing→succeeded, source deleted, result present`);
   if (pass && secs > 90) console.log(`3.4 cold-boot: source URL survived a ${secs}s boot (3600s TTL) ✓`);
 
   // cleanup
-  if (typeof job?.result_path === "string") await admin.storage.from(BUCKET).remove([job.result_path as string]);
+  if (typeof job?.result_path === "string") await admin.storage.from(BUCKET).remove([job.result_path]);
   await admin.storage.from(BUCKET).remove([sourcePath]);
   await admin.from("jobs").delete().eq("user_id", userId);
   await admin.auth.admin.deleteUser(userId);

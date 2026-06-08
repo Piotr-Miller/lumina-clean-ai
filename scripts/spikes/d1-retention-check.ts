@@ -42,6 +42,14 @@ const BUCKET = "photos";
 const admin = createClient(API_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 const created = { userIds: [] as string[], paths: [] as string[] };
 
+interface JobRow {
+  status: string;
+  result_path: string | null;
+  error_code: string | null;
+  error_message: string | null;
+  replicate_prediction_id: string | null;
+}
+
 function readSigningSecret(): string {
   const env = readFileSync("supabase/functions/.env", "utf8");
   const line = env.split(/\r?\n/).find((l) => l.startsWith("REPLICATE_WEBHOOK_SIGNING_SECRET="));
@@ -68,15 +76,18 @@ async function postCallback(jobId: string, body: string, secret: string): Promis
   return { status: res.status, text: await res.text() };
 }
 async function listDir(dir: string): Promise<string[]> {
-  const { data, error } = await admin.storage.from(BUCKET).list(dir);
-  return error || !data ? [] : data.map((o) => o.name);
+  const { data } = await admin.storage.from(BUCKET).list(dir);
+  return (data ?? []).map((o) => o.name);
 }
 async function objectExists(path: string): Promise<boolean> {
   const slash = path.lastIndexOf("/");
   return (await listDir(path.slice(0, slash))).includes(path.slice(slash + 1));
 }
 async function newUser(): Promise<string> {
-  const { data, error } = await admin.auth.admin.createUser({ email: `d1-${randomUUID()}@example.test`, email_confirm: true });
+  const { data, error } = await admin.auth.admin.createUser({
+    email: `d1-${randomUUID()}@example.test`,
+    email_confirm: true,
+  });
   if (error) throw new Error(`createUser: ${error.message}`);
   created.userIds.push(data.user.id);
   return data.user.id;
@@ -112,9 +123,11 @@ async function seedProcessing(opts: { predictionId?: string | null; createdAtIso
   if (ins.error) throw new Error(`job insert: ${ins.error.message}`);
   return { jobId, userId, sourcePath };
 }
-async function readJob(jobId: string): Promise<Record<string, unknown> | null> {
-  const { data } = await admin.from("jobs").select("*").eq("id", jobId).maybeSingle();
-  return data as Record<string, unknown> | null;
+async function readJob(jobId: string): Promise<JobRow | null> {
+  const { data } = (await admin.from("jobs").select("*").eq("id", jobId).maybeSingle()) as {
+    data: JobRow | null;
+  };
+  return data;
 }
 function assert(label: string, cond: boolean) {
   console.log(`${cond ? "  ✓" : "  ✗ FAIL"} ${label}`);
@@ -126,7 +139,7 @@ async function case2a() {
   const { jobId, sourcePath } = await seedProcessing({ predictionId: "pred_2a" });
   const flipped = await markJobFailed(admin, { jobId, errorCode: "callback_failed", errorMessage: "synthetic" });
   const job = await readJob(jobId);
-  assert("markJobFailed returned true", flipped === true);
+  assert("markJobFailed returned true", flipped);
   assert("status == failed", job?.status === "failed");
   assert("source object deleted", !(await objectExists(sourcePath)));
 }
@@ -153,15 +166,24 @@ async function case2cI() {
   const predictionId = `pred_2c_${randomUUID()}`;
   const { jobId, userId } = await seedProcessing({ predictionId });
   // Watchdog sim: flip processing → failed (owner-scoped). prediction_id is preserved.
-  const flipped = await markPendingJobFailedForOwner(admin, { jobId, userId, errorCode: "timeout", errorMessage: "no result in time" });
-  assert("watchdog flip returned true", flipped === true);
+  const flipped = await markPendingJobFailedForOwner(admin, {
+    jobId,
+    userId,
+    errorCode: "timeout",
+    errorMessage: "no result in time",
+  });
+  assert("watchdog flip returned true", flipped);
   // Deliver a valid signed SUCCESS callback for the same prediction id.
-  const body = JSON.stringify({ id: predictionId, status: "succeeded", output: "https://picsum.photos/seed/d1/120/120" });
+  const body = JSON.stringify({
+    id: predictionId,
+    status: "succeeded",
+    output: "https://picsum.photos/seed/d1/120/120",
+  });
   const res = await postCallback(jobId, body, secret);
   console.log(`  → HTTP ${res.status} ${res.text}`);
   const job = await readJob(jobId);
   assert("HTTP 200", res.status === 200);
-  assert("body ignored:already_terminal", /already_terminal/.test(res.text));
+  assert("body ignored:already_terminal", res.text.includes("already_terminal"));
   assert("row stays failed (no resurrection)", job?.status === "failed");
   assert("result_path still null", job?.result_path == null);
   assert("no result object created", !(await listDir(`${userId}/${jobId}`)).some((n) => n.startsWith("result.")));
@@ -170,10 +192,19 @@ async function case2cI() {
 async function cleanup() {
   console.log("\n[cleanup] removing test objects + users");
   for (const p of created.paths) {
-    try { await admin.storage.from(BUCKET).remove([p]); } catch { /* best-effort */ }
+    try {
+      await admin.storage.from(BUCKET).remove([p]);
+    } catch {
+      /* best-effort */
+    }
   }
   for (const u of created.userIds) {
-    try { await admin.from("jobs").delete().eq("user_id", u); await admin.auth.admin.deleteUser(u); } catch { /* best-effort */ }
+    try {
+      await admin.from("jobs").delete().eq("user_id", u);
+      await admin.auth.admin.deleteUser(u);
+    } catch {
+      /* best-effort */
+    }
   }
 }
 
