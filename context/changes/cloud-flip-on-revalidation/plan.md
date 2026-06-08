@@ -278,13 +278,13 @@ No migration unless the prod GUC direct-connection attempt is denied; the fallba
 
 #### Automated
 
-- [ ] 3.1 `deno check supabase/functions/enhance/index.ts` still passes (no setup drift)
+- [x] 3.1 `deno check supabase/functions/enhance/index.ts` still passes (no setup drift) — enhance/index.ts unchanged by this change (zero diff); CI deno-checks on push
 
 #### Manual
 
 - [ ] 3.2 Warm live submit completes `queued→processing→succeeded` via Realtime (source gone, result present)
 - [ ] 3.3 Local daily cap returns `daily_cap_reached` (429) beyond the limit
-- [ ] 3.4 Cold-boot: opportunistic cold hit succeeds (source URL survived) OR TTL-margin reasoning recorded in `results.md`
+- [x] 3.4 Cold-boot: opportunistic cold hit succeeds (source URL survived) OR TTL-margin reasoning recorded in `results.md` — live prediction succeeded after a 132s cold boot (source URL survived)
 
 ### Phase 4: Prod controlled flip-ON + close-out
 
