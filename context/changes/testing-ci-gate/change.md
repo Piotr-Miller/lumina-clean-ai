@@ -1,7 +1,7 @@
 ---
 change_id: testing-ci-gate
 title: Gate the floor — wire the existing Vitest suite (incl. Docker/RLS) into CI
-status: impl_reviewed
+status: implemented
 created: 2026-06-09
 updated: 2026-06-09
 archived_at: null

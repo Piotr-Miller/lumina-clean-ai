@@ -221,11 +221,11 @@ This reverses the original `context/archive/2026-05-28-photo-jobs-data-and-stora
 
 #### Automated
 
-- [x] 2.1 Lint/prettier pass on edited Markdown
-- [x] 2.2 No stale "only lint+build" claim remains in `tests/README.md` / `change.md`
+- [x] 2.1 Lint/prettier pass on edited Markdown — 4ea2cbc
+- [x] 2.2 No stale "only lint+build" claim remains in `tests/README.md` / `change.md` — 4ea2cbc
 
 #### Manual
 
-- [x] 2.3 `test-plan.md §3` Phase 1 `complete`, §5 gates marked wired
-- [x] 2.4 `tests/README.md` no longer contradicts the live workflow
-- [x] 2.5 `§6.2` run command reflects CI + local
+- [x] 2.3 `test-plan.md §3` Phase 1 `complete`, §5 gates marked wired — 4ea2cbc
+- [x] 2.4 `tests/README.md` no longer contradicts the live workflow — 4ea2cbc
+- [x] 2.5 `§6.2` run command reflects CI + local — 4ea2cbc
