@@ -46,6 +46,11 @@ jobs:
     # No GitHub secrets are used here — `supabase start` generates the local
     # keys — so this job also runs on fork PRs.
     runs-on: ubuntu-latest
+    # Bound a pathological hang (a wedged container after the boot retry, or a
+    # stuck `npm test`). This job gates `deploy` via `needs:`, so failing fast
+    # beats leaving a deploy pending under GitHub's default 360-min timeout.
+    # Observed wall-clock is ~2-4 min; 15 is generous headroom.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
