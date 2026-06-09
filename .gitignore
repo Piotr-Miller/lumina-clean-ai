@@ -21,6 +21,11 @@ pnpm-debug.log*
 .dev.vars
 .wrangler/
 
+# stryker mutation testing
+.stryker-tmp/
+reports/
+stryker.log
+
 # macOS-specific files
 .DS_Store
 

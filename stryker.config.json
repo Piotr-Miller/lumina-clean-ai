@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Selective quality gate, not a CI gate. Narrow scope per run with: npx stryker run --mutate \"src/lib/services/<file>.ts\". See CLAUDE.md > Mutation testing.",
+  "packageManager": "npm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "reporters": ["html", "clear-text", "progress"],
+  "vitest": {
+    "configFile": "vitest.config.stryker.ts",
+    "related": true
+  },
+  "mutate": ["src/lib/**/*.ts", "!src/lib/**/*.test.ts"],
+  "ignoreStatic": true,
+  "incremental": true,
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": null
+  }
+}
