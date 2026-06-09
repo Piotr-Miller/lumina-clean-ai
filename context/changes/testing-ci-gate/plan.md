@@ -203,10 +203,10 @@ This reverses the original `context/archive/2026-05-28-photo-jobs-data-and-stora
 
 #### Automated
 
-- [x] 1.1 Push/PR triggers `ci` and `integration` in parallel (valid YAML)
+- [x] 1.1 Push/PR triggers `ci` and `integration` in parallel (valid YAML) — 7bf7ebb
 - [ ] 1.2 `integration` job boots Supabase, applies migrations, `npm test` passes all 11 files incl. `jobs.rls.test.ts`
 - [ ] 1.3 `ci` job runs `deno check` and it passes
-- [x] 1.4 `deploy` does not start until both `ci` and `integration` succeed (push to master)
+- [x] 1.4 `deploy` does not start until both `ci` and `integration` succeed (push to master) — 7bf7ebb
 
 #### Manual
 

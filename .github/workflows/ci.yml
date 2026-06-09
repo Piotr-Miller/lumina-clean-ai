@@ -73,13 +73,20 @@ jobs:
       # stack's status output (override-name keys are the documented config
       # paths — see `supabase status --help`). Safe to write to $GITHUB_ENV:
       # this job has no prod-secret step to bleed into.
+      #
+      # `-o env` wraps every value in double quotes (NAME="value"); $GITHUB_ENV
+      # stores the line verbatim, so the quotes would become part of the value
+      # and supabase-js rejects SUPABASE_URL as "not a valid HTTP/HTTPS URL".
+      # Strip the surrounding quotes before appending (values are URLs/keys —
+      # none contain an internal double-quote, so this is safe). Lines without
+      # surrounding quotes pass through unchanged.
       - name: Export local Supabase credentials
         run: |
           npx supabase status -o env \
             --override-name api.url=SUPABASE_URL \
             --override-name auth.anon_key=SUPABASE_KEY \
             --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
-            >> "$GITHUB_ENV"
+            | sed -E 's/^([A-Za-z_][A-Za-z0-9_]*)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
       - run: npm test
 
   deploy:
