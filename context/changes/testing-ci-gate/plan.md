@@ -29,6 +29,7 @@ So the **actual** gap is narrow and precise (research §A, §32-41):
 ## Desired End State
 
 Every push and PR to `master` runs:
+
 - the `ci` job: lint → `test:unit` → `deno check` → build (prod secrets); and
 - a parallel `integration` job: boot local Supabase → `db reset` → `npm test` (full suite incl. RLS).
 
@@ -83,7 +84,7 @@ Rewrite `.github/workflows/ci.yml` to add the `integration` job, move `deno chec
 
 **Contract**: Change `deploy`'s `needs: ci` (`ci.yml:31`) to `needs: [ci, integration]`. The existing `if: github.ref == 'refs/heads/master' && github.event_name == 'push'` guard is unchanged.
 
-> **Tradeoff (F1):** this is intentional — the regression lock now gates prod, not just PR visibility — but it also couples deploy reliability to `npx supabase start`: a Docker/image-pull hiccup or a transient RLS-suite flake can block a deploy even when the app is fine. The boot retry in change #1 absorbs transient boot failures so that only a *real* test regression blocks deploy. Accepted cost: deploy waits on the integration job (~2-4 min) on every master push.
+> **Tradeoff (F1):** this is intentional — the regression lock now gates prod, not just PR visibility — but it also couples deploy reliability to `npx supabase start`: a Docker/image-pull hiccup or a transient RLS-suite flake can block a deploy even when the app is fine. The boot retry in change #1 absorbs transient boot failures so that only a _real_ test regression blocks deploy. Accepted cost: deploy waits on the integration job (~2-4 min) on every master push.
 
 ### Success Criteria:
 
@@ -134,6 +135,7 @@ The workflow change makes several on-disk claims false and advances the rollout.
 **Intent**: Reflect that the gates are now wired and the cookbook run command moved from developer-local to CI + local.
 
 **Contract**:
+
 - `§5` quality-gates table: `unit + integration` row → wired (note `ci.yml integration` job); `Edge Function deno check` row → wired (note PR-gating `ci` job).
 - `§6.2` integration-test run command: note it now runs in CI (`integration` job) as well as locally.
 - `§3` Phase 1 row: `Status` → `complete`.
@@ -204,26 +206,26 @@ This reverses the original `context/archive/2026-05-28-photo-jobs-data-and-stora
 #### Automated
 
 - [x] 1.1 Push/PR triggers `ci` and `integration` in parallel (valid YAML) — 7bf7ebb
-- [ ] 1.2 `integration` job boots Supabase, applies migrations, `npm test` passes all 11 files incl. `jobs.rls.test.ts`
-- [ ] 1.3 `ci` job runs `deno check` and it passes
+- [x] 1.2 `integration` job boots Supabase, applies migrations, `npm test` passes all 11 files incl. `jobs.rls.test.ts` — a7086aa
+- [x] 1.3 `ci` job runs `deno check` and it passes — a7086aa
 - [x] 1.4 `deploy` does not start until both `ci` and `integration` succeed (push to master) — 7bf7ebb
 
 #### Manual
 
-- [ ] 1.5 PR shows `ci` + `integration` green; `deploy` does not run on PR event
-- [ ] 1.6 `ci` build step still resolves production `SUPABASE_URL`/`SUPABASE_KEY` (no env bleed)
-- [ ] 1.7 Push to master: `deploy` waits on both jobs, then deploys
-- [ ] 1.8 `integration` wall-clock acceptable (~2-4 min incl. image pull)
+- [x] 1.5 PR shows `ci` + `integration` green; `deploy` does not run on PR event — a7086aa (accepted structurally: PR triggers the same green ci+integration jobs; `if: github.event_name == 'push'` provably blocks deploy on PRs — see 1.4)
+- [x] 1.6 `ci` build step still resolves production `SUPABASE_URL`/`SUPABASE_KEY` (no env bleed) — a7086aa
+- [x] 1.7 Push to master: `deploy` waits on both jobs, then deploys — a7086aa
+- [x] 1.8 `integration` wall-clock acceptable (~2-4 min incl. image pull) — a7086aa
 
 ### Phase 2: Sync docs + orchestrator state
 
 #### Automated
 
-- [ ] 2.1 Lint/prettier pass on edited Markdown
-- [ ] 2.2 No stale "only lint+build" claim remains in `tests/README.md` / `change.md`
+- [x] 2.1 Lint/prettier pass on edited Markdown
+- [x] 2.2 No stale "only lint+build" claim remains in `tests/README.md` / `change.md`
 
 #### Manual
 
-- [ ] 2.3 `test-plan.md §3` Phase 1 `complete`, §5 gates marked wired
-- [ ] 2.4 `tests/README.md` no longer contradicts the live workflow
-- [ ] 2.5 `§6.2` run command reflects CI + local
+- [x] 2.3 `test-plan.md §3` Phase 1 `complete`, §5 gates marked wired
+- [x] 2.4 `tests/README.md` no longer contradicts the live workflow
+- [x] 2.5 `§6.2` run command reflects CI + local

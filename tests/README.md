@@ -83,8 +83,16 @@ F-01 foundation owns:
 6. **`markJobSucceeded` retention contract** — updates the row to
    `succeeded` AND deletes the source object in the same call.
 
-## Why this is not in CI
+## How this runs in CI
 
-The suite needs Docker + a local Supabase boot. CI currently runs only
-lint + build (per the project's `ci.yml`). A future change can wire a
-hosted Supabase project for CI; v1 keeps this developer-local.
+This suite **is** wired into CI. The workflow's `integration` job
+(`.github/workflows/ci.yml`) boots an **ephemeral local Supabase** on the
+runner — the same `npx supabase start` → `npx supabase db reset` → `npm test`
+flow documented above — and runs the full suite (including
+`jobs.rls.test.ts`) on every push and PR to `master`. No GitHub secrets are
+needed: `supabase start` generates the local keys, so the job also runs on
+fork PRs. It is a **separate** job from the prod-secret `build`, so the local
+credentials it exports can never bleed into the production build. `deploy`
+gates on this job passing.
+
+The steps above are still the way to run the suite **locally**.
