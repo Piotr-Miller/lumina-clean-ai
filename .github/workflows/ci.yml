@@ -19,16 +19,71 @@ jobs:
       - run: npx astro sync
       - run: npm run lint
       # Pure unit tests only (incl. the /callback hardening suite). The
-      # jobs.rls.test.ts integration suite needs Docker + a local Supabase and
-      # is excluded — it stays developer-local (see tests/README.md).
+      # jobs.rls.test.ts integration suite runs in the `integration` job below
+      # (it needs Docker + a local Supabase); see tests/README.md.
       - run: npm run test:unit
+      # Static-check the Deno Edge Function on every push AND PR. supabase/
+      # functions/** is excluded from the Astro tsc/eslint graph (see
+      # context/foundation/lessons.md), so `deno check` is its ONLY static
+      # coverage — and running it here (not just in `deploy`) gates PRs too.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check supabase/functions/enhance/index.ts
       - run: npm run build
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
+  integration:
+    # Full Vitest suite INCLUDING tests/jobs.rls.test.ts, which deliberately
+    # does not mock Supabase — it hits an ephemeral local stack (Docker) to
+    # lock RLS / storage / retention against a real runtime.
+    #
+    # This is a SEPARATE job on purpose: the local credentials it writes to
+    # $GITHUB_ENV must never share a process with the `ci` job's prod-secret
+    # `build` step, or the build would silently run against the local stack.
+    # No GitHub secrets are used here — `supabase start` generates the local
+    # keys — so this job also runs on fork PRs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # `supabase start` boots Postgres + Auth + Storage in Docker (~1-2 min on
+      # a cold image pull; uncached by design). Retry once after a clean stop
+      # so a transient Docker/image-pull hiccup doesn't false-fail the job —
+      # and, since `deploy` needs this job, doesn't false-block a deploy.
+      # `--no-backup` deletes the data volumes so the retry boots clean.
+      - name: Start local Supabase (retry once on transient boot failure)
+        run: |
+          npx supabase start || {
+            echo "::warning::supabase start failed; stopping and retrying once"
+            npx supabase stop --no-backup || true
+            npx supabase start
+          }
+      # Apply every migration → creates public.jobs + the private `photos`
+      # storage bucket the suite needs. Mirrors the documented dev flow
+      # (tests/README.md); no seed.sql exists, all test data is runtime-created.
+      - run: npx supabase db reset
+      # Export the three vars tests/env.ts requires, renamed from the local
+      # stack's status output (override-name keys are the documented config
+      # paths — see `supabase status --help`). Safe to write to $GITHUB_ENV:
+      # this job has no prod-secret step to bleed into.
+      - name: Export local Supabase credentials
+        run: |
+          npx supabase status -o env \
+            --override-name api.url=SUPABASE_URL \
+            --override-name auth.anon_key=SUPABASE_KEY \
+            --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
+            >> "$GITHUB_ENV"
+      - run: npm test
+
   deploy:
-    needs: ci
+    needs: [ci, integration]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -39,11 +94,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx astro sync
-      # Unit tests run in the `ci` job (gates PRs + pushes); not repeated here.
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-      - run: deno check supabase/functions/enhance/index.ts
+      # Unit tests run in `ci`; the full suite runs in `integration`; `deno
+      # check` runs in `ci`. All three gate this job via `needs:` above, so
+      # none are repeated here.
       # App → Cloudflare Workers. Worker runtime secrets were set once via
       # `wrangler secret put` (Phase 2 #5) and persist across deploys, so
       # CLOUD_PIPELINE_ENABLED=false / CLOUD_DAILY_CAP=0 stay authoritative.
