@@ -139,10 +139,10 @@ No schema or data migration. The migration-file edit is comment-only (no DDL); t
 
 #### Automated
 
-- [x] 1.1 Stale per-user phrasings gone from CLAUDE.md + shape-notes (`grep` ops/user|20 ops|20 AI ops → none)
-- [x] 1.2 Stale `user_id = $1` cap-query gone from the migration comment (`grep` → none)
-- [x] 1.3 Corrected terms present (CLAUDE.md global daily cap/CLOUD_DAILY_CAP; shape-notes CLOUD_DAILY_CAP present; migration comment global)
+- [x] 1.1 Stale per-user phrasings gone from CLAUDE.md + shape-notes (`grep` ops/user|20 ops|20 AI ops → none) — 0c8c058
+- [x] 1.2 Stale `user_id = $1` cap-query gone from the migration comment (`grep` → none) — 0c8c058
+- [x] 1.3 Corrected terms present (CLAUDE.md global daily cap/CLOUD_DAILY_CAP; shape-notes CLOUD_DAILY_CAP present; migration comment global) — 0c8c058
 
 #### Manual
 
-- [x] 1.4 Three corrected sites read accurately; migration comment describes owner-query usage + global-cap-not-served note; no new inconsistency
+- [x] 1.4 Three corrected sites read accurately; migration comment describes owner-query usage + global-cap-not-served note; no new inconsistency — 0c8c058
