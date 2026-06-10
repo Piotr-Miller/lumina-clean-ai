@@ -285,20 +285,20 @@ No data or schema migration. Pure code refactor + new test + docs.
 
 #### Automated
 
-- [x] 2.1 New tests pass (`npm run test:unit`)
-- [x] 2.2 Full suite stays green (`npm run test:unit`)
-- [x] 2.3 Linting passes (`npm run lint`)
+- [x] 2.1 New tests pass (`npm run test:unit`) — 3986c6f
+- [x] 2.2 Full suite stays green (`npm run test:unit`) — 3986c6f
+- [x] 2.3 Linting passes (`npm run lint`) — 3986c6f
 
 #### Manual
 
-- [x] 2.4 Over-cap case asserts insert-not-called (reject-before-insert), not status-only
+- [x] 2.4 Over-cap case asserts insert-not-called (reject-before-insert), not status-only — 3986c6f
 
 ### Phase 3: Cookbook + status sync
 
 #### Automated
 
-- [ ] 3.1 Docs reference an existing file (`tests/cloud-create-job.handler.test.ts` exists)
+- [x] 3.1 Docs reference an existing file (`tests/cloud-create-job.handler.test.ts` exists)
 
 #### Manual
 
-- [ ] 3.2 `test-plan.md §6.4`/§6.6 accurate; `change.md` status reflects reality
+- [x] 3.2 `test-plan.md §6.4`/§6.6 accurate; `change.md` status reflects reality

@@ -174,8 +174,14 @@ relevant rollout phase ships; before that it reads "TBD — see §3 Phase <N>."
 
 ### 6.4 Adding a test for a new API endpoint
 
-- **Test type**: integration (preferred) against the real Supabase edge.
-- **Pattern**: TBD — see §3 Phase 2. Must assert the auth/ownership boundary and side-effects, not just the response shape (per §2 R2/R4). Existing schema-level example: `cloud-create-job-schema.test.ts`.
+- **Choose the layer by what the rule actually depends on** (cost × signal, §1):
+  - **Hermetic (stub admin client)** when the new signal is *route wiring* — the boundary decision, branch order, and side-effect sequencing — not a real DB constraint. Cheapest test that still proves the endpoint rejects/accepts at its boundary.
+  - **Integration (real Supabase edge)** when the rule depends on actual DB state — RLS scoping, constraints, cascades, retention — where a stub would lie. Don't re-run real SQL through the route when the predicate is already integration-covered elsewhere.
+- **Env-free-core pattern (load-bearing for hermetic)**: a route that imports `astro:env/server` can't load under Vitest (Lesson #4). Extract the request→response logic into an env-free core in `src/lib/services/<route>.handler.ts` that receives `{ user, request, admin, cap, … }` and returns a `Response`; leave the route a thin wrapper that reads env, builds the admin client, and delegates. The test drives the core directly with a stub admin (same isolation rationale as the "server-only service-role clients live in their own module" lesson).
+- **Assert side-effects, not just status** (§2 R2/R4): make the mutating calls (`insert`, `createSignedUploadUrl`) `vi.fn()` spies and assert they were **not** called on a reject path — a status-only assertion misses a check-after-mutate reordering that returns the right code but still leaks a row / signed URL. Prove the guard has teeth with a one-off reorder (red) before trusting it.
+- **Reference test**: `tests/cloud-create-job.handler.test.ts` (over-cap 429 + reject-before-insert, hermetic). Env-free core it drives: `src/lib/services/cloud-create-job.handler.ts`. Schema-level example: `cloud-create-job-schema.test.ts`.
+- **Remaining Phase-2 endpoint patterns** (gate-bypass, IDOR, failure-path deletion): TBD — see §3 Phase 2.
+- **Run locally**: `npm run test:unit` (hermetic; no Docker), or the integration flow in §6.2.
 
 ### 6.5 Adding a test for the cloud callback / pipeline
 
@@ -185,6 +191,16 @@ relevant rollout phase ships; before that it reads "TBD — see §3 Phase <N>."
 
 (Optional. After each phase lands, `/10x-implement` appends a 2–3 line note
 here capturing anything surprising the phase taught.)
+
+- **2026-06-10 — Phase 2 / Risk #3 (cloud daily-cap route rejection)**: shipped
+  `tests/cloud-create-job.handler.test.ts` via the env-free-core + hermetic-stub-admin
+  recipe now in §6.4. Surprise worth recording: the cap is *app-level*, not DB-enforced
+  (no trigger/RPC/CHECK in `supabase/migrations/`), so a stub admin can't "lie" about it —
+  hermetic was the right layer, and the only new signal is the route wiring (the count
+  predicate is already integration-covered in `jobs.rls.test.ts`). The load-bearing
+  assertion is *insert-not-called* on the over-cap path (reject-before-insert), proven to
+  have teeth by a one-off reorder mutation (status stayed 429; only the not-called
+  assertions went red).
 
 ## 7. What We Deliberately Don't Test
 
