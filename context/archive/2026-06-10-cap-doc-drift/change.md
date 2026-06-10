@@ -1,10 +1,10 @@
 ---
 change_id: cap-doc-drift
 title: Fix stale daily-cap phrasing in docs to match the live global CLOUD_DAILY_CAP
-status: impl_reviewed
+status: archived
 created: 2026-06-10
 updated: 2026-06-10
-archived_at: null
+archived_at: 2026-06-10T19:46:45Z
 ---
 
 ## Notes
