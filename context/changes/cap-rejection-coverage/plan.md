@@ -297,8 +297,8 @@ No data or schema migration. Pure code refactor + new test + docs.
 
 #### Automated
 
-- [x] 3.1 Docs reference an existing file (`tests/cloud-create-job.handler.test.ts` exists)
+- [x] 3.1 Docs reference an existing file (`tests/cloud-create-job.handler.test.ts` exists) — d8f2547
 
 #### Manual
 
-- [x] 3.2 `test-plan.md §6.4`/§6.6 accurate; `change.md` status reflects reality
+- [x] 3.2 `test-plan.md §6.4`/§6.6 accurate; `change.md` status reflects reality — d8f2547
