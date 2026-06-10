@@ -46,10 +46,12 @@ create table public.jobs (
 -- ---------------------------------------------------------------------------
 
 -- Owner queries (history, current job lookup) hit (user_id, created_at desc).
--- Also serves the S-05 daily-cap query:
---   COUNT(*) WHERE user_id = $1 AND created_at >= today AND status <> 'failed'.
--- The leading user_id makes this a tight range scan; a separate non-user-scoped
--- partial index would scan all users' rows in the time range before filtering.
+-- The S-05 daily cap is GLOBAL (cross-user): countCloudJobsToday filters only on
+-- created_at >= today's UTC midnight AND (status <> 'failed' OR replicate_prediction_id
+-- IS NOT NULL), with no user_id predicate — so this user_id-leading index does NOT
+-- serve that count (a created_at-leading index would). Acceptable at MVP scale;
+-- per-user scoping / a dedicated cap index are v2. The index remains for the owner
+-- queries above.
 create index jobs_user_id_created_at_idx
   on public.jobs (user_id, created_at desc);
 

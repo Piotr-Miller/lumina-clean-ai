@@ -236,7 +236,7 @@ User-volunteered stack hints from `idea-notes.md`:
 - **Engine toggle**: Strategy Pattern between Cloud AI and Local engine.
 - **Auth & data**: Supabase Auth + Row-Level Security (RLS) for cloud usage gating.
 - **Async cloud pipeline**: signed upload → Database Webhook → Edge Function → Replicate prediction with webhook callback → Supabase Realtime push to frontend.
-- **Cost protection**: RLS-gated cloud access + SQL-side rate limiting (20 AI ops / user / 24h).
+- **Cost protection**: RLS-gated cloud access + a SQL-enforced global daily cap on Cloud AI ops across all users (default 50, reset 00:00 UTC; configurable via `CLOUD_DAILY_CAP`, `0` = kill-switch).
 - **Hosting**: Cloudflare Pages.
 
 These will be evaluated, accepted, or revisited downstream — they are NOT pre-committed by the PRD.
