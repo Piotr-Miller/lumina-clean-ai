@@ -20,7 +20,13 @@ import { createPhotoJobRequestSchema } from "@/lib/services/photo-job.schema";
  * The thin route wrapper (`src/pages/api/enhance/cloud/create-job.ts`) owns the
  * env-coupled shell: reading the three `astro:env/server` values, the
  * env-presence 500 guard, and building the admin client. Runtime behavior of the
- * two together is byte-identical to the pre-refactor single-file route.
+ * two together matches the pre-refactor single-file route on every reachable
+ * path, with one deliberate divergence: the env-presence 500 guard now runs in
+ * the wrapper *before* this core's auth/parse/zod checks, whereas the original
+ * placed it after them. That only changes the status code (500 vs 401/400) when
+ * `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` is unset — a deploy-time
+ * misconfiguration that never occurs in a configured deployment, so it is
+ * unobservable in practice.
  */
 
 /** Minimal JSON responder. Error bodies follow the CLAUDE.md envelope and never include `status`. */
