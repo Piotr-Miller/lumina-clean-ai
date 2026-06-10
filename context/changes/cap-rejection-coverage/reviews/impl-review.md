@@ -47,7 +47,7 @@
 - **Location**: src/pages/api/enhance/cloud/create-job.ts:9-14 ; src/lib/services/cloud-create-job.handler.ts:27-32
 - **Detail**: Identical `json(body, status)` in both modules. The wrapper needs it only for the env-missing 500 (before the core is invoked), so the duplication is justified — but the envelope shape is a CLAUDE.md hard rule, and two copies can drift (e.g. a future Content-Type/header change applied to one only).
 - **Fix**: Optional — export `json` from the handler module (or a small `@/lib/http.ts`) and import it in the wrapper. Not blocking.
-- **Decision**: PENDING
+- **Decision**: FIXED — exported `json` from cloud-create-job.handler.ts and imported it in the wrapper; removed the duplicate. Lint clean, 104/104 tests green.
 
 ### F3 — Hermetic stub resolves every query chain to one combined object
 
@@ -57,7 +57,7 @@
 - **Location**: tests/cloud-create-job.handler.test.ts:54-75
 - **Detail**: (Same item raised in the Phase 2 review.) The stub feeds both the sweep (reads `data`) and the cap count (reads `count`) from one resolved object, and doesn't exercise the count-error→500 branch. Faithful for the cap-ordering signal under test; those other paths are covered in jobs.rls.test.ts / photo-job.service.test.ts. Flagged only to keep the coverage boundary explicit.
 - **Fix**: None now. Split the stub into per-call resolved values if the handler's query usage ever changes.
-- **Decision**: PENDING
+- **Decision**: SKIPPED — accepted coverage boundary (recommendation itself was "None now"); the unexercised paths are covered in jobs.rls.test.ts / photo-job.service.test.ts.
 
 ## Notes
 

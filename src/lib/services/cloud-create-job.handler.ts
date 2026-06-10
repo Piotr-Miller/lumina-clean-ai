@@ -30,7 +30,7 @@ import { createPhotoJobRequestSchema } from "@/lib/services/photo-job.schema";
  */
 
 /** Minimal JSON responder. Error bodies follow the CLAUDE.md envelope and never include `status`. */
-function json(body: unknown, status: number): Response {
+export function json(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json" },

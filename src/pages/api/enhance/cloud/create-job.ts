@@ -1,17 +1,9 @@
 import type { APIRoute } from "astro";
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, CLOUD_DAILY_CAP } from "astro:env/server";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { createCloudJobResponse } from "@/lib/services/cloud-create-job.handler";
+import { createCloudJobResponse, json } from "@/lib/services/cloud-create-job.handler";
 
 export const prerender = false;
-
-/** Minimal JSON responder. Error bodies follow the CLAUDE.md envelope and never include `status`. */
-function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
 
 /**
  * Thin env-coupled shell for POST /api/enhance/cloud/create-job.
