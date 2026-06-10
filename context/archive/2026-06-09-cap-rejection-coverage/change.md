@@ -1,10 +1,10 @@
 ---
 change_id: cap-rejection-coverage
 title: Risk #3 — prove the global cloud daily cap rejects the over-cap submission at the route boundary
-status: implemented
+status: archived
 created: 2026-06-09
 updated: 2026-06-10
-archived_at: null
+archived_at: 2026-06-10T19:04:04Z
 ---
 
 ## Notes
