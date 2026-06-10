@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "matcher": "editFiles|edit|create",
+        "bash": "INPUT=$(cat); printf '%s' \"$INPUT\" | jq -r '(.tool_input.files[]?) // .tool_input.filePath // .tool_input.file_path // empty' | while IFS= read -r F; do case \"$F\" in *.ts|*.tsx|*.astro) npx eslint --fix \"$F\" --quiet || exit 2 ;; esac; done",
+        "powershell": "$j = [Console]::In.ReadToEnd() | ConvertFrom-Json; $fs = if ($j.tool_input.files) { $j.tool_input.files } elseif ($j.tool_input.filePath) { @($j.tool_input.filePath) } elseif ($j.tool_input.file_path) { @($j.tool_input.file_path) } else { @() }; $code = 0; foreach ($f in $fs) { if ($f -match '\\.(ts|tsx|astro)$') { npx eslint --fix $f --quiet; if ($LASTEXITCODE -ne 0) { $code = 2 } } }; exit $code",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}

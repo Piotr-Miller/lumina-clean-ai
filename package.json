@@ -7,8 +7,10 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
+    "prepare": "husky",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:unit": "vitest run --exclude '**/jobs.rls.test.ts'",
@@ -69,7 +71,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [
-      "eslint --fix"
+      "eslint --fix",
+      "vitest related --run --exclude **/jobs.rls.test.ts"
     ],
     "*.{json,css,md}": [
       "prettier --write"

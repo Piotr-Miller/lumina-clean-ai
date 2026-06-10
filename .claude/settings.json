@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(jq -r '.tool_input.file_path'); case \"$FILE\" in *.ts|*.tsx|*.astro) npx eslint --fix \"$FILE\" --quiet ;; esac",
+            "timeout": 15000
+          },
+          {
+            "type": "command",
+            "command": "FILE=$(jq -r '.tool_input.file_path'); F=${FILE//\\\\//}; case \"$F\" in */src/lib/services/*.ts|*/src/lib/services/*.tsx) npx vitest related \"$FILE\" --run --exclude '**/jobs.rls.test.ts' || exit 2 ;; esac",
+            "timeout": 20000
+          }
+        ]
+      }
+    ]
+  }
+}
