@@ -21,6 +21,7 @@ gh repo view --json nameWithOwner,visibility
 ```
 
 Confirmed:
+
 - Logged in to github.com as `Piotr-Miller` (token scopes include `repo`, `workflow`).
 - `origin` → `https://github.com/Piotr-Miller/lumina-clean-ai.git`.
 - Repo `Piotr-Miller/lumina-clean-ai`, visibility `PRIVATE`.
@@ -110,18 +111,18 @@ repo. They can be deleted manually at any time.
 
 ## Final mapping (roadmap item → issue)
 
-| Roadmap ID | Issue | Change ID                          | Status   | Labels |
-| ---------- | ----- | ---------------------------------- | -------- | ------ |
-| F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1) | `photo-jobs-data-and-storage`       | ready    | `roadmap` `foundation` `status:ready` |
-| S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2) | `local-engine-enhance-flow`         | ready    | `roadmap` `slice` `status:ready` |
-| S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3) | `account-access-and-password-reset` | ready    | `roadmap` `slice` `status:ready` |
-| S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4) | `gated-cloud-upload`                | done     | `roadmap` `slice` `status:proposed` |
-| S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5) | `cloud-ai-realtime-result`          | done     | `roadmap` `slice` `status:proposed` `north-star` |
-| S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | `cloud-daily-cap`                   | done     | `roadmap` `slice` `status:proposed` |
-| S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7) | `account-session-ux`                | done     | `roadmap` `slice` `status:ready` |
-| S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8) | `production-deployment`             | done     | `roadmap` `slice` `status:ready` |
-| S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9) | `cloud-job-retention-cleanup`       | done     | `roadmap` `slice` `status:ready` |
-| S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`         | done     | `roadmap` `slice` `status:ready` |
+| Roadmap ID | Issue                                                            | Change ID                           | Status | Labels                                           |
+| ---------- | ---------------------------------------------------------------- | ----------------------------------- | ------ | ------------------------------------------------ |
+| F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1)   | `photo-jobs-data-and-storage`       | ready  | `roadmap` `foundation` `status:ready`            |
+| S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2)   | `local-engine-enhance-flow`         | ready  | `roadmap` `slice` `status:ready`                 |
+| S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3)   | `account-access-and-password-reset` | ready  | `roadmap` `slice` `status:ready`                 |
+| S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4)   | `gated-cloud-upload`                | done   | `roadmap` `slice` `status:proposed`              |
+| S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5)   | `cloud-ai-realtime-result`          | done   | `roadmap` `slice` `status:proposed` `north-star` |
+| S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6)   | `cloud-daily-cap`                   | done   | `roadmap` `slice` `status:proposed`              |
+| S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7)   | `account-session-ux`                | done   | `roadmap` `slice` `status:ready`                 |
+| S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)   | `production-deployment`             | done   | `roadmap` `slice` `status:ready`                 |
+| S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)   | `cloud-job-retention-cleanup`       | done   | `roadmap` `slice` `status:ready`                 |
+| S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`          | done   | `roadmap` `slice` `status:ready`                 |
 
 ⭐ = north star (validation milestone).
 
@@ -139,18 +140,19 @@ repo. They can be deleted manually at any time.
 
 Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" note below).
 
-| Date       | Roadmap ID | Issue | Action |
-| ---------- | ---------- | ----- | ------ |
-| 2026-05-29 | F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1) | closed on archive |
-| 2026-05-29 | S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2) | closed on archive |
-| 2026-05-30 | S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3) | closed on archive |
-| 2026-05-31 | S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4) | closed on archive (commit 42d4141) |
-| 2026-06-02 | S-04       | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5) | closed on archive (commit bebad84) |
-| 2026-06-03 | S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7) | closed on archive |
-| 2026-06-04 | S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6) | closed on archive (commit 0130a79) |
-| 2026-06-06 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8) | closed on archive |
-| 2026-06-07 | S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | closed on archive |
-| 2026-06-07 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9) | closed on archive |
+| Date       | Roadmap ID | Issue                                                            | Action                                                                                                                                                                |
+| ---------- | ---------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-29 | F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1)   | closed on archive                                                                                                                                                     |
+| 2026-05-29 | S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2)   | closed on archive                                                                                                                                                     |
+| 2026-05-30 | S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3)   | closed on archive                                                                                                                                                     |
+| 2026-05-31 | S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4)   | closed on archive (commit 42d4141)                                                                                                                                    |
+| 2026-06-02 | S-04       | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5)   | closed on archive (commit bebad84)                                                                                                                                    |
+| 2026-06-03 | S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7)   | closed on archive                                                                                                                                                     |
+| 2026-06-04 | S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6)   | closed on archive (commit 0130a79)                                                                                                                                    |
+| 2026-06-06 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)   | closed on archive                                                                                                                                                     |
+| 2026-06-07 | S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | closed on archive                                                                                                                                                     |
+| 2026-06-07 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)   | closed on archive                                                                                                                                                     |
+| 2026-06-11 | — (chore)  | [#13](https://github.com/Piotr-Miller/lumina-clean-ai/issues/13) | archived `ci-wrangler-action-node24` → `context/archive/2026-06-11-ci-wrangler-action-node24`; issue already closed on merge (wrangler-action@v4). Non-roadmap chore. |
 
 > The F-01/S-01/S-02 rows are recorded for completeness based on their archive dates; this log section was introduced with the S-03 archive (2026-05-31).
 
