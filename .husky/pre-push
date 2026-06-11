@@ -1,1 +1,14 @@
+# Block direct pushes to master — PR-only flow. Server-side rulesets are
+# unavailable on this repo (private + GitHub Free), so this local guard is
+# the enforcement layer. PR merges happen server-side (gh pr merge / web UI),
+# so they are unaffected. Emergency bypass: git push --no-verify
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/master" ]; then
+    echo "✗ Direct push to master is blocked (PR-only flow)." >&2
+    echo "  Use a branch + PR:  git checkout -b <branch> && git push -u origin <branch> && gh pr create" >&2
+    echo "  Emergency bypass:   git push --no-verify" >&2
+    exit 1
+  fi
+done
+
 npm run typecheck

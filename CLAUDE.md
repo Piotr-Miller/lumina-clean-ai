@@ -40,7 +40,7 @@ LuminaClean AI — night/low-light photo denoise + exposure-correction MVP. Two 
 - `npm run lint:fix` — auto-fix lint issues
 - `npm run format` — Prettier (includes prettier-plugin-astro + prettier-plugin-tailwindcss)
 
-Pre-commit hooks: husky + lint-staged runs `eslint --fix` on `*.{ts,tsx,astro}` and `prettier --write` on `*.{json,css,md}`.
+Git hooks (husky): **pre-commit** — lint-staged runs `eslint --fix` on `*.{ts,tsx,astro}`, `vitest related` on staged TS, and `prettier --write` on `*.{json,css,md}`; **pre-push** — blocks any push to `refs/heads/master` (**master is PR-only**: branch → PR → merge; server-side rulesets unavailable on private+Free, so this hook is the enforcement; emergency bypass `git push --no-verify`), then `tsc --noEmit` for branch pushes.
 
 ### Architecture
 
