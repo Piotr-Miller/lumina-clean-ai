@@ -21,6 +21,7 @@ Repo uses Stryker (`@stryker-mutator/core` + `@stryker-mutator/vitest-runner`) f
 - **Run it only** for code covered by the current change or a risk from `context/foundation/test-plan.md` §4. Prefer narrowed scope: `npx stryker run --mutate "src/lib/services/photo-job.service.ts"` or a line range `--mutate "path/to/file.ts:12-48"`. `npm run test:mutation` runs the default scope (`src/lib/**`).
 - **Config:** `stryker.config.json`. Mutation runs use `vitest.config.stryker.ts`, which excludes `jobs.rls.test.ts` (needs live local Supabase — too slow per mutant). HTML report: `reports/mutation/mutation.html`.
 - **Do not chase 100%.** Review survived mutants one by one: add an assertion only when the mutant represents a user-visible or business-relevant bug. Ignore equivalent/cosmetic mutants consciously — pinning implementation detail to kill a cosmetic mutant is itself a vibe test.
+- **When it runs:** on demand, plus a conditional step in `/10x-impl-review` (Step 3 "Verify success criteria") that fires a scoped `stryker run --mutate <file>` **only** when the reviewed change touches a §4 risk module, and surfaces qualifying survived mutants as Safety & Quality findings. This trigger is recorded here too because `10x get` can overwrite the managed skill (`.claude/skills/10x-impl-review/SKILL.md`); if the skill is re-fetched without it, re-add the step from this note.
 
 ## Project: Astro + Supabase + Cloudflare
 
@@ -122,14 +123,14 @@ context/foundation/test-plan.md  (§4 Quality Gates: which check, required when)
 
 ### Task Router — Which layer for this check
 
-| You want to | Do this |
-| --- | --- |
-| React the instant the agent edits a file | A per-edit hook (`PostToolUse` matcher `Write\|Edit` in Claude Code). Right for fast checks: lint/format, and scoped tests on risk-area files. This is the **only** layer that can hand feedback to the agent mid-session. |
-| Run only the tests that depend on the edited file | Parse the path from the hook's stdin (`jq -r .tool_input.file_path`) and run your runner's related-tests mode (`vitest related "$FILE" --run`, `jest --findRelatedTests $FILE`). Gate it on whether the file is a risk area in `test-plan.md`; don't run tests on every helper or config edit. |
-| Catch changes that bypassed the agent (manual edits, a teammate's commit) | A pre-commit git hook (Lefthook or Husky+lint-staged) over staged files: lint + typecheck, and tests on staged risk files. |
-| Run heavier checks before code leaves the machine | Pre-push: full typecheck or a broader test set. Anything too slow for per-edit moves here. |
-| Decide where a given gate belongs | Ask: is it fast enough (a few seconds) for per-edit, or should it wait for commit/push/CI? Slow checks block the agent loop on every edit — push them up a layer. |
-| Use the same hook across tools | The trigger → matcher → handler → signal pattern is the same in Cursor, Codex, Windsurf, and Copilot; only the config file and event names change. See the cross-tool table below. |
+| You want to                                                               | Do this                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| React the instant the agent edits a file                                  | A per-edit hook (`PostToolUse` matcher `Write\|Edit` in Claude Code). Right for fast checks: lint/format, and scoped tests on risk-area files. This is the **only** layer that can hand feedback to the agent mid-session.                                                                     |
+| Run only the tests that depend on the edited file                         | Parse the path from the hook's stdin (`jq -r .tool_input.file_path`) and run your runner's related-tests mode (`vitest related "$FILE" --run`, `jest --findRelatedTests $FILE`). Gate it on whether the file is a risk area in `test-plan.md`; don't run tests on every helper or config edit. |
+| Catch changes that bypassed the agent (manual edits, a teammate's commit) | A pre-commit git hook (Lefthook or Husky+lint-staged) over staged files: lint + typecheck, and tests on staged risk files.                                                                                                                                                                     |
+| Run heavier checks before code leaves the machine                         | Pre-push: full typecheck or a broader test set. Anything too slow for per-edit moves here.                                                                                                                                                                                                     |
+| Decide where a given gate belongs                                         | Ask: is it fast enough (a few seconds) for per-edit, or should it wait for commit/push/CI? Slow checks block the agent loop on every edit — push them up a layer.                                                                                                                              |
+| Use the same hook across tools                                            | The trigger → matcher → handler → signal pattern is the same in Cursor, Codex, Windsurf, and Copilot; only the config file and event names change. See the cross-tool table below.                                                                                                             |
 
 ### Hook lifecycle — the universal pattern
 
@@ -152,12 +153,12 @@ The boundary: the agent reliably fixes **trivial** corrections on its own. When 
 
 ### Three local layers (plus CI)
 
-| Layer | Catches | Timing |
-| --- | --- | --- |
-| Per-edit (agent hooks) | Formatting, simple type errors, failing unit tests on risk files. Only layer that feeds the agent mid-work. | ms–s |
-| Pre-commit (git hooks) | What slipped past per-edit: manual edits, files changed outside the hook, checks too slow for per-edit. Operates on staged files. | s |
-| Pre-push | Heavier checks before pushing to remote (full typecheck, broader test set). | s–min |
-| CI | Integration problems, cross-module dependencies, checks needing infra unavailable locally. | min |
+| Layer                  | Catches                                                                                                                           | Timing |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Per-edit (agent hooks) | Formatting, simple type errors, failing unit tests on risk files. Only layer that feeds the agent mid-work.                       | ms–s   |
+| Pre-commit (git hooks) | What slipped past per-edit: manual edits, files changed outside the hook, checks too slow for per-edit. Operates on staged files. | s      |
+| Pre-push               | Heavier checks before pushing to remote (full typecheck, broader test set).                                                       | s–min  |
+| CI                     | Integration problems, cross-module dependencies, checks needing infra unavailable locally.                                        | min    |
 
 Local layers do **not** replace CI — CI stays the key verification for shared repo state and environments you don't control. But each local layer that catches an error is one fewer CI round-trip. You don't need all layers from day one: start with one per-edit hook (lint) and one commit gate, add layers as you see what escapes. The quality gates in `test-plan.md §4` decide which checks are worth automating and when; a plan may legitimately defer per-edit hooks if the cost/signal ratio isn't there yet.
 
@@ -172,13 +173,13 @@ Local layers do **not** replace CI — CI stays the key verification for shared 
 
 ### The same pattern in every tool
 
-| Tool | Events | Handlers | Context injection | Config |
-| --- | --- | --- | --- | --- |
-| Claude Code | ~30 | command, http, mcp_tool, prompt, agent | yes | `.claude/settings.json` |
-| Cursor | ~18 | command, prompt | yes | `.cursor/hooks.json` |
-| Codex | 10 | command | yes | `.codex/hooks.json` |
-| Windsurf | 12 | command | **no** | `.windsurf/hooks.json` |
-| Copilot | ~13 | command, http, prompt | yes (VS Code) | `.github/hooks/*.json` |
+| Tool        | Events | Handlers                               | Context injection | Config                  |
+| ----------- | ------ | -------------------------------------- | ----------------- | ----------------------- |
+| Claude Code | ~30    | command, http, mcp_tool, prompt, agent | yes               | `.claude/settings.json` |
+| Cursor      | ~18    | command, prompt                        | yes               | `.cursor/hooks.json`    |
+| Codex       | 10     | command                                | yes               | `.codex/hooks.json`     |
+| Windsurf    | 12     | command                                | **no**            | `.windsurf/hooks.json`  |
+| Copilot     | ~13    | command, http, prompt                  | yes (VS Code)     | `.github/hooks/*.json`  |
 
 ### Lesson boundaries
 
@@ -186,7 +187,7 @@ Local layers do **not** replace CI — CI stays the key verification for shared 
 - Do not write E2E tests, configure Playwright/MCP, or run browser scenarios. That is Lesson 4.
 - Do not run the bug-to-fix-to-regression-test debugging workflow. That is Lesson 5.
 - Do not change the risk strategy or quality-gate definitions. That is Lesson 1 (`/10x-test-plan`); read current state with `/10x-test-plan --status`.
-- Do not write unit/integration test code from scratch here. That is Lesson 2 — hooks only *run* the tests those lessons produced.
+- Do not write unit/integration test code from scratch here. That is Lesson 2 — hooks only _run_ the tests those lessons produced.
 - Do not author CI/CD pipelines. That is Module 1 Lesson 5 / Module 2 Lesson 5; hooks are the local layers in front of CI.
 
 ### Paths used by this lesson
