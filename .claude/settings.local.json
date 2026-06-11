@@ -131,7 +131,9 @@
       "Bash(gh run *)",
       "Bash(echo \"=== homepage supabase ref \\(forced edge IP\\) ===\")",
       "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(s\\);console.log\\('API_URL='+\\(j.API_URL||j.api_url\\)\\);console.log\\('SERVICE_ROLE_KEY_len='+\\(\\(j.SERVICE_ROLE_KEY||j.service_role_key||''\\).length\\)\\)}catch\\(e\\){console.log\\('parse failed:',e.message\\)}}\\)\")",
-      "Bash(gh pr create --base master --head chore/track-jobs-rls-seed-flake --title 'chore: track jobs.rls.test.ts seed-flake follow-up \\(#19\\)' --body ' *)"
+      "Bash(gh pr create --base master --head chore/track-jobs-rls-seed-flake --title 'chore: track jobs.rls.test.ts seed-flake follow-up \\(#19\\)' --body ' *)",
+      "Bash(xargs echo \"LuminaClean/astro-island mentions:\")",
+      "Bash(xargs echo \"form/email/password hits:\")"
     ],
     "deny": ["Bash(rm -rf *)"],
     "ask": ["Bash(curl *)", "Bash(wget *)", "Bash(git push *)", "Bash(git push)"]
