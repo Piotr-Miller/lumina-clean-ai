@@ -1,4 +1,5 @@
 <!-- IMPL-REVIEW-REPORT -->
+
 # Implementation Review: Gate the floor — wire the existing Vitest suite (incl. Docker/RLS) into CI
 
 - **Plan**: context/changes/testing-ci-gate/plan.md
@@ -9,14 +10,14 @@
 
 ## Verdicts
 
-| Dimension | Verdict |
-|-----------|---------|
-| Plan Adherence | PASS |
-| Scope Discipline | WARNING |
-| Safety & Quality | PASS |
-| Architecture | PASS |
-| Pattern Consistency | PASS |
-| Success Criteria | PASS (1 observation) |
+| Dimension           | Verdict              |
+| ------------------- | -------------------- |
+| Plan Adherence      | PASS                 |
+| Scope Discipline    | WARNING              |
+| Safety & Quality    | PASS                 |
+| Architecture        | PASS                 |
+| Pattern Consistency | PASS                 |
+| Success Criteria    | PASS (1 observation) |
 
 ## Findings
 
@@ -46,6 +47,6 @@
 - **Impact**: 🔎 MEDIUM — real tradeoff; pause to reason through it
 - **Dimension**: Success Criteria
 - **Location**: context/changes/testing-ci-gate/plan.md:213 (Progress 1.5)
-- **Detail**: 1.5 ("PR shows ci+integration green; deploy doesn't run on PR") is checked with an "accepted structurally" note — proven from the `if: github.event_name == 'push'` guard rather than an observed PR run. The plan's Phase-1 Implementation Note explicitly asked to "pause for human confirmation that a real PR/push run was observed green." The a7086aa quote-strip fix is strong evidence a real CI run *did* happen (the integration job booted and exposed the URL-quoting bug), so the structural acceptance is defensible — but the final all-green state (all 11 files + deploy gated) is worth confirming you actually saw.
+- **Detail**: 1.5 ("PR shows ci+integration green; deploy doesn't run on PR") is checked with an "accepted structurally" note — proven from the `if: github.event_name == 'push'` guard rather than an observed PR run. The plan's Phase-1 Implementation Note explicitly asked to "pause for human confirmation that a real PR/push run was observed green." The a7086aa quote-strip fix is strong evidence a real CI run _did_ happen (the integration job booted and exposed the URL-quoting bug), so the structural acceptance is defensible — but the final all-green state (all 11 files + deploy gated) is worth confirming you actually saw.
 - **Fix**: Confirm a real green ci+integration run was observed on the Actions tab (or note the run URL); otherwise leave 1.5–1.8 as the structural acceptance already recorded.
 - **Decision**: PENDING

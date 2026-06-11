@@ -1,4 +1,5 @@
 <!-- IMPL-REVIEW-REPORT -->
+
 # Implementation Review: Gate the floor — wire the existing Vitest suite (incl. Docker/RLS) into CI
 
 - **Plan**: context/changes/testing-ci-gate/plan.md
@@ -9,14 +10,14 @@
 
 ## Verdicts
 
-| Dimension | Verdict |
-|-----------|---------|
-| Plan Adherence | PASS |
-| Scope Discipline | PASS |
-| Safety & Quality | PASS |
-| Architecture | PASS |
-| Pattern Consistency | PASS |
-| Success Criteria | PASS |
+| Dimension           | Verdict |
+| ------------------- | ------- |
+| Plan Adherence      | PASS    |
+| Scope Discipline    | PASS    |
+| Safety & Quality    | PASS    |
+| Architecture        | PASS    |
+| Pattern Consistency | PASS    |
+| Success Criteria    | PASS    |
 
 ## Scope
 
@@ -38,6 +39,6 @@ Phase 1's only substantive artifact is `.github/workflows/ci.yml` (commits `7bf7
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Safety & Quality (reliability)
 - **Location**: .github/workflows/ci.yml — `integration:` job
-- **Detail**: The boot retry handles a transient `supabase start` failure, but if a container wedges *after* the retry (or `npm test` hangs in a way the 30s per-test timeout doesn't catch), the job inherits GitHub's default 360-min job timeout. Because plan-review F1 put this job on the deploy critical path (`deploy needs: [ci, integration]`), a wedged boot would keep a deploy pending up to 6h rather than failing fast. A bounded `timeout-minutes:` complements the boot-retry mitigation. Not in the plan; surfaced by the F1 reliability-coupling concern.
+- **Detail**: The boot retry handles a transient `supabase start` failure, but if a container wedges _after_ the retry (or `npm test` hangs in a way the 30s per-test timeout doesn't catch), the job inherits GitHub's default 360-min job timeout. Because plan-review F1 put this job on the deploy critical path (`deploy needs: [ci, integration]`), a wedged boot would keep a deploy pending up to 6h rather than failing fast. A bounded `timeout-minutes:` complements the boot-retry mitigation. Not in the plan; surfaced by the F1 reliability-coupling concern.
 - **Fix**: Add `timeout-minutes: 15` to the `integration` job (generous headroom over the observed ~2-4 min wall-clock). Optionally mirror on `ci`, though that's pre-existing and out of this phase's scope.
 - **Decision**: FIXED — added `timeout-minutes: 15` to the `integration` job in `.github/workflows/ci.yml` (uncommitted; will land with the Phase 2 commit).

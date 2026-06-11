@@ -1,4 +1,5 @@
 <!-- PLAN-REVIEW-REPORT -->
+
 # Plan Review: Gate the floor — wire the existing Vitest suite (incl. Docker/RLS) into CI
 
 - **Plan**: context/changes/testing-ci-gate/plan.md
@@ -9,13 +10,13 @@
 
 ## Verdicts
 
-| Dimension | Verdict |
-|-----------|---------|
-| End-State Alignment | PASS |
-| Lean Execution | PASS |
-| Architectural Fitness | PASS |
-| Blind Spots | WARNING |
-| Plan Completeness | PASS |
+| Dimension             | Verdict |
+| --------------------- | ------- |
+| End-State Alignment   | PASS    |
+| Lean Execution        | PASS    |
+| Architectural Fitness | PASS    |
+| Blind Spots           | WARNING |
+| Plan Completeness     | PASS    |
 
 ## Grounding
 
@@ -29,7 +30,7 @@
 - **Impact**: 🔎 MEDIUM — real tradeoff; pause to reason through it
 - **Dimension**: Blind Spots
 - **Location**: Phase 1, change #3 + brief "Key Decisions"
-- **Detail**: The plan adds `deploy: needs: [ci, integration]` and presents it only as "the regression lock actually protects prod." But it introduces a new failure surface on the deploy path: `npx supabase start` boots Docker images on every push to master, and a boot hiccup, image-pull timeout, or a transient RLS-suite flake now blocks a production deploy even when the app itself is fine. Previously the integration suite was developer-local and could never gate shipping. The plan's "Performance Considerations" notes the ~1-2 min cost but not the *reliability* coupling. The user opted into this gate during triage — but the plan should record the tradeoff honestly and add a cheap mitigation so an infra blip doesn't false-block a deploy.
+- **Detail**: The plan adds `deploy: needs: [ci, integration]` and presents it only as "the regression lock actually protects prod." But it introduces a new failure surface on the deploy path: `npx supabase start` boots Docker images on every push to master, and a boot hiccup, image-pull timeout, or a transient RLS-suite flake now blocks a production deploy even when the app itself is fine. Previously the integration suite was developer-local and could never gate shipping. The plan's "Performance Considerations" notes the ~1-2 min cost but not the _reliability_ coupling. The user opted into this gate during triage — but the plan should record the tradeoff honestly and add a cheap mitigation so an infra blip doesn't false-block a deploy.
 - **Fix A ⭐ Recommended**: Keep the decision; add a boot mitigation + honest note
   - Strength: Preserves the chosen "lock protects prod" gate; a single retry/timeout on `supabase start` absorbs transient boot failures so only a real test regression blocks deploy. Matches the repo's async-timeout-backstop instinct (lessons.md).
   - Tradeoff: Deploy still waits on the integration job (~2-4 min) on every master push.

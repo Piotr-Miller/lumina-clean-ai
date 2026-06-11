@@ -17,14 +17,14 @@ Every push/PR runs the `ci` job (lint → test:unit → deno check → build) **
 
 ## Key Decisions Made
 
-| Decision | Choice | Why (1 sentence) | Source |
-| --- | --- | --- | --- |
-| CI Supabase | Ephemeral local (Docker) | Suite is reset-per-run friendly; no hosted project, no new secrets | Research |
-| Env-bleed hazard | Separate `integration` job | Prod-secret build and local keys never share a process — bug is structurally impossible | Plan |
-| Suite scope | Full `npm test` | Simplest; no new script; RLS suite runs with its peers | Plan |
-| `deno check` | Move to `ci`, drop deploy copy | PRs gain static coverage; `deploy needs: ci` makes the copy redundant | Plan |
-| Image caching | None — accept ~1-2 min pull | Actions Docker-layer caching is finicky and often net-neutral | Plan |
-| Cleanup | Fix stale docs + `deploy needs: [ci, integration]` + sync test-plan | Keep repo self-consistent; let the lock actually gate prod | Plan |
+| Decision         | Choice                                                              | Why (1 sentence)                                                                        | Source   |
+| ---------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------- |
+| CI Supabase      | Ephemeral local (Docker)                                            | Suite is reset-per-run friendly; no hosted project, no new secrets                      | Research |
+| Env-bleed hazard | Separate `integration` job                                          | Prod-secret build and local keys never share a process — bug is structurally impossible | Plan     |
+| Suite scope      | Full `npm test`                                                     | Simplest; no new script; RLS suite runs with its peers                                  | Plan     |
+| `deno check`     | Move to `ci`, drop deploy copy                                      | PRs gain static coverage; `deploy needs: ci` makes the copy redundant                   | Plan     |
+| Image caching    | None — accept ~1-2 min pull                                         | Actions Docker-layer caching is finicky and often net-neutral                           | Plan     |
+| Cleanup          | Fix stale docs + `deploy needs: [ci, integration]` + sync test-plan | Keep repo self-consistent; let the lock actually gate prod                              | Plan     |
 
 ## Scope
 
@@ -38,10 +38,10 @@ Three top-level jobs in one workflow. `ci` (lint/unit/deno-check/build with **pr
 
 ## Phases at a Glance
 
-| Phase | What it delivers | Key risk |
-| --- | --- | --- |
-| 1. Wire the CI workflow | `integration` job + `deno check` on PR gate + `deploy needs: [ci, integration]` | Env bleed (mitigated by job isolation); exact `supabase status` key-export syntax for 2.23.x CLI (verify at impl; `-o json` fallback) |
-| 2. Sync docs + state | Corrected `tests/README.md`/`change.md`; `test-plan.md` §3 Phase 1 `complete`, §5 gates wired | None — doc-only |
+| Phase                   | What it delivers                                                                              | Key risk                                                                                                                              |
+| ----------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Wire the CI workflow | `integration` job + `deno check` on PR gate + `deploy needs: [ci, integration]`               | Env bleed (mitigated by job isolation); exact `supabase status` key-export syntax for 2.23.x CLI (verify at impl; `-o json` fallback) |
+| 2. Sync docs + state    | Corrected `tests/README.md`/`change.md`; `test-plan.md` §3 Phase 1 `complete`, §5 gates wired | None — doc-only                                                                                                                       |
 
 **Prerequisites:** none (local keys generated; no new GitHub secrets; Docker preinstalled on `ubuntu-latest`).
 **Estimated effort:** ~1 session, 2 phases.
