@@ -212,7 +212,7 @@ This reverses the original `context/archive/2026-05-28-photo-jobs-data-and-stora
 
 #### Manual
 
-- [x] 1.5 PR shows `ci` + `integration` green; `deploy` does not run on PR event — a7086aa (accepted structurally: PR triggers the same green ci+integration jobs; `if: github.event_name == 'push'` provably blocks deploy on PRs — see 1.4)
+- [x] 1.5 PR shows `ci` + `integration` green; `deploy` does not run on PR event (accepted structurally: PR triggers the same green ci+integration jobs; `if: github.event_name == 'push'` provably blocks deploy on PRs — see 1.4) — a7086aa
 - [x] 1.6 `ci` build step still resolves production `SUPABASE_URL`/`SUPABASE_KEY` (no env bleed) — a7086aa
 - [x] 1.7 Push to master: `deploy` waits on both jobs, then deploys — a7086aa
 - [x] 1.8 `integration` wall-clock acceptable (~2-4 min incl. image pull) — a7086aa
