@@ -58,9 +58,29 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # `supabase start` boots Postgres + Auth + Storage in Docker (~1-2 min on
-      # a cold image pull; uncached by design). Retry once after a clean stop
-      # so a transient Docker/image-pull hiccup doesn't false-fail the job —
+      # Cache the Supabase service images (all pulled from public.ecr.aws) across
+      # runs. The root cause of intermittent `error running container: exit 1`
+      # failures here was the anonymous-pull rate limit on that registry
+      # (`toomanyrequests: Rate exceeded`) — GitHub-hosted runners share egress
+      # IPs, so cold pulls of ~14 images get throttled. Restoring from cache means
+      # `supabase start` / `db reset` find the images locally and skip the pull.
+      # Key on the lockfile (pins the supabase CLI → image tags) + config.toml.
+      - name: Cache Supabase Docker images
+        id: supabase-images
+        uses: actions/cache@v4
+        with:
+          path: ~/supabase-images
+          key: supabase-images-${{ runner.os }}-${{ hashFiles('package-lock.json', 'supabase/config.toml') }}
+      - name: Load cached Supabase images
+        if: steps.supabase-images.outputs.cache-hit == 'true'
+        run: |
+          shopt -s nullglob
+          for tar in ~/supabase-images/*.tar; do
+            docker load -i "$tar"
+          done
+      # `supabase start` boots Postgres + Auth + Storage in Docker (~1-2 min on a
+      # cold image pull; near-instant on a cache hit). Retry once after a clean
+      # stop so a transient Docker/image-pull hiccup doesn't false-fail the job —
       # and, since `deploy` needs this job, doesn't false-block a deploy.
       # `--no-backup` deletes the data volumes so the retry boots clean.
       - name: Start local Supabase (retry once on transient boot failure)
@@ -70,10 +90,34 @@ jobs:
             npx supabase stop --no-backup || true
             npx supabase start
           }
+      # On a cache miss, persist the freshly-pulled images so the next run's
+      # restore step finds them. `actions/cache` saves ~/supabase-images in its
+      # post-job step (only when the key was a miss). Grep on the public.ecr.aws
+      # registry to capture every Supabase service image and nothing the runner
+      # preloaded (those come from docker.io / ghcr / mcr).
+      - name: Save Supabase images to cache
+        if: steps.supabase-images.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/supabase-images
+          docker images --format '{{.Repository}}:{{.Tag}}' \
+            | grep -E 'public\.ecr\.aws|supabase/' \
+            | while read -r img; do
+                fname=$(echo "$img" | tr '/:' '__')
+                docker save "$img" -o ~/supabase-images/"$fname.tar"
+              done
       # Apply every migration → creates public.jobs + the private `photos`
       # storage bucket the suite needs. Mirrors the documented dev flow
       # (tests/README.md); no seed.sql exists, all test data is runtime-created.
-      - run: npx supabase db reset
+      # Retry once on a transient container failure (same `toomanyrequests` /
+      # flaky-boot class the `start` step guards against): `db reset` spins up a
+      # fresh schema-init container, so it shares that exposure. `db reset`
+      # recreates the database itself, so a bare retry is sufficient — no stop.
+      - name: Apply migrations (retry once on transient container failure)
+        run: |
+          npx supabase db reset || {
+            echo "::warning::supabase db reset failed; retrying once"
+            npx supabase db reset
+          }
       # Export the three vars tests/env.ts requires, renamed from the local
       # stack's status output (override-name keys are the documented config
       # paths — see `supabase status --help`). Safe to write to $GITHUB_ENV:
