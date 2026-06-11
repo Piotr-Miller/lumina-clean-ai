@@ -77,7 +77,11 @@ Full server-side rendering (`output: "server"` in astro.config.mjs). All pages a
 
 ### CI
 
-GitHub Actions workflow (`.github/workflows/ci.yml`) runs lint + build on every push and PR to master. Requires `SUPABASE_URL` and `SUPABASE_KEY` repository secrets for the build step.
+GitHub Actions workflow (`.github/workflows/ci.yml`) — three jobs:
+
+- `ci` (push + PR) — lint, unit tests (`npm run test:unit`), `deno check` on the Edge Function, SSR build. Requires `SUPABASE_URL`/`SUPABASE_KEY` repo secrets for the build step.
+- `integration` (push + PR) — full Vitest suite incl. `tests/jobs.rls.test.ts` against an ephemeral local Supabase (Docker). Uses no GitHub secrets (local keys are generated), so it also runs on fork PRs. Supabase Docker images are cached across runs (`actions/cache`) and `supabase start`/`db reset` retry once — anonymous pulls from `public.ecr.aws` get rate-limited on shared runners (see lessons.md).
+- `deploy` (push to master only, gated by `needs: [ci, integration]`) — Worker via `wrangler-action` + `enhance` Edge Function via the pinned supabase CLI.
 
 ## 10x-cli profile & workflow
 
