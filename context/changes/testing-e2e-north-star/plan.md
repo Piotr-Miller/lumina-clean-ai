@@ -159,7 +159,7 @@ The "never hangs forever" half of #1: with the pipeline deliberately unwired, th
 
 **Intent**: Signed-in → upload → submit → do nothing. Assert within a ~40 s expect budget: `role="alert"` with the exact copy "Cloud processing took too long. Please try again." (`useCloudJob.ts:83`), buttons "Try again" and "Start over" visible, spinner text gone.
 
-**Contract**: Requires the DB webhook unwired (CI default; local precondition documented in the spec header — a wired local pipeline would legitimately advance the row and the spec would not see the 30 s timeout). UI-only assertions (admin client never asserts). The spec sets `test.setTimeout(60_000)` per-file — the wait exceeds Playwright's default 30 s test timeout (config deliberately sets none; the rest of the gate stays fast). Cleanup by captured `jobId` removes the job row AND its storage prefix, idempotently (the upload PUT landed even though processing never started; the timeout endpoint flips the row `failed` server-side).
+**Contract**: Requires the DB webhook unwired (CI default; local precondition documented in the spec header — a wired local pipeline would legitimately advance the row and the spec would not see the 30 s timeout). UI-only assertions (admin client never asserts). The spec sets `test.setTimeout(60_000)` per-file — the wait exceeds Playwright's default 30 s test timeout (config deliberately sets none; the rest of the gate stays fast). Cleanup by captured `jobId` removes the job row AND its storage prefix, idempotently (the upload PUT landed even though processing never started; the timeout endpoint flips the row `failed` server-side). _(Post-review addendum, impl-review F2: file timeout raised to 75_000 — outer margin for a cold CI webServer compile + the hydration retry ahead of the 30 s watchdog; internal layering 30 < 40 < 75 unchanged.)_
 
 ### Success Criteria:
 
@@ -287,12 +287,12 @@ None — additive. The seam env is default-off; prod behavior unchanged.
 
 #### Automated
 
-- [x] 3.1 Spec green: `npx playwright test cloud-stall-surfaces-timeout`
-- [x] 3.2 Full local gate green: `npx playwright test`
+- [x] 3.1 Spec green: `npx playwright test cloud-stall-surfaces-timeout` — 08a8f10
+- [x] 3.2 Full local gate green: `npx playwright test` — 08a8f10
 
 #### Manual
 
-- [x] 3.3 Deliberate-break confirmed red (watchdog gutted → eternal spinner), reverted
+- [x] 3.3 Deliberate-break confirmed red (watchdog gutted → eternal spinner), reverted — 08a8f10
 
 ### Phase 4: CI `e2e` job + docs sync
 

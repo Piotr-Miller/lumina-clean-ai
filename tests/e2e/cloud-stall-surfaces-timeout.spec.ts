@@ -35,9 +35,12 @@ import { readFileSync } from "node:fs";
 import { adminClient as sharedAdminClient } from "./helpers/env";
 
 // The wait crosses Playwright's default 30 s test timeout by design: the
-// watchdog budget itself is 30 s (plus re-read + render). Scoped to this file;
-// the rest of the gate stays fast.
-test.setTimeout(60_000);
+// watchdog budget itself is 30 s (plus re-read + render). 75 s leaves outer
+// margin for a cold CI webServer (on-demand Astro compile on first hit) plus
+// the up-to-15 s hydration retry AHEAD of the 30 s watchdog — internal
+// layering stays 30 s watchdog < 40 s alert budget < test timeout. Scoped to
+// this file; the rest of the gate stays fast.
+test.setTimeout(75_000);
 
 // Unique run marker — the upload name derives from it so parallel runs never
 // collide. The job row is correlated by the CAPTURED jobId only: the
@@ -59,11 +62,12 @@ test.describe("Risk #1 (stall half): a stuck cloud job surfaces a terminal failu
   let jobId: string | null = null;
 
   // Cleanup — delete exactly what this test created: the captured job row and
-  // its storage prefix. The upload PUT landed even though processing never
-  // started (the source object exists); the timeout endpoint flipped the row
-  // `failed` server-side. Idempotent: list-then-remove tolerates whatever the
-  // failure path already deleted. The shared e2e user stays — it belongs to
-  // the setup project.
+  // its storage prefix. The timeout endpoint flipped the row `failed`
+  // server-side and its retention contract usually already deleted the source
+  // object (markPendingJobFailedForOwner) — the prefix is swept defensively
+  // for whatever remains. Idempotent: list-then-remove tolerates the
+  // already-empty case. The shared e2e user stays — it belongs to the setup
+  // project.
   test.afterEach(async () => {
     if (jobId) {
       const admin = adminClient();
@@ -87,6 +91,12 @@ test.describe("Risk #1 (stall half): a stuck cloud job surfaces a terminal failu
   test("signed-in upload → Cloud AI → pipeline never advances → timeout alert with retry actions replaces the spinner", async ({
     page,
   }) => {
+    // Hard-fail the env guard BEFORE any data exists: cleanup needs the
+    // service-role client, so prove it's buildable (and local) up front —
+    // otherwise a missing env would surface only in afterEach, after the job
+    // row + storage object were created and became undeletable.
+    adminClient();
+
     // ——— The REAL submit: what a signed-in user actually does ———
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Fix your night photos" })).toBeVisible();
