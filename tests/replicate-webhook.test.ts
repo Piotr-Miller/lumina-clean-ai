@@ -158,6 +158,36 @@ describe("isAllowedOutputUrl", () => {
     expect(isAllowedOutputUrl("not a url")).toBe(false);
     expect(isAllowedOutputUrl("")).toBe(false);
   });
+
+  // The optional second arg is an opt-in E2E test seam (the Edge Function reads
+  // E2E_ALLOWED_OUTPUT_ORIGIN Deno-side and passes it). Default-off must keep prod
+  // behavior byte-identical to the replicate.delivery-only gate.
+  describe("extraOrigin test seam", () => {
+    const ORIGIN = "http://host.docker.internal:8787";
+
+    it("allows a URL whose origin exactly matches the extra origin", () => {
+      expect(isAllowedOutputUrl(`${ORIGIN}/output.jpg`, ORIGIN)).toBe(true);
+    });
+
+    it("is default-off: the same URL is rejected when no extra origin is passed", () => {
+      expect(isAllowedOutputUrl(`${ORIGIN}/output.jpg`)).toBe(false);
+    });
+
+    it("matches by exact origin (protocol + host + port), not a string prefix", () => {
+      expect(isAllowedOutputUrl("http://host.docker.internal:9999/x.jpg", ORIGIN)).toBe(false);
+      expect(isAllowedOutputUrl("http://host.docker.internal:8787.evil.com/x.jpg", ORIGIN)).toBe(false);
+      expect(isAllowedOutputUrl("https://host.docker.internal:8787/x.jpg", ORIGIN)).toBe(false);
+    });
+
+    it("does not weaken the replicate.delivery allowlist when set", () => {
+      expect(isAllowedOutputUrl("https://pbxt.replicate.delivery/x.jpg", ORIGIN)).toBe(true);
+      expect(isAllowedOutputUrl("https://evil.example.com/x.jpg", ORIGIN)).toBe(false);
+    });
+
+    it("ignores an unparseable extra origin (never throws)", () => {
+      expect(isAllowedOutputUrl(`${ORIGIN}/output.jpg`, "not a url")).toBe(false);
+    });
+  });
 });
 
 describe("mapPredictionToOutcome", () => {

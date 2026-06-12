@@ -416,7 +416,14 @@ async function handleCallback(req: Request): Promise<Response> {
     // SSRF guard: only fetch Replicate's real output CDN. A payload that passed
     // signature verification could still carry an attacker-influenced output URL;
     // reject anything that isn't https `*.replicate.delivery` BEFORE the fetch.
-    if (!isAllowedOutputUrl(outcome.outputUrl)) {
+    //
+    // E2E test seam (default-OFF): E2E_ALLOWED_OUTPUT_ORIGIN lets a stubbed
+    // pipeline serve the "model output" from a local fixture server the function
+    // can reach (e.g. http://host.docker.internal:8787). Unset in prod, so the
+    // gate is byte-identical to the replicate.delivery-only allowlist. Read here
+    // (Deno-side) and passed in, keeping replicate-webhook.ts pure/Vitest-testable.
+    const extraAllowedOrigin = Deno.env.get("E2E_ALLOWED_OUTPUT_ORIGIN") ?? undefined;
+    if (!isAllowedOutputUrl(outcome.outputUrl, extraAllowedOrigin)) {
       throw new Error(`refusing to fetch output from a disallowed host: ${outcome.outputUrl}`);
     }
 

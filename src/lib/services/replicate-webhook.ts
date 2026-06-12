@@ -225,13 +225,35 @@ export function resultExtensionFromContentType(contentType: string | null, outpu
  * unparseable URL. Pure (no I/O), so it is unit-testable from Vitest without the
  * Deno runtime; the Edge Function imports it by relative path and calls it before
  * the fetch.
+ *
+ * `extraOrigin` is an OPT-IN test seam: when the caller passes a non-empty
+ * origin (the Edge Function reads it Deno-side from `E2E_ALLOWED_OUTPUT_ORIGIN`),
+ * a URL whose `URL.origin` (protocol + host + port) EXACTLY equals that origin is
+ * also allowed — letting a stubbed E2E pipeline serve the "model output" from a
+ * local fixture server the function can reach. `URL.origin` equality (not a string
+ * prefix) is spoof-proof: it excludes userinfo and normalizes the port, so
+ * `http://host:8787` never matches `http://host:8787.evil.com` or
+ * `http://user@host:8787@evil.com`. Unset/empty/unparseable → no effect, so prod
+ * (which never sets the env) is byte-identical to the replicate.delivery-only gate.
  */
-export function isAllowedOutputUrl(raw: string): boolean {
+export function isAllowedOutputUrl(raw: string, extraOrigin?: string): boolean {
   let u: URL;
   try {
     u = new URL(raw);
   } catch {
     return false;
   }
-  return u.protocol === "https:" && (u.hostname === "replicate.delivery" || u.hostname.endsWith(".replicate.delivery"));
+  if (u.protocol === "https:" && (u.hostname === "replicate.delivery" || u.hostname.endsWith(".replicate.delivery"))) {
+    return true;
+  }
+  if (extraOrigin) {
+    let extra: URL;
+    try {
+      extra = new URL(extraOrigin);
+    } catch {
+      return false;
+    }
+    return u.origin === extra.origin;
+  }
+  return false;
 }
