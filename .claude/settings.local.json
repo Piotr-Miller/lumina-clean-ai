@@ -133,7 +133,14 @@
       "Bash(node -e \"let s='';process.stdin.on\\('data',d=>s+=d\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(s\\);console.log\\('API_URL='+\\(j.API_URL||j.api_url\\)\\);console.log\\('SERVICE_ROLE_KEY_len='+\\(\\(j.SERVICE_ROLE_KEY||j.service_role_key||''\\).length\\)\\)}catch\\(e\\){console.log\\('parse failed:',e.message\\)}}\\)\")",
       "Bash(gh pr create --base master --head chore/track-jobs-rls-seed-flake --title 'chore: track jobs.rls.test.ts seed-flake follow-up \\(#19\\)' --body ' *)",
       "Bash(xargs echo \"LuminaClean/astro-island mentions:\")",
-      "Bash(xargs echo \"form/email/password hits:\")"
+      "Bash(xargs echo \"form/email/password hits:\")",
+      "Bash(grep -oE '<h[12][^>]*>[^<]{0,80}' /tmp/seed-home.html)",
+      "Bash(grep -oE '<button[^>]{0,200}>' /tmp/seed-home.html)",
+      "Bash(grep -oE '<input[^>]{0,150}' /tmp/seed-home.html)",
+      "Bash(grep -oE '<a [^>]{0,120}>' /tmp/seed-home.html)",
+      "Bash(sed 's/data-astro-[a-z-]*=\"[^\"]*\"//g')",
+      "Read(//c/Users/prmi/**)",
+      "Bash(npx playwright-cli *)"
     ],
     "deny": ["Bash(rm -rf *)"],
     "ask": ["Bash(curl *)", "Bash(wget *)", "Bash(git push *)", "Bash(git push)"]
