@@ -254,28 +254,28 @@ None — additive. The seam env is default-off; prod behavior unchanged.
 
 #### Automated
 
-- [x] 1.1 Hermetic suites green: `npx vitest run tests/replicate-stub.helpers.test.ts tests/replicate-webhook.test.ts`
-- [x] 1.2 Deno static check green: `deno check supabase/functions/enhance/index.ts`
-- [x] 1.3 Lint + types green on touched files
+- [x] 1.1 Hermetic suites green: `npx vitest run tests/replicate-stub.helpers.test.ts tests/replicate-webhook.test.ts` — 7286858
+- [x] 1.2 Deno static check green: `deno check supabase/functions/enhance/index.ts` — 7286858
+- [x] 1.3 Lint + types green on touched files — 7286858
 
 #### Manual
 
-- [x] 1.4 Local seeded-row → signed-callback → `succeeded` + retention via new helpers
-- [x] 1.5 Seam default-off confirmed (env unset → 200, row failed/callback_failed, source gone)
+- [x] 1.4 Local seeded-row → signed-callback → `succeeded` + retention via new helpers — 7286858
+- [x] 1.5 Seam default-off confirmed (env unset → 200, row failed/callback_failed, source gone) — 7286858
 
 ### Phase 2: North-star spec — result renders without refresh
 
 #### Automated
 
-- [ ] 2.1 Browsers installed + existing gate green on FIRST execution
-- [ ] 2.2 Spec green: `npx playwright test north-star-cloud-result`
-- [ ] 2.3 Full local gate green: `npx playwright test`
-- [ ] 2.4 Lint + types green on tests/e2e
+- [x] 2.1 Browsers installed + existing gate green on FIRST execution
+- [x] 2.2 Spec green: `npx playwright test north-star-cloud-result`
+- [x] 2.3 Full local gate green: `npx playwright test`
+- [x] 2.4 Lint + types green on tests/e2e
 
 #### Manual
 
-- [ ] 2.5 Deliberate-break confirmed red (succeeded-wins or render guard), reverted
-- [ ] 2.6 Headed run: slider appears without refresh
+- [x] 2.5 Deliberate-break confirmed red (succeeded-wins or render guard), reverted
+- [x] 2.6 Headed run: slider appears without refresh
 
 ### Phase 3: Stall spec — stuck job surfaces a terminal failure
 

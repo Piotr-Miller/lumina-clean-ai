@@ -34,3 +34,13 @@ stryker.log
 
 # claude code transient scheduled-task lock (harness artifact)
 .claude/scheduled_tasks.lock
+
+# playwright-cli working artifacts (snapshots, console logs)
+.playwright-cli/
+
+# Playwright auth storage state — session cookies, never commit
+playwright/.auth/
+
+# Playwright run artifacts (traces, screenshots, HTML report — CI uploads the report)
+test-results/
+playwright-report/

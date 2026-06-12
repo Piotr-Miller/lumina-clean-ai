@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { verifyReplicateSignature } from "@/lib/services/replicate-webhook";
-import { callbackBody, signCallback } from "../tests/e2e/helpers/replicate-stub";
+import { callbackBody, signCallback } from "./e2e/helpers/replicate-stub";
 
 /**
  * Hermetic proof that the E2E stub's signer (tests/e2e/helpers/replicate-stub.ts)
