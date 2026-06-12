@@ -287,12 +287,12 @@ None — additive. The seam env is default-off; prod behavior unchanged.
 
 #### Automated
 
-- [ ] 3.1 Spec green: `npx playwright test cloud-stall-surfaces-timeout`
-- [ ] 3.2 Full local gate green: `npx playwright test`
+- [x] 3.1 Spec green: `npx playwright test cloud-stall-surfaces-timeout`
+- [x] 3.2 Full local gate green: `npx playwright test`
 
 #### Manual
 
-- [ ] 3.3 Deliberate-break confirmed red (watchdog gutted → eternal spinner), reverted
+- [x] 3.3 Deliberate-break confirmed red (watchdog gutted → eternal spinner), reverted
 
 ### Phase 4: CI `e2e` job + docs sync
 
