@@ -9,7 +9,7 @@
  * with `test.use({ storageState: { cookies: [], origins: [] } })`.
  */
 import { test as setup, expect } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
+import { adminClient } from "./helpers/env";
 
 const AUTH_FILE = "playwright/.auth/user.json";
 // Deterministic, dedicated to E2E — never a real account.
@@ -17,19 +17,9 @@ const EMAIL = "e2e-storage-state@e2e.local";
 const PASSWORD = "Pw!e2e-storage-state";
 
 setup("authenticate: admin-create user + form sign-in, save storage state", async ({ request, baseURL }) => {
-  const url = process.env.SUPABASE_URL;
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceRole) {
-    // Same hard-fail convention as tests/env.ts: a missing local stack is a
-    // setup error to surface loudly, never a silent skip.
-    throw new Error(
-      "auth.setup.ts needs SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (local stack — see tests/README.md).",
-    );
-  }
-
   // Idempotent create: an already-existing account is the expected steady
   // state between db resets; anything else is a real failure.
-  const admin = createClient(url, serviceRole);
+  const admin = adminClient("auth.setup.ts");
   const created = await admin.auth.admin.createUser({
     email: EMAIL,
     password: PASSWORD,

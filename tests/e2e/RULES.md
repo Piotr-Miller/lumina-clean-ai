@@ -27,5 +27,11 @@ in this directory. Source: `.claude/skills/10x-e2e/references/e2e-quality-rules.
 - Internal boundaries (auth, routing, DB) stay REAL against the local Supabase
   stack. Mock only expensive or non-deterministic external APIs (Replicate) at
   the network layer — and never submit a real cloud job from a test.
+- The fixture server (`helpers/fixture-server.ts`) is pinned to port 8787 —
+  its origin is baked into `E2E_ALLOWED_OUTPUT_ORIGIN` at serve startup, so
+  only ONE spec in the suite may run it (under `fullyParallel` a second
+  fixture-server spec would collide on the port). Today that spec is
+  `north-star-cloud-result.spec.ts`; a new spec needing fixture bytes must
+  share its flow, not start a second server.
 - Ground every role/name in the actual app (read the component/page source or
   the rendered HTML) — never invent accessible names.

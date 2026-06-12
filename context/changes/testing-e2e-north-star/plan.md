@@ -121,6 +121,12 @@ Setup first: install chromium locally (`npx playwright install chromium`) and br
 
 **Contract**: Preconditions hard-fail loudly (function URL unreachable → clear setup error). Cleanup deletes exactly the captured job row + its storage prefix (service role; setup/cleanup only). Provenance header ties the spec to risks #1+#6 and the seed. One test, one file.
 
+#### 2. Realtime warmup helper (addendum — discovered mid-phase, back-recorded per impl-review F2)
+
+**File**: `tests/e2e/helpers/realtime-ready.ts` (new)
+
+**Intent**: Warm the local Realtime tenant before the browser subscribes. An idle tenant re-initializes on first join and DROPS `postgres_changes` events committed during that warmup — a real flake that would hit every fresh CI boot. Setup-only (precondition hard-fail spirit); Phase 4's CI determinism depends on it.
+
 ### Success Criteria:
 
 #### Automated Verification:
@@ -184,7 +190,7 @@ A dedicated CI job runs the whole Playwright gate on every push/PR; `deploy` gai
 
 **Intent**: New job parallel to `integration`: boot the ephemeral stack, serve the function with a generated env, run Playwright (chromium), upload the report on failure. Gate `deploy` on it.
 
-**Contract**: Steps mirror `integration`'s hardening (Supabase image cache + retry — lessons.md), plus: generate `supabase/functions/.env` (generated `whsec_` secret via openssl, dummy `DB_WEBHOOK_SECRET`, `CLOUD_PIPELINE_ENABLED=false`, `E2E_ALLOWED_OUTPUT_ORIGIN` pointing at the resolved container-reachable host); background `npx supabase functions serve enhance --env-file …` + readiness probe (router 404 = ready); resolve host (`host.docker.internal` probe → fallback `172.17.0.1`) and export for the spec's fixture server URL; Playwright browser cache (`~/.cache/ms-playwright` keyed on the lockfile) + `npx playwright install chromium --with-deps` on miss; export the three `SUPABASE_*` vars (existing `status -o env` pattern — quote-stripping sed included); `npm run test:e2e`; `actions/upload-artifact` of `playwright-report/` on failure. `deploy.needs` → `[ci, integration, e2e]`. No GitHub secrets (fork-PR-safe, like `integration`).
+**Contract**: Steps mirror `integration`'s hardening (Supabase image cache + retry — lessons.md), plus: generate `supabase/functions/.env` (generated `whsec_` secret via openssl, dummy `DB_WEBHOOK_SECRET`, `CLOUD_PIPELINE_ENABLED=false`, `E2E_ALLOWED_OUTPUT_ORIGIN` pointing at the resolved container-reachable host); background `npx supabase functions serve enhance --env-file …` + readiness probe (router 404 = ready); resolve host (`host.docker.internal` probe → fallback `172.17.0.1`) and export for the spec's fixture server URL; Playwright browser cache (`~/.cache/ms-playwright` keyed on the lockfile) + `npx playwright install chromium --with-deps` on miss; export the three `SUPABASE_*` vars (existing `status -o env` pattern — quote-stripping sed included); `npm run test:e2e`; `actions/upload-artifact` of `playwright-report/` on failure. `deploy.needs` → `[ci, integration, e2e]`. No GitHub secrets (fork-PR-safe, like `integration`). The job's determinism on a fresh boot relies on the Realtime warmup precondition (`tests/e2e/helpers/realtime-ready.ts` — see Phase 2 addendum); no extra CI step needed, the spec runs it itself.
 
 #### 2. Docs sync
 
@@ -267,15 +273,15 @@ None — additive. The seam env is default-off; prod behavior unchanged.
 
 #### Automated
 
-- [x] 2.1 Browsers installed + existing gate green on FIRST execution
-- [x] 2.2 Spec green: `npx playwright test north-star-cloud-result`
-- [x] 2.3 Full local gate green: `npx playwright test`
-- [x] 2.4 Lint + types green on tests/e2e
+- [x] 2.1 Browsers installed + existing gate green on FIRST execution — d6ba832
+- [x] 2.2 Spec green: `npx playwright test north-star-cloud-result` — d6ba832
+- [x] 2.3 Full local gate green: `npx playwright test` — d6ba832
+- [x] 2.4 Lint + types green on tests/e2e — d6ba832
 
 #### Manual
 
-- [x] 2.5 Deliberate-break confirmed red (succeeded-wins or render guard), reverted
-- [x] 2.6 Headed run: slider appears without refresh
+- [x] 2.5 Deliberate-break confirmed red (succeeded-wins or render guard), reverted — d6ba832
+- [x] 2.6 Headed run: slider appears without refresh — d6ba832
 
 ### Phase 3: Stall spec — stuck job surfaces a terminal failure
 

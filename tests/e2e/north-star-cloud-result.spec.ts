@@ -38,7 +38,7 @@
  */
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
-import { createClient } from "@supabase/supabase-js";
+import { adminClient as sharedAdminClient, supabaseEnv } from "./helpers/env";
 import { serveFixture, type FixtureServer } from "./helpers/fixture-server";
 import { ensureRealtimeReady } from "./helpers/realtime-ready";
 import { callbackBody, flipToProcessing, resolveSigningSecret, signCallback } from "./helpers/replicate-stub";
@@ -55,16 +55,10 @@ const RUN_ID = `e2e-northstar-${Date.now()}-${Math.random().toString(36).slice(2
 // "model output" must be a real 3-channel JPG, no 1×1 stunt files.
 const FIXTURE_PATH = "tests/e2e/fixtures/night-rgb.jpg";
 
-// Inferred return type, matching the integration suite's idiom (jobs.rls.test.ts).
+// Shared guarded client (helpers/env.ts): hard-fails on missing env AND on a
+// non-local SUPABASE_URL — this suite must never run its admin deletes remotely.
 function adminClient() {
-  const url = process.env.SUPABASE_URL;
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceRole) {
-    throw new Error(
-      "north-star-cloud-result.spec.ts needs SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (local stack — see tests/README.md).",
-    );
-  }
-  return createClient(url, serviceRole);
+  return sharedAdminClient("north-star-cloud-result.spec.ts");
 }
 
 test.describe("Risks #1+#6: the cloud result renders without refresh", () => {
@@ -104,13 +98,7 @@ test.describe("Risks #1+#6: the cloud result renders without refresh", () => {
     request,
   }) => {
     const admin = adminClient();
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceRole) {
-      throw new Error(
-        "north-star-cloud-result.spec.ts needs SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (local stack — see tests/README.md).",
-      );
-    }
+    const { url: supabaseUrl, serviceRole } = supabaseEnv("north-star-cloud-result.spec.ts");
     const functionUrl = `${supabaseUrl}/functions/v1/enhance`;
 
     // Preconditions, loudly: a missing signing secret or an unreachable
@@ -208,7 +196,8 @@ test.describe("Risks #1+#6: the cloud result renders without refresh", () => {
       throw new Error(
         `north-star setup: callback accepted but the row did not reach 'succeeded' (row: ${JSON.stringify(terminal)}). ` +
           "Likely causes: the serving env is missing E2E_ALLOWED_OUTPUT_ORIGIN (read at serve startup — restart serve), " +
-          "or the fixture server is unreachable from the edge container (host.docker.internal).",
+          "the fixture server is unreachable from the edge container (host.docker.internal), " +
+          "or a result-materialization regression in the Edge Function itself.",
       );
     }
 

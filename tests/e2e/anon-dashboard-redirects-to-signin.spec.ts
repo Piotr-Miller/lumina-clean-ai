@@ -20,7 +20,7 @@
  *   The service-role client is used ONLY for setup/cleanup — never in assertions.
  */
 import { test, expect } from "@playwright/test";
-import { createClient } from "@supabase/supabase-js";
+import { adminClient as sharedAdminClient } from "./helpers/env";
 
 // playwright.config.ts owns baseURL and pre-authenticates the chromium project
 // via the `setup` project (storageState). This spec asserts the anonymous
@@ -34,18 +34,10 @@ const RUN_ID = `e2e-dash-gate-${Date.now()}-${Math.random().toString(36).slice(2
 const EMAIL = `${RUN_ID}@e2e.local`;
 const PASSWORD = `Pw!${RUN_ID}`;
 
-// Inferred return type, matching the integration suite's idiom (jobs.rls.test.ts).
+// Shared guarded client (helpers/env.ts): hard-fails on missing env AND on a
+// non-local SUPABASE_URL — this suite must never run its admin deletes remotely.
 function adminClient() {
-  const url = process.env.SUPABASE_URL;
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceRole) {
-    // Same hard-fail convention as tests/env.ts: a missing local stack is a
-    // setup error to surface loudly, never a silent skip.
-    throw new Error(
-      "anon-dashboard-redirects-to-signin.spec.ts needs SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (local stack — see tests/README.md).",
-    );
-  }
-  return createClient(url, serviceRole);
+  return sharedAdminClient("anon-dashboard-redirects-to-signin.spec.ts");
 }
 
 test.describe("Risk #2 perimeter: middleware-protected routes never render for an anonymous visitor", () => {
