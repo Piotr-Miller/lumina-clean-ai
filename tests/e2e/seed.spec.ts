@@ -6,7 +6,7 @@
  * names — every role/name below was read from the running app (2026-06-11),
  * not guessed.
  *
- * Risk: context/foundation/test-plan.md §2 Risk #2 — "An anonymous or
+ * risk: context/foundation/test-plan.md §2 Risk #2 — "An anonymous or
  * otherwise unauthorized request reaches Cloud AI processing because the gate
  * is enforced only in the UI toggle, not in the API." This test fails when
  * EITHER half of the gate regresses: the UI half (no sign-in prompt for an

@@ -35,3 +35,46 @@ in this directory. Source: `.claude/skills/10x-e2e/references/e2e-quality-rules.
   share its flow, not start a second server.
 - Ground every role/name in the actual app (read the component/page source or
   the rendered HTML) — never invent accessible names.
+
+## House style — match the existing suite
+
+Generated specs must look like the four that exist. Follow these concrete forms
+(read any current spec, e.g. `cloud-stall-surfaces-timeout.spec.ts`, as a model).
+
+### Naming (file → header → describe → test)
+
+- **File**: `tests/e2e/<risk-in-brief>.spec.ts`, kebab-case, named after the risk
+  or the guarantee (`cloud-stall-surfaces-timeout`, `anon-dashboard-redirects-to-signin`).
+  (`seed.spec.ts` keeps its name as the exemplar lever — the only exception.)
+- **Header docstring** (every spec opens with one): a `risk:` line (lowercase key)
+  pointing at `context/foundation/test-plan.md §2 Risk #N — <one-line scenario>`,
+  then a `seed: tests/e2e/seed.spec.ts` line. Note the stub boundary + hard-fail
+  preconditions below it when the flow needs a served function or env.
+- **`describe`**: `"Risk #N: <the risk in user/business terms>"` (e.g.
+  `"Risk #2: anon request must not reach Cloud AI processing"`).
+- **`test`**: a full user-flow sentence that **fails if the risk materializes** —
+  not "test 1" (e.g. `"signed-in upload → Cloud AI → pipeline never advances →
+timeout alert with retry actions replaces the spinner"`).
+
+### Repo paths & scaffolding (reuse, don't reinvent)
+
+- Specs in `tests/e2e/*.spec.ts`; helpers in `tests/e2e/helpers/`; committed
+  fixture bytes in `tests/e2e/fixtures/`. Config: `playwright.config.ts`
+  (`testDir: tests/e2e`, `fullyParallel`, `retries: 1` under CI, the `setup` →
+  `chromium` storageState projects).
+- **Service-role admin client ONLY via `tests/e2e/helpers/env.ts`** —
+  `adminClient("<spec>.ts")` / `supabaseEnv(...)` (loopback-guarded; refuses a
+  non-local `SUPABASE_URL`). Never construct `createClient` inline in a spec.
+- Cloud-flow helpers, when stubbing the pipeline: `helpers/replicate-stub.ts`
+  (`signCallback` + `flipToProcessing` + `resolveSigningSecret`),
+  `helpers/fixture-server.ts` (the model-output bytes), and
+  `helpers/realtime-ready.ts` (warm Realtime **before** the browser subscribes).
+  See the port-8787 single-spec rule above.
+
+### Cleanup correlation (load-bearing)
+
+- The `storageState` account is **shared** across specs running in parallel.
+  Correlate cleanup by the **captured id** — the `jobId` from the create-job
+  `page.waitForResponse(...)`, or the unique `user_id` you created — and delete
+  exactly that row + its storage prefix. **Never** "all rows for the user"; that
+  would delete a sibling spec's data mid-run.
