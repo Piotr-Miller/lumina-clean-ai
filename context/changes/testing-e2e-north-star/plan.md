@@ -306,4 +306,4 @@ None — additive. The seam env is default-off; prod behavior unchanged.
 
 - [x] 4.4 Full master run: three jobs green, deploy executes — master run 27472673373
 - [x] 4.5 Second run restores image + browser caches — master 27472673373 (supabase-images cache HIT; chromium cache populated, restores on subsequent runs)
-- [ ] 4.6 Live-smoke doc walked through or explicitly scheduled
+- [x] 4.6 Live-smoke doc walked through or explicitly scheduled — live smoke prod 2026-06-14 (cold+warm `succeeded`; F1 implicit via succeeded, F2 explicit: `.webhook` = prod `…/enhance/callback`)
