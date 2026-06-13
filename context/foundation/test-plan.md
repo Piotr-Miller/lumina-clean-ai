@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-09 (§3 Phase 1 → complete: testing-ci-gate wired into CI)
+> Last updated: 2026-06-13 (§3 Phase 4 → complete: E2E gate + `e2e` CI job wired; deploy needs [ci, integration, e2e])
 
 ## 1. Strategy
 
@@ -90,7 +90,7 @@ orchestrator updates Status as artifacts appear on disk.
 | 1   | Gate the floor — wire existing suite into CI  | Run the 11 tests that already encode the cloud/privacy guardrails on every push (incl. the RLS integration suite via an ephemeral/hosted Supabase) so they cannot silently regress       | #4, #5, #1, #6 (regression lock on existing coverage) | CI wiring (no new test logic)                                                     | complete    | context/archive/2026-06-09-testing-ci-gate/ |
 | 2   | Close top-risk coverage gaps                  | Prove gate-bypass, cost-cap-boundary, IDOR, and failure-path source deletion are caught at the cheapest real-signal layer                                                                | #2, #3, #4, #5                                        | integration (real Supabase)                                                       | not started | —                                           |
 | 3   | Harden silent-stall + watchdog                | Prove a bad/replayed webhook is rejected without over-trust, a stalled job surfaces a terminal failure within budget, and the watchdog re-reads before failing + catches up on subscribe | #1, #6                                                | unit (state machine / verifier) + deploy-smoke checklist for config-only failures | not started | —                                           |
-| 4   | E2E on the north-star flow + gating guardrail | Prove end-to-end that a signed-in upload → Cloud AI → Realtime result appears without refresh, and that an anonymous visitor cannot reach cloud                                          | #2, #1, #6, #3                                        | e2e (Playwright, new tooling)                                                     | not started | —                                           |
+| 4   | E2E on the north-star flow + gating guardrail | Prove end-to-end that a signed-in upload → Cloud AI → Realtime result appears without refresh, and that an anonymous visitor cannot reach cloud                                          | #2, #1, #6, #3                                        | e2e (Playwright, new tooling)                                                     | complete    | context/changes/testing-e2e-north-star/     |
 
 **Status vocabulary** (fixed — parser literals): `not started` →
 `change opened` → `researched` → `planned` → `implementing` → `complete`.
@@ -142,7 +142,7 @@ phase lands; before that it is `planned`.
 | build (SSR)                | CI                           | required (wired in `ci.yml`)                                                | build / module-resolution breakage                                                                                      |
 | unit + integration         | local + CI                   | required — **wired** (`ci.yml` `integration` job, ephemeral local Supabase) | logic regressions in services, schemas, RLS, retention, watchdog                                                        |
 | Edge Function `deno check` | CI                           | recommended — **wired** (PR-gating `ci` job)                                | static breakage in `supabase/functions/` (excluded from the Astro graph)                                                |
-| e2e on the north-star flow | CI on PR (warm/stubbed path) | required after §3 Phase 4                                                   | broken upload → Cloud AI → Realtime path; anon-cloud gating                                                             |
+| e2e on the north-star flow | CI on PR (warm/stubbed path) | required — **wired** (`ci.yml` `e2e` job; `deploy` gates on it)             | broken upload → Cloud AI → Realtime path; anon-cloud gating                                                             |
 | post-edit hook             | local (agent loop)           | recommended after §3 Phase 3                                                | regressions at edit time (configured in a later module)                                                                 |
 | pre-prod / flip-ON smoke   | between merge + prod         | recommended                                                                 | config-only failures no test can catch: wrong provider secret, missing `EDGE_FUNCTION_URL`, source-URL TTL (lessons.md) |
 | multimodal visual review   | —                            | not used                                                                    | excluded by the team (§7)                                                                                               |
@@ -170,7 +170,64 @@ relevant rollout phase ships; before that it reads "TBD — see §3 Phase <N>."
 
 ### 6.3 Adding an e2e test
 
-- TBD — see §3 Phase 4 (Playwright; warm/stubbed pipeline for the PR gate, live cold-boot path as a scheduled smoke).
+- **Tooling**: Playwright (`@playwright/test`); config `playwright.config.ts`
+  (`testDir: tests/e2e`, `fullyParallel`, `retries: 1` under CI). Specs are
+  `tests/e2e/*.spec.ts` (Vitest owns `tests/*.test.ts` — disjoint globs).
+- **Generation levers** (read both before writing a spec): `tests/e2e/RULES.md`
+  (the anti-pattern rules + the **port-8787 single-fixture-server** rule) and
+  `tests/e2e/seed.spec.ts` (the canonical shape). Drive new specs through the
+  `/10x-e2e` loop (PLAN → GENERATE → REVIEW → VERIFY).
+- **Locators** (hard rule, CLAUDE.md): `getByRole` / `getByLabel` / `getByText`
+  first; `getByTestId` only when a11y attrs are ambiguous; never CSS/XPath.
+  **Never `page.waitForTimeout()`** — wait on state (`toBeVisible`,
+  `waitForResponse`, `waitForURL`).
+- **Auth**: the `setup` project (`tests/e2e/auth.setup.ts`) admin-creates a
+  dedicated e2e account and signs in via the real form endpoint (no UI), saving
+  `playwright/.auth/user.json`; the `chromium` project starts authenticated.
+  Specs that must START anonymous opt out per file:
+  `test.use({ storageState: { cookies: [], origins: [] } })`.
+- **Service-role setup/cleanup**: build the admin client only via
+  `tests/e2e/helpers/env.ts` (`adminClient` / `supabaseEnv`) — it hard-fails
+  unless `SUPABASE_URL` is loopback (escape hatch `E2E_ALLOW_REMOTE_SUPABASE=1`).
+  The admin client is **setup/cleanup only — never an assertion** (assert on the
+  rendered UI). Correlate rows by the **captured `jobId`** (from the create-job
+  `waitForResponse`), never "all rows for the user" — the account is shared
+  across specs running in parallel; clean up exactly that job + its storage
+  prefix.
+- **Stub seam (the Cloud-AI pipeline)**: Replicate is replaced at the network
+  layer by a **self-signed `/callback` POST** (`tests/e2e/helpers/replicate-stub.ts`:
+  `signCallback` reproduces the svix scheme the Edge Function verifies) whose
+  `output` points at a local one-shot fixture server
+  (`tests/e2e/helpers/fixture-server.ts`, binds `0.0.0.0`, advertises
+  `host.docker.internal:8787`). Flip the row `queued → processing` first
+  (`flipToProcessing`) so the success path's guards pass. The function's SSRF
+  gate lets the fixture URL through only when
+  `E2E_ALLOWED_OUTPUT_ORIGIN=http://host.docker.internal:8787` is in the serve
+  env (read at **serve startup** — restart after edits; **never set in prod**).
+  Warm Realtime before subscribing (`tests/e2e/helpers/realtime-ready.ts`) — a
+  cold local/CI tenant drops `postgres_changes` events committed during its
+  warmup.
+- **Budgets** (the app's real client watchdogs — not test-only knobs):
+  `QUEUED_WATCHDOG_MS = 30 s`, `PROCESSING_WATCHDOG_MS = 300 s`
+  (`src/components/hooks/useCloudJob.ts`). The flip + callback must land well
+  inside 30 s. The stall spec pays the real 30 s and raises only its own file
+  timeout (`test.setTimeout(75_000)`); the rest of the gate stays seconds.
+- **Reference specs**: `tests/e2e/north-star-cloud-result.spec.ts` (happy path,
+  risks #1+#6, stubbed completion) and `tests/e2e/cloud-stall-surfaces-timeout.spec.ts`
+  (stall half of #1 — the pipeline stays unwired, the watchdog surfaces a
+  terminal failure). Anon gate: `tests/e2e/seed.spec.ts` +
+  `tests/e2e/anon-dashboard-redirects-to-signin.spec.ts` (risk #2).
+- **Run locally**: `npx supabase start` → `npx supabase db reset` → export
+  `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (and put them in `.dev.vars` for
+  `npm run dev`) → populate `supabase/functions/.env` with
+  `REPLICATE_WEBHOOK_SIGNING_SECRET` + `E2E_ALLOWED_OUTPUT_ORIGIN=http://host.docker.internal:8787`
+  → `npx supabase functions serve enhance --env-file supabase/functions/.env` (separate
+  terminal) → `npm run test:e2e`. (The stall spec needs only the stack + dev
+  server; the north-star spec also needs the served function.)
+- **Runs in CI too**: the `ci.yml` `e2e` job reproduces exactly this on every
+  push/PR (ephemeral Supabase, generated serve env, chromium); `deploy` gates on
+  it. No GitHub secrets — fork-PR-safe. The **live** cold-boot path is the
+  separate manual smoke: `context/foundation/cloud-live-smoke.md`.
 
 ### 6.4 Adding a test for a new API endpoint
 
@@ -202,6 +259,20 @@ here capturing anything surprising the phase taught.)
   have teeth by a one-off reorder mutation (status stayed 429; only the not-called
   assertions went red).
 
+- **2026-06-13 — Phase 4 / E2E (risks #1+#6, #2) + `e2e` CI gate**: shipped the
+  Playwright gate (`tests/e2e/*`) and the `ci.yml` `e2e` job; `deploy` now needs
+  `[ci, integration, e2e]`. Cookbook recipe now in §6.3; live path is the manual
+  `cloud-live-smoke.md`. Two surprises worth recording: (1) the stub's success
+  path needs an **env-gated SSRF allowlist origin** (`E2E_ALLOWED_OUTPUT_ORIGIN`)
+  because the Edge Function really fetches the model output to materialize the
+  result — default-off, **never set in prod**. (2) A cold local/CI Realtime
+  tenant **drops `postgres_changes` events committed during its warmup**, so the
+  north-star spec must warm Realtime before subscribing
+  (`realtime-ready.ts`) — without it the very first CI run would flake. The
+  fixture host is `host.docker.internal` (not spec-overridable); the Supabase CLI
+  maps it to the host gateway on Linux runners, so the plan's `172.17.0.1`
+  fallback was unneeded.
+
 ## 7. What We Deliberately Don't Test
 
 Exclusions agreed during the rollout (Phase 2 interview, Q5). Future
@@ -217,7 +288,7 @@ contributors should respect these unless the underlying assumption changes.
 - Strategy (§1–§5) last reviewed: 2026-06-09
 - Stack versions last verified: 2026-06-09
 - AI-native tool references last verified: 2026-06-09
-- Rollout state (§3) last advanced: 2026-06-09 — Phase 1 `complete` (suite + `deno check` wired into CI)
+- Rollout state (§3) last advanced: 2026-06-13 — Phase 4 `complete` (Playwright E2E gate + `e2e` CI job; `deploy` needs [ci, integration, e2e]; change folder `context/changes/testing-e2e-north-star/`)
 
 Refresh (`/10x-test-plan --refresh`) when:
 

@@ -131,7 +131,12 @@ test.describe("Risk #2: anon request must not reach Cloud AI processing", () => 
       // a browser always sends Origin — the request context must add it.
       headers: { Origin: baseURL ?? "http://localhost:4321" },
     });
-    expect(signIn.ok()).toBe(true); // follows the 302 → 200 on success
+    // Success follows the 302 chain to "/"; a failed sign-in also ends 200 but
+    // on /auth/signin?error=… — so assert the landing path, not just ok(), or a
+    // broken sign-in would slip through here and only surface later, with a
+    // murkier message, at the "Process with Cloud AI" assertion.
+    expect(signIn.ok()).toBe(true);
+    expect(new URL(signIn.url()).pathname).toBe("/");
 
     // Fresh render with the session cookie; photo state is client-side, so
     // re-upload (same hydration-race retry as above), then select Cloud AI again.

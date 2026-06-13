@@ -39,6 +39,7 @@ LuminaClean AI — night/low-light photo denoise + exposure-correction MVP. Two 
 - `npm run lint` — ESLint with type-checked rules
 - `npm run lint:fix` — auto-fix lint issues
 - `npm run format` — Prettier (includes prettier-plugin-astro + prettier-plugin-tailwindcss)
+- `npm run test:e2e` — Playwright E2E gate (`tests/e2e/*.spec.ts`). Needs the local stack + a served `enhance` function with the seam env — see `context/foundation/test-plan.md` §6.3 for the run recipe. ⚠️ The stub seam `E2E_ALLOWED_OUTPUT_ORIGIN` is local/CI-only — **never set it in production** (it widens the Edge Function's SSRF output-fetch allowlist; see `context/foundation/cloud-live-smoke.md`).
 
 Git hooks (husky): **pre-commit** — lint-staged runs `eslint --fix` on `*.{ts,tsx,astro}`, `vitest related` on staged TS, and `prettier --write` on `*.{json,css,md}`; **pre-push** — blocks any push to `refs/heads/master` (**master is PR-only**: branch → PR → merge; server-side rulesets unavailable on private+Free, so this hook is the enforcement; emergency bypass `git push --no-verify`), then `tsc --noEmit` for branch pushes.
 
@@ -77,11 +78,12 @@ Full server-side rendering (`output: "server"` in astro.config.mjs). All pages a
 
 ### CI
 
-GitHub Actions workflow (`.github/workflows/ci.yml`) — three jobs:
+GitHub Actions workflow (`.github/workflows/ci.yml`) — four jobs:
 
 - `ci` (push + PR) — lint, unit tests (`npm run test:unit`), `deno check` on the Edge Function, SSR build. Requires `SUPABASE_URL`/`SUPABASE_KEY` repo secrets for the build step.
 - `integration` (push + PR) — full Vitest suite incl. `tests/jobs.rls.test.ts` against an ephemeral local Supabase (Docker). Uses no GitHub secrets (local keys are generated), so it also runs on fork PRs. Supabase Docker images are cached across runs (`actions/cache`) and `supabase start`/`db reset` retry once — anonymous pulls from `public.ecr.aws` get rate-limited on shared runners (see lessons.md).
-- `deploy` (push to master only, gated by `needs: [ci, integration]`) — Worker via `wrangler-action` + `enhance` Edge Function via the pinned supabase CLI.
+- `e2e` (push + PR) — Playwright browser gate (`npm run test:e2e`) on the north-star flow (risks #1+#6) and the stall→terminal spec. Boots the same ephemeral local Supabase (image cache + retry hardening shared with `integration`), backgrounds `supabase functions serve enhance` with a **generated** signing secret + the `E2E_ALLOWED_OUTPUT_ORIGIN` stub seam, and runs chromium (cached). The Cloud-AI pipeline is **stubbed** — a self-signed Replicate `/callback`, no token, no cold boot. No GitHub secrets (fork-PR-safe). The live cold-boot path is a manual smoke (`context/foundation/cloud-live-smoke.md`), never a PR gate.
+- `deploy` (push to master only, gated by `needs: [ci, integration, e2e]`) — Worker via `wrangler-action` + `enhance` Edge Function via the pinned supabase CLI.
 
 ## 10x-cli profile & workflow
 

@@ -138,8 +138,161 @@ jobs:
             | sed -E 's/^([A-Za-z_][A-Za-z0-9_]*)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
       - run: npm test
 
+  e2e:
+    # Playwright browser-level gate on the north-star flow (risks #1+#6) and the
+    # stall→terminal spec (risk #1 stall half). Like `integration`, it boots an
+    # ephemeral local Supabase (Docker) and uses NO GitHub secrets — `supabase
+    # start` generates the local keys — so it also runs on fork PRs. The Cloud-AI
+    # pipeline is STUBBED end-to-end: the north-star spec POSTs a self-signed
+    # Replicate `/callback` (no Replicate account, no token, no cold boot); the
+    # stall spec relies on the DB webhook staying UNWIRED (the CI default), so a
+    # submitted row sits `queued` until the client watchdog surfaces the timeout.
+    # The live cold-boot path stays a manual smoke
+    # (context/foundation/cloud-live-smoke.md), never a PR gate.
+    runs-on: ubuntu-latest
+    # Cold ~5-7 min (stack boot + browser install + the ~30s stall spec); warm
+    # ~4-5 with both caches. 20 fails a wedged container/serve fast — this job
+    # gates `deploy` via `needs:`, so a hang must not sit at GitHub's 360-min
+    # default.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # ——— Ephemeral local Supabase: same image-cache + retry hardening as the
+      # `integration` job above (see that job's comments and lessons.md "Cache
+      # Supabase CI images …" — anonymous public.ecr.aws pulls are rate-limited
+      # on shared runners). Same cache key ⇒ this job and `integration` share the
+      # restored image set.
+      - name: Cache Supabase Docker images
+        id: supabase-images
+        uses: actions/cache@v5
+        with:
+          path: ~/supabase-images
+          key: supabase-images-${{ runner.os }}-${{ hashFiles('package-lock.json', 'supabase/config.toml') }}
+      - name: Load cached Supabase images
+        if: steps.supabase-images.outputs.cache-hit == 'true'
+        run: |
+          shopt -s nullglob
+          for tar in ~/supabase-images/*.tar; do
+            docker load -i "$tar"
+          done
+      - name: Start local Supabase (retry once on transient boot failure)
+        run: |
+          npx supabase start || {
+            echo "::warning::supabase start failed; stopping and retrying once"
+            npx supabase stop --no-backup || true
+            npx supabase start
+          }
+      - name: Save Supabase images to cache
+        if: steps.supabase-images.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/supabase-images
+          docker images --format '{{.Repository}}:{{.Tag}}' \
+            | grep -E 'public\.ecr\.aws|supabase/' \
+            | while read -r img; do
+                fname=$(echo "$img" | tr '/:' '__')
+                docker save "$img" -o ~/supabase-images/"$fname.tar"
+              done
+      - name: Apply migrations (retry once on transient container failure)
+        run: |
+          npx supabase db reset || {
+            echo "::warning::supabase db reset failed; retrying once"
+            npx supabase db reset
+          }
+      # Export the three local creds to BOTH targets:
+      #   - $GITHUB_ENV  → the Playwright TEST process (tests/e2e/helpers/env.ts
+      #     loopback guard + resolveSigningSecret read process.env);
+      #   - .dev.vars    → the DEV SERVER. `npm run dev` (astro dev) runs SSR in
+      #     workerd via @astrojs/cloudflare, which reads .dev.vars, NOT
+      #     process.env (CLAUDE.md "Cloudflare local dev"). .dev.vars is
+      #     gitignored — generating it here is clean.
+      # `-o env` wraps values in double quotes; $GITHUB_ENV stores the line
+      # verbatim, so strip the surrounding quotes (URLs/keys carry no internal
+      # quote). Same sed as `integration`.
+      - name: Export local Supabase credentials (process env + .dev.vars)
+        run: |
+          npx supabase status -o env \
+            --override-name api.url=SUPABASE_URL \
+            --override-name auth.anon_key=SUPABASE_KEY \
+            --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
+            | sed -E 's/^([A-Za-z_][A-Za-z0-9_]*)="(.*)"$/\1=\2/' > .supabase.env
+          cat .supabase.env >> "$GITHUB_ENV"
+          { cat .supabase.env; echo "CLOUD_PIPELINE_ENABLED=false"; } > .dev.vars
+          rm .supabase.env
+      # The Edge Function's serve env (gitignored locally; generated here). The
+      # STUBBED `/callback` needs only the signing secret + the E2E SSRF-allowlist
+      # origin. The secret is generated per-run: a self-signing harness can never
+      # validate the PROD secret anyway — that's the live smoke's job (lessons.md
+      # "A self-signing local webhook harness can't catch a wrong provider secret").
+      # SUPABASE_URL/SERVICE_ROLE_KEY are auto-injected by `functions serve` — do
+      # NOT set them here.
+      #
+      # E2E_ALLOWED_OUTPUT_ORIGIN must equal the fixture server's advertised
+      # origin. The spec advertises host.docker.internal:8787 (fixture-server.ts
+      # default; the host is NOT spec-overridable, so the plan's 172.17.0.1
+      # fallback is moot — CI matches the spec). The Supabase CLI maps
+      # host.docker.internal → host-gateway on its managed containers, so the
+      # edge-runtime container resolves it on a Linux runner too.
+      # ⚠️ NEVER set E2E_ALLOWED_OUTPUT_ORIGIN in production — it widens the SSRF
+      # output-fetch allowlist (default-off seam; see cloud-live-smoke.md).
+      - name: Generate Edge Function serve env (stubbed pipeline)
+        run: |
+          mkdir -p supabase/functions
+          {
+            echo "REPLICATE_WEBHOOK_SIGNING_SECRET=whsec_$(openssl rand -base64 24)"
+            echo "DB_WEBHOOK_SECRET=e2e-unused-on-callback"
+            echo "CLOUD_PIPELINE_ENABLED=false"
+            echo "E2E_ALLOWED_OUTPUT_ORIGIN=http://host.docker.internal:8787"
+          } > supabase/functions/.env
+      # Serve the function in the background (survives across steps — same
+      # runner). The router's 404 on a bare GET IS the ready signal: any HTTP
+      # response (code != 000) means the gateway is up. Env is read at serve
+      # startup. Fail fast with the log if it never binds.
+      - name: Serve the enhance Edge Function (background) + readiness probe
+        run: |
+          npx supabase functions serve enhance --env-file supabase/functions/.env \
+            > "$RUNNER_TEMP/functions-serve.log" 2>&1 &
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SUPABASE_URL/functions/v1/enhance" || true)
+            if [ -n "$code" ] && [ "$code" != "000" ]; then
+              echo "enhance serve ready (HTTP $code)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::enhance Edge Function never became reachable at $SUPABASE_URL/functions/v1/enhance"
+          cat "$RUNNER_TEMP/functions-serve.log" || true
+          exit 1
+      # Cache the chromium binary (keyed on the lockfile — pins @playwright/test →
+      # browser build). `install --with-deps` pulls the apt system libs (not
+      # cacheable) and downloads the binary only on a cache miss.
+      - name: Cache Playwright browser
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install chromium --with-deps
+      # Playwright starts its own dev server (webServer.reuseExistingServer is
+      # false under CI) and runs setup → seed/anon → north-star → stall. CI=true
+      # (GitHub default) ⇒ retries: 1. The fresh-stack Realtime cold-start flake
+      # is absorbed by the north-star spec's own warmup precondition
+      # (tests/e2e/helpers/realtime-ready.ts) — no extra CI step needed.
+      - run: npm run test:e2e
+      - name: Upload Playwright report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
   deploy:
-    needs: [ci, integration]
+    needs: [ci, integration, e2e]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:

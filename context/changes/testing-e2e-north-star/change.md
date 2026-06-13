@@ -3,7 +3,7 @@ change_id: testing-e2e-north-star
 title: E2E on the north-star flow — Cloud AI result renders without refresh (test-plan Phase 4, risks #1+#6)
 status: implementing
 created: 2026-06-11
-updated: 2026-06-12
+updated: 2026-06-13
 archived_at: null
 ---
 
