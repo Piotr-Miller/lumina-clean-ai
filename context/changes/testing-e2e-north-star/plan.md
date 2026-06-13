@@ -299,8 +299,8 @@ None — additive. The seam env is default-off; prod behavior unchanged.
 #### Automated
 
 - [ ] 4.1 `e2e` job green on the PR run
-- [ ] 4.2 `deploy.needs` = [ci, integration, e2e]
-- [ ] 4.3 Markdown lint green (lint-staged)
+- [x] 4.2 `deploy.needs` = [ci, integration, e2e]
+- [x] 4.3 Markdown lint green (lint-staged)
 
 #### Manual
 
