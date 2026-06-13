@@ -213,10 +213,10 @@ None — additive module + behavior-preserving refactor; no data, schema, or API
 
 #### Automated
 
-- [x] 2.1 New suite green: `npx vitest run tests/cloud-job-decisions.test.ts`
-- [x] 2.2 Full unit suite green: `npm run test:unit`
-- [x] 2.3 Lint + types green on the new test
+- [x] 2.1 New suite green: `npx vitest run tests/cloud-job-decisions.test.ts` — 67ece04
+- [x] 2.2 Full unit suite green: `npm run test:unit` — 67ece04
+- [x] 2.3 Lint + types green on the new test — 67ece04
 
 #### Manual
 
-- [x] 2.4 Scoped Stryker reviewed — qualifying survivors killed or consciously ignored
+- [x] 2.4 Scoped Stryker reviewed — qualifying survivors killed or consciously ignored — 67ece04
