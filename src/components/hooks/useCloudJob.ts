@@ -4,9 +4,19 @@ import { createBrowserClient } from "@/lib/supabase-browser";
 import { loadCloudResult } from "@/lib/services/cloud-result.client";
 import { deriveDownloadName } from "@/lib/engines/image-helpers";
 import type { PhotoJob, PhotoJobStatus } from "@/types";
+import {
+  deriveCloudPhase,
+  deriveDisplayError,
+  isTerminalStatus,
+  shouldArmProcessingBudget,
+  shouldFailAfterQueuedReRead,
+  type CloudJobPhase,
+} from "./cloud-job-decisions";
 
-/** Coarse render phase the workspace gates on (derived from the live job state). */
-export type CloudJobPhase = "idle" | "processing" | "succeeded" | "failed";
+// `CloudJobPhase` + the decision predicates now live in `cloud-job-decisions.ts`
+// (pure, Node-unit-testable — test-plan §2 Risk #6). Re-exported so existing
+// `import { CloudJobPhase } from "@/components/hooks/useCloudJob"` consumers stay valid.
+export type { CloudJobPhase };
 
 export interface CloudJobState {
   /** Coarse phase: `idle` before submit, then `processing` → `succeeded`/`failed`. */
@@ -80,9 +90,7 @@ export const PROCESSING_WATCHDOG_MS = 300_000;
 export const SLOW_HINT_MS = 25_000;
 const TIMEOUT_ENDPOINT = "/api/enhance/cloud/timeout";
 
-const TIMEOUT_MESSAGE = "Cloud processing took too long. Please try again.";
 const RESULT_LOAD_MESSAGE = "The enhanced result couldn't be loaded. Please try again.";
-const GENERIC_FAILED_MESSAGE = "Cloud processing failed. Please try again.";
 
 /**
  * Subscribes the browser to its own `jobs` row, drives it from the live status
@@ -174,12 +182,12 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
     // reviving a closed job; `sawProcessing` arms the long budget exactly once.
     const applyStatus = (next: PhotoJobStatus, nextResultPath: string | null, nextError: string | null) => {
       if (cancelled || terminal) return;
-      if (next === "processing" && !sawProcessing) {
+      if (shouldArmProcessingBudget(next, sawProcessing)) {
         sawProcessing = true;
         if (timers.queued) clearTimeout(timers.queued); // pipeline engaged — swap to the cold-boot budget
         timers.processing = setTimeout(failByTimeout, PROCESSING_WATCHDOG_MS);
       }
-      if (next === "succeeded" || next === "failed") {
+      if (isTerminalStatus(next)) {
         terminal = true;
         clearTimers();
         setColdStartHint(false);
@@ -214,7 +222,7 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
       if (cancelled || terminal || sawProcessing) return;
       void syncFromRead().then((current) => {
         if (cancelled || terminal || sawProcessing) return;
-        if (current === null || current === "queued") failByTimeout();
+        if (shouldFailAfterQueuedReRead(current)) failByTimeout();
       });
     };
 
@@ -321,28 +329,13 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
   // `succeeded` always wins (even if a timeout watchdog also fired in a rare
   // race): a real result must render, never a stale timeout. While the result
   // URL is still loading, stay in `processing`.
-  const phase: CloudJobPhase = !jobId
-    ? "idle"
-    : status === "succeeded"
-      ? result !== null
-        ? "succeeded"
-        : "processing"
-      : timedOut || status === "failed" || loadError !== null
-        ? "failed"
-        : "processing";
+  const phase = deriveCloudPhase({ jobId, status, hasResult: result !== null, timedOut, loadError });
 
   // A row-level `failed` (incl. the timeout route's own write) carries the
   // authoritative message; the client `TIMEOUT_MESSAGE` only covers the gap
   // before that write lands. The two timeout strings are identical, so there's
   // no flicker between them.
-  const displayError =
-    phase !== "failed"
-      ? null
-      : status === "failed"
-        ? (errorMessage ?? GENERIC_FAILED_MESSAGE)
-        : timedOut
-          ? TIMEOUT_MESSAGE
-          : (loadError ?? GENERIC_FAILED_MESSAGE);
+  const displayError = deriveDisplayError({ phase, status, timedOut, loadError, errorMessage });
 
   return {
     phase,

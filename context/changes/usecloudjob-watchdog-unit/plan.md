@@ -200,10 +200,10 @@ None — additive module + behavior-preserving refactor; no data, schema, or API
 
 #### Automated
 
-- [ ] 1.1 Type check passes: `npx tsc --noEmit`
-- [ ] 1.2 Lint passes on touched files
-- [ ] 1.3 Existing unit suite still green: `npm run test:unit`
-- [ ] 1.4 Hook still exports timing constants + `CloudJobPhase` (cloud-timings imports resolve + pass)
+- [x] 1.1 Type check passes: `npx tsc --noEmit`
+- [x] 1.2 Lint passes on touched files
+- [x] 1.3 Existing unit suite still green: `npm run test:unit`
+- [x] 1.4 Hook still exports timing constants + `CloudJobPhase` (cloud-timings imports resolve + pass)
 
 #### Manual
 

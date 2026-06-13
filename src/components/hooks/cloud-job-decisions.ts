@@ -1,0 +1,79 @@
+import type { PhotoJobStatus } from "@/types";
+
+/** Coarse render phase the workspace gates on (derived from the live job state). */
+export type CloudJobPhase = "idle" | "processing" | "succeeded" | "failed";
+
+// User-facing failure copy. The two timeout strings — this client-side one and the
+// timeout route's own row-level write — are identical, so there's no flicker between them.
+export const TIMEOUT_MESSAGE = "Cloud processing took too long. Please try again.";
+export const GENERIC_FAILED_MESSAGE = "Cloud processing failed. Please try again.";
+
+/**
+ * Pure decision predicates lifted out of `useCloudJob`'s effect closures so the
+ * test-plan §2 Risk #6 logic (re-read-before-fail, idempotent/monotonic apply,
+ * succeeded-wins render) is deterministically unit-testable under Node — no React,
+ * no Realtime, no mocking. The hook keeps all the async wiring (subscription,
+ * timers, the queued-deadline re-read) and routes its decisions through these.
+ * Tested by `tests/cloud-job-decisions.test.ts`.
+ */
+
+/** A status that closes the job (terminal → clear the watchdog). */
+export function isTerminalStatus(next: PhotoJobStatus): boolean {
+  return next === "succeeded" || next === "failed";
+}
+
+/**
+ * Arm the long (cold-boot) budget exactly once, on the first `processing` — the
+ * `sawProcessing`-once guard keeps a repeated `processing` event from re-arming it.
+ */
+export function shouldArmProcessingBudget(next: PhotoJobStatus, sawProcessing: boolean): boolean {
+  return next === "processing" && !sawProcessing;
+}
+
+/**
+ * Re-read-before-fail: at the queued deadline, only a row that is STILL `queued`
+ * (or genuinely absent) is a real stall. A row that has advanced to
+ * `processing`/terminal must NOT be failed — it gets folded in instead. This is the
+ * load-bearing #6 decision (a cold boot that reached `processing` survives).
+ */
+export function shouldFailAfterQueuedReRead(readStatus: PhotoJobStatus | null): boolean {
+  return readStatus === null || readStatus === "queued";
+}
+
+/**
+ * Coarse render phase. `succeeded` always wins (even against a concurrent timeout):
+ * a real result must render, never a stale timeout. While the result URL is still
+ * loading (`hasResult` false), stay in `processing`.
+ */
+export function deriveCloudPhase(input: {
+  jobId: string | null;
+  status: PhotoJobStatus | null;
+  hasResult: boolean;
+  timedOut: boolean;
+  loadError: string | null;
+}): CloudJobPhase {
+  const { jobId, status, hasResult, timedOut, loadError } = input;
+  if (!jobId) return "idle";
+  if (status === "succeeded") return hasResult ? "succeeded" : "processing";
+  if (timedOut || status === "failed" || loadError !== null) return "failed";
+  return "processing";
+}
+
+/**
+ * The user-facing error for a `failed` phase: a row-level `failed` carries the
+ * authoritative message; the client `TIMEOUT_MESSAGE` only covers the gap before the
+ * timeout route's write lands; a load failure falls back to its own message.
+ */
+export function deriveDisplayError(input: {
+  phase: CloudJobPhase;
+  status: PhotoJobStatus | null;
+  timedOut: boolean;
+  loadError: string | null;
+  errorMessage: string | null;
+}): string | null {
+  const { phase, status, timedOut, loadError, errorMessage } = input;
+  if (phase !== "failed") return null;
+  if (status === "failed") return errorMessage ?? GENERIC_FAILED_MESSAGE;
+  if (timedOut) return TIMEOUT_MESSAGE;
+  return loadError ?? GENERIC_FAILED_MESSAGE;
+}
