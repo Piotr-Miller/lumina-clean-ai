@@ -298,12 +298,12 @@ None — additive. The seam env is default-off; prod behavior unchanged.
 
 #### Automated
 
-- [ ] 4.1 `e2e` job green on the PR run
+- [x] 4.1 `e2e` job green on the PR run — PR #24 (CI runs 27469053657, 27470188773)
 - [x] 4.2 `deploy.needs` = [ci, integration, e2e] — 6382d0e
 - [x] 4.3 Markdown lint green (lint-staged) — 6382d0e
 
 #### Manual
 
-- [ ] 4.4 Full master run: three jobs green, deploy executes
-- [ ] 4.5 Second run restores image + browser caches
+- [x] 4.4 Full master run: three jobs green, deploy executes — master run 27472673373
+- [x] 4.5 Second run restores image + browser caches — master 27472673373 (supabase-images cache HIT; chromium cache populated, restores on subsequent runs)
 - [ ] 4.6 Live-smoke doc walked through or explicitly scheduled

@@ -90,7 +90,7 @@ orchestrator updates Status as artifacts appear on disk.
 | 1   | Gate the floor — wire existing suite into CI  | Run the 11 tests that already encode the cloud/privacy guardrails on every push (incl. the RLS integration suite via an ephemeral/hosted Supabase) so they cannot silently regress       | #4, #5, #1, #6 (regression lock on existing coverage) | CI wiring (no new test logic)                                                     | complete    | context/archive/2026-06-09-testing-ci-gate/ |
 | 2   | Close top-risk coverage gaps                  | Prove gate-bypass, cost-cap-boundary, IDOR, and failure-path source deletion are caught at the cheapest real-signal layer                                                                | #2, #3, #4, #5                                        | integration (real Supabase)                                                       | not started | —                                           |
 | 3   | Harden silent-stall + watchdog                | Prove a bad/replayed webhook is rejected without over-trust, a stalled job surfaces a terminal failure within budget, and the watchdog re-reads before failing + catches up on subscribe | #1, #6                                                | unit (state machine / verifier) + deploy-smoke checklist for config-only failures | not started | —                                           |
-| 4   | E2E on the north-star flow + gating guardrail | Prove end-to-end that a signed-in upload → Cloud AI → Realtime result appears without refresh, and that an anonymous visitor cannot reach cloud                                          | #2, #1, #6, #3                                        | e2e (Playwright, new tooling)                                                     | complete    | context/changes/testing-e2e-north-star/     |
+| 4   | E2E on the north-star flow + gating guardrail | Prove end-to-end that a signed-in upload → Cloud AI → Realtime result appears without refresh, and that an anonymous visitor cannot reach cloud                                          | #2, #1, #6 (#3 stays integration-only)                | e2e (Playwright, new tooling)                                                     | complete    | context/changes/testing-e2e-north-star/     |
 
 **Status vocabulary** (fixed — parser literals): `not started` →
 `change opened` → `researched` → `planned` → `implementing` → `complete`.
@@ -224,6 +224,12 @@ relevant rollout phase ships; before that it reads "TBD — see §3 Phase <N>."
   → `npx supabase functions serve enhance --env-file supabase/functions/.env` (separate
   terminal) → `npm run test:e2e`. (The stall spec needs only the stack + dev
   server; the north-star spec also needs the served function.)
+- **Deliberate-break gotcha**: when validating a spec by deliberately breaking the
+  protected behavior (confirm it goes RED), a cold workerd dev server can false-RED
+  at the UPLOAD step instead of the risk assertion — the React island isn't
+  hydrated on the first browser hit, and `curl`-warming only warms SSR. Warm with a
+  browser first (run one spec, e.g. `seed`), THEN run the target spec so it reaches
+  the protected assertion.
 - **Runs in CI too**: the `ci.yml` `e2e` job reproduces exactly this on every
   push/PR (ephemeral Supabase, generated serve env, chromium); `deploy` gates on
   it. No GitHub secrets — fork-PR-safe. The **live** cold-boot path is the
