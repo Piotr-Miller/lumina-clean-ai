@@ -40,18 +40,21 @@ export function shouldFailAfterQueuedReRead(readStatus: PhotoJobStatus | null): 
   return readStatus === null || readStatus === "queued";
 }
 
-/**
- * Coarse render phase. `succeeded` always wins (even against a concurrent timeout):
- * a real result must render, never a stale timeout. While the result URL is still
- * loading (`hasResult` false), stay in `processing`.
- */
-export function deriveCloudPhase(input: {
+/** Inputs to {@link deriveCloudPhase} — the live job state the render phase derives from. */
+export interface CloudPhaseInput {
   jobId: string | null;
   status: PhotoJobStatus | null;
   hasResult: boolean;
   timedOut: boolean;
   loadError: string | null;
-}): CloudJobPhase {
+}
+
+/**
+ * Coarse render phase. `succeeded` always wins (even against a concurrent timeout):
+ * a real result must render, never a stale timeout. While the result URL is still
+ * loading (`hasResult` false), stay in `processing`.
+ */
+export function deriveCloudPhase(input: CloudPhaseInput): CloudJobPhase {
   const { jobId, status, hasResult, timedOut, loadError } = input;
   if (!jobId) return "idle";
   if (status === "succeeded") return hasResult ? "succeeded" : "processing";
@@ -59,18 +62,21 @@ export function deriveCloudPhase(input: {
   return "processing";
 }
 
-/**
- * The user-facing error for a `failed` phase: a row-level `failed` carries the
- * authoritative message; the client `TIMEOUT_MESSAGE` only covers the gap before the
- * timeout route's write lands; a load failure falls back to its own message.
- */
-export function deriveDisplayError(input: {
+/** Inputs to {@link deriveDisplayError} — the failure-state fields it maps to a message. */
+export interface CloudDisplayErrorInput {
   phase: CloudJobPhase;
   status: PhotoJobStatus | null;
   timedOut: boolean;
   loadError: string | null;
   errorMessage: string | null;
-}): string | null {
+}
+
+/**
+ * The user-facing error for a `failed` phase: a row-level `failed` carries the
+ * authoritative message; the client `TIMEOUT_MESSAGE` only covers the gap before the
+ * timeout route's write lands; a load failure falls back to its own message.
+ */
+export function deriveDisplayError(input: CloudDisplayErrorInput): string | null {
   const { phase, status, timedOut, loadError, errorMessage } = input;
   if (phase !== "failed") return null;
   if (status === "failed") return errorMessage ?? GENERIC_FAILED_MESSAGE;

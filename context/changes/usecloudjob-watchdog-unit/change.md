@@ -1,7 +1,7 @@
 ---
 change_id: usecloudjob-watchdog-unit
 title: Deterministic unit test for useCloudJob's catch-up/re-read decision (R6)
-status: implemented
+status: impl_reviewed
 created: 2026-06-13
 updated: 2026-06-13
 archived_at: null
