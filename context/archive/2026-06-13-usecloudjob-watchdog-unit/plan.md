@@ -207,7 +207,7 @@ None — additive module + behavior-preserving refactor; no data, schema, or API
 
 #### Manual
 
-- [ ] 1.5 Diff review confirms literal 1:1 swaps (no surrounding-logic change)
+- [x] 1.5 Diff review confirms literal 1:1 swaps (no surrounding-logic change) — 50ad3ca
 
 ### Phase 2: Deterministic unit suite + mutation check
 
