@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { countCloudJobsToday, createPhotoJob, markJobSucceeded } from "@/lib/services/photo-job.service";
+import {
+  countCloudJobsToday,
+  createPhotoJob,
+  markJobSucceeded,
+  sweepAbandonedSourcesGlobally,
+} from "@/lib/services/photo-job.service";
 import { supabaseAdmin, supabaseAnonKey, supabaseUrl } from "./env";
 import { createTestUser, deleteTestUser, type TestUser } from "./helpers/test-users";
 
@@ -329,5 +334,123 @@ describe("countCloudJobsToday (S-05 global daily-cap count)", () => {
 
     const after = await countCloudJobsToday(supabaseAdmin);
     expect(after - before).toBe(0);
+  });
+});
+
+describe("sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)", () => {
+  const created: TestUser[] = [];
+
+  // Threshold large enough to make a pass a no-op for fresh test artifacts, so
+  // each test exercises ONE pass in isolation (the reaper is global, no scoping):
+  //  - disable the flip pass with a far-past stale threshold (nothing is that old);
+  //  - disable the delete pass with a far-past retention (no fresh source qualifies).
+  // 1 year in ms; retentionMs/1000 stays within the RPC's int4 `older_than_seconds`.
+  const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
+  afterEach(async () => {
+    for (const u of created) {
+      await deleteTestUser(u.id);
+    }
+    created.length = 0;
+  });
+
+  async function makeUser(prefix?: string): Promise<TestUser> {
+    const u = await createTestUser(prefix);
+    created.push(u);
+    return u;
+  }
+
+  async function uploadSource(userId: string): Promise<{ jobId: string }> {
+    const job = await createPhotoJob(supabaseAdmin, { userId, fileExtension: "jpg", mimeType: "image/jpeg" });
+    const put = await fetch(job.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "image/jpeg" },
+      body: tinyJpegPayload() as BodyInit,
+    });
+    expect(put.status).toBeGreaterThanOrEqual(200);
+    expect(put.status).toBeLessThan(300);
+    return { jobId: job.jobId };
+  }
+
+  async function sourceExists(userId: string, jobId: string): Promise<boolean> {
+    const { data } = await supabaseAdmin.storage.from(PHOTOS_BUCKET).list(`${userId}/${jobId}`);
+    return data?.some((f) => f.name === "source.jpg") ?? false;
+  }
+
+  it("deletes a lingering source object (retentionMs:0), flip pass disabled", async () => {
+    const user = await makeUser("reap-del");
+    const { jobId } = await uploadSource(user.id);
+    expect(await sourceExists(user.id, jobId)).toBe(true);
+
+    // retentionMs:0 → every existing source is past-window; staleMs far past → no flip.
+    const result = await sweepAbandonedSourcesGlobally(supabaseAdmin, { retentionMs: 0, staleMs: ONE_YEAR_MS });
+
+    expect(await sourceExists(user.id, jobId)).toBe(false);
+    expect(result.deleted).toBeGreaterThanOrEqual(1);
+  });
+
+  it("leaves a fresh source object in place when retentionMs exceeds its age", async () => {
+    const user = await makeUser("reap-keep");
+    const { jobId } = await uploadSource(user.id);
+
+    // 1-year retention → a seconds-old source is NOT yet an orphan; flip disabled.
+    await sweepAbandonedSourcesGlobally(supabaseAdmin, { retentionMs: ONE_YEAR_MS, staleMs: ONE_YEAR_MS });
+
+    expect(await sourceExists(user.id, jobId)).toBe(true);
+  });
+
+  it("flips a stale non-terminal job to failed('abandoned') but SPARES a fresh one (don't reap live jobs)", async () => {
+    const user = await makeUser("reap-flip");
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+
+    // Seed two processing rows with source_paths that were never uploaded (so the
+    // delete pass — which reads real storage — leaves them alone): one backdated
+    // 2h (must be reclaimed) and one created NOW (an in-flight job that must NOT be).
+    const { data: staleRow, error: staleErr } = await supabaseAdmin
+      .from("jobs")
+      .insert({
+        user_id: user.id,
+        status: "processing",
+        source_path: `${user.id}/never-uploaded-stale/source.jpg`,
+        created_at: twoHoursAgo,
+      })
+      .select("id")
+      .single();
+    expect(staleErr).toBeNull();
+    const staleJobId = (staleRow as { id: string }).id;
+
+    const { data: freshRow, error: freshErr } = await supabaseAdmin
+      .from("jobs")
+      .insert({
+        user_id: user.id,
+        status: "processing",
+        source_path: `${user.id}/never-uploaded-fresh/source.jpg`,
+      })
+      .select("id")
+      .single();
+    expect(freshErr).toBeNull();
+    const freshJobId = (freshRow as { id: string }).id;
+
+    // staleMs 1h → only the 2h-old row is past the threshold; retentionMs 1yr → delete pass no-op.
+    const result = await sweepAbandonedSourcesGlobally(supabaseAdmin, {
+      staleMs: 60 * 60 * 1000,
+      retentionMs: ONE_YEAR_MS,
+    });
+    expect(result.flipped).toBeGreaterThanOrEqual(1);
+
+    // The stale row is reclaimed …
+    const { data: stale } = await supabaseAdmin
+      .from("jobs")
+      .select("status, error_code, completed_at")
+      .eq("id", staleJobId)
+      .single();
+    expect(stale?.status).toBe("failed");
+    expect(stale?.error_code).toBe("abandoned");
+    expect(stale?.completed_at).not.toBeNull();
+
+    // … but the fresh, still-in-flight row is left untouched (pins the threshold
+    // direction: a `-`→`+` regression would reap every live job).
+    const { data: fresh } = await supabaseAdmin.from("jobs").select("status").eq("id", freshJobId).single();
+    expect(fresh?.status).toBe("processing");
   });
 });

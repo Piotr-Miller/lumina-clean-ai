@@ -46,6 +46,7 @@ Last updated: **2026-06-08**.
 Two separate projects (same org `cqbfrshdnawpivbapygc`). The deployed app uses **prod only**.
 
 ### Prod — `luminaclean-prod`
+
 - **Ref:** `tebdkqpgjjypdethpezo` · **Region:** eu-west-3 · URL `https://tebdkqpgjjypdethpezo.supabase.co`
 - **Auth → URL config:** Site URL `https://luminacleanai.com`; Redirect URLs `https://luminacleanai.com/**`
 - **Auth email:** **custom SMTP via Resend** (see §3). Recovery template = contents of `supabase/templates/recovery.html` pasted into the **Reset Password** template (editing unlocked once custom SMTP was set).
@@ -55,8 +56,10 @@ Two separate projects (same org `cqbfrshdnawpivbapygc`). The deployed app uses *
   - ⚠️ **`SUPABASE_URL`/`KEY`/`SERVICE_ROLE_KEY` MUST point to `tebdkqpgjjypdethpezo` (prod).** They were initially set in May against the dev project (before prod existed), and the deployed app silently used **dev** until they were **repointed to prod on 2026-06-06**. Build-time `SUPABASE_URL`/`KEY` (GitHub/CI) are separate and do NOT drive runtime. **Verify:** `curl https://luminacleanai.com/ | grep -o '[a-z]\{20\}\.supabase\.co'` must show `tebdkqpgjjypdethpezo`. See `lessons.md` ("A new prod Supabase project does NOT repoint the deployed Worker").
 - **Edge Function secrets (SET 2026-06-08, flip-ON / D.1):** `CLOUD_PIPELINE_ENABLED=true`, `DB_WEBHOOK_SECRET`, `REPLICATE_API_TOKEN`, `REPLICATE_WEBHOOK_SIGNING_SECRET` (= Replicate's **real account** default webhook secret from `GET /v1/webhooks/default/secret`, NOT the local-test value — D.1 finding F1), and **`EDGE_FUNCTION_URL=https://tebdkqpgjjypdethpezo.supabase.co/functions/v1/enhance`** (REQUIRED: the in-function auto-injected `SUPABASE_URL` is not the public https URL, so without this explicit override `/start` creates predictions with no webhook → jobs stall — D.1 finding F2).
 - **DB-webhook secret/URL:** moved off custom GUCs (hosted denies `ALTER DATABASE SET app.settings.*`) to **Supabase Vault** via migration `20260608120000_jobs_webhook_vault.sql`. Prod Vault holds `edge_function_url` + `db_webhook_secret` (set 2026-06-08). See `deferred-2.4-db-webhook-settings.md` + `cloud-flip-on-revalidation/results.md`.
+- **Retention reaper (`pg_cron`, change `retention-reaper`):** migration `20260614130000_reaper_schedule.sql` schedules an hourly `cron.job` `reaper-hourly` that POSTs the `enhance` `/reap` route. **Zero new prod config** — the tick reuses the SAME `edge_function_url` + `db_webhook_secret` Vault entries above (no new secret). **One-time prod step:** `pg_cron` must be enabled (Dashboard → Integrations → Cron, or the migration's `create extension` if the migration role may create it); the migration self-skips with a NOTICE where `pg_cron` is unavailable. **Verify** the schedule (`select * from cron.job where jobname='reaper-hourly'`) and that the first tick lands (`select * from cron.job_run_details order by start_time desc limit 5`).
 
 ### Dev — `luminaclean-dev` (renamed from `lumina-clean-ai` on 2026-06-06)
+
 - **Ref:** `gwaviaozehxmyjjcioxy` · **Region:** eu-central-2
 - **Auth → URL config:** Site URL `http://localhost:4321`; Redirect URLs `http://localhost:4321/**`, `http://127.0.0.1:4321/**`, `http://127.0.0.1:8787/**`
 - Used only for local development (`npm run dev` / `wrangler dev`). Not wired to prod.
@@ -92,14 +95,14 @@ Names only (Settings → Secrets and variables → Actions):
 
 ## Credential inventory (names + location, NEVER values)
 
-| Credential | Where it lives | Notes |
-| --- | --- | --- |
-| Cloudflare API token (CI) | GitHub secret `CLOUDFLARE_API_TOKEN` | scoped for Workers deploy |
-| Supabase PAT | GitHub secret `SUPABASE_ACCESS_TOKEN` | name `luminaclean-prod`, expires 2026-07-05 |
-| Supabase service-role key (prod) | Worker secret `SUPABASE_SERVICE_ROLE_KEY` + Edge Function auto-inject | RLS bypass — high privilege |
-| Supabase publishable key (prod) | Worker secret `SUPABASE_KEY` + GitHub secret | `sb_publishable_…`, safe to expose |
-| Resend API key | Supabase prod SMTP password; Resend dashboard | name `supabase-smtp` |
-| Replicate token + webhook secret + DB webhook secret | **set 2026-06-08** — Edge Function secrets + Vault (flip-ON / D.1) | webhook secret = Replicate's real account default (F1) |
+| Credential                                           | Where it lives                                                        | Notes                                                  |
+| ---------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------ |
+| Cloudflare API token (CI)                            | GitHub secret `CLOUDFLARE_API_TOKEN`                                  | scoped for Workers deploy                              |
+| Supabase PAT                                         | GitHub secret `SUPABASE_ACCESS_TOKEN`                                 | name `luminaclean-prod`, expires 2026-07-05            |
+| Supabase service-role key (prod)                     | Worker secret `SUPABASE_SERVICE_ROLE_KEY` + Edge Function auto-inject | RLS bypass — high privilege                            |
+| Supabase publishable key (prod)                      | Worker secret `SUPABASE_KEY` + GitHub secret                          | `sb_publishable_…`, safe to expose                     |
+| Resend API key                                       | Supabase prod SMTP password; Resend dashboard                         | name `supabase-smtp`                                   |
+| Replicate token + webhook secret + DB webhook secret | **set 2026-06-08** — Edge Function secrets + Vault (flip-ON / D.1)    | webhook secret = Replicate's real account default (F1) |
 
 ## Pending / follow-ups
 
@@ -108,3 +111,4 @@ Names only (Settings → Secrets and variables → Actions):
 - **DMARC** — optional TXT for deliverability.
 - ~~**Flip-ON** (S-05+S-08+S-09)~~ — **DONE 2026-06-08 (D.1)**: cloud LIVE, `CLOUD_DAILY_CAP=3`; GUC→Vault migration; Edge/Worker secrets set. Kill-switch: `wrangler secret put CLOUD_DAILY_CAP` → `0`. See `context/changes/cloud-flip-on-revalidation/results.md`.
 - **`www`** subdomain — optionally attach + redirect to apex.
+- **Reaper pg_cron enablement (prod)** — confirm `pg_cron` is enabled on `luminaclean-prod` and `reaper-hourly` is scheduled + ticking (`cron.job` / `cron.job_run_details`) after the `retention-reaper` deploy. See §2 Prod.

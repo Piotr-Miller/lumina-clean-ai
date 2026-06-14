@@ -85,12 +85,12 @@ Each row is a discrete rollout phase that will open its own change folder
 via `/10x-new`. Status moves left-to-right through the values below; the
 orchestrator updates Status as artifacts appear on disk.
 
-| #   | Phase name                                    | Goal (one line)                                                                                                                                                                          | Risks covered                                         | Test types                                                                        | Status      | Change folder                               |
-| --- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------- | ----------- | ------------------------------------------- |
-| 1   | Gate the floor — wire existing suite into CI  | Run the 11 tests that already encode the cloud/privacy guardrails on every push (incl. the RLS integration suite via an ephemeral/hosted Supabase) so they cannot silently regress       | #4, #5, #1, #6 (regression lock on existing coverage) | CI wiring (no new test logic)                                                     | complete    | context/archive/2026-06-09-testing-ci-gate/ |
-| 2   | Close top-risk coverage gaps                  | Prove gate-bypass, cost-cap-boundary, IDOR, and failure-path source deletion are caught at the cheapest real-signal layer                                                                | #2, #3, #4, #5                                        | integration (real Supabase)                                                       | not started | —                                           |
-| 3   | Harden silent-stall + watchdog                | Prove a bad/replayed webhook is rejected without over-trust, a stalled job surfaces a terminal failure within budget, and the watchdog re-reads before failing + catches up on subscribe | #1, #6                                                | unit (state machine / verifier) + deploy-smoke checklist for config-only failures | not started | —                                           |
-| 4   | E2E on the north-star flow + gating guardrail | Prove end-to-end that a signed-in upload → Cloud AI → Realtime result appears without refresh, and that an anonymous visitor cannot reach cloud                                          | #2, #1, #6 (#3 stays integration-only)                | e2e (Playwright, new tooling)                                                     | complete    | context/changes/testing-e2e-north-star/     |
+| #   | Phase name                                    | Goal (one line)                                                                                                                                                                          | Risks covered                                         | Test types                                                                        | Status      | Change folder                                                    |
+| --- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------------- |
+| 1   | Gate the floor — wire existing suite into CI  | Run the 11 tests that already encode the cloud/privacy guardrails on every push (incl. the RLS integration suite via an ephemeral/hosted Supabase) so they cannot silently regress       | #4, #5, #1, #6 (regression lock on existing coverage) | CI wiring (no new test logic)                                                     | complete    | context/archive/2026-06-09-testing-ci-gate/                      |
+| 2   | Close top-risk coverage gaps                  | Prove gate-bypass, cost-cap-boundary, IDOR, and failure-path source deletion are caught at the cheapest real-signal layer                                                                | #2, #3, #4, #5                                        | integration (real Supabase)                                                       | in progress | #3 (2026-06-10), #5 (retention-reaper, 2026-06-14); #2/#4 remain |
+| 3   | Harden silent-stall + watchdog                | Prove a bad/replayed webhook is rejected without over-trust, a stalled job surfaces a terminal failure within budget, and the watchdog re-reads before failing + catches up on subscribe | #1, #6                                                | unit (state machine / verifier) + deploy-smoke checklist for config-only failures | not started | —                                                                |
+| 4   | E2E on the north-star flow + gating guardrail | Prove end-to-end that a signed-in upload → Cloud AI → Realtime result appears without refresh, and that an anonymous visitor cannot reach cloud                                          | #2, #1, #6 (#3 stays integration-only)                | e2e (Playwright, new tooling)                                                     | complete    | context/changes/testing-e2e-north-star/                          |
 
 **Status vocabulary** (fixed — parser literals): `not started` →
 `change opened` → `researched` → `planned` → `implementing` → `complete`.
@@ -243,7 +243,7 @@ relevant rollout phase ships; before that it reads "TBD — see §3 Phase <N>."
 - **Env-free-core pattern (load-bearing for hermetic)**: a route that imports `astro:env/server` can't load under Vitest (Lesson #4). Extract the request→response logic into an env-free core in `src/lib/services/<route>.handler.ts` that receives `{ user, request, admin, cap, … }` and returns a `Response`; leave the route a thin wrapper that reads env, builds the admin client, and delegates. The test drives the core directly with a stub admin (same isolation rationale as the "server-only service-role clients live in their own module" lesson).
 - **Assert side-effects, not just status** (§2 R2/R4): make the mutating calls (`insert`, `createSignedUploadUrl`) `vi.fn()` spies and assert they were **not** called on a reject path — a status-only assertion misses a check-after-mutate reordering that returns the right code but still leaks a row / signed URL. Prove the guard has teeth with a one-off reorder (red) before trusting it.
 - **Reference test**: `tests/cloud-create-job.handler.test.ts` (over-cap 429 + reject-before-insert, hermetic). Env-free core it drives: `src/lib/services/cloud-create-job.handler.ts`. Schema-level example: `cloud-create-job-schema.test.ts`.
-- **Remaining Phase-2 endpoint patterns** (gate-bypass, IDOR, failure-path deletion): TBD — see §3 Phase 2.
+- **Remaining Phase-2 endpoint patterns** (gate-bypass, IDOR): TBD — see §3 Phase 2. (Failure-path / abandon source deletion — Risk #5 — landed via change `retention-reaper`: see `tests/jobs.rls.test.ts` `sweepAbandonedSourcesGlobally` cases.)
 - **Run locally**: `npm run test:unit` (hermetic; no Docker), or the integration flow in §6.2.
 
 ### 6.5 Adding a test for the cloud callback / pipeline
@@ -278,6 +278,20 @@ here capturing anything surprising the phase taught.)
   fixture host is `host.docker.internal` (not spec-overridable); the Supabase CLI
   maps it to the host gateway on Linux runners, so the plan's `172.17.0.1`
   fallback was unneeded.
+
+- **2026-06-14 — Phase 2 / Risk #5 (failure-path + abandon source deletion)**: closed
+  via change `retention-reaper` — a scheduled hourly reaper backstopping the inline
+  on-failure delete. Integration coverage in `tests/jobs.rls.test.ts`
+  (`sweepAbandonedSourcesGlobally`, real storage): an old `source.*` is removed, a
+  fresh one survives the boundary, and a stale non-terminal job flips to
+  `failed('abandoned')` while a FRESH in-flight job is SPARED (the don't-reap-live-jobs
+  invariant — added after a survived flip-threshold mutant). Surprises worth recording:
+  (1) storage staleness is driven by the fn's `retentionMs` option, NOT by mutating
+  `storage.objects.created_at` (the suite has no raw SQL client and the Storage API
+  can't backdate it); (2) the reaper reads `storage.objects` through a `security definer`
+  RPC because PostgREST doesn't expose the `storage` schema and SQL can't delete the
+  object (orphans it + is trigger-rejected). This reverses `idea-notes.md`'s "no pg_cron
+  cleanup" non-goal, prompted by a live prod breach (two sources lingered ~7.7 days).
 
 ## 7. What We Deliberately Don't Test
 

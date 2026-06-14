@@ -24,6 +24,12 @@ const STALE_PENDING_JOB_MS = 3_600_000;
 // the best-effort pass cheap; a larger backlog drains over subsequent submits
 // (surfaced via console.warn — no silent cap).
 const SWEEP_MAX = 100;
+// Scheduled-reaper source-retention window. A `source.*` object older than this
+// is an orphan by definition (every terminal path deletes the source on its
+// flip), so the global reaper removes it regardless of job status. 23h pairs
+// with the hourly cron so worst-case object age (run interval + threshold) stays
+// within the ≤24h retention NFR (Risk #5).
+const ABANDONED_SOURCE_RETENTION_MS = 82_800_000; // 23h
 
 /**
  * Best-effort delete of a private `photos` object, shared by every terminal
@@ -396,6 +402,105 @@ export async function sweepStalePendingJobsForOwner(
     );
     return 0;
   }
+}
+
+/**
+ * Cross-user, scheduled retention reaper — the owner-agnostic backstop for the
+ * ≤24h source-retention NFR (Risk #5). Runs two independent best-effort passes:
+ *
+ *  1. **Row-flip (SQL only).** Flip every non-terminal (`queued`/`processing`)
+ *     job older than `staleMs` → `failed` (`error_code: "abandoned"`) in one
+ *     guarded UPDATE. Touches only `jobs`; it does NOT delete sources (pass 2
+ *     owns all deletes). This is {@link sweepStalePendingJobsForOwner}'s flip
+ *     minus the `user_id` filter — it keeps the DB consistent and the daily-cap
+ *     tally accurate for users who never return.
+ *  2. **Storage-first delete.** Delete EVERY `source.*` object older than
+ *     `retentionMs` via the Storage API, regardless of job status — the literal
+ *     NFR invariant. Status-agnostic, so it catches the gaps the inline terminal
+ *     hooks structurally cannot reach: legacy already-terminal orphans,
+ *     abandon-and-never-return, and best-effort-delete failures. Stale paths
+ *     come from the `stale_source_object_paths` RPC (a SECURITY DEFINER read of
+ *     `storage.objects` — PostgREST doesn't expose the `storage` schema and SQL
+ *     cannot delete the object).
+ *
+ * Each pass is isolated in its own try/catch and the function NEVER throws — a
+ * reaper fault must not surface anywhere user-facing. Bounded by `max` with no
+ * silent cap (warns when the stale source set hits the bound; the remainder
+ * drains on the next run). Returns the `{ flipped, deleted }` counts.
+ *
+ * `admin` must be a service-role client (bypasses RLS; the RPC is granted to
+ * `service_role` only). Thresholds are overridable via `opts` (used by tests to
+ * drive staleness deterministically instead of backdating storage timestamps).
+ */
+export async function sweepAbandonedSourcesGlobally(
+  admin: SupabaseClient,
+  opts?: { staleMs?: number; retentionMs?: number; max?: number },
+): Promise<{ flipped: number; deleted: number }> {
+  const staleMs = opts?.staleMs ?? STALE_PENDING_JOB_MS;
+  const retentionMs = opts?.retentionMs ?? ABANDONED_SOURCE_RETENTION_MS;
+  const max = opts?.max ?? SWEEP_MAX;
+
+  let flipped = 0;
+  let deleted = 0;
+
+  // Pass 1 — flip stale non-terminal rows (SQL only; pass 2 owns deletes).
+  try {
+    const staleIso = new Date(Date.now() - staleMs).toISOString();
+    const { data, error } = (await admin
+      .from(JOBS_TABLE)
+      .update({
+        status: "failed",
+        error_code: "abandoned",
+        error_message: "Reclaimed: job stalled past the retention window with no terminal event.",
+        completed_at: new Date().toISOString(),
+      })
+      .in("status", ["queued", "processing"])
+      .lt("created_at", staleIso)
+      .select("id")) as { data: { id: string }[] | null; error: { message: string } | null };
+    if (error) {
+      throw new Error(error.message);
+    }
+    flipped = (data ?? []).length;
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `sweepAbandonedSourcesGlobally: row-flip pass failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  // Pass 2 — storage-first delete of stale source objects (status-agnostic).
+  try {
+    const { data: paths, error: rpcError } = (await admin.rpc("stale_source_object_paths", {
+      older_than_seconds: Math.floor(retentionMs / 1000),
+      max_rows: max,
+    })) as { data: { name: string }[] | null; error: { message: string } | null };
+    if (rpcError) {
+      throw new Error(rpcError.message);
+    }
+    const names = (paths ?? []).map((r) => r.name).filter(Boolean);
+    if (names.length > 0) {
+      const { error: removeError } = await admin.storage.from(PHOTOS_BUCKET).remove(names);
+      if (removeError) {
+        // eslint-disable-next-line no-console
+        console.warn(`sweepAbandonedSourcesGlobally: source batch delete failed: ${removeError.message}`);
+      } else {
+        deleted = names.length;
+      }
+    }
+    if (names.length >= max) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `sweepAbandonedSourcesGlobally: hit the ${max}-object cap — more stale sources may remain and will drain next run.`,
+      );
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `sweepAbandonedSourcesGlobally: storage-delete pass failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  return { flipped, deleted };
 }
 
 /**

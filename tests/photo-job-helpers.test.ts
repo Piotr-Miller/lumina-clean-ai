@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   createSignedReadUrl,
@@ -9,6 +9,7 @@ import {
   markJobProcessing,
   markJobSucceeded,
   markPendingJobFailedForOwner,
+  sweepAbandonedSourcesGlobally,
   sweepStalePendingJobsForOwner,
 } from "@/lib/services/photo-job.service";
 
@@ -395,6 +396,170 @@ describe("sweepStalePendingJobsForOwner", () => {
     const { admin, removed } = makeSweepAdmin({ selectResult: { data: null, error: { message: "db down" } } });
     await expect(sweepStalePendingJobsForOwner(admin, "u-1")).resolves.toBe(0);
     expect(removed).toEqual([]);
+  });
+});
+
+describe("sweepAbandonedSourcesGlobally", () => {
+  /**
+   * Reaper-specific admin stub. The fn runs two independent passes:
+   *  1. a flip chain `.from().update().in().lt().select()` (terminated by awaiting
+   *     `.select()`, resolving to `flipResult`),
+   *  2. an `admin.rpc("stale_source_object_paths", params)` returning `rpcResult`,
+   *     then a single `admin.storage.from().remove(paths)`.
+   * Records the flip payload/filters, the RPC name+params, and every remove() call.
+   */
+  function makeReaperAdmin(opts: {
+    flipResult?: { data?: unknown; error?: unknown };
+    rpcResult?: { data?: unknown; error?: unknown };
+    removeResult?: { error?: unknown };
+  }) {
+    const calls = {
+      updatePayload: undefined as unknown,
+      selectCols: undefined as unknown,
+      ins: [] as [string, unknown[]][],
+      lt: undefined as [string, unknown] | undefined,
+      rpcName: undefined as unknown,
+      rpcParams: undefined as Record<string, unknown> | undefined,
+    };
+    const removed: string[][] = [];
+    const builder: Record<string, unknown> = {
+      update(payload: unknown) {
+        calls.updatePayload = payload;
+        return builder;
+      },
+      in(col: string, vals: unknown[]) {
+        calls.ins.push([col, vals]);
+        return builder;
+      },
+      lt(col: string, val: unknown) {
+        calls.lt = [col, val];
+        return builder;
+      },
+      // Terminates the flip chain — `await ...select("id")` resolves flipResult.
+      select(cols: unknown) {
+        calls.selectCols = cols;
+        return Promise.resolve(opts.flipResult ?? { data: [], error: null });
+      },
+    };
+    const admin = {
+      from: () => builder,
+      rpc: (name: string, params: Record<string, unknown>) => {
+        calls.rpcName = name;
+        calls.rpcParams = params;
+        return Promise.resolve(opts.rpcResult ?? { data: [], error: null });
+      },
+      storage: {
+        from: () => ({
+          remove: (paths: string[]) => {
+            removed.push(paths);
+            return Promise.resolve(opts.removeResult ?? { error: null });
+          },
+        }),
+      },
+    } as unknown as SupabaseClient;
+    return { admin, calls, removed };
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("flips stale non-terminal rows AND batch-deletes the RPC's stale source paths", async () => {
+    const { admin, calls, removed } = makeReaperAdmin({
+      flipResult: { data: [{ id: "j-1" }, { id: "j-2" }], error: null },
+      rpcResult: { data: [{ name: "u-1/j-1/source.jpg" }, { name: "u-2/j-9/source.png" }], error: null },
+    });
+
+    const result = await sweepAbandonedSourcesGlobally(admin);
+    expect(result).toEqual({ flipped: 2, deleted: 2 });
+
+    // Pass 1 — global (NO user_id filter), status- + age-guarded flip → abandoned.
+    const payload = calls.updatePayload as Record<string, unknown>;
+    expect(payload.status).toBe("failed");
+    expect(payload.error_code).toBe("abandoned");
+    expect(typeof payload.error_message).toBe("string");
+    expect(typeof payload.completed_at).toBe("string");
+    expect(calls.ins).toContainEqual(["status", ["queued", "processing"]]);
+    expect(calls.lt?.[0]).toBe("created_at");
+    expect(calls.selectCols).toBe("id");
+
+    // Pass 2 — RPC drives a SINGLE batched remove of all stale source paths.
+    expect(calls.rpcName).toBe("stale_source_object_paths");
+    expect(removed).toEqual([["u-1/j-1/source.jpg", "u-2/j-9/source.png"]]);
+  });
+
+  it("is a no-op (no remove, zero counts) when nothing is stale", async () => {
+    const { admin, removed } = makeReaperAdmin({
+      flipResult: { data: [], error: null },
+      rpcResult: { data: [], error: null },
+    });
+    const result = await sweepAbandonedSourcesGlobally(admin);
+    expect(result).toEqual({ flipped: 0, deleted: 0 });
+    expect(removed).toEqual([]);
+  });
+
+  it("passes retentionMs/staleMs/max through to the RPC params and bound", async () => {
+    const { admin, calls } = makeReaperAdmin({
+      flipResult: { data: [], error: null },
+      rpcResult: { data: [], error: null },
+    });
+    const before = Date.now();
+    await sweepAbandonedSourcesGlobally(admin, { retentionMs: 5000, staleMs: 2000, max: 7 });
+    expect(calls.rpcParams).toEqual({ older_than_seconds: 5, max_rows: 7 });
+
+    // The flip threshold must be `now - staleMs` (the PAST), never the future — a
+    // `Date.now() - staleMs` → `+`/`*`/`/` regression would reap live in-flight
+    // jobs (or none). Pin direction + magnitude (≈ staleMs ago, generous CI slack).
+    expect(calls.lt?.[0]).toBe("created_at");
+    const threshold = new Date(calls.lt?.[1] as string).getTime();
+    expect(Math.abs(before - threshold - 2000)).toBeLessThan(1000);
+  });
+
+  it("the delete pass still runs when the flip pass errors (never throws)", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { admin, removed } = makeReaperAdmin({
+      flipResult: { data: null, error: { message: "flip boom" } },
+      rpcResult: { data: [{ name: "u-1/j-1/source.jpg" }], error: null },
+    });
+    const result = await sweepAbandonedSourcesGlobally(admin);
+    // Flip failed → 0 flipped, but the NFR-critical delete pass still reaped.
+    expect(result).toEqual({ flipped: 0, deleted: 1 });
+    expect(removed).toEqual([["u-1/j-1/source.jpg"]]);
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it("never throws and reports deleted:0 when the RPC errors", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { admin, removed } = makeReaperAdmin({
+      flipResult: { data: [{ id: "j-1" }], error: null },
+      rpcResult: { data: null, error: { message: "rpc down" } },
+    });
+    const result = await sweepAbandonedSourcesGlobally(admin);
+    expect(result).toEqual({ flipped: 1, deleted: 0 });
+    expect(removed).toEqual([]);
+  });
+
+  it("reports deleted:0 and never throws when the batched remove errors", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { admin } = makeReaperAdmin({
+      flipResult: { data: [], error: null },
+      rpcResult: { data: [{ name: "u-1/j-1/source.jpg" }], error: null },
+      removeResult: { error: { message: "storage gone" } },
+    });
+    const result = await sweepAbandonedSourcesGlobally(admin);
+    expect(result).toEqual({ flipped: 0, deleted: 0 });
+  });
+
+  it("warns (no silent cap) when the stale source set hits the max bound", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const names = [{ name: "u/a/source.jpg" }, { name: "u/b/source.jpg" }];
+    const { admin } = makeReaperAdmin({
+      flipResult: { data: [], error: null },
+      rpcResult: { data: names, error: null },
+    });
+    const result = await sweepAbandonedSourcesGlobally(admin, { max: 2 });
+    expect(result.deleted).toBe(2);
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/hit the 2-object cap/));
   });
 });
 

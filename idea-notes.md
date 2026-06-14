@@ -21,7 +21,7 @@ Night and low-light photos taken on mobile devices suffer from heavy digital noi
 - WebGPU shader-based processing
 - Magic bytes file validation in Edge Functions
 - Cloudflare Turnstile / WAF bot protection
-- Automatic raw-uploads retention cleanup (pg_cron)
+- ~~Automatic raw-uploads retention cleanup (pg_cron)~~ — **now implemented** (change `retention-reaper`, Risk #5): an hourly pg_cron sweep deletes lingering `source.*` objects past the 24h-retention NFR window, backstopping the inline on-failure deletion. Reversed after a live prod breach (two source photos lingered ~7.7 days).
 - Newer AI models (e.g. Retinexformer) requiring custom Cog deployment
 - Multi-format import (TIFF, HEIC, etc.)
 - Social features (sharing galleries, public profiles)
