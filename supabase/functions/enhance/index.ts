@@ -486,6 +486,9 @@ async function handleCallback(req: Request): Promise<Response> {
 // shared DB-webhook bearer as /start; runs the owner-agnostic source sweep under
 // the service role and returns only a count (never the swept paths). Best-effort:
 // the service fn never throws, so a partial fault still acks with what it managed.
+// Deliberately NOT gated on CLOUD_PIPELINE_ENABLED (unlike /start): retention is a
+// privacy/cost obligation that must run even when the pipeline is paused or the
+// cap kill-switch is on — lingering sources still need reaping. Do not add the gate.
 async function handleReap(req: Request): Promise<Response> {
   const expectedSecret = Deno.env.get("DB_WEBHOOK_SECRET");
   if (!expectedSecret) {

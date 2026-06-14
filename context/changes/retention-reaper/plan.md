@@ -257,13 +257,13 @@ No data migration. Backfill of pre-existing orphans is automatic on the first sc
 
 #### Automated
 
-- [x] 2.1 Deno static check passes: `deno check supabase/functions/enhance/index.ts`
-- [x] 2.2 Unit + integration suites still green
+- [x] 2.1 Deno static check passes: `deno check supabase/functions/enhance/index.ts` — 16a7f74
+- [x] 2.2 Unit + integration suites still green — 16a7f74
 
 #### Manual
 
-- [x] 2.3 `POST /reap` returns `{swept}` with bearer / 401 without / 500 on missing secret
-- [x] 2.4 `POST /reap` with bearer removes a seeded orphan end-to-end
+- [x] 2.3 `POST /reap` returns `{swept}` with bearer / 401 without / 500 on missing secret — 16a7f74
+- [x] 2.4 `POST /reap` with bearer removes a seeded orphan end-to-end — 16a7f74
 
 ### Phase 3: pg_cron scheduling migration + docs-sync
 

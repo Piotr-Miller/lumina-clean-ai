@@ -1,7 +1,7 @@
 ---
 change_id: retention-reaper
 title: Scheduled retention reaper for lingering source objects past 24h (Risk #5)
-status: implementing
+status: impl_reviewed
 created: 2026-06-14
 updated: 2026-06-14
 archived_at: null
