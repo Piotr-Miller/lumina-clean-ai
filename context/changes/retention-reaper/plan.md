@@ -269,12 +269,12 @@ No data migration. Backfill of pre-existing orphans is automatic on the first sc
 
 #### Automated
 
-- [ ] 3.1 Migration applies cleanly on a fresh reset: `npx supabase db reset`
-- [ ] 3.2 Full suite still green (unit + integration)
-- [ ] 3.3 No broken references in touched docs
+- [x] 3.1 Migration applies cleanly on a fresh reset: `npx supabase db reset`
+- [x] 3.2 Full suite still green (unit + integration)
+- [x] 3.3 No broken references in touched docs
 
 #### Manual
 
-- [ ] 3.4 `cron.job` shows `reaper-hourly` (or skip-notice confirmed when pg_cron absent)
-- [ ] 3.5 `select public.handle_reaper_tick();` issues `/reap` with Vault set; no-op when unset
-- [ ] 3.6 Docs read correctly (idea-notes, test-plan §5, production-config)
+- [x] 3.4 `cron.job` shows `reaper-hourly` (or skip-notice confirmed when pg_cron absent)
+- [x] 3.5 `select public.handle_reaper_tick();` issues `/reap` with Vault set; no-op when unset
+- [x] 3.6 Docs read correctly (idea-notes, test-plan §5, production-config)
