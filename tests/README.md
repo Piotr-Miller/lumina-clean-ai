@@ -4,7 +4,8 @@ Integration tests for the LuminaClean foundation. The suite hits a real
 local Supabase instance (Postgres + Storage + GoTrue + PostgREST) — it does
 **not** mock the Supabase client. The point is to lock in the privacy
 guardrails (RLS on `public.jobs`, prefix-keyed RLS on `storage.objects`,
-the on-success retention contract in `markJobSucceeded`) against a real
+the on-success retention contract in `markJobSucceeded`, and the scheduled
+retention-reaper backstop in `sweepAbandonedSourcesGlobally`) against a real
 runtime, where a mock would silently miss the very behaviors being asserted.
 
 ## Prerequisites
@@ -82,6 +83,10 @@ F-01 foundation owns:
    usable signed URL the test then uses to PUT a file.
 6. **`markJobSucceeded` retention contract** — updates the row to
    `succeeded` AND deletes the source object in the same call.
+7. **Retention reaper** (`sweepAbandonedSourcesGlobally`) — the scheduled
+   ≤24h backstop: a stale `source.*` object is removed (status-agnostic, age-
+   driven), a fresh one is left in place, and a stale non-terminal job flips to
+   `failed('abandoned')` while a fresh in-flight job is spared (don't-reap-live).
 
 ## How this runs in CI
 

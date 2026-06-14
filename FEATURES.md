@@ -27,7 +27,7 @@
 
 - **Before/After comparison slider** — View the processed result against the original with a drag-reveal slider (FR-011).
 - **Download** — Download the processed image at full quality (FR-012).
-- **Job history** *(nice-to-have / deferred to v2 UI)* — Job data persists in v1 (needed for the result push); the user-facing history list view is deferred to v2 (FR-013).
+- **Job history** _(nice-to-have / deferred to v2 UI)_ — Job data persists in v1 (needed for the result push); the user-facing history list view is deferred to v2 (FR-013).
 
 ## Cost Protection & Guardrails
 
@@ -63,5 +63,5 @@
 - Formal anti-bot defense (CAPTCHA / Turnstile / WAF).
 - Committed offline functionality.
 - Magic-bytes file validation in Edge Functions.
-- Automatic raw-uploads retention cleanup (pg_cron).
+- ~~Automatic raw-uploads retention cleanup (pg_cron).~~ — implemented post-v1 as the **retention reaper** (roadmap S-10): an hourly pg_cron backstop that deletes lingering `source.*` objects past the 24h-retention NFR, beyond the inline on-success/on-failure delete.
 - Multi-format import beyond JPG/PNG/HEIC (TIFF, etc.).
