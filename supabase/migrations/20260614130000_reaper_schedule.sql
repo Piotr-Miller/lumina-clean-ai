@@ -48,6 +48,16 @@ begin
 end;
 $$;
 
+-- Lock down execute: this is a SECURITY DEFINER function that reads Vault secrets
+-- and fires an authenticated outbound POST. It `returns void`, so PostgREST would
+-- otherwise expose it as an anon-callable RPC (any user could trigger the global
+-- reaper). pg_cron runs the scheduled command as the job owner, so revoking from
+-- anon/authenticated/public does NOT affect the schedule. Mirrors the grant model
+-- of `stale_source_object_paths` and lessons.md ("revoke blanket grants from anon +
+-- authenticated, never from service_role").
+revoke all on function public.handle_reaper_tick() from public;
+revoke all on function public.handle_reaper_tick() from anon, authenticated;
+
 do $$
 begin
   if exists (select 1 from pg_available_extensions where name = 'pg_cron') then
