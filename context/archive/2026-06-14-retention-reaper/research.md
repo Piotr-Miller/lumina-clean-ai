@@ -44,7 +44,7 @@ The reaper is essentially **`sweepStalePendingJobsForOwner` minus the `user_id` 
 
 **Test layer (test-plan §2 Risk #5):** integration against **real Supabase storage** (extend `tests/jobs.rls.test.ts`); anti-pattern = mocking storage. This is test-plan §3 **Phase 2** territory (`#5`, not started).
 
-**Design decision the plan must state explicitly:** this **reverses a conscious MVP scope cut.** `idea-notes.md:24` lists "Automatic raw-uploads retention cleanup (pg_cron)" under _NOT in MVP scope_, and S-08 (`context/archive/2026-06-07-cloud-job-retention-cleanup/`) explicitly chose inline-only "NOT a pg_cron reaper (explicit MVP non-goal)". The 7.7-day prod breach is the justification for reversing it now.
+**Design decision the plan must state explicitly:** this **reverses a conscious MVP scope cut.** `idea-notes.md:24` lists "Automatic raw-uploads retention cleanup (pg*cron)" under \_NOT in MVP scope*, and S-08 (`context/archive/2026-06-07-cloud-job-retention-cleanup/`) explicitly chose inline-only "NOT a pg_cron reaper (explicit MVP non-goal)". The 7.7-day prod breach is the justification for reversing it now.
 
 ## Detailed Findings
 
