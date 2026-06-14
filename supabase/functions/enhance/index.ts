@@ -28,6 +28,7 @@ import {
   markJobFailed,
   markJobProcessing,
   markJobSucceeded,
+  sweepAbandonedSourcesGlobally,
 } from "../../../src/lib/services/photo-job.service.ts";
 import type { ReplicatePredictionPayload } from "../../../src/lib/services/replicate-webhook.ts";
 import {
@@ -481,6 +482,25 @@ async function handleCallback(req: Request): Promise<Response> {
   }
 }
 
+// Scheduled retention reaper (Risk #5). Invoked by the pg_cron tick with the same
+// shared DB-webhook bearer as /start; runs the owner-agnostic source sweep under
+// the service role and returns only a count (never the swept paths). Best-effort:
+// the service fn never throws, so a partial fault still acks with what it managed.
+async function handleReap(req: Request): Promise<Response> {
+  const expectedSecret = Deno.env.get("DB_WEBHOOK_SECRET");
+  if (!expectedSecret) {
+    return jsonResponse(500, { error: { code: "internal_error", message: "DB_WEBHOOK_SECRET not set" } });
+  }
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!(await digestEquals(authHeader, `Bearer ${expectedSecret}`))) {
+    return jsonResponse(401, { error: { code: "unauthorized", message: "invalid webhook bearer" } });
+  }
+
+  const admin = buildAdminClient();
+  const { flipped, deleted } = await sweepAbandonedSourcesGlobally(admin);
+  return jsonResponse(200, { swept: flipped + deleted });
+}
+
 Deno.serve(async (req) => {
   const { pathname } = new URL(req.url);
 
@@ -491,6 +511,9 @@ Deno.serve(async (req) => {
   }
   if (req.method === "POST" && pathname.endsWith("/callback")) {
     return await handleCallback(req);
+  }
+  if (req.method === "POST" && pathname.endsWith("/reap")) {
+    return await handleReap(req);
   }
 
   return jsonResponse(404, { error: { code: "not_found", message: "unknown route" } });

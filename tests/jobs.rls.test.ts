@@ -399,39 +399,58 @@ describe("sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)
     expect(await sourceExists(user.id, jobId)).toBe(true);
   });
 
-  it("flips a stale non-terminal job to failed('abandoned'), globally (no owner scope)", async () => {
+  it("flips a stale non-terminal job to failed('abandoned') but SPARES a fresh one (don't reap live jobs)", async () => {
     const user = await makeUser("reap-flip");
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
-    // Seed a processing row backdated 2h, with a source_path that was never
-    // uploaded (so the delete pass — which reads real storage — leaves it alone).
-    const { data: inserted, error: insertError } = await supabaseAdmin
+    // Seed two processing rows with source_paths that were never uploaded (so the
+    // delete pass — which reads real storage — leaves them alone): one backdated
+    // 2h (must be reclaimed) and one created NOW (an in-flight job that must NOT be).
+    const { data: staleRow, error: staleErr } = await supabaseAdmin
       .from("jobs")
       .insert({
         user_id: user.id,
         status: "processing",
-        source_path: `${user.id}/never-uploaded/source.jpg`,
+        source_path: `${user.id}/never-uploaded-stale/source.jpg`,
         created_at: twoHoursAgo,
       })
       .select("id")
       .single();
-    expect(insertError).toBeNull();
-    const jobId = (inserted as { id: string }).id;
+    expect(staleErr).toBeNull();
+    const staleJobId = (staleRow as { id: string }).id;
 
-    // staleMs 1h → the 2h-old row is reclaimed; retentionMs 1yr → delete pass no-op.
+    const { data: freshRow, error: freshErr } = await supabaseAdmin
+      .from("jobs")
+      .insert({
+        user_id: user.id,
+        status: "processing",
+        source_path: `${user.id}/never-uploaded-fresh/source.jpg`,
+      })
+      .select("id")
+      .single();
+    expect(freshErr).toBeNull();
+    const freshJobId = (freshRow as { id: string }).id;
+
+    // staleMs 1h → only the 2h-old row is past the threshold; retentionMs 1yr → delete pass no-op.
     const result = await sweepAbandonedSourcesGlobally(supabaseAdmin, {
       staleMs: 60 * 60 * 1000,
       retentionMs: ONE_YEAR_MS,
     });
     expect(result.flipped).toBeGreaterThanOrEqual(1);
 
-    const { data: row } = await supabaseAdmin
+    // The stale row is reclaimed …
+    const { data: stale } = await supabaseAdmin
       .from("jobs")
       .select("status, error_code, completed_at")
-      .eq("id", jobId)
+      .eq("id", staleJobId)
       .single();
-    expect(row?.status).toBe("failed");
-    expect(row?.error_code).toBe("abandoned");
-    expect(row?.completed_at).not.toBeNull();
+    expect(stale?.status).toBe("failed");
+    expect(stale?.error_code).toBe("abandoned");
+    expect(stale?.completed_at).not.toBeNull();
+
+    // … but the fresh, still-in-flight row is left untouched (pins the threshold
+    // direction: a `-`→`+` regression would reap every live job).
+    const { data: fresh } = await supabaseAdmin.from("jobs").select("status").eq("id", freshJobId).single();
+    expect(fresh?.status).toBe("processing");
   });
 });

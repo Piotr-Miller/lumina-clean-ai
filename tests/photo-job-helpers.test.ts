@@ -503,9 +503,16 @@ describe("sweepAbandonedSourcesGlobally", () => {
       flipResult: { data: [], error: null },
       rpcResult: { data: [], error: null },
     });
+    const before = Date.now();
     await sweepAbandonedSourcesGlobally(admin, { retentionMs: 5000, staleMs: 2000, max: 7 });
     expect(calls.rpcParams).toEqual({ older_than_seconds: 5, max_rows: 7 });
+
+    // The flip threshold must be `now - staleMs` (the PAST), never the future — a
+    // `Date.now() - staleMs` → `+`/`*`/`/` regression would reap live in-flight
+    // jobs (or none). Pin direction + magnitude (≈ staleMs ago, generous CI slack).
     expect(calls.lt?.[0]).toBe("created_at");
+    const threshold = new Date(calls.lt?.[1] as string).getTime();
+    expect(Math.abs(before - threshold - 2000)).toBeLessThan(1000);
   });
 
   it("the delete pass still runs when the flip pass errors (never throws)", async () => {

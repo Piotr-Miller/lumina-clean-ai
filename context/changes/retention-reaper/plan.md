@@ -242,28 +242,28 @@ No data migration. Backfill of pre-existing orphans is automatic on the first sc
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npx supabase db reset`
-- [x] 1.2 Unit tests pass: `npm run test:unit`
-- [x] 1.3 Integration suite passes (real local Supabase, incl. `jobs.rls.test.ts`)
-- [x] 1.4 Type checking passes: `npx tsc --noEmit`
-- [x] 1.5 Lint passes on touched files
+- [x] 1.1 Migration applies cleanly: `npx supabase db reset` — 4c8b412
+- [x] 1.2 Unit tests pass: `npm run test:unit` — 4c8b412
+- [x] 1.3 Integration suite passes (real local Supabase, incl. `jobs.rls.test.ts`) — 4c8b412
+- [x] 1.4 Type checking passes: `npx tsc --noEmit` — 4c8b412
+- [x] 1.5 Lint passes on touched files — 4c8b412
 
 #### Manual
 
-- [x] 1.6 Opts-driven source removal boundary passes; succeeded results untouched
-- [x] 1.7 Returns `{flipped, deleted}` and emits the cap warning past `max`
+- [x] 1.6 Opts-driven source removal boundary passes; succeeded results untouched — 4c8b412
+- [x] 1.7 Returns `{flipped, deleted}` and emits the cap warning past `max` — 4c8b412
 
 ### Phase 2: `/reap` Edge Function route
 
 #### Automated
 
-- [ ] 2.1 Deno static check passes: `deno check supabase/functions/enhance/index.ts`
-- [ ] 2.2 Unit + integration suites still green
+- [x] 2.1 Deno static check passes: `deno check supabase/functions/enhance/index.ts`
+- [x] 2.2 Unit + integration suites still green
 
 #### Manual
 
-- [ ] 2.3 `POST /reap` returns `{swept}` with bearer / 401 without / 500 on missing secret
-- [ ] 2.4 `POST /reap` with bearer removes a seeded orphan end-to-end
+- [x] 2.3 `POST /reap` returns `{swept}` with bearer / 401 without / 500 on missing secret
+- [x] 2.4 `POST /reap` with bearer removes a seeded orphan end-to-end
 
 ### Phase 3: pg_cron scheduling migration + docs-sync
 
