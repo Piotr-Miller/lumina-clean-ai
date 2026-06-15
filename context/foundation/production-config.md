@@ -62,7 +62,8 @@ Two separate projects (same org `cqbfrshdnawpivbapygc`). The deployed app uses *
 
 - **Ref:** `gwaviaozehxmyjjcioxy` · **Region:** eu-central-2
 - **Auth → URL config:** Site URL `http://localhost:4321`; Redirect URLs `http://localhost:4321/**`, `http://127.0.0.1:4321/**`, `http://127.0.0.1:8787/**`
-- Used only for local development (`npm run dev` / `wrangler dev`). Not wired to prod.
+- **Vestigial / paused-by-design (verified 2026-06-15).** Nothing in the current workflow depends on this remote project: local dev + tests run against the **local Docker Supabase** (`npx supabase start`; `.dev.vars` → `SUPABASE_URL=http://127.0.0.1:54321`), CI `integration`/`e2e` boot an **ephemeral local Supabase**, and the deployed app + CI build/deploy use **prod** (`tebdkqpgjjypdethpezo`). The only live references to this ref are documentation (here + `lessons.md`). It's the original pre-prod project (renamed from `lumina-clean-ai`), superseded by prod.
+- **Free-tier auto-pause is harmless here.** Supabase pauses free projects after 7 days idle (mail received 2026-06-15). Leave it paused, or delete it (data downloadable for 90 days first) to cut the noise — do **not** upgrade to Pro just to keep an unused dev project awake. If a remote dev/staging is ever needed, unpause on-demand (≤90 days) rather than always-on. **Prod won't auto-pause:** the hourly retention reaper (`pg_cron reaper-hourly`) plus live traffic keep it active.
 
 ## 3. Resend (transactional / auth email)
 
