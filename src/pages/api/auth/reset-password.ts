@@ -1,38 +1,15 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { resetPasswordResponse } from "@/lib/services/reset-password.handler";
 
 export const prerender = false;
 
+// Thin env shell: build the request-scoped client (reads astro:env) and delegate
+// the entire request→redirect decision to the env-free core so it stays
+// unit-testable. No redirect logic of its own — every outcome (sent / send-error /
+// not-configured / malformed-form) is decided by resetPasswordResponse.
 export const POST: APIRoute = async (context) => {
-  let form: FormData;
-  try {
-    form = await context.request.formData();
-  } catch {
-    return context.redirect(`/auth/forgot-password?error=${encodeURIComponent("Invalid request. Please try again.")}`);
-  }
-  const emailValue = form.get("email");
-  const email = typeof emailValue === "string" ? emailValue : "";
-
   const supabase = createClient(context.request.headers, context.cookies);
-
-  // Always show a generic success to avoid leaking which emails have accounts.
-  // No `redirectTo` is passed: the recovery email template hardcodes the
-  // post-confirm `next` target, so Supabase's `.RedirectTo` / redirect
-  // allowlist is not involved in this flow.
-  if (supabase) {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) {
-      // Swallowed from the user (anti-enumeration), but logged so a rate-limited
-      // or misconfigured send is observable server-side. Note: under the global
-      // email_sent cap, a legitimate over-cap request shows success yet delivers
-      // no email — accepted for MVP, mitigated by higher prod SMTP limits.
-      // eslint-disable-next-line no-console
-      console.error("resetPasswordForEmail failed:", error.message);
-    }
-  } else {
-    // eslint-disable-next-line no-console
-    console.error("resetPasswordForEmail skipped: Supabase is not configured");
-  }
-
-  return context.redirect("/auth/forgot-password?sent=1");
+  const path = await resetPasswordResponse({ supabase, request: context.request });
+  return context.redirect(path);
 };
