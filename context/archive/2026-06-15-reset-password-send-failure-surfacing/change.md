@@ -1,10 +1,10 @@
 ---
 change_id: reset-password-send-failure-surfacing
 title: Surface password-reset send failures instead of always showing "sent"
-status: implemented
+status: archived
 created: 2026-06-15
 updated: 2026-06-15
-archived_at: null
+archived_at: 2026-06-15T18:23:35Z
 ---
 
 ## Notes
