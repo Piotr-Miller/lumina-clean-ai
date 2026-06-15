@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-13 (§3 Phase 4 → complete: E2E gate + `e2e` CI job wired; deploy needs [ci, integration, e2e])
+> Last updated: 2026-06-15 (§3 Phase 3 → complete: silent-stall + watchdog hardening was delivered across several changes — bookkeeping caught up; full rollout now complete)
 
 ## 1. Strategy
 
@@ -85,12 +85,12 @@ Each row is a discrete rollout phase that will open its own change folder
 via `/10x-new`. Status moves left-to-right through the values below; the
 orchestrator updates Status as artifacts appear on disk.
 
-| #   | Phase name                                    | Goal (one line)                                                                                                                                                                          | Risks covered                                         | Test types                                                                        | Status      | Change folder                                              |
-| --- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------- |
-| 1   | Gate the floor — wire existing suite into CI  | Run the 11 tests that already encode the cloud/privacy guardrails on every push (incl. the RLS integration suite via an ephemeral/hosted Supabase) so they cannot silently regress       | #4, #5, #1, #6 (regression lock on existing coverage) | CI wiring (no new test logic)                                                     | complete    | context/archive/2026-06-09-testing-ci-gate/                |
-| 2   | Close top-risk coverage gaps                  | Prove gate-bypass, cost-cap-boundary, IDOR, and failure-path source deletion are caught at the cheapest real-signal layer                                                                | #2, #3, #4, #5                                        | integration (real Supabase)                                                       | complete    | #3+#5 done (archived); #2+#4 done (testing-api-authz-gaps) |
-| 3   | Harden silent-stall + watchdog                | Prove a bad/replayed webhook is rejected without over-trust, a stalled job surfaces a terminal failure within budget, and the watchdog re-reads before failing + catches up on subscribe | #1, #6                                                | unit (state machine / verifier) + deploy-smoke checklist for config-only failures | not started | —                                                          |
-| 4   | E2E on the north-star flow + gating guardrail | Prove end-to-end that a signed-in upload → Cloud AI → Realtime result appears without refresh, and that an anonymous visitor cannot reach cloud                                          | #2, #1, #6 (#3 stays integration-only)                | e2e (Playwright, new tooling)                                                     | complete    | context/changes/testing-e2e-north-star/                    |
+| #   | Phase name                                    | Goal (one line)                                                                                                                                                                          | Risks covered                                         | Test types                                                                        | Status   | Change folder                                                                                                                                                                                                                                                   |
+| --- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Gate the floor — wire existing suite into CI  | Run the 11 tests that already encode the cloud/privacy guardrails on every push (incl. the RLS integration suite via an ephemeral/hosted Supabase) so they cannot silently regress       | #4, #5, #1, #6 (regression lock on existing coverage) | CI wiring (no new test logic)                                                     | complete | context/archive/2026-06-09-testing-ci-gate/                                                                                                                                                                                                                     |
+| 2   | Close top-risk coverage gaps                  | Prove gate-bypass, cost-cap-boundary, IDOR, and failure-path source deletion are caught at the cheapest real-signal layer                                                                | #2, #3, #4, #5                                        | integration (real Supabase)                                                       | complete | #3+#5 done (archived); #2+#4 done (testing-api-authz-gaps)                                                                                                                                                                                                      |
+| 3   | Harden silent-stall + watchdog                | Prove a bad/replayed webhook is rejected without over-trust, a stalled job surfaces a terminal failure within budget, and the watchdog re-reads before failing + catches up on subscribe | #1, #6                                                | unit (state machine / verifier) + deploy-smoke checklist for config-only failures | complete | delivered across changes (no single folder): `replicate-webhook.test.ts` (#1 verifier) + `usecloudjob-watchdog-unit` (#6 reducer, archived) + E2E `cloud-stall-surfaces-timeout.spec.ts` (#1 stall→terminal) + `cloud-live-smoke.md` (config-only deploy-smoke) |
+| 4   | E2E on the north-star flow + gating guardrail | Prove end-to-end that a signed-in upload → Cloud AI → Realtime result appears without refresh, and that an anonymous visitor cannot reach cloud                                          | #2, #1, #6 (#3 stays integration-only)                | e2e (Playwright, new tooling)                                                     | complete | context/changes/testing-e2e-north-star/                                                                                                                                                                                                                         |
 
 **Status vocabulary** (fixed — parser literals): `not started` →
 `change opened` → `researched` → `planned` → `implementing` → `complete`.
@@ -250,7 +250,36 @@ relevant rollout phase ships; before that it reads "TBD — see §3 Phase <N>."
 
 ### 6.5 Adding a test for the cloud callback / pipeline
 
-- TBD — see §3 Phase 3. Anchor: never sign the test callback with the verifier's own secret and assert only the happy accept (§2 R1 anti-pattern). Existing example: `replicate-webhook.test.ts`.
+- **Test the env-free shared core, never the Deno Edge Function directly.** The
+  callback logic lives in pure, `astro:env`-free modules shared across the Deno
+  boundary (`src/lib/services/replicate-webhook.ts`, `src/lib/services/bread.ts`);
+  the Edge Function (`supabase/functions/enhance/index.ts`) only wires runtime env
+  - the admin client around them. Unit-test the shared core under Vitest; the
+    function wiring is covered end-to-end by the E2E stub seam (§6.3), and the
+    config-only failures it depends on are covered by the deploy-smoke (below).
+- **Location**: `tests/<subject>.test.ts` (flat dir). Pure verifier/mapping →
+  plain unit (no Docker).
+- **Anchor (§2 R1 anti-pattern)**: never sign the test callback with the
+  verifier's **own** secret and assert only the happy accept — a green test that
+  structurally cannot catch a wrong prod secret. Assert the **rejections**:
+  tampered body, wrong signing secret, tampered/stale/future/missing timestamp
+  (replay guard), and the SSRF allowlist (non-https, disallowed/look-alike/
+  userinfo-spoofed host, default-off extra-origin seam).
+- **Reference test**: `tests/replicate-webhook.test.ts` (signature verification +
+  freshness/replay guard + `isAllowedOutputUrl` SSRF gate + `mapPredictionToOutcome`
+  payload→outcome mapping). The stub-signing helper it shares with E2E is itself
+  tested in `tests/replicate-stub.helpers.test.ts`.
+- **Stall → terminal (the other half of #1)**: the "a stalled job surfaces a
+  terminal failure within budget" guarantee is **not** a callback unit — it is the
+  watchdog. Unit side: `usecloudjob-watchdog-unit` (archived) reducer cases; E2E
+  side: `tests/e2e/cloud-stall-surfaces-timeout.spec.ts` (§6.3). See §6.1 for the
+  watchdog/timing pattern.
+- **Config-only failures are NOT a unit test**: a wrong provider signing secret, a
+  missing `EDGE_FUNCTION_URL`, or a too-short source-URL TTL cannot be caught by any
+  self-contained test (a self-signing harness passes with any secret — §2 R1). These
+  are the **deploy-smoke** gate: `context/foundation/cloud-live-smoke.md` (F1/F2),
+  run before/after any pipeline-config change.
+- **Run locally**: `npm run test:unit` (the verifier/mapping tests are hermetic — no Docker).
 
 ### 6.6 Per-rollout-phase notes
 
@@ -312,6 +341,22 @@ here capturing anything surprising the phase taught.)
   self-contained sibling. Teeth proven per guard by a one-off mutation (auth-guard
   deletion → #2 red 500; `.eq("user_id")` removal → #4 negative red).
 
+- **2026-06-15 — Phase 3 / Risks #1 + #6 (silent-stall + watchdog) — bookkeeping
+  catch-up**: Phase 3 was never executed as a single change folder; its full scope
+  had already landed piecemeal and the §3 row simply lagged. Mapping to artifacts:
+  #1 verifier-without-over-trust → `tests/replicate-webhook.test.ts` (the §2 R1
+  anti-pattern is actively guarded — rejections for tampered body / wrong secret /
+  stale-future-missing timestamp / SSRF host); #1 stall→terminal-in-budget → E2E
+  `tests/e2e/cloud-stall-surfaces-timeout.spec.ts` (Phase 4); #6 re-read +
+  catch-up-on-subscribe → archived change `usecloudjob-watchdog-unit` (deterministic
+  reducer, out-of-order apply); config-only failures (wrong secret, missing
+  `EDGE_FUNCTION_URL`, TTL) → the `cloud-live-smoke.md` deploy-smoke, deliberately
+  NOT a unit (a self-signing harness can't catch them). Lesson worth recording: a
+  stateful rollout's Status can drift when a phase is satisfied by work done under
+  _other_ changes — the orchestrator only advances Status when a phase's own folder
+  appears, so cross-change delivery needs a manual reconciliation pass like this one.
+  §6.5 (previously "TBD — see Phase 3") is now filled in. Rollout is complete.
+
 ## 7. What We Deliberately Don't Test
 
 Exclusions agreed during the rollout (Phase 2 interview, Q5). Future
@@ -327,7 +372,7 @@ contributors should respect these unless the underlying assumption changes.
 - Strategy (§1–§5) last reviewed: 2026-06-09
 - Stack versions last verified: 2026-06-09
 - AI-native tool references last verified: 2026-06-09
-- Rollout state (§3) last advanced: 2026-06-13 — Phase 4 `complete` (Playwright E2E gate + `e2e` CI job; `deploy` needs [ci, integration, e2e]; change folder `context/changes/testing-e2e-north-star/`)
+- Rollout state (§3) last advanced: 2026-06-15 — Phase 3 `complete` (silent-stall + watchdog; delivered across `replicate-webhook.test.ts` + `usecloudjob-watchdog-unit` + E2E stall spec + `cloud-live-smoke.md`, reconciled in a bookkeeping pass). **All four phases complete — rollout finished.** Prior: 2026-06-13 Phase 4 `complete` (Playwright E2E gate + `e2e` CI job; `deploy` needs [ci, integration, e2e]).
 
 Refresh (`/10x-test-plan --refresh`) when:
 
