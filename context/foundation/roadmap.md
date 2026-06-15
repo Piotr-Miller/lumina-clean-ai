@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-14
+updated: 2026-06-15
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -248,6 +248,7 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 
 - **RAW format support (DNG/CR2/NEF/…).** Why parked: PRD §Non-Goals — needs a dedicated decoder and a RAW-domain model, a separate pipeline.
 - **Advanced Local engine (OpenCV.js / WASM / CLAHE / NLM / WebGPU).** Why parked: PRD §Non-Goals — the quality gap to Cloud is intentional; Local stays naive (gamma + Gaussian blur).
+- **Retinexformer opt-in "HD / better quality" Cloud engine (post-MVP).** Why parked: a Cloud-engine quality enhancement, not an MVP success criterion — the core bet (the Bread cloud result beats Local) is already validated and live, so this is upside, not launch scope. Adds **Retinexformer** (SOTA low-light, ICCV 2023 / NTIRE-winner lineage; same fidelity-preserving paradigm as Bread but markedly better) as an explicit opt-in "slower but better" engine for signed-in users, with **Bread on Replicate staying the proven default**. Deliberately chosen over a `Retinexformer → Bread` fallback chain: in the async webhook pipeline a failure surfaces minutes later, so a sequential fallback would double worst-case latency exactly when the user already waits longest, and most deterministic failures are correlated (both engines fail) — the chain would mostly rescue self-inflicted infra risk from the new self-hosted primary. ⚠️ Retinexformer has **no managed/turnkey API anywhere** (not Replicate, fal.ai, HF Inference, Modal, RunPod) → always self-host (ONNX export on Cloudflare Containers/Modal/RunPod, or Cog-package the official repo). Draft recorded at `context/changes/retinexformer-hd-opt-in/` (`status: new`, no work started — run `/10x-plan retinexformer-hd-opt-in` when picked up). Open considerations for planning: persist `engine_used` on the job (the before/after slider must know which engine ran); `CLOUD_DAILY_CAP` accounting (per-job vs per-attempt — Risk #2); RGB-not-RGBA output; same-global-cap vs separate-budget gating for HD. Inference-provider + Bread-alternative survey lives in the change's side-note.
 - **Native mobile apps.** Why parked: PRD §Non-Goals — web only at launch.
 - **Social features (sharing galleries, public profiles, collaborative editing).** Why parked: PRD §Non-Goals — single-tenant by design in v1.
 - **Admin role + Admin UI.** Why parked: PRD §Non-Goals — deferred to v2; v1 operator tasks handled out-of-band via the Supabase dashboard.
