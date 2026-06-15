@@ -133,13 +133,13 @@ None — no schema, no data, no config changes. Pure code refactor + branch beha
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `npm run test:unit`
-- [x] 1.2 New test present and asserts all three branches + no message leakage: `tests/reset-password.handler.test.ts`
-- [x] 1.3 Type checking passes: `npx tsc --noEmit`
-- [x] 1.4 Linting passes: `npm run lint`
+- [x] 1.1 Unit tests pass: `npm run test:unit` — e5421a4
+- [x] 1.2 New test present and asserts all three branches + no message leakage: `tests/reset-password.handler.test.ts` — e5421a4
+- [x] 1.3 Type checking passes: `npx tsc --noEmit` — e5421a4
+- [x] 1.4 Linting passes: `npm run lint` — e5421a4
 
 #### Manual
 
-- [x] 1.5 Normal submit still lands on `?sent=1` (neutral view)
-- [x] 1.6 Forced send failure re-renders the form with the neutral error, retry-able — no false "sent"
-- [x] 1.7 `?error=` carries only the fixed neutral string (no raw Supabase error text)
+- [x] 1.5 Normal submit still lands on `?sent=1` (neutral view) — e5421a4
+- [x] 1.6 Forced send failure re-renders the form with the neutral error, retry-able — no false "sent" — e5421a4
+- [x] 1.7 `?error=` carries only the fixed neutral string (no raw Supabase error text) — e5421a4
