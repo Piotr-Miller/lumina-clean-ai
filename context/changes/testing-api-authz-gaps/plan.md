@@ -243,7 +243,7 @@ admin: supabaseAdmin })` → `res.status === 200`, body `{ flipped: false }`;
   then admin re-reads A's row and asserts `status === "processing"` and
   `error_code` is null/unset (provably unmutated).
 - **Owner (positive control):** same A-owned `processing` job, `user: { id:
-  A.id }` → `{ flipped: true }`; admin re-read shows `status === "failed"`,
+A.id }` → `{ flipped: true }`; admin re-read shows `status === "failed"`,
   `error_code === "timeout"`. (Proves the test isn't trivially green.)
   Clean up via the existing `created`/`deleteTestUser` afterEach (and the storage
   walk it already does); correlate strictly by the captured `jobId`.
@@ -363,14 +363,14 @@ None — no schema, data, or contract changes.
 
 #### Automated
 
-- [x] 2.1 Full integration suite passes (Docker): `npx supabase start` → `npx supabase db reset` → `npm test`
-- [x] 2.2 New cross-user IDOR cases (negative + positive control) pass
-- [x] 2.3 Existing create-job hermetic test still green: `npm run test:unit`
-- [x] 2.4 Type check passes: `npx tsc --noEmit`
-- [x] 2.5 Lint clean on touched files (`prettier --write` + `eslint` on `timeout.handler.ts`, `timeout.ts`, `jobs.rls.test.ts`)
+- [x] 2.1 Full integration suite passes (Docker): `npx supabase start` → `npx supabase db reset` → `npm test` — 768b1b1
+- [x] 2.2 New cross-user IDOR cases (negative + positive control) pass — 768b1b1
+- [x] 2.3 Existing create-job hermetic test still green: `npm run test:unit` — 768b1b1
+- [x] 2.4 Type check passes: `npx tsc --noEmit` — 768b1b1
+- [x] 2.5 Lint clean on touched files (`prettier --write` + `eslint` on `timeout.handler.ts`, `timeout.ts`, `jobs.rls.test.ts`) — 768b1b1
 
 #### Manual
 
-- [x] 2.6 Teeth proof: removing `.eq("user_id")` turns the IDOR negative case RED; reverted (result recorded)
-- [x] 2.7 Route refactor parity: justified against the create-job extract-core precedent (pure runtime-parity refactor; 154 tests green; nothing imports the route but HTTP callers) — E2E stall spec not run
-- [x] 2.8 `test-plan.md` §3/§6.4/§6.6 updated to reflect shipped coverage
+- [x] 2.6 Teeth proof: removing `.eq("user_id")` turns the IDOR negative case RED; reverted (result recorded) — 768b1b1
+- [x] 2.7 Route refactor parity: justified against the create-job extract-core precedent (pure runtime-parity refactor; 154 tests green; nothing imports the route but HTTP callers) — E2E stall spec not run — 768b1b1
+- [x] 2.8 `test-plan.md` §3/§6.4/§6.6 updated to reflect shipped coverage — 768b1b1
