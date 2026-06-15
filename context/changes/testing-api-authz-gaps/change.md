@@ -1,7 +1,7 @@
 ---
 change_id: testing-api-authz-gaps
 title: Testing api authz gaps
-status: implemented
+status: impl_reviewed
 created: 2026-06-15
 updated: 2026-06-15
 archived_at: null
