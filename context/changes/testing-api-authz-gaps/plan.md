@@ -243,7 +243,7 @@ admin: supabaseAdmin })` → `res.status === 200`, body `{ flipped: false }`;
   then admin re-reads A's row and asserts `status === "processing"` and
   `error_code` is null/unset (provably unmutated).
 - **Owner (positive control):** same A-owned `processing` job, `user: { id:
-    A.id }` → `{ flipped: true }`; admin re-read shows `status === "failed"`,
+  A.id }` → `{ flipped: true }`; admin re-read shows `status === "failed"`,
   `error_code === "timeout"`. (Proves the test isn't trivially green.)
   Clean up via the existing `created`/`deleteTestUser` afterEach (and the storage
   walk it already does); correlate strictly by the captured `jobId`.
@@ -350,27 +350,27 @@ None — no schema, data, or contract changes.
 
 #### Automated
 
-- [x] 1.1 New anon-gate case passes: `npm run test:unit`
-- [x] 1.2 Full hermetic suite still green: `npm run test:unit`
-- [x] 1.3 Type check passes: `npx tsc --noEmit`
-- [x] 1.4 Lint clean on touched file (`prettier --write` + `eslint` on `tests/cloud-create-job.handler.test.ts`)
+- [x] 1.1 New anon-gate case passes: `npm run test:unit` — fda8e99
+- [x] 1.2 Full hermetic suite still green: `npm run test:unit` — fda8e99
+- [x] 1.3 Type check passes: `npx tsc --noEmit` — fda8e99
+- [x] 1.4 Lint clean on touched file (`prettier --write` + `eslint` on `tests/cloud-create-job.handler.test.ts`) — fda8e99
 
 #### Manual
 
-- [x] 1.5 Teeth proof: deleting the `if (!user)` guard turns the new case RED; reverted (result recorded)
+- [x] 1.5 Teeth proof: deleting the `if (!user)` guard turns the new case RED; reverted (result recorded) — fda8e99
 
 ### Phase 2: Risk #4 — Extract `timeout.handler.ts` core + cross-user integration test
 
 #### Automated
 
-- [ ] 2.1 Full integration suite passes (Docker): `npx supabase start` → `npx supabase db reset` → `npm test`
-- [ ] 2.2 New cross-user IDOR cases (negative + positive control) pass
-- [ ] 2.3 Existing create-job hermetic test still green: `npm run test:unit`
-- [ ] 2.4 Type check passes: `npx tsc --noEmit`
-- [ ] 2.5 Lint clean on touched files (`prettier --write` + `eslint` on `timeout.handler.ts`, `timeout.ts`, `jobs.rls.test.ts`)
+- [x] 2.1 Full integration suite passes (Docker): `npx supabase start` → `npx supabase db reset` → `npm test`
+- [x] 2.2 New cross-user IDOR cases (negative + positive control) pass
+- [x] 2.3 Existing create-job hermetic test still green: `npm run test:unit`
+- [x] 2.4 Type check passes: `npx tsc --noEmit`
+- [x] 2.5 Lint clean on touched files (`prettier --write` + `eslint` on `timeout.handler.ts`, `timeout.ts`, `jobs.rls.test.ts`)
 
 #### Manual
 
-- [ ] 2.6 Teeth proof: removing `.eq("user_id")` turns the IDOR negative case RED; reverted (result recorded)
-- [ ] 2.7 Route refactor parity: timeout-path E2E (`cloud-stall-surfaces-timeout.spec.ts`) green, or parity justified against the create-job precedent
-- [ ] 2.8 `test-plan.md` §3/§6.4/§6.6 updated to reflect shipped coverage
+- [x] 2.6 Teeth proof: removing `.eq("user_id")` turns the IDOR negative case RED; reverted (result recorded)
+- [x] 2.7 Route refactor parity: justified against the create-job extract-core precedent (pure runtime-parity refactor; 154 tests green; nothing imports the route but HTTP callers) — E2E stall spec not run
+- [x] 2.8 `test-plan.md` §3/§6.4/§6.6 updated to reflect shipped coverage

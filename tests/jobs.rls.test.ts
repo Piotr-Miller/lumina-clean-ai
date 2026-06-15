@@ -6,6 +6,7 @@ import {
   markJobSucceeded,
   sweepAbandonedSourcesGlobally,
 } from "@/lib/services/photo-job.service";
+import { failTimedOutJobResponse } from "@/lib/services/timeout.handler";
 import { supabaseAdmin, supabaseAnonKey, supabaseUrl } from "./env";
 import { createTestUser, deleteTestUser, type TestUser } from "./helpers/test-users";
 
@@ -452,5 +453,108 @@ describe("sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)
     // direction: a `-`→`+` regression would reap every live job).
     const { data: fresh } = await supabaseAdmin.from("jobs").select("status").eq("id", freshJobId).single();
     expect(fresh?.status).toBe("processing");
+  });
+});
+
+/**
+ * Risk #4 (IDOR) at the route-core boundary. The timeout route is the only
+ * user-facing endpoint that accepts a client-supplied `jobId`. We drive its
+ * env-free core (`failTimedOutJobResponse`) with the real service-role admin
+ * client and two real users: the route MUST resolve ownership from the session
+ * user (never the body), so user B supplying user A's `jobId` flips nothing and
+ * leaves A's row untouched. Helper-in-isolation is already pinned in
+ * photo-job-helpers.test.ts; this proves the ROUTE picks the owner-scoped helper
+ * against a real RLS-bypassing write (service-role bypasses RLS, so only a real
+ * row proves the `.eq("user_id")` filter has teeth).
+ *
+ * A self-contained top-level describe with its own makeUser/created/afterEach,
+ * matching the sibling-describe pattern in this file (each block owns its
+ * teardown so test users + storage never leak across runs).
+ */
+describe("POST /api/enhance/cloud/timeout — cross-user IDOR (route boundary)", () => {
+  const created: TestUser[] = [];
+
+  afterEach(async () => {
+    for (const u of created) {
+      await deleteTestUser(u.id);
+    }
+    created.length = 0;
+  });
+
+  async function makeUser(prefix?: string): Promise<TestUser> {
+    const u = await createTestUser(prefix);
+    created.push(u);
+    return u;
+  }
+
+  function timeoutRequest(jobId: string): Request {
+    return new Request("https://example.test/api/enhance/cloud/timeout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId }),
+    });
+  }
+
+  async function insertProcessingJob(ownerId: string): Promise<string> {
+    const jobId = crypto.randomUUID();
+    const { error } = await supabaseAdmin.from("jobs").insert({
+      id: jobId,
+      user_id: ownerId,
+      status: "processing",
+      source_path: `${ownerId}/${jobId}/source.jpg`,
+    });
+    expect(error).toBeNull();
+    return jobId;
+  }
+
+  it("user B supplying user A's jobId flips nothing and leaves A's row untouched", async () => {
+    const a = await makeUser("idor-a");
+    const b = await makeUser("idor-b");
+    const jobId = await insertProcessingJob(a.id);
+
+    // B (authenticated) targets A's job via the route core.
+    const res = await failTimedOutJobResponse({
+      user: { id: b.id },
+      request: timeoutRequest(jobId),
+      admin: supabaseAdmin,
+    });
+
+    // Live contract: a foreign/non-matching jobId is a silent no-op, not 403/404.
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ flipped: false });
+
+    // A's row is provably unmutated.
+    const { data: row, error } = await supabaseAdmin
+      .from("jobs")
+      .select("status, error_code, completed_at")
+      .eq("id", jobId)
+      .single();
+    expect(error).toBeNull();
+    expect(row?.status).toBe("processing");
+    expect(row?.error_code).toBeNull();
+    expect(row?.completed_at).toBeNull();
+  });
+
+  it("user A timing out their OWN job flips it to failed (positive control)", async () => {
+    const a = await makeUser("idor-owner");
+    const jobId = await insertProcessingJob(a.id);
+
+    // Owner's own call must succeed — proves the test isn't trivially green
+    // (the no-op above is genuine cross-user denial, not a broken route).
+    // NB: the flip fires deleteJobSource on a never-uploaded source object; that
+    // is a benign best-effort no-op (a console.warn), not a failure.
+    const res = await failTimedOutJobResponse({
+      user: { id: a.id },
+      request: timeoutRequest(jobId),
+      admin: supabaseAdmin,
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ flipped: true });
+
+    const { data: row, error } = await supabaseAdmin.from("jobs").select("status, error_code").eq("id", jobId).single();
+    expect(error).toBeNull();
+    expect(row?.status).toBe("failed");
+    expect(row?.error_code).toBe("timeout");
   });
 });
