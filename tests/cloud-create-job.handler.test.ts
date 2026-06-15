@@ -136,3 +136,34 @@ describe("createCloudJobResponse — global daily-cap route boundary", () => {
     expect(createSignedUploadUrl).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * Hermetic route-boundary test for the cloud-AI auth gate (Risk #2: an
+ * unauthorized request must not reach Cloud AI processing).
+ *
+ * The NEW signal is the same shape as the cap test above, one step earlier in
+ * the sequence: an anonymous request (`user: null`) is rejected with 401 at the
+ * boundary BEFORE any insert / signed-URL side-effect — so a missing session can
+ * never mint a signed upload URL or create a job row. The full-stack 401 is
+ * already covered by the slow E2E (tests/e2e/seed.spec.ts); this pins the gate
+ * at the cheap hermetic layer. `cap`/`count` are irrelevant — the auth guard is
+ * the handler's first statement, before the cap check ever runs.
+ */
+describe("createCloudJobResponse — anonymous auth gate (Risk #2)", () => {
+  it("rejects an anonymous request with 401 and the exact contract, before any insert or signed URL", async () => {
+    const { admin, insert, createSignedUploadUrl } = makeStubAdmin(0);
+
+    const res = await createCloudJobResponse({ user: null, request: jsonRequest(VALID_BODY), admin, cap: 3 });
+
+    expect(res.status).toBe(401);
+    const body = await readBody(res);
+    expect(body).toEqual({ error: { code: "unauthorized", message: "Sign in to use Cloud AI." } });
+    // CLAUDE.md envelope: no `status` field leaks into the body.
+    expect("status" in body).toBe(false);
+    // Reject-BEFORE-side-effects: an anonymous caller never reaches storage or
+    // the DB. A status-only assertion would miss a gate placed after the work;
+    // these not-called assertions are what catch it.
+    expect(insert).not.toHaveBeenCalled();
+    expect(createSignedUploadUrl).not.toHaveBeenCalled();
+  });
+});
