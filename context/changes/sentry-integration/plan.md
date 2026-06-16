@@ -349,12 +349,12 @@ Finalize _what_ gets captured and _how clean_ events are: best-effort swallows a
 
 #### Automated
 
-- [ ] 2.1 Deno type check passes: `deno check supabase/functions/enhance/index.ts`
+- [ ] 2.1 Deno type check passes: `deno check supabase/functions/enhance/index.ts` — CI-gated (no standalone deno locally; edge-runtime container ships `edge-runtime`, not `deno`). Serve smoke (2.2) loaded+ran the module under real Deno v2.1.4, so import/init resolve; full type-check runs in CI on push.
 
 #### Manual
 
-- [ ] 2.2 `supabase functions serve enhance` boots with `@sentry/deno` initialized
-- [ ] 2.3 Forced start-path failure produces a `runtime=edge` event, no URL/PII
+- [x] 2.2 `supabase functions serve enhance` boots with `@sentry/deno` initialized — module loaded under supabase-edge-runtime (Deno v2.1.4): POST /enhance/start returned 401 (handler ran past Sentry.init), no import/boot error in serve log
+- [~] 2.3 Forced start-path failure produces a `runtime=edge` event, no URL/PII — start-path forced to fail (authed, pipeline ON, seeded job whose source object is absent → `signSourceWithRetry` exhausts → catch): `HTTP 500` in 4.3s, `Sentry.captureException` + `await Sentry.flush(2000)` ran clean (no serve-log error). Dashboard-visual confirm of the `runtime=edge` event pending human. NOTE: the exception message carries the source PATH (embeds `user_id`, a UUID) — no signed URL/token/email; full message redaction is Phase 3 §1 (bound to `MAX_ERROR_DETAIL_CHARS`). Discovered+fixed here: edge isolates can be frozen post-response, so manual capture needs `Sentry.flush()` before return or the event is dropped — added to both catches.
 - [ ] 2.4 Success path + Replicate callback path behave identically (500 / 200-ack / `markJobFailed`)
 
 ### Phase 3: Capture policy + privacy hardening + CI source maps

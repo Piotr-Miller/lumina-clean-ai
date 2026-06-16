@@ -26,3 +26,8 @@ Add Sentry error tracking to the app. Closes the baseline gap the roadmap notes 
 - Scope guard: error tracking only (+ maybe lightweight tracing). NOT session replay / profiling / cron+uptime monitors in v1 unless cheap.
 
 Likely post-MVP / observability hardening (MVP scope was delivered 2026-06-08), but low-risk and additive.
+
+### Runtime prerequisites (out-of-band, additive — none block the build/deploy)
+
+- **Worker (app):** `SENTRY_DSN` + `PUBLIC_SENTRY_DSN` (same DSN value) and `PUBLIC_SENTRY_ENVIRONMENT` (set to `production` in prod) — local in `.dev.vars`, prod via `wrangler secret put` / GitHub build env. `SENTRY_AUTH_TOKEN` (source-map upload) is Phase 3, CI-only.
+- **Edge Function (`enhance`, Deno):** `SENTRY_DSN` is a **Supabase Edge secret** (`supabase secrets set SENTRY_DSN=…`), NOT a Worker secret — same project/DSN as the app. Optional `SENTRY_ENVIRONMENT` (defaults to `development`; set `production` for the prod project). Local: `supabase/functions/.env` (gitignored). DSN absent → the Deno SDK no-ops, so capture degrades gracefully.

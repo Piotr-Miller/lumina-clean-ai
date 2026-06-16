@@ -19,6 +19,8 @@
 // resolve via the deno.json import map — ONE implementation of the status
 // transitions + the 24h-source-delete retention logic, no app-vs-Deno drift.
 
+// Sentry first (per the Deno SDK guidance: import before other modules).
+import * as Sentry from "@sentry/deno";
 import { createClient } from "@supabase/supabase-js";
 import { BREAD_VERSION, buildBreadInput } from "../../../src/lib/services/bread.ts";
 import {
@@ -38,6 +40,38 @@ import {
   resultExtensionFromContentType,
   verifyReplicateSignature,
 } from "../../../src/lib/services/replicate-webhook.ts";
+
+// Sentry (Edge / Deno runtime). DSN is a Supabase Edge secret
+// (`supabase secrets set SENTRY_DSN=…`) — same project as the app, NOT a Worker
+// secret. Capture is MANUAL (the two outer catches below): the Deno SDK does no
+// auto-instrumentation here. Tracing stays OFF in Phases 1-2 (`tracesSampleRate: 0`,
+// Phase 1 finding F1) until Phase 3's shared span/breadcrumb scrub lands. The
+// placeholder `stripObviousUrls` mirrors the app config: it only redacts the
+// error-event request URL/query — it does NOT redact the exception message (which
+// is already bounded to MAX_ERROR_DETAIL_CHARS) or spans/breadcrumbs. Full message
+// + span redaction is Phase 3 (`src/lib/observability/sentry-scrub.ts` — the Deno
+// init mirrors it since it cannot import app `src/`). DSN absent → SDK no-ops.
+function stripObviousUrls<T extends { request?: { url?: string; query_string?: unknown } }>(event: T): T {
+  if (event.request) {
+    if (typeof event.request.url === "string") {
+      event.request.url = event.request.url.split("?")[0];
+    }
+    if (event.request.query_string != null) {
+      event.request.query_string = "[redacted]";
+    }
+  }
+  return event;
+}
+
+Sentry.init({
+  dsn: Deno.env.get("SENTRY_DSN"),
+  environment: Deno.env.get("SENTRY_ENVIRONMENT") ?? "development",
+  sendDefaultPii: false,
+  tracesSampleRate: 0, // tracing off until Phase 3's span/breadcrumb scrub lands
+  initialScope: { tags: { runtime: "edge" } },
+  beforeSend: (event) => stripObviousUrls(event),
+  beforeSendTransaction: (event) => stripObviousUrls(event),
+});
 
 // Source READ URL TTL (S-09). Replicate (Cog) fetches this URL at `predict()`
 // start — AFTER the container cold-boots, which can exceed several minutes
@@ -267,6 +301,12 @@ async function handleStart(req: Request): Promise<Response> {
     return jsonResponse(200, { jobId, predictionId: prediction.id, status: "processing" });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    // Surface the start-path failure to Sentry first, so it's captured even if
+    // the best-effort markJobFailed below throws. jobId is a UUID (not PII).
+    // flush before returning: the edge isolate can be frozen/torn down right after
+    // the response, dropping the async transport send — so await delivery here.
+    Sentry.captureException(err, { tags: { route: "enhance.start" }, extra: { jobId } });
+    await Sentry.flush(2000);
     // Record the failure on the row (the client's source of truth) before
     // returning. Best-effort: if markJobFailed itself throws, the 500 still
     // signals the failure.
@@ -461,6 +501,12 @@ async function handleCallback(req: Request): Promise<Response> {
     return jsonResponse(200, { jobId, status: "succeeded", resultPath });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    // Surface the callback-path failure to Sentry first (captured even if the
+    // cleanup/markJobFailed below throws). jobId is a UUID (not PII). flush before
+    // returning: the edge isolate can be frozen right after the response, dropping
+    // the async transport send.
+    Sentry.captureException(err, { tags: { route: "enhance.callback" }, extra: { jobId } });
+    await Sentry.flush(2000);
     // If the result was already uploaded before the throw, delete it so it never
     // orphans (F5). The source is handled by the now-guarded markJobFailed below.
     if (resultPath) {
