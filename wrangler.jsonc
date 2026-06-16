@@ -12,6 +12,14 @@
   "observability": {
     "enabled": true,
   },
+  // Server-runtime Sentry environment tag. Read in sentry.server.config.ts as
+  // env.PUBLIC_SENTRY_ENVIRONMENT (workerd runtime, NOT the build-time client var
+  // baked by astro:env). Without this the server entry falls back to "development"
+  // and prod events land in the wrong stream. The client bundle gets its own value
+  // from the CI build env (PUBLIC_SENTRY_ENVIRONMENT=production).
+  "vars": {
+    "PUBLIC_SENTRY_ENVIRONMENT": "production",
+  },
   // Exposes env.CF_VERSION_METADATA = { id, tag, timestamp } so the Sentry server
   // entry can tag events with the deploy `release` (id) — regressions attribute to
   // a deploy. Read in sentry.server.config.ts; absent binding → release undefined.
