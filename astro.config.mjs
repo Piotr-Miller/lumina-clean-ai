@@ -13,8 +13,20 @@ export default defineConfig({
   // @sentry/astro wires the client SDK (sentry.client.config.ts) + source-map
   // upload. Server capture is the custom workerd entry point
   // (sentry.server.config.ts via wrangler `main`), NOT this integration.
-  // Source-map auth-token wiring (sourceMapsUploadOptions) is added in Phase 3.
-  integrations: [react(), sitemap(), sentry()],
+  // sourceMapsUploadOptions reads org/project/authToken from the BUILD env (CI
+  // deploy job). All absent locally → upload is skipped with a warning (build
+  // still succeeds); the integration also cleans up emitted maps after upload.
+  integrations: [
+    react(),
+    sitemap(),
+    sentry({
+      sourceMapsUploadOptions: {
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+      },
+    }),
+  ],
   vite: {
     plugins: [tailwindcss()],
   },

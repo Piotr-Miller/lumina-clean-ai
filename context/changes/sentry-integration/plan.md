@@ -361,11 +361,11 @@ Finalize _what_ gets captured and _how clean_ events are: best-effort swallows a
 
 #### Automated
 
-- [ ] 3.1 Type checking passes: `npm run typecheck`
-- [ ] 3.2 Linting passes: `npm run lint`
-- [ ] 3.3 Unit tests pass incl. scrub test: `npm run test:unit`
-- [ ] 3.4 Deno check passes: `deno check supabase/functions/enhance/index.ts`
-- [ ] 3.5 Build with source-map upload succeeds (or skips cleanly without token): `npm run build`
+- [x] 3.1 Type checking passes: `npm run typecheck` — exit 0
+- [x] 3.2 Linting passes: `npm run lint` — exit 0 (full repo; CRLF baseline no longer present)
+- [x] 3.3 Unit tests pass incl. scrub test: `npm run test:unit` — 156 passed (scrub: 11)
+- [~] 3.4 Deno check passes: `deno check supabase/functions/enhance/index.ts` — CI-gated (no standalone deno locally); serve smoke re-verifies the Deno scrub mirror + new captureMessage sites
+- [x] 3.5 Build with source-map upload succeeds (or skips cleanly without token): `npm run build` — exit 0 (no token → skip warning, build OK)
 - [ ] 3.6 (Conditional) Scoped Stryker on touched §4 risk modules if `/10x-impl-review` fires it
 
 #### Manual

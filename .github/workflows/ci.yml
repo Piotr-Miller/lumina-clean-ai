@@ -321,6 +321,18 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          # Sentry build-time env. SENTRY_AUTH_TOKEN drives source-map upload (the
+          # @sentry/astro integration uploads during `npm run build` then cleans the
+          # emitted maps). PUBLIC_SENTRY_DSN + PUBLIC_SENTRY_ENVIRONMENT are baked
+          # into the client bundle (public by design). The SERVER DSN + environment
+          # are Worker RUNTIME values (wrangler secret/var), not build-time — see
+          # change.md runtime prerequisites. All optional: absent token → upload is
+          # skipped, absent DSN → SDK no-ops.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
+          PUBLIC_SENTRY_ENVIRONMENT: production
       # Edge Function → Supabase. Use the version-pinned supabase CLI from
       # devDependencies via npx (deterministic — no unpinned global install).
       # --use-api forces API bundling (no Docker on the runner); the deploy

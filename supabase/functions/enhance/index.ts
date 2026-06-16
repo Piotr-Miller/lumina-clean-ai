@@ -30,6 +30,7 @@ import {
   markJobFailed,
   markJobProcessing,
   markJobSucceeded,
+  setObservabilityWarnCapture,
   sweepAbandonedSourcesGlobally,
 } from "../../../src/lib/services/photo-job.service.ts";
 import type { ReplicatePredictionPayload } from "../../../src/lib/services/replicate-webhook.ts";
@@ -44,22 +45,75 @@ import {
 // Sentry (Edge / Deno runtime). DSN is a Supabase Edge secret
 // (`supabase secrets set SENTRY_DSN=…`) — same project as the app, NOT a Worker
 // secret. Capture is MANUAL (the two outer catches below): the Deno SDK does no
-// auto-instrumentation here. Tracing stays OFF in Phases 1-2 (`tracesSampleRate: 0`,
-// Phase 1 finding F1) until Phase 3's shared span/breadcrumb scrub lands. The
-// placeholder `stripObviousUrls` mirrors the app config: it only redacts the
-// error-event request URL/query — it does NOT redact the exception message (which
-// is already bounded to MAX_ERROR_DETAIL_CHARS) or spans/breadcrumbs. Full message
-// + span redaction is Phase 3 (`src/lib/observability/sentry-scrub.ts` — the Deno
-// init mirrors it since it cannot import app `src/`). DSN absent → SDK no-ops.
-function stripObviousUrls<T extends { request?: { url?: string; query_string?: unknown } }>(event: T): T {
-  if (event.request) {
-    if (typeof event.request.url === "string") {
-      event.request.url = event.request.url.split("?")[0];
+// auto-instrumentation here. DSN absent → SDK no-ops.
+//
+// `scrubSentryEvent` MIRRORS `src/lib/observability/sentry-scrub.ts` — the Deno
+// runtime cannot import app `src/` across the runtime boundary, so the privacy
+// logic is duplicated. Keep the two in sync. It runs on BOTH `beforeSend` and
+// `beforeSendTransaction` (light tracing is on at 5%), redacting signed Storage
+// URL query/signature, emails, bearer/provider tokens, request headers/cookies,
+// `user.ip_address`, and bounding strings to MAX_ERROR_DETAIL_CHARS.
+const SCRUB_EMAIL_RE = /[^\s@"'<>]+@[^\s@"'<>]+\.[^\s@"'<>]+/g;
+const SCRUB_TOKEN_RES: RegExp[] = [
+  /Bearer\s+[A-Za-z0-9._-]+/g,
+  /\bwhsec_[A-Za-z0-9/+_=-]+/g,
+  /\br8_[A-Za-z0-9]+/g,
+  /\bsbp?_[A-Za-z0-9]{16,}/g,
+  /\beyJ[A-Za-z0-9._-]{20,}/g,
+];
+const SCRUB_URL_QUERY_RE = /(https?:\/\/[^\s"'?]+)\?[^\s"'<>]*/g;
+const SCRUB_SENSITIVE_KEY_RE = /^(authorization|cookie|set-cookie|x-.*-key|.*token.*|.*secret.*|email|apikey)$/i;
+
+function scrubRedactString(input: string): string {
+  let out = input.replace(SCRUB_URL_QUERY_RE, "$1?[redacted]");
+  for (const re of SCRUB_TOKEN_RES) out = out.replace(re, "[redacted-token]");
+  out = out.replace(SCRUB_EMAIL_RE, "[email]");
+  if (out.length > MAX_ERROR_DETAIL_CHARS) out = out.slice(0, MAX_ERROR_DETAIL_CHARS) + "…[truncated]";
+  return out;
+}
+
+function scrubRedactDeep(value: unknown, depth = 0): unknown {
+  if (depth > 6) return "[depth-limited]";
+  if (typeof value === "string") return scrubRedactString(value);
+  if (Array.isArray(value)) return value.map((v) => scrubRedactDeep(v, depth + 1));
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = SCRUB_SENSITIVE_KEY_RE.test(k) ? "[redacted]" : scrubRedactDeep(v, depth + 1);
     }
-    if (event.request.query_string != null) {
-      event.request.query_string = "[redacted]";
+    return out;
+  }
+  return value;
+}
+
+function scrubSentryEvent<T extends Sentry.Event>(event: T): T {
+  const e = event as Record<string, unknown>;
+  if (typeof e.message === "string") e.message = scrubRedactString(e.message);
+  const exception = e.exception as { values?: { value?: unknown }[] } | undefined;
+  if (exception?.values) {
+    for (const ex of exception.values) if (typeof ex.value === "string") ex.value = scrubRedactString(ex.value);
+  }
+  const req = e.request as Record<string, unknown> | undefined;
+  if (req) {
+    if (typeof req.url === "string") req.url = req.url.replace(SCRUB_URL_QUERY_RE, "$1?[redacted]").split("?")[0];
+    if (req.query_string != null) req.query_string = "[redacted]";
+    if (req.cookies != null) req.cookies = "[redacted]";
+    if (req.headers && typeof req.headers === "object") req.headers = scrubRedactDeep(req.headers);
+    if (req.data != null) req.data = scrubRedactDeep(req.data);
+  }
+  const user = e.user as Record<string, unknown> | undefined;
+  if (user) {
+    user.ip_address = null;
+    delete user.email;
+  }
+  const spans = e.spans as { description?: unknown; data?: unknown }[] | undefined;
+  if (spans) {
+    for (const s of spans) {
+      if (typeof s.description === "string") s.description = scrubRedactString(s.description);
+      if (s.data != null) s.data = scrubRedactDeep(s.data);
     }
   }
+  if (e.extra != null) e.extra = scrubRedactDeep(e.extra);
   return event;
 }
 
@@ -67,10 +121,17 @@ Sentry.init({
   dsn: Deno.env.get("SENTRY_DSN"),
   environment: Deno.env.get("SENTRY_ENVIRONMENT") ?? "development",
   sendDefaultPii: false,
-  tracesSampleRate: 0, // tracing off until Phase 3's span/breadcrumb scrub lands
+  tracesSampleRate: 0.05,
   initialScope: { tags: { runtime: "edge" } },
-  beforeSend: (event) => stripObviousUrls(event),
-  beforeSendTransaction: (event) => stripObviousUrls(event),
+  beforeSend: (event) => scrubSentryEvent(event),
+  beforeSendTransaction: (event) => scrubSentryEvent(event),
+});
+
+// Wire the shared job-service swallow sites (bestEffortRemove, the sweeps) to
+// capture as Sentry warnings in the Edge runtime too. See the seam in
+// photo-job.service.ts; the app wires the same hook with @sentry/cloudflare.
+setObservabilityWarnCapture((message) => {
+  Sentry.captureMessage(message, "warning");
 });
 
 // Source READ URL TTL (S-09). Replicate (Cog) fetches this URL at `predict()`
@@ -394,7 +455,9 @@ async function handleCallback(req: Request): Promise<Response> {
   // timestamp is part of the signed content). Reject with the same uniform 401;
   // log the distinct reason so the gate that failed is visible.
   if (!isWebhookTimestampFresh(req.headers.get("webhook-timestamp") ?? "")) {
-    console.warn("enhance/callback: rejecting webhook outside the freshness window (replay guard)");
+    const msg = "enhance/callback: rejecting webhook outside the freshness window (replay guard)";
+    console.warn(msg);
+    Sentry.captureMessage(msg, "warning");
     return jsonResponse(401, { error: { code: "unauthorized", message: "stale webhook timestamp" } });
   }
 
@@ -433,10 +496,11 @@ async function handleCallback(req: Request): Promise<Response> {
     // `processing` job) — is anomalous, so refuse to mutate rather than trust an
     // unverifiable completion. (Defense-in-depth behind the HMAC gate.)
     if (!payload.id || !job.replicate_prediction_id || payload.id !== job.replicate_prediction_id) {
-      console.warn(
+      const msg =
         `enhance/callback: prediction-id cross-check failed ` +
-          `(payload=${payload.id ?? "none"}, stored=${job.replicate_prediction_id ?? "none"}) — ignoring`,
-      );
+        `(payload=${payload.id ?? "none"}, stored=${job.replicate_prediction_id ?? "none"}) — ignoring`;
+      console.warn(msg);
+      Sentry.captureMessage(msg, "warning");
       return jsonResponse(200, { ignored: "prediction_id_mismatch" });
     }
     // Idempotency: a row already terminal (Replicate retry, or the client
