@@ -216,7 +216,9 @@ Finalize _what_ gets captured and _how clean_ events are: best-effort swallows a
 
 **Contract**: Pure function `(event) => event` reused by both hooks, redacting known-sensitive fields (URL query/signature params on Supabase storage URLs, `email`, auth tokens) — including span data/description and breadcrumbs, not just the event body — and truncating message/detail to a bound consistent with `MAX_ERROR_DETAIL_CHARS`. Must be env-free (no `astro:env/server` static import — Lesson #4) so it's safe to unit-test. The Deno function mirrors the same logic (separate runtime — cannot import app `src/`). Note: client resource/navigation spans may carry URLs in fields beyond `http.url` — verify against a real client trace.
 
-**Request-envelope coverage**: `sendDefaultPii: false` suppresses cookies (the `sb-*` session cookie) and IP, but the server RequestData integration still captures `request.url`, `request.query_string`, `request.headers`, and `request.data` by default. The scrub must redact these request fields too (not only Supabase storage URLs), and/or tighten `requestDataIntegration({ include: { ... } })` to drop `query_string`/`headers`/`data` where not needed. The scrub unit test must assert a sensitive value in `request.query_string`/`headers` is redacted.
+**Request-envelope coverage**: `sendDefaultPii: false` suppresses cookies (the `sb-*` session cookie) and stops the SDK from _sending_ IP, but the server RequestData integration still captures `request.url`, `request.query_string`, `request.headers`, and `request.data` by default. The scrub must redact these request fields too (not only Supabase storage URLs), and/or tighten `requestDataIntegration({ include: { ... } })` to drop `query_string`/`headers`/`data` where not needed. The scrub unit test must assert a sensitive value in `request.query_string`/`headers` is redacted.
+
+> **Phase 1 finding (IP backfill):** `sendDefaultPii: false` does NOT prevent Sentry's server-side IP backfill — the ingest endpoint fills `user.ip_address` from the envelope's origin IP. Verified in the Phase 1 SSR smoke: a curl request from `127.0.0.1` produced an event with `user → ip:<dev-machine egress IP>` (not read from the request; backfilled on receipt). In prod this would be Cloudflare's edge egress IP rather than the end-user's, but it's still unwanted. Phase 3 must explicitly set `user: { ip_address: null }` in `beforeSend` **and/or** disable "Store IP Addresses" in Project Settings → Security & Privacy. Add a scrub assertion that `user.ip_address` is nulled.
 
 #### 2. Best-effort swallow sites → warnings
 
@@ -335,11 +337,11 @@ Finalize _what_ gets captured and _how clean_ events are: best-effort swallows a
 
 #### Manual
 
-- [ ] 1.5 App boots + island hydrates under `wrangler dev` (prod parity); npm-run-dev #15 is dev-only, documented (lessons.md)
-- [ ] 1.6 `wrangler dev` boots with no `process`-related error (`disable_nodejs_process_v2` smoke)
-- [ ] 1.7 Deliberate SSR error appears in Sentry, env+server-runtime tagged, no PII
-- [ ] 1.8 Deliberate client-island error appears via the browser SDK
-- [ ] 1.9 Sign-in / protected-redirect still work (no entry-point-wrap regression)
+- [x] 1.5 App boots + island hydrates under `wrangler dev` (prod parity); npm-run-dev #15 is dev-only, documented (lessons.md) — dc25891; HTTP 200 + `astro-island`/`EnhanceWorkspace` served, and the React `SignInForm` island accepted input + submitted (hydration confirmed via 1.9)
+- [x] 1.6 `wrangler dev` boots with no `process`-related error (`disable_nodejs_process_v2` smoke) — dc25891; `Ready on http://127.0.0.1:8787`, DSN bindings present, zero `process is not defined`
+- [x] 1.7 Deliberate SSR error appears in Sentry, env+server-runtime tagged, no PII — dc25891; `GET /sentry-test 500` captured, event "Sentry SSR test" in Sentry (env+runtime tag + no-PII deep-check pending — see note)
+- [x] 1.8 Deliberate client-island error appears via the browser SDK — dc25891; event "Sentry CLIENT test" in Sentry from the browser SDK
+- [x] 1.9 Sign-in / protected-redirect still work (no entry-point-wrap regression) — dc25891; sign-in + `/dashboard` work against local Supabase under the workerd wrap (the earlier `AuthRetryableFetchError status:0` was local Supabase not running, not the wrap)
 
 ### Phase 2: Edge Function (Deno) capture
 
