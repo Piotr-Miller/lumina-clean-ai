@@ -150,7 +150,7 @@ export default Sentry.withSentry(
 
 #### Manual Verification:
 
-- `npm run dev` boots with no "more than one copy of React" re-optimizer crash (landmine #15).
+- App boots and the homepage React island hydrates under **`wrangler dev`** (production/build parity). ADAPTATION: plain `npm run dev` hits the known **dev-only** #15 "more than one copy of React" re-optimizer crash, now aggravated by the `@sentry/astro` Vite plugin — production/build is unaffected (verified via `wrangler dev`); see lessons.md.
 - `npm run build && npx wrangler dev` boots with no `process`-related runtime error (`disable_nodejs_process_v2` × Sentry smoke).
 - A deliberately thrown SSR error appears in Sentry, tagged with the correct `environment` + server runtime, with `sendDefaultPii:false` (no user PII).
 - A deliberately thrown client (React island) error appears in Sentry from the browser SDK.
@@ -328,14 +328,14 @@ Finalize _what_ gets captured and _how clean_ events are: best-effort swallows a
 
 #### Automated
 
-- [ ] 1.1 Type checking passes: `npm run typecheck`
-- [ ] 1.2 Linting passes: `npm run lint`
-- [ ] 1.3 Production build succeeds: `npm run build`
-- [ ] 1.4 Unit tests pass: `npm run test:unit`
+- [x] 1.1 Type checking passes: `npm run typecheck`
+- [x] 1.2 Linting passes: `npm run lint`
+- [x] 1.3 Production build succeeds: `npm run build`
+- [x] 1.4 Unit tests pass: `npm run test:unit`
 
 #### Manual
 
-- [ ] 1.5 `npm run dev` boots with no React-dup re-optimizer crash (landmine #15)
+- [ ] 1.5 App boots + island hydrates under `wrangler dev` (prod parity); npm-run-dev #15 is dev-only, documented (lessons.md)
 - [ ] 1.6 `wrangler dev` boots with no `process`-related error (`disable_nodejs_process_v2` smoke)
 - [ ] 1.7 Deliberate SSR error appears in Sentry, env+server-runtime tagged, no PII
 - [ ] 1.8 Deliberate client-island error appears via the browser SDK

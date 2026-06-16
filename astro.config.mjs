@@ -5,11 +5,16 @@ import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import cloudflare from "@astrojs/cloudflare";
+import sentry from "@sentry/astro";
 
 // https://astro.build/config
 export default defineConfig({
   output: "server",
-  integrations: [react(), sitemap()],
+  // @sentry/astro wires the client SDK (sentry.client.config.ts) + source-map
+  // upload. Server capture is the custom workerd entry point
+  // (sentry.server.config.ts via wrangler `main`), NOT this integration.
+  // Source-map auth-token wiring (sourceMapsUploadOptions) is added in Phase 3.
+  integrations: [react(), sitemap(), sentry()],
   vite: {
     plugins: [tailwindcss()],
   },
@@ -26,6 +31,10 @@ export default defineConfig({
       // create-job rejects with 429 daily_cap_reached once reached. 0 disables
       // cloud entirely (operator kill-switch).
       CLOUD_DAILY_CAP: envField.number({ context: "server", access: "secret", default: 50 }),
+      // Sentry DSN — public by design. Server entry point reads SENTRY_DSN from
+      // the workerd env directly; the browser reads PUBLIC_SENTRY_DSN. Same value.
+      SENTRY_DSN: envField.string({ context: "server", access: "secret", optional: true }),
+      PUBLIC_SENTRY_DSN: envField.string({ context: "client", access: "public", optional: true }),
     },
   },
 });

@@ -1,7 +1,7 @@
 ---
 change_id: sentry-integration
 title: Integrate Sentry error tracking (Astro 6 + Cloudflare Workers)
-status: plan_reviewed
+status: implementing
 created: 2026-06-15
 updated: 2026-06-16
 archived_at: null
