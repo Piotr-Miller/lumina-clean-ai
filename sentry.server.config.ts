@@ -8,12 +8,14 @@ import handler from "@astrojs/cloudflare/entrypoints/server";
  * fetch handler runs inside a Sentry request scope — established above
  * `src/middleware.ts`, which is left untouched.
  *
- * Tracing is enabled from this phase, so BOTH `beforeSend` (errors) and
- * `beforeSendTransaction` (spans) carry a scrub. This is a minimal placeholder:
- * Phase 3 replaces `stripObviousUrls` with the shared
- * `src/lib/observability/sentry-scrub.ts` covering event body, request fields,
- * spans, and breadcrumbs. The placeholder exists now so signed URLs in spans are
- * not shipped unscrubbed before Phase 3 lands.
+ * Tracing is DISABLED in Phases 1-2 (`tracesSampleRate: 0`). The placeholder
+ * `stripObviousUrls` below only redacts the error-event request URL/query — it
+ * does NOT walk `event.spans[]` or breadcrumbs, where signed `result.*`/`source.*`
+ * URLs (incl. tokens) would land once tracing is on. So tracing stays off until
+ * Phase 3 enables it (0.05) together with the shared
+ * `src/lib/observability/sentry-scrub.ts` that covers event body, request fields,
+ * spans, and breadcrumbs. The `beforeSendTransaction` hook is kept wired so it's
+ * ready when tracing turns back on.
  */
 function stripObviousUrls<T extends { request?: { url?: string; query_string?: unknown } }>(event: T): T {
   if (event.request) {
@@ -28,10 +30,11 @@ function stripObviousUrls<T extends { request?: { url?: string; query_string?: u
 }
 
 export default Sentry.withSentry(
-  (env: { SENTRY_DSN?: string }) => ({
+  (env: { SENTRY_DSN?: string; PUBLIC_SENTRY_ENVIRONMENT?: string }) => ({
     dsn: env.SENTRY_DSN,
+    environment: env.PUBLIC_SENTRY_ENVIRONMENT ?? "development",
     sendDefaultPii: false,
-    tracesSampleRate: 0.05,
+    tracesSampleRate: 0, // tracing off until Phase 3's span/breadcrumb scrub lands
     initialScope: { tags: { runtime: "server" } },
     beforeSend: (event) => stripObviousUrls(event),
     beforeSendTransaction: (event) => stripObviousUrls(event),

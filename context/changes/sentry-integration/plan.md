@@ -58,7 +58,7 @@ Three phases, each independently verifiable, in dependency order:
 2. **Edge Function capture** — add the Deno SDK and manual captures to the highest-value target (the churny `enhance` file with silent-stall history), validated by its separate toolchain.
 3. **Capture policy + privacy hardening + CI source maps** — tune _what_ gets captured (swallows-as-warnings, auth hard-scrub), finalize the shared `beforeSend` URL scrub, and wire source-map upload + release versioning in CI.
 
-A single shared scrubbing concept is authored once and applied in each runtime's init (the app server config, the client config, and the Deno init) via **both** `beforeSend` (error/message events) **and** `beforeSendTransaction` (tracing/span events) — Sentry runs `beforeSend` on error events only, so transactions need their own hook or signed URLs in spans bypass the scrub. It is the privacy seam; Phase 3 finalizes it but Phases 1–2 already set `sendDefaultPii: false` and a minimal scrub on **both** hooks so no raw URL leaks before Phase 3.
+A single shared scrubbing concept is authored once and applied in each runtime's init (the app server config, the client config, and the Deno init) via **both** `beforeSend` (error/message events) **and** `beforeSendTransaction` (tracing/span events) — Sentry runs `beforeSend` on error events only, so transactions need their own hook or signed URLs in spans bypass the scrub. It is the privacy seam; Phase 3 finalizes it. Phases 1–2 set `sendDefaultPii: false`, keep tracing disabled, and use a minimal request URL scrub for error events so signed URLs are not shipped in spans before the full scrub exists.
 
 ## Critical Implementation Details
 
@@ -90,7 +90,7 @@ Install the app SDKs, create the Sentry config files, repoint the worker entry p
 
 **Intent**: Wrap the Cloudflare adapter's server entrypoint with Sentry so the whole fetch handler runs inside a Sentry request scope on workerd.
 
-**Contract**: Default-exports `Sentry.withSentry((env) => ({ dsn: env.SENTRY_DSN, sendDefaultPii: false, tracesSampleRate: 0.05, environment: <resolved>, ... }), handler)` where `handler` is the default import from `@astrojs/cloudflare/entrypoints/server`. DSN is read from the workerd `env` object (not `astro:env`). Set a `server`/runtime tag. Minimal `beforeSend` **and** `beforeSendTransaction` (both drop obvious URL fields) as placeholders for the Phase 3 shared scrub — because tracing is on (0.05) from this phase, the transaction hook must exist now or signed URLs leak via spans before Phase 3.
+**Contract**: Default-exports `Sentry.withSentry((env) => ({ dsn: env.SENTRY_DSN, sendDefaultPii: false, tracesSampleRate: 0, environment: <resolved>, ... }), handler)` where `handler` is the default import from `@astrojs/cloudflare/entrypoints/server`. DSN is read from the workerd `env` object (not `astro:env`). Set a `server`/runtime tag. Minimal `beforeSend` drops obvious request URL fields as a placeholder for the Phase 3 shared scrub. Tracing stays disabled until that scrub covers spans and breadcrumbs.
 
 ```ts
 import * as Sentry from "@sentry/cloudflare";
@@ -100,7 +100,7 @@ export default Sentry.withSentry(
   (env) => ({
     dsn: env.SENTRY_DSN,
     sendDefaultPii: false,
-    tracesSampleRate: 0.05,
+    tracesSampleRate: 0,
     // environment + release resolved here; beforeSend scrub finalized in Phase 3
   }),
   handler,
@@ -113,7 +113,7 @@ export default Sentry.withSentry(
 
 **Intent**: Initialize the browser SDK so client-island errors (React 19 hooks) are captured.
 
-**Contract**: `Sentry.init({ dsn: import.meta.env.PUBLIC_SENTRY_DSN, sendDefaultPii: false, tracesSampleRate: 0.05, integrations: [Sentry.browserTracingIntegration()] })`. Client `environment` tag mirrors the server.
+**Contract**: `Sentry.init({ dsn: import.meta.env.PUBLIC_SENTRY_DSN, sendDefaultPii: false, tracesSampleRate: 0, integrations: [Sentry.browserTracingIntegration()] })`. Client `environment` tag mirrors the server. Phase 3 may raise tracing after the shared scrub covers spans and breadcrumbs.
 
 #### 4. Astro integration + env schema
 
@@ -174,7 +174,7 @@ Add Sentry to the `enhance` Edge Function — the highest-value capture target (
 
 **Intent**: Initialize the Deno SDK at module load and capture exceptions at the two outer catches, so Edge failures (start + callback) become Sentry issues.
 
-**Contract**: `import * as Sentry from "npm:@sentry/deno"` + `Sentry.init({ dsn: <Deno.env DSN>, sendDefaultPii: false, tracesSampleRate: 0.05, ... })` near the top. Add `Sentry.captureException(e)` in the `handleStart` catch (`:268-278`) and the `handleCallback` catch (`:462-481`), preserving existing behavior (500 / 200-ack to Replicate respectively, and the best-effort `markJobFailed`). Tag `runtime=edge`. Apply the same `sendDefaultPii:false` + minimal scrub as the app. Capture is **manual** (beta SDK, no auto-instrumentation). The `console.warn` sites (replay-guard `:357`, prediction-id cross-check `:396`) are addressed in Phase 3 (warnings), not here.
+**Contract**: `import * as Sentry from "npm:@sentry/deno"` + `Sentry.init({ dsn: <Deno.env DSN>, sendDefaultPii: false, tracesSampleRate: 0, ... })` near the top. Add `Sentry.captureException(e)` in the `handleStart` catch (`:268-278`) and the `handleCallback` catch (`:462-481`), preserving existing behavior (500 / 200-ack to Replicate respectively, and the best-effort `markJobFailed`). Tag `runtime=edge`. Apply the same `sendDefaultPii:false` + minimal scrub as the app. Capture is **manual** (beta SDK, no auto-instrumentation). Tracing stays disabled until the Phase 3 shared scrub covers spans and breadcrumbs. The `console.warn` sites (replay-guard `:357`, prediction-id cross-check `:396`) are addressed in Phase 3 (warnings), not here.
 
 #### 2. Edge secret
 
@@ -213,6 +213,8 @@ Finalize _what_ gets captured and _how clean_ events are: best-effort swallows a
 **File**: a small shared scrub module (e.g. `src/lib/observability/sentry-scrub.ts`) + mirror in the Deno init
 
 **Intent**: One scrubbing function that strips signed `source.*`/`result.*` URLs, emails, tokens, and bounds long strings — applied in all three inits via **both** `beforeSend` (errors) **and** `beforeSendTransaction` (spans/traces). `beforeSend` alone does not see transaction events, so without the transaction hook the confirmed client-side signed-`result.*` fetch span (`useCloudJob.ts:306-308` → `cloud-result.client.ts:48`) leaks its token query string.
+
+> **Re-enable tracing here (Phase 1 finding F1):** Phases 1–2 ship with `tracesSampleRate: 0` (tracing OFF) because the placeholder scrub only covered the error-event request URL, not spans/breadcrumbs. This phase must set `tracesSampleRate` back to `0.05` in `sentry.server.config.ts` and `sentry.client.config.ts` **together with** the span/breadcrumb-covering shared scrub — never re-enable tracing before the scrub walks `event.spans[]`.
 
 **Contract**: Pure function `(event) => event` reused by both hooks, redacting known-sensitive fields (URL query/signature params on Supabase storage URLs, `email`, auth tokens) — including span data/description and breadcrumbs, not just the event body — and truncating message/detail to a bound consistent with `MAX_ERROR_DETAIL_CHARS`. Must be env-free (no `astro:env/server` static import — Lesson #4) so it's safe to unit-test. The Deno function mirrors the same logic (separate runtime — cannot import app `src/`). Note: client resource/navigation spans may carry URLs in fields beyond `http.url` — verify against a real client trace.
 

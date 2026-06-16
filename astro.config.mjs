@@ -35,6 +35,11 @@ export default defineConfig({
       // the workerd env directly; the browser reads PUBLIC_SENTRY_DSN. Same value.
       SENTRY_DSN: envField.string({ context: "server", access: "secret", optional: true }),
       PUBLIC_SENTRY_DSN: envField.string({ context: "client", access: "public", optional: true }),
+      // Sentry environment tag (not secret) — segments events by env so local
+      // workerd dev / preview / production don't mix. Read by the client via
+      // astro:env/client and by the server entry point via the workerd env.
+      // Defaults to "development"; CI/prod must set it to "production".
+      PUBLIC_SENTRY_ENVIRONMENT: envField.string({ context: "client", access: "public", default: "development" }),
     },
   },
 });
