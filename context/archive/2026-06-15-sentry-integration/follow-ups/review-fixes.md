@@ -2,21 +2,15 @@
 
 Deferred items from the impl review (`reviews/impl-review.md`, 2026-06-17).
 
-## F4 — Regenerate the Edge function deno.lock
+## F4 — Regenerate the Edge function deno.lock — ✅ RESOLVED (2026-06-17, PR #44)
 
 - **Source**: impl-review F4 (OBSERVATION, reliability).
-- **Why deferred**: standalone Deno is not installed on the dev machine, so a complete
-  integrity-pinned lock can't be generated this session.
-- **Action when Deno is available**:
-  ```bash
-  cd supabase/functions/enhance && deno cache index.ts
-  git add supabase/functions/enhance/deno.lock && git commit
-  ```
-  This re-pins `npm:@sentry/deno@^10.58.0` (currently caret-only, no lockfile) with
-  integrity hashes so a future 10.x minor can't silently drift into the build.
-- **Guard**: CI runs `deno check --config supabase/functions/enhance/deno.json …`. If a
-  regenerated lock is committed, confirm CI's deno check still passes (a stale/partial
-  lock re-breaks it — see lessons.md / memory deno-check-needs-config-flag).
+- **Done**: Deno 2.8.3 installed; `deno cache --config deno.json index.ts` regenerated
+  `supabase/functions/enhance/deno.lock` with the full `npm:@sentry/deno@10.58.0` tree
+  (integrity-pinned). Verified `deno check --config deno.json index.ts` passes with the lock
+  present (no stale-lock re-break). Bonus: stabilizes CI — the local edge-runtime now boots
+  from locked deps instead of fetching `@sentry/deno` + `deno.land/std` fresh each cold boot
+  (root cause of the recent `supabase_edge_runtime` 502 health-check flakes).
 
 ## 3.7 — Source maps don't resolve in prod (client AND server)
 
@@ -27,20 +21,19 @@ sources for debug ID upload. Please check the sourcemaps.assets option.`
   - Client event frame: `/_astro/SentryVerifyClient.DrFOipla.js:1:634`, single-letter fns.
   - Server event frame: `chunks/sentry-verify_wVBDjGKS.mjs:45` (readable fn names — workerd
     server bundle isn't minified — but NOT mapped to `src/pages/sentry-verify.astro`).
-- **Diagnosis**: debug IDs aren't being injected into / matched against the built bundles for
-  the `@astrojs/cloudflare` output layout, so Sentry can't link the uploaded maps to events.
-  `sourceMapsUploadOptions.sourcemaps.assets` likely needs to point at the real output dirs.
-- **Candidate fix (UNTESTED — found in the working tree during cleanup, NOT yet deployed):**
-  in `astro.config.mjs`, inside `sentry({ sourceMapsUploadOptions: { … } })`:
-  ```js
-  sourcemaps: {
-    assets: ["dist/**/*", ".wrangler/**/*"],
-  },
-  ```
-  Needs its own change: apply → deploy → re-run a real error via a verify harness → confirm
-  frames resolve to `*.tsx` / `*.astro` originals. Verify the build still cleans emitted maps
-  and the bundle size/output isn't shipped with maps. (A `SENTRY_VERIFY_KEY` env field was
-  also drafted alongside — only needed if the verify route is reintroduced env-keyed.)
+- **Diagnosis**: debug IDs aren't being **injected into the served `@astrojs/cloudflare`
+  bundles**, so events carry no debug ID to match the (successfully) uploaded maps. The maps
+  upload fine; the deployed JS just doesn't reference them.
+- **Attempted, INSUFFICIENT (PR #43, merged 2026-06-17)**: added to `astro.config.mjs`
+  `sentry({ … sourcemaps: { assets: ["dist/**/*"], filesToDeleteAfterUpload: ["dist/**/*.map"] } })`.
+  Deploy log was **unchanged** — same `Didn't find any matching sources for debug ID upload`
+  warning, events still minified. The `assets` glob fixes upload discovery, not the debug-ID
+  **injection** stage, which is the actual gap. The config was kept (harmless; the
+  `filesToDeleteAfterUpload` is good hygiene) but it is NOT the fix.
+- **Still OPEN — needs a dedicated change**: investigate `@astrojs/cloudflare` +
+  `@sentry/astro` debug-ID injection (likely a vite `build.sourcemap` setting and/or the
+  workerd `_worker.js` bundle needing separate handling). Validate by re-triggering a real
+  error (re-add a guarded verify route) and confirming frames resolve to `*.tsx`/`*.astro`.
 - **Severity**: low for an MVP — server traces already name the failing component, and the
   privacy scrub (the load-bearing part) is verified working. Quality-of-debugging only.
 
