@@ -113,6 +113,17 @@ function scrubSentryEvent<T extends Sentry.Event>(event: T): T {
       if (s.data != null) s.data = scrubRedactDeep(s.data);
     }
   }
+  const contexts = e.contexts as { trace?: { data?: unknown } } | undefined;
+  if (contexts?.trace?.data) {
+    contexts.trace.data = scrubRedactDeep(contexts.trace.data) as Record<string, unknown>;
+  }
+  const breadcrumbs = e.breadcrumbs as { message?: unknown; data?: unknown }[] | undefined;
+  if (breadcrumbs) {
+    for (const crumb of breadcrumbs) {
+      if (typeof crumb.message === "string") crumb.message = scrubRedactString(crumb.message);
+      if (crumb.data != null) crumb.data = scrubRedactDeep(crumb.data);
+    }
+  }
   if (e.extra != null) e.extra = scrubRedactDeep(e.extra);
   return event;
 }
@@ -458,6 +469,7 @@ async function handleCallback(req: Request): Promise<Response> {
     const msg = "enhance/callback: rejecting webhook outside the freshness window (replay guard)";
     console.warn(msg);
     Sentry.captureMessage(msg, "warning");
+    await Sentry.flush(2000);
     return jsonResponse(401, { error: { code: "unauthorized", message: "stale webhook timestamp" } });
   }
 
@@ -501,6 +513,7 @@ async function handleCallback(req: Request): Promise<Response> {
         `(payload=${payload.id ?? "none"}, stored=${job.replicate_prediction_id ?? "none"}) — ignoring`;
       console.warn(msg);
       Sentry.captureMessage(msg, "warning");
+      await Sentry.flush(2000);
       return jsonResponse(200, { ignored: "prediction_id_mismatch" });
     }
     // Idempotency: a row already terminal (Replicate retry, or the client
