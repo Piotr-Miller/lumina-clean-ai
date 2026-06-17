@@ -19,6 +19,8 @@
 // resolve via the deno.json import map — ONE implementation of the status
 // transitions + the 24h-source-delete retention logic, no app-vs-Deno drift.
 
+// Sentry first (per the Deno SDK guidance: import before other modules).
+import * as Sentry from "@sentry/deno";
 import { createClient } from "@supabase/supabase-js";
 import { BREAD_VERSION, buildBreadInput } from "../../../src/lib/services/bread.ts";
 import {
@@ -28,6 +30,7 @@ import {
   markJobFailed,
   markJobProcessing,
   markJobSucceeded,
+  setObservabilityWarnCapture,
   sweepAbandonedSourcesGlobally,
 } from "../../../src/lib/services/photo-job.service.ts";
 import type { ReplicatePredictionPayload } from "../../../src/lib/services/replicate-webhook.ts";
@@ -38,6 +41,109 @@ import {
   resultExtensionFromContentType,
   verifyReplicateSignature,
 } from "../../../src/lib/services/replicate-webhook.ts";
+
+// Sentry (Edge / Deno runtime). DSN is a Supabase Edge secret
+// (`supabase secrets set SENTRY_DSN=…`) — same project as the app, NOT a Worker
+// secret. Capture is MANUAL (the two outer catches below): the Deno SDK does no
+// auto-instrumentation here. DSN absent → SDK no-ops.
+//
+// `scrubSentryEvent` MIRRORS `src/lib/observability/sentry-scrub.ts` — the Deno
+// runtime cannot import app `src/` across the runtime boundary, so the privacy
+// logic is duplicated. Keep the two in sync. It runs on BOTH `beforeSend` and
+// `beforeSendTransaction` (light tracing is on at 5%), redacting signed Storage
+// URL query/signature, emails, bearer/provider tokens, request headers/cookies,
+// `user.ip_address`, and bounding strings to MAX_ERROR_DETAIL_CHARS.
+const SCRUB_EMAIL_RE = /[^\s@"'<>]+@[^\s@"'<>]+\.[^\s@"'<>]+/g;
+const SCRUB_TOKEN_RES: RegExp[] = [
+  /Bearer\s+[A-Za-z0-9._-]+/g,
+  /\bwhsec_[A-Za-z0-9/+_=-]+/g,
+  /\br8_[A-Za-z0-9]+/g,
+  /\bsbp?_[A-Za-z0-9]{16,}/g,
+  /\beyJ[A-Za-z0-9._-]{20,}/g,
+];
+const SCRUB_URL_QUERY_RE = /(https?:\/\/[^\s"'?]+)\?[^\s"'<>]*/g;
+const SCRUB_SENSITIVE_KEY_RE = /^(authorization|cookie|set-cookie|x-.*-key|.*token.*|.*secret.*|email|apikey)$/i;
+
+function scrubRedactString(input: string): string {
+  let out = input.replace(SCRUB_URL_QUERY_RE, "$1?[redacted]");
+  for (const re of SCRUB_TOKEN_RES) out = out.replace(re, "[redacted-token]");
+  out = out.replace(SCRUB_EMAIL_RE, "[email]");
+  if (out.length > MAX_ERROR_DETAIL_CHARS) out = out.slice(0, MAX_ERROR_DETAIL_CHARS) + "…[truncated]";
+  return out;
+}
+
+function scrubRedactDeep(value: unknown, depth = 0): unknown {
+  if (depth > 6) return "[depth-limited]";
+  if (typeof value === "string") return scrubRedactString(value);
+  if (Array.isArray(value)) return value.map((v) => scrubRedactDeep(v, depth + 1));
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = SCRUB_SENSITIVE_KEY_RE.test(k) ? "[redacted]" : scrubRedactDeep(v, depth + 1);
+    }
+    return out;
+  }
+  return value;
+}
+
+function scrubSentryEvent<T extends Sentry.Event>(event: T): T {
+  const e = event as Record<string, unknown>;
+  if (typeof e.message === "string") e.message = scrubRedactString(e.message);
+  const exception = e.exception as { values?: { value?: unknown }[] } | undefined;
+  if (exception?.values) {
+    for (const ex of exception.values) if (typeof ex.value === "string") ex.value = scrubRedactString(ex.value);
+  }
+  const req = e.request as Record<string, unknown> | undefined;
+  if (req) {
+    if (typeof req.url === "string") req.url = req.url.replace(SCRUB_URL_QUERY_RE, "$1?[redacted]").split("?")[0];
+    if (req.query_string != null) req.query_string = "[redacted]";
+    if (req.cookies != null) req.cookies = "[redacted]";
+    if (req.headers && typeof req.headers === "object") req.headers = scrubRedactDeep(req.headers);
+    if (req.data != null) req.data = scrubRedactDeep(req.data);
+  }
+  const user = e.user as Record<string, unknown> | undefined;
+  if (user) {
+    user.ip_address = null;
+    delete user.email;
+  }
+  const spans = e.spans as { description?: unknown; data?: unknown }[] | undefined;
+  if (spans) {
+    for (const s of spans) {
+      if (typeof s.description === "string") s.description = scrubRedactString(s.description);
+      if (s.data != null) s.data = scrubRedactDeep(s.data);
+    }
+  }
+  const contexts = e.contexts as { trace?: { data?: unknown } } | undefined;
+  if (contexts?.trace?.data) {
+    contexts.trace.data = scrubRedactDeep(contexts.trace.data) as Record<string, unknown>;
+  }
+  const breadcrumbs = e.breadcrumbs as { message?: unknown; data?: unknown }[] | undefined;
+  if (breadcrumbs) {
+    for (const crumb of breadcrumbs) {
+      if (typeof crumb.message === "string") crumb.message = scrubRedactString(crumb.message);
+      if (crumb.data != null) crumb.data = scrubRedactDeep(crumb.data);
+    }
+  }
+  if (e.extra != null) e.extra = scrubRedactDeep(e.extra);
+  return event;
+}
+
+Sentry.init({
+  dsn: Deno.env.get("SENTRY_DSN"),
+  environment: Deno.env.get("SENTRY_ENVIRONMENT") ?? "development",
+  sendDefaultPii: false,
+  tracesSampleRate: 0.05,
+  initialScope: { tags: { runtime: "edge" } },
+  beforeSend: (event) => scrubSentryEvent(event),
+  beforeSendTransaction: (event) => scrubSentryEvent(event),
+});
+
+// Wire the shared job-service swallow sites (bestEffortRemove, the sweeps) to
+// capture as Sentry warnings in the Edge runtime too. See the seam in
+// photo-job.service.ts; the app wires the same hook with @sentry/cloudflare.
+setObservabilityWarnCapture((message) => {
+  Sentry.captureMessage(message, "warning");
+});
 
 // Source READ URL TTL (S-09). Replicate (Cog) fetches this URL at `predict()`
 // start — AFTER the container cold-boots, which can exceed several minutes
@@ -267,6 +373,12 @@ async function handleStart(req: Request): Promise<Response> {
     return jsonResponse(200, { jobId, predictionId: prediction.id, status: "processing" });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    // Surface the start-path failure to Sentry first, so it's captured even if
+    // the best-effort markJobFailed below throws. jobId is a UUID (not PII).
+    // flush before returning: the edge isolate can be frozen/torn down right after
+    // the response, dropping the async transport send — so await delivery here.
+    Sentry.captureException(err, { tags: { route: "enhance.start" }, extra: { jobId } });
+    await Sentry.flush(2000);
     // Record the failure on the row (the client's source of truth) before
     // returning. Best-effort: if markJobFailed itself throws, the 500 still
     // signals the failure.
@@ -354,7 +466,10 @@ async function handleCallback(req: Request): Promise<Response> {
   // timestamp is part of the signed content). Reject with the same uniform 401;
   // log the distinct reason so the gate that failed is visible.
   if (!isWebhookTimestampFresh(req.headers.get("webhook-timestamp") ?? "")) {
-    console.warn("enhance/callback: rejecting webhook outside the freshness window (replay guard)");
+    const msg = "enhance/callback: rejecting webhook outside the freshness window (replay guard)";
+    console.warn(msg);
+    Sentry.captureMessage(msg, "warning");
+    await Sentry.flush(2000);
     return jsonResponse(401, { error: { code: "unauthorized", message: "stale webhook timestamp" } });
   }
 
@@ -393,10 +508,12 @@ async function handleCallback(req: Request): Promise<Response> {
     // `processing` job) — is anomalous, so refuse to mutate rather than trust an
     // unverifiable completion. (Defense-in-depth behind the HMAC gate.)
     if (!payload.id || !job.replicate_prediction_id || payload.id !== job.replicate_prediction_id) {
-      console.warn(
+      const msg =
         `enhance/callback: prediction-id cross-check failed ` +
-          `(payload=${payload.id ?? "none"}, stored=${job.replicate_prediction_id ?? "none"}) — ignoring`,
-      );
+        `(payload=${payload.id ?? "none"}, stored=${job.replicate_prediction_id ?? "none"}) — ignoring`;
+      console.warn(msg);
+      Sentry.captureMessage(msg, "warning");
+      await Sentry.flush(2000);
       return jsonResponse(200, { ignored: "prediction_id_mismatch" });
     }
     // Idempotency: a row already terminal (Replicate retry, or the client
@@ -461,6 +578,12 @@ async function handleCallback(req: Request): Promise<Response> {
     return jsonResponse(200, { jobId, status: "succeeded", resultPath });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    // Surface the callback-path failure to Sentry first (captured even if the
+    // cleanup/markJobFailed below throws). jobId is a UUID (not PII). flush before
+    // returning: the edge isolate can be frozen right after the response, dropping
+    // the async transport send.
+    Sentry.captureException(err, { tags: { route: "enhance.callback" }, extra: { jobId } });
+    await Sentry.flush(2000);
     // If the result was already uploaded before the throw, delete it so it never
     // orphans (F5). The source is handled by the now-guarded markJobFailed below.
     if (resultPath) {

@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "lumina-clean-ai",
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  "main": "./sentry.server.config.ts",
   "compatibility_date": "2026-05-08",
   "compatibility_flags": ["nodejs_compat", "disable_nodejs_process_v2"],
   "assets": {
@@ -11,5 +11,19 @@
   },
   "observability": {
     "enabled": true,
+  },
+  // Server-runtime Sentry environment tag. Read in sentry.server.config.ts as
+  // env.PUBLIC_SENTRY_ENVIRONMENT (workerd runtime, NOT the build-time client var
+  // baked by astro:env). Without this the server entry falls back to "development"
+  // and prod events land in the wrong stream. The client bundle gets its own value
+  // from the CI build env (PUBLIC_SENTRY_ENVIRONMENT=production).
+  "vars": {
+    "PUBLIC_SENTRY_ENVIRONMENT": "production",
+  },
+  // Exposes env.CF_VERSION_METADATA = { id, tag, timestamp } so the Sentry server
+  // entry can tag events with the deploy `release` (id) — regressions attribute to
+  // a deploy. Read in sentry.server.config.ts; absent binding → release undefined.
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA",
   },
 }
