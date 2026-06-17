@@ -364,15 +364,15 @@ Finalize _what_ gets captured and _how clean_ events are: best-effort swallows a
 - [x] 3.1 Type checking passes: `npm run typecheck` — exit 0
 - [x] 3.2 Linting passes: `npm run lint` — exit 0 (full repo; CRLF baseline no longer present)
 - [x] 3.3 Unit tests pass incl. scrub test: `npm run test:unit` — 156 passed (scrub: 11)
-- [~] 3.4 Deno check passes: `deno check supabase/functions/enhance/index.ts` — CI-gated (no standalone deno locally); serve smoke re-verifies the Deno scrub mirror + new captureMessage sites
+- [x] 3.4 Deno check passes: `deno check supabase/functions/enhance/index.ts` — CI-gated; green on master (run 27672305292) after the `--config` fix (see lessons / memory deno-check-needs-config-flag)
 - [x] 3.5 Build with source-map upload succeeds (or skips cleanly without token): `npm run build` — exit 0 (no token → skip warning, build OK)
-- [ ] 3.6 (Conditional) Scoped Stryker on touched §4 risk modules if `/10x-impl-review` fires it
+- [~] 3.6 (Conditional) Scoped Stryker on touched §4 risk modules if `/10x-impl-review` fires it — impl-review consciously SKIPPED: the touch to photo-job.service.ts is the observability seam only (no business-logic change), so no qualifying mutants (reviews/impl-review.md Notes)
 
 #### Manual
 
-- [ ] 3.7 Production/preview event shows a readable, source-mapped stack trace
-- [ ] 3.8 Auth-path error event has no email / no `error.message`; client response stays neutral
-- [ ] 3.9 Signed-URL-bearing error shows the URL redacted in the payload
-- [ ] 3.10 Transaction/span (client signed-`result.*` fetch trace) shows the URL redacted (`beforeSendTransaction`)
-- [ ] 3.11 Swallow-site trigger appears as a warning, behavior unchanged
-- [ ] 3.12 Events carry the correct `release` tag after deploy
+- [~] 3.7 Production event shows a readable, source-mapped stack trace — verified 2026-06-17: capture works + tags correct, but source maps DON'T resolve (client + server stacks minified; debug-ID/`sourcemaps.assets` gap). Follow-up: follow-ups/review-fixes.md §3.7. Non-blocking (server frames still name the failing component)
+- [x] 3.8 Auth-path error event has no email / no `error.message`; client response stays neutral — verified 2026-06-17 via `/sentry-verify?case=signedurl`: email rendered `[email]`; neutral client response is by-design + unit-tested
+- [x] 3.9 Signed-URL-bearing error shows the URL redacted in the payload — verified 2026-06-17: `…/result.jpg?[redacted]` (token stripped) on a real prod server event
+- [~] 3.10 Transaction/span (client signed-`result.*` fetch trace) shows the URL redacted (`beforeSendTransaction`) — scrub span path is unit-tested (sentry-scrub.test.ts); live span not forced (5% sampled). Follow-up: follow-ups/review-fixes.md §3.10
+- [x] 3.11 Swallow-site trigger appears as a warning, behavior unchanged — verified 2026-06-17 via `/sentry-verify?case=warning`: level=warning, message scrubbed
+- [x] 3.12 Events carry the correct `release` tag after deploy — verified 2026-06-17: client event tagged release `48a7331…` (deploy commit)
