@@ -25,6 +25,17 @@ export default defineConfig({
         project: process.env.SENTRY_PROJECT,
         authToken: process.env.SENTRY_AUTH_TOKEN,
       },
+      // The @astrojs/cloudflare build emits both client (`dist/_astro/`) and
+      // server (`dist/_worker.js/`) bundles under `dist/`. The default asset
+      // discovery missed them on this adapter — deploy log showed
+      // "Didn't find any matching sources for debug ID upload" and prod events
+      // stayed minified (verification 2026-06-17, follow-ups/review-fixes.md §3.7).
+      // Point the upload at dist/** and delete the emitted maps after upload so
+      // they never ship to the browser.
+      sourcemaps: {
+        assets: ["dist/**/*"],
+        filesToDeleteAfterUpload: ["dist/**/*.map"],
+      },
     }),
   ],
   vite: {
