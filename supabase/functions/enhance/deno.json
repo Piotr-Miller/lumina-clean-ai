@@ -1,6 +1,7 @@
 {
   "imports": {
     "@/types": "../../../src/types.ts",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.99.1"
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.99.1",
+    "@sentry/deno": "npm:@sentry/deno@^10.58.0"
   }
 }

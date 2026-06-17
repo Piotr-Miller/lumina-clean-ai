@@ -31,6 +31,20 @@ const SWEEP_MAX = 100;
 // within the ≤24h retention NFR (Risk #5).
 const ABANDONED_SOURCE_RETENTION_MS = 82_800_000; // 23h
 
+// Observability seam (Phase 3 of sentry-integration). This module is imported by
+// BOTH runtimes — the workerd app (@sentry/cloudflare) and the Deno Edge Function
+// (@sentry/deno) — so it MUST stay SDK-free. Each runtime wires its own Sentry at
+// init via setObservabilityWarnCapture; the default is log-only (no-op). The
+// best-effort swallow sites below call it ALONGSIDE their existing console.warn so
+// silent degradation surfaces as a Sentry *warning* (not an error — no alert noise
+// or quota burn). Capture-hook failures must never affect job logic, so the swallow
+// behavior is unchanged. The shared scrub (sentry-scrub.ts) redacts the message.
+type WarnCapture = (message: string) => void;
+let captureWarning: WarnCapture = () => undefined;
+export function setObservabilityWarnCapture(fn: WarnCapture): void {
+  captureWarning = fn;
+}
+
 /**
  * Best-effort delete of a private `photos` object, shared by every terminal
  * transition. Swallows storage errors with a `console.warn` — an orphaned
@@ -42,8 +56,10 @@ const ABANDONED_SOURCE_RETENTION_MS = 82_800_000; // 23h
 async function bestEffortRemove(admin: SupabaseClient, path: string, label: string): Promise<void> {
   const { error } = await admin.storage.from(PHOTOS_BUCKET).remove([path]);
   if (error) {
+    const msg = `${label}: object delete for ${path} failed: ${error.message}`;
     // eslint-disable-next-line no-console
-    console.warn(`${label}: object delete for ${path} failed: ${error.message}`);
+    console.warn(msg);
+    captureWarning(msg);
   }
 }
 
@@ -395,11 +411,11 @@ export async function sweepStalePendingJobsForOwner(
     }
     return sweptCount;
   } catch (err) {
-    // Best-effort: never block job creation. Log and report zero swept.
+    // Best-effort: never block job creation. Log + capture, report zero swept.
+    const msg = `sweepStalePendingJobsForOwner: sweep failed for user ${userId}: ${err instanceof Error ? err.message : String(err)}`;
     // eslint-disable-next-line no-console
-    console.warn(
-      `sweepStalePendingJobsForOwner: sweep failed for user ${userId}: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    console.warn(msg);
+    captureWarning(msg);
     return 0;
   }
 }
@@ -462,10 +478,10 @@ export async function sweepAbandonedSourcesGlobally(
     }
     flipped = (data ?? []).length;
   } catch (err) {
+    const msg = `sweepAbandonedSourcesGlobally: row-flip pass failed: ${err instanceof Error ? err.message : String(err)}`;
     // eslint-disable-next-line no-console
-    console.warn(
-      `sweepAbandonedSourcesGlobally: row-flip pass failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    console.warn(msg);
+    captureWarning(msg);
   }
 
   // Pass 2 — storage-first delete of stale source objects (status-agnostic).
@@ -494,10 +510,10 @@ export async function sweepAbandonedSourcesGlobally(
       );
     }
   } catch (err) {
+    const msg = `sweepAbandonedSourcesGlobally: storage-delete pass failed: ${err instanceof Error ? err.message : String(err)}`;
     // eslint-disable-next-line no-console
-    console.warn(
-      `sweepAbandonedSourcesGlobally: storage-delete pass failed: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    console.warn(msg);
+    captureWarning(msg);
   }
 
   return { flipped, deleted };

@@ -26,10 +26,16 @@ jobs:
       # functions/** is excluded from the Astro tsc/eslint graph (see
       # context/foundation/lessons.md), so `deno check` is its ONLY static
       # coverage — and running it here (not just in `deploy`) gates PRs too.
+      # --config is required: run from the repo root, deno would otherwise
+      # discover no deno.json (none at root) and resolve bare specifiers from
+      # the app's node_modules (installed by `npm ci`). That hides @sentry/deno,
+      # which lives ONLY in the function's import map — yielding a spurious
+      # "not a dependency" error. Pointing at the function's deno.json loads its
+      # import map so the npm:@sentry/deno specifier resolves.
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno check supabase/functions/enhance/index.ts
+      - run: deno check --config supabase/functions/enhance/deno.json supabase/functions/enhance/index.ts
       - run: npm run build
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -321,6 +327,18 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          # Sentry build-time env. SENTRY_AUTH_TOKEN drives source-map upload (the
+          # @sentry/astro integration uploads during `npm run build` then cleans the
+          # emitted maps). PUBLIC_SENTRY_DSN + PUBLIC_SENTRY_ENVIRONMENT are baked
+          # into the client bundle (public by design). The SERVER DSN + environment
+          # are Worker RUNTIME values (wrangler secret/var), not build-time — see
+          # change.md runtime prerequisites. All optional: absent token → upload is
+          # skipped, absent DSN → SDK no-ops.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
+          PUBLIC_SENTRY_ENVIRONMENT: production
       # Edge Function → Supabase. Use the version-pinned supabase CLI from
       # devDependencies via npx (deterministic — no unpinned global install).
       # --use-api forces API bundling (no Docker on the runner); the deploy

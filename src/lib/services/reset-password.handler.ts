@@ -22,6 +22,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const FORGOT_PASSWORD_PATH = "/auth/forgot-password";
 
+// Observability seam (Phase 3 of sentry-integration). The app wires Sentry here at
+// init so a real send failure (rate-limit / SMTP / misconfig) is captured
+// server-side for visibility — WITHOUT changing the neutral client response
+// (anti-enumeration) and WITHOUT pulling an SDK into this env-free, test-imported
+// module (Lesson #4). Default is no-op. The shared scrub (sentry-scrub.ts) redacts
+// email / error.message from the event body AND console breadcrumbs.
+type AuthErrorCapture = (error: unknown, context: { tag: string }) => void;
+let captureAuthError: AuthErrorCapture = () => undefined;
+export function setAuthErrorCapture(fn: AuthErrorCapture): void {
+  captureAuthError = fn;
+}
+
 /** Shown when the reset email genuinely fails to send (rate-limit / SMTP / misconfig). One fixed string for every cause. */
 export const SEND_FAILURE_MESSAGE = "We couldn't send the reset email right now. Please try again in a few minutes.";
 
@@ -65,6 +77,9 @@ export async function resetPasswordResponse({ supabase, request }: ResetPassword
   if (!supabase) {
     // eslint-disable-next-line no-console
     console.error("resetPasswordForEmail skipped: Supabase is not configured");
+    captureAuthError(new Error("resetPasswordForEmail skipped: Supabase is not configured"), {
+      tag: "reset_password.not_configured",
+    });
     return errorPath(SEND_FAILURE_MESSAGE);
   }
 
@@ -77,6 +92,9 @@ export async function resetPasswordResponse({ supabase, request }: ResetPassword
     // The message is NEVER surfaced to the user (anti-enumeration + no detail leak).
     // eslint-disable-next-line no-console
     console.error("resetPasswordForEmail failed:", error.message);
+    // Capture server-side for visibility; the scrub strips email/error.message
+    // from the event + breadcrumbs. Client response stays the neutral envelope.
+    captureAuthError(error, { tag: "reset_password.send_failed" });
     return errorPath(SEND_FAILURE_MESSAGE);
   }
 
