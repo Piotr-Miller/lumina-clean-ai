@@ -59,6 +59,23 @@ const reactConfig = tseslint.config({
   },
 });
 
+// Root config files (astro.config.mjs, etc.) run under Node at build time, so
+// `process` and friends are valid globals there. ESLint's recommended `no-undef`
+// otherwise errors on `process.env` reads — e.g. Sentry sourceMapsUploadOptions,
+// which pulls org/project/authToken from the CI build env.
+const nodeConfigFilesConfig = tseslint.config({
+  files: ["*.config.{js,mjs,cjs,ts}"],
+  languageOptions: {
+    globals: {
+      process: "readonly",
+      console: "readonly",
+      __dirname: "readonly",
+      module: "writable",
+      require: "readonly",
+    },
+  },
+});
+
 const astroConfig = tseslint.config({
   files: ["**/*.astro"],
   rules: {
@@ -82,6 +99,7 @@ export default tseslint.config(
   // runtime. Excluded from tsconfig too (see tsconfig.json "exclude").
   { ignores: ["supabase/functions/**"] },
   baseConfig,
+  nodeConfigFilesConfig,
   reactConfig,
   eslintPluginAstro.configs["flat/recommended"],
   ...eslintPluginAstro.configs["flat/jsx-a11y-recommended"],
