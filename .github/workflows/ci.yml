@@ -26,10 +26,16 @@ jobs:
       # functions/** is excluded from the Astro tsc/eslint graph (see
       # context/foundation/lessons.md), so `deno check` is its ONLY static
       # coverage — and running it here (not just in `deploy`) gates PRs too.
+      # --config is required: run from the repo root, deno would otherwise
+      # discover no deno.json (none at root) and resolve bare specifiers from
+      # the app's node_modules (installed by `npm ci`). That hides @sentry/deno,
+      # which lives ONLY in the function's import map — yielding a spurious
+      # "not a dependency" error. Pointing at the function's deno.json loads its
+      # import map so the npm:@sentry/deno specifier resolves.
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno check supabase/functions/enhance/index.ts
+      - run: deno check --config supabase/functions/enhance/deno.json supabase/functions/enhance/index.ts
       - run: npm run build
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
