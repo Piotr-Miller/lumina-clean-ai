@@ -14,12 +14,12 @@ export default defineConfig({
   // generation + upload. Server capture is the custom workerd entry point
   // (sentry.server.config.ts via wrangler `main`), NOT this integration.
   // org/project/authToken come from the BUILD env (CI deploy job); absent
-  // locally → upload is skipped (build still succeeds). When map generation is
-  // left unconfigured, the SDK auto-enables `vite.build.sourcemap: "hidden"`
-  // and deletes the emitted maps PER-BUILD after upload — so we deliberately do
-  // NOT set `filesToDeleteAfterUpload`: a repo-wide glob raced the adapter's two
-  // vite builds (client + server) and dropped maps before upload, leaving prod
-  // frames minified (follow-up 3.7 — see context/changes/sentry-prod-sourcemaps).
+  // locally → upload is skipped (build still succeeds). Source-map generation is
+  // configured explicitly in the `vite` block below for BOTH the SSR build and
+  // the client island build (Astro 6 needs the client env key — see that
+  // comment). `filesToDeleteAfterUpload` below deletes the emitted maps AFTER
+  // upload so they never ship publicly (follow-up 3.7 — see
+  // context/changes/sentry-prod-sourcemaps).
   integrations: [
     react(),
     sitemap(),
