@@ -123,6 +123,7 @@ repo. They can be deleted manually at any time.
 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)   | `production-deployment`             | done   | `roadmap` `slice` `status:ready`                 |
 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)   | `cloud-job-retention-cleanup`       | done   | `roadmap` `slice` `status:ready`                 |
 | S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`          | done   | `roadmap` `slice` `status:ready`                 |
+| S-12       | [#52](https://github.com/Piotr-Miller/lumina-clean-ai/issues/52) | `adaptive-enhancement-parameters`   | ready  | `roadmap` `slice` `status:ready` `phase:post-mvp` |
 
 ⭐ = north star (validation milestone).
 
@@ -137,6 +138,8 @@ repo. They can be deleted manually at any time.
 > **2026-06-06 (non-roadmap chore):** added **#14** `disable-workers-dev-subdomain` — infra/branding follow-up to disable the default `workers.dev` route once `luminacleanai.com` (custom domain added 2026-06-06) is the established prod URL, so prod is served only at the branded domain. Deferred until after S-07 go-live testing (workers.dev still referenced during cutover). `chore` label; absent from the roadmap→issue table. Change folder: `context/changes/disable-workers-dev-subdomain/`.
 
 > **2026-06-11 (non-roadmap chore):** added **#19** `jobs-rls-seed-flake` — test-hardening follow-up to make `tests/jobs.rls.test.ts` `seedJob` resilient to a transient Kong/PostgREST 502 (`An invalid response was received from the upstream server`) on its setup insert against the ephemeral local Supabase stack. Surfaced as a one-off `integration`-job failure on run 27338381004 (PR #18, docs-only — env, not code); passed on re-run. `chore` label; absent from the roadmap→issue table. Change folder: `context/changes/jobs-rls-seed-flake/`.
+
+> **2026-06-18 (post-MVP UX/quality):** added **S-12 (#52)** `adaptive-enhancement-parameters` — add a responsive parameter panel beside the photo; expose Local `gamma`/blur and Bread `gamma`/`strength`; let Auto populate visible slider values and let the user override any value manually. Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Change folder: `context/changes/adaptive-enhancement-parameters/`.
 
 ## Status updates (post-creation)
 

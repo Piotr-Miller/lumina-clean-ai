@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-14
+updated: 2026-06-18
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -40,6 +40,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-08 | cloud-job-retention-cleanup       | trust uploaded sources are gone within 24h even on failed/abandoned jobs                                                                  | F-01, S-04       | NFR: source not retained beyond 24h                        | done   |
 | S-09 | cloud-source-url-ttl-fix          | (reliability) cloud jobs survive a slow Replicate cold boot without source-URL expiry                                                     | S-04             | MVP success: cloud flow works end-to-end (NFR reliability) | done   |
 | S-10 | retention-reaper                  | (post-MVP hardening) sources stay gone within 24h even for legacy/abandon-never-return/best-effort-fail jobs — scheduled pg_cron backstop | F-01, S-08, S-07 | NFR: source not retained beyond 24h (backstop)             | done   |
+| S-12 | adaptive-enhancement-parameters    | (post-MVP UX/quality) tune Local or Bread in a right-side panel, start from Auto recommendations, and override any slider manually         | S-01, S-04       | Post-MVP enhancement control; extends US-01, US-02          | new    |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
 
@@ -222,6 +223,20 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** Low / additive — backstops, never replaces, the inline delete. Storage-first delete keys on object age (status-agnostic = the literal NFR invariant); the SQL flip spares fresh in-flight jobs (pinned by a mutation-killed test). Both `security definer` reaper functions are anon-locked (execute revoked from public/anon/authenticated). Shipped PR #30; reaper live on prod (`pg_cron reaper-hourly`).
 - **Status:** done
 
+### S-12: Manual and Auto enhancement parameters (post-MVP UX/quality)
+
+- **Phase:** `phase:post-mvp`
+- **Outcome:** after selecting a photo, a user sees a responsive parameter panel to the right of the image (moved below it on narrow screens), can adjust Local `gamma` and blur intensity or Bread `gamma` and `strength`, and can start from Auto-recommended values while retaining the ability to override any recommendation by moving its slider.
+- **Change ID:** adaptive-enhancement-parameters
+- **GitHub issue:** [#52](https://github.com/Piotr-Miller/lumina-clean-ai/issues/52)
+- **PRD refs:** Post-MVP enhancement quality and control; extends US-01 / US-02 and FR-008 / FR-009 without replacing the existing Local or Bread engines
+- **Prerequisites:** S-01 (Local engine + shared image UI), S-04 (Bread pipeline + Cloud result flow)
+- **Related slice:** S-11 `bread-chroma-postpass`; avoid parallel implementation until the Bread input contract and ownership boundary are reconciled. S-12 exposes only Bread `gamma`/`strength`, while S-11's chroma post-pass remains internal.
+- **Sequencing:** **post-MVP**. Prefer before any future model-selection/fallback slice so later engines must adapt to an established parameter-panel contract. Research and plan the Auto recommendation mechanism, safe ranges, and Cloud preview/reprocessing cost before implementation.
+- **Blockers:** representative low-light image set for validating over-brightening; decision on the Auto analyzer (deterministic image metrics, vision model, or hybrid); explicit Cloud slider apply/preview behavior so dragging does not accidentally create unbounded paid Bread jobs
+- **Risk:** Medium. Auto can look authoritative while choosing poor values; frequent Cloud slider changes can multiply paid jobs; a desktop right-side panel can crowd mobile layouts. Recommendations must stay visible and editable, values must be bounded, and Cloud processing must require an intentional apply action or equivalent cost-safe interaction.
+- **Status:** new
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                         | Suggested issue title                                              | Ready for `/10x-plan` | Notes                                                                                                                                                                                                                            |
@@ -236,6 +251,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-07       | production-deployment             | Production deployment / go-live (Cloudflare + prod Supabase)       | done                  | Archived 2026-06-06 → `context/archive/2026-06-04-production-deployment/`. Issue #8.                                                                                                                                             |
 | S-08       | cloud-job-retention-cleanup       | 24h-retention cleanup for failed/abandoned cloud jobs              | done                  | Prereq F-01/S-04 (done). Closes privacy-NFR gap punted by F-01/S-03/S-04. Inline delete-on-failure, NOT pg_cron. Independent of S-05. Archived 2026-06-07 → `context/archive/2026-06-07-cloud-job-retention-cleanup/`. Issue #9. |
 | S-09       | cloud-source-url-ttl-fix          | Source signed-URL TTL fix (cold-boot reliability)                  | done                  | Archived 2026-06-07 → `context/archive/2026-06-06-cloud-source-url-ttl-fix/`. Issue #12.                                                                                                                                         |
+| S-12       | adaptive-enhancement-parameters   | Manual + Auto parameter panel for Local and Bread                  | yes                   | `phase:post-mvp`. Issue #52. Run `/10x-research adaptive-enhancement-parameters`; lock Auto analysis and cost-safe Cloud apply/preview semantics before planning.                                                              |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 
