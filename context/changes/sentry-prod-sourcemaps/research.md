@@ -160,3 +160,17 @@ The decisive remaining unknowns can only be answered with a **real-token CI buil
 2. **Server end-to-end:** Does `no_bundle: true` truly preserve server debug IDs so uploaded maps match at runtime (sidestepping #14841)? Confirm with a deployed server error.
 3. Is the **repo-wide `filesToDeleteAfterUpload`** the actual trigger of _"Didn't find any matching sources"_ by racing the two builds? (Removing it is the cheapest test.)
 4. Are 10.58.0-tag behaviors byte-identical to the `develop` source the research read? (Low risk; the empirical builds anchor this for our installed version.)
+
+## Phase 2 deploy outcome + Phase 3 client root cause (2026-06-18, RESOLVED for the client)
+
+**Phase 1 (config hoist + drop manual delete glob) did NOT move the symptom.** Deployed to prod (#48→guard-fix #49, release `b67777f3` / git `8d5b382`) and verified live via the re-added `/sentry-verify` route:
+
+- **Client (`case=client`)** — still **fully minified**: frame `_astro/SentryVerifyClient.BhaMzmHn.js:1`, debug ID present (`cac153b5…`) but no matching map. The build still logged `Didn't find any matching sources for debug ID upload` for the client build.
+- **Server (`case=ssr`)** — readable but **not source-mapped**: frame `chunks/sentry-verify_*.mjs:43` (unminified server bundle, embeds the `.astro` path) — same state as the original §3.7. Event `release` = CF version id `b67777f3…` while maps upload under the git sha (release mismatch). Accepted as "readable enough" (original low-severity triage); **Phase 3 scoped to the client only** (user decision).
+
+**Client root cause — TWO stacked bugs (file:line from a node_modules sweep):**
+
+1. **Astro 6 client build emits no maps from `vite.build.sourcemap`.** `astro/dist/core/build/static-build.js:288` reads the client Vite environment's sourcemap **only** from `vite.environments.client.build.sourcemap`, defaulting to `false`, and does NOT inherit `vite.build.sourcemap`. `@sentry/astro` (`integration/index.js:74-78,221`) only ever sets `vite.build.sourcemap` → reaches the SSR build, never the client. So client maps are never generated (server maps are).
+2. **`@sentry/astro` auto-injects an unconditional delete glob.** With `vite.build.sourcemap` left "unset", `integration/index.js:63-67` auto-sets `filesToDeleteAfterUpload: ["./dist/**/client/**/*.map","./dist/**/server/**/*.map"]`, and `@sentry/rollup-plugin` `writeBundle` runs `deleteArtifacts()` in a `finally` with **no auth-token gate** (`bundler-plugin-core` `:5927-5940`). So even the maps that the client-env key would generate get deleted. (Phase 1 removing the _manual_ glob ironically triggered this auto-inject.)
+
+**Fix (Phase 3) — locally proven, no token:** set `vite.environments.client.build.sourcemap: "hidden"` (Bug 1) + `vite.build.sourcemap: "hidden"` (server maps + flips @sentry off "unset") + explicit `sourcemaps.filesToDeleteAfterUpload: ["./dist/**/*.map"]` (delete AFTER upload — each of the two sequential builds uploads in `try` before the `finally` delete, so no cross-build race). Empirical: with `filesToDeleteAfterUpload: []` a tokenless build now emits **16 client maps** (incl. `SentryVerifyClient.*.js.map`) + 38 server; with `["./dist/**/*.map"]` the build leaves **0** client maps (deleted post-upload → the Phase 2 deploy guard passes). In CI (token) the client maps upload to Sentry with matching debug IDs → client de-minifies. **Server still readable-not-mapped (accepted).**
