@@ -292,7 +292,7 @@ No data migration. Build/deploy-config only. Rollback = revert the `astro.config
 
 - [ ] 2.4 Deploy log shows no `Didn't find any matching sources for debug ID upload` warning
 - [ ] 2.5 `case=ssr`: server frames resolve to original sources in Sentry
-- [ ] 2.6 `case=client`: client frames resolve to `SentryVerifyClient.tsx` in Sentry
+- [x] 2.6 `case=client`: client frames resolve to `SentryVerifyClient.tsx` in Sentry — 6f0016a
 - [x] 2.7 Deployed `/_astro/<chunk>.js.map` returns 404 (no maps shipped)
 - [x] 2.8 Per-runtime outcomes recorded in research.md + change.md
 
@@ -300,21 +300,21 @@ No data migration. Build/deploy-config only. Rollback = revert the `astro.config
 
 #### Automated
 
-- [ ] 3.1 Build + CI green on the contingency PR
+- [x] 3.1 Build + CI green on the contingency PR — 6f0016a
 
 #### Manual
 
-- [ ] 3.2 Re-triggered case(s) now resolve to original sources in Sentry
+- [x] 3.2 Re-triggered case(s) now resolve to original sources in Sentry — 6f0016a
 
 ### Phase 4: Remove verify route + close
 
 #### Automated
 
 - [ ] 4.1 Build + CI green with route removed: `npm run build`
-- [ ] 4.2 Route file removed: `test ! -f src/pages/sentry-verify.astro`
+- [x] 4.2 Route file removed: `test ! -f src/pages/sentry-verify.astro`
 
 #### Manual
 
 - [ ] 4.3 Deployed `/sentry-verify` returns 404 / not present
 - [ ] 4.4 A subsequent real error in Sentry still resolves to original sources
-- [ ] 4.5 Memory `sentry-prod-followups` reflects 3.7 resolved
+- [x] 4.5 Memory `sentry-prod-followups` reflects 3.7 resolved
