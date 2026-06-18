@@ -1,10 +1,10 @@
 ---
 change_id: sentry-prod-sourcemaps
 title: Fix prod Sentry stack traces resolving to minified code (follow-up 3.7)
-status: implementing
+status: archived
 created: 2026-06-18
 updated: 2026-06-18
-archived_at: null
+archived_at: 2026-06-18T22:06:26Z
 ---
 
 ## Notes
