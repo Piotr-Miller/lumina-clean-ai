@@ -31,11 +31,31 @@ export default defineConfig({
       // auto-filters to .js/.map and it covers both dist/client and dist/server.
       sourcemaps: {
         assets: ["./dist/**/*"],
+        // Delete the emitted maps AFTER upload so they never ship publicly. Each
+        // of Astro's two sequential builds uploads (in writeBundle `try`) before
+        // this deletion (`finally`), so the repo-wide glob is safe — no cross-build
+        // race. Set explicitly (not left to @sentry/astro's auto-inject) so it
+        // applies even though `vite.build.sourcemap` is now configured.
+        filesToDeleteAfterUpload: ["./dist/**/*.map"],
       },
     }),
   ],
   vite: {
     plugins: [tailwindcss()],
+    // Source-map generation for BOTH builds (follow-up 3.7). Astro 6 reads the
+    // CLIENT island build's sourcemap ONLY from `vite.environments.client.build`
+    // (astro core static-build.js — the client env defaults to `false` and does
+    // NOT inherit `vite.build.sourcemap`); `vite.build.sourcemap` drives the SSR
+    // build. `@sentry/astro` only sets `vite.build.sourcemap`, so without the
+    // client-env key the client never emits maps → prod client frames stay
+    // minified. Setting `vite.build.sourcemap` here also flips @sentry/astro off
+    // its "unset" path so it does NOT auto-inject a delete glob (we set our own).
+    build: { sourcemap: "hidden" },
+    environments: {
+      client: {
+        build: { sourcemap: "hidden" },
+      },
+    },
   },
   adapter: cloudflare(),
   env: {

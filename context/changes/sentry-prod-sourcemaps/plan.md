@@ -285,16 +285,16 @@ No data migration. Build/deploy-config only. Rollback = revert the `astro.config
 #### Automated
 
 - [x] 2.1 Build + typecheck + lint pass with the route present — e7ebae6
-- [ ] 2.2 CI pipeline green on the PR
-- [ ] 2.3 Pre-deploy guard: zero `.map` in `dist/client` on the token-bearing build (gates deploy)
+- [x] 2.2 CI pipeline green on the PR
+- [x] 2.3 Pre-deploy guard: zero `.map` in `dist/client` on the token-bearing build (gates deploy)
 
 #### Manual
 
 - [ ] 2.4 Deploy log shows no `Didn't find any matching sources for debug ID upload` warning
 - [ ] 2.5 `case=ssr`: server frames resolve to original sources in Sentry
 - [ ] 2.6 `case=client`: client frames resolve to `SentryVerifyClient.tsx` in Sentry
-- [ ] 2.7 Deployed `/_astro/<chunk>.js.map` returns 404 (no maps shipped)
-- [ ] 2.8 Per-runtime outcomes recorded in research.md + change.md
+- [x] 2.7 Deployed `/_astro/<chunk>.js.map` returns 404 (no maps shipped)
+- [x] 2.8 Per-runtime outcomes recorded in research.md + change.md
 
 ### Phase 3: Contingency — only if a runtime is still minified
 
