@@ -269,22 +269,22 @@ No data migration. Build/deploy-config only. Rollback = revert the `astro.config
 
 #### Automated
 
-- [x] 1.1 Production build succeeds: `npm run build`
-- [x] 1.2 Type checking passes: `npm run typecheck`
-- [x] 1.3 Linting passes on touched file: `npx eslint astro.config.mjs`
-- [x] 1.4 No `.map` files in `dist/client`: `find dist/client -name '*.map'` empty
-- [x] 1.5 Unit suite unaffected: `npm run test:unit`
+- [x] 1.1 Production build succeeds: `npm run build` — 1508dd8
+- [x] 1.2 Type checking passes: `npm run typecheck` — 1508dd8
+- [x] 1.3 Linting passes on touched file: `npx eslint astro.config.mjs` — 1508dd8
+- [x] 1.4 No `.map` files in `dist/client`: `find dist/client -name '*.map'` empty — 1508dd8
+- [x] 1.5 Unit suite unaffected: `npm run test:unit` — 1508dd8
 
 #### Manual
 
-- [x] 1.6 Config matches canonical 10.x shape (top-level org/project/authToken; no `sourceMapsUploadOptions`/`filesToDeleteAfterUpload`)
-- [x] 1.7 Islands hydrate under `npm run build && npx wrangler dev`
+- [x] 1.6 Config matches canonical 10.x shape (top-level org/project/authToken; no `sourceMapsUploadOptions`/`filesToDeleteAfterUpload`) — 1508dd8
+- [x] 1.7 Islands hydrate under `npm run build && npx wrangler dev` — 1508dd8
 
 ### Phase 2: Temporary verify harness + CI deploy + live verification
 
 #### Automated
 
-- [ ] 2.1 Build + typecheck + lint pass with the route present
+- [x] 2.1 Build + typecheck + lint pass with the route present
 - [ ] 2.2 CI pipeline green on the PR
 - [ ] 2.3 Pre-deploy guard: zero `.map` in `dist/client` on the token-bearing build (gates deploy)
 
