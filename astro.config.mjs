@@ -11,30 +11,26 @@ import sentry from "@sentry/astro";
 export default defineConfig({
   output: "server",
   // @sentry/astro wires the client SDK (sentry.client.config.ts) + source-map
-  // upload. Server capture is the custom workerd entry point
+  // generation + upload. Server capture is the custom workerd entry point
   // (sentry.server.config.ts via wrangler `main`), NOT this integration.
-  // sourceMapsUploadOptions reads org/project/authToken from the BUILD env (CI
-  // deploy job). All absent locally → upload is skipped with a warning (build
-  // still succeeds); the integration also cleans up emitted maps after upload.
+  // org/project/authToken come from the BUILD env (CI deploy job); absent
+  // locally → upload is skipped (build still succeeds). When map generation is
+  // left unconfigured, the SDK auto-enables `vite.build.sourcemap: "hidden"`
+  // and deletes the emitted maps PER-BUILD after upload — so we deliberately do
+  // NOT set `filesToDeleteAfterUpload`: a repo-wide glob raced the adapter's two
+  // vite builds (client + server) and dropped maps before upload, leaving prod
+  // frames minified (follow-up 3.7 — see context/changes/sentry-prod-sourcemaps).
   integrations: [
     react(),
     sitemap(),
     sentry({
-      sourceMapsUploadOptions: {
-        org: process.env.SENTRY_ORG,
-        project: process.env.SENTRY_PROJECT,
-        authToken: process.env.SENTRY_AUTH_TOKEN,
-      },
-      // The @astrojs/cloudflare build emits both client (`dist/_astro/`) and
-      // server (`dist/_worker.js/`) bundles under `dist/`. The default asset
-      // discovery missed them on this adapter — deploy log showed
-      // "Didn't find any matching sources for debug ID upload" and prod events
-      // stayed minified (verification 2026-06-17, follow-ups/review-fixes.md §3.7).
-      // Point the upload at dist/** and delete the emitted maps after upload so
-      // they never ship to the browser.
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Broad glob is the @sentry maintainer recommendation — the plugin
+      // auto-filters to .js/.map and it covers both dist/client and dist/server.
       sourcemaps: {
-        assets: ["dist/**/*"],
-        filesToDeleteAfterUpload: ["dist/**/*.map"],
+        assets: ["./dist/**/*"],
       },
     }),
   ],
