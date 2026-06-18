@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-14
+updated: 2026-06-18
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -40,6 +40,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-08 | cloud-job-retention-cleanup       | trust uploaded sources are gone within 24h even on failed/abandoned jobs                                                                  | F-01, S-04       | NFR: source not retained beyond 24h                        | done   |
 | S-09 | cloud-source-url-ttl-fix          | (reliability) cloud jobs survive a slow Replicate cold boot without source-URL expiry                                                     | S-04             | MVP success: cloud flow works end-to-end (NFR reliability) | done   |
 | S-10 | retention-reaper                  | (post-MVP hardening) sources stay gone within 24h even for legacy/abandon-never-return/best-effort-fail jobs — scheduled pg_cron backstop | F-01, S-08, S-07 | NFR: source not retained beyond 24h (backstop)             | done   |
+| S-11 | bread-chroma-postpass             | (post-MVP quality) get cleaner shadow colors from Bread without sacrificing luminance detail                                             | S-04, S-07       | Post-MVP cloud enhancement quality                         | new    |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
 
@@ -222,6 +223,20 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** Low / additive — backstops, never replaces, the inline delete. Storage-first delete keys on object age (status-agnostic = the literal NFR invariant); the SQL flip spares fresh in-flight jobs (pinned by a mutation-killed test). Both `security definer` reaper functions are anon-locked (execute revoked from public/anon/authenticated). Shipped PR #30; reaper live on prod (`pg_cron reaper-hourly`).
 - **Status:** done
 
+### S-11: Bread chroma-denoise post-pass and latest-version resolution (post-MVP quality)
+
+- **Phase:** `phase:post-mvp`
+- **Outcome:** a Cloud AI result keeps Bread's low-light enhancement while an adaptive programmatic YCbCr chroma-denoise post-pass reduces colored noise in dark and near-black regions without materially softening luminance detail. Bread is invoked through a provider-supported latest-model reference or equivalent controlled resolver instead of a hardcoded version hash.
+- **Change ID:** bread-chroma-postpass
+- **GitHub issue:** [#51](https://github.com/Piotr-Miller/lumina-clean-ai/issues/51)
+- **PRD refs:** Post-MVP cloud enhancement quality; extends US-01 / FR-009 without changing the MVP user flow
+- **Prerequisites:** S-04 (Bread pipeline + callback), S-07 (production Replicate integration)
+- **Parallel with:** adaptive-enhancement-parameters only after their parameter contracts and ownership boundaries are reconciled
+- **Sequencing:** **post-MVP**, after S-10. Research first: establish where the chroma-pass runs, its CPU/memory ceiling, supported image formats, and Replicate's exact latest-version semantics. Preserve auditability and rollback by recording the resolved Bread model version used for each prediction or deployment.
+- **Blockers:** representative low-light photo set for visual A/B validation; confirmed Replicate mechanism for following the latest Bread release without silently losing rollback control
+- **Risk:** Medium. An over-strong chroma-pass can bleed color across edges or desaturate shadows; an unpinned "latest" dependency can change output quality or input/output contracts without a code deploy. The implementation must be adaptive, bounded, tested on real photos, and retain resolved-version telemetry plus a rollback path.
+- **Status:** new
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                         | Suggested issue title                                              | Ready for `/10x-plan` | Notes                                                                                                                                                                                                                            |
@@ -236,6 +251,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-07       | production-deployment             | Production deployment / go-live (Cloudflare + prod Supabase)       | done                  | Archived 2026-06-06 → `context/archive/2026-06-04-production-deployment/`. Issue #8.                                                                                                                                             |
 | S-08       | cloud-job-retention-cleanup       | 24h-retention cleanup for failed/abandoned cloud jobs              | done                  | Prereq F-01/S-04 (done). Closes privacy-NFR gap punted by F-01/S-03/S-04. Inline delete-on-failure, NOT pg_cron. Independent of S-05. Archived 2026-06-07 → `context/archive/2026-06-07-cloud-job-retention-cleanup/`. Issue #9. |
 | S-09       | cloud-source-url-ttl-fix          | Source signed-URL TTL fix (cold-boot reliability)                  | done                  | Archived 2026-06-07 → `context/archive/2026-06-06-cloud-source-url-ttl-fix/`. Issue #12.                                                                                                                                         |
+| S-11       | bread-chroma-postpass             | Bread chroma-denoise post-pass + latest-version resolution         | yes                   | `phase:post-mvp`. Issue #51. Run `/10x-research bread-chroma-postpass`. Validate chroma-pass placement and Replicate latest-version/rollback semantics before planning.                                                         |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 
