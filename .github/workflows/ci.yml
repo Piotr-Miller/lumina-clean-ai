@@ -322,16 +322,13 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Pre-deploy privacy guard (follow-up 3.7): the token-bearing build uploads
+          # source maps to Sentry, then the SDK auto-deletes the emitted maps per-build.
+          # If any client .map survives, refuse to deploy rather than ship source publicly.
+          # NOTE: wrangler-action runs preCommands LINE-BY-LINE — the guard must be ONE line.
           preCommands: |
             npm run build
-            # Pre-deploy privacy guard (follow-up 3.7): the token-bearing build uploads
-            # source maps to Sentry and the SDK auto-deletes the emitted maps per-build.
-            # If any client .map survives, that cleanup failed and we'd ship source maps
-            # as public static assets — refuse to deploy rather than expose source.
-            if find dist/client -name '*.map' -print -quit | grep -q .; then
-              echo "::error::client source maps present in dist/client — refusing to deploy"
-              exit 1
-            fi
+            test -z "$(find dist/client -name '*.map')" || { echo "::error::client source maps present in dist/client — refusing to deploy"; exit 1; }
           command: deploy
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

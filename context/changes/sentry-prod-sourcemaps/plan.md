@@ -284,7 +284,7 @@ No data migration. Build/deploy-config only. Rollback = revert the `astro.config
 
 #### Automated
 
-- [x] 2.1 Build + typecheck + lint pass with the route present
+- [x] 2.1 Build + typecheck + lint pass with the route present — e7ebae6
 - [ ] 2.2 CI pipeline green on the PR
 - [ ] 2.3 Pre-deploy guard: zero `.map` in `dist/client` on the token-bearing build (gates deploy)
 
