@@ -75,8 +75,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [
-      "eslint --fix",
-      "vitest related --run --exclude **/jobs.rls.test.ts"
+      "eslint --fix"
     ],
     "*.{json,css,md}": [
       "prettier --write"

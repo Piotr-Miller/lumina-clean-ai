@@ -1,3 +1,9 @@
+# Abort on the first failing command — otherwise a failing `typecheck` would be
+# masked by a later passing `test:unit` (the script's exit code is the last
+# command's). The `while read` master-block loop below is unaffected (a loop
+# condition's non-zero exit does not trip `set -e`).
+set -e
+
 # Block direct pushes to master — PR-only flow. Server-side rulesets are
 # unavailable on this repo (private + GitHub Free), so this local guard is
 # the enforcement layer. PR merges happen server-side (gh pr merge / web UI),
@@ -12,3 +18,4 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 done
 
 npm run typecheck
+npm run test:unit
