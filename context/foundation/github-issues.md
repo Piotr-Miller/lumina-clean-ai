@@ -123,6 +123,8 @@ repo. They can be deleted manually at any time.
 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)   | `production-deployment`             | done   | `roadmap` `slice` `status:ready`                 |
 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)   | `cloud-job-retention-cleanup`       | done   | `roadmap` `slice` `status:ready`                 |
 | S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`          | done   | `roadmap` `slice` `status:ready`                 |
+| S-11       | [#51](https://github.com/Piotr-Miller/lumina-clean-ai/issues/51) | `bread-chroma-postpass`             | ready  | `roadmap` `slice` `status:ready` `phase:post-mvp` |
+| S-12       | [#52](https://github.com/Piotr-Miller/lumina-clean-ai/issues/52) | `adaptive-enhancement-parameters`   | ready  | `roadmap` `slice` `status:ready` `phase:post-mvp` |
 | S-13       | [#60](https://github.com/Piotr-Miller/lumina-clean-ai/issues/60) | `premium-retinexformer-enhancement` | ready  | `roadmap` `slice` `status:ready` `phase:post-mvp` |
 | S-14       | [#61](https://github.com/Piotr-Miller/lumina-clean-ai/issues/61) | `premium-max-tier`                  | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
 
@@ -143,6 +145,9 @@ repo. They can be deleted manually at any time.
 > **2026-06-19 (post-MVP Premium path):** added **S-13 (#60)** `premium-retinexformer-enhancement` — define the explicit Premium Retinexformer path after the Standard Bread pipeline, with a benchmark-first gate and separate timeout plus entitlement policy. Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Change folder: `context/changes/premium-retinexformer-enhancement/`.
 >
 > **2026-06-19 (post-MVP higher tier draft):** added **S-14 (#61)** `premium-max-tier` — a higher application tier above Premium that bundles the Retinexformer path with optional heavyweight denoise, Max-only presets, higher limits, priority scheduling, and batch workflow. Labels: `roadmap`, `slice`, `status:proposed`, `phase:post-mvp`. Change folder: `context/changes/premium-max-tier/`.
+
+> **2026-06-18 (post-MVP UX/quality):** added **S-12 (#52)** `adaptive-enhancement-parameters` — add a responsive parameter panel beside the photo; expose Local `gamma`/blur and Bread `gamma`/`strength`; let Auto populate visible slider values and let the user override any value manually. Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Change folder: `context/changes/adaptive-enhancement-parameters/`.
+> **2026-06-18 (post-MVP quality):** added **S-11 (#51)** `bread-chroma-postpass` — keep Bread/Replicate as the low-light enhancer, add an adaptive YCbCr chroma-denoise post-pass, and replace the hardcoded model-version hash with a controlled latest-version resolver that retains resolved-version telemetry and rollback. Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Change folder: `context/changes/bread-chroma-postpass/`.
 
 ## Status updates (post-creation)
 
