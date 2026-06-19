@@ -21,6 +21,10 @@ pnpm-debug.log*
 .dev.vars
 .wrangler/
 
+# nested git worktrees (e.g. Codex CLI sessions) — never type-checked or tracked
+# by the parent repo (they shadow tracked files → tsc duplicate-decl errors)
+_worktrees/
+
 # stryker mutation testing
 .stryker-tmp/
 reports/

@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-18
+updated: 2026-06-19
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -14,6 +14,7 @@ top_blocker: time
 > Derived from `context/foundation/prd.md` (v1) + auto-researched codebase baseline (2026-05-26).
 > Edit-in-place; archive when superseded.
 > Slices below are listed in dependency order. The "At a glance" table is the index.
+> **Phase tag:** every Foundation/Slice carries a `- **Phase:**` field — `phase:mvp` (the launch scope, fully delivered 2026-06-08) or `phase:post-mvp` (hardening / iteration added after launch). New slices must set it.
 
 ## Vision recap
 
@@ -73,6 +74,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### F-01: Photo storage + job records (private, RLS-gated)
 
+- **Phase:** `phase:mvp`
 - **Outcome:** (foundation) a private Supabase Storage bucket and a jobs/predictions table exist with per-user RLS, signed-upload capability, a 24-hour source-retention policy, and shared entity/DTO types in `src/types.ts`. Not user-visible on its own.
 - **Change ID:** photo-jobs-data-and-storage
 - **PRD refs:** NFR (uploaded source not retrievable by others; source not retained beyond 24h); Access Control (Anonymous vs User tiers; cloud gated to signed-in users)
@@ -88,6 +90,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-01: Local engine end-to-end (anonymous)
 
+- **Phase:** `phase:mvp`
 - **Outcome:** an anonymous visitor can upload a photo (JPG/PNG), run the client-side Local engine (Canvas gamma correction + Gaussian blur), compare the result against the original with a before/after slider, and download it — entirely in the browser, no network round-trip after load.
 - **Change ID:** local-engine-enhance-flow
 - **PRD refs:** US-02; FR-001, FR-005, FR-008, FR-011, FR-012; NFR (Local result visible within ~2s on a 12MP photo; mobile-portrait usable)
@@ -102,6 +105,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-02: Account access — sign-up, sign-in, sign-out, password reset
 
+- **Phase:** `phase:mvp`
 - **Outcome:** a visitor can create an account with email + password, sign in and out, and recover a forgotten password via an email-based reset flow.
 - **Change ID:** account-access-and-password-reset
 - **PRD refs:** FR-002, FR-003, FR-004, FR-015; NFR (a few mistyped passwords don't lock out a legit user, but credential stuffing at scale is rejected)
@@ -115,6 +119,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-03: Gated Cloud AI submission
 
+- **Phase:** `phase:mvp`
 - **Outcome:** a user can switch the engine toggle to Cloud AI (anonymous visitors are prompted to sign in, never silently denied), and a signed-in user can submit the loaded photo for cloud processing — the source is uploaded to the private bucket and a job record is created.
 - **Change ID:** gated-cloud-upload
 - **PRD refs:** US-01; FR-005, FR-006, FR-007; NFR (source not publicly readable)
@@ -129,6 +134,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-04: Cloud AI result delivered in real time (NORTH STAR)
 
+- **Phase:** `phase:mvp`
 - **Outcome:** once a photo is submitted, the async pipeline (Database webhook → Supabase Edge Function → Replicate prediction with webhook callback) runs, and the enhanced result is pushed to the page via Supabase Realtime — appearing in the before/after slider with download, no manual refresh — within ~30s p95.
 - **Change ID:** cloud-ai-realtime-result
 - **PRD refs:** US-01; FR-009, FR-010, FR-011, FR-012 (slider + download reused from S-01); NFR (≤30s p95 end-to-end; source not retained beyond 24h)
@@ -143,6 +149,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-05: Cloud cost protection — global daily cap
 
+- **Phase:** `phase:mvp`
 - **Outcome:** a Cloud AI request that would exceed the global daily cap is rejected before the cloud model is invoked, with a clear user-facing message; the bill is structurally bounded.
 - **Change ID:** cloud-daily-cap
 - **PRD refs:** FR-014; Access Control (cloud gated to signed-in users within the cap)
@@ -156,6 +163,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-06: Account / session UX completion
 
+- **Phase:** `phase:mvp`
 - **Outcome:** a signed-in user can sign out from anywhere in the app (not only from `/` and `/dashboard`), is redirected to home instead of being shown the login form while already authenticated, is — optionally — signed out after a configured idle period, and can complete a password reset from a different device/browser than the one that requested it.
 - **Change ID:** account-session-ux
 - **PRD refs:** FR-004 (sign out reachable); FR-015 (cross-device password reset); session-hygiene NFR (idle timeout, optional)
@@ -170,6 +178,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-07: Production deployment / go-live
 
+- **Phase:** `phase:mvp`
 - **Outcome:** the app is deployed and publicly accessible on Cloudflare (Workers), with the prod Supabase project fully wired — migrations applied, Edge Function `enhance` deployed, Realtime enabled, secrets + DB-webhook settings set — plus a CI deploy step. The Cloud AI pipeline ships behind `CLOUD_PIPELINE_ENABLED=OFF`, so Local engine + auth are live immediately and cloud is switched on later by a single flag flip (once S-05's cap exists).
 - **Change ID:** production-deployment
 - **PRD refs:** MVP success criterion "Deployed and accessible on Cloudflare Pages"; deploy/infra NFR
@@ -184,6 +193,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-08: 24h-retention cleanup for failed / abandoned cloud jobs
 
+- **Phase:** `phase:mvp`
 - **Outcome:** an uploaded source object is removed within the 24h privacy window even when the job does NOT succeed — on a `failed` job (pipeline error / timeout) and on an abandoned `queued` job whose client upload never completed — closing the gap where today only the success path (`markJobSucceeded`) deletes the source.
 - **Change ID:** cloud-job-retention-cleanup
 - **PRD refs:** NFR (uploaded source not retained beyond 24h — a launch privacy guardrail); Access Control (private source)
@@ -198,6 +208,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-09: Source signed-URL TTL fix (cold-boot reliability)
 
+- **Phase:** `phase:mvp`
 - **Outcome:** a Cloud AI job survives a slow Replicate cold boot — the source READ URL the Edge Function signs no longer expires before the model fetches it, so the prediction no longer dies at the source-fetch step with a 400 on cold starts that exceed the current `SOURCE_URL_TTL_SECONDS = 300`. The fix is re-validated against a real slow cold boot.
 - **Change ID:** cloud-source-url-ttl-fix
 - **PRD refs:** MVP success criterion "end-to-end cloud flow works" (reliability); NFR (cloud pipeline reliability under cold start)
@@ -213,6 +224,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-10: Scheduled retention reaper (post-MVP privacy/reliability hardening)
 
+- **Phase:** `phase:post-mvp`
 - **Outcome:** no raw source object lingers in the private `photos` bucket past the ≤24h retention NFR, even in the cases S-08's inline on-failure delete structurally cannot reach — legacy already-terminal orphans, abandon-and-never-return, and best-effort-delete failures. An hourly `pg_cron` job POSTs the `enhance` `/reap` route → `sweepAbandonedSourcesGlobally` (storage-first delete of `source.*` older than 23h + a SQL flip of stale non-terminal jobs → `failed('abandoned')`).
 - **Change ID:** retention-reaper
 - **PRD refs:** NFR "source not retained beyond 24h" (backstop / hardening of F-01 + S-08)
@@ -251,6 +263,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-07       | production-deployment             | Production deployment / go-live (Cloudflare + prod Supabase)       | done                  | Archived 2026-06-06 → `context/archive/2026-06-04-production-deployment/`. Issue #8.                                                                                                                                             |
 | S-08       | cloud-job-retention-cleanup       | 24h-retention cleanup for failed/abandoned cloud jobs              | done                  | Prereq F-01/S-04 (done). Closes privacy-NFR gap punted by F-01/S-03/S-04. Inline delete-on-failure, NOT pg_cron. Independent of S-05. Archived 2026-06-07 → `context/archive/2026-06-07-cloud-job-retention-cleanup/`. Issue #9. |
 | S-09       | cloud-source-url-ttl-fix          | Source signed-URL TTL fix (cold-boot reliability)                  | done                  | Archived 2026-06-07 → `context/archive/2026-06-06-cloud-source-url-ttl-fix/`. Issue #12.                                                                                                                                         |
+| S-10       | retention-reaper                  | Scheduled retention reaper backstop                                | done                  | `phase:post-mvp`. Archived 2026-06-14 → `context/archive/2026-06-14-retention-reaper/`. Shipped PR #30.                                                                                                                          |
 | S-11       | bread-chroma-postpass             | Bread chroma-denoise post-pass + latest-version resolution         | yes                   | `phase:post-mvp`. Issue #51. Run `/10x-research bread-chroma-postpass`. Validate chroma-pass placement and Replicate latest-version/rollback semantics before planning.                                                         |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
