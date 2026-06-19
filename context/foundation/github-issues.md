@@ -111,21 +111,21 @@ repo. They can be deleted manually at any time.
 
 ## Final mapping (roadmap item → issue)
 
-| Roadmap ID | Issue                                                            | Change ID                           | Status | Labels                                           |
-| ---------- | ---------------------------------------------------------------- | ----------------------------------- | ------ | ------------------------------------------------ |
-| F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1)   | `photo-jobs-data-and-storage`       | ready  | `roadmap` `foundation` `status:ready`            |
-| S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2)   | `local-engine-enhance-flow`         | ready  | `roadmap` `slice` `status:ready`                 |
-| S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3)   | `account-access-and-password-reset` | ready  | `roadmap` `slice` `status:ready`                 |
-| S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4)   | `gated-cloud-upload`                | done   | `roadmap` `slice` `status:proposed`              |
-| S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5)   | `cloud-ai-realtime-result`          | done   | `roadmap` `slice` `status:proposed` `north-star` |
-| S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6)   | `cloud-daily-cap`                   | done   | `roadmap` `slice` `status:proposed`              |
-| S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7)   | `account-session-ux`                | done   | `roadmap` `slice` `status:ready`                 |
-| S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)   | `production-deployment`             | done   | `roadmap` `slice` `status:ready`                 |
-| S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)   | `cloud-job-retention-cleanup`       | done   | `roadmap` `slice` `status:ready`                 |
-| S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`          | done   | `roadmap` `slice` `status:ready`                 |
-| S-11       | [#51](https://github.com/Piotr-Miller/lumina-clean-ai/issues/51) | `bread-chroma-postpass`             | ready  | `roadmap` `slice` `status:ready` `phase:post-mvp` |
-| S-12       | [#52](https://github.com/Piotr-Miller/lumina-clean-ai/issues/52) | `adaptive-enhancement-parameters`   | ready  | `roadmap` `slice` `status:ready` `phase:post-mvp` |
-| S-13       | [#60](https://github.com/Piotr-Miller/lumina-clean-ai/issues/60) | `premium-retinexformer-enhancement` | ready  | `roadmap` `slice` `status:ready` `phase:post-mvp` |
+| Roadmap ID | Issue                                                            | Change ID                           | Status   | Labels                                               |
+| ---------- | ---------------------------------------------------------------- | ----------------------------------- | -------- | ---------------------------------------------------- |
+| F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1)   | `photo-jobs-data-and-storage`       | ready    | `roadmap` `foundation` `status:ready`                |
+| S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2)   | `local-engine-enhance-flow`         | ready    | `roadmap` `slice` `status:ready`                     |
+| S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3)   | `account-access-and-password-reset` | ready    | `roadmap` `slice` `status:ready`                     |
+| S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4)   | `gated-cloud-upload`                | done     | `roadmap` `slice` `status:proposed`                  |
+| S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5)   | `cloud-ai-realtime-result`          | done     | `roadmap` `slice` `status:proposed` `north-star`     |
+| S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6)   | `cloud-daily-cap`                   | done     | `roadmap` `slice` `status:proposed`                  |
+| S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7)   | `account-session-ux`                | done     | `roadmap` `slice` `status:ready`                     |
+| S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)   | `production-deployment`             | done     | `roadmap` `slice` `status:ready`                     |
+| S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)   | `cloud-job-retention-cleanup`       | done     | `roadmap` `slice` `status:ready`                     |
+| S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`          | done     | `roadmap` `slice` `status:ready`                     |
+| S-11       | [#51](https://github.com/Piotr-Miller/lumina-clean-ai/issues/51) | `bread-chroma-postpass`             | ready    | `roadmap` `slice` `status:ready` `phase:post-mvp`    |
+| S-12       | [#52](https://github.com/Piotr-Miller/lumina-clean-ai/issues/52) | `adaptive-enhancement-parameters`   | ready    | `roadmap` `slice` `status:ready` `phase:post-mvp`    |
+| S-13       | [#60](https://github.com/Piotr-Miller/lumina-clean-ai/issues/60) | `premium-retinexformer-enhancement` | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
 | S-14       | [#61](https://github.com/Piotr-Miller/lumina-clean-ai/issues/61) | `premium-max-tier`                  | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
 
 ⭐ = north star (validation milestone).
@@ -142,12 +142,13 @@ repo. They can be deleted manually at any time.
 
 > **2026-06-11 (non-roadmap chore):** added **#19** `jobs-rls-seed-flake` — test-hardening follow-up to make `tests/jobs.rls.test.ts` `seedJob` resilient to a transient Kong/PostgREST 502 (`An invalid response was received from the upstream server`) on its setup insert against the ephemeral local Supabase stack. Surfaced as a one-off `integration`-job failure on run 27338381004 (PR #18, docs-only — env, not code); passed on re-run. `chore` label; absent from the roadmap→issue table. Change folder: `context/changes/jobs-rls-seed-flake/`.
 >
-> **2026-06-19 (post-MVP Premium path):** added **S-13 (#60)** `premium-retinexformer-enhancement` — define the explicit Premium Retinexformer path after the Standard Bread pipeline, with a benchmark-first gate and separate timeout plus entitlement policy. Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Change folder: `context/changes/premium-retinexformer-enhancement/`.
+> **2026-06-18 (post-MVP quality):** added **S-11 (#51)** `bread-chroma-postpass` — keep Bread/Replicate as the low-light enhancer, add an adaptive YCbCr chroma-denoise post-pass, and replace the manually-hardcoded model-version hash with a **build/deploy-time resolved-and-pinned** hash (no runtime "latest"; rollback = previous pinned hash; telemetry is audit-only). Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Change folder: `context/changes/bread-chroma-postpass/`.
 >
-> **2026-06-19 (post-MVP higher tier draft):** added **S-14 (#61)** `premium-max-tier` — a higher application tier above Premium that bundles the Retinexformer path with optional heavyweight denoise, Max-only presets, higher limits, priority scheduling, and batch workflow. Labels: `roadmap`, `slice`, `status:proposed`, `phase:post-mvp`. Change folder: `context/changes/premium-max-tier/`.
-
 > **2026-06-18 (post-MVP UX/quality):** added **S-12 (#52)** `adaptive-enhancement-parameters` — add a responsive parameter panel beside the photo; expose Local `gamma`/blur and Bread `gamma`/`strength`; let Auto populate visible slider values and let the user override any value manually. Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Change folder: `context/changes/adaptive-enhancement-parameters/`.
-> **2026-06-18 (post-MVP quality):** added **S-11 (#51)** `bread-chroma-postpass` — keep Bread/Replicate as the low-light enhancer, add an adaptive YCbCr chroma-denoise post-pass, and replace the hardcoded model-version hash with a controlled latest-version resolver that retains resolved-version telemetry and rollback. Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Change folder: `context/changes/bread-chroma-postpass/`.
+>
+> **2026-06-19 (post-MVP Premium path):** added **S-13 (#60)** `premium-retinexformer-enhancement` — define the explicit Premium Retinexformer path after the Standard Bread pipeline, with a benchmark-first gate and separate timeout plus entitlement policy. **Stays Parked + `status:proposed`** until the benchmark passes an explicit GO; promote into the slice table only then. Labels: `roadmap`, `slice`, `status:proposed`, `phase:post-mvp`. Change folder: `context/changes/premium-retinexformer-enhancement/`.
+>
+> **2026-06-19 (post-MVP higher tier draft):** added **S-14 (#61)** `premium-max-tier` — a higher application tier above Premium that bundles the Retinexformer path with optional heavyweight denoise, Max-only presets, higher limits, priority scheduling, and batch workflow. Epic, not a vertical slice: must be split (entitlement, processing mode, queue policy, batch) after research. Labels: `roadmap`, `slice`, `status:proposed`, `phase:post-mvp`. Change folder: `context/changes/premium-max-tier/`.
 
 ## Status updates (post-creation)
 
