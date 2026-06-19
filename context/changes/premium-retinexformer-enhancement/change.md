@@ -1,15 +1,16 @@
 ---
-change_id: retinexformer-hd-opt-in
-title: Add Retinexformer as an opt-in Premium enhancement engine
+change_id: premium-retinexformer-enhancement
+title: Add a Premium Retinexformer enhancement path
 status: new
 created: 2026-06-15
-updated: 2026-06-18
+updated: 2026-06-19
 archived_at: null
+issue: 60
 ---
 
 ## Notes
 
-Planned roadmap slice **S-12**, classified as `phase:post-mvp`.
+Planned roadmap slice **S-13**, classified as `phase:post-mvp`.
 
 Add Retinexformer as an explicitly selected, slower Premium enhancement engine
 for signed-in users. Bread on Replicate remains the default Standard engine.

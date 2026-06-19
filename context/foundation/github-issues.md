@@ -123,6 +123,8 @@ repo. They can be deleted manually at any time.
 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)   | `production-deployment`             | done   | `roadmap` `slice` `status:ready`                 |
 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)   | `cloud-job-retention-cleanup`       | done   | `roadmap` `slice` `status:ready`                 |
 | S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`          | done   | `roadmap` `slice` `status:ready`                 |
+| S-13       | [#60](https://github.com/Piotr-Miller/lumina-clean-ai/issues/60) | `premium-retinexformer-enhancement` | ready  | `roadmap` `slice` `status:ready` `phase:post-mvp` |
+| S-14       | [#61](https://github.com/Piotr-Miller/lumina-clean-ai/issues/61) | `premium-max-tier`                  | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
 
 ⭐ = north star (validation milestone).
 
@@ -137,6 +139,10 @@ repo. They can be deleted manually at any time.
 > **2026-06-06 (non-roadmap chore):** added **#14** `disable-workers-dev-subdomain` — infra/branding follow-up to disable the default `workers.dev` route once `luminacleanai.com` (custom domain added 2026-06-06) is the established prod URL, so prod is served only at the branded domain. Deferred until after S-07 go-live testing (workers.dev still referenced during cutover). `chore` label; absent from the roadmap→issue table. Change folder: `context/changes/disable-workers-dev-subdomain/`.
 
 > **2026-06-11 (non-roadmap chore):** added **#19** `jobs-rls-seed-flake` — test-hardening follow-up to make `tests/jobs.rls.test.ts` `seedJob` resilient to a transient Kong/PostgREST 502 (`An invalid response was received from the upstream server`) on its setup insert against the ephemeral local Supabase stack. Surfaced as a one-off `integration`-job failure on run 27338381004 (PR #18, docs-only — env, not code); passed on re-run. `chore` label; absent from the roadmap→issue table. Change folder: `context/changes/jobs-rls-seed-flake/`.
+>
+> **2026-06-19 (post-MVP Premium path):** added **S-13 (#60)** `premium-retinexformer-enhancement` — define the explicit Premium Retinexformer path after the Standard Bread pipeline, with a benchmark-first gate and separate timeout plus entitlement policy. Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Change folder: `context/changes/premium-retinexformer-enhancement/`.
+>
+> **2026-06-19 (post-MVP higher tier draft):** added **S-14 (#61)** `premium-max-tier` — a higher application tier above Premium that bundles the Retinexformer path with optional heavyweight denoise, Max-only presets, higher limits, priority scheduling, and batch workflow. Labels: `roadmap`, `slice`, `status:proposed`, `phase:post-mvp`. Change folder: `context/changes/premium-max-tier/`.
 
 ## Status updates (post-creation)
 
