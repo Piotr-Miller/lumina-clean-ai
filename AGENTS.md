@@ -41,7 +41,7 @@ LuminaClean AI — night/low-light photo denoise + exposure-correction MVP. Two 
 - `npm run format` — Prettier (includes prettier-plugin-astro + prettier-plugin-tailwindcss)
 - `npm run test:e2e` — Playwright E2E gate (`tests/e2e/*.spec.ts`). Needs the local stack + a served `enhance` function with the seam env — see `context/foundation/test-plan.md` §6.3 for the run recipe. ⚠️ The stub seam `E2E_ALLOWED_OUTPUT_ORIGIN` is local/CI-only — **never set it in production** (it widens the Edge Function's SSRF output-fetch allowlist; see `context/foundation/cloud-live-smoke.md`).
 
-Git hooks (husky): **pre-commit** — lint-staged runs `eslint --fix` on `*.{ts,tsx,astro}`, `vitest related` on staged TS, and `prettier --write` on `*.{json,css,md}`; **pre-push** — blocks any push to `refs/heads/master` (**master is PR-only**: branch → PR → merge; server-side rulesets unavailable on private+Free, so this hook is the enforcement; emergency bypass `git push --no-verify`), then `tsc --noEmit` for branch pushes.
+Git hooks (husky): **pre-commit** — lint-staged runs `eslint --fix` on `*.{ts,tsx,astro}` and `prettier --write` on `*.{json,css,md}` (kept fast — no tests here); **pre-push** — `set -e`, blocks any push to `refs/heads/master` (**master is PR-only**: branch → PR → merge; server-side rulesets unavailable on private+Free, so this hook is the enforcement; emergency bypass `git push --no-verify`), then `npm run typecheck` (`tsc --noEmit`) + `npm run test:unit` for branch pushes. (Tests moved commit→push so commits stay fast; CI still runs the full suite.)
 
 ### Architecture
 
