@@ -310,11 +310,11 @@ No data migration. Build/deploy-config only. Rollback = revert the `astro.config
 
 #### Automated
 
-- [ ] 4.1 Build + CI green with route removed: `npm run build`
-- [x] 4.2 Route file removed: `test ! -f src/pages/sentry-verify.astro`
+- [x] 4.1 Build + CI green with route removed: `npm run build` — c44fe49
+- [x] 4.2 Route file removed: `test ! -f src/pages/sentry-verify.astro` — c44fe49
 
 #### Manual
 
-- [ ] 4.3 Deployed `/sentry-verify` returns 404 / not present
-- [ ] 4.4 A subsequent real error in Sentry still resolves to original sources
-- [x] 4.5 Memory `sentry-prod-followups` reflects 3.7 resolved
+- [x] 4.3 Deployed `/sentry-verify` returns 404 / not present — c44fe49
+- [x] 4.4 A subsequent real error in Sentry still resolves to original sources — c44fe49 (satisfied by Phase 3 live proof; source-map config unchanged by route removal)
+- [x] 4.5 Memory `sentry-prod-followups` reflects 3.7 resolved — c44fe49
