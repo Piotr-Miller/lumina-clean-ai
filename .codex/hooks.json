@@ -7,11 +7,13 @@
           {
             "type": "command",
             "command": "FILE=$(jq -r '.tool_input.file_path'); case \"$FILE\" in *.ts|*.tsx|*.astro) npx eslint --fix \"$FILE\" --quiet ;; esac",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path (& git rev-parse --show-toplevel) '.codex/hooks/eslint-on-edit.ps1')\"",
             "timeout": 15000
           },
           {
             "type": "command",
             "command": "FILE=$(jq -r '.tool_input.file_path'); F=${FILE//\\\\//}; case \"$F\" in */src/lib/services/*.ts|*/src/lib/services/*.tsx) npx vitest related \"$FILE\" --run --exclude '**/jobs.rls.test.ts' || exit 2 ;; esac",
+            "commandWindows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path (& git rev-parse --show-toplevel) '.codex/hooks/test-related-service.ps1')\"",
             "timeout": 20000
           }
         ]
