@@ -19,11 +19,21 @@ export default defineConfig({
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:4321",
     trace: "on-first-retry",
   },
-  // Reuses the already-running dev server locally; CI starts its own.
+  // Serve a PRODUCTION BUILD via workerd (`wrangler dev`), NOT `astro dev`.
+  // `astro dev`'s Vite SSR dep-optimizer intermittently re-optimizes mid-request
+  // and re-emits react-dom/server under a fresh `?v=` hash that desyncs from the
+  // already-loaded React → "more than one copy of React" → null hooks on the
+  // enhance page (dev-only issue #15). The built worker has no `.vite/deps_ssr`
+  // re-optimization, so it renders deterministically — and matches prod runtime.
+  // Always starts its own server (no reuse) for a deterministic, identical
+  // runtime locally and in CI; cost is one build per run (e2e is already a heavy
+  // gate). `wrangler dev` reads `.dev.vars` for runtime secrets; the build
+  // inherits this process's env.
   webServer: {
-    command: "npm run dev",
+    command: "npm run test:e2e:serve",
     url: process.env.E2E_BASE_URL ?? "http://localhost:4321",
-    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
+    reuseExistingServer: false,
   },
   projects: [
     { name: "setup", testMatch: /.*\.setup\.ts/ },

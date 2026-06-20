@@ -212,9 +212,12 @@ jobs:
       # Export the three local creds to BOTH targets:
       #   - $GITHUB_ENV  → the Playwright TEST process (tests/e2e/helpers/env.ts
       #     loopback guard + resolveSigningSecret read process.env);
-      #   - .dev.vars    → the DEV SERVER. `npm run dev` (astro dev) runs SSR in
-      #     workerd via @astrojs/cloudflare, which reads .dev.vars, NOT
-      #     process.env (CLAUDE.md "Cloudflare local dev"). .dev.vars is
+      #   - .dev.vars    → the APP SERVER. Playwright's webServer is
+      #     `npm run test:e2e:serve` = `npm run build && wrangler dev` (a
+      #     production build served on workerd — NOT `astro dev`, whose Vite SSR
+      #     dep-optimizer hits dev-only issue #15). `wrangler dev` reads .dev.vars
+      #     for runtime secrets, NOT process.env (CLAUDE.md "Cloudflare local
+      #     dev"). The build inherits this job's process env. .dev.vars is
       #     gitignored — generating it here is clean.
       # `-o env` wraps values in double quotes; $GITHUB_ENV stores the line
       # verbatim, so strip the surrounding quotes (URLs/keys carry no internal
@@ -283,11 +286,13 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - run: npx playwright install chromium --with-deps
-      # Playwright starts its own dev server (webServer.reuseExistingServer is
-      # false under CI) and runs setup → seed/anon → north-star → stall. CI=true
-      # (GitHub default) ⇒ retries: 1. The fresh-stack Realtime cold-start flake
-      # is absorbed by the north-star spec's own warmup precondition
-      # (tests/e2e/helpers/realtime-ready.ts) — no extra CI step needed.
+      # Playwright builds + serves the worker itself (webServer =
+      # `npm run test:e2e:serve`, reuseExistingServer false) on :4321 — the
+      # fixture-server's :8787 stays clear — then runs setup → seed/anon →
+      # north-star → stall. CI=true (GitHub default) ⇒ retries: 1. The
+      # fresh-stack Realtime cold-start flake is absorbed by the north-star
+      # spec's own warmup precondition (tests/e2e/helpers/realtime-ready.ts) —
+      # no extra CI step needed.
       - run: npm run test:e2e
       - name: Upload Playwright report
         if: ${{ failure() }}

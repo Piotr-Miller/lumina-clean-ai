@@ -218,11 +218,15 @@ relevant rollout phase ships; before that it reads "TBD — see §3 Phase <N>."
   terminal failure). Anon gate: `tests/e2e/seed.spec.ts` +
   `tests/e2e/anon-dashboard-redirects-to-signin.spec.ts` (risk #2).
 - **Run locally**: `npx supabase start` → `npx supabase db reset` → export
-  `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (and put them in `.dev.vars` for
-  `npm run dev`) → populate `supabase/functions/.env` with
+  `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (and put them in `.dev.vars` — read
+  at runtime by `wrangler dev`) → populate `supabase/functions/.env` with
   `REPLICATE_WEBHOOK_SIGNING_SECRET` + `E2E_ALLOWED_OUTPUT_ORIGIN=http://host.docker.internal:8787`
   → `npx supabase functions serve enhance --env-file supabase/functions/.env` (separate
-  terminal) → `npm run test:e2e`. (The stall spec needs only the stack + dev
+  terminal) → `npm run test:e2e`. Playwright's webServer is `npm run test:e2e:serve`
+  (`npm run build && wrangler dev --port 4321`) — it serves a **production build on
+  workerd**, NOT `astro dev`, to avoid the dev-only Vite-SSR React-dup crash
+  (issue #15); it starts its own server every run (`reuseExistingServer: false`),
+  so do not pre-run a server on :4321. (The stall spec needs only the stack + app
   server; the north-star spec also needs the served function.)
 - **Deliberate-break gotcha**: when validating a spec by deliberately breaking the
   protected behavior (confirm it goes RED), a cold workerd dev server can false-RED
