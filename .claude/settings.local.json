@@ -157,7 +157,11 @@
       "Bash(echo '/sentry-verify?key=...&case=ssr: __CMDSUB_OUTPUT__')",
       "Bash(echo \"\\(both expect 404 — route removed\\)\")",
       "Bash(echo \"=== sanity: site still up ===\")",
-      "Bash(echo \"GET / : $\\(curl -s -o /dev/null -w '%{http_code}' \"https://luminacleanai.com/\"\\)\")"
+      "Bash(echo \"GET / : $\\(curl -s -o /dev/null -w '%{http_code}' \"https://luminacleanai.com/\"\\)\")",
+      "PowerShell(Start-Process \"http://localhost:4321/\")",
+      "Bash(git check-ignore *)",
+      "Bash(gh pr create --base master --head chore/claude-settings-localhost-perms --title 'chore\\(claude\\): allow localhost browser-open and git check-ignore' --body ' *)",
+      "PowerShell(gh pr create --base master --head chore/claude-settings-localhost-perms --title \"chore\\(claude\\): allow localhost browser-open and git check-ignore\" --body $body 2>&1)"
     ],
     "deny": ["Bash(rm -rf *)"],
     "ask": ["Bash(curl *)", "Bash(wget *)", "Bash(git push *)", "Bash(git push)"]
