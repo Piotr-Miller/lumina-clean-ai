@@ -157,7 +157,9 @@
       "Bash(echo '/sentry-verify?key=...&case=ssr: __CMDSUB_OUTPUT__')",
       "Bash(echo \"\\(both expect 404 — route removed\\)\")",
       "Bash(echo \"=== sanity: site still up ===\")",
-      "Bash(echo \"GET / : $\\(curl -s -o /dev/null -w '%{http_code}' \"https://luminacleanai.com/\"\\)\")"
+      "Bash(echo \"GET / : $\\(curl -s -o /dev/null -w '%{http_code}' \"https://luminacleanai.com/\"\\)\")",
+      "PowerShell(Start-Process \"http://localhost:4321/\")",
+      "Bash(git check-ignore *)"
     ],
     "deny": ["Bash(rm -rf *)"],
     "ask": ["Bash(curl *)", "Bash(wget *)", "Bash(git push *)", "Bash(git push)"]
