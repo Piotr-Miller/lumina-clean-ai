@@ -161,7 +161,8 @@
       "PowerShell(Start-Process \"http://localhost:4321/\")",
       "Bash(git check-ignore *)",
       "Bash(gh pr create --base master --head chore/claude-settings-localhost-perms --title 'chore\\(claude\\): allow localhost browser-open and git check-ignore' --body ' *)",
-      "PowerShell(gh pr create --base master --head chore/claude-settings-localhost-perms --title \"chore\\(claude\\): allow localhost browser-open and git check-ignore\" --body $body 2>&1)"
+      "PowerShell(gh pr create --base master --head chore/claude-settings-localhost-perms --title \"chore\\(claude\\): allow localhost browser-open and git check-ignore\" --body $body 2>&1)",
+      "Bash(docker info *)"
     ],
     "deny": ["Bash(rm -rf *)"],
     "ask": ["Bash(curl *)", "Bash(wget *)", "Bash(git push *)", "Bash(git push)"]
