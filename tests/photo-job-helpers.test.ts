@@ -93,23 +93,31 @@ describe("getJobById", () => {
 });
 
 describe("markJobProcessing", () => {
-  it("sets status processing + stores the prediction id, scoped by id", async () => {
+  it("sets status processing + stores the prediction id + model_version, scoped by id", async () => {
     const { admin, calls } = makeAdmin({ error: null });
-    await markJobProcessing(admin, { jobId: "job-1", replicatePredictionId: "pred-9" });
-    expect(calls.updatePayload).toEqual({ status: "processing", replicate_prediction_id: "pred-9" });
+    await markJobProcessing(admin, { jobId: "job-1", replicatePredictionId: "pred-9", modelVersion: "model-abc" });
+    expect(calls.updatePayload).toEqual({
+      status: "processing",
+      replicate_prediction_id: "pred-9",
+      model_version: "model-abc",
+    });
     expect(calls.eqs).toEqual([["id", "job-1"]]);
   });
 
-  it("nulls the prediction id when omitted and never sets updated_at", async () => {
+  it("nulls the prediction id when omitted, still records model_version, never sets updated_at", async () => {
     const { admin, calls } = makeAdmin({ error: null });
-    await markJobProcessing(admin, { jobId: "job-1" });
-    expect(calls.updatePayload).toEqual({ status: "processing", replicate_prediction_id: null });
+    await markJobProcessing(admin, { jobId: "job-1", modelVersion: "model-abc" });
+    expect(calls.updatePayload).toEqual({
+      status: "processing",
+      replicate_prediction_id: null,
+      model_version: "model-abc",
+    });
     expect(calls.updatePayload).not.toHaveProperty("updated_at");
   });
 
   it("throws when the update errors", async () => {
     const { admin } = makeAdmin({ error: { message: "nope" } });
-    await expect(markJobProcessing(admin, { jobId: "job-1" })).rejects.toThrow(/nope/);
+    await expect(markJobProcessing(admin, { jobId: "job-1", modelVersion: "model-abc" })).rejects.toThrow(/nope/);
   });
 });
 

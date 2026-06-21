@@ -219,9 +219,11 @@ export async function getJobById(admin: SupabaseClient, jobId: string): Promise<
 }
 
 /**
- * Mark a job as `processing` and (optionally) store the Replicate prediction
- * id used later as the `/callback` integrity cross-check. No timestamps beyond
- * the DB-trigger-owned `updated_at` are touched (the job is still in flight).
+ * Mark a job as `processing`, (optionally) store the Replicate prediction id
+ * used later as the `/callback` integrity cross-check, and record the pinned
+ * Bread `model_version` (S-11 telemetry — written here once; `markJobSucceeded`
+ * never overwrites it). No timestamps beyond the DB-trigger-owned `updated_at`
+ * are touched (the job is still in flight).
  *
  * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
  */
@@ -231,6 +233,7 @@ export async function markJobProcessing(admin: SupabaseClient, cmd: MarkJobProce
     .update({
       status: "processing",
       replicate_prediction_id: cmd.replicatePredictionId ?? null,
+      model_version: cmd.modelVersion,
     })
     .eq("id", cmd.jobId);
   if (error) {

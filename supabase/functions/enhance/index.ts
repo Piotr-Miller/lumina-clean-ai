@@ -368,8 +368,9 @@ async function handleStart(req: Request): Promise<Response> {
       throw new Error("Replicate response missing prediction id");
     }
 
-    // status → processing + store the prediction id (the /callback cross-check).
-    await markJobProcessing(admin, { jobId, replicatePredictionId: prediction.id });
+    // status → processing + store the prediction id (the /callback cross-check)
+    // + the pinned Bread version this prediction ran (S-11 telemetry).
+    await markJobProcessing(admin, { jobId, replicatePredictionId: prediction.id, modelVersion: BREAD_VERSION });
     return jsonResponse(200, { jobId, predictionId: prediction.id, status: "processing" });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

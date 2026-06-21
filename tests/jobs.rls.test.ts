@@ -3,9 +3,11 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import {
   countCloudJobsToday,
   createPhotoJob,
+  markJobProcessing,
   markJobSucceeded,
   sweepAbandonedSourcesGlobally,
 } from "@/lib/services/photo-job.service";
+import { BREAD_VERSION } from "@/lib/services/bread";
 import { failTimedOutJobResponse } from "@/lib/services/timeout.handler";
 import { supabaseAdmin, supabaseAnonKey, supabaseUrl } from "./env";
 import { createTestUser, deleteTestUser, type TestUser } from "./helpers/test-users";
@@ -199,8 +201,13 @@ describe("public.jobs RLS + photo-job service", () => {
     expect(before?.some((f) => f.name === "source.jpg")).toBe(true);
 
     // markJobSucceeded is status-guarded (F9): it only flips a live `processing`
-    // row, so advance past `queued` first (the /start step does this in prod).
-    await supabaseAdmin.from("jobs").update({ status: "processing" }).eq("id", created.jobId);
+    // row, so advance past `queued` first via the same helper /start uses — which
+    // also records the pinned model_version (S-11 telemetry).
+    await markJobProcessing(supabaseAdmin, {
+      jobId: created.jobId,
+      replicatePredictionId: "test-prediction-id",
+      modelVersion: BREAD_VERSION,
+    });
 
     // Act.
     const resultPath = `${user.id}/${created.jobId}/result.jpg`;
@@ -214,13 +221,15 @@ describe("public.jobs RLS + photo-job service", () => {
     // Row state.
     const { data: row, error: readError } = await supabaseAdmin
       .from("jobs")
-      .select("status, result_path, replicate_prediction_id, completed_at")
+      .select("status, result_path, replicate_prediction_id, model_version, completed_at")
       .eq("id", created.jobId)
       .single();
     expect(readError).toBeNull();
     expect(row?.status).toBe("succeeded");
     expect(row?.result_path).toBe(resultPath);
     expect(row?.replicate_prediction_id).toBe("test-prediction-id");
+    // model_version was written at markJobProcessing and survives markJobSucceeded.
+    expect(row?.model_version).toBe(BREAD_VERSION);
     expect(row?.completed_at).not.toBeNull();
 
     // Source object is gone.

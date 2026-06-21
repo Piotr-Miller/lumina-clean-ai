@@ -335,31 +335,31 @@ The pass runs client-side and **after** the job is `succeeded`, so it does not t
 
 #### Automated
 
-- [x] 1.1 Resolver contract/rewrite tests pass (valid, incompatible schema, ambiguous match, no-op)
-- [x] 1.2 Type checking passes
-- [x] 1.3 Linting passes
-- [x] 1.4 `tests/bread.test.ts` passes against the reviewed pinned hash
+- [x] 1.1 Resolver contract/rewrite tests pass (valid, incompatible schema, ambiguous match, no-op) — d86f1cb
+- [x] 1.2 Type checking passes — d86f1cb
+- [x] 1.3 Linting passes — d86f1cb
+- [x] 1.4 `tests/bread.test.ts` passes against the reviewed pinned hash — d86f1cb
 
 #### Manual
 
-- [x] 1.5 Exposed token rotated in hosted/local consumers; old token rejected
-- [x] 1.6 `resolve:bread-version` validates the real latest schema and rewrites both files (clean PR diff / no-op)
-- [x] 1.7 Incompatible schema fails closed with both target files unchanged
-- [x] 1.8 Revert of the pin commit restores the prior hash
+- [x] 1.5 Exposed token rotated in hosted/local consumers; old token rejected — d86f1cb
+- [x] 1.6 `resolve:bread-version` validates the real latest schema and rewrites both files (clean PR diff / no-op) — d86f1cb
+- [x] 1.7 Incompatible schema fails closed with both target files unchanged — d86f1cb
+- [x] 1.8 Revert of the pin commit restores the prior hash — d86f1cb
 
 ### Phase 2: Per-job `model_version` telemetry
 
 #### Automated
 
-- [ ] 2.1 Migration applies cleanly (`supabase db reset`)
-- [ ] 2.2 Integration suite (incl. `jobs.rls.test.ts`) passes
-- [ ] 2.3 Unit tests assert required `modelVersion` write and no success overwrite
-- [ ] 2.4 Type checking passes
-- [ ] 2.5 `deno check` on the Edge Function passes
+- [x] 2.1 Migration applies cleanly (`supabase db reset`)
+- [x] 2.2 Integration suite (incl. `jobs.rls.test.ts`) passes
+- [x] 2.3 Unit tests assert required `modelVersion` write and no success overwrite
+- [x] 2.4 Type checking passes
+- [x] 2.5 `deno check` on the Edge Function passes
 
 #### Manual
 
-- [ ] 2.6 A submitted cloud job's row shows `model_version` = pinned hash; older row null
+- [x] 2.6 A submitted cloud job's row shows `model_version` = pinned hash; older row null
 
 ### Phase 3: Chroma-denoise algorithm (pure module)
 
