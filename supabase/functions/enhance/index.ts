@@ -3,10 +3,10 @@
 // Phase 2 implements the `/start` route: the Database Webhook (pg_net) POSTs
 // here when a `queued` job is inserted. `/start` authenticates the call
 // (DB_WEBHOOK_SECRET bearer), honors the CLOUD_PIPELINE_ENABLED cost guard,
-// mints a short-TTL signed READ URL for the private source, creates a Replicate
-// "Bread" prediction with a webhook callback pointing at this function's
-// `/callback` route, and flips the job to `processing` (storing the prediction
-// id as the callback integrity cross-check). The `/callback` route lands in
+// mints a short-TTL signed READ URL for the private source, atomically claims
+// the queued job, creates a Replicate "Bread" prediction with a webhook callback
+// pointing at this function's `/callback` route, and stores the prediction id
+// as the callback integrity cross-check. The `/callback` route lands in
 // Phase 3.
 //
 // verify_jwt = false (supabase/config.toml): neither invoker (the DB webhook
@@ -24,12 +24,13 @@ import * as Sentry from "@sentry/deno";
 import { createClient } from "@supabase/supabase-js";
 import { BREAD_VERSION, buildBreadInput } from "../../../src/lib/services/bread.ts";
 import {
+  claimJobForProcessing,
   createSignedReadUrl,
   deleteJobResult,
   getJobById,
   markJobFailed,
-  markJobProcessing,
   markJobSucceeded,
+  recordJobPrediction,
   setObservabilityWarnCapture,
   sweepAbandonedSourcesGlobally,
 } from "../../../src/lib/services/photo-job.service.ts";
@@ -249,6 +250,26 @@ function toPublicStorageUrl(signedUrl: string): string {
   return `${publicOrigin}${target.pathname}${target.search}`;
 }
 
+async function cancelReplicatePrediction(replicateToken: string, predictionId: string): Promise<void> {
+  try {
+    const res = await fetch(`${REPLICATE_PREDICTIONS_URL}/${encodeURIComponent(predictionId)}/cancel`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${replicateToken}` },
+      signal: AbortSignal.timeout(OUTPUT_FETCH_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      throw new Error(`Replicate predictions.cancel failed (${res.status})`);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(`enhance/start: failed to cancel unattached prediction ${predictionId}: ${message}`);
+    Sentry.captureException(err, {
+      tags: { route: "enhance.start", operation: "prediction.cancel" },
+      extra: { predictionId },
+    });
+  }
+}
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -305,14 +326,19 @@ async function handleStart(req: Request): Promise<Response> {
   }
 
   const admin = buildAdminClient();
+  let replicateToken: string | undefined;
+  let unattachedPredictionId: string | null = null;
 
   try {
     const job = await getJobById(admin, jobId);
     if (!job) {
       return jsonResponse(404, { error: { code: "not_found", message: `job ${jobId} not found` } });
     }
+    if (job.status !== "queued") {
+      return jsonResponse(200, { skipped: "already_claimed_or_terminal" });
+    }
 
-    const replicateToken = Deno.env.get("REPLICATE_API_TOKEN");
+    replicateToken = Deno.env.get("REPLICATE_API_TOKEN");
     if (!replicateToken) {
       throw new Error("REPLICATE_API_TOKEN not set");
     }
@@ -345,6 +371,11 @@ async function handleStart(req: Request): Promise<Response> {
       );
     }
 
+    const claimedJob = await claimJobForProcessing(admin, jobId);
+    if (!claimedJob) {
+      return jsonResponse(200, { skipped: "already_claimed_or_terminal" });
+    }
+
     const predictionRes = await fetch(REPLICATE_PREDICTIONS_URL, {
       method: "POST",
       headers: {
@@ -368,11 +399,23 @@ async function handleStart(req: Request): Promise<Response> {
       throw new Error("Replicate response missing prediction id");
     }
 
-    // status → processing + store the prediction id (the /callback cross-check)
-    // + the pinned Bread version this prediction ran (S-11 telemetry).
-    await markJobProcessing(admin, { jobId, replicatePredictionId: prediction.id, modelVersion: BREAD_VERSION });
+    // Attach the prediction id used by /callback's integrity cross-check and
+    // the pinned Bread version. The helper's NULL guards make both write-once.
+    unattachedPredictionId = prediction.id;
+    const recorded = await recordJobPrediction(admin, {
+      jobId,
+      replicatePredictionId: prediction.id,
+      modelVersion: BREAD_VERSION,
+    });
+    if (!recorded) {
+      throw new Error(`job ${jobId} no longer accepts prediction metadata`);
+    }
+    unattachedPredictionId = null;
     return jsonResponse(200, { jobId, predictionId: prediction.id, status: "processing" });
   } catch (err) {
+    if (replicateToken && unattachedPredictionId) {
+      await cancelReplicatePrediction(replicateToken, unattachedPredictionId);
+    }
     const message = err instanceof Error ? err.message : String(err);
     // Surface the start-path failure to Sentry first, so it's captured even if
     // the best-effort markJobFailed below throws. jobId is a UUID (not PII).
@@ -502,6 +545,14 @@ async function handleCallback(req: Request): Promise<Response> {
     if (!job) {
       return jsonResponse(200, { ignored: "job_not_found" });
     }
+    if (job.status === "succeeded" || job.status === "failed") {
+      return jsonResponse(200, { ignored: "already_terminal" });
+    }
+    if (job.status === "processing" && !job.replicate_prediction_id) {
+      return jsonResponse(409, {
+        error: { code: "prediction_id_pending", message: "prediction id is still being recorded" },
+      });
+    }
     // Integrity cross-check (fail-closed): the payload's prediction id must be
     // PRESENT and equal the id /start stored on the row. A mismatch is a
     // stale/replayed completion for a different prediction; a missing payload id
@@ -517,12 +568,6 @@ async function handleCallback(req: Request): Promise<Response> {
       await Sentry.flush(2000);
       return jsonResponse(200, { ignored: "prediction_id_mismatch" });
     }
-    // Idempotency: a row already terminal (Replicate retry, or the client
-    // watchdog failed it first) must not be re-processed.
-    if (job.status === "succeeded" || job.status === "failed") {
-      return jsonResponse(200, { ignored: "already_terminal" });
-    }
-
     const outcome = mapPredictionToOutcome(payload);
     if (outcome.kind === "ignore") {
       return jsonResponse(200, { ignored: `status_${payload.status ?? "unknown"}` });

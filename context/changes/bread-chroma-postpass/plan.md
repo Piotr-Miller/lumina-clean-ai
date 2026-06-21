@@ -351,15 +351,15 @@ The pass runs client-side and **after** the job is `succeeded`, so it does not t
 
 #### Automated
 
-- [x] 2.1 Migration applies cleanly (`supabase db reset`)
-- [x] 2.2 Integration suite (incl. `jobs.rls.test.ts`) passes
-- [x] 2.3 Unit tests assert required `modelVersion` write and no success overwrite
-- [x] 2.4 Type checking passes
-- [x] 2.5 `deno check` on the Edge Function passes
+- [x] 2.1 Migration applies cleanly (`supabase db reset`) — d6341a1
+- [x] 2.2 Integration suite (incl. `jobs.rls.test.ts`) passes — d6341a1
+- [x] 2.3 Unit tests assert required `modelVersion` write and no success overwrite — d6341a1
+- [x] 2.4 Type checking passes — d6341a1
+- [x] 2.5 `deno check` on the Edge Function passes — d6341a1
 
 #### Manual
 
-- [x] 2.6 A submitted cloud job's row shows `model_version` = pinned hash; older row null
+- [x] 2.6 A submitted cloud job's row shows `model_version` = pinned hash; older row null — d6341a1
 
 ### Phase 3: Chroma-denoise algorithm (pure module)
 

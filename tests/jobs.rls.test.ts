@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import {
+  claimJobForProcessing,
   countCloudJobsToday,
   createPhotoJob,
-  markJobProcessing,
   markJobSucceeded,
+  recordJobPrediction,
   sweepAbandonedSourcesGlobally,
 } from "@/lib/services/photo-job.service";
 import { BREAD_VERSION } from "@/lib/services/bread";
@@ -96,6 +97,19 @@ describe("public.jobs RLS + photo-job service", () => {
     });
     // After the explicit revoke from anon, the grant layer denies before
     // RLS evaluates — Postgres returns SQLSTATE 42501 (insufficient_privilege).
+    expect(error).not.toBeNull();
+    expect(error?.code).toBe("42501");
+  });
+
+  it("authenticated users cannot INSERT job rows or forge server-owned telemetry", async () => {
+    const user = await makeUser("insert-denied");
+    const { error } = await user.client.from("jobs").insert({
+      user_id: user.id,
+      status: "queued",
+      source_path: `${user.id}/forged/source.jpg`,
+      model_version: "attacker-controlled",
+    });
+
     expect(error).not.toBeNull();
     expect(error?.code).toBe("42501");
   });
@@ -201,13 +215,15 @@ describe("public.jobs RLS + photo-job service", () => {
     expect(before?.some((f) => f.name === "source.jpg")).toBe(true);
 
     // markJobSucceeded is status-guarded (F9): it only flips a live `processing`
-    // row, so advance past `queued` first via the same helper /start uses — which
-    // also records the pinned model_version (S-11 telemetry).
-    await markJobProcessing(supabaseAdmin, {
+    // row, so use the same claim + provider-metadata sequence as /start.
+    const claimed = await claimJobForProcessing(supabaseAdmin, created.jobId);
+    expect(claimed?.id).toBe(created.jobId);
+    const recorded = await recordJobPrediction(supabaseAdmin, {
       jobId: created.jobId,
       replicatePredictionId: "test-prediction-id",
       modelVersion: BREAD_VERSION,
     });
+    expect(recorded).toBe(true);
 
     // Act.
     const resultPath = `${user.id}/${created.jobId}/result.jpg`;
@@ -228,7 +244,7 @@ describe("public.jobs RLS + photo-job service", () => {
     expect(row?.status).toBe("succeeded");
     expect(row?.result_path).toBe(resultPath);
     expect(row?.replicate_prediction_id).toBe("test-prediction-id");
-    // model_version was written at markJobProcessing and survives markJobSucceeded.
+    // model_version was written by recordJobPrediction and survives markJobSucceeded.
     expect(row?.model_version).toBe(BREAD_VERSION);
     expect(row?.completed_at).not.toBeNull();
 
@@ -277,6 +293,64 @@ describe("public.jobs RLS + photo-job service", () => {
     // Source object is untouched (the winning failed-path delete owns it, not this no-op).
     const { data: after } = await supabaseAdmin.storage.from(PHOTOS_BUCKET).list(`${user.id}/${created.jobId}`);
     expect(after?.some((f) => f.name === "source.jpg")).toBe(true);
+  });
+
+  it("allows exactly one concurrent claim and one write-once prediction identity", async () => {
+    const user = await makeUser("claim-race");
+    const created = await createPhotoJob(supabaseAdmin, {
+      userId: user.id,
+      fileExtension: "jpg",
+      mimeType: "image/jpeg",
+    });
+
+    const claims = await Promise.all([
+      claimJobForProcessing(supabaseAdmin, created.jobId),
+      claimJobForProcessing(supabaseAdmin, created.jobId),
+    ]);
+    expect(claims.filter(Boolean)).toHaveLength(1);
+
+    const writes = await Promise.all([
+      recordJobPrediction(supabaseAdmin, {
+        jobId: created.jobId,
+        replicatePredictionId: "pred-a",
+        modelVersion: "model-a",
+      }),
+      recordJobPrediction(supabaseAdmin, {
+        jobId: created.jobId,
+        replicatePredictionId: "pred-b",
+        modelVersion: "model-b",
+      }),
+    ]);
+    expect(writes.filter(Boolean)).toHaveLength(1);
+
+    const { data: row, error } = (await supabaseAdmin
+      .from("jobs")
+      .select("status, replicate_prediction_id, model_version")
+      .eq("id", created.jobId)
+      .single()) as {
+      data: {
+        status: string;
+        replicate_prediction_id: string | null;
+        model_version: string | null;
+      } | null;
+      error: { message: string } | null;
+    };
+    expect(error).toBeNull();
+    expect(row?.status).toBe("processing");
+    expect([
+      { replicate_prediction_id: "pred-a", model_version: "model-a" },
+      { replicate_prediction_id: "pred-b", model_version: "model-b" },
+    ]).toContainEqual({
+      replicate_prediction_id: row?.replicate_prediction_id,
+      model_version: row?.model_version,
+    });
+
+    const overwrite = await recordJobPrediction(supabaseAdmin, {
+      jobId: created.jobId,
+      replicatePredictionId: "pred-overwrite",
+      modelVersion: "model-overwrite",
+    });
+    expect(overwrite).toBe(false);
   });
 });
 

@@ -1,14 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  claimJobForProcessing,
   createSignedReadUrl,
   deleteJobResult,
   deleteJobSource,
   getJobById,
   markJobFailed,
-  markJobProcessing,
   markJobSucceeded,
   markPendingJobFailedForOwner,
+  recordJobPrediction,
   sweepAbandonedSourcesGlobally,
   sweepStalePendingJobsForOwner,
 } from "@/lib/services/photo-job.service";
@@ -24,6 +25,7 @@ function makeQueryBuilder(result: { data?: unknown; error?: unknown }) {
     updatePayload: undefined as unknown,
     selectCols: undefined as unknown,
     eqs: [] as [string, unknown][],
+    isFilters: [] as [string, unknown][],
     inFilter: undefined as [string, unknown[]] | undefined,
   };
   const builder = {
@@ -37,6 +39,10 @@ function makeQueryBuilder(result: { data?: unknown; error?: unknown }) {
     },
     eq(col: string, val: unknown) {
       calls.eqs.push([col, val]);
+      return builder;
+    },
+    is(col: string, val: unknown) {
+      calls.isFilters.push([col, val]);
       return builder;
     },
     in(col: string, vals: unknown[]) {
@@ -92,32 +98,76 @@ describe("getJobById", () => {
   });
 });
 
-describe("markJobProcessing", () => {
-  it("sets status processing + stores the prediction id + model_version, scoped by id", async () => {
-    const { admin, calls } = makeAdmin({ error: null });
-    await markJobProcessing(admin, { jobId: "job-1", replicatePredictionId: "pred-9", modelVersion: "model-abc" });
+describe("claimJobForProcessing", () => {
+  it("atomically claims only a queued row and returns it", async () => {
+    const row = { id: "job-1", user_id: "u-1", status: "processing", source_path: "u-1/job-1/source.jpg" };
+    const { admin, calls } = makeAdmin({ data: row, error: null });
+    expect(await claimJobForProcessing(admin, "job-1")).toEqual(row);
+    expect(calls.updatePayload).toEqual({ status: "processing" });
+    expect(calls.eqs).toEqual([
+      ["id", "job-1"],
+      ["status", "queued"],
+    ]);
+    expect(calls.selectCols).toBe("*");
+  });
+
+  it("returns null when another invocation already claimed the row", async () => {
+    const { admin } = makeAdmin({ data: null, error: null });
+    expect(await claimJobForProcessing(admin, "job-1")).toBeNull();
+  });
+
+  it("throws when the claim errors", async () => {
+    const { admin } = makeAdmin({ data: null, error: { message: "nope" } });
+    await expect(claimJobForProcessing(admin, "job-1")).rejects.toThrow(/nope/);
+  });
+});
+
+describe("recordJobPrediction", () => {
+  it("stores prediction metadata once on the claimed processing row", async () => {
+    const { admin, calls } = makeAdmin({ data: { id: "job-1" }, error: null });
+    expect(
+      await recordJobPrediction(admin, {
+        jobId: "job-1",
+        replicatePredictionId: "pred-9",
+        modelVersion: "model-abc",
+      }),
+    ).toBe(true);
     expect(calls.updatePayload).toEqual({
-      status: "processing",
       replicate_prediction_id: "pred-9",
       model_version: "model-abc",
     });
-    expect(calls.eqs).toEqual([["id", "job-1"]]);
-  });
-
-  it("nulls the prediction id when omitted, still records model_version, never sets updated_at", async () => {
-    const { admin, calls } = makeAdmin({ error: null });
-    await markJobProcessing(admin, { jobId: "job-1", modelVersion: "model-abc" });
-    expect(calls.updatePayload).toEqual({
-      status: "processing",
-      replicate_prediction_id: null,
-      model_version: "model-abc",
-    });
     expect(calls.updatePayload).not.toHaveProperty("updated_at");
+    expect(calls.eqs).toEqual([
+      ["id", "job-1"],
+      ["status", "processing"],
+    ]);
+    expect(calls.isFilters).toEqual([
+      ["replicate_prediction_id", null],
+      ["model_version", null],
+    ]);
+    expect(calls.selectCols).toBe("id");
   });
 
-  it("throws when the update errors", async () => {
-    const { admin } = makeAdmin({ error: { message: "nope" } });
-    await expect(markJobProcessing(admin, { jobId: "job-1", modelVersion: "model-abc" })).rejects.toThrow(/nope/);
+  it("returns false when the row was terminalized or metadata was already recorded", async () => {
+    const { admin } = makeAdmin({ data: null, error: null });
+    expect(
+      await recordJobPrediction(admin, {
+        jobId: "job-1",
+        replicatePredictionId: "pred-9",
+        modelVersion: "model-abc",
+      }),
+    ).toBe(false);
+  });
+
+  it("throws when the metadata update errors", async () => {
+    const { admin } = makeAdmin({ data: null, error: { message: "nope" } });
+    await expect(
+      recordJobPrediction(admin, {
+        jobId: "job-1",
+        replicatePredictionId: "pred-9",
+        modelVersion: "model-abc",
+      }),
+    ).rejects.toThrow(/nope/);
   });
 });
 
@@ -171,6 +221,7 @@ describe("markJobSucceeded", () => {
     expect(payload.status).toBe("succeeded");
     expect(payload.result_path).toBe("u-1/job-1/result.jpg");
     expect(payload.replicate_prediction_id).toBe("pred-9");
+    expect(payload).not.toHaveProperty("model_version");
     expect(typeof payload.completed_at).toBe("string");
     expect(calls.eqs).toContainEqual(["id", "job-1"]);
     expect(calls.eqs).toContainEqual(["status", "processing"]);
