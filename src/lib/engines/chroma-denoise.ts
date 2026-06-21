@@ -48,6 +48,9 @@ export const DEFAULT_CHROMA_PARAMS: ChromaDenoiseParams = {
  */
 export const MAX_CHROMA_POSTPASS_PIXELS = 12_000_000;
 
+/** Prevent pathological kernel sizes from monopolizing the browser main thread. */
+const MAX_BLUR_RADIUS = 32;
+
 // BT.601 RGB↔YCbCr coefficients (the same space JPEG uses).
 const Y_R = 0.299;
 const Y_G = 0.587;
@@ -63,6 +66,33 @@ const G_CB = -0.344136;
 const G_CR = -0.714136;
 const B_CB = 1.772;
 const CHROMA_BIAS = 128;
+
+/**
+ * Find the largest shared scale in `[0,1]` that keeps an RGB displacement in
+ * gamut. Scaling all three channel deltas together preserves their zero-luma
+ * relationship instead of independently clamping channels and shifting Y.
+ */
+function maxInGamutScale(r: number, g: number, b: number, deltaR: number, deltaG: number, deltaB: number): number {
+  let scale = 1;
+
+  if (deltaR > 0) {
+    scale = Math.min(scale, (255 - r) / deltaR);
+  } else if (deltaR < 0) {
+    scale = Math.min(scale, -r / deltaR);
+  }
+  if (deltaG > 0) {
+    scale = Math.min(scale, (255 - g) / deltaG);
+  } else if (deltaG < 0) {
+    scale = Math.min(scale, -g / deltaG);
+  }
+  if (deltaB > 0) {
+    scale = Math.min(scale, (255 - b) / deltaB);
+  } else if (deltaB < 0) {
+    scale = Math.min(scale, -b / deltaB);
+  }
+
+  return Math.max(0, scale);
+}
 
 /**
  * Separable box blur of a single byte plane, in place. Horizontal pass writes
@@ -146,6 +176,15 @@ export function denoiseChroma(
   }
 
   const { blurRadius, maxStrength, shadowCurve } = params;
+  if (!Number.isInteger(blurRadius) || blurRadius < 0 || blurRadius > MAX_BLUR_RADIUS) {
+    throw new RangeError(`chroma-denoise: blurRadius must be an integer between 0 and ${String(MAX_BLUR_RADIUS)}.`);
+  }
+  if (!Number.isFinite(maxStrength) || maxStrength < 0 || maxStrength > 1) {
+    throw new RangeError("chroma-denoise: maxStrength must be a finite number between 0 and 1.");
+  }
+  if (!Number.isFinite(shadowCurve) || shadowCurve <= 0) {
+    throw new RangeError("chroma-denoise: shadowCurve must be a finite number greater than 0.");
+  }
 
   // The only full-frame temporaries: two byte chroma planes + one reusable scratch.
   const cb = new Uint8ClampedArray(pixelCount);
@@ -187,14 +226,16 @@ export function denoiseChroma(
     const origCr = CR_R * r + CR_G * g + CR_B * b + CHROMA_BIAS;
 
     const w = weightLut[Math.round(yLuma)];
-    const newCb = origCb + (cb[p] - origCb) * w;
-    const newCr = origCr + (cr[p] - origCr) * w;
+    const deltaCb = (cb[p] - origCb) * w;
+    const deltaCr = (cr[p] - origCr) * w;
+    const deltaR = R_CR * deltaCr;
+    const deltaG = G_CB * deltaCb + G_CR * deltaCr;
+    const deltaB = B_CB * deltaCb;
+    const scale = maxInGamutScale(r, g, b, deltaR, deltaG, deltaB);
 
-    const cbd = newCb - CHROMA_BIAS;
-    const crd = newCr - CHROMA_BIAS;
-    data[i] = yLuma + R_CR * crd;
-    data[i + 1] = yLuma + G_CB * cbd + G_CR * crd;
-    data[i + 2] = yLuma + B_CB * cbd;
+    data[i] = r + deltaR * scale;
+    data[i + 1] = g + deltaG * scale;
+    data[i + 2] = b + deltaB * scale;
     // Alpha (data[i + 3]) deliberately untouched — the caller forces it opaque.
   }
 }

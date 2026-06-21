@@ -365,9 +365,9 @@ The pass runs client-side and **after** the job is `succeeded`, so it does not t
 
 #### Automated
 
-- [x] 3.1 Unit tests pass (quality invariants, size guard, alpha preservation, bounded buffers)
-- [x] 3.2 Type checking passes
-- [x] 3.3 Linting passes
+- [x] 3.1 Unit tests pass (quality invariants, size guard, alpha preservation, bounded buffers) — 7dab1a2
+- [x] 3.2 Type checking passes — 7dab1a2
+- [x] 3.3 Linting passes — 7dab1a2
 
 ### Phase 4: Wire into the cloud result, flag default-OFF
 

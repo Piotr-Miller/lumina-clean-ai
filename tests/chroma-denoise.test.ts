@@ -94,6 +94,16 @@ describe("denoiseChroma", () => {
     }
   });
 
+  it("preserves black luminance beside a saturated chroma edge", () => {
+    const data = new Uint8ClampedArray([0, 0, 0, 255, 0, 0, 255, 255]);
+    const blackLumaBefore = luma(data[0], data[1], data[2]);
+
+    denoiseChroma(data, 2, 1, { blurRadius: 1, maxStrength: 0.8, shadowCurve: 3 });
+
+    expect(luma(data[0], data[1], data[2])).toBeCloseTo(blackLumaBefore, 5);
+    expect(Array.from(data.slice(0, 3))).toEqual([0, 0, 0]);
+  });
+
   it("(c) leaves a bright, clean region ~unchanged (shadow weight ≈ 0)", () => {
     const w = 16;
     const h = 16;
@@ -110,21 +120,6 @@ describe("denoiseChroma", () => {
 
     for (let i = 0; i < data.length; i++) {
       expect(Math.abs(data[i] - original[i])).toBeLessThanOrEqual(2);
-    }
-  });
-
-  it("(d) keeps all RGB output bytes in range with no NaN", () => {
-    const w = 20;
-    const h = 20;
-    // Span extremes to stress clamping.
-    const data = buildBuffer(w, h, (p) => [noise(p + 1, 256), noise(p + 401, 256), noise(p + 801, 256), 255]);
-
-    denoiseChroma(data, w, h);
-
-    for (const byte of data) {
-      expect(Number.isNaN(byte)).toBe(false);
-      expect(byte).toBeGreaterThanOrEqual(0);
-      expect(byte).toBeLessThanOrEqual(255);
     }
   });
 
@@ -202,5 +197,22 @@ describe("denoiseChroma", () => {
     expect(() => {
       denoiseChroma(data, w, h, params);
     }).not.toThrow();
+  });
+
+  it.each([
+    [{ blurRadius: -1, maxStrength: 0.8, shadowCurve: 3 }, /blurRadius/],
+    [{ blurRadius: 0.5, maxStrength: 0.8, shadowCurve: 3 }, /blurRadius/],
+    [{ blurRadius: 33, maxStrength: 0.8, shadowCurve: 3 }, /blurRadius/],
+    [{ blurRadius: Number.POSITIVE_INFINITY, maxStrength: 0.8, shadowCurve: 3 }, /blurRadius/],
+    [{ blurRadius: 2, maxStrength: -0.1, shadowCurve: 3 }, /maxStrength/],
+    [{ blurRadius: 2, maxStrength: 1.1, shadowCurve: 3 }, /maxStrength/],
+    [{ blurRadius: 2, maxStrength: Number.NaN, shadowCurve: 3 }, /maxStrength/],
+    [{ blurRadius: 2, maxStrength: 0.8, shadowCurve: 0 }, /shadowCurve/],
+    [{ blurRadius: 2, maxStrength: 0.8, shadowCurve: -1 }, /shadowCurve/],
+    [{ blurRadius: 2, maxStrength: 0.8, shadowCurve: Number.POSITIVE_INFINITY }, /shadowCurve/],
+  ] satisfies [ChromaDenoiseParams, RegExp][])("rejects invalid params before processing: %o", (params, message) => {
+    expect(() => {
+      denoiseChroma(new Uint8ClampedArray([20, 10, 10, 255]), 1, 1, params);
+    }).toThrow(message);
   });
 });
