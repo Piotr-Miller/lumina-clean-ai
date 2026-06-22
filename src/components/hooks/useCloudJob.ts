@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@supabase/supabase-js";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { loadCloudResult } from "@/lib/services/cloud-result.client";
+import { maybePostprocessCloudResult } from "@/lib/services/cloud-result-postprocess.client";
+import { CHROMA_POSTPASS_ENABLED } from "@/lib/engines/chroma-denoise";
 import { deriveDownloadName } from "@/lib/engines/image-helpers";
 import type { PhotoJob, PhotoJobStatus } from "@/types";
 import {
@@ -299,6 +301,10 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
       return;
     }
     let cancelled = false;
+    // Tracks the object URL minted for a processed (chroma post-pass) Blob so it
+    // can be revoked on teardown. Stays null when the pass is disabled or falls
+    // back — the raw signed URL is never an object URL and must never be revoked.
+    let processedObjectUrl: string | null = null;
     const client = createBrowserClient(url, anonKey, accessToken);
     // A `.then` chain (not an async IIFE) so the `cancelled` guard reads as a
     // genuine post-unmount check — TS widens a captured `let` referenced from a
@@ -314,8 +320,33 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
         return loadCloudResult(afterUrl).then((loaded) => ({ afterUrl, loaded }));
       })
       .then(({ afterUrl, loaded }) => {
+        // Guard before the async pass: a job/input change between the fetch and
+        // here must not publish a stale result.
         if (cancelled) return;
-        setResult({ afterUrl, blob: loaded.blob, width: loaded.width, height: loaded.height });
+        // Chroma post-pass (default-OFF). On success the processed JPEG feeds
+        // BOTH slider and download via one managed object URL; disabled or any
+        // fallback retains the raw signed URL + raw Blob byte-for-byte.
+        return maybePostprocessCloudResult({
+          enabled: CHROMA_POSTPASS_ENABLED,
+          blob: loaded.blob,
+          width: loaded.width,
+          height: loaded.height,
+        }).then((outcome) => {
+          // Guard again after the async pass for the same stale-job reason.
+          if (cancelled) return;
+          if (outcome.fallbackReason) {
+            // Quality degradation, not result loss: the raw result still renders.
+            // Scrub-safe (no URL/PII) — only flag, dimensions, or error message.
+            // eslint-disable-next-line no-console
+            console.warn("useCloudJob: chroma post-pass fell back to raw result:", outcome.fallbackReason);
+          }
+          let displayUrl = afterUrl;
+          if (outcome.processed) {
+            processedObjectUrl = URL.createObjectURL(outcome.blob);
+            displayUrl = processedObjectUrl;
+          }
+          setResult({ afterUrl: displayUrl, blob: outcome.blob, width: loaded.width, height: loaded.height });
+        });
       })
       .catch(() => {
         if (cancelled) return;
@@ -323,6 +354,8 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
       });
     return () => {
       cancelled = true;
+      // Revoke only the generated object URL (never the signed URL).
+      if (processedObjectUrl) URL.revokeObjectURL(processedObjectUrl);
     };
   }, [status, resultPath, url, anonKey, accessToken]);
 

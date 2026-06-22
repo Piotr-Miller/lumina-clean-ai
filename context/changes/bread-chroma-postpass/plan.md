@@ -373,16 +373,16 @@ The pass runs client-side and **after** the job is `succeeded`, so it does not t
 
 #### Automated
 
-- [ ] 4.1 Unit tests pass (no-op, injected success, opaque alpha, raw fallbacks)
-- [ ] 4.2 Type checking passes
-- [ ] 4.3 Linting passes
-- [ ] 4.4 E2E gate green (flag off → unchanged)
+- [x] 4.1 Unit tests pass (no-op, injected success, opaque alpha, raw fallbacks)
+- [x] 4.2 Type checking passes
+- [x] 4.3 Linting passes
+- [x] 4.4 E2E gate green (flag off → unchanged)
 
 #### Manual
 
-- [ ] 4.5 Flag ON → processed object-URL preview; download matches displayed JPEG
-- [ ] 4.6 Processor error and >12 MP input fall back to raw Bread result
-- [ ] 4.7 Flag OFF → cloud result unchanged from current behavior
+- [x] 4.5 Flag ON → processed object-URL preview; download matches displayed JPEG
+- [x] 4.6 Processor error and >12 MP input fall back to raw Bread result
+- [x] 4.7 Flag OFF → cloud result unchanged from current behavior
 
 ### Phase 5: Tune on real low-light photos + GO/NO-GO
 
