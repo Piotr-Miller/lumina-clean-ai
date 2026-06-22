@@ -22,9 +22,7 @@
  * the Vitest Node environment — see `tests/cloud-result-postprocess.test.ts`.
  */
 import { denoiseChroma, MAX_CHROMA_POSTPASS_PIXELS } from "@/lib/engines/chroma-denoise";
-
-/** JPEG re-encode quality for the processed result (matches the Local engine). */
-const JPEG_QUALITY = 0.92;
+import { canvasToBlob, JPEG_QUALITY } from "@/lib/engines/canvas-helpers";
 
 /**
  * Force every alpha byte of an RGBA buffer to 255 (fully opaque), in place.
@@ -37,23 +35,6 @@ export function forceOpaque(data: Uint8ClampedArray): void {
   for (let i = 3; i < data.length; i += 4) {
     data[i] = 255;
   }
-}
-
-/** Resolve a `Blob` from `canvas.toBlob`, rejecting if the codec returns null. */
-function canvasToJpegBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error("Canvas could not encode the chroma post-pass result."));
-        }
-      },
-      "image/jpeg",
-      quality,
-    );
-  });
 }
 
 /**
@@ -81,7 +62,7 @@ export async function processCloudResultBlob(blob: Blob, width: number, height: 
     forceOpaque(imageData.data);
     ctx.putImageData(imageData, 0, 0);
 
-    return await canvasToJpegBlob(canvas, JPEG_QUALITY);
+    return await canvasToBlob(canvas, "image/jpeg", JPEG_QUALITY);
   } finally {
     bitmap.close();
   }

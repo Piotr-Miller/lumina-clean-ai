@@ -354,7 +354,14 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
       });
     return () => {
       cancelled = true;
-      // Revoke only the generated object URL (never the signed URL).
+      // Revoke only the generated object URL (never the signed URL). This is the
+      // sole revoke site: correct because a job/input change re-runs this effect
+      // and React runs THIS cleanup (revoking the prior URL) before the next run
+      // mints a new one — so each minted URL is revoked exactly once, with no
+      // same-job replace window (there's no `await` between createObjectURL and
+      // setResult above). If a future refactor decouples minting from this
+      // effect's lifecycle, switch to a `urlsRef` revoke-prior pattern (cf.
+      // `useLocalEnhance`) instead of relying on cleanup ordering.
       if (processedObjectUrl) URL.revokeObjectURL(processedObjectUrl);
     };
   }, [status, resultPath, url, anonKey, accessToken]);
