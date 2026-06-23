@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [master]
 
+# Cancel superseded runs to save Actions minutes: pushing a new commit to a PR
+# branch aborts that branch's in-flight run instead of letting it finish. Scoped
+# per ref. master is deliberately EXCLUDED from cancellation (cancel-in-progress
+# false on refs/heads/master) so a merge's deploy run is never killed mid-flight
+# by a follow-up push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 jobs:
   ci:
     runs-on: ubuntu-latest
