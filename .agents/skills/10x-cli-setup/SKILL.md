@@ -1,6 +1,6 @@
 ---
 name: 10x-cli-setup
-description: "ALWAYS invoke this skill when the user mentions 10x-cli, @przeprogramowani/10x-cli, the 10xDevs CLI, or the 10xDevs course environment in a setup context. This skill fetches the live README — Codex does not know 10x-cli's current install steps without it. Applies to: installing, updating, reconfiguring for different AI tools (Cursor, Copilot, Codex), permission/npm errors, authentication, and onboarding after 10xDevs enrollment. Excludes: developing 10x-cli source code, contributing to the repo, building similar CLIs, or general project setup."
+description: "ALWAYS invoke this skill when the user mentions 10x-cli, @przeprogramowani/10x-cli, the 10xDevs CLI, or the 10xDevs course environment in a setup context. This skill fetches the live README — Claude does not know 10x-cli's current install steps without it. Applies to: installing, updating, reconfiguring for different AI tools (Cursor, Copilot, Claude Code), permission/npm errors, authentication, and onboarding after 10xDevs enrollment. Excludes: developing 10x-cli source code, contributing to the repo, building similar CLIs, or general project setup."
 ---
 
 # 10x-cli Setup
@@ -41,7 +41,7 @@ The general flow from the README is:
 3. **Authenticate** — the README describes the auth command and flow. Note: auth is interactive (magic-link email), so the user may need to run it themselves via `! 10x auth` if the shell doesn't support input.
 4. **Verify** — the README lists a diagnostic command. Run it and review the output with the user.
 5. **Explore** — show the user how to browse and fetch content using the commands from the README.
-6. **Tool configuration** — if the user mentioned a specific AI tool (Codex, Cursor, etc.), use the README's multi-tool support section to configure it. If not, explain the options and let them choose.
+6. **Tool configuration** — if the user mentioned a specific AI tool (Claude Code, Cursor, etc.), use the README's multi-tool support section to configure it. If not, explain the options and let them choose.
 
 Do not hardcode specific version numbers, command flags, or directory paths — read them from the README. This way the skill stays correct even when the CLI changes.
 

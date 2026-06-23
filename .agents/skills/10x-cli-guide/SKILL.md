@@ -37,7 +37,7 @@ Also check which tool profile is configured:
 cat ~/.config/10x-cli/config.json 2>/dev/null || cat "$APPDATA/10x-cli/config.json" 2>/dev/null || echo "{}"
 ```
 
-If the config contains a `"tool"` key, that is the active profile. If not, the default is `Codex`.
+If the config contains a `"tool"` key, that is the active profile. If not, the default is `claude-code`.
 
 ### CLI version
 
@@ -77,7 +77,7 @@ The primary daily command. Fetches a lesson bundle from the API and writes skill
 
 | Tool           | Skills                           | Prompts                     | Rules file                        | Config templates                  |
 | -------------- | -------------------------------- | --------------------------- | --------------------------------- | --------------------------------- |
-| Codex          | `.Codex/skills/<name>/SKILL.md`  | `.Codex/prompts/<name>.md`  | `AGENTS.md`                       | `.Codex/config-templates/<name>`  |
+| Claude Code    | `.claude/skills/<name>/SKILL.md` | `.claude/prompts/<name>.md` | `CLAUDE.md`                       | `.claude/config-templates/<name>` |
 | Cursor         | `.cursor/skills/<name>/SKILL.md` | `.cursor/prompts/<name>.md` | `.cursor/rules/10x-course.mdc`    | `.cursor/config-templates/<name>` |
 | GitHub Copilot | `.github/skills/<name>/SKILL.md` | `.github/prompts/<name>.md` | `.github/copilot-instructions.md` | `.github/config-templates/<name>` |
 | Codex CLI      | `.agents/skills/<name>/SKILL.md` | `.agents/prompts/<name>.md` | `AGENTS.md`                       | `.agents/config-templates/<name>` |
@@ -121,7 +121,7 @@ Sessions refresh transparently — if a token is near expiry, the next command r
 
 ## Switching Tools
 
-To change your AI tool (e.g., from Codex to Cursor):
+To change your AI tool (e.g., from Claude Code to Cursor):
 
 ```bash
 10x get m1l1 --tool cursor
@@ -144,7 +144,7 @@ The tool choice is saved in the config file (`~/.config/10x-cli/config.json` on 
 - **npx works fine**: `npx @przeprogramowani/10x-cli get m1l1` — no global install needed. Node 20+ is the only prerequisite.
 - **Clipboard**: Skills that copy to clipboard use `clip.exe` on Windows. If a skill outputs a clipboard command, it will fall back silently if `clip.exe` is unavailable.
 - **Config location**: `%APPDATA%\10x-cli\config.json` and `%APPDATA%\10x-cli\auth.json`. The CLI creates these automatically.
-- **Path separators**: The CLI uses Node's `path.join()` internally, so forward slashes in command output (like `.Codex/skills/code-review/SKILL.md`) work fine on Windows — no need to convert them.
+- **Path separators**: The CLI uses Node's `path.join()` internally, so forward slashes in command output (like `.claude/skills/code-review/SKILL.md`) work fine on Windows — no need to convert them.
 
 ### Linux
 
@@ -172,16 +172,16 @@ This catches the most common issues. Read the output and address each failing ch
 
 ### 2. Common problems and fixes
 
-| Symptom                           | Likely cause                                       | Fix                                                                          |
-| --------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------- |
-| "You're not signed in"            | No auth or expired session                         | `10x auth`                                                                   |
-| "Session expired"                 | Token past expiry and auto-refresh failed          | `10x auth` (re-login)                                                        |
-| API unreachable / timeout         | Network issue or API outage                        | Check internet; retry in a few minutes                                       |
-| "Module is locked"                | Content not yet released                           | `10x list` to see unlock date                                                |
-| `.Codex/` not found (doctor fail) | Running from wrong directory or wrong tool profile | `cd` to project root; check `10x doctor --json` for which tool is configured |
-| "403 Forbidden" on `10x get`      | Module locked or no membership                     | Check `10x list` for module state; verify enrollment                         |
-| Orphaned artifact prompt on `get` | Switching tools mid-lesson                         | Choose "migrate" to move files, or "delete" to clean up                      |
-| Permission denied writing files   | Directory not writable                             | Check directory permissions; on POSIX: `chmod u+w <dir>`                     |
+| Symptom                            | Likely cause                                       | Fix                                                                          |
+| ---------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| "You're not signed in"             | No auth or expired session                         | `10x auth`                                                                   |
+| "Session expired"                  | Token past expiry and auto-refresh failed          | `10x auth` (re-login)                                                        |
+| API unreachable / timeout          | Network issue or API outage                        | Check internet; retry in a few minutes                                       |
+| "Module is locked"                 | Content not yet released                           | `10x list` to see unlock date                                                |
+| `.claude/` not found (doctor fail) | Running from wrong directory or wrong tool profile | `cd` to project root; check `10x doctor --json` for which tool is configured |
+| "403 Forbidden" on `10x get`       | Module locked or no membership                     | Check `10x list` for module state; verify enrollment                         |
+| Orphaned artifact prompt on `get`  | Switching tools mid-lesson                         | Choose "migrate" to move files, or "delete" to clean up                      |
+| Permission denied writing files    | Directory not writable                             | Check directory permissions; on POSIX: `chmod u+w <dir>`                     |
 
 ### 3. Verbose mode for deeper debugging
 
