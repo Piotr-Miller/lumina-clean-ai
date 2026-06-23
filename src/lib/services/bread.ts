@@ -11,7 +11,7 @@
  * spike (`context/changes/cloud-ai-realtime-result/spike-findings.md`).
  */
 
-/** Pinned `mingcv/bread` model version — locked by the Phase-0 spike. */
+/** Pinned `mingcv/bread` model version. Bump reviewably via `npm run resolve:bread-version` — never hand-edit to follow "latest". */
 export const BREAD_VERSION = "057a4e073829a8c50f2622206f71a8ed25331cd07a520bc264469389c7c11e54";
 
 /** Default brightening gamma (≤1.5). Phase-0 default. */

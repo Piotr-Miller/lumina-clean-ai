@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "test:e2e:serve": "npm run build && wrangler dev --port 4321",
     "test:watch": "vitest",
-    "test:mutation": "stryker run"
+    "test:mutation": "stryker run",
+    "resolve:bread-version": "tsx scripts/resolve-bread-version.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",

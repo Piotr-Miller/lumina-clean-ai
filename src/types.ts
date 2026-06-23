@@ -20,6 +20,8 @@ export interface PhotoJob {
   source_path: string;
   result_path: string | null;
   replicate_prediction_id: string | null;
+  /** Pinned Bread model version the job ran (S-11). Written once at prediction-create; null for legacy/pre-S-11 rows. */
+  model_version: string | null;
   error_code: string | null;
   error_message: string | null;
   created_at: string;
@@ -64,13 +66,16 @@ export interface MarkJobSucceededCommand {
 }
 
 /**
- * Input to {@link markJobProcessing}. Called by S-04's Edge Function `/start`
- * route after it creates the Replicate prediction. `replicatePredictionId` is
- * stored so `/callback` can cross-check the completion payload.
+ * Input to {@link recordJobPrediction}. Called by S-04's Edge Function `/start`
+ * route after it claims the job and creates the Replicate prediction. `replicatePredictionId` is
+ * stored so `/callback` can cross-check the completion payload. `modelVersion`
+ * is the pinned Bread version the prediction ran (S-11 telemetry) — required so
+ * every processing row records it; `markJobSucceeded` never overwrites it.
  */
-export interface MarkJobProcessingCommand {
+export interface RecordJobPredictionCommand {
   jobId: string;
-  replicatePredictionId?: string;
+  replicatePredictionId: string;
+  modelVersion: string;
 }
 
 /**

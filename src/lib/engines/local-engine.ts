@@ -9,14 +9,13 @@
  * DOM-dependent; not imported by the unit tests (those cover `image-helpers`).
  */
 import { buildGammaLut } from "./image-helpers";
+import { canvasToBlob, JPEG_QUALITY } from "./canvas-helpers";
 import type { EnhanceResult, ImageEngine } from "./types";
 
 /** Gamma > 1 brightens shadows/midtones. */
 const GAMMA = 1.5;
 /** Light blur radius (px) — masks luminance noise without obliterating detail. */
 const BLUR_PX = 1.2;
-/** JPEG re-encode quality for the result blob. */
-const JPEG_QUALITY = 0.92;
 
 /** Intrinsic pixel dimensions of a decoded source. */
 function sourceDimensions(source: HTMLImageElement | ImageBitmap): { width: number; height: number } {
@@ -24,22 +23,6 @@ function sourceDimensions(source: HTMLImageElement | ImageBitmap): { width: numb
     return { width: source.naturalWidth, height: source.naturalHeight };
   }
   return { width: source.width, height: source.height };
-}
-
-function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject(new Error("Canvas could not encode the enhanced image."));
-        }
-      },
-      mimeType,
-      mimeType === "image/jpeg" ? JPEG_QUALITY : undefined,
-    );
-  });
 }
 
 export const localEngine: ImageEngine = {
@@ -71,7 +54,7 @@ export const localEngine: ImageEngine = {
     }
     ctx.putImageData(imageData, 0, 0);
 
-    const blob = await canvasToBlob(canvas, opts.mimeType);
+    const blob = await canvasToBlob(canvas, opts.mimeType, opts.mimeType === "image/jpeg" ? JPEG_QUALITY : undefined);
     return { blob, width, height, mimeType: opts.mimeType };
   },
 };

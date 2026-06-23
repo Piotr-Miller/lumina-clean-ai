@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { BREAD_GAMMA, BREAD_STRENGTH, BREAD_VERSION, buildBreadInput } from "@/lib/services/bread";
 
 describe("BREAD_VERSION", () => {
-  it("is the locked Phase-0 mingcv/bread version hash", () => {
+  // The committed pin. Bumped reviewably via `npm run resolve:bread-version`
+  // (it rewrites this assertion too); never hand-edit to follow "latest".
+  it("matches the reviewed, pinned mingcv/bread version hash", () => {
     expect(BREAD_VERSION).toBe("057a4e073829a8c50f2622206f71a8ed25331cd07a520bc264469389c7c11e54");
   });
 });

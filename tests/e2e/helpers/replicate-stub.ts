@@ -18,6 +18,8 @@ import { createHmac, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { BREAD_VERSION } from "../../../src/lib/services/bread";
+
 export interface SignedCallback {
   /** Headers to send with the POST (Content-Type + the three svix headers). */
   headers: Record<string, string>;
@@ -90,17 +92,20 @@ export function resolveSigningSecret(): string {
 /**
  * Flip a job row to `processing` with a prediction id — the precondition the
  * signed `/callback` needs (the success path guards on `status = processing` and
- * cross-checks `replicate_prediction_id`). Service-role admin; setup only, never
- * an assertion. Returns the prediction id it set.
+ * cross-checks `replicate_prediction_id`). Also writes `model_version` (default
+ * the shared `BREAD_VERSION`) so a stubbed processing row mirrors a real one
+ * (S-11 telemetry), not an undocumented exception. Service-role admin; setup
+ * only, never an assertion. Returns the prediction id it set.
  */
 export async function flipToProcessing(
   admin: SupabaseClient,
   jobId: string,
   predictionId = `pred_${randomUUID()}`,
+  modelVersion: string = BREAD_VERSION,
 ): Promise<string> {
   const { error } = await admin
     .from("jobs")
-    .update({ status: "processing", replicate_prediction_id: predictionId })
+    .update({ status: "processing", replicate_prediction_id: predictionId, model_version: modelVersion })
     .eq("id", jobId);
   if (error) throw new Error(`flipToProcessing(${jobId}) failed: ${error.message}`);
   return predictionId;

@@ -3,10 +3,10 @@ import type {
   CreatePhotoJobCommand,
   CreatePhotoJobResponse,
   MarkJobFailedCommand,
-  MarkJobProcessingCommand,
   MarkJobSucceededCommand,
   MarkPendingJobFailedCommand,
   PhotoJob,
+  RecordJobPredictionCommand,
 } from "@/types";
 
 const PHOTOS_BUCKET = "photos";
@@ -219,23 +219,59 @@ export async function getJobById(admin: SupabaseClient, jobId: string): Promise<
 }
 
 /**
- * Mark a job as `processing` and (optionally) store the Replicate prediction
- * id used later as the `/callback` integrity cross-check. No timestamps beyond
- * the DB-trigger-owned `updated_at` are touched (the job is still in flight).
+ * Atomically claim a queued job for one `/start` invocation. The guarded
+ * transition is the ownership boundary before any paid provider work starts.
+ * Concurrent or replayed invocations receive `null` and must not create a
+ * prediction. No timestamps beyond the DB-trigger-owned `updated_at` are
+ * touched while the job remains in flight.
  *
  * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
  */
-export async function markJobProcessing(admin: SupabaseClient, cmd: MarkJobProcessingCommand): Promise<void> {
-  const { error } = await admin
+export async function claimJobForProcessing(admin: SupabaseClient, jobId: string): Promise<PhotoJob | null> {
+  const { data, error } = (await admin
+    .from(JOBS_TABLE)
+    .update({ status: "processing" })
+    .eq("id", jobId)
+    .eq("status", "queued")
+    .select("*")
+    .maybeSingle()) as {
+    data: PhotoJob | null;
+    error: { message: string } | null;
+  };
+  if (error) {
+    throw new Error(`claimJobForProcessing: failed to claim job ${jobId}: ${error.message}`);
+  }
+  return data;
+}
+
+/**
+ * Persist the provider identity for a claimed processing job exactly once.
+ * Both NULL guards are load-bearing: a replay or competing invocation cannot
+ * replace the prediction id or pinned model version after either is set.
+ * Returns false when the row was terminalized or already populated.
+ *
+ * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
+ */
+export async function recordJobPrediction(admin: SupabaseClient, cmd: RecordJobPredictionCommand): Promise<boolean> {
+  const { data, error } = (await admin
     .from(JOBS_TABLE)
     .update({
-      status: "processing",
-      replicate_prediction_id: cmd.replicatePredictionId ?? null,
+      replicate_prediction_id: cmd.replicatePredictionId,
+      model_version: cmd.modelVersion,
     })
-    .eq("id", cmd.jobId);
+    .eq("id", cmd.jobId)
+    .eq("status", "processing")
+    .is("replicate_prediction_id", null)
+    .is("model_version", null)
+    .select("id")
+    .maybeSingle()) as {
+    data: { id: string } | null;
+    error: { message: string } | null;
+  };
   if (error) {
-    throw new Error(`markJobProcessing: failed to update job ${cmd.jobId}: ${error.message}`);
+    throw new Error(`recordJobPrediction: failed to update job ${cmd.jobId}: ${error.message}`);
   }
+  return Boolean(data);
 }
 
 /**
