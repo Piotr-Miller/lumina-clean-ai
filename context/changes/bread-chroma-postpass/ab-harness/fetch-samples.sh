@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fetch representative low-light A/B samples for the chroma-denoise Phase-5 tuning.
-# All freely licensed; downloaded locally (gitignored) — NOT committed. Each is
+# All freely licensed; the fetched set is now committed (re-run to refresh). Each is
 # fetched at <=12 MP so the pass runs (the 12 MP guard rejects larger); the
 # "mixed" frame is ~11 MP to also exercise the end-to-end perf budget.
 #

@@ -36,9 +36,13 @@ npx esbuild src/lib/engines/chroma-denoise.ts --bundle --format=iife \
 
 ## Test samples
 
-`bash fetch-samples.sh` (from repo root) downloads 3 representative low-light
-photos into `samples/` (gitignored — not committed). All ≤ 12 MP so the pass
-runs; the larger two (~10 MP) also exercise the end-to-end perf budget.
+`bash fetch-samples.sh` (from repo root) downloads the 3 representative low-light
+photos into `samples/`. These three (and the generated `analysis/` A/B strips)
+are committed to the repo so the Phase-5 evidence is self-contained and survives
+the external source URLs rotting. All ≤ 12 MP so the pass runs; the larger two
+(~10 MP) also exercise the end-to-end perf budget. Any other files in `samples/`
+(ad-hoc scratch inputs used in manual spot-checks) are local-only and gitignored
+— they have no recorded license and are deliberately not committed.
 
 | File                            | Category        | Source / license                                                                                |
 | ------------------------------- | --------------- | ----------------------------------------------------------------------------------------------- |
