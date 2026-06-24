@@ -1,10 +1,10 @@
 ---
 change_id: e2e-build-server
 title: Serve a production build (wrangler dev) for the E2E gate instead of astro dev
-status: new
+status: archived
 created: 2026-06-20
-updated: 2026-06-20
-archived_at: null
+updated: 2026-06-24
+archived_at: 2026-06-24T22:01:33Z
 issue: null
 ---
 
