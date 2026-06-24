@@ -1,0 +1,4 @@
+# Locally-fetched A/B test photos (CC / Unsplash-licensed binaries) — not committed.
+# Regenerate with: bash fetch-samples.sh   (attributions in README.md)
+samples/
+analysis/

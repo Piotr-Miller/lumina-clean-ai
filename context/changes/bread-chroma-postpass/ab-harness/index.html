@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chroma-denoise A/B harness — bread-chroma-postpass Phase 5</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #14151a;
+        --panel: #1d1f27;
+        --line: #2c2f3a;
+        --fg: #e7e9ee;
+        --muted: #9aa0ad;
+        --accent: #6ea8fe;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font: 14px/1.5 system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      header {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--line);
+      }
+      header h1 {
+        margin: 0;
+        font-size: 16px;
+      }
+      header p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 0;
+        min-height: calc(100vh - 64px);
+      }
+      aside {
+        padding: 18px 20px;
+        border-right: 1px solid var(--line);
+        background: var(--panel);
+      }
+      .field {
+        margin-bottom: 18px;
+      }
+      .field label {
+        display: flex;
+        justify-content: space-between;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .field label .val {
+        color: var(--accent);
+        font-variant-numeric: tabular-nums;
+      }
+      .field input[type="range"] {
+        width: 100%;
+      }
+      .field .hint {
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 4px;
+      }
+      button {
+        font: inherit;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        background: #262934;
+        color: var(--fg);
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      button.primary {
+        background: var(--accent);
+        color: #0b0c10;
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      .stage {
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+      }
+      .drop {
+        border: 2px dashed var(--line);
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .drop.drag {
+        border-color: var(--accent);
+        color: var(--fg);
+      }
+      .compare {
+        position: relative;
+        max-width: 100%;
+        user-select: none;
+        background: #0b0c10;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        line-height: 0;
+      }
+      .compare canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .compare .after {
+        position: absolute;
+        inset: 0;
+        clip-path: inset(0 0 0 50%);
+      }
+      .compare .divider {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        width: 2px;
+        background: var(--accent);
+        transform: translateX(-1px);
+        pointer-events: none;
+      }
+      .compare .tag {
+        position: absolute;
+        top: 8px;
+        padding: 2px 8px;
+        font-size: 11px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 4px;
+        line-height: 1.6;
+      }
+      .compare .tag.before {
+        left: 8px;
+      }
+      .compare .tag.after {
+        right: 8px;
+      }
+      .loupe {
+        position: fixed;
+        width: 220px;
+        height: 220px;
+        border: 2px solid var(--accent);
+        border-radius: 8px;
+        pointer-events: none;
+        display: none;
+        background: #000;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+        z-index: 10;
+        image-rendering: pixelated;
+      }
+      .loupe canvas {
+        width: 100%;
+        height: 100%;
+      }
+      table.stats {
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+      }
+      table.stats td {
+        padding: 2px 14px 2px 0;
+        color: var(--muted);
+      }
+      table.stats td.v {
+        color: var(--fg);
+        font-weight: 600;
+      }
+      .warn {
+        color: #ffcc66;
+      }
+      .ok {
+        color: #7ee787;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      code {
+        background: #0b0c10;
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="errbar"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: #5b1a1a;
+        color: #ffd7d7;
+        padding: 8px 14px;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+      "
+    ></div>
+    <header>
+      <h1>Chroma-denoise A/B harness</h1>
+      <p>
+        Change <code>bread-chroma-postpass</code> · Phase 5 tuning. Mirrors the production pipeline exactly:
+        <code>createImageBitmap → drawImage → getImageData → denoiseChroma → forceOpaque → toBlob('image/jpeg', 0.92)</code>.
+        Algorithm is the real bundled module (<code>chroma-denoise.iife.js</code>). Load a <strong>Bread result</strong> JPG.
+      </p>
+    </header>
+    <main>
+      <aside>
+        <div class="field">
+          <label for="blurRadius">blurRadius <span class="val" id="blurRadiusVal">3</span></label>
+          <input type="range" id="blurRadius" min="0" max="16" step="1" value="3" />
+          <div class="hint">Box-blur radius (px) on Cb/Cr. 0 disables blur.</div>
+        </div>
+        <div class="field">
+          <label for="maxStrength">maxStrength <span class="val" id="maxStrengthVal">0.90</span></label>
+          <input type="range" id="maxStrength" min="0" max="1" step="0.05" value="0.9" />
+          <div class="hint">Max chroma-blend in darkest shadows.</div>
+        </div>
+        <div class="field">
+          <label for="shadowCurve">shadowCurve <span class="val" id="shadowCurveVal">2.5</span></label>
+          <input type="range" id="shadowCurve" min="0.5" max="8" step="0.5" value="2.5" />
+          <div class="hint">Falloff exponent; higher = denoise concentrated in near-black.</div>
+        </div>
+        <div class="row">
+          <button id="reset">Reset to defaults</button>
+        </div>
+        <div class="field" style="margin-top: 16px">
+          <label>view</label>
+          <div class="row" id="viewToggle">
+            <button data-view="wipe" class="primary">Wipe A/B</button>
+            <button data-view="diff">Difference</button>
+            <button data-view="after">After only</button>
+          </div>
+          <div class="field" style="margin-top: 10px">
+            <label for="amp">diff amplify <span class="val" id="ampVal">8×</span></label>
+            <input type="range" id="amp" min="1" max="30" step="1" value="8" />
+            <div class="hint">Difference view multiplies |after − before| so subtle shadow changes are visible.</div>
+          </div>
+        </div>
+        <hr style="border-color: var(--line); margin: 18px 0" />
+        <div class="field">
+          <div class="row">
+            <button class="primary" id="pick">Load image…</button>
+            <button id="download" disabled>Download processed</button>
+          </div>
+          <input type="file" id="file" accept="image/*" hidden />
+          <div class="hint" style="margin-top: 10px">
+            Auto-reprocesses on every param change. Drag the divider to wipe. Hover the image for a 100% loupe (inspect
+            shadow color noise).
+          </div>
+        </div>
+      </aside>
+      <section class="stage">
+        <div class="drop" id="drop">Drop a Bread-result image here, or click “Load image…”.</div>
+        <div class="compare" id="compare" style="display: none">
+          <canvas id="beforeCanvas"></canvas>
+          <div class="after"><canvas id="afterCanvas"></canvas></div>
+          <div class="divider" id="divider"></div>
+          <span class="tag before">BEFORE (raw Bread)</span>
+          <span class="tag after">AFTER (denoised)</span>
+        </div>
+        <table class="stats" id="stats" style="display: none">
+          <tr>
+            <td>dimensions</td>
+            <td class="v" id="dims">–</td>
+            <td>megapixels</td>
+            <td class="v" id="mp">–</td>
+            <td>12 MP guard</td>
+            <td class="v" id="guard">–</td>
+          </tr>
+          <tr>
+            <td>decode</td>
+            <td class="v" id="tDecode">–</td>
+            <td>denoise (JS)</td>
+            <td class="v" id="tDenoise">–</td>
+            <td>encode JPEG</td>
+            <td class="v" id="tEncode">–</td>
+          </tr>
+          <tr>
+            <td>end-to-end</td>
+            <td class="v" id="tTotal">–</td>
+            <td>GO gate (≤ 2 s)</td>
+            <td class="v" id="goGate">–</td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>mean Δ (RGB)</td>
+            <td class="v" id="dMean">–</td>
+            <td>max Δ</td>
+            <td class="v" id="dMax">–</td>
+            <td>pixels changed</td>
+            <td class="v" id="dPct">–</td>
+          </tr>
+        </table>
+      </section>
+    </main>
+    <div class="loupe" id="loupe"><canvas id="loupeCanvas" width="220" height="220"></canvas></div>
+
+    <script src="chroma-denoise.iife.js"></script>
+    <script>
+      const { denoiseChroma, DEFAULT_CHROMA_PARAMS, MAX_CHROMA_POSTPASS_PIXELS } = window.ChromaDenoise;
+
+      const $ = (id) => document.getElementById(id);
+      const ctrls = {
+        blurRadius: $("blurRadius"),
+        maxStrength: $("maxStrength"),
+        shadowCurve: $("shadowCurve"),
+      };
+      const beforeCanvas = $("beforeCanvas");
+      const afterCanvas = $("afterCanvas");
+      const bctx = beforeCanvas.getContext("2d");
+      const actx = afterCanvas.getContext("2d", { willReadFrequently: true });
+
+      let sourceBitmap = null; // decoded original
+      let baseImageData = null; // pristine RGBA of the source (re-used each reprocess)
+      let lastBlobUrl = null;
+      let lastDecodeMs = 0; // measured once at load; shown in the stats each reprocess
+      let lastWork = null; // last denoised ImageData (for view switching without re-denoise)
+      let viewMode = "wipe"; // "wipe" | "diff" | "after"
+      let ampFactor = 8; // difference-view amplification
+
+      // Surface any JS error on-page (no console needed for the maintainer).
+      window.addEventListener("error", (e) => {
+        const bar = $("errbar");
+        bar.style.display = "block";
+        bar.textContent = "JS error: " + (e.message || e.error) + "  @ " + (e.filename || "") + ":" + (e.lineno || "");
+      });
+
+      function params() {
+        return {
+          blurRadius: Number(ctrls.blurRadius.value),
+          maxStrength: Number(ctrls.maxStrength.value),
+          shadowCurve: Number(ctrls.shadowCurve.value),
+        };
+      }
+
+      function syncLabels() {
+        $("blurRadiusVal").textContent = ctrls.blurRadius.value;
+        $("maxStrengthVal").textContent = Number(ctrls.maxStrength.value).toFixed(2);
+        $("shadowCurveVal").textContent = Number(ctrls.shadowCurve.value).toFixed(1);
+      }
+
+      function forceOpaque(data) {
+        for (let i = 3; i < data.length; i += 4) data[i] = 255;
+      }
+
+      async function loadFile(file) {
+        if (sourceBitmap) sourceBitmap.close?.();
+        const t0 = performance.now();
+        sourceBitmap = await createImageBitmap(file);
+        const w = sourceBitmap.width;
+        const h = sourceBitmap.height;
+
+        beforeCanvas.width = afterCanvas.width = w;
+        beforeCanvas.height = afterCanvas.height = h;
+        bctx.drawImage(sourceBitmap, 0, 0);
+        actx.drawImage(sourceBitmap, 0, 0);
+        baseImageData = actx.getImageData(0, 0, w, h);
+        lastDecodeMs = performance.now() - t0;
+
+        const mp = (w * h) / 1_000_000;
+        $("dims").textContent = `${w}×${h}`;
+        $("mp").textContent = mp.toFixed(2) + " MP";
+        const overGuard = w * h > MAX_CHROMA_POSTPASS_PIXELS;
+        $("guard").innerHTML = overGuard
+          ? `<span class="warn">OVER → raw fallback</span>`
+          : `<span class="ok">within</span>`;
+
+        $("compare").style.display = "";
+        $("drop").style.display = "none";
+        $("stats").style.display = "";
+        $("download").disabled = false;
+
+        reprocess();
+      }
+
+      function reprocess() {
+        if (!baseImageData) return;
+        const w = afterCanvas.width;
+        const h = afterCanvas.height;
+        const overGuard = w * h > MAX_CHROMA_POSTPASS_PIXELS;
+
+        // Fresh copy of the pristine source each run (the pass mutates in place).
+        const work = new ImageData(new Uint8ClampedArray(baseImageData.data), w, h);
+
+        let denoiseMs = 0;
+        if (overGuard) {
+          // Mirror maybePostprocessCloudResult: over the guard → keep raw (no pass).
+          $("tDenoise").innerHTML = '<span class="warn">skipped (guard)</span>';
+        } else {
+          const t1 = performance.now();
+          denoiseChroma(work.data, w, h, params());
+          denoiseMs = performance.now() - t1;
+          forceOpaque(work.data);
+          $("tDenoise").textContent = denoiseMs.toFixed(1) + " ms";
+        }
+        lastWork = work;
+
+        // Diff metrics vs the pristine source (RGB only) — proves the pass ran
+        // and how strongly each param bites.
+        const base = baseImageData.data;
+        const wd = work.data;
+        let sum = 0,
+          max = 0,
+          changed = 0;
+        for (let i = 0; i < wd.length; i += 4) {
+          const d = Math.abs(wd[i] - base[i]) + Math.abs(wd[i + 1] - base[i + 1]) + Math.abs(wd[i + 2] - base[i + 2]);
+          sum += d;
+          if (d > max) max = d;
+          if (d > 2) changed++;
+        }
+        const px = wd.length / 4;
+        $("dMean").textContent = (sum / px / 3).toFixed(2);
+        $("dMax").textContent = (max / 3).toFixed(0);
+        $("dPct").textContent = ((changed / px) * 100).toFixed(1) + "%";
+
+        // Encode the DENOISED result (production quality 0.92) — measures the real
+        // end-to-end cost and is the bytes a download/slider would consume. toBlob
+        // snapshots the canvas at call time, so switching the display to the diff
+        // view immediately after does not affect the encoded blob.
+        actx.putImageData(work, 0, 0);
+        const t2 = performance.now();
+        afterCanvas.toBlob(
+          (blob) => {
+            const encodeMs = performance.now() - t2;
+            $("tDecode").textContent = lastDecodeMs.toFixed(1) + " ms";
+            $("tEncode").textContent = encodeMs.toFixed(1) + " ms";
+            const total = lastDecodeMs + denoiseMs + encodeMs;
+            $("tTotal").textContent = total.toFixed(1) + " ms";
+            $("goGate").innerHTML = overGuard
+              ? "–"
+              : denoiseMs <= 2000
+                ? `<span class="ok">PASS (${denoiseMs.toFixed(0)} ms)</span>`
+                : `<span class="warn">FAIL (${denoiseMs.toFixed(0)} ms)</span>`;
+            if (lastBlobUrl) URL.revokeObjectURL(lastBlobUrl);
+            lastBlobUrl = URL.createObjectURL(blob);
+          },
+          "image/jpeg",
+          0.92,
+        );
+
+        // Switch the displayed canvas to the chosen view (encode already snapshotted).
+        render();
+      }
+
+      // Render the after-canvas per the active view mode, reusing the last denoise.
+      function render() {
+        if (!lastWork) return;
+        const w = afterCanvas.width;
+        const h = afterCanvas.height;
+        if (viewMode === "diff") {
+          const base = baseImageData.data;
+          const wd = lastWork.data;
+          const out = new ImageData(w, h);
+          const od = out.data;
+          for (let i = 0; i < wd.length; i += 4) {
+            od[i] = Math.min(255, Math.abs(wd[i] - base[i]) * ampFactor);
+            od[i + 1] = Math.min(255, Math.abs(wd[i + 1] - base[i + 1]) * ampFactor);
+            od[i + 2] = Math.min(255, Math.abs(wd[i + 2] - base[i + 2]) * ampFactor);
+            od[i + 3] = 255;
+          }
+          actx.putImageData(out, 0, 0);
+        } else {
+          actx.putImageData(lastWork, 0, 0);
+        }
+      }
+
+      // ——— divider wipe ———
+      const compare = $("compare");
+      const divider = $("divider");
+      const afterWrap = compare.querySelector(".after");
+      function setWipe(clientX) {
+        const r = compare.getBoundingClientRect();
+        let pct = ((clientX - r.left) / r.width) * 100;
+        pct = Math.max(0, Math.min(100, pct));
+        afterWrap.style.clipPath = `inset(0 0 0 ${pct}%)`;
+        divider.style.left = pct + "%";
+      }
+      let wiping = false;
+      compare.addEventListener("pointerdown", (e) => {
+        wiping = true;
+        setWipe(e.clientX);
+      });
+      window.addEventListener("pointerup", () => (wiping = false));
+      compare.addEventListener("pointermove", (e) => {
+        if (wiping) setWipe(e.clientX);
+        moveLoupe(e);
+      });
+
+      // ——— 100% loupe ———
+      const loupe = $("loupe");
+      const lctx = $("loupeCanvas").getContext("2d");
+      lctx.imageSmoothingEnabled = false;
+      const LOUPE = 220;
+      const SRC = 60; // source px sampled → ~3.6× zoom
+      function moveLoupe(e) {
+        if (!baseImageData) return;
+        const r = compare.getBoundingClientRect();
+        const x = ((e.clientX - r.left) / r.width) * afterCanvas.width;
+        const y = ((e.clientY - r.top) / r.height) * afterCanvas.height;
+        // Show AFTER on the right half of the loupe, BEFORE on the left — a mini A/B.
+        lctx.clearRect(0, 0, LOUPE, LOUPE);
+        lctx.drawImage(beforeCanvas, x - SRC / 2, y - SRC / 2, SRC, SRC, 0, 0, LOUPE / 2, LOUPE);
+        lctx.drawImage(afterCanvas, x - SRC / 4, y - SRC / 2, SRC / 2, SRC, LOUPE / 2, 0, LOUPE / 2, LOUPE);
+        lctx.strokeStyle = "#6ea8fe";
+        lctx.beginPath();
+        lctx.moveTo(LOUPE / 2, 0);
+        lctx.lineTo(LOUPE / 2, LOUPE);
+        lctx.stroke();
+        loupe.style.display = "block";
+        loupe.style.left = e.clientX + 24 + "px";
+        loupe.style.top = e.clientY - LOUPE - 12 + "px";
+      }
+      compare.addEventListener("pointerleave", () => (loupe.style.display = "none"));
+
+      // ——— param controls (debounced reprocess) ———
+      let raf = 0;
+      function onParam() {
+        syncLabels();
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => reprocess());
+      }
+      Object.values(ctrls).forEach((c) => c.addEventListener("input", onParam));
+      $("reset").addEventListener("click", () => {
+        ctrls.blurRadius.value = DEFAULT_CHROMA_PARAMS.blurRadius;
+        ctrls.maxStrength.value = DEFAULT_CHROMA_PARAMS.maxStrength;
+        ctrls.shadowCurve.value = DEFAULT_CHROMA_PARAMS.shadowCurve;
+        onParam();
+      });
+
+      // ——— view mode + diff amplification ———
+      $("viewToggle").addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-view]");
+        if (!btn) return;
+        viewMode = btn.dataset.view;
+        [...$("viewToggle").querySelectorAll("button")].forEach((b) => b.classList.toggle("primary", b === btn));
+        render();
+      });
+      $("amp").addEventListener("input", () => {
+        ampFactor = Number($("amp").value);
+        $("ampVal").textContent = ampFactor + "×";
+        if (viewMode === "diff") render();
+      });
+
+      // ——— file loading ———
+      $("pick").addEventListener("click", () => $("file").click());
+      $("file").addEventListener("change", (e) => e.target.files[0] && loadFile(e.target.files[0]));
+      const drop = $("drop");
+      drop.addEventListener("click", () => $("file").click());
+      ["dragover", "dragenter"].forEach((ev) =>
+        drop.addEventListener(ev, (e) => {
+          e.preventDefault();
+          drop.classList.add("drag");
+        }),
+      );
+      ["dragleave", "drop"].forEach((ev) =>
+        drop.addEventListener(ev, (e) => {
+          e.preventDefault();
+          drop.classList.remove("drag");
+        }),
+      );
+      drop.addEventListener("drop", (e) => {
+        const f = e.dataTransfer.files[0];
+        if (f) loadFile(f);
+      });
+      window.addEventListener("dragover", (e) => e.preventDefault());
+      window.addEventListener("drop", (e) => e.preventDefault());
+
+      $("download").addEventListener("click", () => {
+        if (!lastBlobUrl) return;
+        const a = document.createElement("a");
+        a.href = lastBlobUrl;
+        a.download = "chroma-denoised.jpg";
+        a.click();
+      });
+
+      syncLabels();
+    </script>
+  </body>
+</html>
