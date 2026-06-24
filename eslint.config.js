@@ -98,6 +98,9 @@ export default tseslint.config(
   // Linting them with the typed projectService would error; they have their own
   // runtime. Excluded from tsconfig too (see tsconfig.json "exclude").
   { ignores: ["supabase/functions/**"] },
+  // Generated esbuild IIFE bundles (e.g. the committed A/B tuning-harness build
+  // artifact) are machine-emitted, not authored — linting them is noise.
+  { ignores: ["**/*.iife.js"] },
   baseConfig,
   nodeConfigFilesConfig,
   reactConfig,
