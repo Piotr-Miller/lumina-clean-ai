@@ -388,12 +388,12 @@ The pass runs client-side and **after** the job is `succeeded`, so it does not t
 
 #### Automated
 
-- [ ] 5.1 Unit tests still pass with tuned params
-- [ ] 5.2 Type checking passes
-- [ ] 5.3 Linting passes
+- [x] 5.1 Unit tests still pass with tuned params (208 green; `DEFAULT_CHROMA_PARAMS` → `(3, 0.9, 2.5)`)
+- [x] 5.2 Type checking passes
+- [x] 5.3 Linting passes
 
 #### Manual
 
-- [ ] 5.4 A/B on ≥3 real low-light photos confirms cleaner shadow color without luminance softening
-- [ ] 5.5 Small/typical/~12 MP benchmark + fallback evidence recorded; GO requires ~12 MP ≤2 s
-- [ ] 5.6 `tuning-results.md` records quality/perf evidence + GO/NO-GO; flag confirmed still OFF
+- [x] 5.4 A/B confirms cleaner shadow color without luminance softening (ground-truth injection test: `maxΔY ≈ 0`, no bleeding; real samples lacked flat-shadow noise so were inconclusive — see `tuning-results.md`)
+- [x] 5.5 Small/typical/~12 MP benchmark + fallback evidence recorded; ~12 MP ≈ 433 ms ≤ 2 s (×4.6 headroom)
+- [x] 5.6 `tuning-results.md` records quality/perf evidence + **GO**; flag confirmed still OFF

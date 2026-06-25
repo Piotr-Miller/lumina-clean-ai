@@ -1,0 +1,8 @@
+# Local-only scratch test inputs (no recorded license) — not committed.
+# The canonical A/B set (01/02/03, attributed in README.md) and the generated
+# analysis/ comparison strips ARE committed so the Phase-5 evidence is
+# self-contained and survives external source URLs rotting.
+samples/*
+!samples/01-very-dark-iso160000.jpg
+!samples/02-mixed-copenhagen-night.jpg
+!samples/03-moderate-night-street.jpg

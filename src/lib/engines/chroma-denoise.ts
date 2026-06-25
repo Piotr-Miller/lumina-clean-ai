@@ -32,13 +32,19 @@ export interface ChromaDenoiseParams {
 }
 
 /**
- * Conservative defaults. Tuned for "do little harm" before the Phase-5 A/B
- * pass refines them against real low-light photos.
+ * Phase-5-tuned defaults. A ground-truth A/B (clean photo + injected shadow
+ * chroma noise → measured restoration vs the clean original; see
+ * `context/changes/bread-chroma-postpass/tuning-results.md`) showed the prior
+ * `(2, 0.8, 3)` was too conservative (~36–56% chroma-noise restoration). These
+ * restore ~45–66% with no luminance change (`maxΔY ≈ 0`) and no visible color
+ * bleeding. The box blur's cost is radius-independent, so the wider radius is
+ * free. Final confirmation against a real Bread output is deferred to the
+ * separate production-enable change (the flag stays OFF here).
  */
 export const DEFAULT_CHROMA_PARAMS: ChromaDenoiseParams = {
-  blurRadius: 2,
-  maxStrength: 0.8,
-  shadowCurve: 3,
+  blurRadius: 3,
+  maxStrength: 0.9,
+  shadowCurve: 2.5,
 };
 
 /**
