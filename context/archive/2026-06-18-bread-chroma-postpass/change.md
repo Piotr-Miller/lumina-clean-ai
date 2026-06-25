@@ -1,10 +1,10 @@
 ---
 change_id: bread-chroma-postpass
 title: Add a chroma-denoise post-pass and pin a build/deploy-resolved Bread release
-status: impl_reviewed
+status: archived
 created: 2026-06-18
 updated: 2026-06-25
-archived_at: null
+archived_at: 2026-06-25T09:58:03Z
 issue: 51
 ---
 
