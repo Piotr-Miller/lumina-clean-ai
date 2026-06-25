@@ -123,6 +123,8 @@ Persist the pinned version on each job at prediction-create time.
 
 ### Changes Required:
 
+> **Note (impl-review F2)**: this section's prose names the processing-write command `markJobProcessing` / `MarkJobProcessingCommand`. The implemented API is **`recordJobPrediction`** / **`RecordJobPredictionCommand`** (`src/lib/services/photo-job.service.ts:255`). Naming-only drift — behavior matches intent (`model_version` written once, write-once-guarded; `markJobSucceeded` never touches it).
+
 #### 1. Migration
 
 **File**: `supabase/migrations/<YYYYMMDDHHmmss>_add_model_version_to_jobs.sql` (new)
