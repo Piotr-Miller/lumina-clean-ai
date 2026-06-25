@@ -178,7 +178,8 @@
       "Bash(grep -qiE 'Ready on http|Build failed|\\\\[ERROR\\\\]' /c/Users/prmi/AppData/Local/Temp/claude/C--Source-Trainings-AI-10xDevs-LuminaClean-AI/07b8fcf1-0fcb-4fda-9f06-a8a1f296cf34/tasks/bmk3mic5f.output)",
       "Bash(grep -qiE 'Ready on http' /c/Users/prmi/AppData/Local/Temp/claude/C--Source-Trainings-AI-10xDevs-LuminaClean-AI/07b8fcf1-0fcb-4fda-9f06-a8a1f296cf34/tasks/bmk3mic5f.output)",
       "Bash(echo \"WORKER READY \\(flag ON + 1px guard\\)\")",
-      "Bash(tail -15 /c/Users/prmi/AppData/Local/Temp/claude/C--Source-Trainings-AI-10xDevs-LuminaClean-AI/07b8fcf1-0fcb-4fda-9f06-a8a1f296cf34/tasks/bmk3mic5f.output)"
+      "Bash(tail -15 /c/Users/prmi/AppData/Local/Temp/claude/C--Source-Trainings-AI-10xDevs-LuminaClean-AI/07b8fcf1-0fcb-4fda-9f06-a8a1f296cf34/tasks/bmk3mic5f.output)",
+      "Bash(gh pr create --base master --head feat/bread-chroma-postpass --title 'feat\\(bread-chroma-postpass\\): Phase 5 — tune chroma defaults + A/B GO \\(flag still OFF\\)' --body ' *)"
     ],
     "deny": ["Bash(rm -rf *)"],
     "ask": ["Bash(curl *)", "Bash(wget *)", "Bash(git push *)", "Bash(git push)"]
