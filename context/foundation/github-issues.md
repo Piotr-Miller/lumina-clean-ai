@@ -123,7 +123,7 @@ repo. They can be deleted manually at any time.
 | S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)   | `production-deployment`             | done     | `roadmap` `slice` `status:ready`                     |
 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)   | `cloud-job-retention-cleanup`       | done     | `roadmap` `slice` `status:ready`                     |
 | S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | `cloud-source-url-ttl-fix`          | done     | `roadmap` `slice` `status:ready`                     |
-| S-11       | [#51](https://github.com/Piotr-Miller/lumina-clean-ai/issues/51) | `bread-chroma-postpass`             | ready    | `roadmap` `slice` `status:ready` `phase:post-mvp`    |
+| S-11       | [#51](https://github.com/Piotr-Miller/lumina-clean-ai/issues/51) | `bread-chroma-postpass`             | done     | `roadmap` `slice` `status:done` `phase:post-mvp`     |
 | S-12       | [#52](https://github.com/Piotr-Miller/lumina-clean-ai/issues/52) | `adaptive-enhancement-parameters`   | ready    | `roadmap` `slice` `status:ready` `phase:post-mvp`    |
 | S-13       | [#60](https://github.com/Piotr-Miller/lumina-clean-ai/issues/60) | `premium-retinexformer-enhancement` | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
 | S-14       | [#61](https://github.com/Piotr-Miller/lumina-clean-ai/issues/61) | `premium-max-tier`                  | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
@@ -167,6 +167,7 @@ Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" n
 | 2026-06-07 | S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12) | closed on archive                                                                                                                                                     |
 | 2026-06-07 | S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)   | closed on archive                                                                                                                                                     |
 | 2026-06-11 | — (chore)  | [#13](https://github.com/Piotr-Miller/lumina-clean-ai/issues/13) | archived `ci-wrangler-action-node24` → `context/archive/2026-06-11-ci-wrangler-action-node24`; issue already closed on merge (wrangler-action@v4). Non-roadmap chore. |
+| 2026-06-25 | S-11       | [#51](https://github.com/Piotr-Miller/lumina-clean-ai/issues/51) | closed on archive → `context/archive/2026-06-18-bread-chroma-postpass/` (PRs #70 p1–4 + #74 p5).                                                                      |
 
 > The F-01/S-01/S-02 rows are recorded for completeness based on their archive dates; this log section was introduced with the S-03 archive (2026-05-31).
 
