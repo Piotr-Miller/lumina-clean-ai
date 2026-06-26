@@ -72,7 +72,7 @@ export async function processCloudResultBlob(blob: Blob, width: number, height: 
 export type CloudResultProcessor = (blob: Blob, width: number, height: number) => Promise<Blob>;
 
 export interface MaybePostprocessArgs {
-  /** Build-time gate (`CHROMA_POSTPASS_ENABLED`); when false the pass is skipped. */
+  /** Runtime gate (server secret `CHROMA_POSTPASS_ENABLED`, SSR-threaded as the `chromaEnabled` prop); when false the pass is skipped. */
   enabled: boolean;
   /** The raw Bread result bytes. */
   blob: Blob;

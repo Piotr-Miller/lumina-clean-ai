@@ -54,14 +54,6 @@ export const DEFAULT_CHROMA_PARAMS: ChromaDenoiseParams = {
  */
 export const MAX_CHROMA_POSTPASS_PIXELS = 12_000_000;
 
-/**
- * Build-time gate for the chroma post-pass. **Default OFF**: with this `false`
- * the cloud result path is byte-identical to today (no Canvas re-encode, raw
- * Bread output served). Flipping it ON is a deliberate, separate follow-up after
- * the Phase-5 A/B + GO/NO-GO acceptance — not a runtime/user toggle.
- */
-export const CHROMA_POSTPASS_ENABLED = false;
-
 /** Prevent pathological kernel sizes from monopolizing the browser main thread. */
 const MAX_BLUR_RADIUS = 32;
 

@@ -70,6 +70,12 @@ export default defineConfig({
       // create-job rejects with 429 daily_cap_reached once reached. 0 disables
       // cloud entirely (operator kill-switch).
       CLOUD_DAILY_CAP: envField.number({ context: "server", access: "secret", default: 50 }),
+      // Chroma-denoise post-pass (S-11) — a client-side quality layer over the
+      // Bread result. Read at SSR and threaded into the enhance island as the
+      // `chromaEnabled` prop, so it's a runtime kill-switch (`wrangler secret put`,
+      // no code change) rather than a build-time const. Default OFF; flip ON only
+      // after the F3 real-Bread GO + telemetry (change `chroma-postpass-enable`).
+      CHROMA_POSTPASS_ENABLED: envField.boolean({ context: "server", access: "secret", default: false }),
       // Sentry DSN — public by design. Server entry point reads SENTRY_DSN from
       // the workerd env directly; the browser reads PUBLIC_SENTRY_DSN. Same value.
       SENTRY_DSN: envField.string({ context: "server", access: "secret", optional: true }),

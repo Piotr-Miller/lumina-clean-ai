@@ -3,7 +3,6 @@ import { REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@supabase/supab
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { loadCloudResult } from "@/lib/services/cloud-result.client";
 import { maybePostprocessCloudResult } from "@/lib/services/cloud-result-postprocess.client";
-import { CHROMA_POSTPASS_ENABLED } from "@/lib/engines/chroma-denoise";
 import { deriveDownloadName } from "@/lib/engines/image-helpers";
 import type { PhotoJob, PhotoJobStatus } from "@/types";
 import {
@@ -55,6 +54,8 @@ export interface UseCloudJobArgs {
   jobId: string | null;
   /** Original upload filename, for the download name; `null` falls back to a generic. */
   sourceFileName: string | null;
+  /** Server-resolved chroma post-pass gate (runtime secret via SSR prop); when false the pass is skipped. */
+  chromaEnabled: boolean;
 }
 
 /** The subset of the `jobs` row this hook reads off the pushed UPDATE payload. */
@@ -123,7 +124,14 @@ const RESULT_LOAD_MESSAGE = "The enhanced result couldn't be loaded. Please try 
  * Anonymous visitors (no `accessToken`) never subscribe: the Local engine is
  * their path and the RLS-scoped channel would deliver nothing anyway.
  */
-export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }: UseCloudJobArgs): CloudJobState {
+export function useCloudJob({
+  url,
+  anonKey,
+  accessToken,
+  jobId,
+  sourceFileName,
+  chromaEnabled,
+}: UseCloudJobArgs): CloudJobState {
   const [status, setStatus] = useState<PhotoJobStatus | null>(null);
   const [resultPath, setResultPath] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -327,7 +335,7 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
         // BOTH slider and download via one managed object URL; disabled or any
         // fallback retains the raw signed URL + raw Blob byte-for-byte.
         return maybePostprocessCloudResult({
-          enabled: CHROMA_POSTPASS_ENABLED,
+          enabled: chromaEnabled,
           blob: loaded.blob,
           width: loaded.width,
           height: loaded.height,
@@ -364,7 +372,7 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
       // `useLocalEnhance`) instead of relying on cleanup ordering.
       if (processedObjectUrl) URL.revokeObjectURL(processedObjectUrl);
     };
-  }, [status, resultPath, url, anonKey, accessToken]);
+  }, [status, resultPath, url, anonKey, accessToken, chromaEnabled]);
 
   // `succeeded` always wins (even if a timeout watchdog also fired in a rare
   // race): a real result must render, never a stale timeout. While the result

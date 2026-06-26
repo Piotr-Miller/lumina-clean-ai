@@ -379,26 +379,26 @@ a Sentry message per result — negligible; must stay off the critical render pa
 
 #### Manual
 
-- [x] 1.1 Local stack + real Replicate produced ≥1 genuinely-noisy real Bread output — Round 2 `tree1` (real high-ISO bark, direct Replicate Bread call)
-- [x] 1.2 Each output A/B'd in the harness: visible shadow-chroma reduction, maxΔY ≈ 0, no edge bleeding — tree1: deep-shadow 22.4% / 29.1% Cb/Cr reduction on 10.2% px, mid-shadow 12.9% / 15.2% on 51.1% px, maxΔY 0.50, chroma-only diff, no halos/bleeding/softening (100% + 10× diff); visually subtle at normal zoom
-- [x] 1.3 `real-ab-results.md` records inputs, observations, final params, and an explicit decision — Rounds 1 + 2 recorded; decision = GO
-- [x] 1.4 Decision is GO (else stop after the bounded retune loop — do not proceed to Phase 5) — conditional GO; params kept at (3, 0.9, 2.5); Phase 5 must use telemetry / real-world verification before the prod flip
+- [x] 1.1 Local stack + real Replicate produced ≥1 genuinely-noisy real Bread output — Round 2 `tree1` (real high-ISO bark, direct Replicate Bread call) — dc1d35b
+- [x] 1.2 Each output A/B'd in the harness: visible shadow-chroma reduction, maxΔY ≈ 0, no edge bleeding — tree1: deep-shadow 22.4% / 29.1% Cb/Cr reduction on 10.2% px, mid-shadow 12.9% / 15.2% on 51.1% px, maxΔY 0.50, chroma-only diff, no halos/bleeding/softening (100% + 10× diff); visually subtle at normal zoom — dc1d35b
+- [x] 1.3 `real-ab-results.md` records inputs, observations, final params, and an explicit decision — Rounds 1 + 2 recorded; decision = GO — dc1d35b
+- [x] 1.4 Decision is GO (else stop after the bounded retune loop — do not proceed to Phase 5) — conditional GO; params kept at (3, 0.9, 2.5); Phase 5 must use telemetry / real-world verification before the prod flip — dc1d35b
 
 ### Phase 2: Runtime flag via SSR prop (Option B)
 
 #### Automated
 
-- [ ] 2.1 Type checking passes
-- [ ] 2.2 Linting passes
-- [ ] 2.3 Unit tests pass (incl. cloud-result-postprocess.test.ts)
-- [ ] 2.4 SSR build succeeds
-- [ ] 2.5 E2E gate green with the flag default-OFF
+- [x] 2.1 Type checking passes
+- [x] 2.2 Linting passes
+- [x] 2.3 Unit tests pass (incl. cloud-result-postprocess.test.ts)
+- [x] 2.4 SSR build succeeds
+- [ ] 2.5 E2E gate green with the flag default-OFF — deferred to CI/Docker harness (behavior-neutral: secret unset → default false → OFF-path unchanged)
 
 #### Manual
 
-- [ ] 2.6 Secret unset → cloud result unchanged (raw)
-- [ ] 2.7 `CHROMA_POSTPASS_ENABLED=true` under `wrangler dev` → processed preview + matching download
-- [ ] 2.8 Setting it back to `false` (new page load) → raw result restored
+- [x] 2.6 Secret unset → cloud result unchanged (raw) — covered by automated evidence: `cloud-result-postprocess.test.ts` asserts `enabled:false` → exact raw Blob, processor not called; secret defaults to `false` (gate accepted 2026-06-26)
+- [ ] 2.7 `CHROMA_POSTPASS_ENABLED=true` under `wrangler dev` → processed preview + matching download — deferred to Phase 4 flag-ON E2E (real-Canvas adapter has no headless path); gate accepted to defer
+- [ ] 2.8 Setting it back to `false` (new page load) → raw result restored — deferred to Phase 4 / live verification; OFF path proven by 2.6
 
 ### Phase 3: Telemetry
 

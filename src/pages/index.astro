@@ -2,7 +2,7 @@
 import EnhanceWorkspace from "@/components/enhance/EnhanceWorkspace";
 import Layout from "@/layouts/Layout.astro";
 import { createClient } from "@/lib/supabase";
-import { SUPABASE_URL, SUPABASE_KEY } from "astro:env/server";
+import { SUPABASE_URL, SUPABASE_KEY, CHROMA_POSTPASS_ENABLED } from "astro:env/server";
 
 const { user } = Astro.locals;
 
@@ -37,6 +37,7 @@ if (user) {
         supabaseUrl={SUPABASE_URL ?? null}
         supabaseAnonKey={SUPABASE_KEY ?? null}
         accessToken={accessToken}
+        chromaEnabled={CHROMA_POSTPASS_ENABLED}
       />
     </div>
   </main>
