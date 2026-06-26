@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/astro";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { loadCloudResult } from "@/lib/services/cloud-result.client";
 import { maybePostprocessCloudResult } from "@/lib/services/cloud-result-postprocess.client";
@@ -334,6 +335,7 @@ export function useCloudJob({
         // Chroma post-pass (default-OFF). On success the processed JPEG feeds
         // BOTH slider and download via one managed object URL; disabled or any
         // fallback retains the raw signed URL + raw Blob byte-for-byte.
+        const postpassStart = performance.now();
         return maybePostprocessCloudResult({
           enabled: chromaEnabled,
           blob: loaded.blob,
@@ -342,11 +344,30 @@ export function useCloudJob({
         }).then((outcome) => {
           // Guard again after the async pass for the same stale-job reason.
           if (cancelled) return;
+          // Telemetry (Phase 3) — dormant while the flag is OFF (disabled → no
+          // fallbackReason and not processed, so neither branch fires). Payloads
+          // are scrub-safe (bounded reason + integer dims, no URL/PII) and the
+          // global `scrubEvent` runs on send. Must not reorder the mint/setResult.
+          const durationMs = Math.round(performance.now() - postpassStart);
           if (outcome.fallbackReason) {
             // Quality degradation, not result loss: the raw result still renders.
-            // Scrub-safe (no URL/PII) — only flag, dimensions, or error message.
             // eslint-disable-next-line no-console
             console.warn("useCloudJob: chroma post-pass fell back to raw result:", outcome.fallbackReason);
+            // Degraded path → a standalone event so fallback-rate + reason are queryable.
+            Sentry.captureMessage("chroma post-pass: fell back to raw result", {
+              level: "warning",
+              extra: { fallbackReason: outcome.fallbackReason, width: loaded.width, height: loaded.height, durationMs },
+            });
+          } else if (outcome.processed) {
+            // Success → a low-volume event so run-rate is queryable (the Phase-5
+            // telemetry gate needs run-rate, not just fallback-rate). Quota is a
+            // non-issue: prod is bounded by CLOUD_DAILY_CAP (≤ a few/day); add
+            // sampling only if that cap rises materially. Scrub-safe (int dims +
+            // duration; the global scrubEvent runs on send).
+            Sentry.captureMessage("chroma post-pass applied", {
+              level: "info",
+              extra: { width: loaded.width, height: loaded.height, durationMs },
+            });
           }
           let displayUrl = afterUrl;
           if (outcome.processed) {

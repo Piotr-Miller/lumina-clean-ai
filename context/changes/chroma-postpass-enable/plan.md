@@ -388,15 +388,15 @@ a Sentry message per result — negligible; must stay off the critical render pa
 
 #### Automated
 
-- [x] 2.1 Type checking passes
-- [x] 2.2 Linting passes
-- [x] 2.3 Unit tests pass (incl. cloud-result-postprocess.test.ts)
-- [x] 2.4 SSR build succeeds
+- [x] 2.1 Type checking passes — 76d7271
+- [x] 2.2 Linting passes — 76d7271
+- [x] 2.3 Unit tests pass (incl. cloud-result-postprocess.test.ts) — 76d7271
+- [x] 2.4 SSR build succeeds — 76d7271
 - [ ] 2.5 E2E gate green with the flag default-OFF — deferred to CI/Docker harness (behavior-neutral: secret unset → default false → OFF-path unchanged)
 
 #### Manual
 
-- [x] 2.6 Secret unset → cloud result unchanged (raw) — covered by automated evidence: `cloud-result-postprocess.test.ts` asserts `enabled:false` → exact raw Blob, processor not called; secret defaults to `false` (gate accepted 2026-06-26)
+- [x] 2.6 Secret unset → cloud result unchanged (raw) — covered by automated evidence: `cloud-result-postprocess.test.ts` asserts `enabled:false` → exact raw Blob, processor not called; secret defaults to `false` (gate accepted 2026-06-26) — 76d7271
 - [ ] 2.7 `CHROMA_POSTPASS_ENABLED=true` under `wrangler dev` → processed preview + matching download — deferred to Phase 4 flag-ON E2E (real-Canvas adapter has no headless path); gate accepted to defer
 - [ ] 2.8 Setting it back to `false` (new page load) → raw result restored — deferred to Phase 4 / live verification; OFF path proven by 2.6
 
@@ -404,16 +404,16 @@ a Sentry message per result — negligible; must stay off the critical render pa
 
 #### Automated
 
-- [ ] 3.1 Type checking passes
-- [ ] 3.2 Linting passes
-- [ ] 3.3 Unit tests pass
-- [ ] 3.4 SSR build succeeds
+- [x] 3.1 Type checking passes
+- [x] 3.2 Linting passes
+- [x] 3.3 Unit tests pass
+- [x] 3.4 SSR build succeeds
 
 #### Manual
 
-- [ ] 3.5 Flag ON locally: successful post-pass emits a Sentry signal with duration
-- [ ] 3.6 Forced fallback (>12 MP / thrown processor) emits a captureMessage with fallbackReason
-- [ ] 3.7 Sentry payloads contain no signed URLs / user data (scrub-safe)
+- [ ] 3.5 Flag ON locally: successful post-pass emits a Sentry signal with duration — deferred to Phase 5 live telemetry verification (now a `captureMessage`, so run-rate is queryable; code-correct + typecheck-verified)
+- [ ] 3.6 Forced fallback (>12 MP / thrown processor) emits a captureMessage with fallbackReason — deferred to Phase 5 live verification
+- [x] 3.7 Sentry payloads contain no signed URLs / user data (scrub-safe) — verified by impl-review: payload is bounded `fallbackReason` + int dims + duration; no signed-URL/PII path; global `scrubEvent` runs on send
 
 ### Phase 4: ON-path automated test
 
