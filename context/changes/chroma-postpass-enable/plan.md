@@ -419,13 +419,13 @@ a Sentry message per result — negligible; must stay off the critical render pa
 
 #### Automated
 
-- [ ] 4.1 The new flag-ON E2E spec passes — deferred to CI/Docker harness (needs local Supabase + served enhance fn + fixture server; spec compiles + lints clean locally). Seam it depends on validated end-to-end on the built worker: ON+`?chroma=1`→true, ON+no-param→false, OFF(prod)+`?chroma=1`→false (guard).
-- [ ] 4.2 Full unit + integration suite stays green — unit 208 ✓ locally; integration pending CI/local Supabase harness (`SUPABASE_URL` not exported locally; Phase-4 changes touch no RLS/jobs/migration path). Check only once the integration job is green.
+- [x] 4.1 The new flag-ON E2E spec passes — green on CI `e2e` job (PR #78, run 28265830398, commit 3fb3827, 399s on the Docker Supabase + served-enhance harness). Seam validated end-to-end on the built worker: ON+`?chroma=1`→true, ON+no-param→false, OFF(prod)+`?chroma=1`→false (loopback guard).
+- [x] 4.2 Full unit + integration suite stays green — unit 208 ✓ locally; integration green on CI `integration` job (PR #78, run 28265830398, 326s).
 - [x] 4.3 Type checking + lint pass
 
 #### Manual
 
-- [ ] 4.4 The spec demonstrably drives the real adapter (processed `blob:` result) — the browser Canvas-adapter run + `blob:` assertion validate when the e2e spec runs in CI; the seam feeding it (`chromaEnabled` prop) is validated end-to-end locally (truth table above)
+- [x] 4.4 The spec demonstrably drives the real adapter (processed `blob:` result) — proven by the CI `e2e` run (PR #78, run 28265830398): the browser Canvas-adapter produced a `blob:` after-image AND a real Download event with the derived `luminaclean-e2e-chroma-on-*.jpg` filename (F2 assertion).
 
 ### Phase 5: Enable in production (the flip)
 
