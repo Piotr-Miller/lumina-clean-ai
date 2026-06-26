@@ -404,28 +404,28 @@ a Sentry message per result — negligible; must stay off the critical render pa
 
 #### Automated
 
-- [x] 3.1 Type checking passes
-- [x] 3.2 Linting passes
-- [x] 3.3 Unit tests pass
-- [x] 3.4 SSR build succeeds
+- [x] 3.1 Type checking passes — aa487dc
+- [x] 3.2 Linting passes — aa487dc
+- [x] 3.3 Unit tests pass — aa487dc
+- [x] 3.4 SSR build succeeds — aa487dc
 
 #### Manual
 
 - [ ] 3.5 Flag ON locally: successful post-pass emits a Sentry signal with duration — deferred to Phase 5 live telemetry verification (now a `captureMessage`, so run-rate is queryable; code-correct + typecheck-verified)
 - [ ] 3.6 Forced fallback (>12 MP / thrown processor) emits a captureMessage with fallbackReason — deferred to Phase 5 live verification
-- [x] 3.7 Sentry payloads contain no signed URLs / user data (scrub-safe) — verified by impl-review: payload is bounded `fallbackReason` + int dims + duration; no signed-URL/PII path; global `scrubEvent` runs on send
+- [x] 3.7 Sentry payloads contain no signed URLs / user data (scrub-safe) — verified by impl-review: payload is bounded `fallbackReason` + int dims + duration; no signed-URL/PII path; global `scrubEvent` runs on send — aa487dc
 
 ### Phase 4: ON-path automated test
 
 #### Automated
 
-- [ ] 4.1 The new flag-ON E2E spec passes
-- [ ] 4.2 Full unit + integration suite stays green
-- [ ] 4.3 Type checking + lint pass
+- [ ] 4.1 The new flag-ON E2E spec passes — deferred to CI/Docker harness (needs local Supabase + served enhance fn + fixture server; spec compiles + lints clean locally). Seam it depends on validated end-to-end on the built worker: ON+`?chroma=1`→true, ON+no-param→false, OFF(prod)+`?chroma=1`→false (guard).
+- [ ] 4.2 Full unit + integration suite stays green — unit 208 ✓ locally; integration pending CI/local Supabase harness (`SUPABASE_URL` not exported locally; Phase-4 changes touch no RLS/jobs/migration path). Check only once the integration job is green.
+- [x] 4.3 Type checking + lint pass
 
 #### Manual
 
-- [ ] 4.4 The spec demonstrably drives the real adapter (processed `blob:` result)
+- [ ] 4.4 The spec demonstrably drives the real adapter (processed `blob:` result) — the browser Canvas-adapter run + `blob:` assertion validate when the e2e spec runs in CI; the seam feeding it (`chromaEnabled` prop) is validated end-to-end locally (truth table above)
 
 ### Phase 5: Enable in production (the flip)
 

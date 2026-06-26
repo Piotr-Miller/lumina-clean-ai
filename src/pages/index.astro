@@ -2,7 +2,7 @@
 import EnhanceWorkspace from "@/components/enhance/EnhanceWorkspace";
 import Layout from "@/layouts/Layout.astro";
 import { createClient } from "@/lib/supabase";
-import { SUPABASE_URL, SUPABASE_KEY, CHROMA_POSTPASS_ENABLED } from "astro:env/server";
+import { SUPABASE_URL, SUPABASE_KEY, CHROMA_POSTPASS_ENABLED, E2E_CHROMA_OVERRIDE } from "astro:env/server";
 
 const { user } = Astro.locals;
 
@@ -20,6 +20,18 @@ if (user) {
     accessToken = session?.access_token ?? null;
   }
 }
+
+// Chroma post-pass gate. Normally the runtime server secret CHROMA_POSTPASS_ENABLED.
+// Test-only override: when the LOCAL/CI-ONLY seam E2E_CHROMA_OVERRIDE is on, `?chroma=1`
+// forces it ON for one E2E spec. Two independent guards keep this out of prod: the seam
+// is unset there AND the override is honored only on a loopback hostname (CI/Playwright
+// serve on localhost). So even a mis-copied prod secret can't create a browser-flippable
+// feature — the runtime flag stays the only control in prod.
+const isLoopbackHost = ["localhost", "127.0.0.1", "::1", "[::1]"].includes(Astro.url.hostname);
+const chromaEnabled =
+  E2E_CHROMA_OVERRIDE && isLoopbackHost && Astro.url.searchParams.get("chroma") === "1"
+    ? true
+    : CHROMA_POSTPASS_ENABLED;
 ---
 
 <Layout title="LuminaClean AI — fix your night photos">
@@ -37,7 +49,7 @@ if (user) {
         supabaseUrl={SUPABASE_URL ?? null}
         supabaseAnonKey={SUPABASE_KEY ?? null}
         accessToken={accessToken}
-        chromaEnabled={CHROMA_POSTPASS_ENABLED}
+        chromaEnabled={chromaEnabled}
       />
     </div>
   </main>

@@ -239,7 +239,10 @@ jobs:
             --override-name auth.service_role_key=SUPABASE_SERVICE_ROLE_KEY \
             | sed -E 's/^([A-Za-z_][A-Za-z0-9_]*)="(.*)"$/\1=\2/' > .supabase.env
           cat .supabase.env >> "$GITHUB_ENV"
-          { cat .supabase.env; echo "CLOUD_PIPELINE_ENABLED=false"; } > .dev.vars
+          # E2E_CHROMA_OVERRIDE: LOCAL/CI-ONLY seam so the chroma-postpass-on spec can
+          # opt into the post-pass via `?chroma=1` while every other spec stays OFF
+          # (the flag's real default). Never set in production.
+          { cat .supabase.env; echo "CLOUD_PIPELINE_ENABLED=false"; echo "E2E_CHROMA_OVERRIDE=true"; } > .dev.vars
           rm .supabase.env
       # The Edge Function's serve env (gitignored locally; generated here). The
       # STUBBED `/callback` needs only the signing secret + the E2E SSRF-allowlist
