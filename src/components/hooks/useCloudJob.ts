@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/astro";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { loadCloudResult } from "@/lib/services/cloud-result.client";
 import { maybePostprocessCloudResult } from "@/lib/services/cloud-result-postprocess.client";
-import { CHROMA_POSTPASS_ENABLED } from "@/lib/engines/chroma-denoise";
 import { deriveDownloadName } from "@/lib/engines/image-helpers";
 import type { PhotoJob, PhotoJobStatus } from "@/types";
 import {
@@ -55,6 +55,8 @@ export interface UseCloudJobArgs {
   jobId: string | null;
   /** Original upload filename, for the download name; `null` falls back to a generic. */
   sourceFileName: string | null;
+  /** Server-resolved chroma post-pass gate (runtime secret via SSR prop); when false the pass is skipped. */
+  chromaEnabled: boolean;
 }
 
 /** The subset of the `jobs` row this hook reads off the pushed UPDATE payload. */
@@ -123,7 +125,14 @@ const RESULT_LOAD_MESSAGE = "The enhanced result couldn't be loaded. Please try 
  * Anonymous visitors (no `accessToken`) never subscribe: the Local engine is
  * their path and the RLS-scoped channel would deliver nothing anyway.
  */
-export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }: UseCloudJobArgs): CloudJobState {
+export function useCloudJob({
+  url,
+  anonKey,
+  accessToken,
+  jobId,
+  sourceFileName,
+  chromaEnabled,
+}: UseCloudJobArgs): CloudJobState {
   const [status, setStatus] = useState<PhotoJobStatus | null>(null);
   const [resultPath, setResultPath] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -326,19 +335,39 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
         // Chroma post-pass (default-OFF). On success the processed JPEG feeds
         // BOTH slider and download via one managed object URL; disabled or any
         // fallback retains the raw signed URL + raw Blob byte-for-byte.
+        const postpassStart = performance.now();
         return maybePostprocessCloudResult({
-          enabled: CHROMA_POSTPASS_ENABLED,
+          enabled: chromaEnabled,
           blob: loaded.blob,
           width: loaded.width,
           height: loaded.height,
         }).then((outcome) => {
           // Guard again after the async pass for the same stale-job reason.
           if (cancelled) return;
+          // Telemetry (Phase 3) — dormant while the flag is OFF (disabled → no
+          // fallbackReason and not processed, so neither branch fires). Payloads
+          // are scrub-safe (bounded reason + integer dims, no URL/PII) and the
+          // global `scrubEvent` runs on send. Must not reorder the mint/setResult.
+          const durationMs = Math.round(performance.now() - postpassStart);
           if (outcome.fallbackReason) {
             // Quality degradation, not result loss: the raw result still renders.
-            // Scrub-safe (no URL/PII) — only flag, dimensions, or error message.
             // eslint-disable-next-line no-console
             console.warn("useCloudJob: chroma post-pass fell back to raw result:", outcome.fallbackReason);
+            // Degraded path → a standalone event so fallback-rate + reason are queryable.
+            Sentry.captureMessage("chroma post-pass: fell back to raw result", {
+              level: "warning",
+              extra: { fallbackReason: outcome.fallbackReason, width: loaded.width, height: loaded.height, durationMs },
+            });
+          } else if (outcome.processed) {
+            // Success → a low-volume event so run-rate is queryable (the Phase-5
+            // telemetry gate needs run-rate, not just fallback-rate). Quota is a
+            // non-issue: prod is bounded by CLOUD_DAILY_CAP (≤ a few/day); add
+            // sampling only if that cap rises materially. Scrub-safe (int dims +
+            // duration; the global scrubEvent runs on send).
+            Sentry.captureMessage("chroma post-pass applied", {
+              level: "info",
+              extra: { width: loaded.width, height: loaded.height, durationMs },
+            });
           }
           let displayUrl = afterUrl;
           if (outcome.processed) {
@@ -364,7 +393,7 @@ export function useCloudJob({ url, anonKey, accessToken, jobId, sourceFileName }
       // `useLocalEnhance`) instead of relying on cleanup ordering.
       if (processedObjectUrl) URL.revokeObjectURL(processedObjectUrl);
     };
-  }, [status, resultPath, url, anonKey, accessToken]);
+  }, [status, resultPath, url, anonKey, accessToken, chromaEnabled]);
 
   // `succeeded` always wins (even if a timeout watchdog also fired in a rare
   // race): a real result must render, never a stale timeout. While the result

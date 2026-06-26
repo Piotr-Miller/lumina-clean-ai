@@ -20,6 +20,8 @@ interface EnhanceWorkspaceProps {
   supabaseAnonKey: string | null;
   /** Short-lived user JWT for the Realtime subscription; `null` for anonymous visitors. */
   accessToken: string | null;
+  /** Server-resolved chroma post-pass flag (runtime secret); gates the cloud-result post-pass. */
+  chromaEnabled: boolean;
 }
 
 const SECONDARY_BUTTON = "border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white";
@@ -37,6 +39,7 @@ export default function EnhanceWorkspace({
   supabaseUrl,
   supabaseAnonKey,
   accessToken,
+  chromaEnabled,
 }: EnhanceWorkspaceProps) {
   const enhancer = useLocalEnhance();
   const [engine, setEngine] = useState<EngineId>("local");
@@ -48,6 +51,7 @@ export default function EnhanceWorkspace({
     accessToken,
     jobId: cloudSubmit.jobId,
     sourceFileName: sourceFile?.name ?? null,
+    chromaEnabled,
   });
 
   const localProcessing = enhancer.status === "processing";

@@ -101,6 +101,11 @@ export default tseslint.config(
   // Generated esbuild IIFE bundles (e.g. the committed A/B tuning-harness build
   // artifact) are machine-emitted, not authored — linting them is noise.
   { ignores: ["**/*.iife.js"] },
+  // Change-local throwaway tooling (one-off A/B rigs, spike scripts) lives under
+  // context/changes/** and is not part of the app's tsc graph — the typed
+  // projectService errors on it (unresolved deps, .ts-extension imports). It's
+  // not shipped code; don't lint it (same rationale as the IIFE bundle above).
+  { ignores: ["context/changes/**"] },
   baseConfig,
   nodeConfigFilesConfig,
   reactConfig,

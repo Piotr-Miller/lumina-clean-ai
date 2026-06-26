@@ -70,6 +70,21 @@ export default defineConfig({
       // create-job rejects with 429 daily_cap_reached once reached. 0 disables
       // cloud entirely (operator kill-switch).
       CLOUD_DAILY_CAP: envField.number({ context: "server", access: "secret", default: 50 }),
+      // Chroma-denoise post-pass (S-11) — a client-side quality layer over the
+      // Bread result. Read at SSR and threaded into the enhance island as the
+      // `chromaEnabled` prop, so it's a runtime kill-switch (`wrangler secret put`,
+      // no code change) rather than a build-time const. The resolved boolean is
+      // intentionally client-visible (quality toggle, not a credential); the env
+      // binding itself remains server-only. Default OFF; flip ON only after the
+      // F3 real-Bread GO + telemetry (change `chroma-postpass-enable`).
+      CHROMA_POSTPASS_ENABLED: envField.boolean({ context: "server", access: "secret", default: false }),
+      // ⚠️ LOCAL/CI-ONLY test seam — NEVER set in production. When true, the
+      // enhance page honors `?chroma=1` to force the post-pass ON for a single
+      // E2E spec while the shared e2e server keeps every other spec on the real
+      // default. Guarded so prod (where this is unset → false) ignores the query
+      // param entirely — a browser can't flip the feature. Mirrors the
+      // `E2E_ALLOWED_OUTPUT_ORIGIN` local/CI-only convention.
+      E2E_CHROMA_OVERRIDE: envField.boolean({ context: "server", access: "secret", default: false }),
       // Sentry DSN — public by design. Server entry point reads SENTRY_DSN from
       // the workerd env directly; the browser reads PUBLIC_SENTRY_DSN. Same value.
       SENTRY_DSN: envField.string({ context: "server", access: "secret", optional: true }),
