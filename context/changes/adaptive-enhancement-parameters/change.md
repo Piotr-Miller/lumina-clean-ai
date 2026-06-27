@@ -3,7 +3,7 @@ change_id: adaptive-enhancement-parameters
 title: Add manual and Auto parameter controls for Local and Bread
 status: preparing
 created: 2026-06-18
-updated: 2026-06-18
+updated: 2026-06-28
 archived_at: null
 issue: 52
 ---
