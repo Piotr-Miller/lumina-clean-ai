@@ -1,10 +1,10 @@
 ---
 change_id: chroma-postpass-enable
 title: Enable the Bread chroma-denoise post-pass in production (flag ON)
-status: implementing
+status: archived
 created: 2026-06-25
-updated: 2026-06-25
-archived_at: null
+updated: 2026-06-27
+archived_at: 2026-06-27T19:58:32Z
 ---
 
 ## Notes

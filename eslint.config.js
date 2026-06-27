@@ -102,10 +102,13 @@ export default tseslint.config(
   // artifact) are machine-emitted, not authored — linting them is noise.
   { ignores: ["**/*.iife.js"] },
   // Change-local throwaway tooling (one-off A/B rigs, spike scripts) lives under
-  // context/changes/** and is not part of the app's tsc graph — the typed
-  // projectService errors on it (unresolved deps, .ts-extension imports). It's
-  // not shipped code; don't lint it (same rationale as the IIFE bundle above).
-  { ignores: ["context/changes/**"] },
+  // context/changes/** (and, once archived, context/archive/**) and is not part
+  // of the app's tsc graph — the typed projectService errors on it (unresolved
+  // deps, .ts-extension imports). It's not shipped code; don't lint it (same
+  // rationale as the IIFE bundle above). Archiving a change is a pure `git mv`,
+  // so without the archive glob a rig that linted clean under context/changes
+  // would block its own archive commit.
+  { ignores: ["context/changes/**", "context/archive/**"] },
   baseConfig,
   nodeConfigFilesConfig,
   reactConfig,
