@@ -431,7 +431,7 @@ a Sentry message per result — negligible; must stay off the critical render pa
 
 #### Manual
 
-- [ ] 5.1 Prod secret set; a real prod cloud job renders a processed result with cleaner shadow color
-- [ ] 5.2 Sentry shows the post-pass success signal (and any fallback) in prod
-- [ ] 5.3 Setting the secret to `false` restores the raw result on a fresh page load (rollback verified)
-- [ ] 5.4 The flip + rollback procedure is recorded
+- [x] 5.1 Prod secret set ON 2026-06-27; a real prod cloud job (`01-very-dark-iso160000.jpg`) rendered a processed result + working Download. Shadows clean/neutral, no highlight leak (max |ΔY|=13). Visible delta negligible on this crushed-near-black input (no mid-shadow band); rigorous benefit is the Phase-1 same-output A/B (`real-ab-results.md`). NOTE: surfaced + fixed a blocking pre-existing prod bug first — two S-11 jobs migrations (`20260621120000`, `20260621185226`) were merged but never `db push`ed to prod, so `recordJobPrediction` threw on the missing `jobs.model_version` column and every cloud job failed at `/start`; applied both via `supabase db push --linked`. See `prod-flip-procedure.md`.
+- [x] 5.2 Sentry shows the post-pass **success** signal in prod — issue `130690572` `chroma post-pass applied` (info, `environment:production`, `release:7d36bede...`), full happy-path breadcrumbs, scrub-safe; no fallback events.
+- [x] 5.3 Rollback verified — secret `false` + fresh reload → cloud job rendered the **raw** Bread `result.png` from the signed URL (download `.png`, not `-post.jpg`), no new post-pass Sentry event; secret restored to `true` (final prod state ON).
+- [x] 5.4 The flip + rollback procedure is recorded — `prod-flip-procedure.md` (control, flip ON/OFF, verify, telemetry table, rollback, gate reference; observation blanks filled).
