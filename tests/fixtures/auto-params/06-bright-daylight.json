@@ -1,0 +1,18 @@
+{
+  "name": "06-bright-daylight",
+  "class": "already-bright",
+  "provenance": "synthetic",
+  "source": "synthetic:bright-daylight",
+  "stats": {
+    "mean": 0.6455225327435662,
+    "p05": 0.5019607843137255,
+    "p25": 0.5882352941176471,
+    "p50": 0.6470588235294118,
+    "p75": 0.7019607843137254,
+    "p95": 0.788235294117647,
+    "p99": 0.8431372549019608,
+    "shadowRatio": 0.0,
+    "highlightRatio": 0.0014190673828125,
+    "clipRatio": 0.0001068115234375
+  }
+}

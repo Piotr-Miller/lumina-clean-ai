@@ -1,0 +1,18 @@
+{
+  "name": "05-blue-hour-ok",
+  "class": "already-bright",
+  "provenance": "synthetic",
+  "source": "synthetic:blue-hour-ok",
+  "stats": {
+    "mean": 0.359182799096201,
+    "p05": 0.24313725490196078,
+    "p25": 0.3137254901960784,
+    "p50": 0.3607843137254902,
+    "p75": 0.40784313725490196,
+    "p95": 0.4745098039215686,
+    "p99": 0.5215686274509804,
+    "shadowRatio": 0.005340576171875,
+    "highlightRatio": 0.0,
+    "clipRatio": 0.0
+  }
+}
