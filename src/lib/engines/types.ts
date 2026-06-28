@@ -75,5 +75,8 @@ export interface EnhanceResult {
  */
 export interface ImageEngine {
   id: EngineId;
-  enhance(source: HTMLImageElement | ImageBitmap, opts: { mimeType: string }): Promise<EnhanceResult>;
+  enhance(
+    source: HTMLImageElement | ImageBitmap,
+    opts: { mimeType: string; gamma?: number; blur?: number },
+  ): Promise<EnhanceResult>;
 }

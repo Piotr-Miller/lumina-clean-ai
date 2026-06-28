@@ -341,17 +341,17 @@ Additive nullable columns; existing rows stay null; the Edge Function falls back
 
 #### Automated
 
-- [ ] 2.1 Type checking passes
-- [ ] 2.2 Linting passes (touched files)
-- [ ] 2.3 Unit tests pass (param validators / range clamping)
-- [ ] 2.4 SSR build succeeds
+- [x] 2.1 Type checking passes
+- [x] 2.2 Linting passes (touched files)
+- [x] 2.3 Unit tests pass (param validators / range clamping)
+- [x] 2.4 SSR build succeeds
 
 #### Manual
 
-- [ ] 2.5 Panel responsive (right on desktop, stacked below on mobile)
-- [ ] 2.6 Local slider change re-renders after debounce; no freeze on large image
-- [ ] 2.7 Auto pre-fills on select; bright→gamma≈1.0 (no over-bright), very-dark→strong lift
-- [ ] 2.8 Per-slider override marking + Restore Auto work; no regression to upload→enhance→compare→download
+- [x] 2.5 Panel responsive (right on desktop, stacked below on mobile)
+- [x] 2.6 Local slider change re-renders after debounce; no freeze on large image
+- [x] 2.7 Auto pre-fills on select; bright→gamma≈1.0 (no over-bright), very-dark→strong lift
+- [x] 2.8 Per-slider override marking + Restore Auto work; no regression to upload→enhance→compare→download
 
 ### Phase 3: Cloud/Bread threading + cost-safe Apply
 

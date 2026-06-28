@@ -58,7 +58,7 @@ Mutation testing was skipped correctly: Phase 1 does not touch the risk-critical
   - Tradeoff: Requires locating/recovering the raw originals or explicitly weakening the evidence label.
   - Confidence: HIGH - both review passes found the same drift and the script documents the montage-half source.
   - Blind spot: Raw originals were not located during this review.
-- **Decision**: FIXED — relabeled the 3 montage-half fixtures `provenance: "real"` → `"montage-derived"` (proxy for raw source) in the fixtures, generator docstring/output, and the test's `Fixture` union; `source` field now says "proxy for raw source". Raw originals are unrecoverable (prior scratchpad), so the label is corrected rather than re-derived. Oracle behavior unchanged (assertions key off stats, not the label). Commit: <relabel-sha>.
+- **Decision**: FIXED — relabeled the 3 montage-half fixtures `provenance: "real"` → `"montage-derived"` (proxy for raw source) in the fixtures, generator docstring/output, and the test's `Fixture` union; `source` field now says "proxy for raw source". Raw originals are unrecoverable (prior scratchpad), so the label is corrected rather than re-derived. Oracle behavior unchanged (assertions key off stats, not the label). Commit: fcdae3f.
 
 ## Notes
 
