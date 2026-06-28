@@ -1,8 +1,8 @@
 {
   "name": "02-mixed-bright",
   "class": "already-bright",
-  "provenance": "real",
-  "source": "repro/02-mixed-copenhagen-night.local-ba.jpg (left/before half, \u2264512px)",
+  "provenance": "montage-derived",
+  "source": "repro/02-mixed-copenhagen-night.local-ba.jpg (left/before half, \u2264512px \u2014 proxy for raw source)",
   "stats": {
     "mean": 0.38036839780175524,
     "p05": 0.10980392156862745,

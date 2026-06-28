@@ -1,8 +1,8 @@
 {
   "name": "03-moderate-night",
   "class": "moderate-night",
-  "provenance": "real",
-  "source": "repro/03-moderate-night-street.local-ba.jpg (left/before half, \u2264512px)",
+  "provenance": "montage-derived",
+  "source": "repro/03-moderate-night-street.local-ba.jpg (left/before half, \u2264512px \u2014 proxy for raw source)",
   "stats": {
     "mean": 0.09067585245241791,
     "p05": 0.00784313725490196,

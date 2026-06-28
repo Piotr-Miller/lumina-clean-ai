@@ -1,8 +1,8 @@
 {
   "name": "01-very-dark",
   "class": "very-dark",
-  "provenance": "real",
-  "source": "repro/01-very-dark-iso160000.local-ba.jpg (left/before half, \u2264512px)",
+  "provenance": "montage-derived",
+  "source": "repro/01-very-dark-iso160000.local-ba.jpg (left/before half, \u2264512px \u2014 proxy for raw source)",
   "stats": {
     "mean": 0.060001626200333495,
     "p05": 0.047058823529411764,

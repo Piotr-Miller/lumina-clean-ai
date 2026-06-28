@@ -133,7 +133,8 @@ describe("recommendParams — monotonicity (synthetic sweep)", () => {
 interface Fixture {
   name: string;
   class: string;
-  provenance: "real" | "synthetic";
+  /** "montage-derived" = stats of a before/after montage half (proxy for the raw source). */
+  provenance: "montage-derived" | "synthetic";
   source: string;
   stats: LumaStats;
 }

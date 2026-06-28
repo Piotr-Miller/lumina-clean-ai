@@ -328,14 +328,14 @@ Additive nullable columns; existing rows stay null; the Edge Function falls back
 
 #### Automated
 
-- [x] 1.1 Type checking passes
-- [x] 1.2 Linting passes (touched files)
-- [x] 1.3 Unit tests pass (`auto-params.test.ts` — range assertions + 8–12 image oracle)
-- [x] 1.4 SSR build succeeds
+- [x] 1.1 Type checking passes — b08ee9b
+- [x] 1.2 Linting passes (touched files) — b08ee9b
+- [x] 1.3 Unit tests pass (`auto-params.test.ts` — range assertions + 8–12 image oracle) — b08ee9b
+- [x] 1.4 SSR build succeeds — b08ee9b
 
 #### Manual
 
-- [x] 1.5 `recommendParams` output on repro images reads sane (bright→~1.0, dark→strong lift, Bread strength ≤0.2)
+- [x] 1.5 `recommendParams` output on repro images reads sane (bright→~1.0, dark→strong lift, Bread strength ≤0.2) — b08ee9b
 
 ### Phase 2: Parameter panel + Local engine end-to-end
 

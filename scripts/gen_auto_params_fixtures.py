@@ -7,8 +7,11 @@ environment with no image decoder, so stats are precomputed here (offline) and
 committed; the test feeds them into ``recommendParams`` and asserts ranges.
 
 Two provenances:
-  * ``real``      — the untouched source recovered from the LEFT (before) half
-                    of a ``*.local-ba.jpg`` before/after montage in ``repro/``.
+  * ``montage-derived`` — luma stats of the LEFT (before) half of a
+                    ``*.local-ba.jpg`` before/after montage in ``repro/``. This
+                    is a faithful PROXY for the raw source, not the raw original
+                    itself (the montage adds one JPEG re-export and a possible
+                    fit-resize); the raw originals are not in the repo.
   * ``synthetic`` — a constructed luma distribution covering a class the 3
                     available photos don't (point-lights, blue-hour, etc.).
 
@@ -133,8 +136,9 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for name, cls, fname in REAL:
         stats = luma_stats(before_half(REPRO / fname))
-        write(name, {"name": name, "class": cls, "provenance": "real",
-                     "source": f"repro/{fname} (left/before half, ≤512px)", "stats": stats})
+        write(name, {"name": name, "class": cls, "provenance": "montage-derived",
+                     "source": f"repro/{fname} (left/before half, ≤512px — proxy for raw source)",
+                     "stats": stats})
         print(f"{name:24} {cls:18} p50={stats['p50']:.3f} mean={stats['mean']:.3f}")
     for name, cls, kind in SYNTH:
         stats = luma_stats(synth(kind))
