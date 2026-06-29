@@ -359,7 +359,9 @@ async function handleStart(req: Request): Promise<Response> {
     // tunnel is the Phase-3 manual-testing setup anyway.
     const predictionBody: Record<string, unknown> = {
       version: BREAD_VERSION,
-      input: buildBreadInput(signedSourceUrl),
+      // S-12: per-job Bread params ride the persisted row (loaded by getJobById
+      // select("*")); null → buildBreadInput falls back to the locked defaults.
+      input: buildBreadInput(signedSourceUrl, { gamma: job.gamma ?? undefined, strength: job.strength ?? undefined }),
     };
     if (callbackUrl.startsWith("https://")) {
       predictionBody.webhook = callbackUrl;

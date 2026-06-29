@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleAlert, CloudUpload, RotateCcw, Sparkles } from "lucide-react";
-import type { EngineId, LocalParams, LumaStats } from "@/lib/engines/types";
+import type { BreadParams, EngineId, LocalParams, LumaStats } from "@/lib/engines/types";
 import { PARAM_RANGES, recommendParams } from "@/lib/engines/auto-params";
 import { sampleImageLuma } from "@/lib/engines/auto-params.client";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useCloudJob } from "@/components/hooks/useCloudJob";
 import { useCloudSubmit } from "@/components/hooks/useCloudSubmit";
@@ -15,7 +14,7 @@ import { DownloadButton } from "./DownloadButton";
 import { EngineToggle } from "./EngineToggle";
 import { ImageUploader } from "./ImageUploader";
 import { ParameterPanel } from "./ParameterPanel";
-import { withOverride, type LocalParamKey, type ParamKey } from "./param-panel-helpers";
+import { withOverride, type BreadParamKey, type LocalParamKey, type ParamKey } from "./param-panel-helpers";
 
 interface EnhanceWorkspaceProps {
   /** Whether the current visitor has a session. Drives the Cloud sign-in gate. */
@@ -34,6 +33,10 @@ const SECONDARY_BUTTON = "border-white/20 bg-white/10 text-white hover:bg-white/
 
 /** Auto-less defaults — the panel starts here until Auto computes from the image. */
 const LOCAL_DEFAULTS: LocalParams = { gamma: PARAM_RANGES.local.gamma.default, blur: PARAM_RANGES.local.blur.default };
+const BREAD_DEFAULTS: BreadParams = {
+  gamma: PARAM_RANGES.cloud.gamma.default,
+  strength: PARAM_RANGES.cloud.strength.default,
+};
 
 /** Local re-process debounce while a slider is dragged (full-res, no live preview). */
 const LOCAL_DEBOUNCE_MS = 350;
@@ -61,8 +64,9 @@ function decodeImage(url: string): Promise<HTMLImageElement> {
  * never shows one engine's result alongside the other's action.
  *
  * S-12 adds the parameter panel: a deterministic Auto recommendation computed
- * from the selected image (no network), per-slider manual override, and
- * debounced Local re-processing. Cloud param threading lands in Phase 3.
+ * from the selected image (no network), per-slider manual override, debounced
+ * Local re-processing, and Cloud (Bread) params that ride the single create-job
+ * POST — sliders/Auto never issue a request (cost-safety invariant).
  */
 export default function EnhanceWorkspace({
   isAuthenticated,
@@ -84,10 +88,12 @@ export default function EnhanceWorkspace({
     chromaEnabled,
   });
 
-  // --- S-12 parameter + Auto state (Local only this phase; Cloud lands in Phase 3) ---
+  // --- S-12 parameter + Auto state ---
   const [localParams, setLocalParams] = useState<LocalParams>(LOCAL_DEFAULTS);
+  const [breadParams, setBreadParams] = useState<BreadParams>(BREAD_DEFAULTS);
   const [autoOn, setAutoOn] = useState(true);
   const [localOverridden, setLocalOverridden] = useState<ReadonlySet<ParamKey>>(new Set());
+  const [breadOverridden, setBreadOverridden] = useState<ReadonlySet<ParamKey>>(new Set());
   const [stats, setStats] = useState<LumaStats | null>(null);
 
   const localProcessing = enhancer.status === "processing";
@@ -117,7 +123,9 @@ export default function EnhanceWorkspace({
         setStats(s);
         if (autoOnRef.current) {
           setLocalParams(recommendParams(s, "local"));
+          setBreadParams(recommendParams(s, "cloud"));
           setLocalOverridden(new Set());
+          setBreadOverridden(new Set());
         }
       })
       .catch(() => {
@@ -197,17 +205,21 @@ export default function EnhanceWorkspace({
     enhancer.reset();
     cloudSubmit.reset();
     setLocalParams(LOCAL_DEFAULTS);
+    setBreadParams(BREAD_DEFAULTS);
     setLocalOverridden(new Set());
+    setBreadOverridden(new Set());
     setAutoOn(true);
     setStats(null);
     lastEnhancedRef.current = null;
   }
 
-  /** Recompute Local params from the current image stats and clear overrides. */
+  /** Recompute every engine's params from the current image stats and clear overrides. */
   function applyAuto() {
     if (!stats) return;
     setLocalParams(recommendParams(stats, "local"));
+    setBreadParams(recommendParams(stats, "cloud"));
     setLocalOverridden(new Set());
+    setBreadOverridden(new Set());
   }
 
   /** Flip Auto; re-enabling it restores the recommendation for the current image. */
@@ -218,8 +230,13 @@ export default function EnhanceWorkspace({
   }
 
   function handleParamChange(key: ParamKey, value: number) {
-    setLocalParams((p) => ({ ...p, [key]: value }));
-    setLocalOverridden((s) => withOverride(s, key as LocalParamKey));
+    if (engine === "local") {
+      setLocalParams((p) => ({ ...p, [key]: value }));
+      setLocalOverridden((s) => withOverride(s, key as LocalParamKey));
+    } else {
+      setBreadParams((p) => ({ ...p, [key]: value }));
+      setBreadOverridden((s) => withOverride(s, key as BreadParamKey));
+    }
   }
 
   return (
@@ -231,7 +248,7 @@ export default function EnhanceWorkspace({
       {!sourceUrl && <ImageUploader onAccepted={handleAccepted} disabled={busy} />}
 
       {sourceUrl && (
-        <div className={cn("grid gap-6", engine === "local" && "md:grid-cols-[minmax(0,1fr)_320px]")}>
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_320px]">
           <div className="flex flex-col items-center gap-4">
             {/* A ready Local OR Cloud result swaps the preview for the slider; every other
                 state shows the plain preview. The `*ResultReady` flags already narrow the
@@ -318,7 +335,7 @@ export default function EnhanceWorkspace({
                 <Button
                   type="button"
                   onClick={() => {
-                    void cloudSubmit.submit();
+                    void cloudSubmit.submit(breadParams);
                   }}
                   disabled={cloudSubmitting}
                 >
@@ -370,7 +387,7 @@ export default function EnhanceWorkspace({
                     <Button
                       type="button"
                       onClick={() => {
-                        void cloudSubmit.submit();
+                        void cloudSubmit.submit(breadParams);
                       }}
                     >
                       <RotateCcw className="size-4" />
@@ -405,19 +422,18 @@ export default function EnhanceWorkspace({
             )}
           </div>
 
-          {/* Local-only this phase: Cloud (Bread) params are shown + wired to the
-              job in Phase 3, so exposing the sliders now would be a no-op affordance. */}
-          {engine === "local" && (
-            <ParameterPanel
-              engine={engine}
-              params={localParams}
-              ranges={PARAM_RANGES.local}
-              auto={{ on: autoOn, onToggle: handleToggleAuto, onRecalculate: applyAuto }}
-              overridden={localOverridden}
-              onChange={handleParamChange}
-              onRestoreAuto={applyAuto}
-            />
-          )}
+          {/* Both engines now have a working panel. Local sliders re-render the
+              client result (debounced); Bread sliders/Auto only mutate state and
+              ride the next Apply POST — never an on-change request. */}
+          <ParameterPanel
+            engine={engine}
+            params={engine === "local" ? localParams : breadParams}
+            ranges={engine === "local" ? PARAM_RANGES.local : PARAM_RANGES.cloud}
+            auto={{ on: autoOn, onToggle: handleToggleAuto, onRecalculate: applyAuto }}
+            overridden={engine === "local" ? localOverridden : breadOverridden}
+            onChange={handleParamChange}
+            onRestoreAuto={applyAuto}
+          />
         </div>
       )}
 

@@ -1,3 +1,4 @@
+import type { BreadParams } from "@/lib/engines/types";
 import type { CreatePhotoJobRequest, CreatePhotoJobResponse } from "@/types";
 
 /**
@@ -26,11 +27,18 @@ const ROUTE_MESSAGES: Record<string, string> = {
 
 const GENERIC_ROUTE_MESSAGE = "Couldn't start Cloud processing. Please try again.";
 
-/** Derive the (extension, mime) pair from a validated File. Defaults to JPEG; PNG is the only branch. */
-function deriveRequest(file: File): CreatePhotoJobRequest {
-  return file.type === "image/png"
-    ? { fileExtension: "png", mimeType: "image/png" }
-    : { fileExtension: "jpg", mimeType: "image/jpeg" };
+/**
+ * Derive the create-job request body from a validated File and (optional) Bread
+ * params. Defaults to JPEG; PNG is the only other branch. The params, when
+ * present, ride this SINGLE create-job POST — the only cost-bearing path; no
+ * slider/Auto action ever issues a request (S-12 cost-safety invariant).
+ */
+function deriveRequest(file: File, params?: BreadParams): CreatePhotoJobRequest {
+  const base: CreatePhotoJobRequest =
+    file.type === "image/png"
+      ? { fileExtension: "png", mimeType: "image/png" }
+      : { fileExtension: "jpg", mimeType: "image/jpeg" };
+  return params ? { ...base, gamma: params.gamma, strength: params.strength } : base;
 }
 
 async function routeErrorMessage(res: Response): Promise<string> {
@@ -66,8 +74,8 @@ async function safeFetch(input: string, init: RequestInit): Promise<Response> {
  * (used by S-04's Realtime subscription); throws an `Error` whose message is
  * safe to show the user on any failure.
  */
-export async function submitCloudJob(file: File): Promise<{ jobId: string }> {
-  const body = deriveRequest(file);
+export async function submitCloudJob(file: File, params?: BreadParams): Promise<{ jobId: string }> {
+  const body = deriveRequest(file, params);
 
   const res = await safeFetch(CREATE_JOB_ENDPOINT, {
     method: "POST",

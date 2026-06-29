@@ -269,8 +269,8 @@ Thread user Bread `gamma`/`strength` from the panel to the Replicate prediction 
 - Type checking passes: `npm run typecheck`
 - Linting passes (touched files): `npx eslint <touched>`
 - Unit tests pass: `npm run test:unit` (zod accepts in-range, **rejects strength > 0.2 / gamma > 1.5**; `buildBreadInput` override; `createPhotoJob` writes params)
-- Integration tests pass: `npm run test:integration` (a created job row carries `gamma`/`strength`; RLS unaffected)
-- Edge Function checks: `deno check supabase/functions/enhance/index.ts`
+- Integration tests pass: `npm test` against a local Supabase stack (the full Vitest suite incl. `tests/jobs.rls.test.ts` — a created job row carries `gamma`/`strength`; RLS unaffected)
+- Edge Function checks: `deno check --config supabase/functions/enhance/deno.json supabase/functions/enhance/index.ts` (the `--config` flag is required — the `@sentry/deno` dep is in the function's import map; lessons.md / `deno-check-needs-config-flag`)
 - SSR build succeeds: `npm run build`
 
 #### Manual Verification
@@ -341,32 +341,32 @@ Additive nullable columns; existing rows stay null; the Edge Function falls back
 
 #### Automated
 
-- [x] 2.1 Type checking passes
-- [x] 2.2 Linting passes (touched files)
-- [x] 2.3 Unit tests pass (param validators / range clamping)
-- [x] 2.4 SSR build succeeds
+- [x] 2.1 Type checking passes — d5b8876
+- [x] 2.2 Linting passes (touched files) — d5b8876
+- [x] 2.3 Unit tests pass (param validators / range clamping) — d5b8876
+- [x] 2.4 SSR build succeeds — d5b8876
 
 #### Manual
 
-- [x] 2.5 Panel responsive (right on desktop, stacked below on mobile)
-- [x] 2.6 Local slider change re-renders after debounce; no freeze on large image
-- [x] 2.7 Auto pre-fills on select; bright→gamma≈1.0 (no over-bright), very-dark→strong lift
-- [x] 2.8 Per-slider override marking + Restore Auto work; no regression to upload→enhance→compare→download
+- [x] 2.5 Panel responsive (right on desktop, stacked below on mobile) — d5b8876
+- [x] 2.6 Local slider change re-renders after debounce; no freeze on large image — d5b8876
+- [x] 2.7 Auto pre-fills on select; bright→gamma≈1.0 (no over-bright), very-dark→strong lift — d5b8876
+- [x] 2.8 Per-slider override marking + Restore Auto work; no regression to upload→enhance→compare→download — d5b8876
 
 ### Phase 3: Cloud/Bread threading + cost-safe Apply
 
 #### Automated
 
-- [ ] 3.1 Migration applies cleanly (local stack)
-- [ ] 3.2 Type checking passes
-- [ ] 3.3 Linting passes (touched files)
-- [ ] 3.4 Unit tests pass (zod bounds incl. reject strength>0.2 / gamma>1.5; `buildBreadInput` override; `createPhotoJob` writes params)
-- [ ] 3.5 Integration tests pass (job row carries params; RLS unaffected)
-- [ ] 3.6 `deno check supabase/functions/enhance/index.ts` passes
-- [ ] 3.7 SSR build succeeds
+- [x] 3.1 Migration applies cleanly (local stack)
+- [x] 3.2 Type checking passes
+- [x] 3.3 Linting passes (touched files)
+- [x] 3.4 Unit tests pass (zod bounds incl. reject strength>0.2 / gamma>1.5; `buildBreadInput` override; `createPhotoJob` writes params)
+- [x] 3.5 Integration tests pass (job row carries params; RLS unaffected)
+- [x] 3.6 `deno check supabase/functions/enhance/index.ts` passes
+- [x] 3.7 SSR build succeeds
 
 #### Manual
 
-- [ ] 3.8 Real cloud job applies chosen Bread params; `jobs` row shows `gamma`/`strength`
-- [ ] 3.9 Cost-safety: dragging sliders / Auto recompute issues zero `create-job`; only Apply creates a job
-- [ ] 3.10 Bread Auto pre-fills conservative provisional values (never strength>0.2); no regression to cloud flow (+ chroma post-pass still applies if enabled)
+- [x] 3.8 Real cloud job applies chosen Bread params; `jobs` row shows `gamma`/`strength`
+- [x] 3.9 Cost-safety: dragging sliders / Auto recompute issues zero `create-job`; only Apply creates a job
+- [x] 3.10 Bread Auto pre-fills conservative provisional values (never strength>0.2); no regression to cloud flow (+ chroma post-pass still applies if enabled)

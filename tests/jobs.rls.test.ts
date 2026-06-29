@@ -193,6 +193,42 @@ describe("public.jobs RLS + photo-job service", () => {
     expect(put.status).toBeLessThan(300);
   });
 
+  it("createPhotoJob persists per-job Bread params; omitting them leaves the columns null (S-12)", async () => {
+    const user = await makeUser("bread-params");
+
+    // With params: the row carries the chosen gamma/strength.
+    const withParams = await createPhotoJob(supabaseAdmin, {
+      userId: user.id,
+      fileExtension: "jpg",
+      mimeType: "image/jpeg",
+      gamma: 1.1,
+      strength: 0.05,
+    });
+    const { data: rowA, error: errA } = await supabaseAdmin
+      .from("jobs")
+      .select("gamma, strength")
+      .eq("id", withParams.jobId)
+      .single();
+    expect(errA).toBeNull();
+    expect(rowA?.gamma).toBe(1.1);
+    expect(rowA?.strength).toBe(0.05);
+
+    // Without params: the columns stay null (Edge Function falls back to defaults).
+    const noParams = await createPhotoJob(supabaseAdmin, {
+      userId: user.id,
+      fileExtension: "jpg",
+      mimeType: "image/jpeg",
+    });
+    const { data: rowB, error: errB } = await supabaseAdmin
+      .from("jobs")
+      .select("gamma, strength")
+      .eq("id", noParams.jobId)
+      .single();
+    expect(errB).toBeNull();
+    expect(rowB?.gamma).toBeNull();
+    expect(rowB?.strength).toBeNull();
+  });
+
   it("markJobSucceeded updates the row and deletes the source object", async () => {
     const user = await makeUser("succeed");
 

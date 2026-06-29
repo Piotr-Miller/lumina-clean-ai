@@ -97,6 +97,9 @@ export function ParameterPanel({
               onValueChange={(next) => {
                 onChange(key, clampParamValue(next[0], range));
               }}
+              // Dark-panel theming: the filled portion (min → thumb) is white,
+              // the remainder a faint track — so "white" grows from the left.
+              className="[&_[data-slot=slider-range]]:bg-white [&_[data-slot=slider-track]]:bg-white/20"
             />
           </div>
         );
