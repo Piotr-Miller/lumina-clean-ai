@@ -357,16 +357,16 @@ Additive nullable columns; existing rows stay null; the Edge Function falls back
 
 #### Automated
 
-- [x] 3.1 Migration applies cleanly (local stack)
-- [x] 3.2 Type checking passes
-- [x] 3.3 Linting passes (touched files)
-- [x] 3.4 Unit tests pass (zod bounds incl. reject strength>0.2 / gamma>1.5; `buildBreadInput` override; `createPhotoJob` writes params)
-- [x] 3.5 Integration tests pass (job row carries params; RLS unaffected)
-- [x] 3.6 `deno check supabase/functions/enhance/index.ts` passes
-- [x] 3.7 SSR build succeeds
+- [x] 3.1 Migration applies cleanly (local stack) — 1f31ee9
+- [x] 3.2 Type checking passes — 1f31ee9
+- [x] 3.3 Linting passes (touched files) — 1f31ee9
+- [x] 3.4 Unit tests pass (zod bounds incl. reject strength>0.2 / gamma>1.5; `buildBreadInput` override; `createPhotoJob` writes params) — 1f31ee9
+- [x] 3.5 Integration tests pass (job row carries params; RLS unaffected) — 1f31ee9
+- [x] 3.6 `deno check supabase/functions/enhance/index.ts` passes — 1f31ee9
+- [x] 3.7 SSR build succeeds — 1f31ee9
 
 #### Manual
 
-- [x] 3.8 Real cloud job applies chosen Bread params; `jobs` row shows `gamma`/`strength`
-- [x] 3.9 Cost-safety: dragging sliders / Auto recompute issues zero `create-job`; only Apply creates a job
-- [x] 3.10 Bread Auto pre-fills conservative provisional values (never strength>0.2); no regression to cloud flow (+ chroma post-pass still applies if enabled)
+- [x] 3.8 Real cloud job applies chosen Bread params; `jobs` row shows `gamma`/`strength` — 1f31ee9
+- [x] 3.9 Cost-safety: dragging sliders / Auto recompute issues zero `create-job`; only Apply creates a job — 1f31ee9
+- [x] 3.10 Bread Auto pre-fills conservative provisional values (never strength>0.2); no regression to cloud flow (+ chroma post-pass still applies if enabled) — 1f31ee9
