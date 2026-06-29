@@ -149,6 +149,45 @@ describe("createCloudJobResponse — global daily-cap route boundary", () => {
  * at the cheap hermetic layer. `cap`/`count` are irrelevant — the auth guard is
  * the handler's first statement, before the cap check ever runs.
  */
+describe("createCloudJobResponse — S-12 Bread params persisted on insert", () => {
+  it("writes the body's gamma/strength into the inserted job row", async () => {
+    const cap = 3;
+    const { admin, insert } = makeStubAdmin(cap - 1); // under cap → proceeds to insert
+    const body = { fileExtension: "jpg", mimeType: "image/jpeg", gamma: 1.1, strength: 0.05 } as const;
+
+    const res = await createCloudJobResponse({ user: USER, request: jsonRequest(body), admin, cap });
+
+    expect(res.status).toBe(200);
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: USER.id, status: "queued", gamma: 1.1, strength: 0.05 }),
+    );
+  });
+
+  it("inserts null gamma/strength when the body omits them (server falls back to defaults)", async () => {
+    const cap = 3;
+    const { admin, insert } = makeStubAdmin(cap - 1);
+
+    const res = await createCloudJobResponse({ user: USER, request: jsonRequest(VALID_BODY), admin, cap });
+
+    expect(res.status).toBe(200);
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ gamma: null, strength: null }));
+  });
+
+  it("rejects an out-of-range strength (>0.2) with 400 before any insert", async () => {
+    const { admin, insert, createSignedUploadUrl } = makeStubAdmin(0);
+    const body = { fileExtension: "jpg", mimeType: "image/jpeg", strength: 0.5 };
+
+    const res = await createCloudJobResponse({ user: USER, request: jsonRequest(body), admin, cap: 3 });
+
+    expect(res.status).toBe(400);
+    const parsed = await readBody(res);
+    expect(parsed.error?.code).toBe("invalid_body");
+    expect(insert).not.toHaveBeenCalled();
+    expect(createSignedUploadUrl).not.toHaveBeenCalled();
+  });
+});
+
 describe("createCloudJobResponse — anonymous auth gate (Risk #2)", () => {
   it("rejects an anonymous request with 401 and the exact contract, before any insert or signed URL", async () => {
     const { admin, insert, createSignedUploadUrl } = makeStubAdmin(0);

@@ -12,10 +12,10 @@ import { buildGammaLut } from "./image-helpers";
 import { canvasToBlob, JPEG_QUALITY } from "./canvas-helpers";
 import type { EnhanceResult, ImageEngine } from "./types";
 
-/** Gamma > 1 brightens shadows/midtones. */
-const GAMMA = 1.5;
-/** Light blur radius (px) — masks luminance noise without obliterating detail. */
-const BLUR_PX = 1.2;
+/** Default gamma (> 1 brightens shadows/midtones) when the caller passes none. */
+const GAMMA_DEFAULT = 1.5;
+/** Default blur radius (px) — masks luminance noise without obliterating detail. */
+const BLUR_PX_DEFAULT = 1.2;
 
 /** Intrinsic pixel dimensions of a decoded source. */
 function sourceDimensions(source: HTMLImageElement | ImageBitmap): { width: number; height: number } {
@@ -29,6 +29,9 @@ export const localEngine: ImageEngine = {
   id: "local",
   async enhance(source, opts): Promise<EnhanceResult> {
     const { width, height } = sourceDimensions(source);
+    // Per-call params (S-12 parameter panel); fall back to today's constants.
+    const gamma = opts.gamma ?? GAMMA_DEFAULT;
+    const blurPx = opts.blur ?? BLUR_PX_DEFAULT;
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
@@ -39,14 +42,14 @@ export const localEngine: ImageEngine = {
     }
 
     // 1. Native (GPU-backed) Gaussian blur applied while drawing the source.
-    ctx.filter = `blur(${String(BLUR_PX)}px)`;
+    ctx.filter = `blur(${String(blurPx)}px)`;
     ctx.drawImage(source, 0, 0, width, height);
     ctx.filter = "none";
 
     // 2. Gamma lift via a single linear LUT pass over RGB (alpha untouched).
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
-    const lut = buildGammaLut(GAMMA);
+    const lut = buildGammaLut(gamma);
     for (let i = 0; i < data.length; i += 4) {
       data[i] = lut[data[i]];
       data[i + 1] = lut[data[i + 1]];

@@ -28,14 +28,17 @@ export interface BreadInput {
 }
 
 /**
- * Map a fetchable source image URL to Bread's prediction input using the
- * locked Phase-0 defaults. `imageUrl` is a short-TTL signed READ URL for the
- * private source object (Replicate fetches it directly).
+ * Map a fetchable source image URL to Bread's prediction input. `imageUrl` is a
+ * short-TTL signed READ URL for the private source object (Replicate fetches it
+ * directly). Per-job `overrides` (S-12: the user's panel choices, persisted on
+ * the `jobs` row) take precedence; an absent/undefined override falls back to
+ * the locked Phase-0 default. Bounds are already enforced upstream (zod on
+ * create-job), so this module just maps — it does not re-clamp.
  */
-export function buildBreadInput(imageUrl: string): BreadInput {
+export function buildBreadInput(imageUrl: string, overrides?: { gamma?: number; strength?: number }): BreadInput {
   return {
     image: imageUrl,
-    gamma: BREAD_GAMMA,
-    strength: BREAD_STRENGTH,
+    gamma: overrides?.gamma ?? BREAD_GAMMA,
+    strength: overrides?.strength ?? BREAD_STRENGTH,
   };
 }

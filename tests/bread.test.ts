@@ -25,4 +25,23 @@ describe("buildBreadInput", () => {
   it("passes the image URL through verbatim", () => {
     expect(buildBreadInput("https://x/y?token=abc&exp=1").image).toBe("https://x/y?token=abc&exp=1");
   });
+
+  it("applies per-job overrides when present (S-12)", () => {
+    const url = "https://signed/source.jpg";
+    expect(buildBreadInput(url, { gamma: 1.1, strength: 0.05 })).toEqual({ image: url, gamma: 1.1, strength: 0.05 });
+  });
+
+  it("falls back to the locked default for each absent/undefined override field", () => {
+    const url = "https://signed/source.jpg";
+    // Only gamma overridden → strength stays at the default.
+    expect(buildBreadInput(url, { gamma: 1.3 })).toEqual({ image: url, gamma: 1.3, strength: BREAD_STRENGTH });
+    // Only strength overridden → gamma stays at the default.
+    expect(buildBreadInput(url, { strength: 0.1 })).toEqual({ image: url, gamma: BREAD_GAMMA, strength: 0.1 });
+    // Explicit undefined fields fall back too (the `?? default` path).
+    expect(buildBreadInput(url, { gamma: undefined, strength: undefined })).toEqual({
+      image: url,
+      gamma: BREAD_GAMMA,
+      strength: BREAD_STRENGTH,
+    });
+  });
 });

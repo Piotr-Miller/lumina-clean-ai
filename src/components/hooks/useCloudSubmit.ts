@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { validateImageFile } from "@/lib/engines/image-helpers";
+import type { BreadParams } from "@/lib/engines/types";
 import { submitCloudJob } from "@/lib/services/cloud-upload.client";
 
 type CloudStatus = "idle" | "submitting" | "submitted" | "error";
@@ -9,7 +10,8 @@ export interface CloudSubmitState {
   error: string | null;
   /** The created job's id, captured on submit — drives the Realtime subscription (S-04). */
   jobId: string | null;
-  submit: () => Promise<void>;
+  /** Submit the loaded file. Optional Bread params (S-12) ride the single create-job POST. */
+  submit: (params?: BreadParams) => Promise<void>;
   reset: () => void;
 }
 
@@ -31,29 +33,32 @@ export function useCloudSubmit(file: File | null): CloudSubmitState {
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
 
-  const submit = useCallback(async () => {
-    if (!file) {
-      setStatus("error");
-      setError(NO_FILE_MESSAGE);
-      return;
-    }
-    const validation = validateImageFile(file);
-    if (!validation.ok) {
-      setStatus("error");
-      setError(validation.message);
-      return;
-    }
-    setStatus("submitting");
-    setError(null);
-    try {
-      const result = await submitCloudJob(file);
-      setJobId(result.jobId);
-      setStatus("submitted");
-    } catch (err) {
-      setStatus("error");
-      setError(err instanceof Error ? err.message : GENERIC_FAILURE_MESSAGE);
-    }
-  }, [file]);
+  const submit = useCallback(
+    async (params?: BreadParams) => {
+      if (!file) {
+        setStatus("error");
+        setError(NO_FILE_MESSAGE);
+        return;
+      }
+      const validation = validateImageFile(file);
+      if (!validation.ok) {
+        setStatus("error");
+        setError(validation.message);
+        return;
+      }
+      setStatus("submitting");
+      setError(null);
+      try {
+        const result = await submitCloudJob(file, params);
+        setJobId(result.jobId);
+        setStatus("submitted");
+      } catch (err) {
+        setStatus("error");
+        setError(err instanceof Error ? err.message : GENERIC_FAILURE_MESSAGE);
+      }
+    },
+    [file],
+  );
 
   const reset = useCallback(() => {
     setStatus("idle");

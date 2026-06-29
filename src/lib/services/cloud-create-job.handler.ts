@@ -119,6 +119,9 @@ export async function createCloudJobResponse(input: CreateCloudJobInput): Promis
       userId: user.id,
       fileExtension: parsed.data.fileExtension,
       mimeType: parsed.data.mimeType,
+      // S-12 Bread params (validated + bounded by the schema; undefined → defaults).
+      gamma: parsed.data.gamma,
+      strength: parsed.data.strength,
     });
     return json(result, 200);
   } catch (err) {

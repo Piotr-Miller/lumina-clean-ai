@@ -24,6 +24,12 @@ export const createPhotoJobRequestSchema = z
   .object({
     fileExtension: z.enum(["jpg", "png"]),
     mimeType: z.enum(["image/jpeg", "image/png"]),
+    // Optional Bread params (S-12). Omitted → server uses the locked Phase-0
+    // defaults. Bounds are the model contract ceilings (gamma ≤ 1.5,
+    // strength ≤ 0.2), enforced here so an out-of-range value is a 400 and is
+    // unreachable from the slider — never forwarded to Replicate.
+    gamma: z.number().min(1.0).max(1.5).optional(),
+    strength: z.number().min(0.0).max(0.2).optional(),
   })
   .refine((body) => EXTENSION_MIME[body.fileExtension] === body.mimeType, {
     message: "fileExtension and mimeType must correspond (jpg↔image/jpeg, png↔image/png).",

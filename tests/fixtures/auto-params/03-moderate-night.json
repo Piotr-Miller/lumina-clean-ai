@@ -1,0 +1,18 @@
+{
+  "name": "03-moderate-night",
+  "class": "moderate-night",
+  "provenance": "montage-derived",
+  "source": "repro/03-moderate-night-street.local-ba.jpg (left/before half, \u2264512px \u2014 proxy for raw source)",
+  "stats": {
+    "mean": 0.09067585245241791,
+    "p05": 0.00784313725490196,
+    "p25": 0.011764705882352941,
+    "p50": 0.03137254901960784,
+    "p75": 0.07058823529411765,
+    "p95": 0.4588235294117647,
+    "p99": 0.9607843137254902,
+    "shadowRatio": 0.8911175769794721,
+    "highlightRatio": 0.019640075146627568,
+    "clipRatio": 0.006466504765395895
+  }
+}

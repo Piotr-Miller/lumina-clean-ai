@@ -1,0 +1,18 @@
+{
+  "name": "02-mixed-bright",
+  "class": "already-bright",
+  "provenance": "montage-derived",
+  "source": "repro/02-mixed-copenhagen-night.local-ba.jpg (left/before half, \u2264512px \u2014 proxy for raw source)",
+  "stats": {
+    "mean": 0.38036839780175524,
+    "p05": 0.10980392156862745,
+    "p25": 0.2549019607843137,
+    "p50": 0.3686274509803922,
+    "p75": 0.49411764705882355,
+    "p95": 0.7058823529411765,
+    "p99": 0.9058823529411765,
+    "shadowRatio": 0.13083171033994334,
+    "highlightRatio": 0.010368714589235127,
+    "clipRatio": 0.0009074008498583569
+  }
+}

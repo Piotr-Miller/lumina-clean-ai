@@ -1,0 +1,18 @@
+{
+  "name": "04-dark-point-lights",
+  "class": "highlight-clipped",
+  "provenance": "synthetic",
+  "source": "synthetic:dark-point-lights",
+  "stats": {
+    "mean": 0.05393024519378063,
+    "p05": 0.0196078431372549,
+    "p25": 0.0392156862745098,
+    "p50": 0.054901960784313725,
+    "p75": 0.06666666666666667,
+    "p95": 0.08627450980392157,
+    "p99": 0.09803921568627451,
+    "shadowRatio": 0.99908447265625,
+    "highlightRatio": 0.00091552734375,
+    "clipRatio": 0.00091552734375
+  }
+}

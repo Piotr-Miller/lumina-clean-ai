@@ -22,6 +22,10 @@ export interface PhotoJob {
   replicate_prediction_id: string | null;
   /** Pinned Bread model version the job ran (S-11). Written once at prediction-create; null for legacy/pre-S-11 rows. */
   model_version: string | null;
+  /** Per-job Bread gamma chosen in the panel (S-12). Null → Edge Function uses the locked default. */
+  gamma: number | null;
+  /** Per-job Bread strength chosen in the panel (S-12). Null → Edge Function uses the locked default. */
+  strength: number | null;
   error_code: string | null;
   error_message: string | null;
   created_at: string;
@@ -38,6 +42,9 @@ export interface CreatePhotoJobCommand {
   userId: string;
   fileExtension: "jpg" | "png" | "heic";
   mimeType: "image/jpeg" | "image/png" | "image/heic";
+  /** Optional Bread params (S-12). Omitted → row stores null and the Edge Function uses locked defaults. */
+  gamma?: number;
+  strength?: number;
 }
 
 /**
@@ -48,6 +55,9 @@ export interface CreatePhotoJobCommand {
 export interface CreatePhotoJobRequest {
   fileExtension: "jpg" | "png";
   mimeType: "image/jpeg" | "image/png";
+  /** Optional Bread params (S-12), bound-validated by `createPhotoJobRequestSchema` (gamma ≤ 1.5, strength ≤ 0.2). */
+  gamma?: number;
+  strength?: number;
 }
 
 /** Output of {@link createPhotoJob}. S-03 uploads with raw PUT to the absolute `uploadUrl`. */

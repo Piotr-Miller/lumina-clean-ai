@@ -1,0 +1,18 @@
+{
+  "name": "07-clean-but-dark",
+  "class": "dark",
+  "provenance": "synthetic",
+  "source": "synthetic:clean-but-dark",
+  "stats": {
+    "mean": 0.10008084166283701,
+    "p05": 0.07450980392156863,
+    "p25": 0.09019607843137255,
+    "p50": 0.10196078431372549,
+    "p75": 0.10980392156862745,
+    "p95": 0.12549019607843137,
+    "p99": 0.13725490196078433,
+    "shadowRatio": 1.0,
+    "highlightRatio": 0.0,
+    "clipRatio": 0.0
+  }
+}

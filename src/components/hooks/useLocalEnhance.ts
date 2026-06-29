@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { deriveDownloadName, MAX_IMAGE_DIMENSION } from "@/lib/engines/image-helpers";
 import { localEngine } from "@/lib/engines/local-engine";
+import type { LocalParams } from "@/lib/engines/types";
 
 type Status = "idle" | "processing" | "done" | "error";
 
@@ -14,7 +15,8 @@ export interface LocalEnhanceState {
   downloadName: string | null;
   error: string | null;
   onAccepted: (file: File, objectUrl: string) => void;
-  enhance: () => Promise<void>;
+  /** Run the engine. Optional Local params (gamma/blur) override the defaults. */
+  enhance: (params?: LocalParams) => Promise<void>;
   reset: () => void;
 }
 
@@ -79,36 +81,43 @@ export function useLocalEnhance(): LocalEnhanceState {
     setStatus("idle");
   }, []);
 
-  const enhance = useCallback(async () => {
-    if (!file || !sourceUrl) return;
-    setStatus("processing");
-    setError(null);
-    // Yield a macrotask so the spinner paints before the blocking pixel pass.
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 0);
-    });
-    try {
-      const img = await decodeImage(sourceUrl);
-      if (img.naturalWidth > MAX_IMAGE_DIMENSION || img.naturalHeight > MAX_IMAGE_DIMENSION) {
+  const enhance = useCallback(
+    async (params?: LocalParams) => {
+      if (!file || !sourceUrl) return;
+      setStatus("processing");
+      setError(null);
+      // Yield a macrotask so the spinner paints before the blocking pixel pass.
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 0);
+      });
+      try {
+        const img = await decodeImage(sourceUrl);
+        if (img.naturalWidth > MAX_IMAGE_DIMENSION || img.naturalHeight > MAX_IMAGE_DIMENSION) {
+          setStatus("error");
+          setError(TOO_LARGE_MESSAGE);
+          return;
+        }
+        const result = await localEngine.enhance(img, {
+          mimeType: file.type,
+          gamma: params?.gamma,
+          blur: params?.blur,
+        });
+        const url = URL.createObjectURL(result.blob);
+        if (urlsRef.current.result) URL.revokeObjectURL(urlsRef.current.result);
+        urlsRef.current = { ...urlsRef.current, result: url };
+        setResultUrl(url);
+        setResultBlob(result.blob);
+        setResultWidth(result.width);
+        setResultHeight(result.height);
+        setDownloadName(deriveDownloadName(file.name, result.mimeType));
+        setStatus("done");
+      } catch {
         setStatus("error");
-        setError(TOO_LARGE_MESSAGE);
-        return;
+        setError(GENERIC_FAILURE_MESSAGE);
       }
-      const result = await localEngine.enhance(img, { mimeType: file.type });
-      const url = URL.createObjectURL(result.blob);
-      if (urlsRef.current.result) URL.revokeObjectURL(urlsRef.current.result);
-      urlsRef.current = { ...urlsRef.current, result: url };
-      setResultUrl(url);
-      setResultBlob(result.blob);
-      setResultWidth(result.width);
-      setResultHeight(result.height);
-      setDownloadName(deriveDownloadName(file.name, result.mimeType));
-      setStatus("done");
-    } catch {
-      setStatus("error");
-      setError(GENERIC_FAILURE_MESSAGE);
-    }
-  }, [file, sourceUrl]);
+    },
+    [file, sourceUrl],
+  );
 
   const reset = useCallback(() => {
     if (urlsRef.current.source) URL.revokeObjectURL(urlsRef.current.source);

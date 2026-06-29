@@ -103,6 +103,9 @@ export async function createPhotoJob(
     user_id: cmd.userId,
     status: "queued",
     source_path: sourcePath,
+    // Per-job Bread params (S-12); null → Edge Function uses the locked defaults.
+    gamma: cmd.gamma ?? null,
+    strength: cmd.strength ?? null,
   });
   if (insertError) {
     throw new Error(`createPhotoJob: failed to insert job row ${jobId}: ${insertError.message}`);

@@ -1,0 +1,18 @@
+{
+  "name": "08-noisy-mid-shadow",
+  "class": "moderate-night",
+  "provenance": "synthetic",
+  "source": "synthetic:noisy-mid-shadow",
+  "stats": {
+    "mean": 0.15658623190487134,
+    "p05": 0.011764705882352941,
+    "p25": 0.09803921568627451,
+    "p50": 0.1568627450980392,
+    "p75": 0.21176470588235294,
+    "p95": 0.2980392156862745,
+    "p99": 0.35294117647058826,
+    "shadowRatio": 0.6049652099609375,
+    "highlightRatio": 0.0,
+    "clipRatio": 0.0
+  }
+}
