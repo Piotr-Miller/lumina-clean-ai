@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  classifyStartFailure,
   isAllowedOutputUrl,
   isWebhookTimestampFresh,
   mapPredictionToOutcome,
@@ -229,6 +230,19 @@ describe("mapPredictionToOutcome", () => {
   it("ignores non-terminal statuses (defensive — should not arrive with completed filter)", () => {
     expect(mapPredictionToOutcome({ id: "p1", status: "processing" })).toEqual({ kind: "ignore" });
     expect(mapPredictionToOutcome({})).toEqual({ kind: "ignore" });
+  });
+});
+
+describe("classifyStartFailure", () => {
+  it("maps a 429 to provider_rate_limited (Replicate provider rate-limit)", () => {
+    expect(classifyStartFailure(429)).toBe("provider_rate_limited");
+  });
+
+  it("maps any other status to the generic start_failed", () => {
+    expect(classifyStartFailure(500)).toBe("start_failed");
+    expect(classifyStartFailure(422)).toBe("start_failed");
+    expect(classifyStartFailure(401)).toBe("start_failed");
+    expect(classifyStartFailure(0)).toBe("start_failed");
   });
 });
 

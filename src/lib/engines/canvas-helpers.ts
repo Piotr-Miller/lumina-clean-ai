@@ -30,3 +30,45 @@ export function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, qualit
     );
   });
 }
+
+/** Decode a File's bytes into a loaded image via a transient object URL. */
+function decodeFile(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Image failed to decode."));
+    };
+    img.src = url;
+  });
+}
+
+/**
+ * Flatten a (possibly alpha) image File to an opaque RGB JPEG File — the reactive
+ * recovery for the RGBA/torch failure (Bread requires a 3-channel input; an alpha
+ * PNG is 4-channel). Pre-fills the canvas opaque white BEFORE `drawImage` so
+ * transparent pixels composite onto white (JPEG has no alpha channel), then
+ * re-encodes at the shared {@link JPEG_QUALITY}. The output name swaps the
+ * extension to `.jpg` so the re-submit carries an honest MIME/extension pair.
+ */
+export async function flattenToRgbJpeg(file: File): Promise<File> {
+  const img = await decodeFile(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Canvas 2D context unavailable.");
+  }
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0);
+  const blob = await canvasToBlob(canvas, "image/jpeg", JPEG_QUALITY);
+  const base = file.name.replace(/\.[^./\\]+$/, "");
+  return new File([blob], `${base || "photo"}.jpg`, { type: "image/jpeg" });
+}

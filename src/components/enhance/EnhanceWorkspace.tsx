@@ -3,7 +3,9 @@ import { CircleAlert, CloudUpload, RotateCcw, Sparkles } from "lucide-react";
 import type { BreadParams, EngineId, LocalParams, LumaStats } from "@/lib/engines/types";
 import { PARAM_RANGES, recommendParams } from "@/lib/engines/auto-params";
 import { sampleImageLuma } from "@/lib/engines/auto-params.client";
+import { flattenToRgbJpeg } from "@/lib/engines/canvas-helpers";
 import { Button } from "@/components/ui/button";
+import { useBeforeUnloadWarning } from "@/components/hooks/useBeforeUnloadWarning";
 import { useCloudJob } from "@/components/hooks/useCloudJob";
 import { useCloudSubmit } from "@/components/hooks/useCloudSubmit";
 import { useDebouncedValue } from "@/components/hooks/useDebouncedValue";
@@ -96,6 +98,12 @@ export default function EnhanceWorkspace({
   const [breadOverridden, setBreadOverridden] = useState<ReadonlySet<ParamKey>>(new Set());
   const [stats, setStats] = useState<LumaStats | null>(null);
 
+  // RGBA → RGB recovery (Phase 2): `converting` disables the button + shows a
+  // spinner while the canvas flatten runs; `convertError` surfaces a flatten
+  // failure in the cloud error line.
+  const [converting, setConverting] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
+
   const localProcessing = enhancer.status === "processing";
   const cloudSubmitting = cloudSubmit.status === "submitting";
   const busy = localProcessing || cloudSubmitting;
@@ -144,6 +152,28 @@ export default function EnhanceWorkspace({
     enhanceRef.current = enhancer.enhance;
   });
 
+  // Convert-and-retry re-submit (Phase 2). The convert handler swaps the source
+  // File via the uploader's accept seam and flips `pendingResubmitRef`; the
+  // effect below fires the cloud submit once the new File has propagated to
+  // `useCloudSubmit` (whose `submit` closes over `[file]`). A REF trigger (not
+  // state) keeps the submit off the effect's synchronous setState path — the
+  // same no-sync-setState discipline the analyze/debounce effects use to satisfy
+  // `react-hooks/set-state-in-effect`. The latest `submit`/`breadParams` are read
+  // through refs (their identity changes each render) — refreshed here so the
+  // updater runs before the sourceFile-keyed effect below.
+  const pendingResubmitRef = useRef(false);
+  const cloudSubmitRef = useRef(cloudSubmit.submit);
+  const breadParamsRef = useRef(breadParams);
+  useEffect(() => {
+    cloudSubmitRef.current = cloudSubmit.submit;
+    breadParamsRef.current = breadParams;
+  });
+  useEffect(() => {
+    if (!pendingResubmitRef.current || !sourceFile) return;
+    pendingResubmitRef.current = false;
+    void cloudSubmitRef.current(breadParamsRef.current);
+  }, [sourceFile]);
+
   // Params last handed to the engine. Guards the debounce effect from repeating
   // identical work when it re-fires on a status change (which would loop), and
   // lets a change made mid-process replay once processing finishes.
@@ -184,6 +214,7 @@ export default function EnhanceWorkspace({
     downloadName: cloudDownloadName,
     errorMessage: cloudError,
     coldStartHint: cloudColdStartHint,
+    isRgbaError: cloudIsRgbaError,
   } = cloudJob;
   const cloudResultReady =
     engine === "cloud" &&
@@ -194,6 +225,11 @@ export default function EnhanceWorkspace({
     cloudDownloadName !== null &&
     cloudWidth !== null &&
     cloudHeight !== null;
+
+  // Guard an accidental refresh/close while there's unsaved work in flight — a
+  // loaded photo (either engine) or an in-flight cloud job. A reload can't
+  // restore a File/object-URL, so the native prompt is the fix, not recovery.
+  useBeforeUnloadWarning(sourceUrl !== null || cloudPhase === "processing");
 
   function handleAccepted(file: File, objectUrl: string) {
     setSourceFile(file);
@@ -211,6 +247,31 @@ export default function EnhanceWorkspace({
     setAutoOn(true);
     setStats(null);
     lastEnhancedRef.current = null;
+    // Disarm a pending convert-retry so a fresh upload (null → file) can't
+    // inherit it and auto-submit.
+    pendingResubmitRef.current = false;
+    setConvertError(null);
+    setConverting(false);
+  }
+
+  // RGBA recovery: flatten the source to an opaque RGB JPEG, hand it to the SAME
+  // accept seam the uploader uses (keeps the preview/local state aligned and feeds
+  // `useCloudSubmit`), then arm the re-submit effect. Flattening is one canvas
+  // encode; the spinner covers it and the guard blocks a double click.
+  async function handleConvertToRgb() {
+    if (!sourceFile || converting) return;
+    setConverting(true);
+    setConvertError(null);
+    try {
+      const flattened = await flattenToRgbJpeg(sourceFile);
+      const objectUrl = URL.createObjectURL(flattened);
+      handleAccepted(flattened, objectUrl);
+      pendingResubmitRef.current = true;
+    } catch {
+      setConvertError("We couldn't convert this image. Please try another photo.");
+    } finally {
+      setConverting(false);
+    }
   }
 
   /** Recompute every engine's params from the current image stats and clear overrides. */
@@ -384,8 +445,33 @@ export default function EnhanceWorkspace({
                   </div>
                 ) : cloudPhase === "failed" ? (
                   <div className="flex flex-wrap justify-center gap-3">
+                    {/* RGBA recovery: flatten alpha → RGB JPEG and re-submit (Phase 2). */}
+                    {cloudIsRgbaError && (
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          void handleConvertToRgb();
+                        }}
+                        disabled={converting}
+                      >
+                        {converting ? (
+                          <span className="flex items-center gap-2">
+                            <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                            Converting…
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            <Sparkles className="size-4" />
+                            Convert to RGB and try again
+                          </span>
+                        )}
+                      </Button>
+                    )}
                     <Button
                       type="button"
+                      variant={cloudIsRgbaError ? "outline" : "default"}
+                      className={cloudIsRgbaError ? SECONDARY_BUTTON : undefined}
+                      disabled={converting}
                       onClick={() => {
                         void cloudSubmit.submit(breadParams);
                       }}
@@ -393,7 +479,13 @@ export default function EnhanceWorkspace({
                       <RotateCcw className="size-4" />
                       Try again
                     </Button>
-                    <Button type="button" variant="outline" onClick={handleReset} className={SECONDARY_BUTTON}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleReset}
+                      disabled={converting}
+                      className={SECONDARY_BUTTON}
+                    >
                       Start over
                     </Button>
                   </div>
@@ -446,10 +538,10 @@ export default function EnhanceWorkspace({
       )}
       {/* Submit-stage errors (e.g. upload rejected) and pipeline/timeout/load errors
           never coexist; show whichever is set. */}
-      {engine === "cloud" && (cloudSubmit.error ?? cloudError) && (
+      {engine === "cloud" && (convertError ?? cloudSubmit.error ?? cloudError) && (
         <p className="mt-3 flex items-center justify-center gap-1 text-sm text-red-300" role="alert">
           <CircleAlert className="size-4" />
-          {cloudSubmit.error ?? cloudError}
+          {convertError ?? cloudSubmit.error ?? cloudError}
         </p>
       )}
     </div>

@@ -7,6 +7,31 @@ export type CloudJobPhase = "idle" | "processing" | "succeeded" | "failed";
 // timeout route's own row-level write — are identical, so there's no flicker between them.
 export const TIMEOUT_MESSAGE = "Cloud processing took too long. Please try again.";
 export const GENERIC_FAILED_MESSAGE = "Cloud processing failed. Please try again.";
+// Provider (Replicate) rate-limit — distinct from the create-job daily cap, which
+// has its own copy. Keyed off the row's `error_code` (`provider_rate_limited`),
+// set by the Edge Function's `classifyStartFailure` on a 429.
+export const PROVIDER_RATE_LIMITED_MESSAGE =
+  "Cloud AI is busy right now — please try again in a moment, or switch to the Local engine.";
+// Alpha-PNG (RGBA) input rejected by Bread, which needs a 3-channel RGB tensor.
+// The reactive recovery (Convert to RGB and try again) is offered alongside.
+export const RGBA_ALPHA_MESSAGE =
+  "This image has a transparency layer the cloud model can't read. Convert it to RGB and try again.";
+
+// Stable, front-of-message anchor of Bread's RGBA rejection, e.g.
+// `Input size must have a shape of (*, 3, H, W). Got torch.Size([1, 4, 96, 96])`.
+// Matched as a substring so it survives the row's 300-char `error_message`
+// truncation (the signature sits near the front); the trailing H/W dims vary.
+const RGBA_ALPHA_SIGNATURE = "Input size must have a shape of (*, 3";
+
+/**
+ * Recognize the alpha-channel (RGBA) failure from its `error_message` signature.
+ * Truncation-safe: an early, dimension-independent substring (the model's
+ * "needs 3 channels" complaint), not the full message. Drives both the friendly
+ * copy in {@link deriveDisplayError} and the workspace's Convert-to-RGB button.
+ */
+export function isRgbaAlphaError(errorMessage: string | null): boolean {
+  return errorMessage?.includes(RGBA_ALPHA_SIGNATURE) ?? false;
+}
 
 /**
  * Pure decision predicates lifted out of `useCloudJob`'s effect closures so the
@@ -69,17 +94,28 @@ export interface CloudDisplayErrorInput {
   timedOut: boolean;
   loadError: string | null;
   errorMessage: string | null;
+  /** Row-level `error_code` (e.g. `provider_rate_limited`); keys the friendly map. */
+  errorCode: string | null;
 }
 
 /**
  * The user-facing error for a `failed` phase: a row-level `failed` carries the
  * authoritative message; the client `TIMEOUT_MESSAGE` only covers the gap before the
  * timeout route's write lands; a load failure falls back to its own message.
+ *
+ * On a row-level `failed`, a known `error_code` maps to friendly copy first (e.g. a
+ * provider 429 → {@link PROVIDER_RATE_LIMITED_MESSAGE}); then the RGBA-signature
+ * message map ({@link isRgbaAlphaError} → {@link RGBA_ALPHA_MESSAGE}); unknown
+ * codes/messages fall back to the row's `error_message`, then the generic.
  */
 export function deriveDisplayError(input: CloudDisplayErrorInput): string | null {
-  const { phase, status, timedOut, loadError, errorMessage } = input;
+  const { phase, status, timedOut, loadError, errorMessage, errorCode } = input;
   if (phase !== "failed") return null;
-  if (status === "failed") return errorMessage ?? GENERIC_FAILED_MESSAGE;
+  if (status === "failed") {
+    if (errorCode === "provider_rate_limited") return PROVIDER_RATE_LIMITED_MESSAGE;
+    if (isRgbaAlphaError(errorMessage)) return RGBA_ALPHA_MESSAGE;
+    return errorMessage ?? GENERIC_FAILED_MESSAGE;
+  }
   if (timedOut) return TIMEOUT_MESSAGE;
   return loadError ?? GENERIC_FAILED_MESSAGE;
 }

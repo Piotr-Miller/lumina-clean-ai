@@ -190,6 +190,22 @@ export function mapPredictionToOutcome(payload: ReplicatePredictionPayload): Pre
   }
 }
 
+/** `error_code` written to the `jobs` row when the `/start` prediction-create fails. */
+export type StartFailureCode = "provider_rate_limited" | "start_failed";
+
+/**
+ * Classify a `/start` prediction-create failure by HTTP status into the
+ * `error_code` persisted on the row. A Replicate 429 is a provider rate-limit
+ * (distinct from the create-job daily cap) and maps to `provider_rate_limited`
+ * so the client can show friendly "Cloud AI is busy" copy; every other status
+ * stays the generic `start_failed`. Pure + dependency-free so Vitest can prove
+ * the 429 branch directly — `deno check` only proves the Edge Function compiles,
+ * not that it classifies correctly.
+ */
+export function classifyStartFailure(status: number): StartFailureCode {
+  return status === 429 ? "provider_rate_limited" : "start_failed";
+}
+
 const CONTENT_TYPE_EXTENSIONS: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/jpg": "jpg",
