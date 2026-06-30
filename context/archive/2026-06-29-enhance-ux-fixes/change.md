@@ -1,10 +1,10 @@
 ---
 change_id: enhance-ux-fixes
 title: Enhance-flow UX fixes — refresh guard, cloud error messaging, fixed nav
-status: impl_reviewed
+status: archived
 created: 2026-06-29
 updated: 2026-06-30
-archived_at: null
+archived_at: 2026-06-30T21:13:08Z
 ---
 
 ## Notes
