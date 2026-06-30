@@ -7,6 +7,7 @@ import {
   shouldFailAfterQueuedReRead,
   TIMEOUT_MESSAGE,
   GENERIC_FAILED_MESSAGE,
+  PROVIDER_RATE_LIMITED_MESSAGE,
 } from "@/components/hooks/cloud-job-decisions";
 
 /**
@@ -62,6 +63,7 @@ describe("deriveDisplayError", () => {
         timedOut: false,
         loadError: null,
         errorMessage: null,
+        errorCode: null,
       }),
     ).toBeNull();
     expect(
@@ -71,6 +73,7 @@ describe("deriveDisplayError", () => {
         timedOut: false,
         loadError: null,
         errorMessage: null,
+        errorCode: null,
       }),
     ).toBeNull();
   });
@@ -83,11 +86,45 @@ describe("deriveDisplayError", () => {
         timedOut: false,
         loadError: null,
         errorMessage: "pipeline boom",
+        errorCode: null,
       }),
     ).toBe("pipeline boom");
     expect(
-      deriveDisplayError({ phase: "failed", status: "failed", timedOut: false, loadError: null, errorMessage: null }),
+      deriveDisplayError({
+        phase: "failed",
+        status: "failed",
+        timedOut: false,
+        loadError: null,
+        errorMessage: null,
+        errorCode: null,
+      }),
     ).toBe(GENERIC_FAILED_MESSAGE);
+  });
+
+  it("maps a provider_rate_limited code to the friendly 429 copy (over the raw message)", () => {
+    expect(
+      deriveDisplayError({
+        phase: "failed",
+        status: "failed",
+        timedOut: false,
+        loadError: null,
+        errorMessage: "Replicate predictions.create failed (429): rate limit",
+        errorCode: "provider_rate_limited",
+      }),
+    ).toBe(PROVIDER_RATE_LIMITED_MESSAGE);
+  });
+
+  it("leaves an unrelated error_code on the row's authoritative message", () => {
+    expect(
+      deriveDisplayError({
+        phase: "failed",
+        status: "failed",
+        timedOut: false,
+        loadError: null,
+        errorMessage: "pipeline boom",
+        errorCode: "start_failed",
+      }),
+    ).toBe("pipeline boom");
   });
 
   it("shows the timeout message on a client-side timeout (row not yet failed)", () => {
@@ -98,6 +135,7 @@ describe("deriveDisplayError", () => {
         timedOut: true,
         loadError: null,
         errorMessage: null,
+        errorCode: null,
       }),
     ).toBe(TIMEOUT_MESSAGE);
   });
@@ -110,10 +148,18 @@ describe("deriveDisplayError", () => {
         timedOut: false,
         loadError: "decode failed",
         errorMessage: null,
+        errorCode: null,
       }),
     ).toBe("decode failed");
     expect(
-      deriveDisplayError({ phase: "failed", status: null, timedOut: false, loadError: null, errorMessage: null }),
+      deriveDisplayError({
+        phase: "failed",
+        status: null,
+        timedOut: false,
+        loadError: null,
+        errorMessage: null,
+        errorCode: null,
+      }),
     ).toBe(GENERIC_FAILED_MESSAGE);
   });
 

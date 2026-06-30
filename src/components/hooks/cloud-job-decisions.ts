@@ -7,6 +7,11 @@ export type CloudJobPhase = "idle" | "processing" | "succeeded" | "failed";
 // timeout route's own row-level write — are identical, so there's no flicker between them.
 export const TIMEOUT_MESSAGE = "Cloud processing took too long. Please try again.";
 export const GENERIC_FAILED_MESSAGE = "Cloud processing failed. Please try again.";
+// Provider (Replicate) rate-limit — distinct from the create-job daily cap, which
+// has its own copy. Keyed off the row's `error_code` (`provider_rate_limited`),
+// set by the Edge Function's `classifyStartFailure` on a 429.
+export const PROVIDER_RATE_LIMITED_MESSAGE =
+  "Cloud AI is busy right now — please try again in a moment, or switch to the Local engine.";
 
 /**
  * Pure decision predicates lifted out of `useCloudJob`'s effect closures so the
@@ -69,17 +74,26 @@ export interface CloudDisplayErrorInput {
   timedOut: boolean;
   loadError: string | null;
   errorMessage: string | null;
+  /** Row-level `error_code` (e.g. `provider_rate_limited`); keys the friendly map. */
+  errorCode: string | null;
 }
 
 /**
  * The user-facing error for a `failed` phase: a row-level `failed` carries the
  * authoritative message; the client `TIMEOUT_MESSAGE` only covers the gap before the
  * timeout route's write lands; a load failure falls back to its own message.
+ *
+ * On a row-level `failed`, a known `error_code` maps to friendly copy first (e.g. a
+ * provider 429 → {@link PROVIDER_RATE_LIMITED_MESSAGE}); unknown codes fall back to
+ * the row's `error_message`, then the generic.
  */
 export function deriveDisplayError(input: CloudDisplayErrorInput): string | null {
-  const { phase, status, timedOut, loadError, errorMessage } = input;
+  const { phase, status, timedOut, loadError, errorMessage, errorCode } = input;
   if (phase !== "failed") return null;
-  if (status === "failed") return errorMessage ?? GENERIC_FAILED_MESSAGE;
+  if (status === "failed") {
+    if (errorCode === "provider_rate_limited") return PROVIDER_RATE_LIMITED_MESSAGE;
+    return errorMessage ?? GENERIC_FAILED_MESSAGE;
+  }
   if (timedOut) return TIMEOUT_MESSAGE;
   return loadError ?? GENERIC_FAILED_MESSAGE;
 }

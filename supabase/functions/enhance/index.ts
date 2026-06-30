@@ -36,6 +36,7 @@ import {
 } from "../../../src/lib/services/photo-job.service.ts";
 import type { ReplicatePredictionPayload } from "../../../src/lib/services/replicate-webhook.ts";
 import {
+  classifyStartFailure,
   isAllowedOutputUrl,
   isWebhookTimestampFresh,
   mapPredictionToOutcome,
@@ -328,6 +329,10 @@ async function handleStart(req: Request): Promise<Response> {
   const admin = buildAdminClient();
   let replicateToken: string | undefined;
   let unattachedPredictionId: string | null = null;
+  // HTTP status of a non-2xx prediction-create, captured so the catch below can
+  // classify the failure code (a Replicate 429 → provider_rate_limited). null
+  // when the failure isn't a prediction-create HTTP error → generic start_failed.
+  let predictionCreateStatus: number | null = null;
 
   try {
     const job = await getJobById(admin, jobId);
@@ -392,6 +397,7 @@ async function handleStart(req: Request): Promise<Response> {
     });
 
     if (!predictionRes.ok) {
+      predictionCreateStatus = predictionRes.status;
       const detail = (await predictionRes.text()).slice(0, MAX_ERROR_DETAIL_CHARS);
       throw new Error(`Replicate predictions.create failed (${predictionRes.status}): ${detail}`);
     }
@@ -428,12 +434,17 @@ async function handleStart(req: Request): Promise<Response> {
     // Record the failure on the row (the client's source of truth) before
     // returning. Best-effort: if markJobFailed itself throws, the 500 still
     // signals the failure.
+    // Classify by the prediction-create HTTP status: a Replicate 429 (provider
+    // rate-limit, distinct from the create-job daily cap) → provider_rate_limited
+    // so the client shows friendly "Cloud AI is busy" copy; any other path stays
+    // start_failed. The classifier is pure + unit-tested in replicate-webhook.ts.
+    const errorCode = predictionCreateStatus !== null ? classifyStartFailure(predictionCreateStatus) : "start_failed";
     try {
-      await markJobFailed(admin, { jobId, errorCode: "start_failed", errorMessage: message });
+      await markJobFailed(admin, { jobId, errorCode, errorMessage: message });
     } catch {
       // swallow — the row may be unreachable; the 500 below surfaces it
     }
-    return jsonResponse(500, { error: { code: "start_failed", message } });
+    return jsonResponse(500, { error: { code: errorCode, message } });
   }
 }
 

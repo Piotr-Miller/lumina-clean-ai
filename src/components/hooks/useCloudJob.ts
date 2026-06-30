@@ -60,7 +60,7 @@ export interface UseCloudJobArgs {
 }
 
 /** The subset of the `jobs` row this hook reads off the pushed UPDATE payload. */
-type JobUpdateRow = Pick<PhotoJob, "status" | "result_path" | "error_message">;
+type JobUpdateRow = Pick<PhotoJob, "status" | "result_path" | "error_message" | "error_code">;
 
 /** Short TTL for the result read URL; re-minted on demand if it ever expires. */
 const RESULT_URL_TTL_SECONDS = 300;
@@ -136,6 +136,7 @@ export function useCloudJob({
   const [status, setStatus] = useState<PhotoJobStatus | null>(null);
   const [resultPath, setResultPath] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [result, setResult] = useState<{ afterUrl: string; blob: Blob; width: number; height: number } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [timedOut, setTimedOut] = useState(false);
@@ -191,7 +192,12 @@ export function useCloudJob({
     // Fold a status snapshot (catch-up read or pushed event) into state + the
     // watchdog. Idempotent + monotonic: the `terminal` guard stops a late event
     // reviving a closed job; `sawProcessing` arms the long budget exactly once.
-    const applyStatus = (next: PhotoJobStatus, nextResultPath: string | null, nextError: string | null) => {
+    const applyStatus = (
+      next: PhotoJobStatus,
+      nextResultPath: string | null,
+      nextError: string | null,
+      nextErrorCode: string | null,
+    ) => {
       if (cancelled || terminal) return;
       if (shouldArmProcessingBudget(next, sawProcessing)) {
         sawProcessing = true;
@@ -206,6 +212,7 @@ export function useCloudJob({
       setStatus(next);
       setResultPath(nextResultPath);
       setErrorMessage(nextError);
+      setErrorCode(nextErrorCode);
     };
 
     // Authoritative one-shot read of the row, folded in via applyStatus. Used
@@ -214,12 +221,12 @@ export function useCloudJob({
     const syncFromRead = () =>
       client
         .from("jobs")
-        .select("status, result_path, error_message")
+        .select("status, result_path, error_message, error_code")
         .eq("id", jobId)
         .maybeSingle()
         .then((res) => {
           const row = (res as { data: JobUpdateRow | null }).data;
-          if (row) applyStatus(row.status, row.result_path, row.error_message);
+          if (row) applyStatus(row.status, row.result_path, row.error_message, row.error_code);
           return row ? row.status : null;
         });
 
@@ -258,7 +265,12 @@ export function useCloudJob({
             "postgres_changes",
             { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${jobId}` },
             (payload) => {
-              applyStatus(payload.new.status, payload.new.result_path, payload.new.error_message);
+              applyStatus(
+                payload.new.status,
+                payload.new.result_path,
+                payload.new.error_message,
+                payload.new.error_code,
+              );
             },
           )
           .subscribe((subStatus) => {
@@ -285,6 +297,7 @@ export function useCloudJob({
       setStatus(null);
       setResultPath(null);
       setErrorMessage(null);
+      setErrorCode(null);
       setResult(null);
       setLoadError(null);
       setTimedOut(false);
@@ -404,7 +417,7 @@ export function useCloudJob({
   // authoritative message; the client `TIMEOUT_MESSAGE` only covers the gap
   // before that write lands. The two timeout strings are identical, so there's
   // no flicker between them.
-  const displayError = deriveDisplayError({ phase, status, timedOut, loadError, errorMessage });
+  const displayError = deriveDisplayError({ phase, status, timedOut, loadError, errorMessage, errorCode });
 
   return {
     phase,
