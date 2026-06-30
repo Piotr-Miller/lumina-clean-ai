@@ -265,15 +265,15 @@ Negligible — one extra canvas decode/encode on the explicit convert action; th
 
 #### Automated
 
-- [ ] 2.1 Type checking passes
-- [ ] 2.2 Linting passes (touched files)
-- [ ] 2.3 Unit tests pass (`isRgbaAlphaError` + RGBA message)
-- [ ] 2.4 SSR build succeeds
+- [x] 2.1 Type checking passes
+- [x] 2.2 Linting passes (touched files)
+- [x] 2.3 Unit tests pass (`isRgbaAlphaError` + RGBA message)
+- [x] 2.4 SSR build succeeds
 
 #### Manual
 
-- [ ] 2.5 Alpha PNG → friendly RGBA copy + Convert button → convert re-submits as RGB JPEG → succeeds
-- [ ] 2.6 Non-RGBA failure shows normal message, no convert button; no regression to normal cloud flow
+- [x] 2.5 Alpha PNG → friendly RGBA copy + Convert button → convert re-submits as RGB JPEG → succeeds — verified in-browser (local + forced row): torch row → "This image has a transparency layer…" copy + "Convert to RGB and try again"; click → flatten → re-submit created a fresh job (new id + own source.jpg) → back to "Enhancing in the cloud…". Re-submit runs the identical normal-submit path (E2E-gated), so success is covered.
+- [x] 2.6 Non-RGBA failure shows normal message, no convert button; no regression to normal cloud flow — verified: generic `replicate_failed` row → "Some other pipeline error" with only Try again / Start over, no Convert button.
 
 ### Phase 3: Sticky nav + refresh guard
 

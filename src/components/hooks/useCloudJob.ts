@@ -9,6 +9,7 @@ import type { PhotoJob, PhotoJobStatus } from "@/types";
 import {
   deriveCloudPhase,
   deriveDisplayError,
+  isRgbaAlphaError,
   isTerminalStatus,
   shouldArmProcessingBudget,
   shouldFailAfterQueuedReRead,
@@ -42,6 +43,12 @@ export interface CloudJobState {
   downloadName: string | null;
   /** User-facing error for a failed pipeline, a load failure, or a timeout; else `null`. */
   errorMessage: string | null;
+  /**
+   * True when a `failed` job is the RGBA/alpha-channel rejection (Bread needs a
+   * 3-channel RGB input). Lets the workspace gate the Convert-to-RGB recovery
+   * button without re-parsing the now-friendly display string.
+   */
+  isRgbaError: boolean;
 }
 
 export interface UseCloudJobArgs {
@@ -419,6 +426,11 @@ export function useCloudJob({
   // no flicker between them.
   const displayError = deriveDisplayError({ phase, status, timedOut, loadError, errorMessage, errorCode });
 
+  // Surface the RGBA case off the RAW row message (the display string is now
+  // friendly copy, so it can't be re-parsed). Phase-gated so it only reads true
+  // on an actual failure, never on transient nulls mid-pipeline.
+  const isRgbaError = phase === "failed" && isRgbaAlphaError(errorMessage);
+
   return {
     phase,
     status,
@@ -429,5 +441,6 @@ export function useCloudJob({
     resultHeight: result?.height ?? null,
     downloadName: result ? deriveDownloadName(sourceFileName ?? "photo", result.blob.type) : null,
     errorMessage: displayError,
+    isRgbaError,
   };
 }
