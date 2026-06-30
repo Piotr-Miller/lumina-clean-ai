@@ -5,6 +5,7 @@ import { PARAM_RANGES, recommendParams } from "@/lib/engines/auto-params";
 import { sampleImageLuma } from "@/lib/engines/auto-params.client";
 import { flattenToRgbJpeg } from "@/lib/engines/canvas-helpers";
 import { Button } from "@/components/ui/button";
+import { useBeforeUnloadWarning } from "@/components/hooks/useBeforeUnloadWarning";
 import { useCloudJob } from "@/components/hooks/useCloudJob";
 import { useCloudSubmit } from "@/components/hooks/useCloudSubmit";
 import { useDebouncedValue } from "@/components/hooks/useDebouncedValue";
@@ -224,6 +225,11 @@ export default function EnhanceWorkspace({
     cloudDownloadName !== null &&
     cloudWidth !== null &&
     cloudHeight !== null;
+
+  // Guard an accidental refresh/close while there's unsaved work in flight — a
+  // loaded photo (either engine) or an in-flight cloud job. A reload can't
+  // restore a File/object-URL, so the native prompt is the fix, not recovery.
+  useBeforeUnloadWarning(sourceUrl !== null || cloudPhase === "processing");
 
   function handleAccepted(file: File, objectUrl: string) {
     setSourceFile(file);

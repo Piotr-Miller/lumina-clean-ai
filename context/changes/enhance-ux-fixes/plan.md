@@ -279,11 +279,11 @@ Negligible — one extra canvas decode/encode on the explicit convert action; th
 
 #### Automated
 
-- [ ] 3.1 Type checking passes
-- [ ] 3.2 Linting passes (touched files)
-- [ ] 3.3 SSR build succeeds
+- [x] 3.1 Type checking passes
+- [x] 3.2 Linting passes (touched files)
+- [x] 3.3 SSR build succeeds
 
 #### Manual
 
-- [ ] 3.4 Nav stays pinned while scrolling (`/dashboard` + a tall page)
-- [ ] 3.5 `beforeunload` prompts with work in progress; no prompt on an empty workspace
+- [x] 3.4 Nav stays pinned while scrolling (`/dashboard` + a tall page) — verified in-browser: nav pinned while scrolling the tall home page (photo loaded); renders globally on `/dashboard` (short page, nothing to scroll).
+- [x] 3.5 `beforeunload` prompts with work in progress; no prompt on an empty workspace — verified: synthetic `beforeunload` → `defaultPrevented` false (empty) / true (photo loaded); plus the REAL native "Leave site?" dialog blocked navigation while loaded, and navigation proceeded once cleared.
