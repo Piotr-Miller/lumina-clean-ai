@@ -54,13 +54,13 @@ The observation could originate at any of these dimensions:
 
 ## Hypothesis Investigation
 
-| Hypothesis | Evidence | Verdict |
-| --- | --- | --- |
-| Fixed defaults are too aggressive | Local always applies `GAMMA = 1.5`; Cloud always applies `gamma = 1.2` and maximum configured `strength = 0.2`. The user reports over-brightened outputs. | STRONG |
-| Settings need to vary per image | Neither engine accepts enhancement parameters from the caller; both use unconditional constants. Different source exposure therefore cannot influence intensity. | STRONG |
-| Engines need distinct parameter contracts | Local supports gamma plus Canvas blur, while Bread supports gamma plus denoise strength with model-defined limits. | STRONG |
-| The Cloud model itself may be unsuitable | The Bread spike called subjective quality inconclusive and used a noise chart rather than a real low-light color photo. This remains a later model-selection concern, not work for this slice. | WEAK but material |
-| Evaluation is under-specified | The spike explicitly records real-photo quality as unproven; current tests assert fixed constants and LUT math, not perceptual quality. | STRONG |
+| Hypothesis                                | Evidence                                                                                                                                                                                       | Verdict           |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| Fixed defaults are too aggressive         | Local always applies `GAMMA = 1.5`; Cloud always applies `gamma = 1.2` and maximum configured `strength = 0.2`. The user reports over-brightened outputs.                                      | STRONG            |
+| Settings need to vary per image           | Neither engine accepts enhancement parameters from the caller; both use unconditional constants. Different source exposure therefore cannot influence intensity.                               | STRONG            |
+| Engines need distinct parameter contracts | Local supports gamma plus Canvas blur, while Bread supports gamma plus denoise strength with model-defined limits.                                                                             | STRONG            |
+| The Cloud model itself may be unsuitable  | The Bread spike called subjective quality inconclusive and used a noise chart rather than a real low-light color photo. This remains a later model-selection concern, not work for this slice. | WEAK but material |
+| Evaluation is under-specified             | The spike explicitly records real-photo quality as unproven; current tests assert fixed constants and LUT math, not perceptual quality.                                                        | STRONG            |
 
 ## Narrowing Signals
 

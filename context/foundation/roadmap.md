@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-06-25
+updated: 2026-07-01
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -42,7 +42,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-09 | cloud-source-url-ttl-fix          | (reliability) cloud jobs survive a slow Replicate cold boot without source-URL expiry                                                     | S-04             | MVP success: cloud flow works end-to-end (NFR reliability) | done   |
 | S-10 | retention-reaper                  | (post-MVP hardening) sources stay gone within 24h even for legacy/abandon-never-return/best-effort-fail jobs — scheduled pg_cron backstop | F-01, S-08, S-07 | NFR: source not retained beyond 24h (backstop)             | done   |
 | S-11 | bread-chroma-postpass             | (post-MVP quality) get cleaner shadow colors from Bread without sacrificing luminance detail                                              | S-04, S-07       | Post-MVP cloud enhancement quality                         | done   |
-| S-12 | adaptive-enhancement-parameters   | (post-MVP UX/quality) tune Local or Bread in a right-side panel, start from Auto recommendations, and override any slider manually        | S-01, S-04       | Post-MVP enhancement control; extends US-01, US-02         | new    |
+| S-12 | adaptive-enhancement-parameters   | (post-MVP UX/quality) tune Local or Bread in a right-side panel, start from Auto recommendations, and override any slider manually        | S-01, S-04       | Post-MVP enhancement control; extends US-01, US-02         | done   |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
 
@@ -263,7 +263,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Sequencing:** **post-MVP**. Prefer before any future model-selection/fallback slice so later engines must adapt to an established parameter-panel contract. Research and plan the Auto recommendation mechanism, safe ranges, and Cloud preview/reprocessing cost before implementation.
 - **Blockers:** representative low-light image set for validating over-brightening; decision on the Auto analyzer (deterministic image metrics, vision model, or hybrid); explicit Cloud slider apply/preview behavior so dragging does not accidentally create unbounded paid Bread jobs
 - **Risk:** Medium. Auto can look authoritative while choosing poor values; frequent Cloud slider changes can multiply paid jobs; a desktop right-side panel can crowd mobile layouts. Recommendations must stay visible and editable, values must be bounded, and Cloud processing must require an intentional apply action or equivalent cost-safe interaction.
-- **Status:** preparing (framing captured in `context/changes/adaptive-enhancement-parameters/frame.md`)
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -281,7 +281,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-09       | cloud-source-url-ttl-fix          | Source signed-URL TTL fix (cold-boot reliability)                  | done                  | Archived 2026-06-07 → `context/archive/2026-06-06-cloud-source-url-ttl-fix/`. Issue #12.                                                                                                                                         |
 | S-10       | retention-reaper                  | Scheduled retention reaper backstop                                | done                  | `phase:post-mvp`. Archived 2026-06-14 → `context/archive/2026-06-14-retention-reaper/`. Shipped PR #30.                                                                                                                          |
 | S-11       | bread-chroma-postpass             | Bread chroma-denoise post-pass + pinned version resolution         | done                  | `phase:post-mvp`. Archived 2026-06-25 → `context/archive/2026-06-18-bread-chroma-postpass/`. Issue #51. PRs #70 (p1–4) + #74 (p5).                                                                                               |
-| S-12       | adaptive-enhancement-parameters   | Manual + Auto parameter panel for Local and Bread                  | yes                   | `phase:post-mvp`. Issue #52. Run `/10x-research adaptive-enhancement-parameters`; lock Auto analysis and cost-safe Cloud apply/preview semantics before planning.                                                                |
+| S-12       | adaptive-enhancement-parameters   | Manual + Auto parameter panel for Local and Bread                  | done                  | `phase:post-mvp`. Archived 2026-07-01 → `context/archive/2026-06-18-adaptive-enhancement-parameters/`. Issue #52. PR #81.                                                                                                        |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 
@@ -342,3 +342,4 @@ Items that were once parked but have since been implemented or promoted to a sli
 - **S-10 (post-MVP hardening): a scheduled hourly `pg_cron` reaper deletes any lingering `source.*` object past the 24h retention window — backstopping S-08's inline on-failure delete for the gaps it can't reach (legacy terminal orphans, abandon-never-return, best-effort-delete failures). Reverses the `idea-notes.md` pg_cron-cleanup non-goal after a live 7.7-day prod breach; zero new secrets; reaper functions anon-locked.** — Shipped PR #30; Archived 2026-06-14 → `context/archive/2026-06-14-retention-reaper/`. Lesson: storage-first (status-agnostic, object-age) predicate is the complete ≤24h invariant; PostgREST doesn't expose `storage` + SQL can't delete the object → route reads via a `security definer` RPC and deletes via the Storage API.
 - **Cloud flip-ON (D.1 — the S-05 + S-08 + S-09 gate) — executed 2026-06-08:** `CLOUD_PIPELINE_ENABLED` flipped ON in prod, `CLOUD_DAILY_CAP=3` (kill-switch `=0`); retention + cold-boot re-validated end-to-end on luminacleanai.com. GUC→Vault webhook migration; two config findings fixed (real Replicate account signing secret + a required explicit `EDGE_FUNCTION_URL`); `DB_WEBHOOK_SECRET` rotated. Archived 2026-06-08 → `context/archive/2026-06-07-cloud-flip-on-revalidation/`. Lesson: self-signing harness can't catch a wrong provider secret; hosted Edge `SUPABASE_URL` isn't public-https → set `EDGE_FUNCTION_URL` (lessons.md).
 - **S-11: a Cloud AI result keeps Bread's low-light enhancement while an adaptive programmatic YCbCr chroma-denoise post-pass reduces colored noise in dark and near-black regions without materially softening luminance detail; the Bread model version is resolved-and-pinned at build/deploy time (no runtime "latest"), recorded per deployment and per prediction.** — Shipped PRs #70 (p1–4) + #74 (p5); Archived 2026-06-25 → `context/archive/2026-06-18-bread-chroma-postpass/`. Lesson: shipped flag-OFF (`CHROMA_POSTPASS_ENABLED=false`) with a recorded ✅ GO — production enable is a separate change; don't lint generated IIFE bundles.
+- **S-12: after selecting a photo, a user sees a responsive parameter panel to the right of the image (moved below it on narrow screens), can adjust Local `gamma` and blur intensity or Bread `gamma` and `strength`, and can start from Auto-recommended values while retaining the ability to override any recommendation by moving its slider.** — Shipped PR #81; Archived 2026-07-01 → `context/archive/2026-06-18-adaptive-enhancement-parameters/`. Lesson: —.
