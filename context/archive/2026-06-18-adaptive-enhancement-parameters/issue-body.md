@@ -43,7 +43,7 @@ the ability to override any recommendation manually.
 ## Dependencies
 
 - **Prerequisites:** S-01 (Local engine + shared image UI), S-04 (Bread pipeline
-  + Cloud result flow)
+  - Cloud result flow)
 - **Related slice:** S-11 `bread-chroma-postpass`. Avoid parallel implementation
   until the Bread input contract and ownership boundary are reconciled. S-12
   exposes only Bread `gamma`/`strength`; S-11's chroma post-pass remains
