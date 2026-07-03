@@ -1,0 +1,2 @@
+# Built boards/cards are reproducible: node tools/build-boards.mjs (templates + assets in git)
+boards/

@@ -1,0 +1,246 @@
+<!-- @dsCard group="Boards" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction C — Nocturne</title>
+<style>
+  @font-face {
+    font-family: "Archivo";
+    src: url({{FONT:archivo-800.woff2}}) format("woff2");
+    font-weight: 800; font-style: normal; font-display: swap;
+  }
+  :root {
+    --img-city: url({{IMG:city-after.jpg}});
+    --img-banner: url({{IMG:banner-full.jpg}});
+    --void: #050507;
+    --step-1: #0d0d11;         /* surfaces: tone steps, never borders */
+    --step-2: #131319;
+    --ink: #fafafc;
+    --dim: rgba(250,250,252,.55);
+    --faint: rgba(250,250,252,.34);
+    --beam: linear-gradient(90deg, #8f7bf0, #6fe3f2);
+    --beam-v: linear-gradient(180deg, #8f7bf0, #6fe3f2);
+    --radius: 12px;
+    --sans: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    --display: "Archivo", var(--sans);
+  }
+  * { margin: 0; box-sizing: border-box; }
+  body { background: var(--void); color: var(--ink); font: 14px/1.5 var(--sans); }
+
+  .board-head { padding: 28px 36px 20px; background: var(--step-1); }
+  .board-head .tag { font: 800 11px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+  .board-head h1 { font: 800 30px/1.15 var(--display); letter-spacing: -.03em; margin-top: 8px; }
+  .board-head p { color: var(--dim); max-width: 64ch; margin-top: 8px; }
+
+  .section-label { font: 800 10.5px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--faint); padding: 30px 36px 12px; }
+
+  /* ---------- Idle / landing with the key-visual banner ---------- */
+  .idle-hero { width: 1160px; max-width: calc(100% - 72px); margin: 0 36px; border-radius: 20px; overflow: hidden; background: var(--step-1); }
+  .nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 26px; font-size: 13px; color: var(--dim); background: var(--step-2); }
+  .nav .brand { color: var(--ink); font: 800 14px/1 var(--display); letter-spacing: -.02em; }
+  .nav .note { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .nav .links span { margin-left: 20px; color: var(--faint); }
+  .idle-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 0; }
+  .idle-copy { padding: 56px 26px 48px 40px; }
+  .idle-copy h2 { font: 800 54px/1.02 var(--display); letter-spacing: -.035em; }
+  .idle-copy p { color: var(--dim); margin-top: 18px; font-size: 15px; max-width: 42ch; }
+  .toggle { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--step-2); margin-top: 26px; }
+  .toggle .opt { padding: 9px 20px; border-radius: 8px; font-size: 13px; color: var(--dim); }
+  .toggle .opt.active { background: #26262e; color: var(--ink); }
+  .drop { margin-top: 22px; border-radius: var(--radius); padding: 40px 24px; text-align: center; background: var(--step-2); }
+  .drop .l1 strong { background: var(--beam); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; }
+  .drop .l2 { color: var(--faint); font-size: 12px; margin-top: 8px; }
+  .banner-side { position: relative; min-height: 420px; background: var(--img-banner) center / cover no-repeat; }
+  .banner-side .cap { position: absolute; left: 14px; bottom: 12px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: rgba(250,250,252,.7); background: rgba(5,5,7,.65); padding: 5px 9px; border-radius: 6px; }
+
+  /* ---------- Desktop loaded state ---------- */
+  .desktop { width: 1160px; max-width: calc(100% - 72px); margin: 0 36px; border-radius: 20px; overflow: hidden; background: var(--void); outline: 1px solid #1a1a20; }
+  .desktop .inner { padding: 40px 28px 44px; }
+  .loaded-head { text-align: center; }
+  .loaded-head h2 { font: 800 40px/1.05 var(--display); letter-spacing: -.03em; }
+  .loaded-head .toggle { margin: 22px 0 26px; }
+  .workspace { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 28px; }
+  .stage { position: relative; height: 470px; border-radius: var(--radius); overflow: hidden; background: #000;
+    box-shadow: 0 0 90px rgba(111,227,242,.10), 0 0 34px rgba(143,123,240,.10); }
+  .stage .ph { position: absolute; inset: 0; background: var(--img-city) center / cover no-repeat; }
+  .stage .ph.before { clip-path: inset(0 55% 0 0); filter: blur(3px) brightness(.45) saturate(.6); }
+  .stage .divider { position: absolute; top: 0; bottom: 0; left: 45%; width: 2px; background: var(--beam-v); }
+  .stage .handle { position: absolute; top: 50%; left: 45%; transform: translate(-50%,-50%); width: 36px; height: 36px; border-radius: 50%; background: var(--beam); color: #050507; display: grid; place-items: center; font-weight: 800; font-size: 13px; box-shadow: 0 0 24px rgba(111,227,242,.5); }
+  .stage .ba { position: absolute; bottom: 12px; font-size: 10px; letter-spacing: .14em; color: rgba(250,250,252,.72); background: rgba(5,5,7,.6); padding: 5px 9px; border-radius: 6px; }
+  .stage .ba.b { left: 12px; } .stage .ba.a { right: 12px; }
+
+  .cta-row { display: flex; gap: 12px; margin-top: 16px; align-items: center; }
+  .btn { font: 600 13px/1 var(--sans); padding: 12px 20px; border-radius: 10px; color: var(--ink); background: var(--step-2); }
+  .btn.primary { background: var(--beam); color: #050507; font-weight: 800; letter-spacing: .01em; }
+  .btn.quiet { background: transparent; color: var(--dim); }
+
+  .panel { grid-column: 2; grid-row: 1 / span 2; border-radius: var(--radius); background: var(--step-1); padding: 24px; align-self: start; }
+  .panel .head { display: flex; align-items: center; justify-content: space-between; }
+  .panel .title { font: 800 15px/1 var(--display); letter-spacing: -.01em; }
+  .panel .auto { font-size: 11.5px; font-weight: 600; color: var(--ink); background: var(--step-2); padding: 6px 11px; border-radius: 8px; }
+  .param { margin-top: 24px; }
+  .param .row { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--dim); }
+  .param .row .val { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+  .param .row .adj { color: var(--faint); margin-left: 6px; }
+  .track { position: relative; height: 4px; border-radius: 4px; background: var(--step-2); margin-top: 14px; }
+  .track .fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: #3a3a44; }
+  .track .thumb { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 18px; height: 18px; border-radius: 50%; background: var(--beam); box-shadow: 0 0 0 4px var(--void); }
+  .panel .actions { display: flex; gap: 10px; margin-top: 28px; }
+  .panel .actions .btn { padding: 10px 15px; font-size: 12.5px; }
+  .panel .note { margin-top: 20px; font-size: 11.5px; color: var(--faint); line-height: 1.55; }
+
+  .proc { display: flex; align-items: center; gap: 10px; margin-top: 20px; color: var(--dim); font-size: 13px; }
+  .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #26262e; border-top-color: #6fe3f2; }
+  .proc .hint { color: var(--faint); font-size: 12px; }
+
+  /* ---------- Mobile ---------- */
+  .mobile-row { display: flex; gap: 24px; margin: 0 36px; align-items: flex-start; }
+  .phone { width: 375px; flex: none; border-radius: 26px; overflow: hidden; background: var(--void); outline: 1px solid #1a1a20; padding: 20px 16px 24px; }
+  .phone .stage { height: 300px; }
+  .phone h3 { font: 800 30px/1.05 var(--display); letter-spacing: -.03em; text-align: center; margin-top: 12px; }
+  .phone .toggle-row { display: flex; justify-content: center; }
+  .phone .cta-row { flex-wrap: wrap; }
+  .phone .panel { margin-top: 16px; grid-row: auto; grid-column: auto; }
+  .mobile-note { color: var(--faint); font-size: 12.5px; max-width: 34ch; line-height: 1.6; padding-top: 8px; }
+
+  /* ---------- Foundations ---------- */
+  .foundations { margin: 0 36px 40px; border-radius: 20px; background: var(--step-1); padding: 28px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; }
+  .chip { width: 92px; }
+  .chip .sw { height: 56px; border-radius: 10px; outline: 1px solid #22222a; }
+  .chip .nm { font-size: 11px; color: var(--dim); margin-top: 6px; }
+  .chip .hx { font-size: 10.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .f-label { font: 800 10px/1 var(--display); letter-spacing: .18em; text-transform: uppercase; color: var(--faint); margin-bottom: 14px; }
+  .spec .line1 { font: 800 26px/1.2 var(--display); letter-spacing: -.03em; }
+  .spec .line2 { color: var(--dim); margin-top: 8px; }
+  .spec .line3 { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); margin-top: 12px; }
+
+  .board-foot { padding: 0 36px 36px; color: var(--faint); font-size: 12px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <div class="tag">Direction C</div>
+  <h1>Nocturne — gallery at night</h1>
+  <p>The photograph is the only luminous object. Pure black, surfaces separated by tone steps instead of borders, Archivo 800 set tight and large. Color exists in exactly two places: the primary action and the slider handle — both carry the beam gradient. Key-visual treatment: the full LCAI graphic works as the marketing banner of the idle state, where the screen is still a landing page.</p>
+</header>
+
+<div class="section-label">Idle state · landing with key-visual banner</div>
+<div class="idle-hero">
+  <div class="nav">
+    <span class="brand">LuminaClean AI</span>
+    <span class="note">nav out of scope — shown for adjacency</span>
+    <span class="links"><span>Dashboard</span><span>Sign out</span></span>
+  </div>
+  <div class="idle-grid">
+    <div class="idle-copy">
+      <h2>Fix your night photos</h2>
+      <p>Upload a dark, grainy shot and brighten it instantly — right in your browser. No account needed.</p>
+      <div class="toggle"><span class="opt active">Local</span><span class="opt">Cloud AI</span></div>
+      <div class="drop">
+        <div class="l1"><strong>Click to upload</strong> or drag &amp; drop</div>
+        <div class="l2">JPG or PNG · up to 25 MB</div>
+      </div>
+    </div>
+    <div class="banner-side" role="img" aria-label="LuminaClean AI — from noise to perfection">
+      <span class="cap">Key visual · idle only</span>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Desktop · photo loaded, Cloud AI result</div>
+<div class="desktop">
+  <div class="inner">
+    <div class="loaded-head">
+      <h2>Fix your night photos</h2>
+      <div class="toggle"><span class="opt">Local</span><span class="opt active">Cloud AI</span></div>
+    </div>
+    <div class="workspace">
+      <div>
+        <div class="stage">
+          <div class="ph" role="img" aria-label="Your photo — enhanced"></div>
+          <div class="ph before"></div>
+          <div class="divider"></div><div class="handle">⇔</div>
+          <span class="ba b">BEFORE</span><span class="ba a">AFTER</span>
+        </div>
+        <div class="cta-row">
+          <span class="btn primary">Download</span>
+          <span class="btn">Choose another</span>
+          <span class="btn quiet">Start over</span>
+        </div>
+        <div class="proc"><span class="spin"></span> Enhancing in the cloud… <span class="hint">The first run after idle can take a few minutes.</span></div>
+      </div>
+      <aside class="panel">
+        <div class="head">
+          <span class="title">Adjustments</span>
+          <span class="auto">Auto on</span>
+        </div>
+        <div class="param">
+          <div class="row"><span>Brightness (gamma)<span class="adj">· adjusted</span></span><span class="val">1.40</span></div>
+          <div class="track"><div class="fill" style="width:72%"></div><div class="thumb" style="left:72%"></div></div>
+        </div>
+        <div class="param">
+          <div class="row"><span>Denoise strength</span><span class="val">0.15</span></div>
+          <div class="track"><div class="fill" style="width:60%"></div><div class="thumb" style="left:60%"></div></div>
+        </div>
+        <div class="actions">
+          <span class="btn">Recalculate</span>
+          <span class="btn quiet">Restore Auto</span>
+        </div>
+        <p class="note">Provisional — Cloud Auto values are conservative estimates and may be refined.</p>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Mobile · 375px — panel stacks below the image</div>
+<div class="mobile-row">
+  <div class="phone">
+    <div class="toggle-row"><div class="toggle"><span class="opt">Local</span><span class="opt active">Cloud AI</span></div></div>
+    <h3>Fix your night photos</h3>
+    <div class="stage" style="margin-top:16px">
+      <div class="ph" role="img" aria-label="Your photo — enhanced"></div>
+      <div class="ph before"></div>
+      <div class="divider"></div><div class="handle">⇔</div>
+    </div>
+    <div class="cta-row"><span class="btn primary">Download</span><span class="btn">Choose another</span></div>
+    <aside class="panel">
+      <div class="head"><span class="title">Adjustments</span><span class="auto">Auto on</span></div>
+      <div class="param">
+        <div class="row"><span>Brightness (gamma)</span><span class="val">1.40</span></div>
+        <div class="track"><div class="fill" style="width:72%"></div><div class="thumb" style="left:72%"></div></div>
+      </div>
+    </aside>
+  </div>
+  <p class="mobile-note">On mobile the void does the layout work: tone-step cards on pure black, panel stacked under the photo, values visible and editable.</p>
+</div>
+
+<div class="section-label">Foundations</div>
+<div class="foundations">
+  <div>
+    <div class="f-label">Palette</div>
+    <div class="chips">
+      <div class="chip"><div class="sw" style="background:#050507"></div><div class="nm">Void</div><div class="hx">#050507</div></div>
+      <div class="chip"><div class="sw" style="background:#0d0d11"></div><div class="nm">Step 1</div><div class="hx">#0D0D11</div></div>
+      <div class="chip"><div class="sw" style="background:#131319"></div><div class="nm">Step 2</div><div class="hx">#131319</div></div>
+      <div class="chip"><div class="sw" style="background:linear-gradient(90deg,#8f7bf0,#6fe3f2)"></div><div class="nm">Beam · CTA only</div><div class="hx">#8F7BF0→#6FE3F2</div></div>
+      <div class="chip"><div class="sw" style="background:#fafafc"></div><div class="nm">Ink</div><div class="hx">#FAFAFC</div></div>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="f-label">Type</div>
+    <div class="line1">Archivo 800 — tight, large</div>
+    <div class="line2">System sans for body and controls; no third voice.</div>
+    <div class="line3">Radius 12 · no borders — tone steps only · bloom on the photo</div>
+  </div>
+</div>
+
+<footer class="board-foot">
+  Treatment: full key visual as idle-state banner only (never behind live UI) · Archivo (OFL) embedded · discipline rule: if it isn't the primary action or the slider handle, it isn't colored.
+</footer>
+
+</body>
+</html>
