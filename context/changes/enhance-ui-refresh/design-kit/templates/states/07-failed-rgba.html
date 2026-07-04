@@ -1,0 +1,85 @@
+<!-- @dsCard group="States" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State 07 — Cloud failed · generic + RGBA convert variant</title>
+<style>{{CSS:hybrid.css}}
+  .stage .ph.pre { filter: brightness(.45) saturate(.65) blur(1px); }
+  .variant-box { margin: 0 28px 28px; border: 1px solid var(--lc-hairline); border-radius: 6px; background: var(--lc-step-1); padding: 20px; }
+  .variant-box .lbl { font: 500 9.5px/1 var(--lc-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lc-faint); margin-bottom: 14px; }
+  .variant-box .cta-row { justify-content: center; margin-top: 0; }
+  .variant-box .sub-state { margin-top: 14px; font-size: 11.5px; color: var(--lc-faint); text-align: center; }
+</style>
+</head>
+<body>
+
+<header class="card-head">
+  <div class="tag">State 07 · Failed</div>
+  <h1>Cloud failure — retry, plus the RGBA recovery variant</h1>
+  <p>Terminal failure keeps the photo and offers the paid retry as the primary action. The RGBA variant adds a one-click flatten-and-resubmit ahead of it. Alerts are centered lines in --lc-error under the workspace — words, not banners.</p>
+</header>
+
+<div class="section-label">Desktop · generic failure</div>
+<div class="frame">
+  <div class="nav">
+    <span class="brand">LuminaClean AI</span>
+    <span class="note">nav out of scope — shown for adjacency</span>
+    <span class="links"><span>Dashboard</span><span>Sign out</span></span>
+  </div>
+  <div class="inner">
+    <div class="hero">
+      <h2>Fix your night photos</h2>
+      <p class="sub">Upload a dark, grainy shot and brighten it instantly — right in your browser. No account needed.</p>
+    </div>
+    <div class="toggle-row"><div class="toggle"><span class="opt">Local</span><span class="opt active">Cloud AI</span></div></div>
+    <div class="workspace">
+      <div>
+        <div class="stage plain">
+          <div class="ph pre" role="img" aria-label="Selected photo"></div>
+        </div>
+        <div class="cta-row" style="justify-content:center">
+          <span class="btn primary">↺ Try again</span>
+          <span class="btn quiet">Start over</span>
+        </div>
+      </div>
+      <aside class="panel">
+        <div class="head">
+          <span class="title">Adjustments</span>
+          <span class="auto">Auto on</span>
+        </div>
+        <div class="param">
+          <div class="row"><span>Brightness (gamma)</span><span class="val">1.50</span></div>
+          <div class="track"><div class="rail"></div><div class="fill" style="width:88%"></div><div class="thumb" style="left:88%"></div></div>
+        </div>
+        <div class="param">
+          <div class="row"><span>Denoise strength</span><span class="val">0.15</span></div>
+          <div class="track"><div class="rail"></div><div class="fill" style="width:75%"></div><div class="thumb" style="left:75%"></div></div>
+        </div>
+        <div class="actions">
+          <span class="btn">✦ Recalculate</span>
+        </div>
+        <p class="note">Provisional — Cloud Auto values are conservative estimates and may be refined.</p>
+      </aside>
+    </div>
+    <div class="error-line" role="alert"><span class="ico">!</span>Cloud processing failed. Please try again.</div>
+  </div>
+</div>
+
+<div class="section-label">Variant · RGBA (transparency) failure — convert takes the lead</div>
+<div class="variant-box">
+  <div class="lbl">Action row + alert (workspace otherwise identical)</div>
+  <div class="cta-row">
+    <span class="btn primary">✦ Convert to RGB and try again</span>
+    <span class="btn">↺ Try again</span>
+    <span class="btn quiet">Start over</span>
+  </div>
+  <div class="error-line" role="alert"><span class="ico">!</span>This image has a transparency layer the cloud model can't read. Convert it to RGB and try again.</div>
+  <p class="sub-state">While flattening, the primary shows a spinner + “Converting…” and all three buttons disable. Timeout alert (same treatment): “Cloud processing took too long. Please try again.” · Rate-limited: “Cloud AI is busy right now — please try again in a moment, or switch to the Local engine.”</p>
+</div>
+
+<footer class="card-foot">Frozen strings: “Try again” · “Start over” · timeout alert “Cloud processing took too long. Please try again.” (E2E stall spec asserts this exact role="alert" text). RGBA copy and “Convert to RGB and try again” / “Converting…” verbatim from enhance-strings.ts.</footer>
+
+</body>
+</html>

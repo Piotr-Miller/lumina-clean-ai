@@ -1,0 +1,75 @@
+<!-- @dsCard group="States" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State 05 — Cloud sign-in gate (anonymous)</title>
+<style>{{CSS:hybrid.css}}
+  .stage .ph.pre { filter: brightness(.45) saturate(.65) blur(1px); }
+</style>
+</head>
+<body>
+
+<header class="card-head">
+  <div class="tag">State 05 · Cloud gate</div>
+  <h1>Cloud AI selected while anonymous — sign-in gate</h1>
+  <p>The photo stays loaded (dark original, no bloom yet); the gate replaces the action row. Beam moves to “Sign in” — it is this view's primary action. Panel already shows the Cloud pair so the user sees what signing in unlocks.</p>
+</header>
+
+<div class="section-label">Desktop · anonymous, Cloud AI active</div>
+<div class="frame">
+  <div class="nav">
+    <span class="brand">LuminaClean AI</span>
+    <span class="note">nav out of scope — shown for adjacency</span>
+    <span class="links"><span>Sign in</span><span>Sign up</span></span>
+  </div>
+  <div class="inner">
+    <div class="hero">
+      <h2>Fix your night photos</h2>
+      <p class="sub">Upload a dark, grainy shot and brighten it instantly — right in your browser. No account needed.</p>
+    </div>
+    <div class="toggle-row"><div class="toggle"><span class="opt">Local</span><span class="opt active">Cloud AI</span></div></div>
+    <div class="workspace">
+      <div>
+        <div class="stage plain">
+          <div class="ph pre" role="img" aria-label="Selected photo"></div>
+        </div>
+        <div class="gate" style="margin-top:16px">
+          <h3>Sign in to use Cloud AI</h3>
+          <p>Cloud AI delivers a noticeably cleaner result than the local engine. Sign in (or create a free account) to process this photo in the cloud — your photo stays loaded.</p>
+          <div class="cta-row">
+            <span class="btn primary">Sign in</span>
+            <span class="btn">Create account</span>
+          </div>
+        </div>
+        <div class="cta-row" style="justify-content:center">
+          <span class="btn quiet">Choose another</span>
+        </div>
+      </div>
+      <aside class="panel">
+        <div class="head">
+          <span class="title">Adjustments</span>
+          <span class="auto">Auto on</span>
+        </div>
+        <div class="param">
+          <div class="row"><span>Brightness (gamma)</span><span class="val">1.50</span></div>
+          <div class="track"><div class="rail"></div><div class="fill" style="width:88%"></div><div class="thumb" style="left:88%"></div></div>
+        </div>
+        <div class="param">
+          <div class="row"><span>Denoise strength</span><span class="val">0.15</span></div>
+          <div class="track"><div class="rail"></div><div class="fill" style="width:75%"></div><div class="thumb" style="left:75%"></div></div>
+        </div>
+        <div class="actions">
+          <span class="btn">✦ Recalculate</span>
+        </div>
+        <p class="note">Provisional — Cloud Auto values are conservative estimates and may be refined.</p>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<footer class="card-foot">Frozen strings: heading “Sign in to use Cloud AI” (E2E asserts visible for anon, gone when signed in) · toggle “Cloud AI” in group “Processing engine”. Gate body, “Sign in” / “Create account” / “Choose another” verbatim from enhance-strings.ts.</footer>
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!-- @dsCard group="States" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State 01 — Idle · landing with key-visual banner</title>
+<style>{{CSS:hybrid.css}}
+  .idle-grid { display: grid; grid-template-columns: 1.05fr 1fr; }
+  .idle-copy { padding: 56px 26px 48px 40px; }
+  .idle-copy h2 { font: 800 54px/1.02 var(--lc-display); letter-spacing: -.035em; }
+  .idle-copy p { color: var(--lc-dim); margin-top: 18px; font-size: 15px; max-width: 42ch; }
+  .idle-copy .toggle { margin-top: 26px; }
+  .idle-copy .drop { margin-top: 22px; }
+  .banner-side { position: relative; min-height: 420px; background: var(--lc-img-banner) center / cover no-repeat; }
+  .banner-side .cap { position: absolute; left: 14px; bottom: 12px; font: 500 9.5px/1 var(--lc-mono); letter-spacing: .12em; text-transform: uppercase; color: rgba(250,250,252,.7); background: rgba(5,5,7,.65); padding: 5px 9px; border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<header class="card-head">
+  <div class="tag">State 01 · Idle</div>
+  <h1>Landing — uploader idle, key-visual banner</h1>
+  <p>The only state where the LCAI key visual appears — as the marketing banner of the landing, never behind live UI. Anonymous visitor, Local engine pre-selected. Heading and the file-input label are E2E-frozen strings.</p>
+</header>
+
+<div class="section-label">Desktop · anonymous, Local active</div>
+<div class="frame">
+  <div class="nav">
+    <span class="brand">LuminaClean AI</span>
+    <span class="note">nav out of scope — shown for adjacency</span>
+    <span class="links"><span>Sign in</span><span>Sign up</span></span>
+  </div>
+  <div class="idle-grid">
+    <div class="idle-copy">
+      <h2>Fix your night photos</h2>
+      <p>Upload a dark, grainy shot and brighten it instantly — right in your browser. No account needed.</p>
+      <div class="toggle"><span class="opt active">Local</span><span class="opt">Cloud AI</span></div>
+      <div class="drop">
+        <div class="l1"><strong>Click to upload</strong> or drag &amp; drop</div>
+        <div class="l2">JPG or PNG · up to 25 MB</div>
+      </div>
+    </div>
+    <div class="banner-side" role="img" aria-label="LuminaClean AI — from noise to perfection">
+      <span class="cap">Key visual · idle only</span>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Mobile · 375px — banner collapses, uploader leads</div>
+<div class="mobile-row">
+  <div class="phone">
+    <div class="hero">
+      <h2>Fix your night photos</h2>
+      <p class="sub" style="font-size:13px">Upload a dark, grainy shot and brighten it instantly — right in your browser. No account needed.</p>
+    </div>
+    <div class="toggle-row"><div class="toggle"><span class="opt active">Local</span><span class="opt">Cloud AI</span></div></div>
+    <div class="drop">
+      <div class="l1"><strong>Click to upload</strong> or drag &amp; drop</div>
+      <div class="l2">JPG or PNG · up to 25 MB</div>
+    </div>
+  </div>
+  <p class="mobile-note">On mobile the banner is dropped entirely — the uploader is the hero. No horizontal scroll, toggle stays one row.</p>
+</div>
+
+<footer class="card-foot">Frozen strings on this card: “Fix your night photos” (h1) · “Upload an image” (hidden file-input aria-label) · toggle button names “Local” / “Cloud AI” inside group “Processing engine”.</footer>
+
+</body>
+</html>

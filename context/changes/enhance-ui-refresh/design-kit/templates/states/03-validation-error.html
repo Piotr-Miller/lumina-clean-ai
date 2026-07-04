@@ -1,0 +1,49 @@
+<!-- @dsCard group="States" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State 03 — Uploader validation error</title>
+<style>{{CSS:hybrid.css}}
+  .center-col { max-width: 640px; margin: 0 auto; padding: 28px; }
+  .drop-error { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--lc-error); }
+  .drop-error .ico { font: 500 9px/1 var(--lc-mono); border: 1px solid currentColor; border-radius: 50%; width: 14px; height: 14px; display: grid; place-items: center; flex: none; }
+  .variants { margin: 0 28px 28px; border: 1px solid var(--lc-hairline); border-radius: 6px; background: var(--lc-step-1); padding: 14px 16px; font-size: 12px; color: var(--lc-dim); line-height: 1.7; }
+  .variants b { font: 500 9.5px/1 var(--lc-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--lc-faint); display: block; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<header class="card-head">
+  <div class="tag">State 03 · Validation error</div>
+  <h1>Uploader — rejected file</h1>
+  <p>Inline rejection under the drop zone: <code>role="alert"</code>, desaturated night-red (--lc-error), small circle-alert glyph. The zone itself stays calm — the error is a line, not a repaint.</p>
+</header>
+
+<div class="section-label">Desktop · unsupported file type</div>
+<div class="frame">
+  <div class="nav">
+    <span class="brand">LuminaClean AI</span>
+    <span class="note">nav out of scope — shown for adjacency</span>
+    <span class="links"><span>Sign in</span><span>Sign up</span></span>
+  </div>
+  <div class="center-col">
+    <div class="drop">
+      <div class="l1"><strong>Click to upload</strong> or drag &amp; drop</div>
+      <div class="l2">JPG or PNG · up to 25 MB</div>
+    </div>
+    <div class="drop-error" role="alert"><span class="ico">!</span>Unsupported file type. Please upload a JPG or PNG image.</div>
+  </div>
+</div>
+
+<div class="variants">
+  <b>Copy variants (same treatment)</b>
+  “This image is too large (max 25 MB). Try a smaller copy.”<br>
+  “HEIC photos aren't supported yet — please convert to JPG or PNG and try again.”
+</div>
+
+<footer class="card-foot">All three messages come verbatim from enhance-strings.ts (fileValidation.*). Error line is left-aligned to the drop zone, 12px, icon 14px — quiet enough to not fight the CTA, red enough to read as a stop.</footer>
+
+</body>
+</html>

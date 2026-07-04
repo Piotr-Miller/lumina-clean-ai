@@ -1,0 +1,67 @@
+<!-- @dsCard group="Foundations" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foundations — Nocturne × Darkroom</title>
+<style>{{CSS:hybrid.css}}
+  .grid2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 32px; padding: 28px 32px; }
+  .spec .l1 { font: 800 30px/1.15 var(--lc-display); letter-spacing: -.03em; }
+  .spec .l2 { font: 500 12px/1.6 var(--lc-mono); color: var(--lc-dim); margin-top: 10px; }
+  .spec .l3 { color: var(--lc-dim); margin-top: 8px; }
+  .vars { font: 500 11px/1.9 var(--lc-mono); color: var(--lc-dim); background: var(--lc-step-1); border: 1px solid var(--lc-hairline); border-radius: 6px; padding: 14px 16px; margin: 0 32px 28px; }
+  .vars b { color: var(--lc-ink); font-weight: 500; }
+  .samples { display: flex; gap: 16px; align-items: center; padding: 0 32px 28px; }
+  .s-gallery { width: 180px; height: 84px; border-radius: var(--lc-radius); background: var(--lc-step-1); box-shadow: var(--lc-bloom); display: grid; place-items: center; color: var(--lc-faint); font-size: 11px; }
+  .s-panel { width: 180px; height: 84px; border-radius: var(--lc-radius-panel); background: var(--lc-step-1); border: 1px solid var(--lc-hairline); display: grid; place-items: center; color: var(--lc-faint); font: 500 10px/1 var(--lc-mono); letter-spacing: .1em; text-transform: uppercase; }
+  .s-cta { padding: 12px 20px; border-radius: 10px; background: var(--lc-beam); color: var(--lc-void); font: 800 13px/1 var(--lc-sans); }
+</style>
+</head>
+<body>
+<header class="card-head">
+  <div class="tag">Foundations</div>
+  <h1>Nocturne × Darkroom — the approved hybrid</h1>
+  <p>Gallery rules the screen: pure-black void, tone-step surfaces, no borders, Archivo 800. The parameter panel is the single instrument: hairline border, IBM Plex Mono readouts, tick-marked sliders — monochrome. Beam gradient appears in exactly two places per view: the primary action and the before/after handle.</p>
+</header>
+
+<div class="section-label">Palette</div>
+<div class="grid2" style="padding-top:0">
+  <div>
+    <div class="chips">
+      <div class="chip"><div class="sw" style="background:#050507"></div><div class="nm">Void</div><div class="hx">--lc-void</div></div>
+      <div class="chip"><div class="sw" style="background:#0d0d11"></div><div class="nm">Step 1</div><div class="hx">--lc-step-1</div></div>
+      <div class="chip"><div class="sw" style="background:#131319"></div><div class="nm">Step 2</div><div class="hx">--lc-step-2</div></div>
+      <div class="chip"><div class="sw" style="background:#1c1c24"></div><div class="nm">Step 3</div><div class="hx">--lc-step-3</div></div>
+      <div class="chip"><div class="sw" style="background:#fafafc"></div><div class="nm">Ink</div><div class="hx">--lc-ink</div></div>
+      <div class="chip"><div class="sw" style="background:linear-gradient(90deg,#8f7bf0,#6fe3f2)"></div><div class="nm">Beam · CTA + handle</div><div class="hx">--lc-beam</div></div>
+      <div class="chip"><div class="sw" style="background:#f0968f"></div><div class="nm">Error</div><div class="hx">--lc-error</div></div>
+    </div>
+  </div>
+  <div class="spec">
+    <div class="f-label">Type</div>
+    <div class="l1">Archivo 800 — display, tight</div>
+    <div class="l2">IBM PLEX MONO 500 — READOUTS, TAGS, BA LABELS</div>
+    <div class="l3">System sans for body and controls; no fourth voice.</div>
+  </div>
+</div>
+
+<div class="section-label">Surfaces</div>
+<div class="samples">
+  <div class="s-gallery">gallery · radius 12 · bloom</div>
+  <div class="s-panel">instrument · radius 6 · hairline</div>
+  <span class="s-cta">Primary action</span>
+</div>
+
+<div class="section-label">Implementation variables (Phase 4)</div>
+<div class="vars">
+  <b>--lc-void --lc-step-1 --lc-step-2 --lc-step-3</b> · surfaces (tone steps, never borders outside the panel)<br>
+  <b>--lc-ink --lc-dim --lc-faint</b> · text tiers &nbsp; <b>--lc-hairline</b> · panel border only<br>
+  <b>--lc-beam --lc-beam-v</b> · primary CTA + slider handle/divider only &nbsp; <b>--lc-error</b> · role="alert" lines<br>
+  <b>--lc-radius: 12px</b> · gallery &nbsp; <b>--lc-radius-panel: 6px</b> · instrument &nbsp; <b>--lc-bloom</b> · photo stage glow<br>
+  Fonts: Archivo 800 + IBM Plex Mono 500, self-hosted woff2 (OFL), font-display: swap.
+</div>
+
+<footer class="card-foot">Key-visual treatment: full LCAI graphic as the idle-state banner only; palette derives from its beam. Never behind live UI.</footer>
+</body>
+</html>

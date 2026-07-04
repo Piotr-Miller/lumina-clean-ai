@@ -319,24 +319,24 @@ None — no data, schema, or API changes. Rollback = revert the PR.
 
 #### Automated
 
-- [x] 2.1 `npm run typecheck` passes
-- [x] 2.2 `npm run test:unit` passes untouched (277)
-- [x] 2.3 Freeze-list strings byte-identical (grep)
-- [x] 2.4 Lint clean on touched files
+- [x] 2.1 `npm run typecheck` passes — 4b27290
+- [x] 2.2 `npm run test:unit` passes untouched (277) — 4b27290
+- [x] 2.3 Freeze-list strings byte-identical (grep) — 4b27290
+- [x] 2.4 Lint clean on touched files — 4b27290
 
 #### Manual
 
-- [x] 2.5 Smoke on wrangler dev: screen renders identically
+- [x] 2.5 Smoke on wrangler dev: screen renders identically — 4b27290
 
 ### Phase 3: State Cards for the Winning Direction
 
 #### Automated
 
-- [ ] 3.1 `list_files` shows all `states/*` + `foundations/*`
+- [x] 3.1 `list_files` shows all `states/*` + `foundations/*`
 
 #### Manual
 
-- [ ] 3.2 User approves the kit
+- [x] 3.2 User approves the kit
 
 ### Phase 4: Implementation — Restyle to the Approved Kit
 
