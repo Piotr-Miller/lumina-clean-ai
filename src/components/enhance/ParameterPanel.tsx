@@ -1,4 +1,5 @@
 import { RotateCcw, Sparkles, Wand2 } from "lucide-react";
+import { STRINGS } from "@/lib/enhance-strings";
 import type { BreadParams, EngineId, LocalParams } from "@/lib/engines/types";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -28,12 +29,8 @@ interface ParameterPanelProps {
   onRestoreAuto: () => void;
 }
 
-/** Friendly labels per parameter key. */
-const PARAM_LABELS: Record<string, string> = {
-  gamma: "Brightness (gamma)",
-  blur: "Smoothing (blur)",
-  strength: "Denoise strength",
-};
+/** Friendly labels per parameter key (values live in the enhance-strings module). */
+const PARAM_LABELS: Record<string, string> = STRINGS.panel.paramLabels;
 
 const SECONDARY_BUTTON = "border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white";
 
@@ -60,7 +57,7 @@ export function ParameterPanel({
   return (
     <div className="flex flex-col gap-5 rounded-xl border border-white/15 bg-white/5 p-5 text-white">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Adjustments</h3>
+        <h3 className="text-sm font-semibold">{STRINGS.panel.heading}</h3>
         <Button
           type="button"
           size="sm"
@@ -70,7 +67,7 @@ export function ParameterPanel({
           className={cn("gap-1.5", !auto.on && "text-white/70 hover:bg-white/10 hover:text-white")}
         >
           <Wand2 className="size-4" />
-          Auto {auto.on ? "on" : "off"}
+          {STRINGS.panel.auto} {auto.on ? STRINGS.panel.autoOn : STRINGS.panel.autoOff}
         </Button>
       </div>
 
@@ -83,7 +80,7 @@ export function ParameterPanel({
             <div className="flex items-baseline justify-between gap-2 text-xs">
               <label htmlFor={`param-${key}`} className="font-medium text-white/80">
                 {PARAM_LABELS[key] ?? key}
-                {isOverridden && <span className="ml-1.5 text-white/45">· adjusted</span>}
+                {isOverridden && <span className="ml-1.5 text-white/45">{STRINGS.panel.adjusted}</span>}
               </label>
               <span className="text-white/60 tabular-nums">{formatParamValue(value, range.step)}</span>
             </div>
@@ -115,7 +112,7 @@ export function ParameterPanel({
           className={cn("gap-1.5", SECONDARY_BUTTON)}
         >
           <Sparkles className="size-4" />
-          Recalculate
+          {STRINGS.panel.recalculate}
         </Button>
         {hasOverrides && (
           <Button
@@ -126,16 +123,12 @@ export function ParameterPanel({
             className={cn("gap-1.5", SECONDARY_BUTTON)}
           >
             <RotateCcw className="size-4" />
-            Restore Auto
+            {STRINGS.panel.restoreAuto}
           </Button>
         )}
       </div>
 
-      {engine === "cloud" && provisional && (
-        <p className="text-xs text-white/45">
-          Provisional — Cloud Auto values are conservative estimates and may be refined.
-        </p>
-      )}
+      {engine === "cloud" && provisional && <p className="text-xs text-white/45">{STRINGS.panel.provisionalNote}</p>}
     </div>
   );
 }

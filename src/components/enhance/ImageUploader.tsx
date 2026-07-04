@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { CircleAlert, Upload } from "lucide-react";
+import { STRINGS } from "@/lib/enhance-strings";
 import { validateImageFile } from "@/lib/engines/image-helpers";
 import { cn } from "@/lib/utils";
 
@@ -57,16 +58,16 @@ export function ImageUploader({ onAccepted, disabled = false }: ImageUploaderPro
       >
         <Upload className="size-8 text-purple-300" />
         <span className="text-sm text-white/80">
-          <span className="font-medium text-white">Click to upload</span> or drag &amp; drop
+          <span className="font-medium text-white">{STRINGS.uploader.ctaStrong}</span> {STRINGS.uploader.ctaRest}
         </span>
-        <span className="text-xs text-white/40">JPG or PNG · up to 25 MB</span>
+        <span className="text-xs text-white/40">{STRINGS.uploader.constraints}</span>
       </button>
 
       <input
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png"
-        aria-label="Upload an image"
+        aria-label={STRINGS.uploader.inputLabel}
         className="hidden"
         onChange={(e) => {
           handleFile(e.target.files?.[0]);

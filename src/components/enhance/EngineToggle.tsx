@@ -1,4 +1,5 @@
 import { Cloud, Monitor } from "lucide-react";
+import { STRINGS } from "@/lib/enhance-strings";
 import type { EngineId } from "@/lib/engines/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,7 @@ export function EngineToggle({ engine, onChange, disabled = false }: EngineToggl
   return (
     <div
       role="group"
-      aria-label="Processing engine"
+      aria-label={STRINGS.engine.groupLabel}
       className="mx-auto mb-6 inline-flex gap-1 rounded-lg border border-white/15 bg-white/5 p-1"
     >
       <Button
@@ -34,7 +35,7 @@ export function EngineToggle({ engine, onChange, disabled = false }: EngineToggl
         className={cn(engine !== "local" && "text-white/70 hover:bg-white/10 hover:text-white")}
       >
         <Monitor className="size-4" />
-        Local
+        {STRINGS.engine.local}
       </Button>
       <Button
         type="button"
@@ -48,7 +49,7 @@ export function EngineToggle({ engine, onChange, disabled = false }: EngineToggl
         className={cn(engine !== "cloud" && "text-white/70 hover:bg-white/10 hover:text-white")}
       >
         <Cloud className="size-4" />
-        Cloud AI
+        {STRINGS.engine.cloud}
       </Button>
     </div>
   );

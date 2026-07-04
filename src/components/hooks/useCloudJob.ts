@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { REALTIME_SUBSCRIBE_STATES, type RealtimeChannel } from "@supabase/supabase-js";
 import * as Sentry from "@sentry/astro";
+import { STRINGS } from "@/lib/enhance-strings";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { loadCloudResult } from "@/lib/services/cloud-result.client";
 import { maybePostprocessCloudResult } from "@/lib/services/cloud-result-postprocess.client";
@@ -101,7 +102,7 @@ export const PROCESSING_WATCHDOG_MS = 300_000;
 export const SLOW_HINT_MS = 25_000;
 const TIMEOUT_ENDPOINT = "/api/enhance/cloud/timeout";
 
-const RESULT_LOAD_MESSAGE = "The enhanced result couldn't be loaded. Please try again.";
+const RESULT_LOAD_MESSAGE = STRINGS.cloudErrors.resultLoad;
 
 /**
  * Subscribes the browser to its own `jobs` row, drives it from the live status

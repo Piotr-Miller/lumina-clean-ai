@@ -308,25 +308,25 @@ None — no data, schema, or API changes. Rollback = revert the PR.
 
 #### Automated
 
-- [x] 1.1 Boards valid + self-contained (no external refs)
-- [x] 1.2 `list_files` shows all pushed `boards/*`
+- [x] 1.1 Boards valid + self-contained (no external refs) — 7dc961c
+- [x] 1.2 `list_files` shows all pushed `boards/*` — 7dc961c
 
 #### Manual
 
-- [x] 1.3 User picks the winning direction in claude.ai/design
+- [x] 1.3 User picks the winning direction in claude.ai/design — 7dc961c
 
 ### Phase 2: i18n String Extraction
 
 #### Automated
 
-- [ ] 2.1 `npm run typecheck` passes
-- [ ] 2.2 `npm run test:unit` passes untouched (277)
-- [ ] 2.3 Freeze-list strings byte-identical (grep)
-- [ ] 2.4 Lint clean on touched files
+- [x] 2.1 `npm run typecheck` passes
+- [x] 2.2 `npm run test:unit` passes untouched (277)
+- [x] 2.3 Freeze-list strings byte-identical (grep)
+- [x] 2.4 Lint clean on touched files
 
 #### Manual
 
-- [ ] 2.5 Smoke on wrangler dev: screen renders identically
+- [x] 2.5 Smoke on wrangler dev: screen renders identically
 
 ### Phase 3: State Cards for the Winning Direction
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { STRINGS } from "@/lib/enhance-strings";
 import { deriveDownloadName, MAX_IMAGE_DIMENSION } from "@/lib/engines/image-helpers";
 import { localEngine } from "@/lib/engines/local-engine";
 import type { LocalParams } from "@/lib/engines/types";
@@ -34,9 +35,8 @@ function decodeImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-const TOO_LARGE_MESSAGE = `This photo is too large to process in your browser (max ${String(MAX_IMAGE_DIMENSION)}×${String(MAX_IMAGE_DIMENSION)} px) — try a smaller copy.`;
-const GENERIC_FAILURE_MESSAGE =
-  "We couldn't process this image — it may be corrupted or in an unsupported format. Try another photo.";
+const TOO_LARGE_MESSAGE = STRINGS.localErrors.tooLarge(MAX_IMAGE_DIMENSION);
+const GENERIC_FAILURE_MESSAGE = STRINGS.localErrors.genericFailure;
 
 /**
  * Orchestrates the Local engine flow: holds the source/result state, runs the

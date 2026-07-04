@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleAlert, CloudUpload, RotateCcw, Sparkles } from "lucide-react";
+import { STRINGS } from "@/lib/enhance-strings";
 import type { BreadParams, EngineId, LocalParams, LumaStats } from "@/lib/engines/types";
 import { PARAM_RANGES, recommendParams } from "@/lib/engines/auto-params";
 import { sampleImageLuma } from "@/lib/engines/auto-params.client";
@@ -268,7 +269,7 @@ export default function EnhanceWorkspace({
       handleAccepted(flattened, objectUrl);
       pendingResubmitRef.current = true;
     } catch {
-      setConvertError("We couldn't convert this image. Please try another photo.");
+      setConvertError(STRINGS.workspace.convertFailed);
     } finally {
       setConverting(false);
     }
@@ -320,7 +321,7 @@ export default function EnhanceWorkspace({
                 afterSrc={resultUrl}
                 width={resultWidth}
                 height={resultHeight}
-                alt="Your photo"
+                alt={STRINGS.workspace.photoAlt}
               />
             ) : cloudResultReady ? (
               <BeforeAfterSlider
@@ -328,10 +329,14 @@ export default function EnhanceWorkspace({
                 afterSrc={cloudAfterUrl}
                 width={cloudWidth}
                 height={cloudHeight}
-                alt="Your photo"
+                alt={STRINGS.workspace.photoAlt}
               />
             ) : (
-              <img src={sourceUrl} alt="Selected photo" className="max-h-[60vh] w-full rounded-xl object-contain" />
+              <img
+                src={sourceUrl}
+                alt={STRINGS.workspace.selectedAlt}
+                className="max-h-[60vh] w-full rounded-xl object-contain"
+              />
             )}
 
             {/* LOCAL — not yet enhanced */}
@@ -348,12 +353,12 @@ export default function EnhanceWorkspace({
                   {localProcessing ? (
                     <span className="flex items-center gap-2">
                       <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Enhancing…
+                      {STRINGS.workspace.enhancing}
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
                       <Sparkles className="size-4" />
-                      Enhance
+                      {STRINGS.workspace.enhance}
                     </span>
                   )}
                 </Button>
@@ -364,7 +369,7 @@ export default function EnhanceWorkspace({
                   disabled={localProcessing}
                   className={SECONDARY_BUTTON}
                 >
-                  Choose another
+                  {STRINGS.workspace.chooseAnother}
                 </Button>
               </div>
             )}
@@ -375,7 +380,7 @@ export default function EnhanceWorkspace({
                 <DownloadButton blob={resultBlob} filename={downloadName} />
                 <Button type="button" variant="outline" onClick={handleReset} className={`gap-2 ${SECONDARY_BUTTON}`}>
                   <RotateCcw className="size-4" />
-                  Start over
+                  {STRINGS.workspace.startOver}
                 </Button>
               </div>
             )}
@@ -385,7 +390,7 @@ export default function EnhanceWorkspace({
               <>
                 <CloudSignInPrompt />
                 <Button type="button" variant="outline" onClick={handleReset} className={SECONDARY_BUTTON}>
-                  Choose another
+                  {STRINGS.workspace.chooseAnother}
                 </Button>
               </>
             )}
@@ -403,12 +408,12 @@ export default function EnhanceWorkspace({
                   {cloudSubmitting ? (
                     <span className="flex items-center gap-2">
                       <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Submitting…
+                      {STRINGS.workspace.submitting}
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
                       <CloudUpload className="size-4" />
-                      Process with Cloud AI
+                      {STRINGS.workspace.processWithCloud}
                     </span>
                   )}
                 </Button>
@@ -419,7 +424,7 @@ export default function EnhanceWorkspace({
                   disabled={cloudSubmitting}
                   className={SECONDARY_BUTTON}
                 >
-                  Choose another
+                  {STRINGS.workspace.chooseAnother}
                 </Button>
               </div>
             )}
@@ -440,7 +445,7 @@ export default function EnhanceWorkspace({
                       className={`gap-2 ${SECONDARY_BUTTON}`}
                     >
                       <RotateCcw className="size-4" />
-                      Start over
+                      {STRINGS.workspace.startOver}
                     </Button>
                   </div>
                 ) : cloudPhase === "failed" ? (
@@ -457,12 +462,12 @@ export default function EnhanceWorkspace({
                         {converting ? (
                           <span className="flex items-center gap-2">
                             <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                            Converting…
+                            {STRINGS.workspace.converting}
                           </span>
                         ) : (
                           <span className="flex items-center gap-2">
                             <Sparkles className="size-4" />
-                            Convert to RGB and try again
+                            {STRINGS.workspace.convertToRgb}
                           </span>
                         )}
                       </Button>
@@ -477,7 +482,7 @@ export default function EnhanceWorkspace({
                       }}
                     >
                       <RotateCcw className="size-4" />
-                      Try again
+                      {STRINGS.workspace.tryAgain}
                     </Button>
                     <Button
                       type="button"
@@ -486,19 +491,17 @@ export default function EnhanceWorkspace({
                       disabled={converting}
                       className={SECONDARY_BUTTON}
                     >
-                      Start over
+                      {STRINGS.workspace.startOver}
                     </Button>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3 text-center">
                     <p className="flex items-center gap-2 text-sm text-white/80">
                       <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      Enhancing in the cloud…
+                      {STRINGS.workspace.enhancingInCloud}
                     </p>
                     {/* Progressive cold-start reassurance — only after the wait looks like a model boot. */}
-                    {cloudColdStartHint && (
-                      <p className="text-xs text-white/50">The first run after idle can take a few minutes.</p>
-                    )}
+                    {cloudColdStartHint && <p className="text-xs text-white/50">{STRINGS.workspace.coldStartHint}</p>}
                     <Button
                       type="button"
                       variant="outline"
@@ -506,7 +509,7 @@ export default function EnhanceWorkspace({
                       className={`gap-2 ${SECONDARY_BUTTON}`}
                     >
                       <RotateCcw className="size-4" />
-                      Start over
+                      {STRINGS.workspace.startOver}
                     </Button>
                   </div>
                 )}

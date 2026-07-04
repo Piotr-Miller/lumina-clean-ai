@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { STRINGS } from "@/lib/enhance-strings";
 import { validateImageFile } from "@/lib/engines/image-helpers";
 import type { BreadParams } from "@/lib/engines/types";
 import { submitCloudJob } from "@/lib/services/cloud-upload.client";
@@ -15,8 +16,8 @@ export interface CloudSubmitState {
   reset: () => void;
 }
 
-const NO_FILE_MESSAGE = "Choose a photo first.";
-const GENERIC_FAILURE_MESSAGE = "Couldn't submit to Cloud AI. Please try again.";
+const NO_FILE_MESSAGE = STRINGS.cloudSubmitErrors.noFile;
+const GENERIC_FAILURE_MESSAGE = STRINGS.cloudSubmitErrors.genericFailure;
 
 /**
  * Orchestrates the cloud-submit flow for the currently loaded `file`. Forked

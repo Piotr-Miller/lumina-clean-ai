@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { ChevronsLeftRight } from "lucide-react";
+import { STRINGS } from "@/lib/enhance-strings";
 
 interface BeforeAfterSliderProps {
   /** Original image (revealed on the left as the divider moves right). */
@@ -55,7 +56,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, width, height, alt = ""
       ref={containerRef}
       role="slider"
       tabIndex={0}
-      aria-label="Before and after comparison — drag or use arrow keys to compare"
+      aria-label={STRINGS.slider.ariaLabel}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(pos)}
@@ -84,7 +85,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, width, height, alt = ""
           layers fill it exactly, so the divider tracks the real image width. */}
       <img
         src={afterSrc}
-        alt={alt ? `${alt} — enhanced` : "Enhanced result"}
+        alt={alt ? STRINGS.slider.enhancedAlt(alt) : STRINGS.slider.enhancedFallback}
         draggable={false}
         className="block h-full w-full object-cover"
       />
@@ -92,7 +93,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, width, height, alt = ""
       {/* Original, clipped to the left of the divider. */}
       <img
         src={beforeSrc}
-        alt={alt ? `${alt} — original` : "Original"}
+        alt={alt ? STRINGS.slider.originalAlt(alt) : STRINGS.slider.originalFallback}
         draggable={false}
         className="absolute inset-0 block h-full w-full object-cover"
         style={{ clipPath: `inset(0 ${String(100 - pos)}% 0 0)` }}

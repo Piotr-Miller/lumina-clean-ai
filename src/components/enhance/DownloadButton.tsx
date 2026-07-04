@@ -1,4 +1,5 @@
 import { Download } from "lucide-react";
+import { STRINGS } from "@/lib/enhance-strings";
 import { Button } from "@/components/ui/button";
 
 interface DownloadButtonProps {
@@ -29,7 +30,7 @@ export function DownloadButton({ blob, filename, disabled = false }: DownloadBut
   return (
     <Button type="button" onClick={handleDownload} disabled={disabled} className="gap-2">
       <Download className="size-4" />
-      Download
+      {STRINGS.download.button}
     </Button>
   );
 }
