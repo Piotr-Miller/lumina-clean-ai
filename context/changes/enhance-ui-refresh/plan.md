@@ -332,11 +332,11 @@ None — no data, schema, or API changes. Rollback = revert the PR.
 
 #### Automated
 
-- [x] 3.1 `list_files` shows all `states/*` + `foundations/*`
+- [x] 3.1 `list_files` shows all `states/*` + `foundations/*` — e62559a
 
 #### Manual
 
-- [x] 3.2 User approves the kit
+- [x] 3.2 User approves the kit — e62559a
 
 ### Phase 4: Implementation — Restyle to the Approved Kit
 
