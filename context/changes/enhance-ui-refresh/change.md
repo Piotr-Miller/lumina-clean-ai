@@ -1,9 +1,9 @@
 ---
 change_id: enhance-ui-refresh
 title: Enhance screen UI refresh — restyle the main flow
-status: implementing
+status: implemented
 created: 2026-06-30
-updated: 2026-07-04
+updated: 2026-07-05
 archived_at: null
 ---
 

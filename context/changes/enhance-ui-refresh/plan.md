@@ -351,16 +351,16 @@ None — no data, schema, or API changes. Rollback = revert the PR.
 #### Manual
 
 - [x] 4.6 Visual parity with cards on wrangler dev (desktop + mobile) — aed096a
-- [x] 4.7 All 8 states reachable and matching
+- [x] 4.7 All 8 states reachable and matching — 4822e81
 - [x] 4.8 Cost-safety: sliders/Auto → zero network requests — aed096a
 
 ### Phase 5: Verification & Close-out
 
 #### Automated
 
-- [x] 5.1 `npm run test:e2e` — all specs green locally
+- [x] 5.1 `npm run test:e2e` — all specs green locally — 4822e81
 
 #### Manual
 
-- [x] 5.2 Final user acceptance (desktop + mobile)
-- [x] 5.3 Adjacency check vs sticky Nav
+- [x] 5.2 Final user acceptance (desktop + mobile) — 4822e81
+- [x] 5.3 Adjacency check vs sticky Nav — 4822e81
