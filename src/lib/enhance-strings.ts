@@ -22,6 +22,8 @@ export const STRINGS = {
     /** E2E freeze: heading role. */
     heading: "Fix your night photos",
     subtitle: "Upload a dark, grainy shot and brighten it instantly — right in your browser. No account needed.",
+    /** Idle-state key-visual banner (enhance-ui-refresh kit, state 01). */
+    bannerAlt: "LuminaClean AI — from noise to perfection",
   },
 
   /** `EngineToggle.tsx`. */
@@ -51,6 +53,9 @@ export const STRINGS = {
     enhancedFallback: "Enhanced result",
     originalAlt: (alt: string) => `${alt} — original`,
     originalFallback: "Original",
+    /** Decorative corner chips on the comparison stage (kit states 04/08). */
+    beforeLabel: "Before",
+    afterLabel: "After",
   },
 
   /** `EnhanceWorkspace.tsx` — actions, statuses, alts. */

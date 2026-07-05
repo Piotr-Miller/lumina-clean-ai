@@ -1,4 +1,3 @@
-import { Cloud, Monitor } from "lucide-react";
 import { STRINGS } from "@/lib/enhance-strings";
 import type { EngineId } from "@/lib/engines/types";
 import { Button } from "@/components/ui/button";
@@ -21,34 +20,38 @@ export function EngineToggle({ engine, onChange, disabled = false }: EngineToggl
     <div
       role="group"
       aria-label={STRINGS.engine.groupLabel}
-      className="mx-auto mb-6 inline-flex gap-1 rounded-lg border border-white/15 bg-white/5 p-1"
+      className="mx-auto mb-6 inline-flex gap-0.5 rounded-[10px] bg-(--lc-step-2) p-[3px]"
     >
       <Button
         type="button"
         size="sm"
-        variant={engine === "local" ? "default" : "ghost"}
+        variant="ghost"
         aria-pressed={engine === "local"}
         disabled={disabled}
         onClick={() => {
           onChange("local");
         }}
-        className={cn(engine !== "local" && "text-white/70 hover:bg-white/10 hover:text-white")}
+        className={cn(
+          "rounded-lg px-5 hover:bg-(--lc-step-3) hover:text-(--lc-ink)",
+          engine === "local" ? "bg-[#26262e] text-(--lc-ink)" : "text-(--lc-dim)",
+        )}
       >
-        <Monitor className="size-4" />
         {STRINGS.engine.local}
       </Button>
       <Button
         type="button"
         size="sm"
-        variant={engine === "cloud" ? "default" : "ghost"}
+        variant="ghost"
         aria-pressed={engine === "cloud"}
         disabled={disabled}
         onClick={() => {
           onChange("cloud");
         }}
-        className={cn(engine !== "cloud" && "text-white/70 hover:bg-white/10 hover:text-white")}
+        className={cn(
+          "rounded-lg px-5 hover:bg-(--lc-step-3) hover:text-(--lc-ink)",
+          engine === "cloud" ? "bg-[#26262e] text-(--lc-ink)" : "text-(--lc-dim)",
+        )}
       >
-        <Cloud className="size-4" />
         {STRINGS.engine.cloud}
       </Button>
     </div>

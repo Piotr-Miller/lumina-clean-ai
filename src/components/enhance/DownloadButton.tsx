@@ -28,7 +28,7 @@ export function DownloadButton({ blob, filename, disabled = false }: DownloadBut
   }
 
   return (
-    <Button type="button" onClick={handleDownload} disabled={disabled} className="gap-2">
+    <Button type="button" variant="beam" onClick={handleDownload} disabled={disabled} className="gap-2">
       <Download className="size-4" />
       {STRINGS.download.button}
     </Button>

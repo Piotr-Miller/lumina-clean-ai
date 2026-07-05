@@ -32,7 +32,9 @@ interface EnhanceWorkspaceProps {
   chromaEnabled: boolean;
 }
 
-const SECONDARY_BUTTON = "border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white";
+/** Spinner tints (kit): cyan-tipped on dark surfaces, void-dark inside the light beam primary. */
+const SPINNER_ON_DARK = "border-(--lc-step-3) border-t-[#6fe3f2]";
+const SPINNER_ON_BEAM = "border-[#050507]/30 border-t-[#050507]";
 
 /** Auto-less defaults — the panel starts here until Auto computes from the image. */
 const LOCAL_DEFAULTS: LocalParams = { gamma: PARAM_RANGES.local.gamma.default, blur: PARAM_RANGES.local.blur.default };
@@ -307,7 +309,21 @@ export default function EnhanceWorkspace({
         <EngineToggle engine={engine} onChange={setEngine} disabled={busy} />
       </div>
 
-      {!sourceUrl && <ImageUploader onAccepted={handleAccepted} disabled={busy} />}
+      {/* Idle: uploader beside the key-visual banner (kit state 01 — the only
+          state where the LCAI marketing graphic appears; dropped on mobile). */}
+      {!sourceUrl && (
+        <div className="grid items-stretch gap-6 md:grid-cols-[1.05fr_1fr]">
+          <ImageUploader onAccepted={handleAccepted} disabled={busy} />
+          <img
+            src="/images/enhance-idle-banner.jpg"
+            alt={STRINGS.page.bannerAlt}
+            width={560}
+            height={560}
+            loading="eager"
+            className="hidden h-full min-h-[420px] w-full rounded-xl object-cover md:block"
+          />
+        </div>
+      )}
 
       {sourceUrl && (
         <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_320px]">
@@ -344,6 +360,7 @@ export default function EnhanceWorkspace({
               <div className="flex flex-wrap justify-center gap-3">
                 <Button
                   type="button"
+                  variant="beam"
                   onClick={() => {
                     lastEnhancedRef.current = localParams;
                     void enhancer.enhance(localParams);
@@ -352,7 +369,7 @@ export default function EnhanceWorkspace({
                 >
                   {localProcessing ? (
                     <span className="flex items-center gap-2">
-                      <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      <span className={`size-4 animate-spin rounded-full border-2 ${SPINNER_ON_BEAM}`} />
                       {STRINGS.workspace.enhancing}
                     </span>
                   ) : (
@@ -362,13 +379,7 @@ export default function EnhanceWorkspace({
                     </span>
                   )}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleReset}
-                  disabled={localProcessing}
-                  className={SECONDARY_BUTTON}
-                >
+                <Button type="button" variant="lcquiet" onClick={handleReset} disabled={localProcessing}>
                   {STRINGS.workspace.chooseAnother}
                 </Button>
               </div>
@@ -378,7 +389,7 @@ export default function EnhanceWorkspace({
             {localResultReady && (
               <div className="flex flex-wrap justify-center gap-3">
                 <DownloadButton blob={resultBlob} filename={downloadName} />
-                <Button type="button" variant="outline" onClick={handleReset} className={`gap-2 ${SECONDARY_BUTTON}`}>
+                <Button type="button" variant="lcquiet" onClick={handleReset} className="gap-2">
                   <RotateCcw className="size-4" />
                   {STRINGS.workspace.startOver}
                 </Button>
@@ -389,7 +400,7 @@ export default function EnhanceWorkspace({
             {engine === "cloud" && !isAuthenticated && (
               <>
                 <CloudSignInPrompt />
-                <Button type="button" variant="outline" onClick={handleReset} className={SECONDARY_BUTTON}>
+                <Button type="button" variant="lcquiet" onClick={handleReset}>
                   {STRINGS.workspace.chooseAnother}
                 </Button>
               </>
@@ -400,6 +411,7 @@ export default function EnhanceWorkspace({
               <div className="flex flex-wrap justify-center gap-3">
                 <Button
                   type="button"
+                  variant="beam"
                   onClick={() => {
                     void cloudSubmit.submit(breadParams);
                   }}
@@ -407,7 +419,7 @@ export default function EnhanceWorkspace({
                 >
                   {cloudSubmitting ? (
                     <span className="flex items-center gap-2">
-                      <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      <span className={`size-4 animate-spin rounded-full border-2 ${SPINNER_ON_BEAM}`} />
                       {STRINGS.workspace.submitting}
                     </span>
                   ) : (
@@ -417,13 +429,7 @@ export default function EnhanceWorkspace({
                     </span>
                   )}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleReset}
-                  disabled={cloudSubmitting}
-                  className={SECONDARY_BUTTON}
-                >
+                <Button type="button" variant="lcquiet" onClick={handleReset} disabled={cloudSubmitting}>
                   {STRINGS.workspace.chooseAnother}
                 </Button>
               </div>
@@ -438,12 +444,7 @@ export default function EnhanceWorkspace({
                 {cloudResultReady ? (
                   <div className="flex flex-wrap justify-center gap-3">
                     <DownloadButton blob={cloudBlob} filename={cloudDownloadName} />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleReset}
-                      className={`gap-2 ${SECONDARY_BUTTON}`}
-                    >
+                    <Button type="button" variant="lcquiet" onClick={handleReset} className="gap-2">
                       <RotateCcw className="size-4" />
                       {STRINGS.workspace.startOver}
                     </Button>
@@ -454,6 +455,7 @@ export default function EnhanceWorkspace({
                     {cloudIsRgbaError && (
                       <Button
                         type="button"
+                        variant="beam"
                         onClick={() => {
                           void handleConvertToRgb();
                         }}
@@ -461,7 +463,7 @@ export default function EnhanceWorkspace({
                       >
                         {converting ? (
                           <span className="flex items-center gap-2">
-                            <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                            <span className={`size-4 animate-spin rounded-full border-2 ${SPINNER_ON_BEAM}`} />
                             {STRINGS.workspace.converting}
                           </span>
                         ) : (
@@ -474,8 +476,7 @@ export default function EnhanceWorkspace({
                     )}
                     <Button
                       type="button"
-                      variant={cloudIsRgbaError ? "outline" : "default"}
-                      className={cloudIsRgbaError ? SECONDARY_BUTTON : undefined}
+                      variant={cloudIsRgbaError ? "lcsecondary" : "beam"}
                       disabled={converting}
                       onClick={() => {
                         void cloudSubmit.submit(breadParams);
@@ -484,30 +485,21 @@ export default function EnhanceWorkspace({
                       <RotateCcw className="size-4" />
                       {STRINGS.workspace.tryAgain}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleReset}
-                      disabled={converting}
-                      className={SECONDARY_BUTTON}
-                    >
+                    <Button type="button" variant="lcquiet" onClick={handleReset} disabled={converting}>
                       {STRINGS.workspace.startOver}
                     </Button>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3 text-center">
-                    <p className="flex items-center gap-2 text-sm text-white/80">
-                      <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    <p className="flex items-center gap-2 text-sm text-(--lc-dim)">
+                      <span className={`size-4 animate-spin rounded-full border-2 ${SPINNER_ON_DARK}`} />
                       {STRINGS.workspace.enhancingInCloud}
                     </p>
                     {/* Progressive cold-start reassurance — only after the wait looks like a model boot. */}
-                    {cloudColdStartHint && <p className="text-xs text-white/50">{STRINGS.workspace.coldStartHint}</p>}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleReset}
-                      className={`gap-2 ${SECONDARY_BUTTON}`}
-                    >
+                    {cloudColdStartHint && (
+                      <p className="text-xs text-(--lc-faint)">{STRINGS.workspace.coldStartHint}</p>
+                    )}
+                    <Button type="button" variant="lcquiet" onClick={handleReset} className="gap-2">
                       <RotateCcw className="size-4" />
                       {STRINGS.workspace.startOver}
                     </Button>
@@ -534,16 +526,16 @@ export default function EnhanceWorkspace({
 
       {/* Per-engine error line (a stale error from the inactive engine never shows). */}
       {engine === "local" && enhancer.error && (
-        <p className="mt-3 flex items-center justify-center gap-1 text-sm text-red-300" role="alert">
-          <CircleAlert className="size-4" />
+        <p className="mt-3 flex items-center justify-center gap-2 text-sm text-(--lc-error)" role="alert">
+          <CircleAlert className="size-4 shrink-0" />
           {enhancer.error}
         </p>
       )}
       {/* Submit-stage errors (e.g. upload rejected) and pipeline/timeout/load errors
           never coexist; show whichever is set. */}
       {engine === "cloud" && (convertError ?? cloudSubmit.error ?? cloudError) && (
-        <p className="mt-3 flex items-center justify-center gap-1 text-sm text-red-300" role="alert">
-          <CircleAlert className="size-4" />
+        <p className="mt-3 flex items-center justify-center gap-2 text-sm text-(--lc-error)" role="alert">
+          <CircleAlert className="size-4 shrink-0" />
           {convertError ?? cloudSubmit.error ?? cloudError}
         </p>
       )}
