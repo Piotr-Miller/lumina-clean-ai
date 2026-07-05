@@ -342,25 +342,25 @@ None — no data, schema, or API changes. Rollback = revert the PR.
 
 #### Automated
 
-- [x] 4.1 `npm run typecheck` passes
-- [x] 4.2 `npm run test:unit` passes
-- [x] 4.3 `npm run build` succeeds
-- [x] 4.4 Lint clean on touched files
-- [x] 4.5 Freeze-list strings byte-identical (grep)
+- [x] 4.1 `npm run typecheck` passes — aed096a
+- [x] 4.2 `npm run test:unit` passes — aed096a
+- [x] 4.3 `npm run build` succeeds — aed096a
+- [x] 4.4 Lint clean on touched files — aed096a
+- [x] 4.5 Freeze-list strings byte-identical (grep) — aed096a
 
 #### Manual
 
-- [x] 4.6 Visual parity with cards on wrangler dev (desktop + mobile)
-- [ ] 4.7 All 8 states reachable and matching
-- [x] 4.8 Cost-safety: sliders/Auto → zero network requests
+- [x] 4.6 Visual parity with cards on wrangler dev (desktop + mobile) — aed096a
+- [x] 4.7 All 8 states reachable and matching
+- [x] 4.8 Cost-safety: sliders/Auto → zero network requests — aed096a
 
 ### Phase 5: Verification & Close-out
 
 #### Automated
 
-- [ ] 5.1 `npm run test:e2e` — all specs green locally
+- [x] 5.1 `npm run test:e2e` — all specs green locally
 
 #### Manual
 
-- [ ] 5.2 Final user acceptance (desktop + mobile)
-- [ ] 5.3 Adjacency check vs sticky Nav
+- [x] 5.2 Final user acceptance (desktop + mobile)
+- [x] 5.3 Adjacency check vs sticky Nav
