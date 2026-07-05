@@ -1,8 +1,12 @@
-# 10x Astro Starter
+# LuminaClean AI
 
-![](./public/template.png)
+Night and low-light photos taken on phones suffer from heavy digital noise and underexposure. Fixing them normally means moving the file to a desktop, installing paid editing software, and learning exposure/noise-reduction sliders — so most people just give up on the shot. LuminaClean AI removes that workflow entirely: upload a dark JPG, get a visibly cleaner, brighter version back in seconds, and compare the two with a before/after slider.
 
-A modern, opinionated starter template for building fast, accessible web applications.
+Two enhancement engines sit behind a Strategy toggle. The **Cloud AI** engine (the [Bread](https://replicate.com/) low-light model on Replicate) runs through an async pipeline — signed upload → database webhook → Supabase Edge Function → Replicate prediction → signed webhook callback → Supabase Realtime push to the browser, no page refresh needed. The **Local** engine is a free, no-account fallback that runs entirely on the visitor's device (Canvas API: gamma correction + Gaussian blur), with adaptive auto-parameters suggested from the image itself.
+
+The cloud path is deliberately guarded: it requires a signed-in account (Supabase Auth + Row Level Security), a **global daily cap** on cloud operations bounds the Replicate bill (`CLOUD_DAILY_CAP`, `0` acts as a kill-switch), and uploaded source photos are private and deleted within 24 hours (inline on terminal job states, backstopped by an hourly pg_cron reaper). Full scope and explicit non-goals: [`idea-notes.md`](idea-notes.md); product requirements: [`context/foundation/prd.md`](context/foundation/prd.md).
+
+Built as a 10xDevs course project, scaffolded from [10x-astro-starter](https://github.com/przeprogramowani/10x-astro-starter).
 
 ## Tech Stack
 
@@ -10,21 +14,24 @@ A modern, opinionated starter template for building fast, accessible web applica
 - [React](https://react.dev/) v19 - UI library for interactive components
 - [TypeScript](https://www.typescriptlang.org/) v5 - Type-safe JavaScript
 - [Tailwind CSS](https://tailwindcss.com/) v4 - Utility-first CSS framework
-- [Supabase](https://supabase.com/) - Authentication and backend-as-a-service
+- [Supabase](https://supabase.com/) - Auth, Postgres (with RLS), Storage, Edge Functions, Realtime
 - [Cloudflare Workers](https://workers.cloudflare.com/) - Edge deployment runtime
+- [Replicate](https://replicate.com/) - Hosted inference for the Bread low-light model
+- [Vitest](https://vitest.dev/) + [Playwright](https://playwright.dev/) - Unit/integration and E2E tests
 
 ## Prerequisites
 
 - Node.js v22.14.0 (as specified in `.nvmrc`)
 - npm (comes with Node.js)
+- [Docker](https://www.docker.com/) for the local Supabase stack
 
 ## Getting Started
 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/przeprogramowani/10x-astro-starter.git
-cd 10x-astro-starter
+git clone https://github.com/Piotr-Miller/lumina-clean-ai.git
+cd lumina-clean-ai
 ```
 
 2. Install dependencies:
@@ -47,14 +54,20 @@ cp .env.example .dev.vars
 npm run dev
 ```
 
+The enhance UI lives on the home page (`/`) — the Local engine works anonymously; Cloud AI requires signing up.
+
 ## Available Scripts
 
-- `npm run dev` - Start development server (Cloudflare workerd runtime)
-- `npm run build` - Build for production
+- `npm run dev` - Start Astro dev server (Node/Vite; for workerd fidelity use `npm run build && npx wrangler dev`)
+- `npm run build` - Build for production (SSR via `@astrojs/cloudflare`)
 - `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint with type-checked rules
-- `npm run lint:fix` - Auto-fix ESLint issues
+- `npm run lint` / `npm run lint:fix` - ESLint with type-checked rules
 - `npm run format` - Run Prettier
+- `npm run typecheck` - `tsc --noEmit`
+- `npm run test:unit` - Vitest unit suite (excludes the RLS integration suite)
+- `npm run test` - Full Vitest suite incl. `tests/jobs.rls.test.ts` (needs the local Supabase stack)
+- `npm run test:e2e` - Playwright E2E gate (production build on workerd; see `context/foundation/test-plan.md` §6.3 for the run recipe)
+- `npm run test:mutation` - Stryker mutation testing on risk-critical modules (on demand, never in CI)
 
 ## Project Structure
 
@@ -63,16 +76,22 @@ npm run dev
 ├── src/
 │ ├── layouts/ # Astro layouts
 │ ├── pages/ # Astro pages
-│ │ └── api/ # API endpoints
+│ │ └── api/ # API endpoints (auth, cloud job create/timeout)
 │ ├── components/ # UI components (Astro & React)
-│ └── assets/ # Static assets
+│ ├── lib/ # Services, engines (local/cloud), helpers
+│ └── middleware.ts # Session resolution + route protection
+├── supabase/
+│ ├── migrations/ # SQL migrations (jobs table, storage policies, cron)
+│ └── functions/ # Edge Functions (enhance: /start + /callback)
+├── tests/ # Vitest suites + Playwright E2E (tests/e2e/)
+├── context/ # 10x written foundation (PRD, roadmap, test plan)
 ├── public/ # Public assets
 ├── wrangler.jsonc # Cloudflare Workers config
 ```
 
 ## Supabase Configuration
 
-This project uses [Supabase](https://supabase.com/) for authentication. Environment variables are declared via Astro's `astro:env` schema and are treated as **server-only secrets** — they are never exposed to the client.
+This project uses [Supabase](https://supabase.com/) for auth, the jobs database, photo storage, Edge Functions, and Realtime. Environment variables are declared via Astro's `astro:env` schema and are treated as **server-only secrets** — they are never exposed to the client.
 
 ### First-time setup (local, no cloud project needed)
 
@@ -84,34 +103,26 @@ Requires [Docker](https://www.docker.com/) and ~7 GB RAM.
 cp .env.example .env
 ```
 
-2. Initialize the local Supabase project (creates a `supabase/` config folder):
-
-```bash
-npx supabase init
-```
-
-3. Start the local stack (downloads Docker images on first run):
+2. Start the local stack (downloads Docker images on first run and applies the migrations from `supabase/migrations/`):
 
 ```bash
 npx supabase start
 ```
 
-4. Copy the credentials printed by the CLI into your `.env` and `.dev.vars`:
+3. Copy the credentials printed by the CLI into your `.env` and `.dev.vars`:
 
 ```
 SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_KEY=<anon key from CLI output>
 ```
 
-5. To stop the stack when done:
+4. To stop the stack when done:
 
 ```bash
 npx supabase stop
 ```
 
-The local Studio UI is available at `http://localhost:54323`.
-
-No database tables or migrations are required — this project uses Supabase Auth's built-in `auth.users` table only.
+The local Studio UI is available at `http://localhost:54323`. To re-apply migrations from scratch, run `npx supabase db reset`.
 
 ### Using a cloud Supabase project instead
 
@@ -127,6 +138,8 @@ SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_KEY=<anon-key>
 ```
 
+Apply the migrations with `npx supabase db push` (they are **not** applied by CI deploy).
+
 ### Email confirmation in local development
 
 By default Supabase requires email confirmation before a user can sign in. To skip this during local development:
@@ -139,12 +152,13 @@ Users can then sign in immediately after sign-up without clicking a confirmation
 
 ### Auth routes
 
-| Route                 | Description                                                             |
-| --------------------- | ----------------------------------------------------------------------- |
-| `/auth/signin`        | Email/password sign-in form                                             |
-| `/auth/signup`        | Email/password sign-up form                                             |
-| `/auth/confirm-email` | Post-signup "check your inbox" page                                     |
-| `/dashboard`          | Example protected page (redirects to `/auth/signin` if unauthenticated) |
+| Route                                           | Description                                                             |
+| ----------------------------------------------- | ----------------------------------------------------------------------- |
+| `/auth/signin`                                  | Email/password sign-in form                                             |
+| `/auth/signup`                                  | Email/password sign-up form                                             |
+| `/auth/confirm-email`                           | Post-signup "check your inbox" page                                     |
+| `/auth/forgot-password`, `/auth/reset-password` | Password recovery flow                                                  |
+| `/dashboard`                                    | Example protected page (redirects to `/auth/signin` if unauthenticated) |
 
 Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
 
@@ -170,7 +184,11 @@ Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or
 
 ## CI
 
-GitHub Actions runs lint + build on every push and PR to `master`. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets in GitHub for the build step.
+GitHub Actions (`.github/workflows/ci.yml`) runs four jobs: **ci** (lint, unit tests, Edge Function `deno check`, SSR build), **integration** (full Vitest suite incl. the RLS tests against an ephemeral local Supabase in Docker), **e2e** (Playwright gate on the north-star cloud flow with a stubbed Replicate callback), and **deploy** (Worker + Edge Function, on pushes to `master` only, gated by the other three). `master` is PR-only.
+
+## Documentation
+
+The written foundation the app was built from lives in [`context/foundation/`](context/foundation/): [`prd.md`](context/foundation/prd.md) (vision, user stories, guardrails), [`roadmap.md`](context/foundation/roadmap.md), [`test-plan.md`](context/foundation/test-plan.md) (risk map + phased test rollout), and [`tech-stack.md`](context/foundation/tech-stack.md). MVP scope and non-goals: [`idea-notes.md`](idea-notes.md).
 
 ## License
 
