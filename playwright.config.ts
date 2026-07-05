@@ -41,6 +41,25 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"], storageState: "playwright/.auth/user.json" },
       dependencies: ["setup"],
+      // The two cloud happy-path specs live in their own chained projects below.
+      testIgnore: ["**/north-star-cloud-result.spec.ts", "**/chroma-postpass-on.spec.ts"],
+    },
+    // Both cloud happy-path specs boot the one-shot fixture server on the FIXED
+    // port 8787 — the Edge Function's E2E_ALLOWED_OUTPUT_ORIGIN allowlist is read
+    // at serve startup, so the origin cannot vary per spec. Under fullyParallel
+    // they raced for the port (EADDRINUSE; impl-review F1). Chained project
+    // dependencies serialize exactly these two, keeping the rest parallel.
+    {
+      name: "cloud-northstar",
+      use: { ...devices["Desktop Chrome"], storageState: "playwright/.auth/user.json" },
+      dependencies: ["setup"],
+      testMatch: "**/north-star-cloud-result.spec.ts",
+    },
+    {
+      name: "cloud-chroma",
+      use: { ...devices["Desktop Chrome"], storageState: "playwright/.auth/user.json" },
+      dependencies: ["setup", "cloud-northstar"],
+      testMatch: "**/chroma-postpass-on.spec.ts",
     },
   ],
 });
