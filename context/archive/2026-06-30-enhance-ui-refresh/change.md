@@ -1,10 +1,10 @@
 ---
 change_id: enhance-ui-refresh
 title: Enhance screen UI refresh — restyle the main flow
-status: impl_reviewed
+status: archived
 created: 2026-06-30
-updated: 2026-07-05
-archived_at: null
+updated: 2026-07-06
+archived_at: 2026-07-06T08:13:52Z
 ---
 
 ## Notes
