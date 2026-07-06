@@ -1,8 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to AI coding agents (e.g. Codex CLI) working with code in this repository.
-
-> **Mirror notice:** this file is a verbatim copy of [`CLAUDE.md`](CLAUDE.md) — the source of truth — with only this header swapped. Do not edit AGENTS.md directly: edit `CLAUDE.md`, then re-sync the body here. All paths below (e.g. `.claude/skills/`) are real on-disk locations and apply to every agent, regardless of its vendor.
+This file is the **single source of truth** for AI coding agents working with code in this repository — Codex CLI and friends read it natively; Claude Code pulls it in via the `@AGENTS.md` import in [`CLAUDE.md`](CLAUDE.md). Edit THIS file; `CLAUDE.md` is only a pointer. All paths below (e.g. `.claude/skills/`) are real on-disk locations and apply to every agent, regardless of its vendor.
 
 ## Hard rules
 
@@ -91,7 +89,7 @@ All jobs run under a workflow-level `concurrency` block (`group` = workflow + re
 
 ## 10x-cli profile & workflow
 
-- Active profile is **Claude Code**: skills live under `.claude/skills/` and this `CLAUDE.md` is the canonical rules file. Verify with `10x doctor`. To switch profiles (e.g. Codex CLI under `.agents/`), re-run `10x get <ref> --tool <name>`; the CLI will prompt to migrate existing artifacts.
+- Active profile is **Claude Code**: skills live under `.claude/skills/`; the rules live in this `AGENTS.md`, which `CLAUDE.md` (the profile's canonical rules file) imports via `@AGENTS.md`. Verify with `10x doctor` — and if a `10x get` ever appends content to the `CLAUDE.md` shim, move it here. To switch profiles (e.g. Codex CLI under `.agents/`), re-run `10x get <ref> --tool <name>`; the CLI will prompt to migrate existing artifacts.
 - Lesson artifacts (skills, prompts, rules, config templates) are managed via the CLI, not edited by hand. `10x list` browses; `10x get <ref>` (e.g. `10x get m1l1`) fetches and applies a bundle; `10x get <ref> --dry-run` previews; `10x doctor` diagnoses auth, API, config, and tool-directory issues.
 - Re-fetching a different lesson cleans up artifacts from the previous lesson that aren't in the new one. Hand-editing files under `.claude/skills/` will be overwritten on the next `10x get` for the same lesson.
 - **Upstream README is authoritative** for install/usage: `https://raw.githubusercontent.com/przeprogramowani/10x-cli/refs/heads/master/README.md`. If memory and the README disagree, follow the README.
