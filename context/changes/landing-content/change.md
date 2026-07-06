@@ -1,9 +1,9 @@
 ---
 change_id: landing-content
-title: Landing 2.0 — FAQ, how-to, article guides, panel tooltips
-status: idea
+title: Landing 2.0 — FAQ, how-to, article guides, panel tooltips, nav brand lockup
+status: implementing
 created: 2026-07-05
-updated: 2026-07-05
+updated: 2026-07-06
 archived_at: null
 ---
 
@@ -24,6 +24,23 @@ the shipped Nocturne × Darkroom skin (change `enhance-ui-refresh`):
   ruins night photos — and what's fixable" and "Shooting better night photos
   with the phone you have". Long-form pages may use Fraunces for body copy
   (sans UI + serif editorial); the landing itself stays Archivo.
+- **Brand lockup in the nav** (added 2026-07-06): swap the plain-text
+  `<span class="brand">` in `Nav.astro` for the LC lockup — beam-gradient LC
+  monogram + Archivo 800 wordmark ("AI" picked out in beam) + Plex Mono
+  tagline; size ladder down to mark-only ≤28px; optionally derive the favicon
+  from the mark. ⚠️ `Nav.astro` is GLOBAL chrome (auth/dashboard too) and was
+  explicitly out of scope of `enhance-ui-refresh` — this change deliberately
+  names it as an in-scope touch. Kit rule amendment the card sanctions: the
+  LOCKUP (mark tile + the wordmark's beam-clipped "AI", one unit) is the ONLY
+  beam surface besides the primary CTA and the slider handle (F2 plan-review
+  decision). The tagline stays a LITERAL in `Nav.astro` — `enhance-strings.ts`
+  is screen-scoped to `/`; the i18n slice localizes global chrome at its
+  component (F4 plan-review decision). Design: repo-local spec
+  `design/brand-lockup-spec.md`; visual source `foundations/brand-lockup.html`
+  in the Claude Design project (built from user-pasted logo PNGs in
+  `uploads/`). At implementation time, also have
+  the pane propagate the lockup into cards 01–10/boards so the kit stays
+  truthful (not before — those cards document the shipped screen).
 
 Direction decisions (user, 2026-07-05, "modern & uncluttered"):
 

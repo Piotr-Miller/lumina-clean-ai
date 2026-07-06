@@ -2,34 +2,55 @@
 // Global header nav, rendered by Layout on every page. Reads the current user
 // from middleware-populated Astro.locals (no prop threading). Context-aware:
 // authed -> email + Dashboard + Sign out; anon -> Sign in + Sign up.
+//
+// Brand: the LC lockup (change landing-content, spec:
+// context/changes/landing-content/design/brand-lockup-spec.md). The lockup —
+// mark tile + the wordmark's beam-clipped "AI", one unit — is the strip's only
+// beam surface. Tagline is a deliberate literal (global chrome sits outside the
+// screen-scoped enhance-strings module; the i18n slice localizes it here).
 const { user } = Astro.locals;
 ---
 
 <header
-  class="sticky top-0 z-50 flex items-center justify-between gap-3 border-b border-white/10 bg-white/10 px-4 py-3 text-sm text-white/80 backdrop-blur-xl sm:px-8"
+  class="sticky top-0 z-50 flex items-center justify-between gap-3 border-b border-white/5 bg-(--lc-step-2)/95 px-4 py-2.5 text-sm text-(--lc-dim) backdrop-blur-xl sm:px-8 sm:py-3.5"
 >
-  <a href="/" class="font-semibold tracking-tight text-white transition-colors hover:text-purple-200">
-    LuminaClean AI
+  <a href="/" class="flex items-center gap-2.5 transition-opacity hover:opacity-90">
+    <img
+      src="/images/brand-mark.png"
+      alt=""
+      width="54"
+      height="51"
+      class="size-8 shrink-0 object-contain sm:size-11"
+      aria-hidden="true"
+    />
+    <span class="flex flex-col gap-0.5 leading-none">
+      <span class="font-lc-display text-[15px] font-extrabold tracking-tight text-(--lc-ink) sm:text-[16px]">
+        LuminaClean <span class="bg-beam bg-clip-text text-transparent">AI</span>
+      </span>
+      <span class="font-lc-mono hidden text-[9px] tracking-[0.16em] text-(--lc-faint) uppercase sm:block">
+        AI Photo Editing. Perfected.
+      </span>
+    </span>
   </a>
   {
     user ? (
       <div class="flex items-center gap-3 sm:gap-4">
-        <span class="hidden max-w-[12rem] truncate text-blue-100/70 sm:inline">{user.email}</span>
-        <a href="/dashboard" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+        <span class="hidden max-w-[12rem] truncate text-(--lc-faint) sm:inline">{user.email}</span>
+        <a href="/dashboard" class="text-(--lc-dim) transition-colors hover:text-(--lc-ink)">
           Dashboard
         </a>
         <form method="POST" action="/api/auth/signout">
-          <button type="submit" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+          <button type="submit" class="text-(--lc-dim) transition-colors hover:text-(--lc-ink)">
             Sign out
           </button>
         </form>
       </div>
     ) : (
       <div class="flex items-center gap-3 sm:gap-4">
-        <a href="/auth/signin" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+        <a href="/auth/signin" class="text-(--lc-dim) transition-colors hover:text-(--lc-ink)">
           Sign in
         </a>
-        <a href="/auth/signup" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
+        <a href="/auth/signup" class="text-(--lc-dim) transition-colors hover:text-(--lc-ink)">
           Sign up
         </a>
       </div>
