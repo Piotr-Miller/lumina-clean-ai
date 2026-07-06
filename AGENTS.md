@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file is the **single source of truth** for AI coding agents working with code in this repository — Codex CLI and friends read it natively; Claude Code pulls it in via the `@AGENTS.md` import in [`CLAUDE.md`](CLAUDE.md). Edit THIS file; `CLAUDE.md` is only a pointer. All paths below (e.g. `.claude/skills/`) are real on-disk locations and apply to every agent, regardless of its vendor.
 
 ## Hard rules
 
@@ -21,7 +21,7 @@ Repo uses Stryker (`@stryker-mutator/core` + `@stryker-mutator/vitest-runner`) f
 - **Run it only** for code covered by the current change or a risk from `context/foundation/test-plan.md` §4. Prefer narrowed scope: `npx stryker run --mutate "src/lib/services/photo-job.service.ts"` or a line range `--mutate "path/to/file.ts:12-48"`. `npm run test:mutation` runs the default scope (`src/lib/**`).
 - **Config:** `stryker.config.json`. Mutation runs use `vitest.config.stryker.ts`, which excludes `jobs.rls.test.ts` (needs live local Supabase — too slow per mutant). HTML report: `reports/mutation/mutation.html`.
 - **Do not chase 100%.** Review survived mutants one by one: add an assertion only when the mutant represents a user-visible or business-relevant bug. Ignore equivalent/cosmetic mutants consciously — pinning implementation detail to kill a cosmetic mutant is itself a vibe test.
-- **When it runs:** on demand, plus a conditional step in `/10x-impl-review` (Step 3 "Verify success criteria") that fires a scoped `stryker run --mutate <file>` **only** when the reviewed change touches a §4 risk module, and surfaces qualifying survived mutants as Safety & Quality findings. This trigger is recorded here too because `10x get` can overwrite the managed skill (`.Codex/skills/10x-impl-review/SKILL.md`); if the skill is re-fetched without it, re-add the step from this note.
+- **When it runs:** on demand, plus a conditional step in `/10x-impl-review` (Step 3 "Verify success criteria") that fires a scoped `stryker run --mutate <file>` **only** when the reviewed change touches a §4 risk module, and surfaces qualifying survived mutants as Safety & Quality findings. This trigger is recorded here too because `10x get` can overwrite the managed skill (`.claude/skills/10x-impl-review/SKILL.md`); if the skill is re-fetched without it, re-add the step from this note.
 
 ## Project: Astro + Supabase + Cloudflare
 
@@ -85,19 +85,23 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) — four jobs:
 - `e2e` (push + PR) — Playwright browser gate (`npm run test:e2e`) on the north-star flow (risks #1+#6) and the stall→terminal spec. Boots the same ephemeral local Supabase (image cache + retry hardening shared with `integration`), backgrounds `supabase functions serve enhance` with a **generated** signing secret + the `E2E_ALLOWED_OUTPUT_ORIGIN` stub seam, and runs chromium (cached). The Cloud-AI pipeline is **stubbed** — a self-signed Replicate `/callback`, no token, no cold boot. No GitHub secrets (fork-PR-safe). The live cold-boot path is a manual smoke (`context/foundation/cloud-live-smoke.md`), never a PR gate.
 - `deploy` (push to master only, gated by `needs: [ci, integration, e2e]`) — Worker via `wrangler-action` + `enhance` Edge Function via the pinned supabase CLI.
 
+All jobs run under a workflow-level `concurrency` block (`group` = workflow + ref, `cancel-in-progress` for any ref ≠ `refs/heads/master`): a new push to a PR branch cancels its in-flight runs to save Actions minutes, while runs on `master` are never cancelled (PR #72).
+
 ## 10x-cli profile & workflow
 
-- Active profile is **Codex**: skills live under `.Codex/skills/` and this `AGENTS.md` is the canonical rules file. Verify with `10x doctor`. To switch profiles (e.g. Codex CLI under `.agents/`), re-run `10x get <ref> --tool <name>`; the CLI will prompt to migrate existing artifacts.
+- The rules live in this `AGENTS.md`; `CLAUDE.md` (the Claude Code profile's canonical rules file) imports it via `@AGENTS.md`. If a `10x get` ever appends content to the `CLAUDE.md` shim, move it here.
+- **Two synced skill trees exist in-repo — use the one for YOUR tool:** Claude Code reads `.claude/skills/<name>/SKILL.md`; Codex reads the adapted copies at `.agents/skills/<name>/SKILL.md` (same skills; per-tool path/filename references swapped). Codex runtime config/hooks live under `.codex/`. Every `.claude/skills/<name>` path mentioned elsewhere in this file has its Codex equivalent at `.agents/skills/<name>`.
+- The 10x-cli's active profile is **Claude Code** (verify with `10x doctor` — it validates the `.claude/` tool dir), so `10x get` refreshes `.claude/skills/`; after a re-fetch, re-sync the `.agents/skills/` copies. To switch the managed profile, re-run `10x get <ref> --tool <name>`; the CLI will prompt to migrate existing artifacts.
 - Lesson artifacts (skills, prompts, rules, config templates) are managed via the CLI, not edited by hand. `10x list` browses; `10x get <ref>` (e.g. `10x get m1l1`) fetches and applies a bundle; `10x get <ref> --dry-run` previews; `10x doctor` diagnoses auth, API, config, and tool-directory issues.
-- Re-fetching a different lesson cleans up artifacts from the previous lesson that aren't in the new one. Hand-editing files under `.Codex/skills/` will be overwritten on the next `10x get` for the same lesson.
+- Re-fetching a different lesson cleans up artifacts from the previous lesson that aren't in the new one. Hand-editing files under `.claude/skills/` will be overwritten on the next `10x get` for the same lesson.
 - **Upstream README is authoritative** for install/usage: `https://raw.githubusercontent.com/przeprogramowani/10x-cli/refs/heads/master/README.md`. If memory and the README disagree, follow the README.
 - **Run `10x doctor` before guessing** at CLI failures — it covers auth, API reachability, config, version, and tool-directory presence.
 - **Auth is interactive (magic link).** If a shell can't accept input, ask the user to run `10x auth` themselves via the `!` prefix.
-- Deeper guidance: `.Codex/skills/10x-cli-setup/SKILL.md` (first-time install / re-auth / tool reconfiguration) and `.Codex/skills/10x-cli-guide/SKILL.md` (daily-usage reference, troubleshooting matrix, platform tips).
+- Deeper guidance: `.claude/skills/10x-cli-setup/SKILL.md` (first-time install / re-auth / tool reconfiguration) and `.claude/skills/10x-cli-guide/SKILL.md` (daily-usage reference, troubleshooting matrix, platform tips).
 
 ### Archive workflow extensions (durable fallback)
 
-These behaviors were added to `.Codex/skills/10x-archive/SKILL.md` (step 6) but live here too because a `10x get` re-fetch can overwrite the managed skill. **When archiving a change** (via `/10x-archive` or equivalent), after the base move + stamp + roadmap-item close, also:
+These behaviors were added to `.claude/skills/10x-archive/SKILL.md` (step 6) but live here too because a `10x get` re-fetch can overwrite the managed skill. **When archiving a change** (via `/10x-archive` or equivalent), after the base move + stamp + roadmap-item close, also:
 
 - **Refresh status across the other tracking md files** (best-effort, never blocks): in `context/foundation/roadmap.md` flip the matching **Backlog Handoff** table row to `done` with an `Archived <date> → <archive-path>. Issue #<n>.` note; in `context/foundation/github-issues.md` set the final-mapping **Status** cell for the change to `done` and append a row to its `## Status updates` log (`| date | roadmap-id | #issue | action |`). These follow `github-issues.md`'s own note that issue state should stay in sync with the roadmap `Status` on archive.
 - **Sync the matching GitHub issue** (outward-facing → confirm first): resolve the issue number from `github-issues.md` (or `gh issue list`), then **ask once** before mutating; on approval `gh issue close <n> --comment "Archived <date> → <archive-path> (commit <sha>)."`. `gh` failures are non-fatal; never close/comment without explicit consent. Pattern precedent: issues #1–#4 were closed on archive.
@@ -108,7 +112,7 @@ This repository is a **10xDevs course workspace** that has been bootstrapped wit
 
 - **Course artifacts** managed by `@przeprogramowani/10x-cli`:
   - `skills-lock.json` — pins the skills fetched from the course CLI (source: `przeprogramowani/10x-cli` on GitHub) with content hashes.
-  - `.Codex/skills/<name>/SKILL.md` — skill bundles pulled in by `10x get`.
+  - `.claude/skills/<name>/SKILL.md` — skill bundles pulled in by `10x get`.
 - **Application code** scaffolded from `10x-astro-starter` — see "Project: Astro + Supabase + Cloudflare" above for commands, architecture, and conventions. Bootstrap audit trail lives at `context/changes/bootstrap-verification/verification.md`.
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
