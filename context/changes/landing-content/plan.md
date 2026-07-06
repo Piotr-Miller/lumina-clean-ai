@@ -58,7 +58,7 @@ Swap the text brand for the LC lockup, retune the nav strip to kit tokens (both 
 
 **File**: `src/components/Nav.astro`
 
-**Intent**: Replace the brand `<a>` content with the lockup (beam tile + "LC" in `font-lc-display`, wordmark "LuminaClean AI" with "AI" beam-clipped, Plex Mono tagline) per `foundations/brand-lockup.html`; retune strip classes to kit tones (step-2 surface, dim→ink links, hairline separation) replacing white-glass + purple. Tagline hidden on narrow viewports per the card's size ladder.
+**Intent**: Replace the brand `<a>` content with the lockup (mark + wordmark "LuminaClean AI" with "AI" beam-clipped + Plex Mono tagline); retune strip classes to kit tones (step-2 surface, dim→ink links, hairline separation) replacing white-glass + purple. Tagline hidden on narrow viewports per the size ladder. _(Amended 2026-07-06 per impl-review F1 — user decision during implementation: the mark is the ORIGINAL brand asset `public/images/brand-mark.png` (from `Icon.png`, 32px mobile / 44px desktop), not the card's CSS beam tile; see `design/brand-lockup-spec.md` "As shipped".)_
 
 **Contract**: Pure markup/class change; auth-aware link structure, hrefs, and the sign-out form stay identical. The lockup (mark tile + the wordmark's beam-clipped "AI") is the strip's only beam element — per the F2 review decision, matching the approved card.
 
@@ -72,9 +72,9 @@ Swap the text brand for the LC lockup, retune the nav strip to kit tokens (both 
 
 #### 3. Favicon
 
-**File**: `public/favicon.svg` (new), `public/favicon.png` (replaced), `src/layouts/Layout.astro`
+**File**: `public/favicon.png` (replaced), `src/layouts/Layout.astro`
 
-**Intent**: Hand-authored SVG mark (rounded rect with beam `linearGradient` + bold "LC"), rasterized 64px PNG fallback; Layout head links `image/svg+xml` first, PNG second.
+**Intent**: The favicon is the original brand mark (`Icon.png`) composed to 64×64 PNG; Layout links it with a version query (`?v=2`) to bust the browser favicon cache. _(Amended 2026-07-06 per impl-review F1 — the interim hand-authored beam SVG was dropped by user decision; PNG-only.)_
 
 **Contract**: Layout change is head-only (link tags); the existing `<slot name="head" />` seam stays.
 
@@ -320,15 +320,15 @@ None — content and presentation only. Rollback = revert the PR.
 
 #### Automated
 
-- [x] 1.1 `npm run typecheck` passes
-- [x] 1.2 `npm run build` succeeds
-- [x] 1.3 Lint clean on touched files
+- [x] 1.1 `npm run typecheck` passes — 9b49060
+- [x] 1.2 `npm run build` succeeds — 9b49060
+- [x] 1.3 Lint clean on touched files — 9b49060
 
 #### Manual
 
-- [x] 1.4 Nav + lockup verified on all pages (desktop + 375px, both grounds)
-- [x] 1.5 New favicon visible
-- [x] 1.6 Lockup propagated to kit cards in Claude Design
+- [x] 1.4 Nav + lockup verified on all pages (desktop + 375px, both grounds) — 9b49060
+- [x] 1.5 New favicon visible — 9b49060
+- [x] 1.6 Lockup propagated to kit cards in Claude Design — 9b49060
 
 ### Phase 2: Guides — Content Collection + Two Articles
 

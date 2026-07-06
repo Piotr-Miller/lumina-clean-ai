@@ -58,7 +58,8 @@ contrast holds on both; no outline needed.
   `public/images/brand-mark.png` (nav, 32px mobile / 44px desktop) and
   `public/favicon.png` (composed 64×64, link versioned `?v=2` to bust the
   favicon cache). This supersedes the card's CSS beam-tile mark for the nav;
-  the beam-clipped "AI" in the wordmark stays. The kit cards still show the
-  beam-tile variant from the initial propagation — sync this detail during
-  the Phase 5 kit sync-back.
+  the beam-clipped "AI" in the wordmark stays. **Kit synced 2026-07-06** (per
+  impl-review F2): the pane agent replaced the beam-tile mark with the
+  original mark image (data URI) on all 13 cards + `foundations/brand-lockup.html`;
+  the extracted mark lives at `foundations/assets/lc-mark.png` in the project.
 - The user-pasted PNGs in the project's `uploads/` are reference-only.
