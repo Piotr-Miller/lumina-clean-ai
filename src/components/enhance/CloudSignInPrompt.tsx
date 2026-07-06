@@ -1,4 +1,5 @@
 import { LogIn } from "lucide-react";
+import { STRINGS } from "@/lib/enhance-strings";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -9,23 +10,18 @@ import { Button } from "@/components/ui/button";
  */
 export function CloudSignInPrompt() {
   return (
-    <div className="flex w-full flex-col items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-6 py-8 text-center">
-      <LogIn className="size-7 text-purple-300" />
-      <h3 className="text-lg font-semibold text-white">Sign in to use Cloud AI</h3>
-      <p className="max-w-sm text-sm text-white/70">
-        Cloud AI delivers a noticeably cleaner result than the local engine. Sign in (or create a free account) to
-        process this photo in the cloud — your photo stays loaded.
-      </p>
+    <div className="flex w-full max-w-md flex-col items-center gap-3 rounded-xl bg-(--lc-step-1) px-6 py-8 text-center">
+      <LogIn className="size-7 text-[#8f7bf0]" />
+      <h3 className="font-lc-display text-lg font-extrabold tracking-tight text-(--lc-ink)">
+        {STRINGS.signInPrompt.heading}
+      </h3>
+      <p className="max-w-sm text-sm text-(--lc-dim)">{STRINGS.signInPrompt.body}</p>
       <div className="mt-1 flex flex-wrap justify-center gap-3">
-        <Button asChild>
-          <a href="/auth/signin">Sign in</a>
+        <Button asChild variant="beam">
+          <a href="/auth/signin">{STRINGS.signInPrompt.signIn}</a>
         </Button>
-        <Button
-          asChild
-          variant="outline"
-          className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-        >
-          <a href="/auth/signup">Create account</a>
+        <Button asChild variant="lcsecondary">
+          <a href="/auth/signup">{STRINGS.signInPrompt.createAccount}</a>
         </Button>
       </div>
     </div>

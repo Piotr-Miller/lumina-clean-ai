@@ -17,6 +17,11 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Enhance-screen kit variants (change enhance-ui-refresh; vars in global.css).
+        // `beam` is the ONLY colored control per view — the kit's primary action.
+        beam: "rounded-[10px] bg-beam font-bold text-[#050507] hover:brightness-110 focus-visible:ring-[#6fe3f2]/50",
+        lcsecondary: "rounded-[10px] bg-(--lc-step-2) text-(--lc-ink) hover:bg-(--lc-step-3)",
+        lcquiet: "rounded-[10px] bg-transparent text-(--lc-dim) hover:bg-(--lc-step-2) hover:text-(--lc-ink)",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

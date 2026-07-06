@@ -1,0 +1,93 @@
+<!-- @dsCard group="States" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State 04 — Local result + parameter panel</title>
+<style>{{CSS:hybrid.css}}</style>
+</head>
+<body>
+
+<header class="card-head">
+  <div class="tag">State 04 · Local result</div>
+  <h1>Local engine — enhanced, before/after live</h1>
+  <p>The gallery moment: result in the bloomed stage, beam only on the slider handle and Download. Instrument panel shows the Local pair (gamma + blur), Auto on, no overrides — so no “Restore Auto” and no “· adjusted” tag.</p>
+</header>
+
+<div class="section-label">Desktop · Local engine, Auto on</div>
+<div class="frame">
+  <div class="nav">
+    <span class="brand">LuminaClean AI</span>
+    <span class="note">nav out of scope — shown for adjacency</span>
+    <span class="links"><span>Sign in</span><span>Sign up</span></span>
+  </div>
+  <div class="inner">
+    <div class="hero">
+      <h2>Fix your night photos</h2>
+      <p class="sub">Upload a dark, grainy shot and brighten it instantly — right in your browser. No account needed.</p>
+    </div>
+    <div class="toggle-row"><div class="toggle"><span class="opt active">Local</span><span class="opt">Cloud AI</span></div></div>
+    <div class="workspace">
+      <div>
+        <div class="stage">
+          <div class="ph" role="img" aria-label="Your photo — enhanced"></div>
+          <div class="ph before"></div>
+          <div class="divider"></div><div class="handle">⇔</div>
+          <span class="ba b">BEFORE</span><span class="ba a">AFTER</span>
+        </div>
+        <div class="cta-row" style="justify-content:center">
+          <span class="btn primary">Download</span>
+          <span class="btn quiet">↺ Start over</span>
+        </div>
+      </div>
+      <aside class="panel">
+        <div class="head">
+          <span class="title">Adjustments</span>
+          <span class="auto">Auto on</span>
+        </div>
+        <div class="param">
+          <div class="row"><span>Brightness (gamma)</span><span class="val">1.80</span></div>
+          <div class="track"><div class="rail"></div><div class="fill" style="width:95%"></div><div class="thumb" style="left:95%"></div></div>
+        </div>
+        <div class="param">
+          <div class="row"><span>Smoothing (blur)</span><span class="val">0.5</span></div>
+          <div class="track"><div class="rail"></div><div class="fill" style="width:25%"></div><div class="thumb" style="left:25%"></div></div>
+        </div>
+        <div class="actions">
+          <span class="btn">✦ Recalculate</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Mobile · 375px — panel stacks below the image (S-12 contract)</div>
+<div class="mobile-row">
+  <div class="phone">
+    <div class="toggle-row"><div class="toggle"><span class="opt active">Local</span><span class="opt">Cloud AI</span></div></div>
+    <div class="stage" style="margin-top:16px">
+      <div class="ph" role="img" aria-label="Your photo — enhanced"></div>
+      <div class="ph before"></div>
+      <div class="divider"></div><div class="handle">⇔</div>
+    </div>
+    <div class="cta-row"><span class="btn primary">Download</span><span class="btn quiet">↺ Start over</span></div>
+    <aside class="panel">
+      <div class="head"><span class="title">Adjustments</span><span class="auto">Auto on</span></div>
+      <div class="param">
+        <div class="row"><span>Brightness (gamma)</span><span class="val">1.80</span></div>
+        <div class="track"><div class="rail"></div><div class="fill" style="width:95%"></div><div class="thumb" style="left:95%"></div></div>
+      </div>
+      <div class="param" style="padding-bottom:16px">
+        <div class="row"><span>Smoothing (blur)</span><span class="val">0.5</span></div>
+        <div class="track"><div class="rail"></div><div class="fill" style="width:25%"></div><div class="thumb" style="left:25%"></div></div>
+      </div>
+    </aside>
+  </div>
+  <p class="mobile-note">Panel stacks under the photo; values stay visible and editable. Slider drags re-render locally (debounced) — never a network request.</p>
+</div>
+
+<footer class="card-foot">Frozen strings: buttons “Download” / “Start over” · slider aria-label “Before and after comparison — drag or use arrow keys to compare” · img alts “Your photo — enhanced” / “Your photo — original”. Panel labels from enhance-strings.ts panel.* (“Adjustments”, “Auto” + “on”, “Brightness (gamma)”, “Smoothing (blur)”, “Recalculate”).</footer>
+
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!-- @dsCard group="States" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State 06 — Cloud processing (+ cold-start hint)</title>
+<style>{{CSS:hybrid.css}}
+  .stage .ph.pre { filter: brightness(.45) saturate(.65) blur(1px); }
+  .proc-col { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 16px; }
+  .proc-col .proc { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<header class="card-head">
+  <div class="tag">State 06 · Processing</div>
+  <h1>Cloud AI — enhancing, Realtime-driven wait</h1>
+  <p>Signed-in, job submitted. The dark original sits in a plain stage (bloom is earned by the result); a cyan-tipped spinner and the status line carry the wait. The cold-start hint appears progressively — only once the wait looks like a model boot.</p>
+</header>
+
+<div class="section-label">Desktop · signed in, Cloud AI active, job processing</div>
+<div class="frame">
+  <div class="nav">
+    <span class="brand">LuminaClean AI</span>
+    <span class="note">nav out of scope — shown for adjacency</span>
+    <span class="links"><span>Dashboard</span><span>Sign out</span></span>
+  </div>
+  <div class="inner">
+    <div class="hero">
+      <h2>Fix your night photos</h2>
+      <p class="sub">Upload a dark, grainy shot and brighten it instantly — right in your browser. No account needed.</p>
+    </div>
+    <div class="toggle-row"><div class="toggle"><span class="opt">Local</span><span class="opt active">Cloud AI</span></div></div>
+    <div class="workspace">
+      <div>
+        <div class="stage plain">
+          <div class="ph pre" role="img" aria-label="Selected photo"></div>
+        </div>
+        <div class="proc-col">
+          <div class="proc"><span class="spin"></span> Enhancing in the cloud…</div>
+          <div class="hint">The first run after idle can take a few minutes.</div>
+          <span class="btn quiet">↺ Start over</span>
+        </div>
+      </div>
+      <aside class="panel">
+        <div class="head">
+          <span class="title">Adjustments</span>
+          <span class="auto">Auto on</span>
+        </div>
+        <div class="param">
+          <div class="row"><span>Brightness (gamma)</span><span class="val">1.50</span></div>
+          <div class="track"><div class="rail"></div><div class="fill" style="width:88%"></div><div class="thumb" style="left:88%"></div></div>
+        </div>
+        <div class="param">
+          <div class="row"><span>Denoise strength</span><span class="val">0.15</span></div>
+          <div class="track"><div class="rail"></div><div class="fill" style="width:75%"></div><div class="thumb" style="left:75%"></div></div>
+        </div>
+        <div class="actions">
+          <span class="btn">✦ Recalculate</span>
+        </div>
+        <p class="note">Provisional — Cloud Auto values are conservative estimates and may be refined.</p>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<footer class="card-foot">Frozen strings: status line “Enhancing in the cloud…” (E2E asserts visible, then gone) · “Start over”. Hint copy “The first run after idle can take a few minutes.” verbatim; it mounts below the status line without layout shift for the row above. Spinner: 16px ring, top arc #6FE3F2 — the accent as instrument light, not decoration.</footer>
+
+</body>
+</html>

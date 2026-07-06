@@ -8,6 +8,8 @@
  * Unit-tested in `tests/image-helpers.test.ts`.
  */
 
+import { STRINGS } from "@/lib/enhance-strings";
+
 /** Accepted upload MIME types. Mirrors the F-01 `photos` bucket (minus HEIC, which is detect-and-reject in S-01). */
 export const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png"] as const;
 
@@ -37,21 +39,21 @@ export function validateImageFile(file: File): FileValidation {
     return {
       ok: false,
       code: "unsupported_type",
-      message: "HEIC photos aren't supported yet — please convert to JPG or PNG and try again.",
+      message: STRINGS.fileValidation.heicUnsupported,
     };
   }
   if (!(ACCEPTED_MIME_TYPES as readonly string[]).includes(file.type)) {
     return {
       ok: false,
       code: "unsupported_type",
-      message: "Unsupported file type. Please upload a JPG or PNG image.",
+      message: STRINGS.fileValidation.unsupportedType,
     };
   }
   if (file.size > MAX_FILE_BYTES) {
     return {
       ok: false,
       code: "file_too_large",
-      message: "This image is too large (max 25 MB). Try a smaller copy.",
+      message: STRINGS.fileValidation.tooLarge,
     };
   }
   return { ok: true };

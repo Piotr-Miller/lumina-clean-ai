@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { CircleAlert, Upload } from "lucide-react";
+import { CircleAlert } from "lucide-react";
+import { STRINGS } from "@/lib/enhance-strings";
 import { validateImageFile } from "@/lib/engines/image-helpers";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +33,7 @@ export function ImageUploader({ onAccepted, disabled = false }: ImageUploaderPro
   }
 
   return (
-    <div className="w-full">
+    <div className="flex w-full flex-col">
       <button
         type="button"
         disabled={disabled}
@@ -50,23 +51,25 @@ export function ImageUploader({ onAccepted, disabled = false }: ImageUploaderPro
           handleFile(e.dataTransfer.files[0]);
         }}
         className={cn(
-          "flex w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors",
-          dragOver ? "border-purple-400 bg-white/10" : "border-white/20 bg-white/5 hover:bg-white/10",
+          "flex min-h-40 w-full grow flex-col items-center justify-center gap-2 rounded-xl px-6 py-11 text-center transition-[background-color,outline] duration-150",
+          dragOver
+            ? "bg-(--lc-step-3) outline-2 outline-offset-[-2px] outline-[#6fe3f2] outline-dashed"
+            : "bg-(--lc-step-2) hover:bg-(--lc-step-3)",
           disabled && "pointer-events-none opacity-50",
         )}
       >
-        <Upload className="size-8 text-purple-300" />
-        <span className="text-sm text-white/80">
-          <span className="font-medium text-white">Click to upload</span> or drag &amp; drop
+        <span className="text-sm text-(--lc-ink)">
+          <span className="bg-beam bg-clip-text font-extrabold text-transparent">{STRINGS.uploader.ctaStrong}</span>{" "}
+          {STRINGS.uploader.ctaRest}
         </span>
-        <span className="text-xs text-white/40">JPG or PNG · up to 25 MB</span>
+        <span className="text-xs text-(--lc-faint)">{STRINGS.uploader.constraints}</span>
       </button>
 
       <input
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png"
-        aria-label="Upload an image"
+        aria-label={STRINGS.uploader.inputLabel}
         className="hidden"
         onChange={(e) => {
           handleFile(e.target.files?.[0]);
@@ -76,8 +79,8 @@ export function ImageUploader({ onAccepted, disabled = false }: ImageUploaderPro
       />
 
       {error && (
-        <p className="mt-2 flex items-center gap-1 text-xs text-red-300" role="alert">
-          <CircleAlert className="size-3" />
+        <p className="mt-2.5 flex items-center gap-2 text-xs text-(--lc-error)" role="alert">
+          <CircleAlert className="size-3.5 shrink-0" />
           {error}
         </p>
       )}

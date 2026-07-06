@@ -114,6 +114,65 @@
   background-image: linear-gradient(to bottom, #0a0e1a, #0f1529, #0a0e1a);
 }
 
+/* ---------------------------------------------------------------------------
+   Enhance screen (`/`) local design vars — "Nocturne × Darkroom" kit
+   (change enhance-ui-refresh). Deliberately NOT a global token system:
+   only the Enhance surface references these. Kit record: Claude Design
+   project db969341-ba46-4ca0-a64c-1477dae83137 + design-kit/ in the change
+   folder. Discipline: the beam gradient appears in exactly two places per
+   view — the primary action and the before/after divider/handle; hairline
+   borders and mono readouts exist only inside the parameter panel.
+--------------------------------------------------------------------------- */
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/archivo-800.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/plex-mono-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --lc-void: #050507; /* page background */
+  --lc-step-1: #0d0d11; /* card surface */
+  --lc-step-2: #131319; /* raised surface (buttons, chips, toggle, drop) */
+  --lc-step-3: #1c1c24; /* hover / active tone */
+  --lc-ink: #fafafc;
+  --lc-dim: rgba(250, 250, 252, 0.55);
+  --lc-faint: rgba(250, 250, 252, 0.34);
+  --lc-hairline: rgba(255, 255, 255, 0.13); /* panel-only border */
+  --lc-beam: linear-gradient(90deg, #8f7bf0, #6fe3f2);
+  --lc-beam-v: linear-gradient(180deg, #8f7bf0, #6fe3f2);
+  --lc-error: #f0968f; /* desaturated night-red, readable on void */
+  --lc-radius: 12px; /* gallery surfaces (= rounded-xl) */
+  --lc-radius-panel: 6px; /* instrument panel */
+  --lc-bloom: 0 0 90px rgba(111, 227, 242, 0.1), 0 0 34px rgba(143, 123, 240, 0.1);
+  --lc-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --lc-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+
+@utility bg-beam {
+  background-image: var(--lc-beam);
+}
+@utility bg-beam-v {
+  background-image: var(--lc-beam-v);
+}
+@utility font-lc-display {
+  font-family: var(--lc-display);
+}
+@utility font-lc-mono {
+  font-family: var(--lc-mono);
+}
+@utility shadow-bloom {
+  box-shadow: var(--lc-bloom);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

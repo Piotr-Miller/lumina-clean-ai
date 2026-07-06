@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { STRINGS } from "@/lib/enhance-strings";
 import { markPendingJobFailedForOwner } from "@/lib/services/photo-job.service";
 
 /**
@@ -85,10 +86,10 @@ export async function failTimedOutJobResponse(input: FailTimedOutJobInput): Prom
       jobId: parsed.data.jobId,
       userId: user.id,
       errorCode: "timeout",
-      // Keep this identical to the client's TIMEOUT_MESSAGE (useCloudJob) so the
-      // UI shows one consistent string whether it's the optimistic client copy
-      // or this authoritative row write — no flicker between two timeout texts.
-      errorMessage: "Cloud processing took too long. Please try again.",
+      // Identical to the client's TIMEOUT_MESSAGE by construction (same
+      // enhance-strings value) so the UI shows one consistent string whether
+      // it's the optimistic client copy or this authoritative row write.
+      errorMessage: STRINGS.cloudErrors.timeout,
     });
     return json({ flipped }, 200);
   } catch (err) {

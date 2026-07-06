@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { ChevronsLeftRight } from "lucide-react";
+import { STRINGS } from "@/lib/enhance-strings";
 
 interface BeforeAfterSliderProps {
   /** Original image (revealed on the left as the divider moves right). */
@@ -55,11 +56,11 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, width, height, alt = ""
       ref={containerRef}
       role="slider"
       tabIndex={0}
-      aria-label="Before and after comparison — drag or use arrow keys to compare"
+      aria-label={STRINGS.slider.ariaLabel}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(pos)}
-      className="relative mx-auto w-full touch-none overflow-hidden rounded-xl bg-black/20 select-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:outline-none"
+      className="shadow-bloom relative mx-auto w-full touch-none overflow-hidden rounded-xl bg-black select-none focus-visible:ring-2 focus-visible:ring-[#6fe3f2] focus-visible:outline-none"
       style={{
         aspectRatio: `${String(width)} / ${String(height)}`,
         maxWidth: `calc(60vh * ${String(width)} / ${String(height)})`,
@@ -84,7 +85,7 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, width, height, alt = ""
           layers fill it exactly, so the divider tracks the real image width. */}
       <img
         src={afterSrc}
-        alt={alt ? `${alt} — enhanced` : "Enhanced result"}
+        alt={alt ? STRINGS.slider.enhancedAlt(alt) : STRINGS.slider.enhancedFallback}
         draggable={false}
         className="block h-full w-full object-cover"
       />
@@ -92,19 +93,37 @@ export function BeforeAfterSlider({ beforeSrc, afterSrc, width, height, alt = ""
       {/* Original, clipped to the left of the divider. */}
       <img
         src={beforeSrc}
-        alt={alt ? `${alt} — original` : "Original"}
+        alt={alt ? STRINGS.slider.originalAlt(alt) : STRINGS.slider.originalFallback}
         draggable={false}
         className="absolute inset-0 block h-full w-full object-cover"
         style={{ clipPath: `inset(0 ${String(100 - pos)}% 0 0)` }}
       />
 
-      {/* Divider + visual handle (decorative; the container owns interaction). */}
+      {/* Decorative corner chips naming the two halves (kit states 04/08). */}
+      <span
+        aria-hidden="true"
+        className="font-lc-mono pointer-events-none absolute bottom-3 left-3 rounded-md bg-[rgba(5,5,7,0.6)] px-2 py-1 text-[9.5px] tracking-[0.14em] uppercase select-none"
+        style={{ color: "rgba(250, 250, 252, 0.72)" }}
+      >
+        {STRINGS.slider.beforeLabel}
+      </span>
+      <span
+        aria-hidden="true"
+        className="font-lc-mono pointer-events-none absolute right-3 bottom-3 rounded-md bg-[rgba(5,5,7,0.6)] px-2 py-1 text-[9.5px] tracking-[0.14em] uppercase select-none"
+        style={{ color: "rgba(250, 250, 252, 0.72)" }}
+      >
+        {STRINGS.slider.afterLabel}
+      </span>
+
+      {/* Divider + visual handle (decorative; the container owns interaction).
+          The beam gradient here and on the primary action are the only colored
+          elements per view (kit discipline rule). */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2 bg-white/80"
+        className="bg-beam-v pointer-events-none absolute inset-y-0 w-0.5 -translate-x-1/2"
         style={{ left: `${String(pos)}%` }}
       >
-        <div className="absolute top-1/2 left-1/2 flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white text-slate-700 shadow-lg">
+        <div className="bg-beam absolute top-1/2 left-1/2 flex size-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-[#050507] shadow-[0_0_24px_rgba(111,227,242,0.5)]">
           <ChevronsLeftRight className="size-4" />
         </div>
       </div>

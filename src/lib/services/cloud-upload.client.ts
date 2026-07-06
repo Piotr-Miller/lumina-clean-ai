@@ -1,3 +1,4 @@
+import { STRINGS } from "@/lib/enhance-strings";
 import type { BreadParams } from "@/lib/engines/types";
 import type { CreatePhotoJobRequest, CreatePhotoJobResponse } from "@/types";
 
@@ -18,14 +19,9 @@ import type { CreatePhotoJobRequest, CreatePhotoJobResponse } from "@/types";
 const CREATE_JOB_ENDPOINT = "/api/enhance/cloud/create-job";
 
 /** User-facing copy per error envelope `code` from the create-job route. */
-const ROUTE_MESSAGES: Record<string, string> = {
-  unauthorized: "Please sign in to use Cloud AI.",
-  invalid_body: "This photo can't be sent to Cloud AI — please use a JPG or PNG.",
-  daily_cap_reached: "The daily Cloud AI limit has been reached. Try the Local engine, or come back tomorrow.",
-  internal_error: "Cloud processing is temporarily unavailable. Please try again.",
-};
+const ROUTE_MESSAGES: Record<string, string> = STRINGS.uploadErrors.route;
 
-const GENERIC_ROUTE_MESSAGE = "Couldn't start Cloud processing. Please try again.";
+const GENERIC_ROUTE_MESSAGE = STRINGS.uploadErrors.genericRoute;
 
 /**
  * Derive the create-job request body from a validated File and (optional) Bread
@@ -53,12 +49,12 @@ async function routeErrorMessage(res: Response): Promise<string> {
 }
 
 function uploadErrorMessage(status: number): string {
-  if (status === 413) return "This photo is too large to upload (max 25 MB). Try a smaller copy.";
-  if (status === 403) return "The upload link was rejected. Please try again.";
-  return "Upload failed. Please try again.";
+  if (status === 413) return STRINGS.uploadErrors.uploadTooLarge;
+  if (status === 403) return STRINGS.uploadErrors.uploadRejected;
+  return STRINGS.uploadErrors.uploadFailed;
 }
 
-const NETWORK_MESSAGE = "Couldn't reach Cloud AI — check your connection and try again.";
+const NETWORK_MESSAGE = STRINGS.uploadErrors.network;
 
 /** `fetch` that maps a network-layer rejection (offline, DNS) to friendly copy instead of the raw `TypeError`. */
 async function safeFetch(input: string, init: RequestInit): Promise<Response> {

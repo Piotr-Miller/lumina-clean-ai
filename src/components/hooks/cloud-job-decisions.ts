@@ -1,21 +1,22 @@
+import { STRINGS } from "@/lib/enhance-strings";
 import type { PhotoJobStatus } from "@/types";
 
 /** Coarse render phase the workspace gates on (derived from the live job state). */
 export type CloudJobPhase = "idle" | "processing" | "succeeded" | "failed";
 
-// User-facing failure copy. The two timeout strings — this client-side one and the
+// User-facing failure copy — values live in the enhance-strings module (i18n
+// readiness), re-exported here under the original names so tests and consumers
+// keep their imports. The two timeout strings — this client-side one and the
 // timeout route's own row-level write — are identical, so there's no flicker between them.
-export const TIMEOUT_MESSAGE = "Cloud processing took too long. Please try again.";
-export const GENERIC_FAILED_MESSAGE = "Cloud processing failed. Please try again.";
+export const TIMEOUT_MESSAGE = STRINGS.cloudErrors.timeout;
+export const GENERIC_FAILED_MESSAGE = STRINGS.cloudErrors.genericFailed;
 // Provider (Replicate) rate-limit — distinct from the create-job daily cap, which
 // has its own copy. Keyed off the row's `error_code` (`provider_rate_limited`),
 // set by the Edge Function's `classifyStartFailure` on a 429.
-export const PROVIDER_RATE_LIMITED_MESSAGE =
-  "Cloud AI is busy right now — please try again in a moment, or switch to the Local engine.";
+export const PROVIDER_RATE_LIMITED_MESSAGE = STRINGS.cloudErrors.providerRateLimited;
 // Alpha-PNG (RGBA) input rejected by Bread, which needs a 3-channel RGB tensor.
 // The reactive recovery (Convert to RGB and try again) is offered alongside.
-export const RGBA_ALPHA_MESSAGE =
-  "This image has a transparency layer the cloud model can't read. Convert it to RGB and try again.";
+export const RGBA_ALPHA_MESSAGE = STRINGS.cloudErrors.rgbaAlpha;
 
 // Stable, front-of-message anchor of Bread's RGBA rejection, e.g.
 // `Input size must have a shape of (*, 3, H, W). Got torch.Size([1, 4, 96, 96])`.

@@ -1,0 +1,49 @@
+<!-- @dsCard group="States" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>State 02 — Uploader drag-over</title>
+<style>{{CSS:hybrid.css}}
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 28px; }
+  .pair .lbl { font: 500 9.5px/1 var(--lc-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--lc-faint); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<header class="card-head">
+  <div class="tag">State 02 · Drag-over</div>
+  <h1>Uploader — file dragged over the drop zone</h1>
+  <p>Copy does not change — the zone answers with tone and a dashed cyan outline (the only moment the accent leaves the CTA/handle, as an affordance, not decoration). Resting state shown for comparison.</p>
+</header>
+
+<div class="section-label">Desktop · resting vs drag-over</div>
+<div class="frame">
+  <div class="nav">
+    <span class="brand">LuminaClean AI</span>
+    <span class="note">nav out of scope — shown for adjacency</span>
+    <span class="links"><span>Sign in</span><span>Sign up</span></span>
+  </div>
+  <div class="pair">
+    <div>
+      <div class="lbl">Resting</div>
+      <div class="drop">
+        <div class="l1"><strong>Click to upload</strong> or drag &amp; drop</div>
+        <div class="l2">JPG or PNG · up to 25 MB</div>
+      </div>
+    </div>
+    <div>
+      <div class="lbl">Drag-over</div>
+      <div class="drop dragover">
+        <div class="l1"><strong>Click to upload</strong> or drag &amp; drop</div>
+        <div class="l2">JPG or PNG · up to 25 MB</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="card-foot">Interaction spec: transition on background + outline only (~150 ms); outline 2px dashed #6FE3F2, offset −2px; surface steps var(--lc-step-2) → var(--lc-step-3). No copy or layout shift, so drag-leave restores instantly.</footer>
+
+</body>
+</html>
