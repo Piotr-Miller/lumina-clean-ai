@@ -1,7 +1,7 @@
 ---
 change_id: landing-content
 title: Landing 2.0 — FAQ, how-to, article guides, panel tooltips, nav brand lockup
-status: impl_reviewed
+status: implementing
 created: 2026-07-05
 updated: 2026-07-06
 archived_at: null
@@ -60,4 +60,30 @@ self-contained copies live in the Claude Design project
 group **Proposals**.
 
 Out of scope (for later slices): translations (PL/DE i18n slice #7), CMS,
-comments/social, more than two articles.
+comments/social.
+
+## Amendments (during implementation, 2026-07-06)
+
+- **Third article added — plan amended 2 → 3 articles.** Alongside the two
+  night-photo guides, a third camera-agnostic article "Shooting in difficult
+  light: backlight, harsh sun, and everything between"
+  (`src/content/guides/shooting-in-difficult-light.md`) is written in THIS
+  change (user decision). It's the broadened-audience piece spun off from
+  article #2's "any camera / any hard light" angle, cross-linked to the two
+  night guides. Phase 3's teaser section grows from two cards to three; the
+  no-`/guides`-index constraint still holds. Article #2 also keeps its
+  phone-first frame but gains a few "works on any camera" touches (same
+  broadening decision).
+- **Localization deferred (reaffirmed).** Articles stay EN-only in this change;
+  i18n (UI + article content) remains slice #7. Reopened during implementation;
+  the answer is still defer. The `guides` content collection is designed so a
+  later `locale` dimension (`guides/<lang>/*`) + `[lang]` routing drops in
+  without a rewrite — nothing in Phase 2 blocks it.
+- **Nav mark + favicon made transparent (Phase-1 artifact polish).** During the
+  Phase 2 visual review the user flagged that the LC mark's near-black tile sat
+  as a mismatched box on the charcoal nav. Fixed by keying the near-black fill
+  to transparent (max-channel alpha ramp) on both `public/images/brand-mark.png`
+  and `public/favicon.png`; `Layout.astro` favicon cache-buster bumped `?v=2 →
+?v=3`. Also re-cropped the two portrait-sourced guide covers
+  (`shoot-better-night-photos`, `shooting-in-difficult-light`) with explicit 16:9
+  extract windows so the subject's head is no longer clipped.

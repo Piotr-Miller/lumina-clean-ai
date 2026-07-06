@@ -4,6 +4,17 @@
 
 Grow the shipped Nocturne × Darkroom Enhance landing (`/`) below the fold with content surfaces (How-it-works, FAQ, guide teasers), publish two full English photography guides as the product's SEO surface, add tooltips to the parameter panel, swap the plain-text nav brand for the LC lockup (retuning the whole nav strip to kit tokens), and wire the SEO basics that make any of it indexable. Visual/content layer only — no engine, pipeline, or auth logic changes; the E2E locator contract stays frozen.
 
+> **Amendment (2026-07-06, during Phase 2 implementation):** Scope grew from
+> **two** guide articles to **three** — a third, camera-agnostic article
+> "Shooting in difficult light: backlight, harsh sun, and everything between"
+> (`src/content/guides/shooting-in-difficult-light.md`) is added in this change
+> (user decision; the broadened-audience piece spun off from article #2's "any
+> camera / any hard light" angle, cross-linked to the two night guides).
+> Consequences: Phase 3's teaser section carries **three** cards (still no
+> `/guides` index); Phase 2 checks read "all three" where they said "both".
+> Localization stays deferred to slice #7 (EN-only here); the `guides` collection
+> leaves room for a later `locale` dimension without a rewrite.
+
 ## Current State Analysis
 
 - **Landing** (`src/pages/index.astro`) ends at the enhance island — nothing below the fold. Copy lives in `src/lib/enhance-strings.ts` (i18n-ready module from `enhance-ui-refresh`).
@@ -30,7 +41,7 @@ The landing scrolls past the tool into three restrained kit-styled sections; two
 ## What We're NOT Doing
 
 - No PL/DE translations, no i18n framework (slice #7); article markdown is EN-only content, not strings-module material.
-- No CMS, comments, social features, or more than two articles; no `/guides` index page (teasers link directly).
+- No CMS, comments, social features, or more than three articles; no `/guides` index page (teasers link directly).
 - No new E2E specs (decision: static content carries no §2 risk-map row); the existing gate is the regression net.
 - No engine/pipeline/auth logic changes; no changes to dashboard/auth page bodies (nav strip is the only global touch besides Layout head).
 - No restyle of the archived kit cards beyond the sanctioned lockup propagation (design-side, via the pane agent).
@@ -100,13 +111,13 @@ Swap the text brand for the LC lockup, retune the nav strip to kit tokens (both 
 
 ### Overview
 
-Stand up the `guides` content collection and publish two full EN articles as prerendered pages with license-safe imagery.
+Stand up the `guides` content collection and publish three full EN articles as prerendered pages with license-safe imagery.
 
 ### Changes Required:
 
 #### 1. Content collection
 
-**File**: `src/content.config.ts` (new), `src/content/guides/what-ruins-night-photos.md` (new), `src/content/guides/shoot-better-night-photos.md` (new)
+**File**: `src/content.config.ts` (new), `src/content/guides/what-ruins-night-photos.md` (new), `src/content/guides/shoot-better-night-photos.md` (new), `src/content/guides/shooting-in-difficult-light.md` (new — 3-article amendment)
 
 **Intent**: `guides` collection (glob loader) with schema: `title`, `description`, `readingMinutes`, `publishedAt`, `cover`, `coverAlt`, `credits[] {source, license, url}`. Two complete articles (~6 and ~9 min): "What actually ruins night photos — and what's fixable" (noise vs underexposure vs motion blur; what an editor can and can't rescue; before/after demos) and "Shooting better night photos with the phone you have" (brace, expose for highlights, skip digital zoom, let night mode finish, RAW caveat).
 
@@ -158,7 +169,7 @@ Add the three below-the-fold sections to `index.astro` per the slim Proposal A b
 
 **File**: `src/pages/index.astro`
 
-**Intent**: Static Astro markup below the island wrapper: `How it works` (3 tone-step cards: Engines / Sliders + Auto / What's free), `FAQ` (native `<details>/<summary>` styled to kit, ALL items closed by default — F1 review decision; no island), `Learn the craft` (2 teaser cards reusing guide covers, reading-time kicker, beam-text "Read the guide →" links). Section rhythm ~104px, no borders, content sections colorless except teaser links (kit discipline).
+**Intent**: Static Astro markup below the island wrapper: `How it works` (3 tone-step cards: Engines / Sliders + Auto / What's free), `FAQ` (native `<details>/<summary>` styled to kit, ALL items closed by default — F1 review decision; no island), `Learn the craft` (3 teaser cards reusing guide covers, reading-time kicker, beam-text "Read the guide →" links — 3-article amendment). Section rhythm ~104px, no borders, content sections colorless except teaser links (kit discipline).
 
 **Contract**: The island markup and props are untouched; sections are pure SSR HTML below it.
 
@@ -334,15 +345,15 @@ None — content and presentation only. Rollback = revert the PR.
 
 #### Automated
 
-- [ ] 2.1 `npm run typecheck` passes
-- [ ] 2.2 `npm run build` emits both prerendered guide pages
-- [ ] 2.3 Lint clean on touched files
+- [x] 2.1 `npm run typecheck` passes
+- [x] 2.2 `npm run build` emits all three prerendered guide pages
+- [x] 2.3 Lint clean on touched files
 
 #### Manual
 
-- [ ] 2.4 User approves image set + licenses (pre-download gate)
-- [ ] 2.5 User copy-review of both articles
-- [ ] 2.6 Guide pages verified desktop + 375px
+- [x] 2.4 User approves image set + licenses (pre-download gate)
+- [x] 2.5 User copy-review of all three articles
+- [x] 2.6 Guide pages verified desktop + 375px
 
 ### Phase 3: Landing Content Sections
 
