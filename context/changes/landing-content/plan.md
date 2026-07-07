@@ -359,15 +359,15 @@ None — content and presentation only. Rollback = revert the PR.
 
 #### Automated
 
-- [ ] 3.1 `npm run typecheck` passes
-- [ ] 3.2 `npm run build` succeeds
-- [ ] 3.3 Lint clean on touched files
-- [ ] 3.4 Freeze-list strings byte-identical (grep)
+- [x] 3.1 `npm run typecheck` passes
+- [x] 3.2 `npm run build` succeeds
+- [x] 3.3 Lint clean on touched files
+- [x] 3.4 Freeze-list strings byte-identical (grep)
 
 #### Manual
 
-- [ ] 3.5 Visual parity with the slim proposal board (desktop + 375px)
-- [ ] 3.6 Teaser links + FAQ behavior verified
+- [x] 3.5 Visual parity with the slim proposal board (desktop + 375px)
+- [x] 3.6 Teaser links + FAQ behavior verified
 
 ### Phase 4: Parameter Panel Tooltips
 

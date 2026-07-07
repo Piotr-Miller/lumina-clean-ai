@@ -26,6 +26,73 @@ export const STRINGS = {
     bannerAlt: "LuminaClean AI — from noise to perfection",
   },
 
+  /**
+   * `src/pages/index.astro` — below-the-fold content sections (change
+   * landing-content, Phase 3). Static SSR copy for How-it-works, FAQ (native
+   * `<details>`), and the guide teasers. Teaser title/cover/reading-time come
+   * from the `guides` content collection; only the teaser blurb + section
+   * chrome live here. Not E2E-frozen (static content carries no risk-map row).
+   */
+  landing: {
+    howItWorks: {
+      heading: "How it works",
+      lede: "The two engines, the controls, and what's free — with the finer details waiting in tooltips right at each control.",
+      cards: [
+        {
+          kicker: "Engines",
+          title: "Local vs Cloud AI",
+          body: "Local brightens instantly in your browser — nothing is uploaded. Cloud AI sends the photo to a night-photo model for a visibly cleaner result (free account required).",
+        },
+        {
+          kicker: "Controls",
+          title: "Sliders + Auto",
+          body: "Auto reads your photo and sets the sliders; drag any of them to take over. Every slider explains itself when you hover or focus it.",
+        },
+        {
+          kicker: "Cost",
+          title: "What's free?",
+          body: "Local is free and unlimited. Cloud AI is free within a small daily community limit — sliders never trigger processing; only the explicit process button does.",
+        },
+      ],
+    },
+    faq: {
+      heading: "FAQ",
+      items: [
+        {
+          q: "Is my photo uploaded anywhere?",
+          a: "With the Local engine — never; everything happens in your browser. With Cloud AI the photo is uploaded over an encrypted connection, processed, and the source file is automatically deleted within 24 hours.",
+        },
+        {
+          q: "Why does Cloud AI need an account?",
+          a: "Cloud processing costs real GPU time. A free account plus a shared daily limit keeps it free for everyone.",
+        },
+        {
+          q: "Which files can I upload?",
+          a: 'JPG or PNG up to 25 MB. HEIC isn\'t supported yet. PNGs with transparency get a one-click "Convert to RGB and try again" helper for the cloud model.',
+        },
+        {
+          q: "Why did my first cloud photo take a few minutes?",
+          a: "After a quiet period the AI model boots from cold — the first run can take a few minutes; the next ones finish in seconds.",
+        },
+      ],
+    },
+    guides: {
+      heading: "Learn the craft",
+      lede: "Three evergreen guides — also the SEO surface of the landing.",
+      readLink: "Read the guide →",
+      /** Teaser order + slug→blurb map; title/cover/min read come from the collection. */
+      order: ["what-ruins-night-photos", "shoot-better-night-photos", "shooting-in-difficult-light"],
+      teasers: {
+        "what-ruins-night-photos":
+          "Noise, underexposure, motion blur: which of the three your editor can rescue, and which you have to avoid at capture time.",
+        "shoot-better-night-photos":
+          "Brace, expose for the highlights, skip digital zoom, let night mode finish — practical habits that beat any filter.",
+        "shooting-in-difficult-light":
+          "Backlight, harsh sun, mixed colour, high contrast: name the light you're standing in, and the one move that saves the shot follows.",
+      },
+    },
+  },
+
   /** `EngineToggle.tsx`. */
   engine: {
     /** E2E freeze: group aria-label. */
