@@ -27,7 +27,7 @@ Grow the shipped Nocturne × Darkroom Enhance landing (`/`) below the fold with 
 
 ## Desired End State
 
-The landing scrolls past the tool into three restrained kit-styled sections; two real guides live at `/guides/<slug>` with license-safe imagery; hovering/focusing a panel option explains it in place; the nav carries the LC lockup on a kit-toned strip on every page; the favicon is the LC mark; Google can index all of it (sitemap alive, meta/OG present). Verified by the full existing E2E gate (green, unchanged specs), freeze-grep, and a manual desktop+375px walkthrough against the proposal board.
+The landing scrolls past the tool into three restrained kit-styled sections; three real guides live at `/guides/<slug>` with license-safe imagery; hovering/focusing a panel option explains it in place; the nav carries the LC lockup on a kit-toned strip on every page; the favicon is the LC mark; Google can index all of it (sitemap alive, meta/OG present). Verified by the full existing E2E gate (green, unchanged specs), freeze-grep, and a manual desktop+375px walkthrough against the proposal board.
 
 ### Key Discoveries:
 
@@ -107,7 +107,7 @@ Swap the text brand for the LC lockup, retune the nav strip to kit tokens (both 
 
 ---
 
-## Phase 2: Guides — Content Collection + Two Articles
+## Phase 2: Guides — Content Collection + Three Articles
 
 ### Overview
 
@@ -119,7 +119,7 @@ Stand up the `guides` content collection and publish three full EN articles as p
 
 **File**: `src/content.config.ts` (new), `src/content/guides/what-ruins-night-photos.md` (new), `src/content/guides/shoot-better-night-photos.md` (new), `src/content/guides/shooting-in-difficult-light.md` (new — 3-article amendment)
 
-**Intent**: `guides` collection (glob loader) with schema: `title`, `description`, `readingMinutes`, `publishedAt`, `cover`, `coverAlt`, `credits[] {source, license, url}`. Two complete articles (~6 and ~9 min): "What actually ruins night photos — and what's fixable" (noise vs underexposure vs motion blur; what an editor can and can't rescue; before/after demos) and "Shooting better night photos with the phone you have" (brace, expose for highlights, skip digital zoom, let night mode finish, RAW caveat).
+**Intent**: `guides` collection (glob loader) with schema: `title`, `description`, `readingMinutes`, `publishedAt`, `cover`, `coverAlt`, `credits[] {source, license, url}`. Three complete articles: "What actually ruins night photos — and what's fixable" (noise vs underexposure vs motion blur; what an editor can and can't rescue; before/after demo), "Shooting better night photos with the phone you have" (brace, expose for highlights, skip digital zoom, let night mode finish, RAW caveat; phone-first with any-camera touches), and "Shooting in difficult light: backlight, harsh sun, and everything between" (camera-agnostic taxonomy — backlight, harsh sun, mixed/artificial light, high contrast, low light — added per the 3-article amendment).
 
 **Contract**: Schema is the typed source for teasers (Phase 3) and meta (Phase 5). Article voice matches the product (plain, concrete, no hype).
 
@@ -127,7 +127,7 @@ Stand up the `guides` content collection and publish three full EN articles as p
 
 **File**: `public/images/guides/*` (new)
 
-**Intent**: 3–5 images per article: illustrative night shots (CC0/permissive stock, user-approved pre-download) + at least one before/after pair produced with the product's Local engine from an approved source. Optimized (≤~120 KB each, correct render size, `loading="lazy"`), meaningful alt text, credits recorded in frontmatter.
+**Intent**: Lean, editorial per-article imagery — a cover always, plus illustrative / before-after shots only where they earn their place (as shipped: #1 cover + before/after pair, #2 cover + one in-body shot, #3 cover only; amended from the original "3–5 per article" to the lighter count actually shipped, per Phase-2 impl-review F1). All CC0/permissive stock, user-approved pre-download; at least one before/after pair across the set, produced with the product's Local engine from an approved source. Optimized (≤~120 KB each, correct render size, `loading="lazy"`), meaningful alt text, credits recorded in frontmatter.
 
 **Contract**: Total added weight per article ≤ ~400 KB; every file traceable to a source+license in frontmatter `credits`.
 
@@ -137,21 +137,21 @@ Stand up the `guides` content collection and publish three full EN articles as p
 
 **Intent**: Prerendered (`export const prerender = true` + `getStaticPaths`) kit-styled article layout: void ground, `max-w-prose`, Fraunces 600 headings (new `@font-face`, font copied to `public/fonts/`), system-sans body, reading-time + published line, credits footer, back-to-home link. Uses Layout (nav/footer chrome comes free).
 
-**Contract**: URL shape `/guides/<slug>`; slugs are the two above and become link targets for Phase 3 teasers and sitemap entries in Phase 5.
+**Contract**: URL shape `/guides/<slug>`; slugs are the three above and become link targets for Phase 3 teasers and sitemap entries in Phase 5.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
 - `npm run typecheck` passes
-- `npm run build` succeeds and emits both prerendered guide pages
+- `npm run build` succeeds and emits all three prerendered guide pages
 - Lint clean on touched files
 
 #### Manual Verification:
 
 - User approves the image set + licenses (pre-download gate)
-- User copy-review of both articles
-- Both pages read well desktop + 375px (typography, images, credits)
+- User copy-review of all three articles
+- All three pages read well desktop + 375px (typography, images, credits)
 
 **Implementation Note**: pause for manual confirmation before Phase 3.
 
@@ -161,7 +161,7 @@ Stand up the `guides` content collection and publish three full EN articles as p
 
 ### Overview
 
-Add the three below-the-fold sections to `index.astro` per the slim Proposal A board: How-it-works (3 cards), FAQ (4 items), guide teasers (2 cards linking to Phase 2 pages).
+Add the three below-the-fold sections to `index.astro` per the slim Proposal A board: How-it-works (3 cards), FAQ (4 items), guide teasers (3 cards linking to Phase 2 pages — 3-article amendment).
 
 ### Changes Required:
 
@@ -278,7 +278,7 @@ Make the new surface indexable and finish with a full manual walkthrough.
 
 #### Automated Verification:
 
-- `npm run build` succeeds, emits sitemap including both guide URLs, no sitemap warning
+- `npm run build` succeeds, emits sitemap including all three guide URLs, no sitemap warning
 - Meta description + OG tags present in built landing and guide HTML (grep dist or curl on wrangler dev)
 
 #### Manual Verification:
@@ -341,19 +341,19 @@ None — content and presentation only. Rollback = revert the PR.
 - [x] 1.5 New favicon visible — 9b49060
 - [x] 1.6 Lockup propagated to kit cards in Claude Design — 9b49060
 
-### Phase 2: Guides — Content Collection + Two Articles
+### Phase 2: Guides — Content Collection + Three Articles
 
 #### Automated
 
-- [x] 2.1 `npm run typecheck` passes
-- [x] 2.2 `npm run build` emits all three prerendered guide pages
-- [x] 2.3 Lint clean on touched files
+- [x] 2.1 `npm run typecheck` passes — e4b92ab
+- [x] 2.2 `npm run build` emits all three prerendered guide pages — e4b92ab
+- [x] 2.3 Lint clean on touched files — e4b92ab
 
 #### Manual
 
-- [x] 2.4 User approves image set + licenses (pre-download gate)
-- [x] 2.5 User copy-review of all three articles
-- [x] 2.6 Guide pages verified desktop + 375px
+- [x] 2.4 User approves image set + licenses (pre-download gate) — e4b92ab
+- [x] 2.5 User copy-review of all three articles — e4b92ab
+- [x] 2.6 Guide pages verified desktop + 375px — e4b92ab
 
 ### Phase 3: Landing Content Sections
 
@@ -388,7 +388,7 @@ None — content and presentation only. Rollback = revert the PR.
 
 #### Automated
 
-- [ ] 5.1 Build emits sitemap incl. both guides; no sitemap warning
+- [ ] 5.1 Build emits sitemap incl. all three guides; no sitemap warning
 - [ ] 5.2 Meta description + OG + canonical present on `/` and guides (grep/curl)
 
 #### Manual
