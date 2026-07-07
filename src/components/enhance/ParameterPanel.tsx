@@ -97,7 +97,13 @@ export function ParameterPanel({
           return (
             <div key={key} className="flex flex-col gap-2.5 px-4 pt-4">
               <div className="flex items-baseline justify-between gap-2 text-xs">
-                <label htmlFor={`param-${key}`} className="font-medium text-(--lc-dim)">
+                {/* Group wrapper is a <span>, NOT a <label>: the slider is named
+                    by its own aria-label, and a <label> may not contain a labelable
+                    element other than its control — the tooltip trigger is a
+                    <button>, so nesting it in a <label> is invalid HTML. Keeping
+                    the slider's aria-label/id frozen preserves the accessible name.
+                    (Phase 4 review follow-up F1.) */}
+                <span className="font-medium text-(--lc-dim)">
                   {PARAM_TOOLTIPS[key] ? (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -118,7 +124,7 @@ export function ParameterPanel({
                       {STRINGS.panel.adjusted}
                     </span>
                   )}
-                </label>
+                </span>
                 <span className="font-lc-mono rounded border border-(--lc-hairline) bg-(--lc-step-2) px-1.5 py-1 text-[11.5px] text-(--lc-ink) tabular-nums">
                   {formatParamValue(value, range.step)}
                 </span>
