@@ -20,7 +20,10 @@ const guides = defineCollection({
     description: z.string(),
     readingMinutes: z.number().int().positive(),
     publishedAt: z.coerce.date(),
-    cover: z.string(),
+    // Absolute public path (e.g. "/images/guides/foo.jpg"). The leading-slash
+    // guard turns a missing "/" typo into a build-time schema error instead of
+    // a broken <img> at runtime (review follow-up, GLM validation 2026-07-07).
+    cover: z.string().startsWith("/"),
     coverAlt: z.string(),
     credits: z
       .array(

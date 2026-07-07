@@ -135,7 +135,7 @@ Stand up the `guides` content collection and publish three full EN articles as p
 
 **File**: `src/pages/guides/[slug].astro` (new)
 
-**Intent**: Prerendered (`export const prerender = true` + `getStaticPaths`) kit-styled article layout: void ground, `max-w-prose`, Fraunces 600 headings (new `@font-face`, font copied to `public/fonts/`), system-sans body, reading-time + published line, credits footer, back-to-home link. Uses Layout (nav/footer chrome comes free).
+**Intent**: Prerendered (`export const prerender = true` + `getStaticPaths`) kit-styled article layout: void ground, `max-w-prose`, Fraunces 600 headings (new `@font-face`, font copied to `public/fonts/`), system-sans body, reading-time + published line, credits footer, top back-to-home link, and a single beam "Try it on your photo →" CTA at the article foot linking to `/` — the page's primary action and the sanctioned beam surface for the guide route _(recorded 2026-07-07 per GLM review validation; the footer CTA shipped in Phase 2 and this intent now names it)_. Uses Layout (nav/footer chrome comes free).
 
 **Contract**: URL shape `/guides/<slug>`; slugs are the three above and become link targets for Phase 3 teasers and sitemap entries in Phase 5.
 
@@ -359,15 +359,15 @@ None — content and presentation only. Rollback = revert the PR.
 
 #### Automated
 
-- [x] 3.1 `npm run typecheck` passes
-- [x] 3.2 `npm run build` succeeds
-- [x] 3.3 Lint clean on touched files
-- [x] 3.4 Freeze-list strings byte-identical (grep)
+- [x] 3.1 `npm run typecheck` passes — 526c6f4
+- [x] 3.2 `npm run build` succeeds — 526c6f4
+- [x] 3.3 Lint clean on touched files — 526c6f4
+- [x] 3.4 Freeze-list strings byte-identical (grep) — 526c6f4
 
 #### Manual
 
-- [x] 3.5 Visual parity with the slim proposal board (desktop + 375px)
-- [x] 3.6 Teaser links + FAQ behavior verified
+- [x] 3.5 Visual parity with the slim proposal board (desktop + 375px) — 526c6f4
+- [x] 3.6 Teaser links + FAQ behavior verified — 526c6f4
 
 ### Phase 4: Parameter Panel Tooltips
 
