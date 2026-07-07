@@ -87,3 +87,16 @@ comments/social.
 ?v=3`. Also re-cropped the two portrait-sourced guide covers
   (`shoot-better-night-photos`, `shooting-in-difficult-light`) with explicit 16:9
   extract windows so the subject's head is no longer clipped.
+- **Cloud AI single-job notice (added 2026-07-07, user request).** LuminaClean
+  is a single-job app (no queue); switching photos mid-run abandons the in-flight
+  Cloud AI job. Surfaced on two surfaces: (1) an inline faint hint in the Cloud
+  AI processing state next to "Start over" (`EnhanceWorkspace.tsx`,
+  `workspace.cloudSingleJobHint`); (2) a landing FAQ item "Can I process more
+  than one photo at once?" (`landing.faq.items`, grows the FAQ 4 → 5, past the
+  board's original "max 4"). Copy uses honest "leaves this run behind" framing —
+  the switched-away Replicate prediction may still run server-side and count
+  against the daily cap (no hard cancel is wired; a true cancel + cap-slot free
+  is a separate future task). Touches the enhance island → re-ran the full local
+  E2E gate (6/6 green). Scope note: the inline hint is app-tool copy, slightly
+  outside landing-content's "landing/SEO content" scope, folded in here as a
+  small related copy addition rather than a separate change.

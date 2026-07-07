@@ -74,6 +74,10 @@ export const STRINGS = {
           q: "Why did my first cloud photo take a few minutes?",
           a: "After a quiet period the AI model boots from cold — the first run can take a few minutes; the next ones finish in seconds.",
         },
+        {
+          q: "Can I process more than one photo at once?",
+          a: "No — Cloud AI works on one photo at a time. Starting a new photo leaves the current run behind rather than queuing it, so download your result before you switch.",
+        },
       ],
     },
     guides: {
@@ -145,6 +149,8 @@ export const STRINGS = {
     /** E2E freeze: processing status line (asserted visible, then gone). */
     enhancingInCloud: "Enhancing in the cloud…",
     coldStartHint: "The first run after idle can take a few minutes.",
+    /** Shown during cloud processing: single-job app, no queue (honest "starts fresh" framing). */
+    cloudSingleJobHint: "One photo at a time — starting over leaves this run behind (no queue).",
     convertFailed: "We couldn't convert this image. Please try another photo.",
   },
 

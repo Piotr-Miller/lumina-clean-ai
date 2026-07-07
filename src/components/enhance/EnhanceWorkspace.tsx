@@ -499,6 +499,8 @@ export default function EnhanceWorkspace({
                     {cloudColdStartHint && (
                       <p className="text-xs text-(--lc-faint)">{STRINGS.workspace.coldStartHint}</p>
                     )}
+                    {/* Single-job app, no queue: warn before "Start over" abandons this run. */}
+                    <p className="text-xs text-(--lc-faint)">{STRINGS.workspace.cloudSingleJobHint}</p>
                     <Button type="button" variant="lcquiet" onClick={handleReset} className="gap-2">
                       <RotateCcw className="size-4" />
                       {STRINGS.workspace.startOver}
