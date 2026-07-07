@@ -68,7 +68,7 @@ export const STRINGS = {
         },
         {
           q: "Which files can I upload?",
-          a: 'JPG or PNG up to 25 MB. HEIC isn\'t supported yet. PNGs with transparency get a one-click "Convert to RGB and try again" helper for the cloud model.',
+          a: 'JPG or PNG up to 25 MB. HEIC and RAW support is coming soon. PNGs with transparency get a one-click "Convert to RGB and try again" helper for the cloud model.',
         },
         {
           q: "Why did my first cloud photo take a few minutes?",

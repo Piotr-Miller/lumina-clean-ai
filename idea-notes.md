@@ -16,14 +16,14 @@ Night and low-light photos taken on mobile devices suffer from heavy digital noi
 
 ### What is NOT in MVP Scope
 
-- RAW format support (requires a dedicated server-side decoder and a RAW-domain model — separate Cog pipeline)
+- RAW format support (requires a dedicated server-side decoder and a RAW-domain model — separate Cog pipeline) — **now signalled as "coming soon"** (landing FAQ, 2026-07-07): still out of the current MVP for the reasons noted, but on the public post-MVP roadmap rather than a hard non-goal.
 - Advanced local engine (OpenCV.js / WASM / Web Worker / CLAHE / NLM denoising)
 - WebGPU shader-based processing
 - Magic bytes file validation in Edge Functions
 - Cloudflare Turnstile / WAF bot protection
 - ~~Automatic raw-uploads retention cleanup (pg_cron)~~ — **now implemented** (change `retention-reaper`, Risk #5): an hourly pg_cron sweep deletes lingering `source.*` objects past the 24h-retention NFR window, backstopping the inline on-failure deletion. Reversed after a live prod breach (two source photos lingered ~7.7 days).
 - Newer AI models (e.g. Retinexformer) requiring custom Cog deployment
-- Multi-format import (TIFF, HEIC, etc.)
+- Multi-format import (TIFF, etc.) — **except HEIC, now signalled as "coming soon"** (landing FAQ, 2026-07-07): HEIC is on the public post-MVP roadmap; TIFF and the rest stay out of scope.
 - Social features (sharing galleries, public profiles)
 - Mobile apps (web only at launch)
 
