@@ -388,10 +388,10 @@ None — content and presentation only. Rollback = revert the PR.
 
 #### Automated
 
-- [ ] 5.1 Build emits sitemap incl. all three guides; no sitemap warning
-- [ ] 5.2 Meta description + OG + canonical present on `/` and guides (grep/curl)
+- [x] 5.1 Build emits sitemap incl. all three guides; no sitemap warning
+- [x] 5.2 Meta description + OG + canonical present on `/` and guides (grep/curl)
 
 #### Manual
 
-- [ ] 5.3 Full manual walkthrough (desktop + 375px)
-- [ ] 5.4 Final user acceptance
+- [x] 5.3 Full manual walkthrough (desktop + 375px)
+- [x] 5.4 Final user acceptance

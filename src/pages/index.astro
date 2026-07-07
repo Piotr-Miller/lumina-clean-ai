@@ -58,7 +58,7 @@ const teasers = landing.guides.order.flatMap((slug) => {
 });
 ---
 
-<Layout title={STRINGS.page.title}>
+<Layout title={STRINGS.page.title} description={STRINGS.page.subtitle}>
   <link rel="preload" slot="head" href="/fonts/archivo-800.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" slot="head" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin />
   <main class="min-h-screen bg-(--lc-void) px-4 py-10 text-(--lc-ink) sm:py-14">

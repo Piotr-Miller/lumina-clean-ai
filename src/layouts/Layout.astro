@@ -6,9 +6,33 @@ import { missingConfigs } from "@/lib/config-status";
 
 interface Props {
   title?: string;
+  /** Meta description + OG/Twitter description. Falls back to the brand default. */
+  description?: string;
+  /** OG/Twitter image — absolute or root-relative; resolved against `site`. */
+  ogImage?: string;
+  /** OG type: "website" for chrome pages, "article" for guides. */
+  ogType?: "website" | "article";
+  /** Canonical URL — absolute or root-relative; defaults to site + current path. */
+  canonical?: string | URL;
 }
 
-const { title = "10x Astro Starter" } = Astro.props;
+// Brand default description for chrome pages (auth/dashboard) that pass nothing.
+// A LITERAL here, not in enhance-strings.ts — that module is screen-scoped to `/`;
+// global chrome copy lives at its component (same rule as the Nav tagline).
+const DEFAULT_DESCRIPTION =
+  "Brighten and denoise your night and low-light photos right in your browser — free, no account needed. Cloud AI enhancement with an instant local fallback.";
+
+const {
+  title = "LuminaClean AI",
+  description = DEFAULT_DESCRIPTION,
+  ogImage = "/images/og-card.jpg",
+  ogType = "website",
+  canonical,
+} = Astro.props;
+
+// `site` is set in astro.config.mjs, so Astro.site is defined; guard anyway.
+const canonicalUrl = Astro.site ? new URL(canonical ?? Astro.url.pathname, Astro.site).href : undefined;
+const ogImageUrl = Astro.site ? new URL(ogImage, Astro.site).href : ogImage;
 ---
 
 <!doctype html>
@@ -18,6 +42,21 @@ const { title = "10x Astro Starter" } = Astro.props;
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/png" href="/favicon.png?v=3" />
     <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    {/* Open Graph */}
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content="LuminaClean AI" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageUrl} />
+    {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+    <meta property="og:locale" content="en_US" />
+    {/* Twitter */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
     <slot name="head" />
   </head>
   <body class="bg-cosmic">

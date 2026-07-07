@@ -32,7 +32,13 @@ const published = publishedAt.toLocaleDateString("en-US", {
 });
 ---
 
-<Layout title={`${title} — LuminaClean AI`}>
+<Layout
+  title={`${title} — LuminaClean AI`}
+  description={description}
+  ogImage={cover}
+  ogType="article"
+  canonical={`/guides/${entry.id}/`}
+>
   <link rel="preload" slot="head" href="/fonts/fraunces-600.woff2" as="font" type="font/woff2" crossorigin />
   <main class="min-h-screen bg-(--lc-void) px-4 py-10 text-(--lc-ink) sm:py-14">
     <article class="lc-article mx-auto max-w-[46rem]">

@@ -10,6 +10,9 @@ import sentry from "@sentry/astro";
 // https://astro.build/config
 export default defineConfig({
   output: "server",
+  // Canonical production origin. Revives @astrojs/sitemap (which no-ops without
+  // `site`) and is the base for Layout's canonical + absolute OG image URLs.
+  site: "https://luminacleanai.com",
   // @sentry/astro wires the client SDK (sentry.client.config.ts) + source-map
   // generation + upload. Server capture is the custom workerd entry point
   // (sentry.server.config.ts via wrangler `main`), NOT this integration.
@@ -22,7 +25,14 @@ export default defineConfig({
   // context/changes/sentry-prod-sourcemaps).
   integrations: [
     react(),
-    sitemap(),
+    // The SSR landing `/` is added via customPages; prerendered guides enter
+    // automatically. `filter` drops chrome/transactional routes that route
+    // enumeration also picks up (auth flow + the auth-gated dashboard) — a public
+    // sitemap should list only indexable content: `/` + the three guides.
+    sitemap({
+      customPages: ["https://luminacleanai.com/"],
+      filter: (page) => !/\/(auth|dashboard)(\/|$)/.test(page),
+    }),
     sentry({
       org: process.env.SENTRY_ORG,
       project: process.env.SENTRY_PROJECT,
