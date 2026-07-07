@@ -178,6 +178,19 @@ export const STRINGS = {
       blur: "Smoothing (blur)",
       strength: "Denoise strength",
     },
+    /**
+     * Option tooltips (Phase 4) — one-sentence explainers in the landing
+     * How-it-works voice, keyed by param key plus the Auto chip. NOT E2E-frozen
+     * (the `paramLabels` / Slider aria-labels above are the frozen contract).
+     */
+    tooltips: {
+      gamma:
+        "Lifts shadows to brighten the shot without blowing out the highlights — Auto picks a starting value from your photo.",
+      blur: "Smooths away grain with a gentle blur; too much softens real detail, so Auto keeps it light.",
+      strength:
+        "How hard the cloud AI denoises — higher clears more grain but can flatten fine texture, so it stays conservative.",
+      auto: "Reads your photo and sets every slider for you; nudge any slider to take over, or Recalculate to let Auto try again.",
+    },
   },
 
   /** `useLocalEnhance.ts` — Local engine failures. */

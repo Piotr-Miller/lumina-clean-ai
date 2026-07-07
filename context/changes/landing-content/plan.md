@@ -373,16 +373,16 @@ None — content and presentation only. Rollback = revert the PR.
 
 #### Automated
 
-- [ ] 4.1 `npm run typecheck` passes
-- [ ] 4.2 `npm run test:unit` passes untouched (277)
-- [ ] 4.3 `npm run build` succeeds
-- [ ] 4.4 Lint clean on touched files
-- [ ] 4.5 Freeze-list strings byte-identical (grep)
-- [ ] 4.6 Full `npm run test:e2e` green locally
+- [x] 4.1 `npm run typecheck` passes
+- [x] 4.2 `npm run test:unit` passes untouched (277)
+- [x] 4.3 `npm run build` succeeds
+- [x] 4.4 Lint clean on touched files
+- [x] 4.5 Freeze-list strings byte-identical (grep)
+- [x] 4.6 Full `npm run test:e2e` green locally
 
 #### Manual
 
-- [ ] 4.7 Tooltips verified: hover, keyboard focus, touch; no layout shift
+- [x] 4.7 Tooltips verified: hover, keyboard focus, touch; no layout shift
 
 ### Phase 5: SEO Basics + Close-out
 
