@@ -1,10 +1,10 @@
 ---
 change_id: landing-content
 title: Landing 2.0 — FAQ, how-to, article guides, panel tooltips, nav brand lockup
-status: impl_reviewed
+status: archived
 created: 2026-07-05
 updated: 2026-07-08
-archived_at: null
+archived_at: 2026-07-08T16:57:57Z
 ---
 
 ## Notes

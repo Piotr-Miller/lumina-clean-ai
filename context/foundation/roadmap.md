@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-07-01
+updated: 2026-07-08
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -343,3 +343,4 @@ Items that were once parked but have since been implemented or promoted to a sli
 - **Cloud flip-ON (D.1 — the S-05 + S-08 + S-09 gate) — executed 2026-06-08:** `CLOUD_PIPELINE_ENABLED` flipped ON in prod, `CLOUD_DAILY_CAP=3` (kill-switch `=0`); retention + cold-boot re-validated end-to-end on luminacleanai.com. GUC→Vault webhook migration; two config findings fixed (real Replicate account signing secret + a required explicit `EDGE_FUNCTION_URL`); `DB_WEBHOOK_SECRET` rotated. Archived 2026-06-08 → `context/archive/2026-06-07-cloud-flip-on-revalidation/`. Lesson: self-signing harness can't catch a wrong provider secret; hosted Edge `SUPABASE_URL` isn't public-https → set `EDGE_FUNCTION_URL` (lessons.md).
 - **S-11: a Cloud AI result keeps Bread's low-light enhancement while an adaptive programmatic YCbCr chroma-denoise post-pass reduces colored noise in dark and near-black regions without materially softening luminance detail; the Bread model version is resolved-and-pinned at build/deploy time (no runtime "latest"), recorded per deployment and per prediction.** — Shipped PRs #70 (p1–4) + #74 (p5); Archived 2026-06-25 → `context/archive/2026-06-18-bread-chroma-postpass/`. Lesson: shipped flag-OFF (`CHROMA_POSTPASS_ENABLED=false`) with a recorded ✅ GO — production enable is a separate change; don't lint generated IIFE bundles.
 - **S-12: after selecting a photo, a user sees a responsive parameter panel to the right of the image (moved below it on narrow screens), can adjust Local `gamma` and blur intensity or Bread `gamma` and `strength`, and can start from Auto-recommended values while retaining the ability to override any recommendation by moving its slider.** — Shipped PR #81; Archived 2026-07-01 → `context/archive/2026-06-18-adaptive-enhancement-parameters/`. Lesson: —.
+- **Landing 2.0 (non-roadmap change `landing-content`): the landing grows below the fold with How-it-works / FAQ (5 items) / guide-teaser sections, three full photography guides ship at `/guides/<slug>` as the SEO surface, the parameter panel gains tooltips, the nav carries the LC brand lockup + favicon, and SEO basics go live (sitemap incl. guides, meta/OG/canonical, robots.txt, 1200×630 OG card); plus a Cloud AI single-job notice (inline hint + FAQ) with the shared-daily-cap caveat.** — Shipped PR #89; Archived 2026-07-08 → `context/archive/2026-07-05-landing-content/`. Lesson: —.
