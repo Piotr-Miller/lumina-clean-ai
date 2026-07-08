@@ -15,6 +15,20 @@ Grow the shipped Nocturne × Darkroom Enhance landing (`/`) below the fold with 
 > Localization stays deferred to slice #7 (EN-only here); the `guides` collection
 > leaves room for a later `locale` dimension without a rewrite.
 
+> **Amendment (2026-07-07, after Phase 5, user request):** A Cloud AI **single-job
+> notice** was folded in on two surfaces. (1) A **fifth FAQ item** — "Can I process
+> more than one photo at once?" — grows Phase 3's FAQ from **4 → 5** items (past the
+> board's original "max 4"; see Phase 3 note below). (2) An **inline processing hint**
+> in the Cloud AI state (`src/components/enhance/EnhanceWorkspace.tsx`, string
+> `workspace.cloudSingleJobHint` in `src/lib/enhance-strings.ts`), next to "Start
+> over". Copy uses honest "leaves this run behind" framing — switching photos mid-run
+> abandons the in-flight job (the Replicate prediction may still run server-side and
+> count against the daily cap; no hard cancel is wired — a true cancel + cap-slot free
+> is a separate future task). The inline hint is app-tool copy, slightly outside this
+> change's "landing/SEO content" scope, folded in as a small related copy addition
+> rather than a separate change. Touches the enhance island → full local E2E gate
+> re-run green (6/6). Full rationale in `change.md`.
+
 ## Current State Analysis
 
 - **Landing** (`src/pages/index.astro`) ends at the enhance island — nothing below the fold. Copy lives in `src/lib/enhance-strings.ts` (i18n-ready module from `enhance-ui-refresh`).
@@ -161,7 +175,7 @@ Stand up the `guides` content collection and publish three full EN articles as p
 
 ### Overview
 
-Add the three below-the-fold sections to `index.astro` per the slim Proposal A board: How-it-works (3 cards), FAQ (4 items), guide teasers (3 cards linking to Phase 2 pages — 3-article amendment).
+Add the three below-the-fold sections to `index.astro` per the slim Proposal A board: How-it-works (3 cards), FAQ (4 items — later **5**, see 2026-07-07 amendment above), guide teasers (3 cards linking to Phase 2 pages — 3-article amendment).
 
 ### Changes Required:
 
