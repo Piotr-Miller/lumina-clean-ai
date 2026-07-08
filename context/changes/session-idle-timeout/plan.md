@@ -196,23 +196,23 @@ No data, no schema, no secrets. Deploy = merge to master (CI deploys the Worker)
 
 #### Automated
 
-- [x] 1.1 `npm run typecheck` passes
-- [x] 1.2 `npm run test:unit` passes (new idle-session suite green, existing 277 untouched)
-- [x] 1.3 Lint clean on touched files
+- [x] 1.1 `npm run typecheck` passes — 52a6de0
+- [x] 1.2 `npm run test:unit` passes (new idle-session suite green, existing 277 untouched) — 52a6de0
+- [x] 1.3 Lint clean on touched files — 52a6de0
 
 ### Phase 2: Middleware Wiring + Expiry Notice
 
 #### Automated
 
-- [ ] 2.1 `npm run typecheck` passes
-- [ ] 2.2 `npm run test:unit` passes (full suite)
-- [ ] 2.3 Lint clean on touched files
-- [ ] 2.4 Full existing E2E gate green (`npm run test:e2e`, 5 specs)
+- [x] 2.1 `npm run typecheck` passes
+- [x] 2.2 `npm run test:unit` passes (full suite)
+- [x] 2.3 Lint clean on touched files
+- [x] 2.4 Full existing E2E gate green (`npm run test:e2e`, 5 specs)
 
 #### Manual
 
-- [ ] 2.5 Activity cookie set + advances per navigation (devtools)
-- [ ] 2.6 Backdated cookie → `/dashboard` → signin redirect with inactivity notice
-- [ ] 2.7 Backdated cookie → `/` renders anonymously, Local engine works
-- [ ] 2.8 Explicit signout unaffected; cookie cleaned on next anon request
-- [ ] 2.9 Second browser/profile session survives session A's idle expiry (scope: local proven)
+- [x] 2.5 Activity cookie set + advances per navigation (devtools)
+- [x] 2.6 Backdated cookie → `/dashboard` → signin redirect with inactivity notice
+- [x] 2.7 Backdated cookie → `/` renders anonymously, Local engine works
+- [x] 2.8 Explicit signout unaffected; cookie cleaned on next anon request
+- [x] 2.9 Second browser/profile session survives session A's idle expiry (scope: local proven)
