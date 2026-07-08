@@ -1,10 +1,10 @@
 ---
 change_id: session-idle-timeout
 title: Idle session logout — post-MVP security hardening
-status: impl_reviewed
+status: archived
 created: 2026-07-08
 updated: 2026-07-08
-archived_at: null
+archived_at: 2026-07-08T21:20:14Z
 ---
 
 ## Notes
