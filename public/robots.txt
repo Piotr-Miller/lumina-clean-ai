@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://luminacleanai.com/sitemap-index.xml

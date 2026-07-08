@@ -3,6 +3,7 @@ import EnhanceWorkspace from "@/components/enhance/EnhanceWorkspace";
 import Layout from "@/layouts/Layout.astro";
 import { STRINGS } from "@/lib/enhance-strings";
 import { createClient } from "@/lib/supabase";
+import { getCollection } from "astro:content";
 import { SUPABASE_URL, SUPABASE_KEY, CHROMA_POSTPASS_ENABLED, E2E_CHROMA_OVERRIDE } from "astro:env/server";
 
 const { user } = Astro.locals;
@@ -33,9 +34,31 @@ const chromaEnabled =
   E2E_CHROMA_OVERRIDE && isLoopbackHost && Astro.url.searchParams.get("chroma") === "1"
     ? true
     : CHROMA_POSTPASS_ENABLED;
+
+// Below-the-fold content (Phase 3). Guide teasers read title/cover/reading-time
+// from the typed `guides` collection (Phase 2 schema is the source of truth);
+// only the teaser blurb + section chrome come from STRINGS. Order is pinned by
+// `landing.guides.order` so the cards don't reshuffle with the loader.
+const { landing } = STRINGS;
+const guides = await getCollection("guides");
+const guideById = new Map(guides.map((g) => [g.id, g]));
+const teasers = landing.guides.order.flatMap((slug) => {
+  const g = guideById.get(slug);
+  if (!g) return [];
+  return [
+    {
+      href: `/guides/${slug}`,
+      title: g.data.title,
+      cover: g.data.cover,
+      coverAlt: g.data.coverAlt,
+      readingMinutes: g.data.readingMinutes,
+      blurb: landing.guides.teasers[slug],
+    },
+  ];
+});
 ---
 
-<Layout title={STRINGS.page.title}>
+<Layout title={STRINGS.page.title} description={STRINGS.page.subtitle}>
   <link rel="preload" slot="head" href="/fonts/archivo-800.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" slot="head" href="/fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin />
   <main class="min-h-screen bg-(--lc-void) px-4 py-10 text-(--lc-ink) sm:py-14">
@@ -56,6 +79,94 @@ const chromaEnabled =
         accessToken={accessToken}
         chromaEnabled={chromaEnabled}
       />
+    </div>
+
+    <!-- Below the fold — content sections (Phase 3). Static SSR, no islands;
+         ~104px section rhythm, no borders, colorless except the beam teaser link
+         (kit discipline). Aligned to the tool's max-w-5xl. -->
+    <div class="mx-auto mt-[104px] max-w-5xl space-y-[104px] pb-4">
+      <!-- How it works -->
+      <section aria-labelledby="how-heading">
+        <h2 id="how-heading" class="font-lc-display text-2xl font-extrabold tracking-[-0.03em] sm:text-[26px]">
+          {landing.howItWorks.heading}
+        </h2>
+        <p class="mt-2 max-w-[60ch] text-[13.5px] text-(--lc-dim)">{landing.howItWorks.lede}</p>
+        <div class="mt-5 grid gap-3.5 sm:grid-cols-3">
+          {
+            landing.howItWorks.cards.map((card) => (
+              <div class="rounded-(--lc-radius) bg-(--lc-step-1) p-[18px]">
+                <span class="font-lc-mono text-[9.5px] tracking-[0.14em] text-(--lc-faint) uppercase">
+                  {card.kicker}
+                </span>
+                <h3 class="font-lc-display mt-2 text-[15px] font-extrabold tracking-[-0.01em]">{card.title}</h3>
+                <p class="mt-2 text-[12.5px] leading-[1.55] text-(--lc-dim)">{card.body}</p>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- FAQ — native <details>, all closed by default, no JS -->
+      <section aria-labelledby="faq-heading">
+        <h2 id="faq-heading" class="font-lc-display text-2xl font-extrabold tracking-[-0.03em] sm:text-[26px]">
+          {landing.faq.heading}
+        </h2>
+        <div class="mt-5 overflow-hidden rounded-(--lc-radius) bg-(--lc-step-1)">
+          {
+            landing.faq.items.map((item) => (
+              <details class="group border-t border-white/6 px-5 py-4 first:border-t-0">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-(--lc-ink) [&::-webkit-details-marker]:hidden">
+                  {item.q}
+                  <span
+                    aria-hidden="true"
+                    class="shrink-0 text-(--lc-faint) transition-transform duration-200 group-open:rotate-180"
+                  >
+                    ▾
+                  </span>
+                </summary>
+                <p class="mt-2.5 max-w-[78ch] text-[13px] leading-relaxed text-(--lc-dim)">{item.a}</p>
+              </details>
+            ))
+          }
+        </div>
+      </section>
+
+      <!-- Learn the craft — guide teasers -->
+      <section aria-labelledby="guides-heading">
+        <h2 id="guides-heading" class="font-lc-display text-2xl font-extrabold tracking-[-0.03em] sm:text-[26px]">
+          {landing.guides.heading}
+        </h2>
+        <p class="mt-2 max-w-[60ch] text-[13.5px] text-(--lc-dim)">{landing.guides.lede}</p>
+        <div class="mt-5 grid gap-3.5 sm:grid-cols-3">
+          {
+            teasers.map((t) => (
+              <a
+                href={t.href}
+                class="group block overflow-hidden rounded-(--lc-radius) bg-(--lc-step-1) transition-colors hover:bg-(--lc-step-2)"
+              >
+                <img
+                  src={t.cover}
+                  alt={t.coverAlt}
+                  width="440"
+                  height="150"
+                  loading="lazy"
+                  class="h-[150px] w-full object-cover"
+                />
+                <div class="p-[18px]">
+                  <span class="font-lc-mono text-[9.5px] tracking-[0.14em] text-(--lc-faint) uppercase">
+                    Guide · {t.readingMinutes} min
+                  </span>
+                  <h3 class="font-lc-display mt-2 text-[17px] font-extrabold tracking-[-0.02em]">{t.title}</h3>
+                  <p class="mt-2 text-[12.5px] leading-[1.55] text-(--lc-dim)">{t.blurb}</p>
+                  <span class="bg-beam mt-3 inline-block bg-clip-text text-[12.5px] font-semibold text-transparent">
+                    {landing.guides.readLink}
+                  </span>
+                </div>
+              </a>
+            ))
+          }
+        </div>
+      </section>
     </div>
   </main>
 </Layout>

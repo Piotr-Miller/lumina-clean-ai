@@ -3,6 +3,7 @@ import { STRINGS } from "@/lib/enhance-strings";
 import type { BreadParams, EngineId, LocalParams } from "@/lib/engines/types";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   clampParamValue,
@@ -32,6 +33,9 @@ interface ParameterPanelProps {
 /** Friendly labels per parameter key (values live in the enhance-strings module). */
 const PARAM_LABELS: Record<string, string> = STRINGS.panel.paramLabels;
 
+/** One-sentence option explainers, keyed by param key (Phase 4). */
+const PARAM_TOOLTIPS: Record<string, string> = STRINGS.panel.tooltips;
+
 /** Hairline instrument button — used only inside the panel (kit: Darkroom actions). */
 const PANEL_BUTTON =
   "rounded-md border-(--lc-hairline) bg-transparent text-(--lc-ink) shadow-none hover:bg-(--lc-step-2) hover:text-(--lc-ink)";
@@ -60,93 +64,120 @@ export function ParameterPanel({
   const provisional = isBreadParams(params) && params.provisional === true;
 
   return (
-    <div className="flex w-full flex-col rounded-[6px] border border-(--lc-hairline) bg-(--lc-step-1) text-(--lc-ink)">
-      <div className="flex items-center justify-between gap-2 border-b border-(--lc-hairline) px-4 py-3.5">
-        <h3 className="font-lc-display text-sm font-extrabold tracking-tight">{STRINGS.panel.heading}</h3>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          aria-pressed={auto.on}
-          onClick={auto.onToggle}
-          className={cn(
-            "font-lc-mono h-auto rounded border border-(--lc-hairline) px-2 py-1.5 text-[10px] tracking-[0.1em] uppercase",
-            auto.on
-              ? "bg-(--lc-step-2) text-(--lc-ink) hover:bg-(--lc-step-3) hover:text-(--lc-ink)"
-              : "bg-transparent text-(--lc-faint) hover:bg-(--lc-step-2) hover:text-(--lc-dim)",
-          )}
-        >
-          {STRINGS.panel.auto} {auto.on ? STRINGS.panel.autoOn : STRINGS.panel.autoOff}
-        </Button>
-      </div>
-
-      {keys.map((key) => {
-        const range = ranges[key];
-        const value = values[key];
-        const isOverridden = overridden.has(key);
-        return (
-          <div key={key} className="flex flex-col gap-2.5 px-4 pt-4">
-            <div className="flex items-baseline justify-between gap-2 text-xs">
-              <label htmlFor={`param-${key}`} className="font-medium text-(--lc-dim)">
-                {PARAM_LABELS[key] ?? key}
-                {isOverridden && (
-                  <span className="font-lc-mono ml-1.5 text-[8.5px] tracking-[0.1em] text-(--lc-faint) uppercase">
-                    {STRINGS.panel.adjusted}
-                  </span>
+    <TooltipProvider>
+      <div className="flex w-full flex-col rounded-[6px] border border-(--lc-hairline) bg-(--lc-step-1) text-(--lc-ink)">
+        <div className="flex items-center justify-between gap-2 border-b border-(--lc-hairline) px-4 py-3.5">
+          <h3 className="font-lc-display text-sm font-extrabold tracking-tight">{STRINGS.panel.heading}</h3>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-pressed={auto.on}
+                onClick={auto.onToggle}
+                className={cn(
+                  "font-lc-mono h-auto rounded border border-(--lc-hairline) px-2 py-1.5 text-[10px] tracking-[0.1em] uppercase",
+                  auto.on
+                    ? "bg-(--lc-step-2) text-(--lc-ink) hover:bg-(--lc-step-3) hover:text-(--lc-ink)"
+                    : "bg-transparent text-(--lc-faint) hover:bg-(--lc-step-2) hover:text-(--lc-dim)",
                 )}
-              </label>
-              <span className="font-lc-mono rounded border border-(--lc-hairline) bg-(--lc-step-2) px-1.5 py-1 text-[11.5px] text-(--lc-ink) tabular-nums">
-                {formatParamValue(value, range.step)}
-              </span>
-            </div>
-            <Slider
-              id={`param-${key}`}
-              aria-label={PARAM_LABELS[key] ?? key}
-              min={range.min}
-              max={range.max}
-              step={range.step}
-              value={[value]}
-              onValueChange={(next) => {
-                onChange(key, clampParamValue(next[0], range));
-              }}
-              // Darkroom instrument skin: hairline rail with a brighter filled
-              // segment, a rectangular ink thumb, and tick marks along the foot
-              // of the control (kit foundations card).
-              className="h-5 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.14)_0_1px,transparent_1px_10%)] [background-size:100%_6px] [background-position:0_100%] [background-repeat:no-repeat] [&_[data-slot=slider-range]]:bg-white/70 [&_[data-slot=slider-thumb]]:h-3.5 [&_[data-slot=slider-thumb]]:w-1.5 [&_[data-slot=slider-thumb]]:rounded-[2px] [&_[data-slot=slider-thumb]]:border-0 [&_[data-slot=slider-thumb]]:bg-(--lc-ink) [&_[data-slot=slider-thumb]]:shadow-none [&_[data-slot=slider-track]]:h-0.5 [&_[data-slot=slider-track]]:bg-white/15"
-            />
-          </div>
-        );
-      })}
+              >
+                {STRINGS.panel.auto} {auto.on ? STRINGS.panel.autoOn : STRINGS.panel.autoOff}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{STRINGS.panel.tooltips.auto}</TooltipContent>
+          </Tooltip>
+        </div>
 
-      <div className="flex flex-wrap gap-2 px-4 py-4">
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={auto.onRecalculate}
-          disabled={!auto.on}
-          className={cn("gap-1.5", PANEL_BUTTON)}
-        >
-          <Sparkles className="size-4" />
-          {STRINGS.panel.recalculate}
-        </Button>
-        {hasOverrides && (
+        {keys.map((key) => {
+          const range = ranges[key];
+          const value = values[key];
+          const isOverridden = overridden.has(key);
+          return (
+            <div key={key} className="flex flex-col gap-2.5 px-4 pt-4">
+              <div className="flex items-baseline justify-between gap-2 text-xs">
+                {/* Group wrapper is a <span>, NOT a <label>: the slider is named
+                    by its own aria-label, and a <label> may not contain a labelable
+                    element other than its control — the tooltip trigger is a
+                    <button>, so nesting it in a <label> is invalid HTML. Keeping
+                    the slider's aria-label/id frozen preserves the accessible name.
+                    (Phase 4 review follow-up F1.) */}
+                <span className="font-medium text-(--lc-dim)">
+                  {PARAM_TOOLTIPS[key] ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="cursor-help font-medium text-(--lc-dim) underline decoration-(--lc-faint) decoration-dotted underline-offset-2 transition-colors hover:text-(--lc-ink) hover:decoration-(--lc-dim)"
+                        >
+                          {PARAM_LABELS[key] ?? key}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>{PARAM_TOOLTIPS[key]}</TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    (PARAM_LABELS[key] ?? key)
+                  )}
+                  {isOverridden && (
+                    <span className="font-lc-mono ml-1.5 text-[8.5px] tracking-[0.1em] text-(--lc-faint) uppercase">
+                      {STRINGS.panel.adjusted}
+                    </span>
+                  )}
+                </span>
+                <span className="font-lc-mono rounded border border-(--lc-hairline) bg-(--lc-step-2) px-1.5 py-1 text-[11.5px] text-(--lc-ink) tabular-nums">
+                  {formatParamValue(value, range.step)}
+                </span>
+              </div>
+              <Slider
+                id={`param-${key}`}
+                aria-label={PARAM_LABELS[key] ?? key}
+                min={range.min}
+                max={range.max}
+                step={range.step}
+                value={[value]}
+                onValueChange={(next) => {
+                  onChange(key, clampParamValue(next[0], range));
+                }}
+                // Darkroom instrument skin: hairline rail with a brighter filled
+                // segment, a rectangular ink thumb, and tick marks along the foot
+                // of the control (kit foundations card).
+                className="h-5 bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.14)_0_1px,transparent_1px_10%)] [background-size:100%_6px] [background-position:0_100%] [background-repeat:no-repeat] [&_[data-slot=slider-range]]:bg-white/70 [&_[data-slot=slider-thumb]]:h-3.5 [&_[data-slot=slider-thumb]]:w-1.5 [&_[data-slot=slider-thumb]]:rounded-[2px] [&_[data-slot=slider-thumb]]:border-0 [&_[data-slot=slider-thumb]]:bg-(--lc-ink) [&_[data-slot=slider-thumb]]:shadow-none [&_[data-slot=slider-track]]:h-0.5 [&_[data-slot=slider-track]]:bg-white/15"
+              />
+            </div>
+          );
+        })}
+
+        <div className="flex flex-wrap gap-2 px-4 py-4">
           <Button
             type="button"
             size="sm"
             variant="outline"
-            onClick={onRestoreAuto}
+            onClick={auto.onRecalculate}
+            disabled={!auto.on}
             className={cn("gap-1.5", PANEL_BUTTON)}
           >
-            <RotateCcw className="size-4" />
-            {STRINGS.panel.restoreAuto}
+            <Sparkles className="size-4" />
+            {STRINGS.panel.recalculate}
           </Button>
+          {hasOverrides && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onRestoreAuto}
+              className={cn("gap-1.5", PANEL_BUTTON)}
+            >
+              <RotateCcw className="size-4" />
+              {STRINGS.panel.restoreAuto}
+            </Button>
+          )}
+        </div>
+
+        {engine === "cloud" && provisional && (
+          <p className="px-4 pb-3.5 text-xs leading-relaxed text-(--lc-faint)">{STRINGS.panel.provisionalNote}</p>
         )}
       </div>
-
-      {engine === "cloud" && provisional && (
-        <p className="px-4 pb-3.5 text-xs leading-relaxed text-(--lc-faint)">{STRINGS.panel.provisionalNote}</p>
-      )}
-    </div>
+    </TooltipProvider>
   );
 }
