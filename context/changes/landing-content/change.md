@@ -96,7 +96,10 @@ comments/social.
   board's original "max 4"). Copy uses honest "leaves this run behind" framing —
   the switched-away Replicate prediction may still run server-side and count
   against the daily cap (no hard cancel is wired; a true cancel + cap-slot free
-  is a separate future task). Touches the enhance island → re-ran the full local
+  is a separate future task). **2026-07-08 (post-GLM-review tightening):** both
+  surfaces now spell out that caveat in the shipped copy — the abandoned run "may
+  still finish and count toward today's shared cloud limit" with a "download your
+  result first" nudge — rather than leaving it documented only here. Touches the enhance island → re-ran the full local
   E2E gate (6/6 green). Scope note: the inline hint is app-tool copy, slightly
   outside landing-content's "landing/SEO content" scope, folded in here as a
   small related copy addition rather than a separate change.
