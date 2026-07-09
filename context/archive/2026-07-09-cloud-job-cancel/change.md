@@ -1,10 +1,10 @@
 ---
 change_id: cloud-job-cancel
 title: Hard-cancel an in-flight Cloud AI job (button) + delete its orphaned source
-status: implemented
+status: archived
 created: 2026-07-09
 updated: 2026-07-09
-archived_at: null
+archived_at: 2026-07-09T21:44:09Z
 ---
 
 ## Notes
