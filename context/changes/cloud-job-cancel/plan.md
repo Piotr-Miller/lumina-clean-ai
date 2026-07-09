@@ -290,7 +290,7 @@ One guarded UPDATE + one storage delete per cancel (already the `/timeout` cost)
 - [x] 1.1 `npm run typecheck` passes — 33317ab
 - [x] 1.2 `npm run test:unit` passes (new hermetic `cancel.handler` suite green, existing untouched) — 33317ab
 - [x] 1.3 Lint clean on touched files — 33317ab
-- [ ] 1.4 Integration cancel IDOR/flip block green (`jobs.rls.test.ts`, real local Supabase / CI `integration` job)
+- [x] 1.4 Integration cancel IDOR/flip block green (`jobs.rls.test.ts`, real local Supabase / CI `integration` job) — CI run 29044452442 (PR #93)
 
 ### Phase 2: Edge `/cancel` Sub-path (true Replicate compute kill)
 
@@ -313,7 +313,7 @@ One guarded UPDATE + one storage delete per cancel (already the `/timeout` cost)
 - [x] 3.1 `npm run typecheck` passes — 85db0ae
 - [x] 3.2 `npm run test:unit` passes (new `shouldCancelInFlight` cases green) — 85db0ae
 - [x] 3.3 Lint clean on touched files — 85db0ae
-- [ ] 3.4 Full existing E2E gate green (`npm run test:e2e`, 5 specs) — CI-verified (Docker down locally)
+- [x] 3.4 Full existing E2E gate green (`npm run test:e2e`, 5 specs) — CI run 29044452442 (PR #93)
 
 #### Manual
 
