@@ -177,6 +177,30 @@ describe("cancelCloudJobResponse — best-effort Edge compute-cancel (Phase 2)",
     }
   });
 
+  it("logs (but swallows) a resolved non-2xx Edge response, still 200 { canceled: true }", async () => {
+    const { admin } = makeStubAdmin(null, MATCHED);
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("unauthorized", { status: 401 }));
+    try {
+      const res = await cancelCloudJobResponse({
+        user: USER,
+        request: jsonRequest({ jobId: JOB_ID }),
+        admin,
+        edge: EDGE,
+      });
+
+      // The DB flip is authoritative — a non-OK Edge response doesn't change it.
+      expect(res.status).toBe(200);
+      expect(await readBody(res)).toEqual({ canceled: true });
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      // …but the failure IS surfaced (not silently treated as success).
+      expect(errSpy).toHaveBeenCalledWith(expect.stringContaining("401"));
+    } finally {
+      fetchSpy.mockRestore();
+      errSpy.mockRestore();
+    }
+  });
+
   it("does not call the Edge when the flip was a no-op (canceled:false)", async () => {
     const { admin } = makeStubAdmin(null, []); // no matched row → nothing in flight to cancel
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));

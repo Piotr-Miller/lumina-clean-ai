@@ -71,12 +71,22 @@ const EDGE_CANCEL_TIMEOUT_MS = 5000;
  */
 async function fireEdgeCancel(edge: { url: string; secret: string }, jobId: string): Promise<void> {
   try {
-    await fetch(`${edge.url.replace(/\/$/, "")}/cancel`, {
+    const res = await fetch(`${edge.url.replace(/\/$/, "")}/cancel`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${edge.secret}` },
       body: JSON.stringify({ jobId }),
       signal: AbortSignal.timeout(EDGE_CANCEL_TIMEOUT_MS),
     });
+    if (!res.ok) {
+      // A RESOLVED HTTP failure (401 wrong shared secret, 500 while resolving the
+      // prediction id, …) does NOT reject fetch — without this it would be
+      // swallowed as success. Surface status + a bounded body so a miswired seam
+      // shows up in logs instead of only in a live smoke. Still best-effort: the
+      // row is already terminal, so we log and move on (never throw out).
+      const detail = (await res.text().catch(() => "")).slice(0, 200);
+      // eslint-disable-next-line no-console
+      console.error(`cancel: edge compute-cancel returned ${String(res.status)} (best-effort): ${detail}`);
+    }
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("cancel: edge compute-cancel failed (best-effort):", err instanceof Error ? err.message : err);
