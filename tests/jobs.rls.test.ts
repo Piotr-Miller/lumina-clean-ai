@@ -10,6 +10,8 @@ import {
 } from "@/lib/services/photo-job.service";
 import { BREAD_VERSION } from "@/lib/services/bread";
 import { failTimedOutJobResponse } from "@/lib/services/timeout.handler";
+import { cancelCloudJobResponse } from "@/lib/services/cancel.handler";
+import { STRINGS } from "@/lib/enhance-strings";
 import { supabaseAdmin, supabaseAnonKey, supabaseUrl } from "./env";
 import { createTestUser, deleteTestUser, type TestUser } from "./helpers/test-users";
 
@@ -675,5 +677,155 @@ describe("POST /api/enhance/cloud/timeout — cross-user IDOR (route boundary)",
     expect(error).toBeNull();
     expect(row?.status).toBe("failed");
     expect(row?.error_code).toBe("timeout");
+  });
+});
+
+/**
+ * Risk #4 (IDOR) + flip semantics at the CANCEL route-core boundary
+ * (change `cloud-job-cancel`, Phase 1). Like `/timeout`, the cancel route accepts
+ * a client-supplied `jobId` and mutates it through the RLS-bypassing service-role
+ * client, so only a real row proves the `.eq("user_id")` guard has teeth (lesson:
+ * client-supplied ids route through owner-scoped mutations — a stub can't catch a
+ * regression to an id-only helper). Mirrors the timeout IDOR block above, plus the
+ * cancel-specific assertions: the owner flip persists `failed`/`error_code:"canceled"`
+ * and deletes the source, and an already-terminal row is a no-op.
+ */
+describe("POST /api/enhance/cloud/cancel — cross-user IDOR + flip (route boundary)", () => {
+  const created: TestUser[] = [];
+
+  afterEach(async () => {
+    for (const u of created) {
+      await deleteTestUser(u.id);
+    }
+    created.length = 0;
+  });
+
+  async function makeUser(prefix?: string): Promise<TestUser> {
+    const u = await createTestUser(prefix);
+    created.push(u);
+    return u;
+  }
+
+  function cancelRequest(jobId: string): Request {
+    return new Request("https://example.test/api/enhance/cloud/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId }),
+    });
+  }
+
+  async function insertProcessingJob(ownerId: string): Promise<string> {
+    const jobId = crypto.randomUUID();
+    const { error } = await supabaseAdmin.from("jobs").insert({
+      id: jobId,
+      user_id: ownerId,
+      status: "processing",
+      source_path: `${ownerId}/${jobId}/source.jpg`,
+    });
+    expect(error).toBeNull();
+    return jobId;
+  }
+
+  async function sourceExists(userId: string, jobId: string): Promise<boolean> {
+    const { data } = await supabaseAdmin.storage.from(PHOTOS_BUCKET).list(`${userId}/${jobId}`);
+    return data?.some((f) => f.name === "source.jpg") ?? false;
+  }
+
+  it("user B supplying user A's jobId cancels nothing and leaves A's row untouched", async () => {
+    const a = await makeUser("cancel-idor-a");
+    const b = await makeUser("cancel-idor-b");
+    const jobId = await insertProcessingJob(a.id);
+
+    // B (authenticated) targets A's job via the route core.
+    const res = await cancelCloudJobResponse({
+      user: { id: b.id },
+      request: cancelRequest(jobId),
+      admin: supabaseAdmin,
+      edge: null,
+    });
+
+    // Live contract: a foreign/non-matching jobId is a silent no-op, not 403/404.
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ canceled: false });
+
+    // A's row is provably unmutated.
+    const { data: row, error } = await supabaseAdmin
+      .from("jobs")
+      .select("status, error_code, completed_at")
+      .eq("id", jobId)
+      .single();
+    expect(error).toBeNull();
+    expect(row?.status).toBe("processing");
+    expect(row?.error_code).toBeNull();
+    expect(row?.completed_at).toBeNull();
+  });
+
+  it("user A canceling their OWN in-flight job flips it to failed('canceled') and deletes the source", async () => {
+    const a = await makeUser("cancel-owner");
+
+    // Real job + uploaded source so the source-delete on cancel is provable.
+    const job = await createPhotoJob(supabaseAdmin, { userId: a.id, fileExtension: "jpg", mimeType: "image/jpeg" });
+    const put = await fetch(job.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "image/jpeg" },
+      body: tinyJpegPayload() as BodyInit,
+    });
+    expect(put.status).toBeGreaterThanOrEqual(200);
+    expect(put.status).toBeLessThan(300);
+    // Move to `processing` — a cancelable in-flight state.
+    const claimed = await claimJobForProcessing(supabaseAdmin, job.jobId);
+    expect(claimed?.id).toBe(job.jobId);
+    expect(await sourceExists(a.id, job.jobId)).toBe(true);
+
+    const res = await cancelCloudJobResponse({
+      user: { id: a.id },
+      request: cancelRequest(job.jobId),
+      admin: supabaseAdmin,
+      edge: null,
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ canceled: true });
+
+    // Persisted terminal state: failed + the distinct cancel error_code/message.
+    const { data: row, error } = await supabaseAdmin
+      .from("jobs")
+      .select("status, error_code, error_message, completed_at")
+      .eq("id", job.jobId)
+      .single();
+    expect(error).toBeNull();
+    expect(row?.status).toBe("failed");
+    expect(row?.error_code).toBe("canceled");
+    expect(row?.error_message).toBe(STRINGS.cloudErrors.canceled);
+    expect(row?.completed_at).not.toBeNull();
+
+    // Source object is gone.
+    expect(await sourceExists(a.id, job.jobId)).toBe(false);
+  });
+
+  it("canceling an already-terminal job is a no-op (canceled:false, row unchanged)", async () => {
+    const a = await makeUser("cancel-terminal");
+    const jobId = await insertProcessingJob(a.id);
+
+    // The job already succeeded when the cancel arrives (race): the guard
+    // (.in status [queued,processing]) must not resurrect or overwrite it.
+    await supabaseAdmin
+      .from("jobs")
+      .update({ status: "succeeded", result_path: `${a.id}/${jobId}/result.jpg` })
+      .eq("id", jobId);
+
+    const res = await cancelCloudJobResponse({
+      user: { id: a.id },
+      request: cancelRequest(jobId),
+      admin: supabaseAdmin,
+      edge: null,
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ canceled: false });
+
+    const { data: row } = await supabaseAdmin.from("jobs").select("status, error_code").eq("id", jobId).single();
+    expect(row?.status).toBe("succeeded");
+    expect(row?.error_code).toBeNull();
   });
 });

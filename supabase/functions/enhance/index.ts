@@ -686,6 +686,58 @@ async function handleReap(req: Request): Promise<Response> {
   return jsonResponse(200, { swept: flipped + deleted });
 }
 
+// User-initiated hard-cancel (change `cloud-job-cancel`). The Astro cancel route
+// has already flipped the job terminal + deleted its source under the service
+// role; this route stops the paid Replicate compute — the token lives ONLY here.
+// Authenticated with the same shared DB-webhook bearer as /start + /reap (the
+// Worker is the trusted internal caller; it enforced ownership before proxying).
+// Reading the row's prediction id + calling Replicate's cancel is best-effort: a
+// null id (job canceled while still `queued`, before /start created a prediction)
+// or a missing token is a 200 no-op — the row is already terminal regardless.
+// Deliberately NOT gated on CLOUD_PIPELINE_ENABLED (like /reap): a cancel must
+// work even when the pipeline is paused.
+async function handleCancel(req: Request): Promise<Response> {
+  const expectedSecret = Deno.env.get("DB_WEBHOOK_SECRET");
+  if (!expectedSecret) {
+    return jsonResponse(500, { error: { code: "internal_error", message: "DB_WEBHOOK_SECRET not set" } });
+  }
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!(await digestEquals(authHeader, `Bearer ${expectedSecret}`))) {
+    return jsonResponse(401, { error: { code: "unauthorized", message: "invalid webhook bearer" } });
+  }
+
+  let jobId: string;
+  try {
+    const body = (await req.json()) as { jobId?: unknown };
+    if (typeof body.jobId !== "string" || body.jobId.length === 0) {
+      return jsonResponse(400, { error: { code: "invalid_body", message: "expected a jobId" } });
+    }
+    jobId = body.jobId;
+  } catch {
+    return jsonResponse(400, { error: { code: "invalid_body", message: "body must be valid JSON" } });
+  }
+
+  const replicateToken = Deno.env.get("REPLICATE_API_TOKEN");
+  if (!replicateToken) {
+    // No token configured → nothing to cancel provider-side; row already terminal.
+    return jsonResponse(200, { canceled: false });
+  }
+
+  const admin = buildAdminClient();
+  const job = await getJobById(admin, jobId);
+  const predictionId = job?.replicate_prediction_id ?? null;
+  if (!predictionId) {
+    // Canceled before /start created a prediction (still `queued`), or already
+    // cleaned — nothing to cancel provider-side.
+    return jsonResponse(200, { canceled: false });
+  }
+
+  // Best-effort: cancelReplicatePrediction swallows + Sentry-captures its own
+  // failures, so a provider error still returns 200 (the row is terminal anyway).
+  await cancelReplicatePrediction(replicateToken, predictionId);
+  return jsonResponse(200, { canceled: true });
+}
+
 Deno.serve(async (req) => {
   const { pathname } = new URL(req.url);
 
@@ -699,6 +751,9 @@ Deno.serve(async (req) => {
   }
   if (req.method === "POST" && pathname.endsWith("/reap")) {
     return await handleReap(req);
+  }
+  if (req.method === "POST" && pathname.endsWith("/cancel")) {
+    return await handleCancel(req);
   }
 
   return jsonResponse(404, { error: { code: "not_found", message: "unknown route" } });

@@ -66,6 +66,17 @@ export function shouldFailAfterQueuedReRead(readStatus: PhotoJobStatus | null): 
   return readStatus === null || readStatus === "queued";
 }
 
+/**
+ * Whether a cancel click should fire the backend hard-cancel (change
+ * `cloud-job-cancel`): only for an in-flight (`processing`) job with a known id —
+ * that's the one state with a running prediction to stop. Every other phase
+ * (idle / succeeded / failed) keeps the pure client reset; there is nothing to
+ * cancel server-side. Consumed by the workspace's mid-processing button.
+ */
+export function shouldCancelInFlight(phase: CloudJobPhase, jobId: string | null): boolean {
+  return phase === "processing" && jobId !== null;
+}
+
 /** Inputs to {@link deriveCloudPhase} — the live job state the render phase derives from. */
 export interface CloudPhaseInput {
   jobId: string | null;

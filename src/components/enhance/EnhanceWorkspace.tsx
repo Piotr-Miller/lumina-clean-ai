@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleAlert, CloudUpload, RotateCcw, Sparkles } from "lucide-react";
 import { STRINGS } from "@/lib/enhance-strings";
+import { cancelCloudJob } from "@/lib/services/cloud-cancel.client";
 import type { BreadParams, EngineId, LocalParams, LumaStats } from "@/lib/engines/types";
 import { PARAM_RANGES, recommendParams } from "@/lib/engines/auto-params";
 import { sampleImageLuma } from "@/lib/engines/auto-params.client";
@@ -8,6 +9,7 @@ import { flattenToRgbJpeg } from "@/lib/engines/canvas-helpers";
 import { Button } from "@/components/ui/button";
 import { useBeforeUnloadWarning } from "@/components/hooks/useBeforeUnloadWarning";
 import { useCloudJob } from "@/components/hooks/useCloudJob";
+import { shouldCancelInFlight } from "@/components/hooks/cloud-job-decisions";
 import { useCloudSubmit } from "@/components/hooks/useCloudSubmit";
 import { useDebouncedValue } from "@/components/hooks/useDebouncedValue";
 import { useLocalEnhance } from "@/components/hooks/useLocalEnhance";
@@ -257,6 +259,19 @@ export default function EnhanceWorkspace({
     setConverting(false);
   }
 
+  // Mid-processing cancel (change `cloud-job-cancel`): fold a real backend
+  // hard-cancel into what was the mid-run "Start over". Capture the job id BEFORE
+  // `handleReset` nulls `cloudSubmit.jobId`, fire the best-effort cancel POST for
+  // an in-flight job only, then run the same optimistic client teardown — no
+  // waiting on the network (the server guard + reaper backstop a lost POST).
+  function handleCancelInFlight() {
+    const jobId = cloudSubmit.jobId;
+    if (shouldCancelInFlight(cloudPhase, jobId) && jobId !== null) {
+      cancelCloudJob(jobId);
+    }
+    handleReset();
+  }
+
   // RGBA recovery: flatten the source to an opaque RGB JPEG, hand it to the SAME
   // accept seam the uploader uses (keeps the preview/local state aligned and feeds
   // `useCloudSubmit`), then arm the re-submit effect. Flattening is one canvas
@@ -499,9 +514,10 @@ export default function EnhanceWorkspace({
                     {cloudColdStartHint && (
                       <p className="text-xs text-(--lc-faint)">{STRINGS.workspace.coldStartHint}</p>
                     )}
-                    {/* Single-job app, no queue: warn before "Start over" abandons this run. */}
+                    {/* Single-job app, no queue: "Start over" mid-processing hard-cancels
+                        this run + deletes the uploaded source (change cloud-job-cancel). */}
                     <p className="text-xs text-(--lc-faint)">{STRINGS.workspace.cloudSingleJobHint}</p>
-                    <Button type="button" variant="lcquiet" onClick={handleReset} className="gap-2">
+                    <Button type="button" variant="lcquiet" onClick={handleCancelInFlight} className="gap-2">
                       <RotateCcw className="size-4" />
                       {STRINGS.workspace.startOver}
                     </Button>

@@ -149,9 +149,9 @@ export const STRINGS = {
     /** E2E freeze: processing status line (asserted visible, then gone). */
     enhancingInCloud: "Enhancing in the cloud…",
     coldStartHint: "The first run after idle can take a few minutes.",
-    /** Shown during cloud processing: single-job app, no queue; an abandoned run may still finish server-side and count toward the shared daily cap (honest framing). */
+    /** Shown during cloud processing (change `cloud-job-cancel`): Start over now hard-cancels the running job AND deletes the uploaded source; a job that already reached the model may still count toward the shared daily cap (honest framing). */
     cloudSingleJobHint:
-      "One photo at a time (no queue). Starting over leaves this run behind — it may still finish and count toward today's shared cloud limit, so download your result first.",
+      "One photo at a time (no queue). Start over cancels this cloud job and deletes the photo you uploaded — if processing already began, it may still count toward today's shared cloud limit.",
     convertFailed: "We couldn't convert this image. Please try another photo.",
   },
 
@@ -226,6 +226,13 @@ export const STRINGS = {
     providerRateLimited: "Cloud AI is busy right now — please try again in a moment, or switch to the Local engine.",
     rgbaAlpha: "This image has a transparency layer the cloud model can't read. Convert it to RGB and try again.",
     resultLoad: "The enhanced result couldn't be loaded. Please try again.",
+    /**
+     * Row-level copy for a user-initiated hard-cancel (change `cloud-job-cancel`).
+     * Not surfaced in the UI — the workspace resets optimistically on cancel — so
+     * this is the authoritative `error_message` written to the canceled row for
+     * records/history, parallel to `timeout`.
+     */
+    canceled: "You canceled this job.",
   },
 
   /** `cloud-upload.client.ts` — create-job route + signed-upload failures. */
