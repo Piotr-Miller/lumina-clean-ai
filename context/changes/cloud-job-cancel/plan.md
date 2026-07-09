@@ -209,7 +209,7 @@ Wire the user-facing cancel: a pure enablement predicate, a best-effort client P
 
 **Intent**: The mid-processing "Start over" becomes a real cancel: fire the backend cancel for the in-flight job, then run the existing client reset. Other branches (succeeded/failed/pre-submit) keep plain `handleReset`.
 
-**Contract**: Add `handleCancelInFlight()` — capture `const jobId = cloudSubmit.jobId` (before reset nulls it); if `shouldCancelInFlight(cloudPhase, jobId)` then `cancelCloudJob(jobId)`; then call `handleReset()`. Wire the processing-branch button (`:504-507`) `onClick` to it and change its label to `STRINGS.workspace.cancel` (new string, e.g. "Cancel"). Leave the succeeded (`:447-450`), failed (`:488-490`), and pre-submit (`:382-384`, `:403-405`, `:432-434`) buttons on `handleReset`. `useBeforeUnloadWarning` disarms automatically once `cloudPhase` leaves `processing` post-reset.
+**Contract**: Add `handleCancelInFlight()` — capture `const jobId = cloudSubmit.jobId` (before reset nulls it); if `shouldCancelInFlight(cloudPhase, jobId)` (with a `jobId !== null` type-narrow) then `cancelCloudJob(jobId)`; then call `handleReset()`. Wire the processing-branch button (`:504-507`) `onClick` to it. **Keep the E2E-frozen "Start over" label + icon** — user decision 2026-07-09: keep the familiar label and communicate the new behavior in the hint rather than renaming to "Cancel" (also preserves the E2E locator contract). Update `STRINGS.workspace.cloudSingleJobHint` to state that Start over **cancels the running cloud job AND deletes the uploaded photo** (keeping the honest "may still count toward the daily cap" caveat, since a job that reached the model still counts). Leave the succeeded (`:447-450`), failed (`:488-490`), and pre-submit (`:382-384`, `:403-405`, `:432-434`) buttons on `handleReset`. `useBeforeUnloadWarning` disarms automatically once `cloudPhase` leaves `processing` post-reset.
 
 #### 4. Predicate unit tests
 
@@ -310,10 +310,10 @@ One guarded UPDATE + one storage delete per cancel (already the `/timeout` cost)
 
 #### Automated
 
-- [ ] 3.1 `npm run typecheck` passes
-- [ ] 3.2 `npm run test:unit` passes (new `shouldCancelInFlight` cases green)
-- [ ] 3.3 Lint clean on touched files
-- [ ] 3.4 Full existing E2E gate green (`npm run test:e2e`, 5 specs)
+- [x] 3.1 `npm run typecheck` passes
+- [x] 3.2 `npm run test:unit` passes (new `shouldCancelInFlight` cases green)
+- [x] 3.3 Lint clean on touched files
+- [ ] 3.4 Full existing E2E gate green (`npm run test:e2e`, 5 specs) — CI-verified (Docker down locally)
 
 #### Manual
 

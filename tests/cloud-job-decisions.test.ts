@@ -5,6 +5,7 @@ import {
   isRgbaAlphaError,
   isTerminalStatus,
   shouldArmProcessingBudget,
+  shouldCancelInFlight,
   shouldFailAfterQueuedReRead,
   TIMEOUT_MESSAGE,
   GENERIC_FAILED_MESSAGE,
@@ -255,5 +256,21 @@ describe("isTerminalStatus", () => {
   it("is not terminal for queued and processing", () => {
     expect(isTerminalStatus("queued")).toBe(false);
     expect(isTerminalStatus("processing")).toBe(false);
+  });
+});
+
+describe("shouldCancelInFlight", () => {
+  it("fires the backend cancel only for an in-flight job with an id", () => {
+    expect(shouldCancelInFlight("processing", "job-1")).toBe(true);
+  });
+
+  it("does not fire without a job id — nothing is running to cancel", () => {
+    expect(shouldCancelInFlight("processing", null)).toBe(false);
+  });
+
+  it("does not fire outside the processing phase (idle/succeeded/failed keep the pure reset)", () => {
+    expect(shouldCancelInFlight("idle", "job-1")).toBe(false);
+    expect(shouldCancelInFlight("succeeded", "job-1")).toBe(false);
+    expect(shouldCancelInFlight("failed", "job-1")).toBe(false);
   });
 });

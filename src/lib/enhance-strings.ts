@@ -149,9 +149,9 @@ export const STRINGS = {
     /** E2E freeze: processing status line (asserted visible, then gone). */
     enhancingInCloud: "Enhancing in the cloud…",
     coldStartHint: "The first run after idle can take a few minutes.",
-    /** Shown during cloud processing: single-job app, no queue; an abandoned run may still finish server-side and count toward the shared daily cap (honest framing). */
+    /** Shown during cloud processing (change `cloud-job-cancel`): Start over now hard-cancels the running job AND deletes the uploaded source; a job that already reached the model may still count toward the shared daily cap (honest framing). */
     cloudSingleJobHint:
-      "One photo at a time (no queue). Starting over leaves this run behind — it may still finish and count toward today's shared cloud limit, so download your result first.",
+      "One photo at a time (no queue). Start over cancels this cloud job and deletes the photo you uploaded — if processing already began, it may still count toward today's shared cloud limit.",
     convertFailed: "We couldn't convert this image. Please try another photo.",
   },
 
