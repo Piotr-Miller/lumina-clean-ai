@@ -303,8 +303,8 @@ One guarded UPDATE + one storage delete per cancel (already the `/timeout` cost)
 
 #### Manual
 
-- [ ] 2.5 Live Edge `/cancel` smoke: correct bearer + real `processing` job → 200 + Replicate prediction `canceled`; wrong bearer → 401
-- [ ] 2.6 `queued` job (no prediction id) → 200 `{ canceled: false }`, no error
+- [ ] 2.5 Live Edge `/cancel` smoke: correct bearer + real `processing` job → 200 + Replicate prediction `canceled`; wrong bearer → 401 — auth (401), routing, and body-validation verified via local Edge smoke (2026-07-09); **real-prediction cancel → prod smoke** (needs a live in-flight prediction)
+- [x] 2.6 `queued` job (no prediction id) → 200 `{ canceled: false }`, no error — local Edge smoke 2026-07-09 (`200 {"canceled":false}`)
 
 ### Phase 3: Client — fold cancel into the mid-processing button
 
@@ -317,7 +317,9 @@ One guarded UPDATE + one storage delete per cancel (already the `/timeout` cost)
 
 #### Manual
 
-- [ ] 3.5 Mid-`processing` Cancel → UI resets, row `failed`/`canceled`, source deleted, Replicate prediction `canceled`
-- [ ] 3.6 `queued`-window cancel → flip + source delete, no error
-- [ ] 3.7 Success-race cancel → silent no-op, no crash
-- [ ] 3.8 Succeeded/failed/pre-submit reset buttons unchanged (no backend call)
+- [ ] 3.5 Mid-`processing` Cancel → UI resets, row `failed`/`canceled`, source deleted, Replicate prediction `canceled` — **→ prod smoke**
+- [ ] 3.6 `queued`-window cancel → flip + source delete, no error — **→ prod smoke**
+- [ ] 3.7 Success-race cancel → silent no-op, no crash — **→ prod smoke**
+- [ ] 3.8 Succeeded/failed/pre-submit reset buttons unchanged (no backend call) — **→ prod smoke**
+
+> **Deferred to prod smoke (2026-07-09).** The browser cancel flow (`3.5`–`3.8`) and `2.5`'s real-prediction cancel could not run locally: the local `.dev.vars` keys are stale (anon → 401) and the configured Edge tunnel is dead, so a cloud job never reaches `processing` locally. The pipeline + enhance UI are already exercised end-to-end by the **green E2E gate (`3.4`)** under the stub harness, and the cancel route's DB flip + source-delete + owner-scoping by the **green integration block (`1.4`)**. Verify the remaining items post-deploy (real running job → click Start over → row `failed`/`error_code:"canceled"` + source deleted + Replicate prediction `canceled`) per the `context/foundation/cloud-live-smoke.md` pattern. **Prod prerequisite:** set the Worker secrets `EDGE_FUNCTION_URL` + `DB_WEBHOOK_SECRET` (unset → cancel degrades to DB-flip + source-delete, no compute kill).
