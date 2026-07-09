@@ -56,6 +56,33 @@ export interface CancelCloudJobInput {
 /** Body: just the job to cancel. `userId` comes from the session, never the body. */
 const cancelRequestSchema = z.object({ jobId: z.uuid() });
 
+/** Bounded budget for the best-effort Edge compute-cancel proxy (awaited, see below). */
+const EDGE_CANCEL_TIMEOUT_MS = 5000;
+
+/**
+ * Best-effort proxy of the Replicate compute-cancel to the enhance Edge Function
+ * (the only holder of the Replicate token), authenticated with the shared bearer.
+ *
+ * AWAITED, not fire-and-forget: on Cloudflare Workers a floating promise is
+ * cancelled once the response is returned, which would silently skip the compute
+ * kill. Never throws — a failed/timed-out call is swallowed (the row is already
+ * terminal + source-deleted; the reaper + orphan-callback idempotency backstop
+ * the residual prediction).
+ */
+async function fireEdgeCancel(edge: { url: string; secret: string }, jobId: string): Promise<void> {
+  try {
+    await fetch(`${edge.url.replace(/\/$/, "")}/cancel`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${edge.secret}` },
+      body: JSON.stringify({ jobId }),
+      signal: AbortSignal.timeout(EDGE_CANCEL_TIMEOUT_MS),
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error("cancel: edge compute-cancel failed (best-effort):", err instanceof Error ? err.message : err);
+  }
+}
+
 /**
  * User-initiated hard-cancel: flip a still-pending job to `failed` +
  * `error_code: "canceled"` and delete its source, owner-scoped.
@@ -69,7 +96,7 @@ const cancelRequestSchema = z.object({ jobId: z.uuid() });
  * way; `canceled` tells the caller whether this request actually flipped the row.
  */
 export async function cancelCloudJobResponse(input: CancelCloudJobInput): Promise<Response> {
-  const { user, request, admin } = input;
+  const { user, request, admin, edge } = input;
 
   if (!user) {
     return json({ error: { code: "unauthorized", message: "Sign in to use Cloud AI." } }, 401);
@@ -96,9 +123,14 @@ export async function cancelCloudJobResponse(input: CancelCloudJobInput): Promis
       errorCode: "canceled",
       errorMessage: STRINGS.cloudErrors.canceled,
     });
-    // Phase 2: when `input.edge` is set, fire the best-effort Replicate
-    // compute-cancel here (the Edge Function holds the token). Awaited, never
-    // fails the route. Until then the flip + source-delete above is the whole job.
+    // True hard-cancel: stop the paid Replicate compute via the Edge Function
+    // (only it holds the token). Only when we actually flipped a row — a no-op
+    // flip (foreign/already-terminal job) has no in-flight prediction to cancel —
+    // and only when the Edge seam is configured (`edge` null → degrade to
+    // DB-flip + source-delete). Best-effort: never fails the route.
+    if (canceled && edge) {
+      await fireEdgeCancel(edge, parsed.data.jobId);
+    }
     return json({ canceled }, 200);
   } catch (err) {
     // eslint-disable-next-line no-console

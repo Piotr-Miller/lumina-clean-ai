@@ -45,14 +45,19 @@ function rawRequest(body: string): Request {
 /**
  * Stub admin client. The owner-scoped guarded UPDATE
  * (`from(...).update(...).eq(...).eq(...).in(...).select(...)`) resolves
- * (thenable) to `{ data: [], error: updateError }` — the hermetic tests here
- * never need a matched row, they only exercise the reject paths and the
- * error → 500 mapping. `from` and `storage...remove` are spies so we can assert
- * the reject paths never touch the DB or storage.
+ * (thenable) to `{ data: updatedRows, error: updateError }`. Most hermetic tests
+ * use the default empty `updatedRows` (they exercise only the reject paths + the
+ * error → 500 mapping); `updatedRows` is supplied ONLY to reach the `canceled:
+ * true` path for the best-effort Edge proxy test — it is NOT an owner-scoping
+ * proof (that lives in `jobs.rls.test.ts`). `from` and `storage...remove` are
+ * spies so we can assert the reject paths never touch the DB or storage.
  */
-function makeStubAdmin(updateError: { message: string } | null = null) {
+function makeStubAdmin(
+  updateError: { message: string } | null = null,
+  updatedRows: { id: string; source_path: string }[] = [],
+) {
   const remove = vi.fn().mockResolvedValue({ data: [], error: null });
-  const resolved = { data: [] as { id: string; source_path: string }[], error: updateError };
+  const resolved = { data: updatedRows, error: updateError };
 
   const builder: Record<string, unknown> = {};
   for (const method of ["update", "select", "eq", "in"]) {
@@ -141,6 +146,72 @@ describe("cancelCloudJobResponse — service error mapping", () => {
     expect(res.status).toBe(500);
     expect((await readBody(res)).error?.code).toBe("internal_error");
     expect(remove).not.toHaveBeenCalled();
+  });
+});
+
+describe("cancelCloudJobResponse — best-effort Edge compute-cancel (Phase 2)", () => {
+  const EDGE = { url: "https://edge.test/functions/v1/enhance", secret: "shh" };
+  const MATCHED = [{ id: JOB_ID, source_path: `u/${JOB_ID}/source.jpg` }];
+
+  it("still returns 200 { canceled: true } when the Edge cancel fetch fails", async () => {
+    const { admin } = makeStubAdmin(null, MATCHED);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("edge down"));
+    try {
+      const res = await cancelCloudJobResponse({
+        user: USER,
+        request: jsonRequest({ jobId: JOB_ID }),
+        admin,
+        edge: EDGE,
+      });
+
+      // The rejected Edge proxy is swallowed — the DB flip is authoritative.
+      expect(res.status).toBe(200);
+      expect(await readBody(res)).toEqual({ canceled: true });
+      // It DID attempt the compute-cancel at the Edge /cancel with the shared bearer.
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(url).toBe("https://edge.test/functions/v1/enhance/cancel");
+      expect(init?.headers).toMatchObject({ Authorization: "Bearer shh" });
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not call the Edge when the flip was a no-op (canceled:false)", async () => {
+    const { admin } = makeStubAdmin(null, []); // no matched row → nothing in flight to cancel
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));
+    try {
+      const res = await cancelCloudJobResponse({
+        user: USER,
+        request: jsonRequest({ jobId: JOB_ID }),
+        admin,
+        edge: EDGE,
+      });
+
+      expect(await readBody(res)).toEqual({ canceled: false });
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  it("does not call the Edge when the seam is unconfigured (edge:null)", async () => {
+    const { admin } = makeStubAdmin(null, MATCHED);
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));
+    try {
+      const res = await cancelCloudJobResponse({
+        user: USER,
+        request: jsonRequest({ jobId: JOB_ID }),
+        admin,
+        edge: null,
+      });
+
+      // Degrades to DB-flip + source-delete only — still 200 { canceled: true }.
+      expect(await readBody(res)).toEqual({ canceled: true });
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 });
 

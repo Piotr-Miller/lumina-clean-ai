@@ -296,10 +296,10 @@ One guarded UPDATE + one storage delete per cancel (already the `/timeout` cost)
 
 #### Automated
 
-- [ ] 2.1 `deno check supabase/functions/enhance/index.ts` passes
-- [ ] 2.2 `npm run typecheck` passes
-- [ ] 2.3 `npm run test:unit` passes (full suite, incl. best-effort-Edge test)
-- [ ] 2.4 Lint clean on touched `src/` files
+- [x] 2.1 `deno check supabase/functions/enhance/index.ts` passes
+- [x] 2.2 `npm run typecheck` passes
+- [x] 2.3 `npm run test:unit` passes (full suite, incl. best-effort-Edge test)
+- [x] 2.4 Lint clean on touched `src/` files
 
 #### Manual
 

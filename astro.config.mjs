@@ -73,6 +73,15 @@ export default defineConfig({
       SUPABASE_URL: envField.string({ context: "server", access: "secret", optional: true }),
       SUPABASE_KEY: envField.string({ context: "server", access: "secret", optional: true }),
       SUPABASE_SERVICE_ROLE_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      // Cloud-job hard-cancel (change `cloud-job-cancel`): the Worker proxies the
+      // Replicate compute-cancel to the enhance Edge Function — the ONLY holder of
+      // the Replicate token. EDGE_FUNCTION_URL is that function's public https base
+      // (`https://<ref>.supabase.co/functions/v1/enhance`); DB_WEBHOOK_SECRET is the
+      // shared bearer the Edge validates (same secret as /start + /reap). Both
+      // optional: unset → cancel degrades to DB-flip + source-delete only (the
+      // prediction runs to completion as a self-cleaning orphan), never an error.
+      EDGE_FUNCTION_URL: envField.string({ context: "server", access: "secret", optional: true }),
+      DB_WEBHOOK_SECRET: envField.string({ context: "server", access: "secret", optional: true }),
       // Cost guard for the S-04 cloud pipeline. OFF in prod until S-05's daily
       // cap lands; the Edge Function `/start` route no-ops when this is false.
       CLOUD_PIPELINE_ENABLED: envField.boolean({ context: "server", access: "secret", default: false }),
