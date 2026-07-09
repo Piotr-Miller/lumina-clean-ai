@@ -5,16 +5,18 @@ import { STRINGS } from "@/lib/enhance-strings";
 
 /**
  * Hermetic route-boundary tests for the user-initiated hard-cancel
- * (change `cloud-job-cancel`, Phase 1 — the DB-flip + source-cleanup half).
+ * (change `cloud-job-cancel`, Phase 1). A stub admin client lets us drive the
+ * cheap, infra-free part of the contract — the auth gate, body validation, and
+ * the service-error → 500 mapping — without `astro:env/server` (Lesson #4) or a
+ * live database. Mirrors the hermetic layer of `cloud-create-job.handler.test.ts`.
  *
- * Mirrors `tests/cloud-create-job.handler.test.ts`: a stub admin client lets us
- * drive the owner-scoped guarded flip to a controlled outcome and spy on the
- * source delete, without `astro:env/server` (Lesson #4) and without real infra.
- * The signal here is the route wiring — auth gate, body validation, the
- * `{ canceled }` contract, and that the source is deleted ONLY on a confirmed
- * flip. The SQL owner-scoping itself (that user_id/status actually filter the
- * UPDATE) is covered against live Supabase in tests/jobs.rls.test.ts +
- * tests/photo-job.service.test.ts, so it is not re-asserted here.
+ * The LOAD-BEARING guarantees — that the flip is owner-scoped (a client-supplied
+ * foreign `jobId` mutates nothing) and that a matched flip persists
+ * `failed`/`error_code:"canceled"` + deletes the source — are deliberately NOT
+ * asserted here: a stub can't prove the `.eq("user_id")` guard (it would stay
+ * green even against an id-only helper). Those live against a real local Supabase
+ * in `tests/jobs.rls.test.ts` ("POST /api/enhance/cloud/cancel — cross-user IDOR
+ * + flip"), the same place the sibling `/timeout` route proves its IDOR guard.
  */
 
 type ResponseBody = Partial<{ error: { code: string; message: string }; canceled: boolean; status: unknown }>;
@@ -41,21 +43,16 @@ function rawRequest(body: string): Request {
 }
 
 /**
- * Build a stub admin client for the owner-scoped cancel flip.
- *
- * `from(table).update(...).eq(...).eq(...).in(...).select(...)` resolves
- * (thenable) to `{ data: updatedRows, error }` — `updatedRows: []` models "no
- * row matched" (wrong owner / already terminal → the guard is a no-op).
- * `storage.from("photos").remove(...)` is a spy so we can assert the source
- * delete fires only on a confirmed flip. `from` is exposed so an anonymous
- * request can be asserted to never touch the DB.
+ * Stub admin client. The owner-scoped guarded UPDATE
+ * (`from(...).update(...).eq(...).eq(...).in(...).select(...)`) resolves
+ * (thenable) to `{ data: [], error: updateError }` — the hermetic tests here
+ * never need a matched row, they only exercise the reject paths and the
+ * error → 500 mapping. `from` and `storage...remove` are spies so we can assert
+ * the reject paths never touch the DB or storage.
  */
-function makeStubAdmin(
-  updatedRows: { id: string; source_path: string }[],
-  updateError: { message: string } | null = null,
-) {
+function makeStubAdmin(updateError: { message: string } | null = null) {
   const remove = vi.fn().mockResolvedValue({ data: [], error: null });
-  const resolved = { data: updatedRows, error: updateError };
+  const resolved = { data: [] as { id: string; source_path: string }[], error: updateError };
 
   const builder: Record<string, unknown> = {};
   for (const method of ["update", "select", "eq", "in"]) {
@@ -72,11 +69,10 @@ function makeStubAdmin(
 
 const USER = { id: "11111111-1111-1111-1111-111111111111" };
 const JOB_ID = "22222222-2222-4222-8222-222222222222";
-const SOURCE_PATH = `${USER.id}/${JOB_ID}/source.jpg`;
 
 describe("cancelCloudJobResponse — auth gate", () => {
   it("rejects an anonymous request with 401 and the exact contract, before any DB touch", async () => {
-    const { admin, from, remove } = makeStubAdmin([]);
+    const { admin, from, remove } = makeStubAdmin();
 
     const res = await cancelCloudJobResponse({
       user: null,
@@ -96,8 +92,8 @@ describe("cancelCloudJobResponse — auth gate", () => {
 });
 
 describe("cancelCloudJobResponse — body validation", () => {
-  it("rejects a non-JSON body with 400 invalid_body", async () => {
-    const { admin, from } = makeStubAdmin([]);
+  it("rejects a non-JSON body with 400 invalid_body, before any DB touch", async () => {
+    const { admin, from } = makeStubAdmin();
 
     const res = await cancelCloudJobResponse({ user: USER, request: rawRequest("not json"), admin, edge: null });
 
@@ -107,7 +103,7 @@ describe("cancelCloudJobResponse — body validation", () => {
   });
 
   it("rejects a missing jobId with 400 invalid_body", async () => {
-    const { admin, from } = makeStubAdmin([]);
+    const { admin, from } = makeStubAdmin();
 
     const res = await cancelCloudJobResponse({ user: USER, request: jsonRequest({}), admin, edge: null });
 
@@ -117,7 +113,7 @@ describe("cancelCloudJobResponse — body validation", () => {
   });
 
   it("rejects a non-uuid jobId with 400 invalid_body", async () => {
-    const { admin } = makeStubAdmin([]);
+    const { admin } = makeStubAdmin();
 
     const res = await cancelCloudJobResponse({
       user: USER,
@@ -131,43 +127,9 @@ describe("cancelCloudJobResponse — body validation", () => {
   });
 });
 
-describe("cancelCloudJobResponse — the flip", () => {
-  it("flips a matched in-flight job to canceled and deletes its source (200 { canceled: true })", async () => {
-    const { admin, remove } = makeStubAdmin([{ id: JOB_ID, source_path: SOURCE_PATH }]);
-
-    const res = await cancelCloudJobResponse({
-      user: USER,
-      request: jsonRequest({ jobId: JOB_ID }),
-      admin,
-      edge: null,
-    });
-
-    expect(res.status).toBe(200);
-    const body = await readBody(res);
-    expect(body).toEqual({ canceled: true });
-    expect("status" in body).toBe(false);
-    // Source deleted on the confirmed flip.
-    expect(remove).toHaveBeenCalledTimes(1);
-    expect(remove).toHaveBeenCalledWith([SOURCE_PATH]);
-  });
-
-  it("is a no-op when the guard matches no row (wrong owner / already terminal): 200 { canceled: false }, no source delete", async () => {
-    const { admin, remove } = makeStubAdmin([]); // empty = no matching queued/processing row for this owner
-
-    const res = await cancelCloudJobResponse({
-      user: USER,
-      request: jsonRequest({ jobId: JOB_ID }),
-      admin,
-      edge: null,
-    });
-
-    expect(res.status).toBe(200);
-    expect(await readBody(res)).toEqual({ canceled: false });
-    expect(remove).not.toHaveBeenCalled();
-  });
-
-  it("returns 500 internal_error when the update errors (no source delete)", async () => {
-    const { admin, remove } = makeStubAdmin([], { message: "db exploded" });
+describe("cancelCloudJobResponse — service error mapping", () => {
+  it("maps an unexpected update error to 500 internal_error (no source delete)", async () => {
+    const { admin, remove } = makeStubAdmin({ message: "db exploded" });
 
     const res = await cancelCloudJobResponse({
       user: USER,

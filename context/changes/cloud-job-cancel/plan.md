@@ -93,25 +93,29 @@ A new owner-scoped `POST /api/enhance/cloud/cancel` that flips an in-flight job 
 
 **Contract**: `export const prerender = false;` + `export const POST: APIRoute`. Read `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`; missing → 500 `internal_error`. `createAdminClient(...)`; call `cancelCloudJobResponse({ user: context.locals.user, request: context.request, admin, edge: null })` (Phase 2 fills `edge`). Mirrors `timeout.ts` exactly.
 
-#### 4. Handler unit tests
+#### 4. Handler tests — hermetic rejects + real-Supabase IDOR/flip proof
 
-**File**: `tests/cancel.handler.test.ts` (new)
+**Files**: `tests/cancel.handler.test.ts` (new, hermetic) + `tests/jobs.rls.test.ts` (new describe block)
 
-**Intent**: Pin the route-boundary contract incl. the load-bearing owner scoping (cross-user IDOR), mirroring the existing timeout/create-job handler suites against a real local Supabase.
+**Intent**: Split by what each layer can honestly prove. A stub admin client cannot prove the RLS-bypassing `.eq("user_id")` guard has teeth — it stays green even against an id-only helper — so the load-bearing owner-scoping + persistence proof goes against a real local Supabase, mirroring the sibling `/timeout` route's IDOR block already in `jobs.rls.test.ts`. (The plan originally named a single hermetic file "against a real local Supabase"; corrected here per Phase 1 impl-review F1.)
 
-**Contract**: Cover — anonymous → 401; non-JSON → 400; missing/invalid `jobId` → 400; a `queued`/`processing` row owned by the caller → 200 `{ canceled: true }` + row now `failed`/`error_code: "canceled"` + source removed; another user's jobId → 200 `{ canceled: false }` + that row untouched (IDOR guard); an already-`succeeded`/`failed` row → 200 `{ canceled: false }` (guard no-op). Pass `edge: null`.
+**Contract**:
+
+- `tests/cancel.handler.test.ts` (hermetic, runs under `test:unit`): anonymous → 401 (no DB touch); non-JSON / missing / non-uuid `jobId` → 400; an unexpected update error → 500 `internal_error` (no source delete); the canceled copy exists.
+- `tests/jobs.rls.test.ts`, new describe `POST /api/enhance/cloud/cancel — cross-user IDOR + flip` (real local Supabase; runs under the CI `integration` job / `npm run test`, excluded from `test:unit`): user B supplying user A's `jobId` → 200 `{ canceled: false }` + A's row untouched; user A canceling their own `processing` job → 200 `{ canceled: true }` + row `failed`/`error_code:"canceled"`/`error_message` persisted + source deleted; an already-`succeeded` row → 200 `{ canceled: false }` + row unchanged. Pass `edge: null`.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
 - `npm run typecheck` passes
-- `npm run test:unit` passes — new `cancel.handler` suite green, existing suites untouched
+- `npm run test:unit` passes — new hermetic `cancel.handler` suite green, existing suites untouched
+- Integration cancel IDOR/flip block green: the new `jobs.rls.test.ts` describe passes under `npm run test` against a local Supabase (or the CI `integration` job); it is excluded from `test:unit`
 - Lint clean on touched files (`npx prettier --write` + `npx eslint` on the new files — per the CRLF lesson, not repo-wide)
 
 #### Manual Verification:
 
-- (none — server-only phase, exercised by the integration-backed unit suite)
+- (none — server-only phase, exercised by the hermetic unit suite + the real-Supabase integration block)
 
 **Implementation Note**: No manual items; proceed to Phase 2 once automated checks pass.
 
@@ -283,9 +287,10 @@ One guarded UPDATE + one storage delete per cancel (already the `/timeout` cost)
 
 #### Automated
 
-- [x] 1.1 `npm run typecheck` passes
-- [x] 1.2 `npm run test:unit` passes (new `cancel.handler` suite green, existing untouched)
-- [x] 1.3 Lint clean on touched files
+- [x] 1.1 `npm run typecheck` passes — 33317ab
+- [x] 1.2 `npm run test:unit` passes (new hermetic `cancel.handler` suite green, existing untouched) — 33317ab
+- [x] 1.3 Lint clean on touched files — 33317ab
+- [ ] 1.4 Integration cancel IDOR/flip block green (`jobs.rls.test.ts`, real local Supabase / CI `integration` job)
 
 ### Phase 2: Edge `/cancel` Sub-path (true Replicate compute kill)
 
