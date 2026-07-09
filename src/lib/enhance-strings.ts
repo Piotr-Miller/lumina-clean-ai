@@ -226,6 +226,13 @@ export const STRINGS = {
     providerRateLimited: "Cloud AI is busy right now — please try again in a moment, or switch to the Local engine.",
     rgbaAlpha: "This image has a transparency layer the cloud model can't read. Convert it to RGB and try again.",
     resultLoad: "The enhanced result couldn't be loaded. Please try again.",
+    /**
+     * Row-level copy for a user-initiated hard-cancel (change `cloud-job-cancel`).
+     * Not surfaced in the UI — the workspace resets optimistically on cancel — so
+     * this is the authoritative `error_message` written to the canceled row for
+     * records/history, parallel to `timeout`.
+     */
+    canceled: "You canceled this job.",
   },
 
   /** `cloud-upload.client.ts` — create-job route + signed-upload failures. */
