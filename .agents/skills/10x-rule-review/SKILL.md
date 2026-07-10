@@ -29,7 +29,7 @@ The skill never edits the file. It produces a scorecard. The user decides what t
 - `.cursor/rules/api.mdc`
 - `src/api/AGENTS.md`
 - `.github/copilot-instructions.md`
-- `~/.Codex/AGENTS.md`
+- `~/.codex/AGENTS.md`
 
 If `$ARGUMENTS` is empty, ask the user once for the path. Do not guess.
 
