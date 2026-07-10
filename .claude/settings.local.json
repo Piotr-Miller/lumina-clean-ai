@@ -180,7 +180,17 @@
       "Bash(echo \"WORKER READY \\(flag ON + 1px guard\\)\")",
       "Bash(tail -15 /c/Users/prmi/AppData/Local/Temp/claude/C--Source-Trainings-AI-10xDevs-LuminaClean-AI/07b8fcf1-0fcb-4fda-9f06-a8a1f296cf34/tasks/bmk3mic5f.output)",
       "Bash(gh pr create --base master --head feat/bread-chroma-postpass --title 'feat\\(bread-chroma-postpass\\): Phase 5 — tune chroma defaults + A/B GO \\(flag still OFF\\)' --body ' *)",
-      "Bash(sed -i 's/^E2E_CHROMA_OVERRIDE=true/E2E_CHROMA_OVERRIDE=false/' .dev.vars)"
+      "Bash(sed -i 's/^E2E_CHROMA_OVERRIDE=true/E2E_CHROMA_OVERRIDE=false/' .dev.vars)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(echo HTTP:__CMDSUB_OUTPUT__)",
+      "Bash(cp public/images/brand-mark-t.png public/images/brand-mark.png)",
+      "Bash(rm public/images/brand-mark-t.png)",
+      "Bash(seq 1 20)",
+      "Bash(echo \"=== GET /dashboard \\(authed\\) ===\")",
+      "Bash(echo \"--- lc-last-activity after req 1 ---\")",
+      "Bash(grep lc-last-activity *)",
+      "Bash(awk '{print $NF}')"
     ],
     "deny": ["Bash(rm -rf *)"],
     "ask": ["Bash(curl *)", "Bash(wget *)", "Bash(git push *)", "Bash(git push)"]
