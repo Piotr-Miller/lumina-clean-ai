@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-07-09
+updated: 2026-07-10
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -43,6 +43,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-10 | retention-reaper                  | (post-MVP hardening) sources stay gone within 24h even for legacy/abandon-never-return/best-effort-fail jobs — scheduled pg_cron backstop | F-01, S-08, S-07 | NFR: source not retained beyond 24h (backstop)             | done   |
 | S-11 | bread-chroma-postpass             | (post-MVP quality) get cleaner shadow colors from Bread without sacrificing luminance detail                                              | S-04, S-07       | Post-MVP cloud enhancement quality                         | done   |
 | S-12 | adaptive-enhancement-parameters   | (post-MVP UX/quality) tune Local or Bread in a right-side panel, start from Auto recommendations, and override any slider manually        | S-01, S-04       | Post-MVP enhancement control; extends US-01, US-02         | done   |
+| S-15 | localization                      | (post-MVP i18n) switch the whole UI to one of 7 languages (EN + DE, PL, FR, ES, UK, ZH), persisted; copy-only, engines unaffected         | S-01, S-12       | Post-MVP internationalization; extends US-01, US-02 UI     | ready  |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
 
@@ -265,6 +266,19 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** Medium. Auto can look authoritative while choosing poor values; frequent Cloud slider changes can multiply paid jobs; a desktop right-side panel can crowd mobile layouts. Recommendations must stay visible and editable, values must be bounded, and Cloud processing must require an intentional apply action or equivalent cost-safe interaction.
 - **Status:** done
 
+### S-15: UI localization — 7 languages (post-MVP reach)
+
+- **Phase:** `phase:post-mvp`
+- **Outcome:** a visitor can switch the app's display language and see the **entire UI surface** — landing (hero, How-it-works, FAQ, guide teasers, nav), the enhance workspace (engine toggle, uploader, before/after slider, parameter panel, all status/error copy), and the auth pages — rendered in their chosen language. Supported: **English (default) + German (de), Polish (pl), French (fr), Spanish (es), Ukrainian (uk), Chinese (zh)**. The choice is persisted; the enhancement engines, async pipeline, and job data are unaffected (copy-only).
+- **Change ID:** localization
+- **GitHub issue:** [#96](https://github.com/Piotr-Miller/lumina-clean-ai/issues/96)
+- **PRD refs:** Post-MVP internationalization / market reach; extends US-01 / US-02 across the existing UI surface without changing engine behavior or any FR.
+- **Prerequisites:** S-01 (shared UI shell), S-12 (parameter panel), plus non-roadmap `landing-content` (below-the-fold + `/guides/*`). All user-facing copy is already externalized into `src/lib/enhance-strings.ts` (the `STRINGS` catalog), built i18n-ready in `enhance-ui-refresh` — its comment names "the later DE/PL localization slice". This slice consumes that readiness.
+- **Sequencing:** post-MVP; independent of the S-13/S-14 Premium path. **Research first:** choose the i18n mechanism (Astro i18n URL routing `/de/`, `/pl/` for SEO vs a runtime cookie-selected catalog), the translation source + review workflow (incl. the three long-form guides — decide in-scope vs follow-up), and locale detection + persistence.
+- **Blockers:** translation source + native/professional review for 6 languages; SEO plan if URL-routed (`hreflang`, per-locale sitemap, canonical); a language-switcher UI + persistence; font/glyph coverage for Cyrillic (uk) + CJK (zh) and text-expansion (de/fr) in tight layouts; scope of `/guides/*` SEO content (this slice vs follow-up).
+- **Risk:** Medium. Translation quality + maintenance (copy drift), SEO regressions on `hreflang`/canonical, CJK/Cyrillic rendering + per-locale layout. No RTL in scope. Mitigate with a single source-of-truth catalog, a native-review gate, and per-locale layout validation.
+- **Status:** ready (prerequisites met; **not started — deliberate hold**, user 2026-07-10)
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                         | Suggested issue title                                              | Ready for `/10x-plan` | Notes                                                                                                                                                                                                                            |
@@ -282,6 +296,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-10       | retention-reaper                  | Scheduled retention reaper backstop                                | done                  | `phase:post-mvp`. Archived 2026-06-14 → `context/archive/2026-06-14-retention-reaper/`. Shipped PR #30.                                                                                                                          |
 | S-11       | bread-chroma-postpass             | Bread chroma-denoise post-pass + pinned version resolution         | done                  | `phase:post-mvp`. Archived 2026-06-25 → `context/archive/2026-06-18-bread-chroma-postpass/`. Issue #51. PRs #70 (p1–4) + #74 (p5).                                                                                               |
 | S-12       | adaptive-enhancement-parameters   | Manual + Auto parameter panel for Local and Bread                  | done                  | `phase:post-mvp`. Archived 2026-07-01 → `context/archive/2026-06-18-adaptive-enhancement-parameters/`. Issue #52. PR #81.                                                                                                        |
+| S-15       | localization                      | UI localization: 7-language switcher (EN + DE, PL, FR, ES, UK, ZH) | on hold               | `phase:post-mvp`. **Do not start** (user 2026-07-10). Strings already externalized (enhance-ui-refresh). Next: `/10x-new localization` → `/10x-research` → `/10x-plan`. Issue #96.                                               |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 

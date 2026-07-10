@@ -127,6 +127,7 @@ repo. They can be deleted manually at any time.
 | S-12       | [#52](https://github.com/Piotr-Miller/lumina-clean-ai/issues/52) | `adaptive-enhancement-parameters`   | done     | `roadmap` `slice` `phase:post-mvp`                   |
 | S-13       | [#60](https://github.com/Piotr-Miller/lumina-clean-ai/issues/60) | `premium-retinexformer-enhancement` | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
 | S-14       | [#61](https://github.com/Piotr-Miller/lumina-clean-ai/issues/61) | `premium-max-tier`                  | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
+| S-15       | [#96](https://github.com/Piotr-Miller/lumina-clean-ai/issues/96) | `localization`                      | ready    | `roadmap` `slice` `status:ready` `phase:post-mvp`    |
 
 ⭐ = north star (validation milestone).
 
@@ -149,6 +150,8 @@ repo. They can be deleted manually at any time.
 > **2026-06-19 (post-MVP Premium path):** added **S-13 (#60)** `premium-retinexformer-enhancement` — define the explicit Premium Retinexformer path after the Standard Bread pipeline, with a benchmark-first gate and separate timeout plus entitlement policy. **Stays Parked + `status:proposed`** until the benchmark passes an explicit GO; promote into the slice table only then. Labels: `roadmap`, `slice`, `status:proposed`, `phase:post-mvp`. Change folder: `context/changes/premium-retinexformer-enhancement/`.
 >
 > **2026-06-19 (post-MVP higher tier draft):** added **S-14 (#61)** `premium-max-tier` — a higher application tier above Premium that bundles the Retinexformer path with optional heavyweight denoise, Max-only presets, higher limits, priority scheduling, and batch workflow. Epic, not a vertical slice: must be split (entitlement, processing mode, queue policy, batch) after research. Labels: `roadmap`, `slice`, `status:proposed`, `phase:post-mvp`. Change folder: `context/changes/premium-max-tier/`.
+>
+> **2026-07-10 (post-MVP i18n):** added **S-15 (#96)** `localization` — UI localization across the full surface (landing, enhance workspace, parameter panel, auth) in EN + de/pl/fr/es/uk/zh, persisted; copy-only, engines unaffected. Consumes the string-externalization built i18n-ready in `enhance-ui-refresh`. **Deliberate hold — not started** (user, 2026-07-10). Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Next: `/10x-new localization` → `/10x-research` → `/10x-plan`.
 
 ## Status updates (post-creation)
 
