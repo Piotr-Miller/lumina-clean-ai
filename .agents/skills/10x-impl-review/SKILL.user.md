@@ -112,7 +112,7 @@ For each reviewed phase:
 
 ### Mutation check (conditional — risk-critical modules only)
 
-Run this **only** when a file under review is a risk area in `context/foundation/test-plan.md §4` (e.g. `src/lib/services/photo-job.service.ts`). If the reviewed change touches no §4 risk area, **skip entirely** — mutation testing is a targeted gate, not a default pass, and is **never** run in CI (see `CLAUDE.md` → _Mutation testing_).
+Run this **only** when a file under review is a risk area in `context/foundation/test-plan.md §4` (e.g. `src/lib/services/photo-job.service.ts`). If the reviewed change touches no §4 risk area, **skip entirely** — mutation testing is a targeted gate, not a default pass, and is **never** run in CI (see `AGENTS.md` → _Mutation testing_).
 
 When it applies, run **scoped** Stryker on just the touched risk file(s) — never `npm run test:mutation` (full scope), never a whole directory:
 

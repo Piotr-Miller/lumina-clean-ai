@@ -1,11 +1,11 @@
 ---
 name: 10x-rule-review
 description: >
-  Review the condition of an "AI rules" file (AGENTS.md, AGENTS.md,
+  Review the condition of an "AI rules" file (CLAUDE.md, AGENTS.md,
   .cursor/rules/*.mdc, copilot-instructions.md, .windsurfrules, or similar)
   and produce a 5-point scorecard with concrete fixes, regardless of which
   tool the rules target. Use when the user asks to "review AI rules",
-  "audit AGENTS.md", "check my AGENTS.md", "score my agent instructions".
+  "audit AGENTS.md", "check my CLAUDE.md", "score my agent instructions".
 allowed-tools:
   - Read
   - Glob
@@ -16,7 +16,7 @@ allowed-tools:
 
 # 10x Rule Review
 
-Score an AI rules file on five axes and return concrete fixes. The file under review is whatever rule-for-AI markdown the user passes in — this skill does not assume AGENTS.md, AGENTS.md, or any specific tool.
+Score an AI rules file on five axes and return concrete fixes. The file under review is whatever rule-for-AI markdown the user passes in — this skill does not assume CLAUDE.md, AGENTS.md, or any specific tool.
 
 The skill never edits the file. It produces a scorecard. The user decides what to act on.
 
@@ -41,7 +41,7 @@ If the file does not exist, stop and report the path. Do not invent content.
 
 - Does not edit the rules file _unless the user explicitly approves the reorder proposed by Check 5_. The default output is read-only.
 - Does not generate a full "fixed version" of the file. At most, Check 5 may move/regroup sections; it never rewrites rule content.
-- Does not assume the file's tool target. AGENTS.md, AGENTS.md, `.mdc`, `.windsurfrules`, custom names — all treated as "a rules-for-AI file".
+- Does not assume the file's tool target. CLAUDE.md, AGENTS.md, `.mdc`, `.windsurfrules`, custom names — all treated as "a rules-for-AI file".
 - Does not score _project content_ (architecture, tech choices, conventions). It scores the _rule artifact's condition_ — the same way a code review scores code, not the product.
 
 ## Procedure
