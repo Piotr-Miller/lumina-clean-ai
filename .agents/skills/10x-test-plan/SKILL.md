@@ -127,7 +127,7 @@ Explicit paths from `$ARGUMENTS` are **always read**, regardless of where they l
 | Archived slices                | `context/archive/*/plan.md` + argument-provided slice plans                               | What is already implemented (current risk surface)                            |
 | Tech stack                     | `context/foundation/tech-stack.md` + argument-provided stack note, OR detect via manifest | Language, framework, runtime, test runner already in use                      |
 | Briefs / scoping notes         | argument-provided only — no fixed default                                                 | Constraints, non-goals, risk hints that never landed in a PRD                 |
-| Existing AGENTS.md / AGENTS.md | repo root                                                                                 | Hard rules and conventions that constrain testing choices                     |
+| Existing AGENTS.md / CLAUDE.md | repo root                                                                                 | Hard rules and conventions that constrain testing choices                     |
 | Existing testing config        | `vitest.config.*`, `jest.config.*`, `playwright.config.*`, `pytest.ini`, etc.             | What test infra already exists                                                |
 | Session MCP tools              | current host/session tool list                                                            | Docs/search MCPs that can ground stack-sensitive recommendations              |
 

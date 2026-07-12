@@ -81,7 +81,7 @@ If the host exposes a subagent / task-spawn tool, the discovery and diff steps p
 
 **Self-discovery rule.** Before kicking off discovery, check whether such a tool exists. If it does, fan out the independent reads in **one batched call** (multiple subagents in a single message, not sequentially):
 
-- one subagent reads `README.md`, `AGENTS.md`, existing `AGENTS.md`, top-level `docs/` index;
+- one subagent reads `README.md`, `CLAUDE.md`, existing `AGENTS.md`, top-level `docs/` index;
 - one inspects the manifest + lint/format/type configs;
 - one inspects test config + CI workflows;
 - one runs the git-history queries (commit conventions, last-touch on AGENTS.md, diff range since `LAST_TOUCH`).
@@ -111,7 +111,7 @@ Each subagent should return a **short structured report** (≤200 words: facts o
 ### Create path
 
 1. **Discover.** Read in this order, skipping what doesn't exist:
-   - `README.md`, `AGENTS.md`, existing `AGENTS.md`, top-level `docs/` index.
+   - `README.md`, `CLAUDE.md`, existing `AGENTS.md`, top-level `docs/` index.
    - Manifest: `package.json` (scripts, workspaces, engines), or `pyproject.toml` / `Cargo.toml` / `go.mod` / `Gemfile` / equivalent.
    - Lint/format/type configs: `.eslintrc*`, `oxlint*`, `biome.json`, `tsconfig.json`, `ruff.toml`, `.editorconfig`.
    - Test config: `vitest.config.*`, `jest.config.*`, `pytest.ini`, `playwright.config.*`, `*.test.*` locations.
@@ -215,7 +215,7 @@ Do not propose follow-ups unless the user asks.
 
 - **No `README.md` and no manifest detected.** Stop and tell the user the repo looks empty or unfamiliar; ask for a one-paragraph project description before drafting.
 - **Monorepo with per-package READMEs.** Write a root `AGENTS.md` that lists packages and `@`-references each package's README, rather than duplicating per-package detail. Suggest nested `packages/<name>/AGENTS.md` for any package with rules that materially differ.
-- **Existing rich `AGENTS.md` in the repo.** Treat it as authoritative source material. The new `AGENTS.md` should be a tighter, agent-tool-agnostic distillation that points back to `@AGENTS.md` for depth, not a verbatim copy.
+- **Existing rich `CLAUDE.md` in the repo.** Treat it as authoritative source material. The new `AGENTS.md` should be a tighter, agent-tool-agnostic distillation that points back to `@CLAUDE.md` for depth, not a verbatim copy.
 - **Existing `AGENTS.md` was edited by hand after its last commit.** `git diff HEAD -- <path>` will show uncommitted changes. Read those changes first and treat them as KEEP unless they directly contradict a CI-enforced rule — the user is mid-edit and you must not clobber in-flight work.
 - **`LAST_TOUCH` is the initial commit of the repo.** Diff range becomes `LAST_TOUCH..HEAD` with no useful signal. Fall back to inspecting current repo state vs. the file's claims, line by line, without the git-diff shortcut.
 - **File exists but is empty or a stub.** Skip the Update path — run the Create path and overwrite, since there is no authorial content to preserve.

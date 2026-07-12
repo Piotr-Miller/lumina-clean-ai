@@ -1,7 +1,7 @@
 # E2E Quality Rules
 
 These rules live in the project rules file the agent reads automatically before
-generating code (`CLAUDE.md`, `.cursor/rules/`, or a dedicated file in the test
+generating code (`AGENTS.md`, `.cursor/rules/`, or a dedicated file in the test
 directory). They constrain the agent's output so generated tests are stable by
 default — agents apply known patterns far more reliably than they invent new ones.
 

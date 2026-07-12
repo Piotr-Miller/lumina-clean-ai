@@ -4,7 +4,7 @@ description: >
   Assess an existing project's stack for agent-friendliness against the 4
   quality gates (typed, convention-based, popular, well-documented); writes
   context/foundation/stack-assessment.md with per-component scores, gaps, and
-  ready-to-paste AGENTS.md/AGENTS.md entries. Trigger phrases: "assess my
+  ready-to-paste CLAUDE.md/AGENTS.md entries. Trigger phrases: "assess my
   stack", "is my stack agent-friendly", "oceń mój stack", "stack assessment".
   Use AFTER /10x-prd (brownfield), BEFORE /10x-health-check.
 argument-hint: "[path-to-prd]"
@@ -23,7 +23,7 @@ This skill is the brownfield counterpart to `/10x-tech-stack-selector`. Where te
 
 The skill sits in the brownfield chain: `/10x-shape → /10x-prd → /10x-stack-assess → /10x-health-check`. Its single job: evaluate the existing stack against the quality gates and produce a structured assessment with concrete compensation strategies.
 
-The core brownfield value is the **compensation path** — when a gate fails, the skill doesn't recommend replacing the stack. It documents what to add to instruction files (AGENTS.md / AGENTS.md) so the agent can work effectively despite the gap.
+The core brownfield value is the **compensation path** — when a gate fails, the skill doesn't recommend replacing the stack. It documents what to add to instruction files (CLAUDE.md / AGENTS.md) so the agent can work effectively despite the gap.
 
 ## When to use, when to skip
 
@@ -96,7 +96,7 @@ Read project files to identify the stack. The detection is file-driven — read 
 
 - CI/CD: `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `.circleci/config.yml`, `cloudbuild.yaml`
 - Deployment: `Dockerfile`, `docker-compose.yml`, `fly.toml`, `vercel.json`, `netlify.toml`, `wrangler.toml`, `render.yaml`, `railway.json`, `Procfile`
-- Instruction files: `AGENTS.md`, `AGENTS.md`, `.cursor/rules`, `.github/copilot-instructions.md`
+- Instruction files: `CLAUDE.md`, `AGENTS.md`, `.cursor/rules`, `.github/copilot-instructions.md`
 - Config quality: `.editorconfig`, `.prettierrc*`, `.eslintrc*`, `tsconfig.json` (strict mode check)
 
 Echo the detected stack back to the user:
@@ -146,7 +146,7 @@ For each detected component (language, framework, build tool, test runner), scor
 
 - **Pass**: the framework ships strong opinions about folder layout, routing, configuration (Next.js App Router, Rails, Django, Spring Boot, Astro, Angular, Laravel, .NET).
 - **Fail**: the framework is minimal/unopinionated and the project has no documented conventions (Express, Koa, Flask without blueprints, Sinatra, raw Vite + React).
-- **Partial pass**: minimal framework BUT the project has documented conventions in instruction files (AGENTS.md, AGENTS.md) or a visible conventions document. Score as pass-with-note.
+- **Partial pass**: minimal framework BUT the project has documented conventions in instruction files (CLAUDE.md, AGENTS.md) or a visible conventions document. Score as pass-with-note.
 - **Evidence**: cite the framework's convention strength or the absence of it.
 
 #### Gate 3: Popular in training data
@@ -179,7 +179,7 @@ Legend: ✓ = pass, ✗ = fail, ~ = partial, — = not applicable
 
 ### Step 3 — Identify compensation strategies
 
-For each failed gate, produce a concrete compensation strategy. Compensation means specific entries to add to instruction files (AGENTS.md / AGENTS.md) so the agent can work effectively despite the gap.
+For each failed gate, produce a concrete compensation strategy. Compensation means specific entries to add to instruction files (CLAUDE.md / AGENTS.md) so the agent can work effectively despite the gap.
 
 **Compensation templates by gate failure:**
 
@@ -284,7 +284,7 @@ gates_failed: <N>
 
 ### Recommended Instruction File Additions
 
-<ready-to-paste AGENTS.md/AGENTS.md entries for each compensation strategy, formatted as markdown rule blocks the user can copy directly>
+<ready-to-paste CLAUDE.md/AGENTS.md entries for each compensation strategy, formatted as markdown rule blocks the user can copy directly>
 
 ## Summary
 

@@ -231,7 +231,7 @@ Check for common development configuration:
 | `tsconfig.json` with `strict: true` (TS) | Type strictness                      | high (if TS project without strict)      |
 | `.gitignore`                             | Tracked file exclusions              | high                                     |
 | `.env.example` / `.env.template`         | Environment variable documentation   | low                                      |
-| `AGENTS.md` / `AGENTS.md`                | Agent instruction files              | Category B — covered in agent onboarding |
+| `CLAUDE.md` / `AGENTS.md`                | Agent instruction files              | Category B — covered in agent onboarding |
 
 Surface missing files grouped by severity.
 
@@ -253,7 +253,7 @@ In-check: test runner <detected/not detected>, CI <provider/not detected>,
 If `context/foundation/stack-assessment.md` exists, read it and link findings:
 
 - If stack-assess identified a quality-gate failure (e.g., "typed: fail"), and health-check found no type-checking in CI → reinforce: "the stack lacks type safety AND CI doesn't enforce types — compensation is doubly important"
-- If stack-assess identified compensation strategies → check whether the recommended instruction-file entries exist (are `AGENTS.md` / `AGENTS.md` present? Do they contain the recommended rules?)
+- If stack-assess identified compensation strategies → check whether the recommended instruction-file entries exist (are `CLAUDE.md` / `AGENTS.md` present? Do they contain the recommended rules?)
 - If stack-assess gave a `ready-with-compensation` verdict but the compensation entries are missing → flag as a gap
 
 #### 3b. Determine overall health status
@@ -288,7 +288,7 @@ Split findings into two categories:
 These findings are real but the learner will set them up in upcoming steps. Frame them as "coming up next," not as problems:
 
 - **No CI pipeline** → covered in the infrastructure/deployment lesson. Note the gap, point forward: "You'll set up CI in an upcoming lesson. For now, local test runner coverage is what matters for agent collaboration."
-- **Missing agent instruction files** (AGENTS.md / AGENTS.md) → covered in the agent onboarding lesson. Do not recommend creating them now: "Agent onboarding walks you through building these with the right content. Generating a stub now would be premature."
+- **Missing agent instruction files** (CLAUDE.md / AGENTS.md) → covered in the agent onboarding lesson. Do not recommend creating them now: "Agent onboarding walks you through building these with the right content. Generating a stub now would be premature."
 - **Missing deployment configuration** → covered in the infrastructure lesson. Acknowledge, don't prioritize.
 
 When the health-check runs standalone (outside the course chain), all findings go into a single ranked list without the A/B split — the course-context framing only applies when the user is progressing through the brownfield chain. When running inside the 10xDevs course chain, enrich forward-references with lesson titles and links:

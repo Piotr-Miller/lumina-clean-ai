@@ -24,7 +24,7 @@ This skill is the chain-tail of the bootstrap sequence (`/10x-shape → /10x-prd
 
 The skill is a **registry consumer**, not a registry owner. The starter registry lives in `/10x-tech-stack-selector` (`/skills/10x-tech-stack-selector/references/starter-registry.yaml`); bootstrapper looks up the chosen card by `starter_id`, substitutes its `cmd_template`, and dispatches to the right cwd strategy. A CI validator (`scripts/validate-starter-registry-sync.mjs`) prevents bootstrapper from referencing a `starter_id` absent from that registry.
 
-v1 is **chain-mode only**. Without `context/foundation/tech-stack.md`, the skill refuses and redirects to `/10x-tech-stack-selector`. There is no inline mini-handoff, no standalone-mode, no AI-as-bridge fallback for unknown stacks. v1 also does **not** generate `AGENTS.md` / `AGENTS.md` — that responsibility belongs to a future M1L4 skill.
+v1 is **chain-mode only**. Without `context/foundation/tech-stack.md`, the skill refuses and redirects to `/10x-tech-stack-selector`. There is no inline mini-handoff, no standalone-mode, no AI-as-bridge fallback for unknown stacks. v1 also does **not** generate `AGENTS.md` / `CLAUDE.md` — that responsibility belongs to a future M1L4 skill.
 
 ## When to trigger
 
@@ -193,7 +193,7 @@ Sequence:
    Scaffold:    <one-line scaffold summary>.
    Audit:       <one-line audit summary>.
 
-   Next: a future skill will set up agent context (AGENTS.md, AGENTS.md). For now, your project is scaffolded and verified — happy hacking.
+   Next: a future skill will set up agent context (CLAUDE.md, AGENTS.md). For now, your project is scaffolded and verified — happy hacking.
    ```
 
 6. Stop. Do not set the clipboard for retry on a successful run; the chain is complete for v1.
@@ -211,7 +211,7 @@ What the skill produces externally:
 
 What the skill does NOT produce in v1:
 
-- **`AGENTS.md` / `AGENTS.md`** — deferred to the future M1L4 ("Memory Architecture") skill.
+- **`AGENTS.md` / `CLAUDE.md`** — deferred to the future M1L4 ("Memory Architecture") skill.
 - **CI workflow files** (`.github/workflows/ci.yml`, etc.) — deferred to the same future skill.
 - **`git init`** or any git history — bootstrapper assumes the user manages their own repo. The `git-clone` strategy explicitly deletes the cloned `.git/` before move-up so the upstream starter's history does not leak.
 - **Auto-fix / auto-patch on audit findings** — bootstrapper informs; the user decides.
@@ -236,6 +236,6 @@ What the skill does NOT produce in v1:
 
 4. **CLI failure is HARD-STOP.** Non-zero exit code at Step 2 halts the skill, leaves `.bootstrap-scaffold/` in place for inspection, and writes a partial verification log. All other phases use WARN-AND-CONTINUE — verification findings are educational, not gating.
 
-5. **v1 does not generate `AGENTS.md` / `AGENTS.md`.** That work moves to a future M1L4 skill ("Memory Architecture"). v1 surfaces hint values like `bootstrapper_confidence: best-effort` and `quality_override: true` in the conversation summary but takes no compensating action.
+5. **v1 does not generate `AGENTS.md` / `CLAUDE.md`.** That work moves to a future M1L4 skill ("Memory Architecture"). v1 surfaces hint values like `bootstrapper_confidence: best-effort` and `quality_override: true` in the conversation summary but takes no compensating action.
 
 6. **Skill-internal labels stay internal.** When speaking to the user, never reference Step numbers (`Step 0`, `Step 2`), strategy names verbatim (`subdir-then-move`, `native-cwd`, `git-clone`) without context, or internal field paths (`hints.deployment_target`). Translate to plain language: "the scaffold step", "your deployment target", "how the CLI scaffolds in your current directory", "by cloning a starter repo".
