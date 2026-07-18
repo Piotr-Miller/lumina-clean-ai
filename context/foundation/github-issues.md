@@ -153,6 +153,8 @@ repo. They can be deleted manually at any time.
 >
 > **2026-07-10 (post-MVP i18n):** added **S-15 (#96)** `localization` — UI localization across the full surface (landing, enhance workspace, parameter panel, auth) in EN + de/pl/fr/es/uk/zh, persisted; copy-only, engines unaffected. Consumes the string-externalization built i18n-ready in `enhance-ui-refresh`. **Deliberate hold — not started** (user, 2026-07-10). Labels: `roadmap`, `slice`, `status:ready`, `phase:post-mvp`. Next: `/10x-new localization` → `/10x-research` → `/10x-plan`.
 
+> **2026-07-18 (non-roadmap chore):** added **[#102](https://github.com/Piotr-Miller/lumina-clean-ai/issues/102)** `skills-sync-check` — a read-only `npm run check:skills` verifier for `.claude/skills` ↔ `.agents/skills`, manifest hash baselines, local-extension sentinels, and deliberate per-tool adaptations. `chore` label; intentionally absent from the roadmap mapping table above. Change folder: `context/changes/skills-sync-check/`.
+
 ## Status updates (post-creation)
 
 Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" note below).
