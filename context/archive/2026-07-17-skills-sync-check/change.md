@@ -1,10 +1,10 @@
 ---
 change_id: skills-sync-check
 title: Read-only weryfikator spójności drzew skilli (.claude ↔ .agents)
-status: impl_reviewed
+status: archived
 created: 2026-07-17
 updated: 2026-07-18
-archived_at: null
+archived_at: 2026-07-18T19:02:48Z
 ---
 
 ## Notes
