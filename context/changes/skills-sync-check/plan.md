@@ -276,31 +276,31 @@ Pomijalne: ~170 plików do zhashowania/porównania (sha256 + odczyt), czas dzia�
 
 #### Automated
 
-- [x] 1.1 Diff drzew ograniczony do 9 adaptowanych plików (substytucje 1:1 z artefaktu adaptacji)
-- [x] 1.2 `npx prettier --check` na obu drzewach → exit 0 (ignorowane)
-- [x] 1.3 `npm run test:unit` zielone (sanity)
+- [x] 1.1 Diff drzew ograniczony do 9 adaptowanych plików (substytucje 1:1 z artefaktu adaptacji) — a8782f4 (mikro-krok EOL: working-tree-only — bloby `.claude` były już LF, więc commit nie zawiera zmian `.claude`)
+- [x] 1.2 `npx prettier --check` na obu drzewach → exit 0 (ignorowane) — a8782f4
+- [x] 1.3 `npm run test:unit` zielone (sanity) — a8782f4
 
 #### Manual
 
-- [x] 1.4 Spot-check 3 adaptowanych plików — adaptacje poprawne w kontekście
-- [x] 1.5 Próbny commit pliku md z `.agents` — pre-commit nie reformatuje
+- [x] 1.4 Spot-check 3 adaptowanych plików — adaptacje poprawne w kontekście — a8782f4
+- [x] 1.5 Próbny commit pliku md z `.agents` — pre-commit nie reformatuje — a8782f4
 
 ### Phase 2: Checker — konfiguracja + logika + entrypoint + testy
 
 #### Automated
 
-- [ ] 2.1 `npm run check:skills` → exit 0 na czystym repo
-- [ ] 2.2 `npm run check:skills -- --report-only` → exit 0 + pełny raport
-- [ ] 2.3 `npm run test:unit` zielone (z nowymi testami fixture)
-- [ ] 2.4 `npm run typecheck` zielone
-- [ ] 2.5 Targeted prettier + eslint na 4 nowych plikach bez błędów
+- [x] 2.1 `npm run check:skills` → exit 0 na czystym repo
+- [x] 2.2 `npm run check:skills -- --report-only` → exit 0 + pełny raport
+- [x] 2.3 `npm run test:unit` zielone (z nowymi testami fixture)
+- [x] 2.4 `npm run typecheck` zielone
+- [x] 2.5 Targeted prettier + eslint na 4 nowych plikach bez błędów
 
 #### Manual
 
-- [ ] 2.6 Celowe zepsucie #1 (rename katalogu skilla) → exit 1, trafny finding, revert → exit 0
-- [ ] 2.7 Celowe zepsucie #2 (edycja pliku zarządzanego) → exit 1, trafny finding, revert → exit 0
-- [ ] 2.8 Celowe zepsucie #3 (usunięty sentinel) → exit 1, findingi sygnałów 3+4, revert → exit 0
-- [ ] 2.9 Raport czytelny bez zaglądania w kod
+- [x] 2.6 Celowe zepsucie #1 (rename katalogu skilla) → exit 1, trafny finding, revert → exit 0
+- [x] 2.7 Celowe zepsucie #2 (edycja pliku zarządzanego) → exit 1, trafny finding, revert → exit 0
+- [x] 2.8 Celowe zepsucie #3 (usunięty sentinel) → exit 1, findingi sygnałów 3+4, revert → exit 0
+- [x] 2.9 Raport czytelny bez zaglądania w kod
 
 ### Phase 3: Dokumentacja + bookkeeping
 
