@@ -194,7 +194,8 @@
       "Bash(printf 'tampered\\\\n')",
       "Bash(echo \"DRIFT_EXIT=$?\")",
       "Bash(echo \"REPORT_ONLY_EXIT=$?\")",
-      "Bash(echo \"RESTORED_EXIT=$?\")"
+      "Bash(echo \"RESTORED_EXIT=$?\")",
+      "Bash(gh pr create --base master --title 'chore: update local Claude Code settings allowlist' --body ' *)"
     ],
     "deny": [
       "Bash(rm -rf *)"
