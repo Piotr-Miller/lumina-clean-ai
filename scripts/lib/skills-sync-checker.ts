@@ -80,6 +80,15 @@ function shorten(text: string, max = 72): string {
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 
+const SHA256_PATTERN = /^[a-f0-9]{64}$/;
+
+function requireSha256(hash: unknown, label: string): string {
+  if (typeof hash !== "string" || !SHA256_PATTERN.test(hash)) {
+    throw new Error(`${label} is not a lowercase sha256 hex digest`);
+  }
+  return hash;
+}
+
 function parseManifest(rawJson: string): ParsedManifest {
   let data: unknown;
   try {
@@ -102,19 +111,37 @@ function parseManifest(rawJson: string): ParsedManifest {
     }
     const hashes = new Map<string, string>();
     for (const [file, hash] of Object.entries(contentHashes)) {
-      if (typeof hash !== "string") {
-        throw new Error(`hash for "${skill}/${file}" is not a string`);
-      }
-      hashes.set(file, hash);
+      hashes.set(file, requireSha256(hash, `hash for "${skill}/${file}"`));
     }
     skillHashes.set(skill, hashes);
   }
 
+  const rawPrompts = files.prompts;
+  if (!Array.isArray(rawPrompts)) {
+    throw new Error("files.prompts is not an array");
+  }
+  const declaredPrompts = new Set<string>();
+  for (const prompt of rawPrompts) {
+    if (typeof prompt !== "string" || prompt.length === 0) {
+      throw new Error("files.prompts contains a non-string or empty path");
+    }
+    if (declaredPrompts.has(prompt)) {
+      throw new Error(`files.prompts declares "${prompt}" more than once`);
+    }
+    declaredPrompts.add(prompt);
+  }
+
   const promptHashes = new Map<string, string>();
   const rawPromptHashes = files.promptHashes;
-  if (isRecord(rawPromptHashes)) {
-    for (const [file, hash] of Object.entries(rawPromptHashes)) {
-      if (typeof hash === "string") promptHashes.set(file, hash);
+  if (!isRecord(rawPromptHashes)) {
+    throw new Error("files.promptHashes is not a map");
+  }
+  for (const [file, hash] of Object.entries(rawPromptHashes)) {
+    promptHashes.set(file, requireSha256(hash, `prompt hash for "${file}"`));
+  }
+  for (const prompt of declaredPrompts) {
+    if (!promptHashes.has(prompt)) {
+      throw new Error(`declared prompt "${prompt}" has no promptHashes entry`);
     }
   }
 
@@ -133,6 +160,16 @@ function listTreeFiles(treeRoot: string): string[] {
   };
   walk(treeRoot, "");
   return files.sort();
+}
+
+function isAcceptedLocalHash(
+  config: SkillsSyncConfig,
+  repoPath: string,
+  manifestHash: string,
+  actualHash: string,
+): boolean {
+  const pin = config.acceptedLocalHashes[repoPath];
+  return pin?.manifestHashAtPin === manifestHash && pin.acceptedLocalHash === actualHash;
 }
 
 export function runSkillsSyncCheck(root: string, config: SkillsSyncConfig): SkillsSyncResult {
@@ -166,6 +203,7 @@ export function runSkillsSyncCheck(root: string, config: SkillsSyncConfig): Skil
   const agentsSet = new Set(agentsFiles);
   const manifestSkills = new Set(manifest.skillHashes.keys());
   const manualParityPaths = new Set(config.manualParityFiles.map((file) => file.path));
+  const missingPathsReported = new Set<string>();
 
   const classify = (treePath: string): FileClass => {
     if (manualParityPaths.has(treePath)) return "personal-manual";
@@ -178,24 +216,28 @@ export function runSkillsSyncCheck(root: string, config: SkillsSyncConfig): Skil
   // Signal 1 — presence: dir-diff of the full file sets of both trees.
   for (const file of claudeFiles) {
     if (!agentsSet.has(file)) {
+      const path = `${config.agentsSkillsDir}/${file}`;
       findings.push({
         signal: 1,
         kind: "missing-in-tree",
         fileClass: classify(file),
-        path: `${config.agentsSkillsDir}/${file}`,
+        path,
         detail: `present in ${config.claudeSkillsDir} but missing here`,
       });
+      missingPathsReported.add(path);
     }
   }
   for (const file of agentsFiles) {
     if (!claudeSet.has(file)) {
+      const path = `${config.claudeSkillsDir}/${file}`;
       findings.push({
         signal: 1,
         kind: "missing-in-tree",
         fileClass: classify(file),
-        path: `${config.claudeSkillsDir}/${file}`,
+        path,
         detail: `present in ${config.agentsSkillsDir} but missing here`,
       });
+      missingPathsReported.add(path);
     }
   }
   // Signal 1 — presence: every manifest-listed file exists in the .claude tree
@@ -212,6 +254,33 @@ export function runSkillsSyncCheck(root: string, config: SkillsSyncConfig): Skil
           detail: "listed in the 10x-cli manifest but absent from the tree",
         });
       }
+    }
+  }
+  // Signal 1 — presence: configured non-manifest files must exist in BOTH
+  // trees. A symmetric deletion is invisible to the raw dir-diff above.
+  const requiredNonManifestFiles: { path: string; fileClass: FileClass }[] = [
+    ...config.manualParityFiles.map(({ path }) => ({ path, fileClass: "personal-manual" as const })),
+    ...config.lockBootstrapSkills.map((skill) => ({
+      path: `${skill}/SKILL.md`,
+      fileClass: "lock-bootstrap" as const,
+    })),
+  ];
+  for (const { path: rel, fileClass } of requiredNonManifestFiles) {
+    for (const [treeDir, treeSet] of [
+      [config.claudeSkillsDir, claudeSet],
+      [config.agentsSkillsDir, agentsSet],
+    ] as const) {
+      if (treeSet.has(rel)) continue;
+      const repoPath = `${treeDir}/${rel}`;
+      if (missingPathsReported.has(repoPath)) continue; // dir-diff already emitted the precise finding
+      findings.push({
+        signal: 1,
+        kind: "missing-from-disk",
+        fileClass,
+        path: repoPath,
+        detail: "required by the local skills-sync contract but absent from the tree",
+      });
+      missingPathsReported.add(repoPath);
     }
   }
 
@@ -236,7 +305,7 @@ export function runSkillsSyncCheck(root: string, config: SkillsSyncConfig): Skil
               "content matches the upstream manifest hash — the local extension was wiped (a healthy extended file MISMATCHES the manifest)",
           });
         }
-      } else if (actual !== expected && actual !== config.acceptedLocalHashes[repoPath]) {
+      } else if (actual !== expected && !isAcceptedLocalHash(config, repoPath, expected, actual)) {
         findings.push({
           signal: 2,
           kind: "unauthorized-edit",
@@ -263,7 +332,7 @@ export function runSkillsSyncCheck(root: string, config: SkillsSyncConfig): Skil
     }
     hashedFiles += 1;
     const actual = sha256(readFileSync(abs));
-    if (actual !== expected && actual !== config.acceptedLocalHashes[repoPath]) {
+    if (actual !== expected && !isAcceptedLocalHash(config, repoPath, expected, actual)) {
       findings.push({
         signal: 2,
         kind: "unauthorized-edit",

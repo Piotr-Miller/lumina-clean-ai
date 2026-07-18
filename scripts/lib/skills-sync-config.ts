@@ -22,6 +22,13 @@ export interface SentinelFile {
   sentinels: string[];
 }
 
+export interface AcceptedLocalHashPin {
+  /** Manifest baseline that was current when the local deviation was pinned. */
+  manifestHashAtPin: string;
+  /** Sha256 of the accepted local bytes. */
+  acceptedLocalHash: string;
+}
+
 export interface SkillsSyncConfig {
   /** Repo-relative path of the Claude Code skills tree (the `10x get` target). */
   claudeSkillsDir: string;
@@ -31,7 +38,11 @@ export interface SkillsSyncConfig {
   manifestPath: string;
   /** Repo-relative path of the manifest-tracked prompts directory (`.claude` only — no `.agents` twin). */
   claudePromptsDir: string;
-  /** Skills present in the trees that come from the starter bootstrap (`skills-lock.json`), not the manifest. */
+  /**
+   * Skill directories that come from the starter bootstrap
+   * (`skills-lock.json`), not the manifest. Their canonical `SKILL.md` must
+   * exist in both trees.
+   */
   lockBootstrapSkills: string[];
   /**
    * Manifest-tracked files with INVERTED hash semantics: they carry local
@@ -49,13 +60,14 @@ export interface SkillsSyncConfig {
    */
   adaptedLines: Record<string, AdaptedLinePair[]>;
   /**
-   * Known local deviations from the manifest baseline, pinned by sha256 of
-   * the CURRENT on-disk bytes. Keyed by repo-relative path. A normal managed
-   * file is OK when its hash matches the manifest OR its pinned value here;
-   * anything else is drift. Extended skills ignore this map (their healthy
-   * state is any-mismatch + sentinels).
+   * Known local deviations from a SPECIFIC manifest baseline, pinned by the
+   * baseline sha256 and the sha256 of the accepted on-disk bytes. Keyed by
+   * repo-relative path. A pin is active only while the live manifest still
+   * carries `manifestHashAtPin`; after the next upstream change the pin is
+   * inert, so stale local bytes alarm. Extended skills ignore this map (their
+   * healthy state is any-mismatch + sentinels).
    */
-  acceptedLocalHashes: Record<string, string>;
+  acceptedLocalHashes: Partial<Record<string, AcceptedLocalHashPin>>;
 }
 
 export const EXTENDED_SKILLS: SentinelFile[] = [
@@ -224,23 +236,44 @@ export const ADAPTED_LINES: Record<string, AdaptedLinePair[]> = {
  * m5l1 initial, PR #85 — all before `.prettierignore` landed in a8782f4), so
  * their pristine upstream bytes never existed in git and the manifest hash
  * can never match. Semantically zero drift. Pinned to the exact formatted
- * bytes: any FUTURE edit still alarms. After the next `10x get` restores
- * upstream bytes these entries go inert and can be dropped.
+ * bytes and to the manifest baseline current at the time of the pin: any
+ * FUTURE local edit alarms, and any FUTURE manifest baseline makes the pin
+ * inert even if stale local bytes remain. After the next `10x get` restores
+ * upstream bytes these entries can be dropped.
  */
-export const ACCEPTED_LOCAL_HASHES: Record<string, string> = {
-  ".claude/skills/10x-e2e/SKILL.md": "548aea02f324130ba461a6a0660669baca541768b8dc17789c4b848f16d75bf7",
-  ".claude/skills/10x-e2e/references/browser-driven-generation.md":
-    "826b011c2e4edb133c9ba2ec1aa1220216979dd3aa41f1f61e4af5047acbadf4",
-  ".claude/skills/10x-e2e/references/e2e-anti-patterns.md":
-    "92a48588e6c3a9465e36f60cdc17e67e52a1432f29a28288ef91413ff0f52eb1",
-  ".claude/skills/10x-e2e/references/e2e-prompt-template.md":
-    "626c66ac597b4954f493e6be1150e2351752d6960aac4d197718b303620266af",
-  ".claude/skills/10x-e2e/references/e2e-quality-rules.md":
-    "f42546fd1cc6395e4274b86ace96a30589dfd35f19378a496806f2ecf1effdb2",
-  ".claude/skills/10x-e2e/references/seed-test-pattern.md":
-    "a70fd860c53eda1e1251472a90a25c32084b2aba0c62736ae348ed4b332a249d",
-  ".claude/skills/10x-opportunity-map/SKILL.md": "bc24fdf565c9b7fb928bdaaa6537368975ae3c4e535c0c86837117d7e8d313e9",
-  ".claude/prompts/mvp-check.md": "5674efc9b394335ea09fc480ebde58eab8a67418c3da4eeb86f077e1665bbab9",
+export const ACCEPTED_LOCAL_HASHES: Partial<Record<string, AcceptedLocalHashPin>> = {
+  ".claude/skills/10x-e2e/SKILL.md": {
+    manifestHashAtPin: "994b511efafdcbe7526bb32a9908b330bd78326c42c5e41896983e497c61cd54",
+    acceptedLocalHash: "548aea02f324130ba461a6a0660669baca541768b8dc17789c4b848f16d75bf7",
+  },
+  ".claude/skills/10x-e2e/references/browser-driven-generation.md": {
+    manifestHashAtPin: "08fb380685c299ce7cc40d9ab3191261198d0c40ec62a4d9ee5f7ebfc440e50c",
+    acceptedLocalHash: "826b011c2e4edb133c9ba2ec1aa1220216979dd3aa41f1f61e4af5047acbadf4",
+  },
+  ".claude/skills/10x-e2e/references/e2e-anti-patterns.md": {
+    manifestHashAtPin: "38950a5c6fc67f65899365f99930178d589e87118d7a6dbd74728806ac36ab38",
+    acceptedLocalHash: "92a48588e6c3a9465e36f60cdc17e67e52a1432f29a28288ef91413ff0f52eb1",
+  },
+  ".claude/skills/10x-e2e/references/e2e-prompt-template.md": {
+    manifestHashAtPin: "7d934d3b6f0e3f36e7abdf0ab7ff4a23b645d12cb80603e3a962ce7d6babb95b",
+    acceptedLocalHash: "626c66ac597b4954f493e6be1150e2351752d6960aac4d197718b303620266af",
+  },
+  ".claude/skills/10x-e2e/references/e2e-quality-rules.md": {
+    manifestHashAtPin: "d161cf3659ae5321b7f597987664e4017aecc7e15f5caa7a15a1eaf73bf4162b",
+    acceptedLocalHash: "f42546fd1cc6395e4274b86ace96a30589dfd35f19378a496806f2ecf1effdb2",
+  },
+  ".claude/skills/10x-e2e/references/seed-test-pattern.md": {
+    manifestHashAtPin: "90fa8778a557d0c88320e839c6a8879735b3390b68ed89b3487258f2562b2f80",
+    acceptedLocalHash: "a70fd860c53eda1e1251472a90a25c32084b2aba0c62736ae348ed4b332a249d",
+  },
+  ".claude/skills/10x-opportunity-map/SKILL.md": {
+    manifestHashAtPin: "df8ddeb8377253b41b2de7812dedcf3fce8ddf3489e4ad52a7cc20e8b72f939f",
+    acceptedLocalHash: "bc24fdf565c9b7fb928bdaaa6537368975ae3c4e535c0c86837117d7e8d313e9",
+  },
+  ".claude/prompts/mvp-check.md": {
+    manifestHashAtPin: "925dbc3beb572cb90e858c8ec1ed6c813803cc7169bbf8be727cf29a83ccd839",
+    acceptedLocalHash: "5674efc9b394335ea09fc480ebde58eab8a67418c3da4eeb86f077e1665bbab9",
+  },
 };
 
 export const SKILLS_SYNC_CONFIG: SkillsSyncConfig = {

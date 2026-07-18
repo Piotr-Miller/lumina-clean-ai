@@ -39,6 +39,7 @@ LuminaClean AI — night/low-light photo denoise + exposure-correction MVP. Two 
 - `npm run lint` — ESLint with type-checked rules
 - `npm run lint:fix` — auto-fix lint issues
 - `npm run format` — Prettier (includes prettier-plugin-astro + prettier-plugin-tailwindcss)
+- `npm run check:skills` — read-only drift check for `.claude/skills` ↔ `.agents/skills`; run after every `10x get` and manual re-sync
 - `npm run test:e2e` — Playwright E2E gate (`tests/e2e/*.spec.ts`). Playwright's webServer is `npm run test:e2e:serve` (`npm run build && wrangler dev --port 4321`) — it serves a **production build on workerd**, NOT `astro dev` (whose Vite SSR dep-optimizer hits dev-only issue #15 → "more than one copy of React" on the enhance page). Needs the local stack + a served `enhance` function with the seam env — see `context/foundation/test-plan.md` §6.3 for the run recipe. ⚠️ The stub seam `E2E_ALLOWED_OUTPUT_ORIGIN` is local/CI-only — **never set it in production** (it widens the Edge Function's SSRF output-fetch allowlist; see `context/foundation/cloud-live-smoke.md`).
 
 Git hooks (husky): **pre-commit** — lint-staged runs `eslint --fix` on `*.{ts,tsx,astro}` and `prettier --write` on `*.{json,css,md}` (kept fast — no tests here); **pre-push** — `set -e`, blocks any push to `refs/heads/master` (**master is PR-only**: branch → PR → merge; server-side rulesets unavailable on private+Free, so this hook is the enforcement; emergency bypass `git push --no-verify`), then `npm run typecheck` (`tsc --noEmit`) + `npm run test:unit` for branch pushes. (Tests moved commit→push so commits stay fast; CI still runs the full suite.)
@@ -91,7 +92,7 @@ All jobs run under a workflow-level `concurrency` block (`group` = workflow + re
 
 - The rules live in this `AGENTS.md`; `CLAUDE.md` (the Claude Code profile's canonical rules file) imports it via `@AGENTS.md`. If a `10x get` ever appends content to the `CLAUDE.md` shim, move it here.
 - **Two synced skill trees exist in-repo — use the one for YOUR tool:** Claude Code reads `.claude/skills/<name>/SKILL.md`; Codex reads the adapted copies at `.agents/skills/<name>/SKILL.md` (same skills; per-tool path/filename references swapped). Codex runtime config/hooks live under `.codex/`. Every `.claude/skills/<name>` path mentioned elsewhere in this file has its Codex equivalent at `.agents/skills/<name>`.
-- The 10x-cli's active profile is **Claude Code** (verify with `10x doctor` — it validates the `.claude/` tool dir), so `10x get` refreshes `.claude/skills/`; after a re-fetch, re-sync the `.agents/skills/` copies. To switch the managed profile, re-run `10x get <ref> --tool <name>`; the CLI will prompt to migrate existing artifacts.
+- The 10x-cli's active profile is **Claude Code** (verify with `10x doctor` — it validates the `.claude/` tool dir), so `10x get` refreshes `.claude/skills/`; after a re-fetch, re-sync the `.agents/skills/` copies and run `npm run check:skills`. Run the same check after every manual re-sync. To switch the managed profile, re-run `10x get <ref> --tool <name>`; the CLI will prompt to migrate existing artifacts.
 - Lesson artifacts (skills, prompts, rules, config templates) are managed via the CLI, not edited by hand. `10x list` browses; `10x get <ref>` (e.g. `10x get m1l1`) fetches and applies a bundle; `10x get <ref> --dry-run` previews; `10x doctor` diagnoses auth, API, config, and tool-directory issues.
 - Re-fetching a different lesson cleans up artifacts from the previous lesson that aren't in the new one. Hand-editing files under `.claude/skills/` will be overwritten on the next `10x get` for the same lesson.
 - **Upstream README is authoritative** for install/usage: `https://raw.githubusercontent.com/przeprogramowani/10x-cli/refs/heads/master/README.md`. If memory and the README disagree, follow the README.
@@ -111,7 +112,8 @@ These behaviors were added to `.claude/skills/10x-archive/SKILL.md` (step 6) but
 This repository is a **10xDevs course workspace** that has been bootstrapped with an Astro 6 application (Supabase + Cloudflare Workers). Two layers of artifacts coexist:
 
 - **Course artifacts** managed by `@przeprogramowani/10x-cli`:
-  - `skills-lock.json` — pins the skills fetched from the course CLI (source: `przeprogramowani/10x-cli` on GitHub) with content hashes.
+  - `skills-lock.json` — bootstrap artifact from `10x-astro-starter` in the vercel-labs `skills` CLI format; tracks 2 starter skills with CRLF-sensitive folder hashes and is not the `10x get` inventory.
+  - `.claude/.10x-cli-manifest.json` — authoritative inventory and raw-byte sha256 baseline produced by `10x get` for managed skills and prompts.
   - `.claude/skills/<name>/SKILL.md` — skill bundles pulled in by `10x get`.
 - **Application code** scaffolded from `10x-astro-starter` — see "Project: Astro + Supabase + Cloudflare" above for commands, architecture, and conventions. Bootstrap audit trail lives at `context/changes/bootstrap-verification/verification.md`.
 

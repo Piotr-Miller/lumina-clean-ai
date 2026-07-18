@@ -32,7 +32,10 @@ const CONFIG: SkillsSyncConfig = {
     "adapted/SKILL.md": [{ claude: "read CLAUDE.md for the rules", agents: "read AGENTS.md for the rules" }],
   },
   acceptedLocalHashes: {
-    ".claude/skills/formatted/SKILL.md": sha256(FORMATTED_ON_DISK),
+    ".claude/skills/formatted/SKILL.md": {
+      manifestHashAtPin: sha256(FORMATTED_UPSTREAM),
+      acceptedLocalHash: sha256(FORMATTED_ON_DISK),
+    },
   },
 };
 
@@ -116,6 +119,43 @@ describe("runSkillsSyncCheck", () => {
     });
   });
 
+  it("signal 1: flags a configured manual-parity file missing from BOTH trees", () => {
+    for (const tree of [".claude", ".agents"]) {
+      rmSync(join(root, tree, "skills", "ext", "SKILL.user.md"));
+    }
+    const findings = findingsOf(runSkillsSyncCheck(root, CONFIG));
+    expect(findings).toHaveLength(2);
+    expect(findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          signal: 1,
+          kind: "missing-from-disk",
+          fileClass: "personal-manual",
+          path: ".claude/skills/ext/SKILL.user.md",
+        }),
+        expect.objectContaining({
+          signal: 1,
+          kind: "missing-from-disk",
+          fileClass: "personal-manual",
+          path: ".agents/skills/ext/SKILL.user.md",
+        }),
+      ]),
+    );
+  });
+
+  it("signal 1: flags a configured lock-bootstrap skill missing from BOTH trees", () => {
+    for (const tree of [".claude", ".agents"]) {
+      rmSync(join(root, tree, "skills", "lockskill"), { recursive: true });
+    }
+    const findings = findingsOf(runSkillsSyncCheck(root, CONFIG));
+    expect(findings).toHaveLength(2);
+    expect(findings.every((finding) => finding.fileClass === "lock-bootstrap")).toBe(true);
+    expect(findings.map((finding) => finding.path)).toEqual([
+      ".claude/skills/lockskill/SKILL.md",
+      ".agents/skills/lockskill/SKILL.md",
+    ]);
+  });
+
   it("signal 2: flags an unauthorized local edit of a normal managed file", () => {
     const edited = "# alpha\nlocally edited body\n";
     write(".claude/skills/alpha/SKILL.md", edited);
@@ -149,6 +189,18 @@ describe("runSkillsSyncCheck", () => {
     const edited = "# formatted\nsomething else entirely\n";
     write(".claude/skills/formatted/SKILL.md", edited);
     write(".agents/skills/formatted/SKILL.md", edited); // keep the pair equal → only signal 2 fires
+    const findings = findingsOf(runSkillsSyncCheck(root, CONFIG));
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({
+      signal: 2,
+      kind: "unauthorized-edit",
+      path: ".claude/skills/formatted/SKILL.md",
+    });
+  });
+
+  it("signal 2: an accepted-local pin becomes inert when the manifest baseline changes", () => {
+    const nextUpstreamHash = sha256("# formatted\nnew upstream body\n");
+    write(".claude/.10x-cli-manifest.json", MANIFEST.replace(sha256(FORMATTED_UPSTREAM), nextUpstreamHash));
     const findings = findingsOf(runSkillsSyncCheck(root, CONFIG));
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({
@@ -241,6 +293,33 @@ describe("runSkillsSyncCheck", () => {
     const result = runSkillsSyncCheck(root, CONFIG);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.environmentError).toMatch(/manifest/);
+  });
+
+  it("returns an environment error when promptHashes is missing", () => {
+    const manifest = JSON.parse(MANIFEST) as { files: Record<string, unknown> };
+    delete manifest.files.promptHashes;
+    write(".claude/.10x-cli-manifest.json", JSON.stringify(manifest));
+    const result = runSkillsSyncCheck(root, CONFIG);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.environmentError).toContain("files.promptHashes is not a map");
+  });
+
+  it("returns an environment error when a declared prompt has no hash", () => {
+    const manifest = JSON.parse(MANIFEST) as { files: { promptHashes: Record<string, unknown> } };
+    delete manifest.files.promptHashes["p1.md"];
+    write(".claude/.10x-cli-manifest.json", JSON.stringify(manifest));
+    const result = runSkillsSyncCheck(root, CONFIG);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.environmentError).toContain('declared prompt "p1.md" has no promptHashes entry');
+  });
+
+  it("returns an environment error for a malformed sha256 in the manifest", () => {
+    const manifest = JSON.parse(MANIFEST) as { files: { promptHashes: Record<string, unknown> } };
+    manifest.files.promptHashes["p1.md"] = "not-a-sha256";
+    write(".claude/.10x-cli-manifest.json", JSON.stringify(manifest));
+    const result = runSkillsSyncCheck(root, CONFIG);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.environmentError).toContain("not a lowercase sha256 hex digest");
   });
 
   it("returns an environment error when a skills tree is missing", () => {
