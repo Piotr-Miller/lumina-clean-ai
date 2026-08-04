@@ -195,7 +195,13 @@
       "Bash(echo \"DRIFT_EXIT=$?\")",
       "Bash(echo \"REPORT_ONLY_EXIT=$?\")",
       "Bash(echo \"RESTORED_EXIT=$?\")",
-      "Bash(gh pr create --base master --title 'chore: update local Claude Code settings allowlist' --body ' *)"
+      "Bash(gh pr create --base master --title 'chore: update local Claude Code settings allowlist' --body ' *)",
+      "Bash(seq 1 100)",
+      "Bash(echo \"UP: http://127.0.0.1:4321 responds\")",
+      "Bash(exit 0)",
+      "Bash(echo \"UP: http://localhost:4321 responds\")",
+      "Bash(grep -qiE 'EADDRINUSE|error|failed|address in use' /c/Users/prmi/AppData/Local/Temp/claude/C--Source-Trainings-AI-10xDevs-LuminaClean-AI/3cf149f4-da1d-41b0-87db-e57f1d4f3eda/tasks/bhh9ie4kv.output)",
+      "Bash(gh pr create --base master --title 'docs\\(prod-config\\): refresh local-toolchain state after #106/#107' --body ' *)"
     ],
     "deny": [
       "Bash(rm -rf *)"
