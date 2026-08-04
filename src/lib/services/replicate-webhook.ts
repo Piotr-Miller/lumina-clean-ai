@@ -141,9 +141,7 @@ export interface ReplicatePredictionPayload {
 
 /** Terminal action the `/callback` route should take for a completion payload. */
 export type PredictionOutcome =
-  | { kind: "succeeded"; outputUrl: string }
-  | { kind: "failed"; errorMessage: string }
-  | { kind: "ignore" };
+  { kind: "succeeded"; outputUrl: string } | { kind: "failed"; errorMessage: string } | { kind: "ignore" };
 
 /** Bread returns a single output URI; tolerate the array-of-strings shape too. */
 function firstOutputUrl(output: unknown): string | null {
