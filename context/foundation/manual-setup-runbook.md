@@ -20,7 +20,7 @@ configuration that lives **outside the codebase** and that a fresh clone cannot 
 
 - Accounts: **Cloudflare**, **Supabase**, **Replicate**, **Resend**, **GitHub**, **Google
   Search Console**.
-- Local tooling: Node 22.x via `fnm`/`.nvmrc`; `npx supabase` + `npx wrangler` (both
+- Local tooling: Node 24.x via `fnm`/`.nvmrc`; `npx supabase` + `npx wrangler` (both
   devDependencies); `git`/`gh`; Docker (only for local Supabase).
 - Auth the CLIs once: `npx supabase login` and `npx wrangler login` (interactive — run them
   yourself via the `!` prefix if a shell can't accept input).
@@ -108,7 +108,7 @@ Gated until the cloud-readiness slices are in (cost cap, retention, cold-boot). 
 this together — a half-wired pipeline stalls jobs silently. Names/locations → `production-config.md` §2.
 
 1. **DB-webhook config in Supabase Vault** (hosted Supabase denies `ALTER DATABASE SET
-   app.settings.*`, so config moved to Vault — migration `20260608120000_jobs_webhook_vault.sql`
+app.settings.*`, so config moved to Vault — migration `20260608120000_jobs_webhook_vault.sql`
    makes `handle_queued_job()` read these). In the prod **SQL Editor**:
    ```sql
    select vault.create_secret('https://<PROD_REF>.supabase.co/functions/v1/enhance', 'edge_function_url');
