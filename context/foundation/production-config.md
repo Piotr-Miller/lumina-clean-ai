@@ -20,7 +20,7 @@ production — the things that live in Cloudflare, Supabase, Resend, GitHub, and
 > (ordered "do this, then this" wire-up actions per service). This file is the _state record_
 > (the concrete refs/IDs and what's currently set). Use them together.
 
-Last updated: **2026-06-15**.
+Last updated: **2026-08-04**.
 
 ---
 
