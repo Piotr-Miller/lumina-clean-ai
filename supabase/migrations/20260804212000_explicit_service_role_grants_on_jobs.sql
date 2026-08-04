@@ -1,0 +1,23 @@
+-- Make service_role's table-level grants on public.jobs EXPLICIT.
+--
+-- The create-table migration (20260528120000) trimmed anon/authenticated to
+-- explicit minimal grants but deliberately relied on the platform's implicit
+-- blanket grants for service_role ("service_role keeps its full blanket
+-- grants (not re-listed here; they are the Supabase default)"). That
+-- assumption broke on fresh local stacks booted by supabase CLI 2.111.0:
+-- service_role gets NO grants on this table, and every admin-client code path
+-- fails with 42501 "permission denied for table jobs" (first seen in CI run
+-- 30950583601 on the CLI 2.98.2 -> 2.111.0 bump, tests/jobs.rls.test.ts).
+--
+-- Grants and RLS are orthogonal gates: service_role has BYPASSRLS but still
+-- needs table-level grants. The four DML ops below are exactly what the
+-- admin-client paths use: createPhotoJob (insert), status flips /
+-- markJobSucceeded / cancel / timeout (update), job lookups (select), and
+-- E2E/test cleanup (delete). No sequence grant needed (uuid PK).
+--
+-- Idempotent everywhere: on hosted prod (where the blanket grants still
+-- exist) this is a no-op re-grant; on fresh local stacks it restores the
+-- intended access. anon/authenticated grants are untouched (anon: none,
+-- authenticated: select-only per 20260621185226).
+
+grant select, insert, update, delete on public.jobs to service_role;
