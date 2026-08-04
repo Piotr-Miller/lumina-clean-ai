@@ -54,8 +54,7 @@ export interface SyncStats {
 }
 
 export type SkillsSyncResult =
-  | { ok: true; findings: SyncFinding[]; stats: SyncStats }
-  | { ok: false; environmentError: string };
+  { ok: true; findings: SyncFinding[]; stats: SyncStats } | { ok: false; environmentError: string };
 
 interface ParsedManifest {
   /** skill name → file (skill-relative) → sha256 of raw bytes. */
