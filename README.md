@@ -21,7 +21,7 @@ Built as a 10xDevs course project, scaffolded from [10x-astro-starter](https://g
 
 ## Prerequisites
 
-- Node.js v22.14.0 (as specified in `.nvmrc`)
+- Node.js v24.19.0 (as specified in `.nvmrc`)
 - npm (comes with Node.js)
 - [Docker](https://www.docker.com/) for the local Supabase stack
 
