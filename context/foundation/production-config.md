@@ -20,7 +20,7 @@ production — the things that live in Cloudflare, Supabase, Resend, GitHub, and
 > (ordered "do this, then this" wire-up actions per service). This file is the _state record_
 > (the concrete refs/IDs and what's currently set). Use them together.
 
-Last updated: **2026-06-15**.
+Last updated: **2026-08-04**.
 
 ---
 
@@ -33,13 +33,13 @@ Last updated: **2026-06-15**.
   - **workers.dev alias:** `lumina-clean-ai.pmiller-software.workers.dev` — same Worker, still active. **Teardown = issue #14** (`disable-workers-dev-subdomain`), after go-live testing.
   - **Bindings:** `SESSION` (KV namespace), `IMAGES` (Images), `ASSETS` (static `./dist`). `observability.enabled = true`. Config in `wrangler.jsonc`.
 - **DNS records** (added by Resend "Auto configure", DNS-only):
-  | Host | Type | Purpose | Value (summary) |
-  | --- | --- | --- | --- |
-  | `send` | TXT | SPF | `v=spf1 include:amazonses.com ~all` |
-  | `resend._domainkey` | TXT | DKIM | `p=MIGf…` (Resend/SES key) |
-  | `send` | MX | bounce/return-path | `10 feedback-smtp.eu-west-1.amazonses.com` |
-  | `_dmarc` | TXT | DMARC | **not set** — optional, add `v=DMARC1; p=none;` later for deliverability |
-  | `luminacleanai.com` / `www` | (managed) | Worker custom domain | proxied → Worker `lumina-clean-ai` |
+  | Host                        | Type      | Purpose              | Value (summary)                                                          |
+  | --------------------------- | --------- | -------------------- | ------------------------------------------------------------------------ |
+  | `send`                      | TXT       | SPF                  | `v=spf1 include:amazonses.com ~all`                                      |
+  | `resend._domainkey`         | TXT       | DKIM                 | `p=MIGf…` (Resend/SES key)                                               |
+  | `send`                      | MX        | bounce/return-path   | `10 feedback-smtp.eu-west-1.amazonses.com`                               |
+  | `_dmarc`                    | TXT       | DMARC                | **not set** — optional, add `v=DMARC1; p=none;` later for deliverability |
+  | `luminacleanai.com` / `www` | (managed) | Worker custom domain | proxied → Worker `lumina-clean-ai`                                       |
 
 ## 2. Supabase — environments
 
@@ -89,8 +89,8 @@ Names only (Settings → Secrets and variables → Actions):
 
 ## 6. Local dev environment
 
-- Node via **fnm**; PowerShell profile now auto-activates it (`fnm env --use-on-cd`). Project Node pinned by `.nvmrc` (22.x).
-- `wrangler` `4.98.0` (devDependency).
+- Node via **fnm**; PowerShell profile now auto-activates it (`fnm env --use-on-cd`). Project Node pinned by `.nvmrc` (24.x — switched from 22.x in PR #107).
+- `wrangler` `4.118.0` (devDependency — bumped from 4.98.0 in PR #106).
 
 ---
 
