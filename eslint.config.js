@@ -98,6 +98,13 @@ export default tseslint.config(
   // Linting them with the typed projectService would error; they have their own
   // runtime. Excluded from tsconfig too (see tsconfig.json "exclude").
   { ignores: ["supabase/functions/**"] },
+  // The code-reviewer package has its own tsconfig/module graph — the typed
+  // projectService can't place its files in the root project. Compensating
+  // gates (same pattern as `deno check` for the Edge Function): package-local
+  // eslint config + a dedicated CI job run its lint/typecheck/tests. Scoped to
+  // the one package (not packages/**) so a future package must opt out — and
+  // compensate — explicitly.
+  { ignores: ["packages/code-reviewer/**"] },
   // Generated esbuild IIFE bundles (e.g. the committed A/B tuning-harness build
   // artifact) are machine-emitted, not authored — linting them is noise.
   { ignores: ["**/*.iife.js"] },
