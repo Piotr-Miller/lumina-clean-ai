@@ -5,7 +5,7 @@ import tseslint from "typescript-eslint";
 // package's lint story. Typed rules run against the package's own tsconfig.
 export default tseslint.config({
   files: ["src/**/*.ts"],
-  extends: [...tseslint.configs.recommendedTypeChecked],
+  extends: [...tseslint.configs.strictTypeChecked, ...tseslint.configs.stylisticTypeChecked],
   languageOptions: {
     parserOptions: {
       projectService: true,

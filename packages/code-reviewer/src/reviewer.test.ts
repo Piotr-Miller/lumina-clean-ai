@@ -1,24 +1,24 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_MODEL } from "./config.js";
-import { createReviewer } from "./reviewer.js";
+import {
+  createReviewer,
+  fetchBoundedContext,
+  MAX_CONTEXT_CHARS,
+  MAX_CONTEXT_LINES,
+  type SourceProvider,
+} from "./reviewer.js";
 
 // Hermetic: scrub the OpenRouter env so results don't depend on a developer's
 // .env or shell (vitest does not load .env, but a shell-exported key would
-// otherwise leak in).
-const scrubbed = ["OPENROUTER_API_KEY", "OPENROUTER_MODEL"] as const;
-let saved: Record<string, string | undefined>;
-
+// otherwise leak in). vi.stubEnv(name, undefined) deletes with tracked restore.
 beforeEach(() => {
-  saved = Object.fromEntries(scrubbed.map((k) => [k, process.env[k]]));
-  for (const k of scrubbed) delete process.env[k];
+  vi.stubEnv("OPENROUTER_API_KEY", undefined);
+  vi.stubEnv("OPENROUTER_MODEL", undefined);
 });
 
 afterEach(() => {
-  for (const k of scrubbed) {
-    if (saved[k] === undefined) delete process.env[k];
-    else process.env[k] = saved[k];
-  }
+  vi.unstubAllEnvs();
 });
 
 describe("createReviewer", () => {
@@ -41,8 +41,13 @@ describe("createReviewer", () => {
   });
 
   it("resolves the model from OPENROUTER_MODEL when not overridden", () => {
-    process.env.OPENROUTER_MODEL = "env/model-y";
+    vi.stubEnv("OPENROUTER_MODEL", "env/model-y");
     expect(createReviewer({ apiKey: "test-key" }).model).toBe("env/model-y");
+  });
+
+  it("falls back to DEFAULT_MODEL when OPENROUTER_MODEL is set but empty", () => {
+    vi.stubEnv("OPENROUTER_MODEL", "");
+    expect(createReviewer({ apiKey: "test-key" }).model).toBe(DEFAULT_MODEL);
   });
 
   it("is a factory, not a singleton", () => {
@@ -57,4 +62,44 @@ describe("createReviewer", () => {
       expect(() => createReviewer({ apiKey: "test-key", maxSteps })).toThrow(/positive integer/);
     },
   );
+});
+
+describe("fetchBoundedContext (context-tool guardrails)", () => {
+  it("returns the fixed fallback when no source is injected", async () => {
+    await expect(fetchBoundedContext(undefined, { path: "a.ts" })).resolves.toBe(
+      "No additional context available.",
+    );
+  });
+
+  it("clamps oversized ranges to at most MAX_CONTEXT_LINES lines", async () => {
+    let seen: { startLine?: number; endLine?: number } | undefined;
+    const source: SourceProvider = (request) => {
+      seen = request;
+      return "ctx";
+    };
+    await fetchBoundedContext(source, { path: "a.ts", startLine: 1, endLine: 1000 });
+    expect(seen?.endLine).toBe(MAX_CONTEXT_LINES);
+    expect((seen?.endLine ?? 0) - (seen?.startLine ?? 0) + 1).toBe(MAX_CONTEXT_LINES);
+  });
+
+  it("passes coherent small ranges through unclamped", async () => {
+    let seen: { endLine?: number } | undefined;
+    const source: SourceProvider = (request) => {
+      seen = request;
+      return "ctx";
+    };
+    await fetchBoundedContext(source, { path: "a.ts", startLine: 5, endLine: 12 });
+    expect(seen?.endLine).toBe(12);
+  });
+
+  it("truncates oversized responses with a visible marker", async () => {
+    const oversized = "x".repeat(MAX_CONTEXT_CHARS + 500);
+    const result = await fetchBoundedContext(() => oversized, { path: "a.ts" });
+    expect(result.length).toBeLessThan(oversized.length);
+    expect(result.endsWith("[...context truncated]")).toBe(true);
+  });
+
+  it("returns small responses untouched", async () => {
+    await expect(fetchBoundedContext(() => "small", { path: "a.ts" })).resolves.toBe("small");
+  });
 });

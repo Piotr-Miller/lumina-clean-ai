@@ -8,9 +8,10 @@ import { buildInstructions, buildPrompt } from "./prompts.js";
 import { reviewResultSchema, type Lens, type ReviewResult, type ReviewUnit } from "./schemas.js";
 
 // Defense-in-depth caps on the context tool: requested ranges and returned
-// context are bounded regardless of what the provider serves.
-const MAX_CONTEXT_LINES = 400;
-const MAX_CONTEXT_CHARS = 20_000;
+// context are bounded regardless of what the provider serves. Exported so
+// tests can pin them (impl-review-full F1).
+export const MAX_CONTEXT_LINES = 400;
+export const MAX_CONTEXT_CHARS = 20_000;
 
 /**
  * Caller-injected source of file context. The demo wires it to an in-memory
@@ -51,6 +52,27 @@ export interface ReviewCallOptions {
 }
 
 /**
+ * The context tool's execute path, extracted pure for testability: the
+ * no-source fallback, the range clamp (at most MAX_CONTEXT_LINES lines), and
+ * the response truncation (MAX_CONTEXT_CHARS) are the shipped interim defense
+ * for the deferred path allowlist — reviewer.test.ts pins all three.
+ */
+export async function fetchBoundedContext(
+  source: SourceProvider | undefined,
+  request: { path: string; startLine?: number; endLine?: number },
+): Promise<string> {
+  if (!source) return "No additional context available.";
+  const endLine =
+    request.startLine !== undefined && request.endLine !== undefined
+      ? Math.min(request.endLine, request.startLine + MAX_CONTEXT_LINES - 1)
+      : request.endLine;
+  const context = await source({ path: request.path, startLine: request.startLine, endLine });
+  return context.length > MAX_CONTEXT_CHARS
+    ? `${context.slice(0, MAX_CONTEXT_CHARS)}\n[...context truncated]`
+    : context;
+}
+
+/**
  * Factory (deliberately not a singleton): each call builds a fresh
  * ToolLoopAgent so a future orchestrator can fan out one reviewer per lens.
  * Throws (never exits) when no API key is resolvable.
@@ -80,17 +102,7 @@ export function createReviewer(options: ReviewerOptions = {}) {
           startLine: z.number().int().min(1).optional().describe("First line of interest (1-based)"),
           endLine: z.number().int().min(1).optional().describe("Last line of interest (1-based)"),
         }),
-        execute: async ({ path, startLine, endLine }) => {
-          if (!options.source) return "No additional context available.";
-          const clampedEnd =
-            startLine !== undefined && endLine !== undefined
-              ? Math.min(endLine, startLine + MAX_CONTEXT_LINES)
-              : endLine;
-          const context = await options.source({ path, startLine, endLine: clampedEnd });
-          return context.length > MAX_CONTEXT_CHARS
-            ? `${context.slice(0, MAX_CONTEXT_CHARS)}\n[...context truncated]`
-            : context;
-        },
+        execute: async (request) => fetchBoundedContext(options.source, request),
       }),
     },
   });

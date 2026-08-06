@@ -77,32 +77,32 @@ describe("normalizeFindings", () => {
 
   it("coerces file to the unit path for file units", () => {
     const [f] = normalizeFindings(fileUnit, [finding({ file: "hallucinated.ts" })]);
-    expect(f?.file).toBe("src/real.ts");
+    expect(f.file).toBe("src/real.ts");
   });
 
   it("coerces file to the unit path for hunk units", () => {
     const [f] = normalizeFindings(hunkUnit, [finding({ file: "hallucinated.ts" })]);
-    expect(f?.file).toBe("src/real.ts");
+    expect(f.file).toBe("src/real.ts");
   });
 
   it("leaves file untouched for diff units (multi-file)", () => {
     const [f] = normalizeFindings(diffUnit, [finding({ file: "src/other.ts" })]);
-    expect(f?.file).toBe("src/other.ts");
+    expect(f.file).toBe("src/other.ts");
   });
 
   it("drops endLine when startLine is missing", () => {
     const [f] = normalizeFindings(diffUnit, [finding({ endLine: 7 })]);
-    expect(f?.endLine).toBeUndefined();
+    expect(f.endLine).toBeUndefined();
   });
 
   it("drops endLine when it precedes startLine", () => {
     const [f] = normalizeFindings(diffUnit, [finding({ startLine: 9, endLine: 3 })]);
-    expect(f?.startLine).toBe(9);
-    expect(f?.endLine).toBeUndefined();
+    expect(f.startLine).toBe(9);
+    expect(f.endLine).toBeUndefined();
   });
 
   it("keeps a coherent range", () => {
     const [f] = normalizeFindings(diffUnit, [finding({ startLine: 3, endLine: 9 })]);
-    expect(f?.endLine).toBe(9);
+    expect(f.endLine).toBe(9);
   });
 });

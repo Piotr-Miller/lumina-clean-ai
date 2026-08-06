@@ -12,7 +12,7 @@ const compareStrings = (a: string, b: string): number => (a < b ? -1 : a > b ? 1
 
 /** Stable file+line identity. File-level findings (no startLine) key to line 0. */
 export function findingKey(finding: Pick<Finding, "file" | "startLine">): string {
-  return `${finding.file}:${finding.startLine ?? 0}`;
+  return `${finding.file}:${String(finding.startLine ?? 0)}`;
 }
 
 /**

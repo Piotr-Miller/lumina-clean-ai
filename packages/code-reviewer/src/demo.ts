@@ -49,7 +49,7 @@ const source: SourceProvider = ({ path, startLine, endLine }) => {
 };
 
 try {
-  const lensArg = process.argv[2];
+  const lensArg = process.argv.at(2);
   const lens = lensArg === undefined ? undefined : lensSchema.parse(lensArg);
 
   const reviewer = createReviewer({ lens, source });

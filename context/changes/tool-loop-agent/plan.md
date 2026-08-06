@@ -489,6 +489,24 @@ Approved deviations from the locked contracts, per impl-review-phase-2 triage
   from the barrel (F3) and `ReviewCallOptions` (`abortSignal`/`timeoutMs`) on
   `review()` (F2).
 
+From the full-plan review triage (2026-08-06; see
+`reviews/impl-review-full.md`):
+
+- **CI job pins `node-version: 24`** rather than the planned
+  `node-version-file: .nvmrc` — accepted for consistency with every sibling
+  job in the workflow (all hardcode 24; `.nvmrc` pins 24.19.0 within the same
+  major). (F5)
+- **`vitest.config.ts` exists** under Phase 3's "no config unless needed"
+  clause: without it, vitest resolves upward to the ROOT repo config
+  (`include: tests/**`) and discovers zero package tests. (F5)
+- **Guardrail extraction**: `fetchBoundedContext` + the `MAX_CONTEXT_*`
+  constants are exported from `reviewer.ts` (not the barrel) so tests can pin
+  the interim-defense clamp/truncation/fallback. (F1)
+- **Prompt hardening**: review units are fenced in `<review-unit>` tags and
+  instructions declare reviewed code untrusted data. (F2)
+- **Package lint presets upgraded** to `strictTypeChecked` +
+  `stylisticTypeChecked`, closing the gap vs the root gate. (F4)
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
