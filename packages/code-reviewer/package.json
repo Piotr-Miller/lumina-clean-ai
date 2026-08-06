@@ -5,8 +5,8 @@
   "type": "module",
   "description": "AI-powered code reviewer built on the AI SDK + OpenRouter",
   "scripts": {
-    "dev": "tsx --env-file-if-exists=.env src/index.ts",
-    "start": "tsx --env-file-if-exists=.env src/index.ts",
+    "dev": "tsx --env-file-if-exists=.env src/demo.ts",
+    "start": "tsx --env-file-if-exists=.env src/demo.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
@@ -15,8 +15,11 @@
     "ai": "^7.0.52",
     "zod": "^4.4.3"
   },
+  "engines": {
+    "node": "24.x"
+  },
   "devDependencies": {
-    "@types/node": "^26.1.2",
+    "@types/node": "^24",
     "eslint": "^10.8.0",
     "tsx": "^4.23.8",
     "typescript": "^5.9.3",

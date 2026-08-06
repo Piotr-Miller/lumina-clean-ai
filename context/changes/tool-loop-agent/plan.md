@@ -480,24 +480,24 @@ session old). The demo's user-visible behavior (`npm run dev`) is preserved;
 
 #### Automated
 
-- [x] 1.1 Root `tsc --listFilesOnly` lists zero `packages/code-reviewer` paths
-- [x] 1.2 Root ESLint reports package file as ignored (exit 0)
-- [x] 1.3 Root `npm run typecheck` exits 0
-- [x] 1.4 Package `npm run lint` exits 0
-- [x] 1.5 Package `npm run typecheck` exits 0
+- [x] 1.1 Root `tsc --listFilesOnly` lists zero `packages/code-reviewer` paths — d8e479c
+- [x] 1.2 Root ESLint reports package file as ignored (exit 0) — d8e479c
+- [x] 1.3 Root `npm run typecheck` exits 0 — d8e479c
+- [x] 1.4 Package `npm run lint` exits 0 — d8e479c
+- [x] 1.5 Package `npm run typecheck` exits 0 — d8e479c
 
 ### Phase 2: Modular Extraction + ToolLoopAgent Factory
 
 #### Automated
 
-- [ ] 2.1 Package `npm run typecheck` exits 0
-- [ ] 2.2 Barrel import side-effect-free without env key
-- [ ] 2.3 Demo without key exits 1 with actionable message
+- [x] 2.1 Package `npm run typecheck` exits 0
+- [x] 2.2 Barrel import side-effect-free without env key
+- [x] 2.3 Demo without key exits 1 with actionable message
 
 #### Manual
 
-- [ ] 2.4 Live demo run returns schema-valid review (file + startLine + category present)
-- [ ] 2.5 `lens: "security"` run visibly shifts review focus
+- [x] 2.4 Live demo run returns schema-valid review (file + startLine + category present)
+- [x] 2.5 `lens: "security"` run visibly shifts review focus
 
 ### Phase 3: Seam-Contract Unit Tests + CI Gate
 
