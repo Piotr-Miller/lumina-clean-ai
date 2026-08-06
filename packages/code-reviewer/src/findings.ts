@@ -1,4 +1,4 @@
-import type { Finding, Severity } from "./schemas.js";
+import type { Finding, ReviewUnit, Severity } from "./schemas.js";
 
 // The mergeable-findings seam: stable identity + deterministic merge. Pure
 // functions, no AI SDK imports — future multi-agent fan-out merges per-lens
@@ -6,9 +6,33 @@ import type { Finding, Severity } from "./schemas.js";
 
 const severityRank: Record<Severity, number> = { critical: 3, major: 2, minor: 1, nit: 0 };
 
+// Locale-independent ordering: localeCompare would sort differently across
+// host environments, breaking the deterministic-merge contract.
+const compareStrings = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
 /** Stable file+line identity. File-level findings (no startLine) key to line 0. */
 export function findingKey(finding: Pick<Finding, "file" | "startLine">): string {
   return `${finding.file}:${finding.startLine ?? 0}`;
+}
+
+/**
+ * Repair semantically invalid locations the schema alone cannot enforce:
+ * coerce `file` to the unit's path for single-file units (file/hunk), and
+ * drop `endLine` when it lacks a `startLine` or precedes it. Keeps stable
+ * keys and dedup trustworthy without hard-failing on model sloppiness.
+ */
+export function normalizeFindings(unit: ReviewUnit, findings: Finding[]): Finding[] {
+  return findings.map((finding) => {
+    const normalized = { ...finding };
+    if (unit.kind !== "diff") normalized.file = unit.path;
+    if (
+      normalized.endLine !== undefined &&
+      (normalized.startLine === undefined || normalized.endLine < normalized.startLine)
+    ) {
+      delete normalized.endLine;
+    }
+    return normalized;
+  });
 }
 
 /**
@@ -27,8 +51,8 @@ export function mergeFindings(...lists: Finding[][]): Finding[] {
   }
   return [...byIdentity.values()].sort(
     (a, b) =>
-      a.file.localeCompare(b.file) ||
+      compareStrings(a.file, b.file) ||
       (a.startLine ?? 0) - (b.startLine ?? 0) ||
-      a.category.localeCompare(b.category),
+      compareStrings(a.category, b.category),
   );
 }

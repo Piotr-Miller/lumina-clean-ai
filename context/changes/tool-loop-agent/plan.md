@@ -472,6 +472,23 @@ session old). The demo's user-visible behavior (`npm run dev`) is preserved;
 - Root-graph exclusion precedent: `tsconfig.json:4`, `eslint.config.js:100`, and the Deno Edge Functions lesson in `context/foundation/lessons.md`
 - Plan review: Codex deep review 2026-08-05 (F1 critical — compensating gates, Fix A adopted CI-only; F2 warning — mechanical isolation proof). Both incorporated in this revision.
 
+## Addenda
+
+Approved deviations from the locked contracts, per impl-review-phase-2 triage
+(2026-08-06; see `reviews/impl-review-phase-2.md`):
+
+- **Factory result** additionally exposes `lens` and `model` (read-only
+  resolved values; the demo prints them, promptfoo will want them for run
+  labeling). (F4)
+- **Barrel** additionally exports `DEFAULT_MODEL`, `ConfigOverrides`,
+  `ResolvedConfig`, and `Reviewer` — config surface embedders need. (F4)
+- **Demo** accepts one positional lens argument (`npm run dev -- security`) as
+  the sanctioned affordance for manual criterion 2.5; this is a demo argument,
+  not CLI design — the "No CLI" boundary otherwise stands. (F5)
+- **Review-fix surface** from the same triage: `normalizeFindings` exported
+  from the barrel (F3) and `ReviewCallOptions` (`abortSignal`/`timeoutMs`) on
+  `review()` (F2).
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles.
@@ -490,22 +507,22 @@ session old). The demo's user-visible behavior (`npm run dev`) is preserved;
 
 #### Automated
 
-- [x] 2.1 Package `npm run typecheck` exits 0
-- [x] 2.2 Barrel import side-effect-free without env key
-- [x] 2.3 Demo without key exits 1 with actionable message
+- [x] 2.1 Package `npm run typecheck` exits 0 — dac4626
+- [x] 2.2 Barrel import side-effect-free without env key — dac4626
+- [x] 2.3 Demo without key exits 1 with actionable message — dac4626
 
 #### Manual
 
-- [x] 2.4 Live demo run returns schema-valid review (file + startLine + category present)
-- [x] 2.5 `lens: "security"` run visibly shifts review focus
+- [x] 2.4 Live demo run returns schema-valid review (file + startLine + category present) — dac4626
+- [x] 2.5 `lens: "security"` run visibly shifts review focus — dac4626
 
 ### Phase 3: Seam-Contract Unit Tests + CI Gate
 
 #### Automated
 
-- [ ] 3.1 Package `npm test` exits 0
-- [ ] 3.2 Package `npm run typecheck` exits 0
-- [ ] 3.3 Root `npm run typecheck` + `npm run test:unit` exit 0
+- [x] 3.1 Package `npm test` exits 0
+- [x] 3.2 Package `npm run typecheck` exits 0
+- [x] 3.3 Root `npm run typecheck` + `npm run test:unit` exit 0
 - [ ] 3.4 CI `code-reviewer` job green on the PR
 
 #### Manual

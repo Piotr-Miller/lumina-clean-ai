@@ -3,10 +3,10 @@
 
 export { DEFAULT_MODEL, resolveConfig } from "./config.js";
 export type { ConfigOverrides, ResolvedConfig } from "./config.js";
-export { findingKey, mergeFindings } from "./findings.js";
+export { findingKey, mergeFindings, normalizeFindings } from "./findings.js";
 export { buildInstructions, buildPrompt } from "./prompts.js";
 export { createReviewer } from "./reviewer.js";
-export type { Reviewer, ReviewerOptions, SourceProvider } from "./reviewer.js";
+export type { ReviewCallOptions, Reviewer, ReviewerOptions, SourceProvider } from "./reviewer.js";
 export {
   categorySchema,
   findingSchema,

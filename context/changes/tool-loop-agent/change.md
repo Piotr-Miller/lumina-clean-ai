@@ -3,7 +3,7 @@ change_id: tool-loop-agent
 title: Convert code-reviewer into a modular ToolLoopAgent-based review library
 status: implementing
 created: 2026-08-05
-updated: 2026-08-05
+updated: 2026-08-06
 archived_at: null
 issue: null
 ---
@@ -44,5 +44,10 @@ Eval environment (promptfoo config) is explicitly **not** part of this change.
   results via `mergeFindings`/`findingKey`.
 - **Optional verifier**: a second-pass agent that adversarially re-checks
   merged findings before reporting.
+- **Context-tool capability boundary** (impl-review-phase-2 F1): derive an
+  allowed-path set from each ReviewUnit (needs a canonical diff parser) and
+  reject model-chosen paths outside it. Interim defense shipped in this
+  change: range clamping + response-size caps in the tool, and a documented
+  trust contract on `SourceProvider` (fs-backed providers must allowlist).
 - **Promptfoo eval environment**: separate change; consumes the factory export
   from this one.
