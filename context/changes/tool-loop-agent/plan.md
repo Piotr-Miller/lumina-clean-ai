@@ -520,11 +520,11 @@ Approved deviations from the locked contracts, per impl-review-phase-2 triage
 
 #### Automated
 
-- [x] 3.1 Package `npm test` exits 0
-- [x] 3.2 Package `npm run typecheck` exits 0
-- [x] 3.3 Root `npm run typecheck` + `npm run test:unit` exit 0
-- [ ] 3.4 CI `code-reviewer` job green on the PR
+- [x] 3.1 Package `npm test` exits 0 — ec719e5
+- [x] 3.2 Package `npm run typecheck` exits 0 — ec719e5
+- [x] 3.3 Root `npm run typecheck` + `npm run test:unit` exit 0 — ec719e5
+- [x] 3.4 CI `code-reviewer` job green on the PR — ec719e5
 
 #### Manual
 
-- [ ] 3.5 `deploy` job `needs` confirmed unchanged (does not wait on `code-reviewer`)
+- [x] 3.5 `deploy` job `needs` confirmed unchanged (does not wait on `code-reviewer`) — ec719e5
