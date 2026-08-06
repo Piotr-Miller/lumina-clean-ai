@@ -1,0 +1,13 @@
+name: smoke-actions
+# Temporary diagnostic (change tool-loop-agent): verifies GitHub Actions
+# creates runs for this branch at all. Delete before merge.
+
+on:
+  push:
+    branches: [feat/tool-loop-agent]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "actions alive on $GITHUB_REF"
