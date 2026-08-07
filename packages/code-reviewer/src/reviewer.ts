@@ -92,6 +92,9 @@ export function createReviewer(options: ReviewerOptions = {}) {
     model: openrouter(model),
     instructions: buildInstructions(lens),
     output: Output.object({ schema: reviewResultSchema }),
+    // SDK-internal retries off (default is 2): retry.ts's withOneRetry is the
+    // single retry authority in the CI pipeline, keeping cost predictable.
+    maxRetries: 0,
     stopWhen: isStepCount(maxSteps),
     tools: {
       getFileContext: tool({

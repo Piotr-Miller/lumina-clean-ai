@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { findingSchema, reviewResultSchema, reviewUnitSchema } from "./schemas.js";
+import {
+  categorySchema,
+  judgeOutputSchema,
+  reviewUnitSchema,
+  scoresSchema,
+  findingSchema,
+  reviewResultSchema,
+} from "./schemas.js";
 
 const fileLevelFinding = {
   file: "src/a.ts",
@@ -40,6 +47,50 @@ describe("reviewResultSchema", () => {
 
   it("rejects a result without summary", () => {
     expect(reviewResultSchema.safeParse({ findings: [] }).success).toBe(false);
+  });
+});
+
+describe("categorySchema (rubric-signal categories)", () => {
+  it.each(["testing", "documentation"])("accepts the additive %s category", (category) => {
+    expect(categorySchema.safeParse(category).success).toBe(true);
+  });
+});
+
+const criterion = { score: 8, justification: "j", findingIds: ["F1"] };
+const validScores = Object.fromEntries(
+  Object.keys(scoresSchema.shape).map((key) => [key, criterion]),
+);
+const validJudgeOutput = {
+  scores: validScores,
+  verdict: "passed",
+  verdictReason: "well supported",
+  summary: "overall fine",
+};
+
+describe("judgeOutputSchema", () => {
+  it("parses a valid judge output", () => {
+    expect(judgeOutputSchema.parse(validJudgeOutput)).toEqual(validJudgeOutput);
+  });
+
+  it.each([
+    ["a missing criterion", { ...validJudgeOutput, scores: { implementation_correctness: criterion } }],
+    ["an unknown verdict", { ...validJudgeOutput, verdict: "maybe" }],
+    ["an empty verdictReason", { ...validJudgeOutput, verdictReason: "" }],
+    ["a missing summary", { scores: validScores, verdict: "passed", verdictReason: "r" }],
+    [
+      "an out-of-range score",
+      { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: 11 } } },
+    ],
+    [
+      "a zero score",
+      { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: 0 } } },
+    ],
+    [
+      "a fractional score",
+      { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: 6.5 } } },
+    ],
+  ])("rejects %s", (_name, invalid) => {
+    expect(judgeOutputSchema.safeParse(invalid).success).toBe(false);
   });
 });
 
