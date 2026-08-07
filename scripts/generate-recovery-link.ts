@@ -29,7 +29,7 @@
 /* eslint-disable no-console -- CLI ops utility: stdout/stderr is its interface */
 import { createAdminClient } from "../src/lib/supabase-admin";
 
-const DEFAULT_APP_ORIGIN = "https://lumina-clean-ai.pmiller-software.workers.dev";
+const DEFAULT_APP_ORIGIN = "https://luminacleanai.com";
 
 function fail(message: string): never {
   console.error(`\n✖ ${message}\n`);

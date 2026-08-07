@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { parseCookieHeader } from "@supabase/ssr";
 import { createClient } from "@/lib/supabase";
+import { httpsRedirectTarget } from "@/lib/https-redirect";
 import { ACTIVITY_COOKIE, IDLE_SIGNOUT_MESSAGE, decideIdleAction } from "@/lib/idle-session";
 
 const PROTECTED_ROUTES = ["/dashboard"];
@@ -16,6 +17,13 @@ const PROTECTED_ROUTES = ["/dashboard"];
 const REDIRECT_WHEN_AUTHED = ["/auth/signin", "/auth/signup", "/auth/forgot-password"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Plain-HTTP hits on the prod host 301 to HTTPS before any auth work —
+  // otherwise http:// serves a full duplicate of every page (GSC "alternate
+  // page with proper canonical tag"). Policy in @/lib/https-redirect (pure,
+  // unit-tested); localhost/wrangler-dev traffic is untouched.
+  const httpsTarget = httpsRedirectTarget(context.url);
+  if (httpsTarget) return context.redirect(httpsTarget, 301);
+
   const supabase = createClient(context.request.headers, context.cookies);
 
   if (supabase) {
