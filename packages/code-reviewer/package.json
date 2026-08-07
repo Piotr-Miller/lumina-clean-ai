@@ -1,0 +1,30 @@
+{
+  "name": "@luminaclean/code-reviewer",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "AI-powered code reviewer built on the AI SDK + OpenRouter",
+  "scripts": {
+    "dev": "tsx --env-file-if-exists=.env src/demo.ts",
+    "start": "tsx --env-file-if-exists=.env src/demo.ts",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@openrouter/ai-sdk-provider": "^3.0.0",
+    "ai": "^7.0.52",
+    "zod": "^4.4.3"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "eslint": "^10.8.0",
+    "tsx": "^4.23.8",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.66.0",
+    "vitest": "^4.1.10"
+  }
+}

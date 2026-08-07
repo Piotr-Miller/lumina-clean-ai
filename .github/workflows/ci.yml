@@ -314,6 +314,30 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  code-reviewer:
+    # Compensating remote gate for packages/code-reviewer (change tool-loop-agent):
+    # the package is EXCLUDED from the root tsc/eslint graphs (own module graph —
+    # same pattern as supabase/functions + `deno check`, see lessons.md), so this
+    # job is its only CI coverage: own-lockfile install + lint + typecheck +
+    # hermetic unit tests (no network, no secrets — fork-PR-safe). Deliberately
+    # NOT in deploy.needs: the package is not part of the deployed Worker, and a
+    # red package job must not block app deploys.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/code-reviewer
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: packages/code-reviewer/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
   deploy:
     needs: [ci, integration, e2e]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
