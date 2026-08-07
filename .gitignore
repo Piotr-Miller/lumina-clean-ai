@@ -39,6 +39,21 @@ stryker.log
 # claude code transient scheduled-task lock (harness artifact)
 .claude/scheduled_tasks.lock
 
+# 10x-Workflow course artifacts are LOCAL-ONLY in this public repo (course
+# rule: don't publish the workflow skills; m5l3 explicitly allowlists ONLY
+# 10x-impl-review-ci for public repos — it powers the public CI reviewer).
+# Restore locally with `10x get <lesson>` (see AGENTS.md). The CLI manifest
+# and fetched course prompts are local CLI state, likewise unpublished.
+.claude/skills/10x-*/
+!.claude/skills/10x-impl-review-ci/
+.agents/skills/10x-*/
+!.agents/skills/10x-impl-review-ci/
+.claude/prompts/
+.claude/.10x-cli-manifest.json
+# The full course-workflow sync checker embeds course-skill content in its
+# adaptation allowlists — local-only, next to the skills it validates.
+scripts/local/
+
 # playwright-cli working artifacts (snapshots, console logs)
 .playwright-cli/
 
