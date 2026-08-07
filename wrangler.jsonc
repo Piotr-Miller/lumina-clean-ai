@@ -3,6 +3,12 @@
   "name": "lumina-clean-ai",
   "main": "./sentry.server.config.ts",
   "compatibility_date": "2026-05-08",
+  // Prod is served ONLY at luminacleanai.com (issue #14): the default
+  // lumina-clean-ai.pmiller-software.workers.dev route served a full duplicate
+  // of the site (GSC "alternate page with proper canonical tag"). Preview
+  // URLs off for the same reason.
+  "workers_dev": false,
+  "preview_urls": false,
   "compatibility_flags": ["nodejs_compat", "disable_nodejs_process_v2"],
   "assets": {
     "binding": "ASSETS",
