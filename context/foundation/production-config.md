@@ -30,7 +30,7 @@ Last updated: **2026-08-04**.
 - **Cloudflare account ID:** `9b645f82fe0122394111985d936e5844`
 - **Worker:** `lumina-clean-ai`
   - **Custom domain:** `luminacleanai.com` (root) — attached 2026-06-06, Cloudflare auto-created proxied DNS + TLS. `www` **not yet** attached (optional).
-  - **workers.dev alias:** `lumina-clean-ai.pmiller-software.workers.dev` — same Worker, still active. **Teardown = issue #14** (`disable-workers-dev-subdomain`), after go-live testing.
+  - **workers.dev alias:** ~~`lumina-clean-ai.pmiller-software.workers.dev`~~ — **DISABLED 2026-08-07** (issue #14 closed, PR #113): `workers_dev: false` + `preview_urls: false` in `wrangler.jsonc` (config-as-code — reapplied on every deploy). Trigger: GSC "Alternate page with proper canonical tag" (the alias served a full site duplicate). Plain-HTTP additionally 301s to HTTPS in `src/middleware.ts`. Live-verified: https 200 / http→301 / workers.dev 404.
   - **Bindings:** `SESSION` (KV namespace), `IMAGES` (Images), `ASSETS` (static `./dist`). `observability.enabled = true`. Config in `wrangler.jsonc`.
 - **DNS records** (added by Resend "Auto configure", DNS-only):
   | Host                        | Type      | Purpose              | Value (summary)                                                          |
@@ -108,7 +108,7 @@ Names only (Settings → Secrets and variables → Actions):
 ## Pending / follow-ups
 
 - ~~**Safe Browsing review**~~ — **RESOLVED 2026-06-07**: Google review passed, "Deceptive pages" false positive cleared, warnings being removed.
-- **#14** — disable workers.dev once branded domain is established.
+- ~~**#14** — disable workers.dev once branded domain is established~~ — **DONE 2026-08-07** (PR #113): `workers_dev:false` + `preview_urls:false` in `wrangler.jsonc`, plus http→https 301 in middleware. Archived → `context/archive/2026-06-06-disable-workers-dev-subdomain/`.
 - **DMARC** — optional TXT for deliverability.
 - ~~**Flip-ON** (S-05+S-08+S-09)~~ — **DONE 2026-06-08 (D.1)**: cloud LIVE, `CLOUD_DAILY_CAP=3`; GUC→Vault migration; Edge/Worker secrets set. Kill-switch: `wrangler secret put CLOUD_DAILY_CAP` → `0`. See `context/changes/cloud-flip-on-revalidation/results.md`.
 - **`www`** subdomain — optionally attach + redirect to apex.

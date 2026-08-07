@@ -13,6 +13,12 @@ scope: frontend-only
 
 # Deploy Plan — LuminaClean AI → Cloudflare Workers (first production deploy)
 
+> **2026-08-07:** the `workers.dev` `live_url` in the frontmatter above is the
+> HISTORICAL first-deploy URL and no longer serves — that route was disabled
+> (`workers_dev: false`, issue #14, PR #113). Prod is served only at
+> `https://luminacleanai.com`. This file remains the audit trail of the first
+> deploy; current prod state: `context/foundation/production-config.md`.
+
 Audit trail of the project's first production deploy. Platform decision: see
 `context/foundation/infrastructure.md` (Cloudflare Workers, runner-up Netlify).
 Stack contract: `context/foundation/tech-stack.md`.
@@ -58,11 +64,11 @@ Both flags were mandatory pre-deploy mitigations identified in `infrastructure.m
 
 Set via `wrangler secret put` (Workers secret vault, stored as `secret_text`):
 
-| Secret | Status | Notes |
-| --- | --- | --- |
-| `SUPABASE_URL` | ✅ wired | `https://gwaviaozehxmyjjcioxy.supabase.co` (public value) |
-| `SUPABASE_KEY` | ✅ wired | Supabase **publishable** key (`sb_publishable_…`; public, anon-equivalent) |
-| `REPLICATE_API_KEY` | ⏳ deferred | Needed when the Replicate cloud pipeline lands |
+| Secret                      | Status      | Notes                                                                           |
+| --------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| `SUPABASE_URL`              | ✅ wired    | `https://gwaviaozehxmyjjcioxy.supabase.co` (public value)                       |
+| `SUPABASE_KEY`              | ✅ wired    | Supabase **publishable** key (`sb_publishable_…`; public, anon-equivalent)      |
+| `REPLICATE_API_KEY`         | ⏳ deferred | Needed when the Replicate cloud pipeline lands                                  |
 | `SUPABASE_SERVICE_ROLE_KEY` | ⏳ deferred | `sb_secret_…`; **never paste in chat** — set directly via `wrangler secret put` |
 
 Build does not require the secrets (`SUPABASE_URL`/`SUPABASE_KEY` are `optional: true` in the
@@ -70,13 +76,13 @@ Build does not require the secrets (`SUPABASE_URL`/`SUPABASE_KEY` are `optional:
 
 ## Verification (all passed)
 
-| Check | Result |
-| --- | --- |
-| Local workerd smoke (`wrangler dev`): `GET /` renders real HTML | ✅ no `[object Object]` |
-| Local workerd smoke: `GET /dashboard` signed-out redirects | ✅ `302 → /auth/signin` |
-| Production `GET /` | ✅ `200`, real HTML |
-| Production `GET /dashboard` signed-out | ✅ `302 → /auth/signin` |
-| Production CSRF: form `POST` with no/mismatched `Origin` | ✅ `403` (Astro origin check) |
+| Check                                                              | Result                                                                                                        |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Local workerd smoke (`wrangler dev`): `GET /` renders real HTML    | ✅ no `[object Object]`                                                                                       |
+| Local workerd smoke: `GET /dashboard` signed-out redirects         | ✅ `302 → /auth/signin`                                                                                       |
+| Production `GET /`                                                 | ✅ `200`, real HTML                                                                                           |
+| Production `GET /dashboard` signed-out                             | ✅ `302 → /auth/signin`                                                                                       |
+| Production CSRF: form `POST` with no/mismatched `Origin`           | ✅ `403` (Astro origin check)                                                                                 |
 | Production auth path: sign-in with matching `Origin` + bogus creds | ✅ `302 → /auth/signin?error=Invalid%20login%20credentials` (reached Supabase Auth; publishable key accepted) |
 
 No `1102` (CPU-limit) errors observed exercising the auth hot path.
@@ -105,7 +111,7 @@ The hosted Supabase project (`gwaviaozehxmyjjcioxy`) is configured separately fr
   local-vs-hosted config drift noted during the first deploy.
 - **Site URL**: set to `https://lumina-clean-ai.pmiller-software.workers.dev` (Authentication →
   URL Configuration) so any auth redirects resolve to production, not localhost.
-- **Future**: when real users arrive, re-enable "Confirm email" *and* configure custom SMTP
+- **Future**: when real users arrive, re-enable "Confirm email" _and_ configure custom SMTP
   (Authentication → Emails → SMTP Settings — e.g. Resend/Postmark/SES) so confirmation emails
   actually deliver. Confirmation-on without custom SMTP is the trap that blocked the first signup.
 
