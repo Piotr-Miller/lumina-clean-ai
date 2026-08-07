@@ -20,14 +20,14 @@ The app is already built on `@astrojs/cloudflare` v13.5 (which targets Workers, 
 
 Hard filter applied: the host is stateless request/response (Supabase Realtime holds the push channel; Replicate runs the long inference), so **no platform was dropped** for lacking persistent connections. Astro SSR runs on all six via an adapter — but only Cloudflare needs no adapter swap. Soft weights from the interview: minimize cost (penalizes pricey base tiers), Cloudflare familiarity (tie-break), single-region OK (edge not required), external providers fine — Supabase owns DB/auth/storage/realtime and Replicate owns inference (no co-location bonus).
 
-| Platform | CLI-first | Managed/Serverless | Agent docs | Deploy API | MCP | Cost (MVP) | Migration |
-|---|---|---|---|---|---|---|---|
-| **Cloudflare Workers** | Pass | Pass | Pass (llms.txt) | Pass | Pass (GA) | **$0** (100k req/day free) | **none** |
-| **Netlify** | Pass | Pass | Pass (llms.txt) | Pass | Pass (GA) | $0 free | adapter swap |
-| **Vercel** | Pass | Pass | Pass | Pass | Partial (beta) | $20/mo* | adapter swap |
-| **Fly.io** | Pass | Partial (container) | Pass | Pass | Partial (experimental) | ~$2/mo (no free tier) | swap + Dockerfile |
-| **Railway** | Partial (no CLI rollback) | Pass | Pass | Pass | Partial (WIP) | ~$5/mo (no free tier) | adapter swap |
-| **Render** | Pass | Pass | Pass (llms.txt) | Pass | Pass (GA, no deploy-trigger) | $7/mo (free spins down ~60s) | adapter swap |
+| Platform               | CLI-first                 | Managed/Serverless  | Agent docs      | Deploy API | MCP                          | Cost (MVP)                   | Migration         |
+| ---------------------- | ------------------------- | ------------------- | --------------- | ---------- | ---------------------------- | ---------------------------- | ----------------- |
+| **Cloudflare Workers** | Pass                      | Pass                | Pass (llms.txt) | Pass       | Pass (GA)                    | **$0** (100k req/day free)   | **none**          |
+| **Netlify**            | Pass                      | Pass                | Pass (llms.txt) | Pass       | Pass (GA)                    | $0 free                      | adapter swap      |
+| **Vercel**             | Pass                      | Pass                | Pass            | Pass       | Partial (beta)               | $20/mo*                      | adapter swap      |
+| **Fly.io**             | Pass                      | Partial (container) | Pass            | Pass       | Partial (experimental)       | ~$2/mo (no free tier)        | swap + Dockerfile |
+| **Railway**            | Partial (no CLI rollback) | Pass                | Pass            | Pass       | Partial (WIP)                | ~$5/mo (no free tier)        | adapter swap      |
+| **Render**             | Pass                      | Pass                | Pass (llms.txt) | Pass       | Pass (GA, no deploy-trigger) | $7/mo (free spins down ~60s) | adapter swap      |
 
 \* Vercel's free Hobby tier forbids commercial use; a real product lands on Pro (~$20/mo).
 
@@ -66,7 +66,7 @@ Excellent DX, GA Astro adapter, and a generous 300s function timeout. The gap: a
 
 ### Pre-Mortem — How This Could Fail
 
-They shipped on Cloudflare and it mostly worked — until protected pages intermittently rendered `[object Object]` in production. Local `astro dev` never reproduced it (different runtime) and `wrangler dev` only sometimes did, so it sat un-diagnosed for days before someone found Astro #15434 and added `disable_nodejs_process_v2`. Before that, auth redirects had silently no-op'd on some asset-pathed routes because `run_worker_first` was never set, letting a few protected views leak their shell to anonymous visitors. As traffic grew, the 10ms free-tier CPU tripped on JWT verification during login spikes — sporadic 1102 errors no one could reproduce — and they upgraded to the paid plan reactively after user complaints. Meanwhile the real fragility, the Supabase Edge Function + Replicate webhook chain, was never in the infrastructure doc; when a webhook silently failed, results stopped appearing with no error surfaced to users and no runbook to consult. Cloudflare wasn't the problem; treating it as the *entire* problem was.
+They shipped on Cloudflare and it mostly worked — until protected pages intermittently rendered `[object Object]` in production. Local `astro dev` never reproduced it (different runtime) and `wrangler dev` only sometimes did, so it sat un-diagnosed for days before someone found Astro #15434 and added `disable_nodejs_process_v2`. Before that, auth redirects had silently no-op'd on some asset-pathed routes because `run_worker_first` was never set, letting a few protected views leak their shell to anonymous visitors. As traffic grew, the 10ms free-tier CPU tripped on JWT verification during login spikes — sporadic 1102 errors no one could reproduce — and they upgraded to the paid plan reactively after user complaints. Meanwhile the real fragility, the Supabase Edge Function + Replicate webhook chain, was never in the infrastructure doc; when a webhook silently failed, results stopped appearing with no error surfaced to users and no runbook to consult. Cloudflare wasn't the problem; treating it as the _entire_ problem was.
 
 ### Unknown Unknowns
 
@@ -78,7 +78,7 @@ They shipped on Cloudflare and it mostly worked — until protected pages interm
 
 ## Operational Story
 
-- **Preview deploys**: not automatic like Pages. Create an unpromoted preview with `npx wrangler versions upload` (returns a versioned `*.workers.dev` preview URL) or enable the Workers Builds GitHub integration for per-push preview builds. Preview URLs are public unless protected with Cloudflare Access (Zero Trust); fork PRs won't have repo/CI secrets.
+- **Preview deploys**: not automatic like Pages. Create an unpromoted preview with `npx wrangler versions upload` (returns a versioned `*.workers.dev` preview URL) or enable the Workers Builds GitHub integration for per-push preview builds. Preview URLs are public unless protected with Cloudflare Access (Zero Trust); fork PRs won't have repo/CI secrets. **Update 2026-08-07 (issue #14, PR #113):** `workers_dev: false` + `preview_urls: false` are now set in `wrangler.jsonc` — the `*.workers.dev` route AND versioned preview URLs no longer serve (they duplicated the site; GSC "alternate page"). To use a preview URL temporarily, flip `preview_urls` on a branch, never on master.
 - **Secrets**: production via `npx wrangler secret put SUPABASE_URL` / `SUPABASE_KEY` (and the Replicate token + Supabase service-role key when that pipeline lands) — stored in the Workers secret vault, readable only by account members with Workers access. Local dev secrets live in `.dev.vars` (gitignored, used by `wrangler dev`); `astro dev` reads `.env`. CI deploy needs `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` as GitHub repo secrets. Rotation = re-run `wrangler secret put` (overwrites in place); rotate the API token in the Cloudflare dashboard.
 - **Rollback**: `npx wrangler rollback [<version-id>]` reverts to a prior deployed version, near-instant; `npx wrangler versions list` to find IDs. Caveat: this reverts **only the Worker code + static assets** — it does NOT roll back Supabase schema migrations or Edge Functions, which are a separate ops surface and must be reverted independently.
 - **Approval**: human-only (panel-by-hand) — rotating the Supabase service-role key, dropping/altering Postgres tables, deleting the Worker, and changing the Cloudflare API-token scope. An agent may run unattended: `wrangler deploy` to preview/non-prod, `wrangler versions upload`, `wrangler tail`, and read-only logs/analytics queries.
@@ -86,16 +86,16 @@ They shipped on Cloudflare and it mostly worked — until protected pages interm
 
 ## Risk Register
 
-| Risk | Source | Likelihood | Impact | Mitigation |
-|---|---|---|---|---|
-| Astro #15434: middleware + `nodejs_compat` + compat-date ≥ 2025-09-15 renders `[object Object]` on SSR pages | Devil's advocate / Unknown unknowns | H | H | Add `disable_nodejs_process_v2` to `compatibility_flags` in `wrangler.jsonc` before first deploy; smoke-test a protected page under `wrangler dev`. |
-| SSR middleware silently skipped for asset-pathed routes (no `run_worker_first`) | Devil's advocate / Unknown unknowns | M | H | Set `run_worker_first: true` (or an explicit route list) in `wrangler.jsonc`; verify auth redirect fires on a protected route. |
-| 10ms free-tier CPU trips on SSR auth → intermittent 1102 | Devil's advocate / Pre-mortem | M | M | Keep synchronous middleware lean; move heavy parsing off the hot path; budget for the $5/mo paid plan (30ms CPU). |
-| Service-role / Replicate secret mis-scoped or leaked via Worker | Devil's advocate | L | H | Scope the Cloudflare API token to this Worker only (no DNS/billing); keep service-role usage server-side; use `wrangler secret put`, never commit to `.env`. |
-| Local dev (`astro dev`) hides runtime bugs that only appear under workerd | Unknown unknowns | M | M | Validate auth/SSR with `npm run build && wrangler dev` and on a real preview before promoting; don't trust `npm run dev` alone. |
-| Supabase Edge Function + Replicate webhook chain has no runbook | Devil's advocate / Pre-mortem | M | H | Document the async pipeline's failure modes separately; add a dead-letter/timeout path and a user-facing error when a webhook doesn't return within the ≤30s p95 budget. |
-| Preview-deploy expectation mismatch (no free per-branch URLs) | Unknown unknowns | M | L | Wire Workers Builds GitHub integration or scripted `wrangler versions upload`; gate preview URLs with Cloudflare Access if they expose pre-release UI. |
-| Replicate cold-start consumes the ≤30s p95 budget (PRD Open Question #2) | Research finding / PRD | M | M | Measure on the real model early; if violated, choose warm-up, model swap, or relax the SLA — Cloudflare is not the bottleneck (inference is external). |
+| Risk                                                                                                         | Source                              | Likelihood | Impact | Mitigation                                                                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------------------- | ---------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Astro #15434: middleware + `nodejs_compat` + compat-date ≥ 2025-09-15 renders `[object Object]` on SSR pages | Devil's advocate / Unknown unknowns | H          | H      | Add `disable_nodejs_process_v2` to `compatibility_flags` in `wrangler.jsonc` before first deploy; smoke-test a protected page under `wrangler dev`.                      |
+| SSR middleware silently skipped for asset-pathed routes (no `run_worker_first`)                              | Devil's advocate / Unknown unknowns | M          | H      | Set `run_worker_first: true` (or an explicit route list) in `wrangler.jsonc`; verify auth redirect fires on a protected route.                                           |
+| 10ms free-tier CPU trips on SSR auth → intermittent 1102                                                     | Devil's advocate / Pre-mortem       | M          | M      | Keep synchronous middleware lean; move heavy parsing off the hot path; budget for the $5/mo paid plan (30ms CPU).                                                        |
+| Service-role / Replicate secret mis-scoped or leaked via Worker                                              | Devil's advocate                    | L          | H      | Scope the Cloudflare API token to this Worker only (no DNS/billing); keep service-role usage server-side; use `wrangler secret put`, never commit to `.env`.             |
+| Local dev (`astro dev`) hides runtime bugs that only appear under workerd                                    | Unknown unknowns                    | M          | M      | Validate auth/SSR with `npm run build && wrangler dev` and on a real preview before promoting; don't trust `npm run dev` alone.                                          |
+| Supabase Edge Function + Replicate webhook chain has no runbook                                              | Devil's advocate / Pre-mortem       | M          | H      | Document the async pipeline's failure modes separately; add a dead-letter/timeout path and a user-facing error when a webhook doesn't return within the ≤30s p95 budget. |
+| Preview-deploy expectation mismatch (no free per-branch URLs)                                                | Unknown unknowns                    | M          | L      | Wire Workers Builds GitHub integration or scripted `wrangler versions upload`; gate preview URLs with Cloudflare Access if they expose pre-release UI.                   |
+| Replicate cold-start consumes the ≤30s p95 budget (PRD Open Question #2)                                     | Research finding / PRD              | M          | M      | Measure on the real model early; if violated, choose warm-up, model swap, or relax the SLA — Cloudflare is not the bottleneck (inference is external).                   |
 
 ## Getting Started
 
@@ -110,6 +110,7 @@ The repo is already Workers-ready (`wrangler.jsonc` has the correct `main`, `com
 ## Out of Scope
 
 The following were not evaluated in this research:
+
 - Docker image configuration (not applicable to the Workers target)
 - CI/CD pipeline setup (the existing `.github/workflows/ci.yml` runs lint+build; adding a deploy job with `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` is a separate task)
 - Production-scale architecture (multi-region, HA, DR)
