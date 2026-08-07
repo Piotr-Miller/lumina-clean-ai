@@ -1,26 +1,37 @@
 /**
- * Read-only consistency check of the two managed skill trees
- * (`.claude/skills` ↔ `.agents/skills`). Run it after every `10x get` and
- * after any manual re-sync:
+ * Read-only parity check of the PUBLIC (git-tracked) skills between the two
+ * managed trees (`.claude/skills` ↔ `.agents/skills`):
  *
  *   npm run check:skills                    # fail (exit 1) on drift
  *   npm run check:skills -- --report-only   # print findings, exit 0 anyway
  *
- * Four signals: tree dir-diff, sha256 vs `.claude/.10x-cli-manifest.json`
- * (INVERTED for locally-extended skills — a manifest MATCH means the
- * extension was wiped), extension sentinels in both trees, and pair parity
- * with the per-tool adaptation allowlist. Exit codes: 0 clean (or
- * `--report-only`), 1 drift, 2 environment error (missing tree / unreadable
- * manifest — exit 2 even under `--report-only`). The checker never writes;
- * drift is fixed by hand (see AGENTS.md → "10x-cli profile & workflow").
+ * This repo publishes only an allowlist of skills — the course's 10x-Workflow
+ * skills are local-only (restore with `10x get <lesson>`; see AGENTS.md), with
+ * `10x-impl-review-ci` as the explicitly permitted public exception. The full
+ * course-workflow checker (manifest hashes, extension sentinels, adaptation
+ * allowlists) lives in gitignored `scripts/local/check-skills-sync.ts`; run it
+ * after every `10x get` on a machine with the course environment.
+ *
+ * Exit codes: 0 clean (or `--report-only`), 1 drift, 2 environment error.
+ * The checker never writes; drift is fixed by hand.
  */
-import { dirname, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { renderSkillsSyncReport, runSkillsSyncCheck } from "./lib/skills-sync-checker";
-import { SKILLS_SYNC_CONFIG } from "./lib/skills-sync-config";
+import { checkPublicSkillsParity, renderParityReport } from "./lib/public-skills-parity";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+/** Skills tracked in the public repo — pairs must stay byte-identical. */
+const PUBLIC_SKILLS = [
+  "10x-impl-review-ci",
+  "code-review",
+  "documentation",
+  "learning",
+  "skill-optimizer",
+  "typescript-magician",
+];
 
 function main(): void {
   const args = process.argv.slice(2);
@@ -31,8 +42,18 @@ function main(): void {
     process.exit(2);
   }
 
-  const result = runSkillsSyncCheck(ROOT, SKILLS_SYNC_CONFIG);
-  console.log(renderSkillsSyncReport(result));
+  const result = checkPublicSkillsParity(ROOT, PUBLIC_SKILLS, {
+    claudeSkillsDir: ".claude/skills",
+    agentsSkillsDir: ".agents/skills",
+  });
+  console.log(renderParityReport(PUBLIC_SKILLS, result));
+
+  if (existsSync(join(ROOT, "scripts/local/check-skills-sync.ts"))) {
+    console.log(
+      "\n(local course environment detected — run the full checker too: npx tsx scripts/local/check-skills-sync.ts)",
+    );
+  }
+
   if (!result.ok) process.exit(2);
   if (result.findings.length > 0 && !reportOnly) process.exit(1);
 }
