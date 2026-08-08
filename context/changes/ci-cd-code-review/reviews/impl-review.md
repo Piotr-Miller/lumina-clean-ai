@@ -78,7 +78,7 @@
 - **Location**: GitHub Actions run 31277190123
 - **Detail**: Earlier required runs succeeded, but the newest run for HEAD a5e1e6e failed on a structured-output schema mismatch. This is intentionally non-retryable, and the failure preserved the previous sticky comment and ai-cr:failed label.
 - **Fix**: Re-run current HEAD via ai-cr:review and record the outcome; open a separate change if schema failures remain recurrent.
-- **Decision**: PENDING
+- **Decision**: FIXED — the F1/F2 triage push (`bb5837d`) triggered run 31279153306, which succeeded first-try on the true final HEAD and live-verified both fixes (same sticky comment id under the author-filtered lookup; label flip under the strict add). Schema-flake rate now 2/7 live runs — the reliability follow-up change (schema-retry + F3 + F4) remains the recorded response.
 
 ## Verification
 

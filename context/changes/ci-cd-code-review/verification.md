@@ -35,3 +35,11 @@
 - **Live catch fixed mid-phase**: the first self-review's F7 was legitimate — `on.pull_request` lacked `branches: [master]`; fixed in `4116d17`
 - **Follow-up candidates (not in scope)**: (1) consider classifying structured-output schema mismatches as retryable-once (run 2's flake cost a manual retry); (2) upload `review.json` as a run artifact for post-hoc finding inspection; (3) post-merge clean re-run of check (d)
 - **Outcome**: PASS (secret user-set; live checks executed/observed by the agent at the user's request)
+
+## Post-implementation — Codex full-plan review triage (reviews/impl-review.md)
+
+- **Date**: 2026-08-08 (recorded at run time — primary evidence)
+- **Review**: Codex full-plan impl-review (Phases 1–3, range ae3c00f..a5e1e6e): NEEDS ATTENTION — 0 critical, 4 warnings, 1 observation; drift/scope/architecture/patterns all PASS
+- **Triage**: F1 (sticky lookup now requires `github-actions[bot]` author) + F2 (add-label mandatory before opposite-label removal) FIXED in `bb5837d`; F3 (same-line dedup collapse) + F4 (no retry backoff) DEFERRED to the pipeline-reliability follow-up change
+- **F5 resolution**: the `bb5837d` push's run 31279153306 succeeded first-try on the final HEAD — sticky comment updated in place under the author filter (same id 5227813452, count 1), label flip clean under the strict add, PR still MERGEABLE with the advisory `ai-cr:failed`
+- **Schema-flake tally**: 2 failures / 7 live runs (31275401205 on `4116d17`, 31277190123 on `a5e1e6e`) — quantifies the case for making structured-output schema mismatches retryable-once in the follow-up change
