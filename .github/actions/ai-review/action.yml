@@ -81,9 +81,11 @@ runs:
       run: |
         # Marker-based lifecycle: find the existing comment by STICKY_MARKER
         # (rendered into comment.md by the package) → PATCH, else POST.
+        # Only match OUR bot's comment — a user pasting the public marker
+        # string must not be able to hijack the upsert target (impl-review F1).
         MARKER="<!-- ai-cr:sticky -->"
         EXISTING_ID=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
-          --paginate --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" | head -1)
+          --paginate --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | contains(\"$MARKER\"))) | .id" | head -1)
         if [[ -n "$EXISTING_ID" ]]; then
           echo "Updating sticky comment $EXISTING_ID"
           gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${EXISTING_ID}" \
@@ -107,7 +109,10 @@ runs:
           ADD="ai-cr:failed"; REMOVE="ai-cr:passed"
         fi
         echo "verdict=$VERDICT → +$ADD -$REMOVE"
-        # Tolerate absent labels (first run, or label deleted repo-side).
-        gh pr edit "$PR_NUMBER" --add-label "$ADD" \
-          || echo "::warning::could not add label $ADD (missing in repo?)"
+        # Add must succeed BEFORE the opposite label is removed — otherwise a
+        # transient API failure leaves the PR with no verdict label at all
+        # while the job reports green (impl-review F2). A failed add fails the
+        # step red; the old label survives as the last valid verdict. Remove
+        # stays tolerant: an absent opposite label is normal on first runs.
+        gh pr edit "$PR_NUMBER" --add-label "$ADD"
         gh pr edit "$PR_NUMBER" --remove-label "$REMOVE" || true
