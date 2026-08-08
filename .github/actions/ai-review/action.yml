@@ -1,0 +1,113 @@
+# Composite action encapsulating the AI review so review.yml stays one
+# readable job: setup → npm run review (packages/code-reviewer two-pass
+# pipeline) → sticky comment upsert → verdict label flip. Posting steps run
+# only when the review step succeeded (composite steps are sequential); the
+# CLI's exit-code contract is exit 0 for ANY produced verdict (incl.
+# "failed" — advisory data) and exit 1 for technical failure only, so a
+# provider outage leaves the last valid comment and labels untouched.
+
+name: AI Code Review
+description: Two-pass AI review (finder + judge) over the PR diff; posts a sticky scorecard comment and flips ai-cr:* labels.
+
+inputs:
+  api-key:
+    description: OpenRouter API key
+    required: true
+  review-model:
+    description: Finder model override (maps to OPENROUTER_REVIEW_MODEL; empty = package default chain)
+    required: false
+    default: ""
+  judge-model:
+    description: Judge model override (maps to OPENROUTER_JUDGE_MODEL; empty = package default chain)
+    required: false
+    default: ""
+  pr-title:
+    description: Pull request title (untrusted metadata; passed via env, never interpolated into scripts)
+    required: false
+    default: ""
+  pr-body:
+    description: Pull request body (untrusted metadata; passed via env, never interpolated into scripts)
+    required: false
+    default: ""
+  diff-file:
+    description: Absolute path to the unified diff to review
+    required: true
+  project-context-file:
+    description: Absolute path to trusted project review rules (must be sourced from the BASE branch, never the PR head); empty or empty-file = no rules
+    required: false
+    default: ""
+  github-token:
+    description: Token for the sticky comment + label steps (needs pull-requests write)
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v5
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: packages/code-reviewer/package-lock.json
+
+    - name: Install package dependencies
+      shell: bash
+      working-directory: packages/code-reviewer
+      run: npm ci
+
+    - name: Run two-pass review
+      shell: bash
+      working-directory: packages/code-reviewer
+      env:
+        OPENROUTER_API_KEY: ${{ inputs.api-key }}
+        OPENROUTER_REVIEW_MODEL: ${{ inputs.review-model }}
+        OPENROUTER_JUDGE_MODEL: ${{ inputs.judge-model }}
+        PR_TITLE: ${{ inputs.pr-title }}
+        PR_BODY: ${{ inputs.pr-body }}
+        DIFF_FILE: ${{ inputs.diff-file }}
+        PROJECT_CONTEXT_FILE: ${{ inputs.project-context-file }}
+      run: |
+        ARGS=(--diff-file "$DIFF_FILE" --out-dir .review-out)
+        if [[ -n "$PROJECT_CONTEXT_FILE" ]]; then
+          ARGS+=(--project-context-file "$PROJECT_CONTEXT_FILE")
+        fi
+        npm run review -- "${ARGS[@]}"
+
+    - name: Upsert sticky comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        BODY_FILE: packages/code-reviewer/.review-out/comment.md
+      run: |
+        # Marker-based lifecycle: find the existing comment by STICKY_MARKER
+        # (rendered into comment.md by the package) → PATCH, else POST.
+        MARKER="<!-- ai-cr:sticky -->"
+        EXISTING_ID=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+          --paginate --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" | head -1)
+        if [[ -n "$EXISTING_ID" ]]; then
+          echo "Updating sticky comment $EXISTING_ID"
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${EXISTING_ID}" \
+            -F body=@"$BODY_FILE" > /dev/null
+        else
+          echo "Creating sticky comment"
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            -F body=@"$BODY_FILE" > /dev/null
+        fi
+
+    - name: Flip verdict label
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        VERDICT=$(jq -r .verdict packages/code-reviewer/.review-out/review.json)
+        if [[ "$VERDICT" == "passed" ]]; then
+          ADD="ai-cr:passed"; REMOVE="ai-cr:failed"
+        else
+          ADD="ai-cr:failed"; REMOVE="ai-cr:passed"
+        fi
+        echo "verdict=$VERDICT → +$ADD -$REMOVE"
+        # Tolerate absent labels (first run, or label deleted repo-side).
+        gh pr edit "$PR_NUMBER" --add-label "$ADD" \
+          || echo "::warning::could not add label $ADD (missing in repo?)"
+        gh pr edit "$PR_NUMBER" --remove-label "$REMOVE" || true

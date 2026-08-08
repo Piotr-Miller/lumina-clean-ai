@@ -512,14 +512,14 @@ Purely additive: no existing behavior changes (demo and lens API untouched;
 
 #### Automated
 
-- [ ] 2.1 Both YAML files parse cleanly
-- [ ] 2.2 Package gates still green
-- [ ] 2.3 Root `npm run typecheck` exits 0
+- [x] 2.1 Both YAML files parse cleanly
+- [x] 2.2 Package gates still green
+- [x] 2.3 Root `npm run typecheck` exits 0
 
 #### Manual
 
-- [ ] 2.4 Local dry-run of the action's command chain produces posting artifacts
-- [ ] 2.5 Guard read-through: all six requirement guardrails present in review.yml
+- [x] 2.4 Local dry-run of the action's command chain produces posting artifacts
+- [x] 2.5 Guard read-through: all six requirement guardrails present in review.yml
 
 ### Phase 3: Provisioning + Live E2E
 

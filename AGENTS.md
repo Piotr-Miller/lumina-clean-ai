@@ -79,14 +79,17 @@ Full server-side rendering (`output: "server"` in astro.config.mjs). All pages a
 
 ### CI
 
-GitHub Actions workflow (`.github/workflows/ci.yml`) — four jobs:
+GitHub Actions workflow (`.github/workflows/ci.yml`) — five jobs:
 
 - `ci` (push + PR) — lint, unit tests (`npm run test:unit`), `deno check` on the Edge Function, SSR build. Requires `SUPABASE_URL`/`SUPABASE_KEY` repo secrets for the build step.
+- `code-reviewer` (push + PR) — the `packages/code-reviewer` gate (own lockfile: `npm ci` + lint + typecheck + hermetic unit tests). The package is excluded from the root tsc/eslint graphs, so this job is its only CI coverage. No secrets (fork-PR-safe); not in `deploy.needs`.
 - `integration` (push + PR) — full Vitest suite incl. `tests/jobs.rls.test.ts` against an ephemeral local Supabase (Docker). Uses no GitHub secrets (local keys are generated), so it also runs on fork PRs. Supabase Docker images are cached across runs (`actions/cache`) and `supabase start`/`db reset` retry once — anonymous pulls from `public.ecr.aws` get rate-limited on shared runners (see lessons.md).
 - `e2e` (push + PR) — Playwright browser gate (`npm run test:e2e`) on the north-star flow (risks #1+#6) and the stall→terminal spec. Boots the same ephemeral local Supabase (image cache + retry hardening shared with `integration`), backgrounds `supabase functions serve enhance` with a **generated** signing secret + the `E2E_ALLOWED_OUTPUT_ORIGIN` stub seam, and runs chromium (cached). The Cloud-AI pipeline is **stubbed** — a self-signed Replicate `/callback`, no token, no cold boot. No GitHub secrets (fork-PR-safe). The live cold-boot path is a manual smoke (`context/foundation/cloud-live-smoke.md`), never a PR gate.
 - `deploy` (push to master only, gated by `needs: [ci, integration, e2e]`) — Worker via `wrangler-action` + `enhance` Edge Function via the pinned supabase CLI.
 
 All jobs run under a workflow-level `concurrency` block (`group` = workflow + ref, `cancel-in-progress` for any ref ≠ `refs/heads/master`): a new push to a PR branch cancels its in-flight runs to save Actions minutes, while runs on `master` are never cancelled (PR #72).
+
+A separate workflow `.github/workflows/review.yml` (`AI Code Review`, PR-only) runs an **advisory** two-pass AI review (`packages/code-reviewer` finder + judge via OpenRouter, invoked through the local composite action `.github/actions/ai-review`): sticky scorecard comment + mutually exclusive `ai-cr:passed`/`ai-cr:failed` labels; re-run by adding the `ai-cr:review` label. Secret-bearing (`OPENROUTER_API_KEY`), therefore **same-repo, non-draft, human-authored PRs only** (fork PRs skip); per-PR concurrency with cancel-in-progress; **never in `deploy.needs`** — a red review blocks nothing. The finder's trusted project rules are sourced from the BASE branch's `.github/ai-review-rules.md` (never the PR head).
 
 ## 10x-cli profile & workflow
 
