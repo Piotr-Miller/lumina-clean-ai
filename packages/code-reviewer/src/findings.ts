@@ -4,7 +4,7 @@ import type { Finding, ReviewUnit, Severity } from "./schemas.js";
 // functions, no AI SDK imports — future multi-agent fan-out merges per-lens
 // results through these without touching agent code.
 
-const severityRank: Record<Severity, number> = { critical: 3, major: 2, minor: 1, nit: 0 };
+export const severityRank: Record<Severity, number> = { critical: 3, major: 2, minor: 1, nit: 0 };
 
 // Locale-independent ordering: localeCompare would sort differently across
 // host environments, breaking the deterministic-merge contract.

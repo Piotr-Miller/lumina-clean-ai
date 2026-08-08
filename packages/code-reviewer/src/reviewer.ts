@@ -42,6 +42,12 @@ export interface ReviewerOptions {
   source?: SourceProvider;
   /** Agent loop cap (cost guard); a positive integer, defaults to 8 steps. */
   maxSteps?: number;
+  /**
+   * Trusted repository-maintainer review rules, appended to the system
+   * instructions (never fenced with untrusted data). Source it from trusted
+   * ground only — e.g. the base branch, not the PR head.
+   */
+  projectContext?: string;
 }
 
 export interface ReviewCallOptions {
@@ -88,23 +94,38 @@ export function createReviewer(options: ReviewerOptions = {}) {
   }
   const openrouter = createOpenRouter({ apiKey });
 
+  // Cost ceiling (impl-review-phase-1 F3): without a SourceProvider the
+  // context tool could only return its fixed fallback, yet its mere presence
+  // lets the model loop up to maxSteps generations per review call. Tool-less
+  // means single-generation, so the pipeline's documented <= 2 provider
+  // attempts per pass (withOneRetry x maxRetries: 0) actually holds.
+  const hasSource = options.source !== undefined;
+
   const agent = new ToolLoopAgent({
     model: openrouter(model),
-    instructions: buildInstructions(lens),
+    instructions: buildInstructions(lens, {
+      fileContextTool: hasSource,
+      projectContext: options.projectContext,
+    }),
     output: Output.object({ schema: reviewResultSchema }),
+    // SDK-internal retries off (default is 2): retry.ts's withOneRetry is the
+    // single retry authority in the CI pipeline, keeping cost predictable.
+    maxRetries: 0,
     stopWhen: isStepCount(maxSteps),
-    tools: {
-      getFileContext: tool({
-        description:
-          "Fetch source-file context around the code under review. Use it when surrounding code would change a verdict.",
-        inputSchema: z.object({
-          path: z.string().describe("File path exactly as given in the review unit"),
-          startLine: z.number().int().min(1).optional().describe("First line of interest (1-based)"),
-          endLine: z.number().int().min(1).optional().describe("Last line of interest (1-based)"),
-        }),
-        execute: async (request) => fetchBoundedContext(options.source, request),
-      }),
-    },
+    tools: hasSource
+      ? {
+          getFileContext: tool({
+            description:
+              "Fetch source-file context around the code under review. Use it when surrounding code would change a verdict.",
+            inputSchema: z.object({
+              path: z.string().describe("File path exactly as given in the review unit"),
+              startLine: z.number().int().min(1).optional().describe("First line of interest (1-based)"),
+              endLine: z.number().int().min(1).optional().describe("Last line of interest (1-based)"),
+            }),
+            execute: async (request) => fetchBoundedContext(options.source, request),
+          }),
+        }
+      : {},
   });
 
   async function review(unit: ReviewUnit, callOptions: ReviewCallOptions = {}): Promise<ReviewResult> {

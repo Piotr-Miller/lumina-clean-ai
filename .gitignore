@@ -54,6 +54,9 @@ stryker.log
 # adaptation allowlists — local-only, next to the skills it validates.
 scripts/local/
 
+# AI code-review CLI artifacts (review.json, comment.md — may repeat source details)
+**/.review-out/
+
 # playwright-cli working artifacts (snapshots, console logs)
 .playwright-cli/
 

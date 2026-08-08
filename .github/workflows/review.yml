@@ -1,0 +1,81 @@
+# Advisory AI code review on PRs to master. Separate from ci.yml and NEVER
+# referenced by deploy.needs — a red review must not block app deploys.
+# Secret-bearing (OPENROUTER_API_KEY), therefore same-repo PRs only: never
+# combine the secret with an untrusted fork diff in one job. Retry = add the
+# ai-cr:review label (no workflow_dispatch).
+
+name: AI Code Review
+
+on:
+  pull_request:
+    # Reviews target master only (requirements) — the live self-review's F7
+    # caught the missing branches filter on the first run of PR #115.
+    branches: [master]
+    types: [opened, synchronize, reopened, labeled]
+
+permissions: {}
+
+jobs:
+  ai-review:
+    # Guards (requirements): same-repo head (fork PRs skip — secret safety),
+    # not draft, labeled-events pass ONLY for ai-cr:review (any other label
+    # would burn a review run), and bot-authored PRs skip.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.draft == false &&
+      (github.event.action != 'labeled' || github.event.label.name == 'ai-cr:review') &&
+      github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: ai-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # Own step, continue-on-error: label removal must not kill the review,
+      # and removing it at run start means re-adding retriggers cleanly.
+      - name: Remove ai-cr:review retry label
+        if: github.event.action == 'labeled'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --remove-label "ai-cr:review"
+
+      - name: Compute PR diff (three-dot vs merge-base)
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff "origin/${BASE_REF}...${HEAD_SHA}" > "$RUNNER_TEMP/pr.diff"
+          wc -c "$RUNNER_TEMP/pr.diff"
+
+      - name: Stage trusted review rules from the base branch
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          # Trust boundary: the BASE branch's copy of the rules, never the PR
+          # head's — a PR must not be able to rewrite the rubric that judges
+          # it. Absent file (pre-adoption base) → empty file → the package
+          # skips project rules.
+          git show "origin/${BASE_REF}:.github/ai-review-rules.md" \
+            > "$RUNNER_TEMP/ai-review-rules.md" 2>/dev/null \
+            || : > "$RUNNER_TEMP/ai-review-rules.md"
+          wc -c "$RUNNER_TEMP/ai-review-rules.md"
+
+      - name: AI review
+        uses: ./.github/actions/ai-review
+        with:
+          api-key: ${{ secrets.OPENROUTER_API_KEY }}
+          review-model: ${{ vars.OPENROUTER_REVIEW_MODEL }}
+          judge-model: ${{ vars.OPENROUTER_JUDGE_MODEL }}
+          pr-title: ${{ github.event.pull_request.title }}
+          pr-body: ${{ github.event.pull_request.body }}
+          diff-file: ${{ runner.temp }}/pr.diff
+          project-context-file: ${{ runner.temp }}/ai-review-rules.md
+          github-token: ${{ secrets.GITHUB_TOKEN }}

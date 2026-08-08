@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "tsx --env-file-if-exists=.env src/demo.ts",
     "start": "tsx --env-file-if-exists=.env src/demo.ts",
+    "review": "tsx --env-file-if-exists=.env src/review-pr.ts",
     "lint": "eslint .",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
