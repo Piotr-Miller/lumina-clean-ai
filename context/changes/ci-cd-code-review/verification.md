@@ -22,3 +22,16 @@
 - **Signal check**: the planted IDOR/PII/test gaps drove exactly the intended criteria down (security 2, tests 3) — the base-branch rules file reached the finder
 - **Guard read-through (2.5)**: all six requirement guardrails present in `review.yml` — fork (`head.repo.full_name == github.repository`), draft, bot author, `ai-cr:review`-only label gate + removal step, per-PR concurrency w/ cancel-in-progress, `permissions: {}` + job-scoped `contents: read, pull-requests: write`
 - **Outcome**: PASS (both checks executed by the agent at the user's request)
+
+## Phase 3 — live E2E on real PRs (Progress 3.3 / 3.4 / 3.5)
+
+- **Date**: 2026-08-08 (recorded at run time — primary evidence)
+- **Provisioning**: 3 `ai-cr:*` labels + `OPENROUTER_REVIEW_MODEL`/`OPENROUTER_JUDGE_MODEL` variables created via `gh` (verified by list); `OPENROUTER_API_KEY` secret set by the user via the GitHub UI (first live run authenticated — no 401)
+- **(a) Review on open** — PR #115 `opened` → run 31275208983 `success` (2m10s): sticky comment (`❌ FAILED` headline, marker present) + `ai-cr:failed` label
+- **(b) Sticky update in place** — follow-up push `4116d17` → after the retry run, exactly ONE marker comment, SAME id (5227813452), fresh `updated_at` — no duplicate. Empirically refutes the self-review's "PATCH -F will fail" finding
+- **(c) Retry label** — run 2 (31275401205, `synchronize`) failed red with `No object generated: response did not match schema` (finder output flake; schema mismatches deliberately don't retry) — posting steps skipped, last valid comment/label untouched, cause in the job summary. Adding `ai-cr:review` → run 31275495502 `success`, label auto-removed at run start, comment updated. The designed failure + recovery path both observed live
+- **(d) Flawed scratch PR** — PR #116 (planted IDOR, no zod, wrong error shape, PII log, no tests): `verdict=failed`, `security_safety=2/10`, `test_risk_coverage=3/10`, `ai-cr:failed` applied. CAVEAT: the scratch branch had to include the whole feature (a `pull_request` workflow only triggers when present in the PR's merge ref; master lacks `review.yml` pre-merge), so per-file attribution of the planted flaw is unverified (top-5 findings targeted the CI files; the rest only in the runner-ephemeral `review.json`). Clean flawed-file-only re-test possible post-merge. PR closed + branch deleted after verification
+- **(e) Advisory contract** — both PRs `MERGEABLE` with `ai-cr:failed`; `deploy` gates on `needs: [ci, integration, e2e]` only (static), `review.yml` never referenced
+- **Live catch fixed mid-phase**: the first self-review's F7 was legitimate — `on.pull_request` lacked `branches: [master]`; fixed in `4116d17`
+- **Follow-up candidates (not in scope)**: (1) consider classifying structured-output schema mismatches as retryable-once (run 2's flake cost a manual retry); (2) upload `review.json` as a run artifact for post-hoc finding inspection; (3) post-merge clean re-run of check (d)
+- **Outcome**: PASS (secret user-set; live checks executed/observed by the agent at the user's request)

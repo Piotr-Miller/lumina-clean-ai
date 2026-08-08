@@ -527,9 +527,9 @@ Purely additive: no existing behavior changes (demo and lens API untouched;
 
 - [x] 3.1 Three `ai-cr:*` labels exist
 - [x] 3.2 Both model variables exist
-- [ ] 3.3 `AI Code Review` run on this change's PR concludes success
+- [x] 3.3 `AI Code Review` run on this change's PR concludes success
 
 #### Manual
 
-- [ ] 3.4 Secret set by user via UI
-- [ ] 3.5 Live checklist: sticky update, retry label, flawed-PR failed, advisory merge
+- [x] 3.4 Secret set by user via UI
+- [x] 3.5 Live checklist: sticky update, retry label, flawed-PR failed, advisory merge
