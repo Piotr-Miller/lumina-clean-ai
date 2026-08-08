@@ -512,21 +512,21 @@ Purely additive: no existing behavior changes (demo and lens API untouched;
 
 #### Automated
 
-- [x] 2.1 Both YAML files parse cleanly
-- [x] 2.2 Package gates still green
-- [x] 2.3 Root `npm run typecheck` exits 0
+- [x] 2.1 Both YAML files parse cleanly — f8e7b83
+- [x] 2.2 Package gates still green — f8e7b83
+- [x] 2.3 Root `npm run typecheck` exits 0 — f8e7b83
 
 #### Manual
 
-- [x] 2.4 Local dry-run of the action's command chain produces posting artifacts
-- [x] 2.5 Guard read-through: all six requirement guardrails present in review.yml
+- [x] 2.4 Local dry-run of the action's command chain produces posting artifacts — f8e7b83
+- [x] 2.5 Guard read-through: all six requirement guardrails present in review.yml — f8e7b83
 
 ### Phase 3: Provisioning + Live E2E
 
 #### Automated
 
-- [ ] 3.1 Three `ai-cr:*` labels exist
-- [ ] 3.2 Both model variables exist
+- [x] 3.1 Three `ai-cr:*` labels exist
+- [x] 3.2 Both model variables exist
 - [ ] 3.3 `AI Code Review` run on this change's PR concludes success
 
 #### Manual

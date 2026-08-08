@@ -8,6 +8,9 @@ name: AI Code Review
 
 on:
   pull_request:
+    # Reviews target master only (requirements) — the live self-review's F7
+    # caught the missing branches filter on the first run of PR #115.
+    branches: [master]
     types: [opened, synchronize, reopened, labeled]
 
 permissions: {}
