@@ -17,6 +17,31 @@ export const BODY_CAP_CHARS = 2_000;
 export const DIFF_TRUNCATION_MARKER = "\n[...diff truncated at 100 KB]";
 export const BODY_TRUNCATION_MARKER = "\n[...body truncated at 2,000 chars]";
 
+// Operational timeouts (impl-review-phase-1 F2): every provider call gets a
+// wall-clock budget so a stalled provider fails locally (activating the
+// TimeoutError retry path) instead of hanging until an external job limit.
+// Per attempt, so worst case = 2×finder + 2×judge with withOneRetry.
+export const DEFAULT_FINDER_TIMEOUT_MS = 300_000; // up to 8 tool-loop steps
+export const DEFAULT_JUDGE_TIMEOUT_MS = 120_000; // single structured call
+
+export interface PipelineTimeouts {
+  finderTimeoutMs?: number;
+  judgeTimeoutMs?: number;
+}
+
+// Same guard style as reviewer.ts's maxSteps: a zero, negative, fractional,
+// or non-finite budget would silently disable the bound.
+function resolveTimeouts(overrides: PipelineTimeouts = {}): Required<PipelineTimeouts> {
+  const finderTimeoutMs = overrides.finderTimeoutMs ?? DEFAULT_FINDER_TIMEOUT_MS;
+  const judgeTimeoutMs = overrides.judgeTimeoutMs ?? DEFAULT_JUDGE_TIMEOUT_MS;
+  for (const [name, value] of Object.entries({ finderTimeoutMs, judgeTimeoutMs })) {
+    if (!Number.isSafeInteger(value) || value < 1) {
+      throw new Error(`${name} must be a positive integer (ms), got: ${String(value)}`);
+    }
+  }
+  return { finderTimeoutMs, judgeTimeoutMs };
+}
+
 /** Files/additions/deletions from unified-diff text (headers excluded). */
 export function computeDiffStats(diff: string): DiffStats {
   let files = 0;
@@ -46,6 +71,17 @@ function capBody(body: string | undefined): { body: string | undefined; truncate
   return { body: body.slice(0, BODY_CAP_CHARS) + BODY_TRUNCATION_MARKER, truncated: true };
 }
 
+// Trusted project rules still get a cap (impl-review-phase-1 F4): they spend
+// finder prompt tokens on every run, so an unbounded rules file must not
+// silently dominate the context window.
+export const PROJECT_CONTEXT_CAP_CHARS = 10_000;
+export const PROJECT_CONTEXT_TRUNCATION_MARKER = "\n[...project context truncated at 10,000 chars]";
+
+function capProjectContext(text: string | undefined): string | undefined {
+  if (text === undefined || text.length <= PROJECT_CONTEXT_CAP_CHARS) return text;
+  return text.slice(0, PROJECT_CONTEXT_CAP_CHARS) + PROJECT_CONTEXT_TRUNCATION_MARKER;
+}
+
 export interface PipelineOverrides {
   apiKey?: string;
   reviewModel?: string;
@@ -63,11 +99,20 @@ export interface PipelineInput {
   prTitle?: string;
   prBody?: string;
   overrides?: PipelineOverrides;
+  /** Per-pass, per-attempt wall-clock budgets; validated defaults apply when omitted. */
+  timeouts?: PipelineTimeouts;
+  /**
+   * Trusted repository-maintainer review rules for the finder (the pass that
+   * sees the code). Must be sourced from trusted ground (e.g. the base
+   * branch, never the PR head); capped at PROJECT_CONTEXT_CAP_CHARS.
+   */
+  projectReviewContext?: string;
   deps?: PipelineDeps;
 }
 
 export async function runReviewPipeline(input: PipelineInput): Promise<PipelineResult> {
   const models = resolveModels(input.overrides);
+  const timeouts = resolveTimeouts(input.timeouts);
   const { diff, truncated: diffTruncated } = capDiff(input.diff);
   const { body: prBody, truncated: bodyTruncated } = capBody(input.prBody);
   // Stats describe the real PR, so they're computed on the un-capped diff.
@@ -75,18 +120,24 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
 
   const finder =
     input.deps?.finder ??
-    createReviewer({ apiKey: input.overrides?.apiKey, model: models.reviewModel }).review;
+    createReviewer({
+      apiKey: input.overrides?.apiKey,
+      model: models.reviewModel,
+      projectContext: capProjectContext(input.projectReviewContext),
+    }).review;
   const judge =
     input.deps?.judge ??
     createJudge({ apiKey: input.overrides?.apiKey, model: models.judgeModel }).judge;
 
-  const reviewResult = await withOneRetry(() => finder({ kind: "diff", diff }));
+  const reviewResult = await withOneRetry(() =>
+    finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs }),
+  );
   // reviewer.review already normalized; mergeFindings adds the dedup +
   // deterministic file/line/category sort that makes F1..Fn stable per run.
   const findings = assignFindingIds(mergeFindings(reviewResult.findings));
 
   const judgeResult = await withOneRetry(() =>
-    judge({ findings, prTitle: input.prTitle, prBody, diffStats }),
+    judge({ findings, prTitle: input.prTitle, prBody, diffStats }, { timeoutMs: timeouts.judgeTimeoutMs }),
   );
 
   return {

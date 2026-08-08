@@ -6,6 +6,8 @@ import {
   BODY_CAP_CHARS,
   BODY_TRUNCATION_MARKER,
   computeDiffStats,
+  DEFAULT_FINDER_TIMEOUT_MS,
+  DEFAULT_JUDGE_TIMEOUT_MS,
   DIFF_CAP_BYTES,
   DIFF_TRUNCATION_MARKER,
   runReviewPipeline,
@@ -200,6 +202,52 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
       authError,
     );
     expect(finder).toHaveBeenCalledTimes(1);
+    expect(judge).not.toHaveBeenCalled();
+  });
+
+  it("passes the default per-attempt timeout budgets to both passes", async () => {
+    const finder = vi.fn().mockResolvedValue({ summary: "s", findings: [] });
+    const judge = vi.fn().mockResolvedValue(judgeResult());
+    await runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge } });
+    expect(finder).toHaveBeenCalledWith(expect.anything(), { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS });
+    expect(judge).toHaveBeenCalledWith(expect.anything(), { timeoutMs: DEFAULT_JUDGE_TIMEOUT_MS });
+  });
+
+  it("forwards timeout overrides to the matching pass", async () => {
+    const finder = vi.fn().mockResolvedValue({ summary: "s", findings: [] });
+    const judge = vi.fn().mockResolvedValue(judgeResult());
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      timeouts: { finderTimeoutMs: 10_000, judgeTimeoutMs: 5_000 },
+      deps: { finder, judge },
+    });
+    expect(finder).toHaveBeenCalledWith(expect.anything(), { timeoutMs: 10_000 });
+    expect(judge).toHaveBeenCalledWith(expect.anything(), { timeoutMs: 5_000 });
+  });
+
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects invalid timeout %s before any pass runs",
+    async (bad) => {
+      const finder = vi.fn();
+      await expect(
+        runReviewPipeline({
+          diff: SMALL_DIFF,
+          timeouts: { finderTimeoutMs: bad },
+          deps: { finder, judge: vi.fn() },
+        }),
+      ).rejects.toThrow(/finderTimeoutMs must be a positive integer/);
+      expect(finder).not.toHaveBeenCalled();
+    },
+  );
+
+  it("treats a timeout as retryable: one retry, then the TimeoutError is rethrown", async () => {
+    const timeout = () => new DOMException("timed out", "TimeoutError");
+    const finder = vi.fn().mockRejectedValueOnce(timeout()).mockRejectedValueOnce(timeout());
+    const judge = vi.fn();
+    await expect(runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge } })).rejects.toThrow(
+      "timed out",
+    );
+    expect(finder).toHaveBeenCalledTimes(2);
     expect(judge).not.toHaveBeenCalled();
   });
 

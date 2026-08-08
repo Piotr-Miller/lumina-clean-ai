@@ -3,7 +3,9 @@ import { MockLanguageModelV3 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createJudge } from "./judge.js";
+import { PROJECT_CONTEXT_CAP_CHARS, runReviewPipeline } from "./pipeline.js";
 import { createReviewer } from "./reviewer.js";
+import { CRITERIA } from "./scorecard.js";
 import type { IdentifiedFinding } from "./schemas.js";
 
 // Pins the one-retry cost contract at the PROVIDER level (plan F2): both
@@ -53,6 +55,96 @@ const findings: IdentifiedFinding[] = [
     suggestion: "s",
   },
 ];
+
+// Minimal successful V3 generation carrying a schema-valid review result.
+const successfulGeneration = () => ({
+  content: [{ type: "text" as const, text: '{"summary":"s","findings":[]}' }],
+  finishReason: { unified: "stop" as const },
+  usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+  warnings: [],
+});
+
+describe("finder tool surface (cost ceiling, impl-review-phase-1 F3)", () => {
+  it("no SourceProvider: the request carries no tools and one review = one provider attempt", async () => {
+    const doGenerate = vi.fn().mockResolvedValue(successfulGeneration());
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const reviewer = createReviewer({ apiKey: "test-key" });
+    const result = await reviewer.review({ kind: "diff", diff: "--- a\n+++ b" });
+    expect(result.findings).toEqual([]);
+    expect(doGenerate).toHaveBeenCalledTimes(1);
+    const request = doGenerate.mock.calls[0]?.[0] as { tools?: unknown[] };
+    expect(request.tools ?? []).toEqual([]);
+  });
+
+  it("with a SourceProvider: the request carries the getFileContext tool", async () => {
+    const doGenerate = vi.fn().mockResolvedValue(successfulGeneration());
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const reviewer = createReviewer({ apiKey: "test-key", source: () => "ctx" });
+    await reviewer.review({ kind: "diff", diff: "--- a\n+++ b" });
+    const request = doGenerate.mock.calls[0]?.[0] as { tools?: { name?: string }[] };
+    expect(request.tools?.map((t) => t.name)).toEqual(["getFileContext"]);
+  });
+});
+
+// Schema-valid judge generation for full-pipeline wiring tests.
+const judgeGeneration = () => ({
+  content: [
+    {
+      type: "text" as const,
+      text: JSON.stringify({
+        scores: Object.fromEntries(
+          CRITERIA.map(({ key }) => [key, { score: 8, justification: "j", findingIds: [] }]),
+        ),
+        verdict: "passed",
+        verdictReason: "ok",
+        summary: "s",
+      }),
+    },
+  ],
+  finishReason: { unified: "stop" as const },
+  usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+  warnings: [],
+});
+
+const promptOfCall = (doGenerate: ReturnType<typeof vi.fn>, index: number): string =>
+  JSON.stringify((doGenerate.mock.calls[index]?.[0] as { prompt?: unknown }).prompt);
+
+describe("project review context wiring (impl-review-phase-1 F4)", () => {
+  const RULES = "Always merge Tailwind classes with cn().";
+
+  it("delivers trusted rules to the finder's system instructions and never to the judge", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockResolvedValueOnce(successfulGeneration())
+      .mockResolvedValueOnce(judgeGeneration());
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const result = await runReviewPipeline({
+      diff: "diff --git a/a b/a\n+x",
+      projectReviewContext: RULES,
+      overrides: { apiKey: "test-key" },
+    });
+    expect(result.verdict).toBe("passed");
+    expect(doGenerate).toHaveBeenCalledTimes(2);
+    expect(promptOfCall(doGenerate, 0)).toContain(RULES);
+    expect(promptOfCall(doGenerate, 1)).not.toContain(RULES);
+  });
+
+  it("caps an oversized rules text with a visible marker before it reaches the finder", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockResolvedValueOnce(successfulGeneration())
+      .mockResolvedValueOnce(judgeGeneration());
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    await runReviewPipeline({
+      diff: "diff --git a/a b/a\n+x",
+      projectReviewContext: "r".repeat(PROJECT_CONTEXT_CAP_CHARS + 500),
+      overrides: { apiKey: "test-key" },
+    });
+    const finderPrompt = promptOfCall(doGenerate, 0);
+    expect(finderPrompt).toContain("project context truncated");
+    expect(finderPrompt).not.toContain("r".repeat(PROJECT_CONTEXT_CAP_CHARS + 1));
+  });
+});
 
 describe("provider attempts with maxRetries: 0", () => {
   it("finder: a failing review call makes exactly one provider attempt", async () => {

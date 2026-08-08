@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { MAX_RENDERED_FINDINGS, renderStickyComment, STICKY_MARKER } from "./render.js";
+import {
+  MAX_COMMENT_CHARS,
+  MAX_FIELD_CHARS,
+  MAX_RENDERED_FINDINGS,
+  renderStickyComment,
+  STICKY_MARKER,
+} from "./render.js";
 import { CRITERIA } from "./scorecard.js";
 import type { IdentifiedFinding, PipelineResult, Scores, Severity } from "./schemas.js";
 
@@ -99,5 +105,69 @@ describe("renderStickyComment", () => {
     const comment = renderStickyComment(result());
     expect(comment).toContain("finder: cheap/finder");
     expect(comment).toContain("judge: big/judge");
+  });
+});
+
+describe("renderStickyComment (model-controlled Markdown isolation)", () => {
+  it("flattens newlines and escapes pipes/headings smuggled through a description", () => {
+    const attack = "bad |cell|\n### Fake heading\n| a | b |";
+    const comment = renderStickyComment(result({ findings: [identified("F1", { description: attack })] }));
+    // No line may start with the smuggled heading — it stays inline in the finding row.
+    expect(comment.split("\n").some((line) => line.startsWith("### Fake"))).toBe(false);
+    expect(comment).toContain("\\|cell\\|");
+    const findingLine = comment.split("\n").find((line) => line.includes("**F1**"));
+    expect(findingLine).toContain("Fake heading");
+  });
+
+  it("escapes a summary and verdict reason that try to open new sections", () => {
+    const comment = renderStickyComment(
+      result({ summary: "### Injected section\nspoof", verdictReason: "> fake quote" }),
+    );
+    // The only heading lines are the author-owned ones; injected markers are escaped.
+    expect(comment.split("\n").some((line) => line.startsWith("### Injected"))).toBe(false);
+    expect(comment.split("\n").some((line) => line.startsWith("> "))).toBe(false);
+    expect(comment).toContain("\\### Injected section spoof");
+    expect(comment).toContain("\\> fake quote");
+  });
+
+  it("keeps a backtick-carrying file path inside its code span", () => {
+    const comment = renderStickyComment(
+      result({ findings: [identified("F1", { file: "src/a`.ts" })] }),
+    );
+    expect(comment).toContain("``src/a`.ts:5``");
+  });
+
+  it("renders a file-level finding as its path alone, never file:0", () => {
+    const comment = renderStickyComment(
+      result({ findings: [identified("F1", { startLine: undefined })] }),
+    );
+    expect(comment).toContain("`src/a.ts`");
+    expect(comment).not.toContain("src/a.ts:0");
+  });
+
+  it("defuses @mentions and Markdown links in model text", () => {
+    const comment = renderStickyComment(
+      result({ summary: "ping @octocat", verdictReason: "[click me](https://evil.example)" }),
+    );
+    expect(comment).toContain("@<!-- -->octocat");
+    expect(comment).not.toContain("ping @octocat");
+    // The opening bracket is escaped, so the sequence can never parse as a link.
+    expect(comment).toContain("\\[click me](");
+    expect(comment).not.toMatch(/(?<!\\)\[click me\]\(/u);
+  });
+
+  it("caps an oversized field with an ellipsis", () => {
+    const comment = renderStickyComment(result({ summary: "s".repeat(MAX_FIELD_CHARS + 500) }));
+    expect(comment).toContain(`${"s".repeat(MAX_FIELD_CHARS)}…`);
+    expect(comment).not.toContain("s".repeat(MAX_FIELD_CHARS + 1));
+  });
+
+  it("enforces the whole-comment ceiling and keeps the sticky marker last", () => {
+    const findings = Array.from({ length: 2_000 }, (_, index) => identified(`F${String(index + 1)}`));
+    const ids = findings.map((finding) => finding.id);
+    const comment = renderStickyComment(result({ findings, scores: scores(ids) }));
+    expect(comment.length).toBeLessThanOrEqual(MAX_COMMENT_CHARS);
+    expect(comment).toContain("comment truncated");
+    expect(comment.trimEnd().endsWith(STICKY_MARKER)).toBe(true);
   });
 });

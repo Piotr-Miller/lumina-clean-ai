@@ -498,15 +498,15 @@ Purely additive: no existing behavior changes (demo and lens API untouched;
 
 #### Automated
 
-- [x] 1.1 Package `npm test` exits 0
-- [x] 1.2 Package `npm run typecheck` + `npm run lint` exit 0
-- [x] 1.3 Barrel import side-effect-free without env key
-- [x] 1.4 Root `npm run typecheck` + `npm run test:unit` exit 0
+- [x] 1.1 Package `npm test` exits 0 — ca102ed
+- [x] 1.2 Package `npm run typecheck` + `npm run lint` exit 0 — ca102ed
+- [x] 1.3 Barrel import side-effect-free without env key — ca102ed
+- [x] 1.4 Root `npm run typecheck` + `npm run test:unit` exit 0 — ca102ed
 
 #### Manual
 
-- [x] 1.5 Live local `npm run review` produces sane review.json + comment.md (named-field scores, valid findingIds, model-owned verdict + verdictReason)
-- [x] 1.6 Judge model resolution confirmed in output metadata (finder=glm, judge=sonnet)
+- [x] 1.5 Live local `npm run review` produces sane review.json + comment.md (named-field scores, valid findingIds, model-owned verdict + verdictReason) — ca102ed
+- [x] 1.6 Judge model resolution confirmed in output metadata (finder=glm, judge=sonnet) — ca102ed
 
 ### Phase 2: Composite Action + Workflow
 
