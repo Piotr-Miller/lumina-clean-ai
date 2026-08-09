@@ -13,6 +13,7 @@ import {
   runReviewPipeline,
 } from "./pipeline.js";
 import { type JudgePromptInput } from "./prompts.js";
+import { RATE_LIMIT_DELAY_MS, TRANSIENT_DELAY_MS } from "./retry.js";
 import { CRITERIA } from "./scorecard.js";
 import type { Finding, JudgeResult, ReviewUnit, Scores } from "./schemas.js";
 
@@ -68,6 +69,23 @@ const apiError = (statusCode: number): APICallError =>
     statusCode,
   });
 
+// Retry-path tests inject a recording sleep — the real pre-retry delay (up to
+// 10s for a 429) would blow vitest's per-test timeout and add real wall-clock.
+// Recorded delays are range-asserted: jitter's random source is not a pipeline
+// seam (deliberate — only the sleep is), so exact values aren't reproducible.
+const recordingSleep = () => {
+  const calls: number[] = [];
+  const sleep = (ms: number): Promise<void> => {
+    calls.push(ms);
+    return Promise.resolve();
+  };
+  return { calls, sleep };
+};
+const expectInJitterRange = (value: number | undefined, base: number): void => {
+  expect(value).toBeGreaterThanOrEqual(base);
+  expect(value).toBeLessThanOrEqual(base + 1_000);
+};
+
 describe("computeDiffStats", () => {
   it("counts files, additions, and deletions, excluding +++/--- headers", () => {
     expect(computeDiffStats(SMALL_DIFF)).toEqual({ files: 1, additions: 1, deletions: 1 });
@@ -122,6 +140,7 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     expect(result.verdict).toBe("passed");
     expect(result.verdictReason).toBe("solid change");
     expect(result.droppedFindingIdRefs).toBe(1);
+    expect(result.preDedupFindingCount).toBe(3);
     expect(result.diffTruncated).toBe(false);
     expect(result.bodyTruncated).toBe(false);
     expect(result.models).toEqual({ finder: DEFAULT_MODEL, judge: DEFAULT_JUDGE_MODEL });
@@ -181,17 +200,72 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     expect(seenBody?.length).toBe(BODY_CAP_CHARS + BODY_TRUNCATION_MARKER.length);
   });
 
-  it("retries a retryable finder failure exactly once and recovers", async () => {
+  it("retries a retryable finder failure exactly once, after the transient delay", async () => {
+    const { calls, sleep } = recordingSleep();
     const finder = vi
       .fn()
       .mockRejectedValueOnce(apiError(503))
       .mockResolvedValueOnce({ summary: "s", findings: [] });
     const result = await runReviewPipeline({
       diff: SMALL_DIFF,
-      deps: { finder, judge: () => Promise.resolve(judgeResult()) },
+      deps: { finder, judge: () => Promise.resolve(judgeResult()), retrySleep: sleep },
     });
     expect(finder).toHaveBeenCalledTimes(2);
     expect(result.verdict).toBe("passed");
+    expect(calls).toHaveLength(1);
+    expectInJitterRange(calls.at(0), TRANSIENT_DELAY_MS);
+  });
+
+  it("records the pre-dedup finding count when the finder emits collapsing duplicates", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: {
+        finder: () =>
+          Promise.resolve({
+            summary: "s",
+            findings: [
+              finding({ startLine: 9 }),
+              finding({ startLine: 9 }), // dup — merged away, but still counted
+              finding({ file: "src/b.ts", startLine: 1 }),
+            ],
+          }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect(result.findings).toHaveLength(2);
+    expect(result.preDedupFindingCount).toBe(3);
+  });
+
+  it("reports retried passes through onRetry with the pass name and bounded delay", async () => {
+    const events: { pass: "finder" | "judge"; error: unknown; delayMs: number }[] = [];
+    const { sleep } = recordingSleep();
+    const finder = vi
+      .fn()
+      .mockRejectedValueOnce(apiError(503))
+      .mockResolvedValueOnce({ summary: "s", findings: [] });
+    const judge = vi.fn().mockRejectedValueOnce(apiError(429)).mockResolvedValueOnce(judgeResult());
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      onRetry: (pass, error, delayMs) => events.push({ pass, error, delayMs }),
+      deps: { finder, judge, retrySleep: sleep },
+    });
+    expect(events.map((event) => event.pass)).toEqual(["finder", "judge"]);
+    expect(events.at(0)?.error).toBeInstanceOf(APICallError);
+    expectInJitterRange(events.at(0)?.delayMs, TRANSIENT_DELAY_MS);
+    expectInJitterRange(events.at(1)?.delayMs, RATE_LIMIT_DELAY_MS);
+  });
+
+  it("keeps onRetry silent when both passes succeed first try", async () => {
+    const onRetry = vi.fn();
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      onRetry,
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect(onRetry).not.toHaveBeenCalled();
   });
 
   it("fails fast on a non-retryable finder error (single attempt)", async () => {
@@ -241,25 +315,35 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
   );
 
   it("treats a timeout as retryable: one retry, then the TimeoutError is rethrown", async () => {
+    const { calls, sleep } = recordingSleep();
     const timeout = () => new DOMException("timed out", "TimeoutError");
     const finder = vi.fn().mockRejectedValueOnce(timeout()).mockRejectedValueOnce(timeout());
     const judge = vi.fn();
-    await expect(runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge } })).rejects.toThrow(
-      "timed out",
-    );
+    await expect(
+      runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge, retrySleep: sleep } }),
+    ).rejects.toThrow("timed out");
     expect(finder).toHaveBeenCalledTimes(2);
     expect(judge).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(1);
+    expectInJitterRange(calls.at(0), TRANSIENT_DELAY_MS);
   });
 
-  it("gives the judge its own single retry and rethrows the second failure", async () => {
+  it("gives the judge its own single retry (rate-limit delay) and rethrows the second failure", async () => {
+    const { calls, sleep } = recordingSleep();
     const second = apiError(500);
     const judge = vi.fn().mockRejectedValueOnce(apiError(429)).mockRejectedValueOnce(second);
     await expect(
       runReviewPipeline({
         diff: SMALL_DIFF,
-        deps: { finder: () => Promise.resolve({ summary: "s", findings: [] }), judge },
+        deps: {
+          finder: () => Promise.resolve({ summary: "s", findings: [] }),
+          judge,
+          retrySleep: sleep,
+        },
       }),
     ).rejects.toBe(second);
     expect(judge).toHaveBeenCalledTimes(2);
+    expect(calls).toHaveLength(1);
+    expectInJitterRange(calls.at(0), RATE_LIMIT_DELAY_MS);
   });
 });

@@ -123,6 +123,13 @@ export interface DiffStats {
 export interface PipelineResult {
   summary: string;
   findings: IdentifiedFinding[];
+  /**
+   * The finder's normalized finding count before the dedup/merge — always
+   * >= findings.length. Measurement only (the dedup-identity decision is
+   * deferred to code-review-evals with live collapse data); nothing renders
+   * it, it just rides along in review.json.
+   */
+  preDedupFindingCount: number;
   scores: Scores;
   verdict: Verdict;
   verdictReason: string;

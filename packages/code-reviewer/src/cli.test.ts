@@ -19,6 +19,7 @@ const scores = (): Scores =>
 const pipelineResult = (overrides: Partial<PipelineResult> = {}): PipelineResult => ({
   summary: "overall assessment",
   findings: [],
+  preDedupFindingCount: 0,
   scores: scores(),
   verdict: "passed",
   verdictReason: "looks solid",
@@ -172,6 +173,21 @@ describe("runReviewCli input routing and pipeline wiring", () => {
     const pipeline = okPipeline();
     await runReviewCli(["--project-context-file", "rules.md"], {}, fakeIo(), pipeline);
     expect(inputOf(pipeline).projectReviewContext).toBe("content of rules.md");
+  });
+
+  it("wires onRetry to a stderr line naming the pass, error, and delay", async () => {
+    const io = fakeIo();
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onRetry?.("finder", new DOMException("timed out", "TimeoutError"), 2_000.4);
+      input.onRetry?.("judge", "boom", 10_500);
+      return Promise.resolve(pipelineResult());
+    });
+    expect(await runReviewCli([], {}, io, pipeline)).toBe(0);
+    // Rounded ms; a non-Error throw falls back to its string form.
+    expect(io.errors).toEqual([
+      "retrying finder after TimeoutError in 2000ms",
+      "retrying judge after boom in 10500ms",
+    ]);
   });
 
   it("links the Actions run in comment.md when the env triple is present", async () => {

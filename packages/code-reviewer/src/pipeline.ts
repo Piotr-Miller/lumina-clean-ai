@@ -92,6 +92,8 @@ export interface PipelineOverrides {
 export interface PipelineDeps {
   finder?: (unit: ReviewUnit, callOptions?: ReviewCallOptions) => Promise<ReviewResult>;
   judge?: (input: JudgePromptInput, callOptions?: JudgeCallOptions) => Promise<JudgeResult>;
+  /** Replaces the real pre-retry sleep so retry-path tests never wait. */
+  retrySleep?: (ms: number) => Promise<void>;
 }
 
 export interface PipelineInput {
@@ -107,6 +109,12 @@ export interface PipelineInput {
    * branch, never the PR head); capped at PROJECT_CONTEXT_CAP_CHARS.
    */
   projectReviewContext?: string;
+  /**
+   * Production observability: fires when a pass is about to be retried, with
+   * the pass name, the swallowed first failure, and the pre-retry delay.
+   * Without it a recovered flake leaves zero trace in the run's output.
+   */
+  onRetry?: (pass: "finder" | "judge", error: unknown, delayMs: number) => void;
   deps?: PipelineDeps;
 }
 
@@ -129,20 +137,32 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     input.deps?.judge ??
     createJudge({ apiKey: input.overrides?.apiKey, model: models.judgeModel }).judge;
 
-  const reviewResult = await withOneRetry(() =>
-    finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs }),
+  const retryOptions = (pass: "finder" | "judge") => ({
+    sleep: input.deps?.retrySleep,
+    onRetry: (error: unknown, delayMs: number) => input.onRetry?.(pass, error, delayMs),
+  });
+
+  const reviewResult = await withOneRetry(
+    () => finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs }),
+    retryOptions("finder"),
   );
   // reviewer.review already normalized; mergeFindings adds the dedup +
   // deterministic file/line/category sort that makes F1..Fn stable per run.
   const findings = assignFindingIds(mergeFindings(reviewResult.findings));
 
-  const judgeResult = await withOneRetry(() =>
-    judge({ findings, prTitle: input.prTitle, prBody, diffStats }, { timeoutMs: timeouts.judgeTimeoutMs }),
+  const judgeResult = await withOneRetry(
+    () =>
+      judge(
+        { findings, prTitle: input.prTitle, prBody, diffStats },
+        { timeoutMs: timeouts.judgeTimeoutMs },
+      ),
+    retryOptions("judge"),
   );
 
   return {
     summary: judgeResult.summary,
     findings,
+    preDedupFindingCount: reviewResult.findings.length,
     scores: judgeResult.scores,
     verdict: judgeResult.verdict,
     verdictReason: judgeResult.verdictReason,
