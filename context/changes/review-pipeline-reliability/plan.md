@@ -398,9 +398,9 @@ schema migration.
 
 #### Automated
 
-- [x] 2.1 Package unit tests pass with no added wall-clock: `npm run test`
-- [x] 2.2 Type checking passes: `npm run typecheck`
-- [x] 2.3 Linting passes: `npm run lint`
+- [x] 2.1 Package unit tests pass with no added wall-clock: `npm run test` — dc38e4c
+- [x] 2.2 Type checking passes: `npm run typecheck` — dc38e4c
+- [x] 2.3 Linting passes: `npm run lint` — dc38e4c
 
 #### Manual
 
@@ -410,7 +410,7 @@ schema migration.
 
 #### Automated
 
-- [ ] 3.1 Workflow YAML parses
+- [x] 3.1 Workflow YAML parses (prettier YAML parse + format check, local)
 - [ ] 3.2 `code-reviewer` CI job green on the PR
 
 #### Manual
