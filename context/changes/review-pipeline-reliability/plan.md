@@ -410,10 +410,10 @@ schema migration.
 
 #### Automated
 
-- [x] 3.1 Workflow YAML parses (prettier YAML parse + format check, local)
-- [ ] 3.2 `code-reviewer` CI job green on the PR
+- [x] 3.1 Workflow YAML parses (prettier YAML parse + format check, local) — f419e40
+- [x] 3.2 `code-reviewer` CI job green on the PR — f419e40 (PR #118, run 31313913399)
 
 #### Manual
 
-- [ ] 3.3 Own-PR run uploads downloadable `ai-review-output` artifact with complete `review.json`
-- [ ] 3.4 Sticky comment + label behavior unchanged on that run
+- [x] 3.3 Own-PR run uploads downloadable `ai-review-output` artifact with complete `review.json` — f419e40 (run 31314247760: review.json incl. `preDedupFindingCount` + comment.md)
+- [x] 3.4 Sticky comment + label behavior unchanged on that run — f419e40 (single bot sticky comment, `ai-cr:passed` set, `ai-cr:review` auto-removed)
