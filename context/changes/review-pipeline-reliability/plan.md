@@ -198,6 +198,12 @@ finding count so the F3 identity decision can be made on live data later.
 
 #### 1. Retry seams: sleep + telemetry
 
+> **Pulled forward (approved, landed in Phase 1 — `73f8eaf`)**: `PipelineDeps.retrySleep`
+> and its forwarding into both `withOneRetry` calls, plus the no-op sleep injection in
+> `pipeline.test.ts` — without it the 429 retry-path test would really sleep 10 s and blow
+> vitest's 5 s timeout. Still to do here: `PipelineInput.onRetry` (pass-name telemetry),
+> the CLI stderr wiring, and the tests asserting recorded delays + `onRetry` behavior.
+
 **File**: `packages/code-reviewer/src/pipeline.ts`, `packages/code-reviewer/src/cli.ts`
 
 **Intent**: Let tests replace the retry delay, and make an in-run recovery visible in the
@@ -384,9 +390,9 @@ schema migration.
 
 #### Automated
 
-- [x] 1.1 Package unit tests pass: `npm run test`
-- [x] 1.2 Type checking passes: `npm run typecheck`
-- [x] 1.3 Linting passes: `npm run lint`
+- [x] 1.1 Package unit tests pass: `npm run test` — 73f8eaf
+- [x] 1.2 Type checking passes: `npm run typecheck` — 73f8eaf
+- [x] 1.3 Linting passes: `npm run lint` — 73f8eaf
 
 ### Phase 2: Pipeline Wiring + Dedup Measurement
 

@@ -79,7 +79,8 @@ export interface RetryOptions {
   /**
    * Observability hook: fires exactly once, before the sleep, only when a
    * retry will actually happen. Without it a recovered flake leaves no trace
-   * — the first failure is swallowed by the retry.
+   * — the first failure is swallowed by the retry. A throwing hook is
+   * swallowed: telemetry must never turn a recoverable failure terminal.
    */
   onRetry?: (error: unknown, delayMs: number) => void;
 }
@@ -101,7 +102,11 @@ export async function withOneRetry<T>(
   } catch (error) {
     if (!isRetryableError(error)) throw error;
     const delayMs = retryDelayMs(error, options.random);
-    options.onRetry?.(error, delayMs);
+    try {
+      options.onRetry?.(error, delayMs);
+    } catch {
+      // Deliberately swallowed — see the onRetry doc comment.
+    }
     if (delayMs > 0) await (options.sleep ?? realSleep)(delayMs);
     return await fn();
   }

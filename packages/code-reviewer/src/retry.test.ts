@@ -89,6 +89,17 @@ describe("isRetryableError", () => {
   });
 });
 
+describe("delay constants", () => {
+  // Independent of the production imports' use in the tests below: pins the
+  // planned 10s / 2s / 30s contract so a constant edit can't slip through
+  // green tests that merely reuse the changed value.
+  it("pins the planned delay contract", () => {
+    expect(RATE_LIMIT_DELAY_MS).toBe(10_000);
+    expect(TRANSIENT_DELAY_MS).toBe(2_000);
+    expect(MAX_RETRY_DELAY_MS).toBe(30_000);
+  });
+});
+
 describe("retryDelayMs", () => {
   it("returns 0 for a schema mismatch (fresh sample is the fix)", () => {
     expect(retryDelayMs(schemaMismatchError(), () => 1)).toBe(0);
@@ -206,6 +217,20 @@ describe("withOneRetry", () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(onRetry).toHaveBeenCalledWith(error, RATE_LIMIT_DELAY_MS);
     expect(order).toEqual(["onRetry", "sleep"]);
+  });
+
+  it("still retries (and succeeds) when onRetry throws", async () => {
+    const { calls, sleep } = recordingSleep();
+    const onRetry = vi.fn(() => {
+      throw new Error("telemetry exploded");
+    });
+    const fn = vi.fn().mockRejectedValueOnce(apiError(503)).mockResolvedValueOnce("recovered");
+    await expect(withOneRetry(fn, { sleep, random: noJitter, onRetry })).resolves.toBe(
+      "recovered",
+    );
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(calls).toEqual([TRANSIENT_DELAY_MS]);
   });
 
   it("never fires onRetry on a first-try success", async () => {
