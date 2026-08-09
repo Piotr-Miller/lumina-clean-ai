@@ -68,6 +68,10 @@ const apiError = (statusCode: number): APICallError =>
     statusCode,
   });
 
+// Retry-path tests inject a no-op sleep — the real pre-retry delay (up to 10s
+// for a 429) would blow vitest's per-test timeout and add real wall-clock.
+const noSleep = (): Promise<void> => Promise.resolve();
+
 describe("computeDiffStats", () => {
   it("counts files, additions, and deletions, excluding +++/--- headers", () => {
     expect(computeDiffStats(SMALL_DIFF)).toEqual({ files: 1, additions: 1, deletions: 1 });
@@ -188,7 +192,7 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
       .mockResolvedValueOnce({ summary: "s", findings: [] });
     const result = await runReviewPipeline({
       diff: SMALL_DIFF,
-      deps: { finder, judge: () => Promise.resolve(judgeResult()) },
+      deps: { finder, judge: () => Promise.resolve(judgeResult()), retrySleep: noSleep },
     });
     expect(finder).toHaveBeenCalledTimes(2);
     expect(result.verdict).toBe("passed");
@@ -244,9 +248,9 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     const timeout = () => new DOMException("timed out", "TimeoutError");
     const finder = vi.fn().mockRejectedValueOnce(timeout()).mockRejectedValueOnce(timeout());
     const judge = vi.fn();
-    await expect(runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge } })).rejects.toThrow(
-      "timed out",
-    );
+    await expect(
+      runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge, retrySleep: noSleep } }),
+    ).rejects.toThrow("timed out");
     expect(finder).toHaveBeenCalledTimes(2);
     expect(judge).not.toHaveBeenCalled();
   });
@@ -257,7 +261,11 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     await expect(
       runReviewPipeline({
         diff: SMALL_DIFF,
-        deps: { finder: () => Promise.resolve({ summary: "s", findings: [] }), judge },
+        deps: {
+          finder: () => Promise.resolve({ summary: "s", findings: [] }),
+          judge,
+          retrySleep: noSleep,
+        },
       }),
     ).rejects.toBe(second);
     expect(judge).toHaveBeenCalledTimes(2);

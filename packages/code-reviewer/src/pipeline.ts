@@ -92,6 +92,8 @@ export interface PipelineOverrides {
 export interface PipelineDeps {
   finder?: (unit: ReviewUnit, callOptions?: ReviewCallOptions) => Promise<ReviewResult>;
   judge?: (input: JudgePromptInput, callOptions?: JudgeCallOptions) => Promise<JudgeResult>;
+  /** Replaces the real pre-retry sleep so retry-path tests never wait. */
+  retrySleep?: (ms: number) => Promise<void>;
 }
 
 export interface PipelineInput {
@@ -129,15 +131,23 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     input.deps?.judge ??
     createJudge({ apiKey: input.overrides?.apiKey, model: models.judgeModel }).judge;
 
-  const reviewResult = await withOneRetry(() =>
-    finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs }),
+  const retryOptions = { sleep: input.deps?.retrySleep };
+
+  const reviewResult = await withOneRetry(
+    () => finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs }),
+    retryOptions,
   );
   // reviewer.review already normalized; mergeFindings adds the dedup +
   // deterministic file/line/category sort that makes F1..Fn stable per run.
   const findings = assignFindingIds(mergeFindings(reviewResult.findings));
 
-  const judgeResult = await withOneRetry(() =>
-    judge({ findings, prTitle: input.prTitle, prBody, diffStats }, { timeoutMs: timeouts.judgeTimeoutMs }),
+  const judgeResult = await withOneRetry(
+    () =>
+      judge(
+        { findings, prTitle: input.prTitle, prBody, diffStats },
+        { timeoutMs: timeouts.judgeTimeoutMs },
+      ),
+    retryOptions,
   );
 
   return {

@@ -1,9 +1,9 @@
 ---
 change_id: review-pipeline-reliability
 title: Review pipeline reliability — schema-retry, backoff, dedup identity
-status: new
+status: implementing
 created: 2026-08-08
-updated: 2026-08-08
+updated: 2026-08-09
 archived_at: null
 ---
 
