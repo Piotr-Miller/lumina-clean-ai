@@ -1,7 +1,7 @@
 ---
 change_id: review-pipeline-reliability
 title: Review pipeline reliability — schema-retry, backoff, dedup identity
-status: impl_reviewed
+status: implementing
 created: 2026-08-08
 updated: 2026-08-09
 archived_at: null
@@ -32,3 +32,11 @@ coherent reliability pass over `packages/code-reviewer`:
 
 Adjacent candidate while in there: upload `review.json` as a workflow run
 artifact (post-hoc finding inspection — today it dies with the runner).
+
+**2026-08-09 — F3 dedup-identity decision (Phase 2):** the `mergeFindings`
+identity stays `file:startLine|category`; we shipped measurement instead of a
+reflex widen. `PipelineResult.preDedupFindingCount` (the finder's normalized
+count before the merge) now rides in `review.json`, so every live run reports
+how often collapse actually happens (`preDedupFindingCount − findings.length`).
+The widen-or-keep call is deferred to the `code-review-evals` change, decided
+on that data plus the promptfoo harness.

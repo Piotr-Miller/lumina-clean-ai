@@ -398,9 +398,9 @@ schema migration.
 
 #### Automated
 
-- [ ] 2.1 Package unit tests pass with no added wall-clock: `npm run test`
-- [ ] 2.2 Type checking passes: `npm run typecheck`
-- [ ] 2.3 Linting passes: `npm run lint`
+- [x] 2.1 Package unit tests pass with no added wall-clock: `npm run test`
+- [x] 2.2 Type checking passes: `npm run typecheck`
+- [x] 2.3 Linting passes: `npm run lint`
 
 #### Manual
 

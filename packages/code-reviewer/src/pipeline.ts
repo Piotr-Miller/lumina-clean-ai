@@ -109,6 +109,12 @@ export interface PipelineInput {
    * branch, never the PR head); capped at PROJECT_CONTEXT_CAP_CHARS.
    */
   projectReviewContext?: string;
+  /**
+   * Production observability: fires when a pass is about to be retried, with
+   * the pass name, the swallowed first failure, and the pre-retry delay.
+   * Without it a recovered flake leaves zero trace in the run's output.
+   */
+  onRetry?: (pass: "finder" | "judge", error: unknown, delayMs: number) => void;
   deps?: PipelineDeps;
 }
 
@@ -131,11 +137,14 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     input.deps?.judge ??
     createJudge({ apiKey: input.overrides?.apiKey, model: models.judgeModel }).judge;
 
-  const retryOptions = { sleep: input.deps?.retrySleep };
+  const retryOptions = (pass: "finder" | "judge") => ({
+    sleep: input.deps?.retrySleep,
+    onRetry: (error: unknown, delayMs: number) => input.onRetry?.(pass, error, delayMs),
+  });
 
   const reviewResult = await withOneRetry(
     () => finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs }),
-    retryOptions,
+    retryOptions("finder"),
   );
   // reviewer.review already normalized; mergeFindings adds the dedup +
   // deterministic file/line/category sort that makes F1..Fn stable per run.
@@ -147,12 +156,13 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
         { findings, prTitle: input.prTitle, prBody, diffStats },
         { timeoutMs: timeouts.judgeTimeoutMs },
       ),
-    retryOptions,
+    retryOptions("judge"),
   );
 
   return {
     summary: judgeResult.summary,
     findings,
+    preDedupFindingCount: reviewResult.findings.length,
     scores: judgeResult.scores,
     verdict: judgeResult.verdict,
     verdictReason: judgeResult.verdictReason,

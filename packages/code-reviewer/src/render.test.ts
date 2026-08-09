@@ -29,6 +29,7 @@ const scores = (findingIds: string[] = []): Scores =>
 const result = (overrides: Partial<PipelineResult> = {}): PipelineResult => ({
   summary: "overall assessment",
   findings: [identified("F1")],
+  preDedupFindingCount: 1,
   scores: scores(),
   verdict: "passed",
   verdictReason: "looks solid",

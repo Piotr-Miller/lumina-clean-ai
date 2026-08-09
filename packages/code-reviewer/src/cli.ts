@@ -63,6 +63,15 @@ function parseTimeoutEnv(env: CliEnv, name: string): number | undefined {
   return value;
 }
 
+const errorLabel = (error: unknown): string =>
+  typeof error === "object" &&
+  error !== null &&
+  "name" in error &&
+  typeof error.name === "string" &&
+  error.name !== ""
+    ? error.name
+    : String(error);
+
 /** Actions run URL when the standard env triple is present; omitted locally. */
 function resolveRunUrl(env: CliEnv): string | undefined {
   const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID } = env;
@@ -92,6 +101,13 @@ export async function runReviewCli(
       },
       projectReviewContext:
         args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
+      // In an ultimately-green run this stderr line is the only evidence that
+      // a transient flake happened and the single retry recovered it.
+      onRetry: (pass, error, delayMs) => {
+        io.logError(
+          `retrying ${pass} after ${errorLabel(error)} in ${String(Math.round(delayMs))}ms`,
+        );
+      },
     });
 
     io.mkdir(args.outDir);
