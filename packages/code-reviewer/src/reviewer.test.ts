@@ -62,6 +62,26 @@ describe("createReviewer", () => {
       expect(() => createReviewer({ apiKey: "test-key", maxSteps })).toThrow(/positive integer/);
     },
   );
+
+  it("forwards onStepEnd to each agent generate call (telemetry pass-through)", async () => {
+    const onStepEnd = vi.fn();
+    const reviewer = createReviewer({ apiKey: "test-key", source: () => "ctx", onStepEnd });
+    const generate = vi
+      .spyOn(reviewer.agent, "generate")
+      .mockResolvedValue({ output: { summary: "s", findings: [] } } as never);
+    await reviewer.review({ kind: "diff", diff: "+x" });
+    expect(generate).toHaveBeenCalledWith(expect.objectContaining({ onStepEnd }));
+  });
+
+  it("describes the getFileContext path in the allowlist's format (no a/ b/ prefix)", () => {
+    const reviewer = createReviewer({ apiKey: "test-key", source: () => "ctx" });
+    const tools = reviewer.agent.tools as unknown as {
+      getFileContext: { inputSchema: { shape: { path: { description?: string } } } };
+    };
+    expect(tools.getFileContext.inputSchema.shape.path.description).toBe(
+      "Repository-relative file path without git's a/ or b/ prefix (e.g. src/x.ts)",
+    );
+  });
 });
 
 describe("fetchBoundedContext (context-tool guardrails)", () => {

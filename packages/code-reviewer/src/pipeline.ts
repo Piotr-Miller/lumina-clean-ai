@@ -1,11 +1,26 @@
+import type { StepResult, ToolSet } from "ai";
+
 import { resolveModels } from "./config.js";
 import { mergeFindings } from "./findings.js";
 import { createJudge, type JudgeCallOptions } from "./judge.js";
 import { type JudgePromptInput } from "./prompts.js";
 import { withOneRetry } from "./retry.js";
-import { createReviewer, type ReviewCallOptions } from "./reviewer.js";
+import {
+  createReviewer,
+  type ReviewCallOptions,
+  type Reviewer,
+  type ReviewerOptions,
+  type SourceProvider,
+} from "./reviewer.js";
 import { assignFindingIds } from "./scorecard.js";
-import type { DiffStats, JudgeResult, PipelineResult, ReviewResult, ReviewUnit } from "./schemas.js";
+import type {
+  DiffStats,
+  FinderTelemetry,
+  JudgeResult,
+  PipelineResult,
+  ReviewResult,
+  ReviewUnit,
+} from "./schemas.js";
 
 // Two-pass orchestration in plain code: finder (full diff) → normalize +
 // merge + assign F1..Fn → judge (findings + rubric + PR metadata) → result.
@@ -92,8 +107,56 @@ export interface PipelineOverrides {
 export interface PipelineDeps {
   finder?: (unit: ReviewUnit, callOptions?: ReviewCallOptions) => Promise<ReviewResult>;
   judge?: (input: JudgePromptInput, callOptions?: JudgeCallOptions) => Promise<JudgeResult>;
+  /**
+   * Replaces createReviewer for the finder pass so the source/maxSteps/step-
+   * telemetry wiring is hermetically testable; `finder` (above) bypasses
+   * construction entirely and therefore produces no finderTelemetry.
+   */
+  createFinder?: (options: ReviewerOptions) => Pick<Reviewer, "review">;
   /** Replaces the real pre-retry sleep so retry-path tests never wait. */
   retrySleep?: (ms: number) => Promise<void>;
+}
+
+/** SDK-independent view of one finder loop step, as `onFinderStep` receives it. */
+export interface FinderStepInfo {
+  /** The getFileContext calls in the step, with the model's requested targets. */
+  fileContextCalls: { path: string; startLine?: number; endLine?: number }[];
+  /** Total tool calls in the step — any tool, valid or not (it all costs). */
+  toolCalls: number;
+  /** Token usage of the step's generation, where the provider reported it. */
+  usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+}
+
+// The tool input is model-chosen and reaches us untyped — narrow it instead
+// of trusting the schema validated elsewhere.
+const asFileContextTarget = (
+  input: unknown,
+): { path: string; startLine?: number; endLine?: number } | undefined => {
+  if (typeof input !== "object" || input === null) return undefined;
+  if (!("path" in input) || typeof input.path !== "string") return undefined;
+  return {
+    path: input.path,
+    startLine:
+      "startLine" in input && typeof input.startLine === "number" ? input.startLine : undefined,
+    endLine: "endLine" in input && typeof input.endLine === "number" ? input.endLine : undefined,
+  };
+};
+
+/** Extract the small per-step description from the SDK's step result. */
+export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
+  return {
+    fileContextCalls: step.toolCalls.flatMap((call) => {
+      if (call.toolName !== "getFileContext") return [];
+      const target = asFileContextTarget(call.input);
+      return target === undefined ? [] : [target];
+    }),
+    toolCalls: step.toolCalls.length,
+    usage: {
+      inputTokens: step.usage.inputTokens,
+      outputTokens: step.usage.outputTokens,
+      totalTokens: step.usage.totalTokens,
+    },
+  };
 }
 
 export interface PipelineInput {
@@ -115,6 +178,16 @@ export interface PipelineInput {
    * Without it a recovered flake leaves zero trace in the run's output.
    */
   onRetry?: (pass: "finder" | "judge", error: unknown, delayMs: number) => void;
+  /**
+   * File-context provider for the finder's getFileContext tool. Absent (all
+   * legacy callers) → the finder stays tool-less and single-generation — the
+   * documented cost ceiling (impl-review-phase-1 F3).
+   */
+  source?: SourceProvider;
+  /** Finder loop cap, forwarded to createReviewer as maxSteps — only when `source` is set. */
+  finderMaxSteps?: number;
+  /** Observes each finder loop step (across both retry attempts) for per-step telemetry. */
+  onFinderStep?: (info: FinderStepInfo) => void;
   deps?: PipelineDeps;
 }
 
@@ -126,12 +199,35 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   // Stats describe the real PR, so they're computed on the un-capped diff.
   const diffStats = computeDiffStats(input.diff);
 
+  // Accumulated across BOTH finder attempts of a retried run — it measures
+  // real spend for the run, not the last attempt's shape, so `steps` MAY
+  // exceed the per-attempt maxSteps cap (the SDK's stepNumber resets to 0 on
+  // the retry attempt; each event is simply counted).
+  const telemetry: FinderTelemetry = { steps: 0, toolCalls: 0 };
+  const addTokens = (sum: number | undefined, next: number | undefined): number | undefined =>
+    next === undefined ? sum : (sum ?? 0) + next;
+  const observeFinderStep = (step: StepResult<ToolSet>): void => {
+    const info = describeFinderStep(step);
+    telemetry.steps += 1;
+    telemetry.toolCalls += info.toolCalls;
+    telemetry.inputTokens = addTokens(telemetry.inputTokens, info.usage.inputTokens);
+    telemetry.outputTokens = addTokens(telemetry.outputTokens, info.usage.outputTokens);
+    telemetry.totalTokens = addTokens(telemetry.totalTokens, info.usage.totalTokens);
+    input.onFinderStep?.(info);
+  };
+
+  const createFinder = input.deps?.createFinder ?? createReviewer;
   const finder =
     input.deps?.finder ??
-    createReviewer({
+    createFinder({
       apiKey: input.overrides?.apiKey,
       model: models.reviewModel,
       projectContext: capProjectContext(input.projectReviewContext),
+      source: input.source,
+      // The tool-less cost ceiling is a contract: a step cap only accompanies
+      // a live source (impl-review-phase-1 F3).
+      maxSteps: input.source === undefined ? undefined : input.finderMaxSteps,
+      onStepEnd: observeFinderStep,
     }).review;
   const judge =
     input.deps?.judge ??
@@ -171,5 +267,8 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     bodyTruncated,
     droppedFindingIdRefs: judgeResult.droppedFindingIdRefs,
     models: { finder: models.reviewModel, judge: models.judgeModel },
+    // Key absent (not undefined-valued) when nothing was observed, so
+    // review.json and `in` checks stay clean for injected-finder runs.
+    ...(telemetry.steps > 0 ? { finderTelemetry: telemetry } : {}),
   };
 }

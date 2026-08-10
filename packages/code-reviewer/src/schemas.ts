@@ -119,6 +119,20 @@ export interface DiffStats {
   deletions: number;
 }
 
+/**
+ * Cost summary of the finder's agent loop, accumulated across BOTH attempts
+ * of a retried run — it measures real spend, so `steps` counts generations
+ * across attempts and MAY exceed the per-attempt maxSteps cap. Token fields
+ * are absent when the provider reported no usage.
+ */
+export interface FinderTelemetry {
+  steps: number;
+  toolCalls: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+}
+
 /** Full result of the two-pass review pipeline (what review.json carries). */
 export interface PipelineResult {
   summary: string;
@@ -138,6 +152,12 @@ export interface PipelineResult {
   bodyTruncated: boolean;
   droppedFindingIdRefs: number;
   models: { finder: string; judge: string };
+  /**
+   * Present only when the pipeline constructed the real finder and observed
+   * at least one loop step — absent with an injected deps.finder. Nothing
+   * renders it; it rides along in review.json as the per-run cost record.
+   */
+  finderTelemetry?: FinderTelemetry;
 }
 
 export const reviewUnitSchema = z.discriminatedUnion("kind", [
