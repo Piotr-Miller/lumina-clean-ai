@@ -6,6 +6,8 @@
   "description": "AI-powered code reviewer built on the AI SDK + OpenRouter",
   "scripts": {
     "dev": "tsx --env-file-if-exists=.env src/demo.ts",
+    "eval": "promptfoo eval --config evals/promptfooconfig.yaml",
+    "eval:view": "promptfoo view",
     "start": "tsx --env-file-if-exists=.env src/demo.ts",
     "review": "tsx --env-file-if-exists=.env src/review-pr.ts",
     "lint": "eslint .",
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@types/node": "^24",
     "eslint": "^10.8.0",
+    "promptfoo": "0.122.0",
     "tsx": "^4.23.8",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.66.0",

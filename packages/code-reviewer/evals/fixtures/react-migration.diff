@@ -1,0 +1,102 @@
+diff --git a/src/components/MetricsPanel.jsx b/src/components/MetricsPanel.jsx
+index 0d0cc94..87ca2e8 100644
+--- a/src/components/MetricsPanel.jsx
++++ b/src/components/MetricsPanel.jsx
+@@ -1,4 +1,4 @@
+-import React from "react";
++import { useEffect, useState } from "react";
+ 
+ import { metricsClient } from "../lib/metricsClient";
+ 
+@@ -10,52 +10,46 @@ function formatValue(value, unit) {
+   return unit ? `${rounded} ${unit}` : String(rounded);
+ }
+ 
+-export class MetricsPanel extends React.Component {
+-  constructor(props) {
+-    super(props);
+-    this.state = { metrics: [], lastUpdated: null, secondsOnScreen: 0 };
+-    this.handleMetrics = this.handleMetrics.bind(this);
+-  }
+-
+-  componentDidMount() {
+-    this.subscription = metricsClient.subscribe(this.props.channel, this.handleMetrics);
+-    this.ticker = setInterval(() => {
+-      this.setState((prev) => ({ secondsOnScreen: prev.secondsOnScreen + 1 }));
+-    }, 1000);
+-  }
++export function MetricsPanel({ channel, filter, title, description }) {
++  const [metrics, setMetrics] = useState([]);
++  const [lastUpdated, setLastUpdated] = useState(null);
++  const [secondsOnScreen, setSecondsOnScreen] = useState(0);
+ 
+-  componentWillUnmount() {
+-    this.subscription.unsubscribe();
+-    clearInterval(this.ticker);
+-  }
++  useEffect(() => {
++    const handleMetrics = (payload) => {
++      const visible = payload.metrics.filter((metric) => metric.name.includes(filter));
++      setMetrics(visible);
++      setLastUpdated(payload.timestamp);
++    };
++    metricsClient.subscribe(channel, handleMetrics);
++  }, []);
+ 
+-  handleMetrics(payload) {
+-    const visible = payload.metrics.filter((metric) => metric.name.includes(this.props.filter));
+-    this.setState({ metrics: visible, lastUpdated: payload.timestamp });
+-  }
++  useEffect(() => {
++    const ticker = setInterval(() => {
++      setSecondsOnScreen((prev) => prev + 1);
++    }, 1000);
++    return () => clearInterval(ticker);
++  }, []);
+ 
+-  render() {
+-    const { title, description } = this.props;
+-    const { metrics, lastUpdated, secondsOnScreen } = this.state;
+-    return (
+-      <section className="metrics-panel">
+-        <header>
+-          <h2>{title}</h2>
+-          <p className="metrics-panel__description">{description}</p>
+-        </header>
+-        <ul>
+-          {metrics.map((metric) => (
+-            <li key={metric.name}>
+-              <span className="metrics-panel__name">{metric.name}</span>
+-              <span className="metrics-panel__value">{formatValue(metric.value, metric.unit)}</span>
+-            </li>
+-          ))}
+-        </ul>
+-        <footer>
+-          <span>Last updated: {lastUpdated ?? "never"}</span>
+-          <span>On screen for {secondsOnScreen}s</span>
+-        </footer>
+-      </section>
+-    );
+-  }
++  return (
++    <section className="metrics-panel">
++      <header>
++        <h2>{title}</h2>
++        {/* Descriptions now arrive as rich text from the server. */}
++        <p className="metrics-panel__description" dangerouslySetInnerHTML={{ __html: description }} />
++      </header>
++      <ul>
++        {metrics.map((metric) => (
++          <li key={metric.name}>
++            <span className="metrics-panel__name">{metric.name}</span>
++            <span className="metrics-panel__value">{formatValue(metric.value, metric.unit)}</span>
++          </li>
++        ))}
++      </ul>
++      <footer>
++        <span>Last updated: {lastUpdated ?? "never"}</span>
++        <span>On screen for {secondsOnScreen}s</span>
++      </footer>
++    </section>
++  );
+ }

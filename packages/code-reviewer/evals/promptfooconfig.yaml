@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Compare the production finder prompt across the production baseline and three price/capability tiers
+
+prompts:
+  # The provider turns this diff into the same system + user prompt used by
+  # createReviewer(). It also reports that rendered chat prompt to Promptfoo.
+  - id: "{{diff}}"
+    label: production-finder-prompt
+
+providers:
+  # Production baseline first: every comparison is anchored to what runs today.
+  - id: file://./finder-provider.ts
+    label: baseline-glm-4.6
+    config:
+      model: z-ai/glm-4.6
+  - id: file://./finder-provider.ts
+    label: cheap-qwen3-coder-flash
+    config:
+      model: qwen/qwen3-coder-flash
+  - id: file://./finder-provider.ts
+    label: middle-gpt-5.4-mini
+    config:
+      model: openai/gpt-5.4-mini
+  - id: file://./finder-provider.ts
+    label: premium-claude-sonnet-5
+    config:
+      model: anthropic/claude-sonnet-5
+
+defaultTest:
+  vars:
+    projectContext: file://../../../.github/ai-review-rules.md
+  options:
+    # Keep expectedIssues as one array instead of expanding it into a matrix.
+    disableVarExpansion: true
+  assert:
+    - type: is-json
+      value: file://./review-result.schema.json
+      metric: schema_validity
+    # No threshold here: scoreIssueRecall's integer hit-count decides pass/fail
+    # (a rounded 0.67 ratio threshold would silently demand 3-of-3, since 2/3 < 0.67).
+    - type: javascript
+      value: file://./assertions.mjs:scoreIssueRecall
+      metric: issue_recall
+
+tests:
+  - description: Finds the material defects in a small JavaScript loop
+    vars:
+      diff: |-
+        diff --git a/src/users.js b/src/users.js
+        index 3f1c2aa..9be51d7 100644
+        --- a/src/users.js
+        +++ b/src/users.js
+        @@ -1,3 +1,9 @@
+         export function listUsers(users) {
+           return users.map((u) => u.name);
+         }
+        +
+        +export function getUserAge(users, id) {
+        +  for (var i = 0; i <= users.length; i++) {
+        +    if (users[i].id == id) return users[i].age;
+        +  }
+        +}
+      # Canary ground truth: only the indisputable defect. Coercive equality and
+      # function-scoped var are debatable without a type contract, and a healthy
+      # model following "report only issues worth fixing" may skip them.
+      expectedIssues:
+        - label: out-of-bounds loop condition
+          patterns:
+            - "off[- ]by[- ]one"
+            - "out[- ]of[- ]bounds"
+            - 'i <= users\.length'
+            - 'i < users\.length'
+
+  - description: React 16->19 class-to-function migration with three planted flaws (post-change lines - 24 lost cleanup, 25 stale closure, 39 unsafe HTML)
+    vars:
+      diff: file://./fixtures/react-migration.diff
+      expectedIssues:
+        - label: stale closure (empty dependency array)
+          patterns:
+            - "stale"
+            - "closure"
+            - "dependenc"
+        - label: lost subscription cleanup
+          patterns:
+            - "cleanup"
+            - "unsubscrib"
+            - "leak"
+            - "componentWillUnmount"
+        - label: unsafe HTML rendering
+          patterns:
+            - "xss"
+            - "dangerouslySetInnerHTML"
+            - "sanitiz"
