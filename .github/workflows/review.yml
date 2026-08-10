@@ -75,7 +75,8 @@ jobs:
         uses: ./.github/actions/ai-review
         with:
           api-key: ${{ secrets.OPENROUTER_API_KEY }}
-          review-model: ${{ vars.OPENROUTER_REVIEW_MODEL }}
+          # Scratch-branch only: pin a tool-capable finder for the planted-flaw probe.
+          review-model: anthropic/claude-sonnet-5
           judge-model: ${{ vars.OPENROUTER_JUDGE_MODEL }}
           finder-max-steps: ${{ vars.REVIEW_FINDER_MAX_STEPS }}
           pr-title: ${{ github.event.pull_request.title }}
