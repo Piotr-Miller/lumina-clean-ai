@@ -68,7 +68,8 @@ export async function flattenToRgbJpeg(file: File): Promise<File> {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, 0, 0);
-  const blob = await canvasToBlob(canvas, "image/jpeg", JPEG_QUALITY);
+  // Lower quality keeps the recovery re-upload small on slow connections.
+  const blob = await canvasToBlob(canvas, "image/jpeg", 0.5);
   const base = file.name.replace(/\.[^./\\]+$/, "");
   return new File([blob], `${base || "photo"}.jpg`, { type: "image/jpeg" });
 }
