@@ -28,16 +28,33 @@ import type { SourceProvider } from "./reviewer.js";
 // around.
 
 /**
- * Post-change file paths from a unified diff: the `+++ b/<path>` lines.
- * Deletions never match (`+++ /dev/null` has no `b/` prefix) and git-quoted
- * paths (special characters → `+++ "b/..."`) are deliberately not collected —
- * they will be refused downstream (degrade, don't decode).
+ * Post-change file paths from a unified diff: the `+++ b/<path>` HEADER
+ * lines. Deletions never match (`+++ /dev/null` has no `b/` prefix) and
+ * git-quoted paths (special characters → `+++ "b/..."`) are deliberately not
+ * collected — they will be refused downstream (degrade, don't decode).
+ *
+ * Structure-aware, not line-based (impl-review-phase-1 F1): an ADDED line
+ * whose content starts `++ b/` renders in a hunk body as `+++ b/<path>` and
+ * would forge an allowlist entry for any existing repo file (reproduced with
+ * `.git/config`). Hunk-body lines always carry a marker prefix (space, `+`,
+ * `-`, `\`), so literal `diff --git ` and `@@` lines cannot be forged from
+ * content — headers are therefore only accepted OUTSIDE hunk bodies, between
+ * a file block's `diff --git` line and its first `@@`.
  */
 export function parseDiffPaths(diff: string): Set<string> {
   const paths = new Set<string>();
+  let inHunkBody = false;
   for (const rawLine of diff.split("\n")) {
     const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
-    if (!line.startsWith("+++ b/")) continue;
+    if (line.startsWith("diff --git ")) {
+      inHunkBody = false;
+      continue;
+    }
+    if (line.startsWith("@@")) {
+      inHunkBody = true;
+      continue;
+    }
+    if (inHunkBody || !line.startsWith("+++ b/")) continue;
     const path = line.slice("+++ b/".length);
     if (path !== "") paths.add(path);
   }

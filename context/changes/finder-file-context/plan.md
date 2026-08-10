@@ -238,13 +238,13 @@ None — all new inputs are optional; absent `--source-root` reproduces today's 
 
 #### Automated
 
-- [x] 1.1 Package unit tests pass incl. source-provider + wiring tests (`npm run test`)
-- [x] 1.2 Typecheck passes (`npm run typecheck`)
-- [x] 1.3 Lint clean on touched files (targeted eslint)
+- [x] 1.1 Package unit tests pass incl. source-provider + wiring tests (`npm run test`) — 0cb4eb9
+- [x] 1.2 Typecheck passes (`npm run typecheck`) — 0cb4eb9
+- [x] 1.3 Lint clean on touched files (targeted eslint) — 0cb4eb9
 
 #### Manual
 
-- [x] 1.4 Never-throw + exact-match-allowlist invariants confirmed by read-through
+- [x] 1.4 Never-throw + exact-match-allowlist invariants confirmed by read-through — 0cb4eb9
 
 ### Phase 2: Delivery — CLI flag, env knob, telemetry lines, composite action
 

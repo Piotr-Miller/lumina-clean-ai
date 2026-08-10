@@ -57,6 +57,41 @@ describe("parseDiffPaths", () => {
     expect(parseDiffPaths("+++ b/src/a.ts\r\n+x\r")).toEqual(new Set(["src/a.ts"]));
   });
 
+  it("does not collect a header forged by hunk content (impl-review F1)", () => {
+    // An ADDED line whose content is `++ b/.git/config` renders as
+    // `+++ b/.git/config` inside the hunk body — it must not widen the
+    // allowlist to an existing repo file.
+    const diff = diffFor([
+      "diff --git a/safe.ts b/safe.ts",
+      "--- a/safe.ts",
+      "+++ b/safe.ts",
+      "@@ -1,1 +1,2 @@",
+      " x",
+      "+++ b/.git/config",
+      "diff --git a/next.ts b/next.ts",
+      "--- a/next.ts",
+      "+++ b/next.ts",
+      "@@ -1 +1 @@",
+      "-y",
+      "+++ b/etc/passwd",
+    ]);
+    expect(parseDiffPaths(diff)).toEqual(new Set(["safe.ts", "next.ts"]));
+  });
+
+  it("still collects headers after a forged line once a new file block starts", () => {
+    const diff = diffFor([
+      "diff --git a/a.ts b/a.ts",
+      "+++ b/a.ts",
+      "@@ -1 +1 @@",
+      "+++ b/forged.ts",
+      "diff --git a/b.ts b/b.ts",
+      "+++ b/b.ts",
+      "@@ -1 +1 @@",
+      "+z",
+    ]);
+    expect(parseDiffPaths(diff)).toEqual(new Set(["a.ts", "b.ts"]));
+  });
+
   it("returns an empty set for an empty diff", () => {
     expect(parseDiffPaths("")).toEqual(new Set());
   });
