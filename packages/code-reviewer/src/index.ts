@@ -10,6 +10,7 @@ export {
   BODY_CAP_CHARS,
   BODY_TRUNCATION_MARKER,
   computeDiffStats,
+  DEFAULT_FINDER_TIMEOUT_MS,
   DIFF_CAP_BYTES,
   DIFF_TRUNCATION_MARKER,
   runReviewPipeline,
