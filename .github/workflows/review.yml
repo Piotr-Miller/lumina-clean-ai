@@ -80,7 +80,6 @@ jobs:
           # Scratch-branch only: sonnet spent all 5 default steps on fetches ("No output generated").
           finder-max-steps: "8"
           judge-model: ${{ vars.OPENROUTER_JUDGE_MODEL }}
-          finder-max-steps: ${{ vars.REVIEW_FINDER_MAX_STEPS }}
           pr-title: ${{ github.event.pull_request.title }}
           pr-body: ${{ github.event.pull_request.body }}
           diff-file: ${{ runner.temp }}/pr.diff
