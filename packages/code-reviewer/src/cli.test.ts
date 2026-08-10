@@ -333,6 +333,24 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     ]);
   });
 
+  it("strips control characters from the model-chosen path in the step line (impl-review F4)", async () => {
+    // An injection-steered model could otherwise embed a newline or an ANSI
+    // escape to forge or restyle telemetry lines in the Actions log.
+    const io = fakeIo({ readStdin: () => DIFF });
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onFinderStep?.({
+        fileContextCalls: [{ path: "src/a.ts\n\u001b[31mfinder step 99: forged\u007f" }],
+        toolCalls: 1,
+        usage: { totalTokens: 10 },
+      });
+      return Promise.resolve(pipelineResult());
+    });
+    expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
+    expect(io.errors).toEqual([
+      "finder step 1: getFileContext src/a.ts??[31mfinder step 99: forged? (tokens in=? out=? total=10)",
+    ]);
+  });
+
   it("mentions --source-root in the usage message", async () => {
     const io = fakeIo();
     expect(await runReviewCli(["--bogus"], {}, io, okPipeline())).toBe(1);

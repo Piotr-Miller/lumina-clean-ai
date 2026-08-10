@@ -84,6 +84,12 @@ const formatRange = (call: { startLine?: number; endLine?: number }): string =>
     ? ""
     : `:${String(call.startLine ?? 1)}-${call.endLine === undefined ? "end" : String(call.endLine)}`;
 
+// The path is model-chosen and untrusted: control characters (newlines, ANSI
+// escapes) would let an injection-steered model forge or restyle telemetry
+// lines in the Actions log (impl-review-full F4). Matched via the Cc Unicode
+// property (C0 + DEL + C1) so no control literal appears in the source.
+const logSafePath = (path: string): string => path.replace(/\p{Cc}/gu, "?");
+
 // One stderr line per finder loop step — in an Actions log this is the only
 // live evidence of what the tool loop fetched and spent.
 const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
@@ -91,7 +97,7 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
     info.fileContextCalls.length === 0
       ? "no getFileContext call"
       : info.fileContextCalls
-          .map((call) => `getFileContext ${call.path}${formatRange(call)}`)
+          .map((call) => `getFileContext ${logSafePath(call.path)}${formatRange(call)}`)
           .join(", ");
   const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} total=${tokenCount(info.usage.totalTokens)}`;
   return `finder step ${String(index)}: ${calls} (${usage})`;

@@ -41,6 +41,16 @@ import type { SourceProvider } from "./reviewer.js";
  * content — headers are therefore only accepted OUTSIDE hunk bodies, between
  * a file block's `diff --git` line and its first `@@`.
  */
+// Defense-in-depth (impl-review F1): allowlist entries must themselves be
+// clean relative paths. Real git cannot emit a traversal-bearing `+++ b/`
+// header, but parseDiffPaths is exported and other consumers may feed
+// hand-crafted diff text — a `../secret` entry would pass the containment
+// check because join() collapses `..` on BOTH sides of the realpath
+// equality. Empty/`.`/`..` segments on either separator are rejected
+// (covers leading `/` / `\` and trailing separators too).
+const hasUnsafeSegment = (path: string): boolean =>
+  path.split(/[/\\]/).some((s) => s === "" || s === "." || s === "..");
+
 export function parseDiffPaths(diff: string): Set<string> {
   const paths = new Set<string>();
   let inHunkBody = false;
@@ -56,7 +66,7 @@ export function parseDiffPaths(diff: string): Set<string> {
     }
     if (inHunkBody || !line.startsWith("+++ b/")) continue;
     const path = line.slice("+++ b/".length);
-    if (path !== "") paths.add(path);
+    if (!hasUnsafeSegment(path)) paths.add(path);
   }
   return paths;
 }

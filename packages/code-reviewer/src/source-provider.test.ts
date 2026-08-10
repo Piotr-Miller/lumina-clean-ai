@@ -53,6 +53,15 @@ describe("parseDiffPaths", () => {
     expect(parseDiffPaths(diff)).toEqual(new Set());
   });
 
+  it("keeps real git's trailing tab on a space-bearing path (impl-review F5)", () => {
+    // Real git does NOT c-quote a plain space: it emits `+++ b/sp ace.ts<TAB>`.
+    // The tab stays part of the entry, so the clean name misses the exact-match
+    // set downstream and the file degrades to no-context — no decoding, same
+    // contract as the quoted-path case above.
+    const diff = diffFor(["--- a/sp ace.ts\t", "+++ b/sp ace.ts\t", "@@ -1 +1 @@", "+x"]);
+    expect(parseDiffPaths(diff)).toEqual(new Set(["sp ace.ts\t"]));
+  });
+
   it("strips a trailing CR from CRLF diffs", () => {
     expect(parseDiffPaths("+++ b/src/a.ts\r\n+x\r")).toEqual(new Set(["src/a.ts"]));
   });
@@ -90,6 +99,22 @@ describe("parseDiffPaths", () => {
       "+z",
     ]);
     expect(parseDiffPaths(diff)).toEqual(new Set(["a.ts", "b.ts"]));
+  });
+
+  it("rejects traversal-bearing header paths — allowlist-side defense-in-depth (impl-review F1)", () => {
+    // Real git can't emit these in CI, but parseDiffPaths is exported and a
+    // `../secret` allowlist entry would pass containment (join() collapses
+    // `..` on both sides of the realpath equality).
+    const diff = diffFor([
+      "+++ b/../secret",
+      "+++ b/src/../a.ts",
+      "+++ b/./a.ts",
+      "+++ b//etc/passwd",
+      "+++ b/..\\secret",
+      "+++ b/trailing/",
+      "+++ b/src/ok.ts",
+    ]);
+    expect(parseDiffPaths(diff)).toEqual(new Set(["src/ok.ts"]));
   });
 
   it("returns an empty set for an empty diff", () => {
@@ -200,6 +225,16 @@ describe("createDiffScopedSource — refusals", () => {
       expect(fs.reads).toEqual([]);
     },
   );
+
+  it("refuses the clean name of a tab-suffixed space-bearing entry (impl-review F5)", () => {
+    // The allowlist entry real git produces carries a trailing tab, so the
+    // requestable name never matches: degrade-only, never a decoded guess.
+    const fs: FakeFs = { files: { ["/repo/sp ace.ts"]: "x" }, reads: [] };
+    expect(makeSource(["sp ace.ts\t"], fs)({ path: "sp ace.ts" })).toContain(
+      "not part of the reviewed diff",
+    );
+    expect(fs.reads).toEqual([]);
+  });
 
   it("caps the refusal's path listing deterministically and counts the omitted rest", () => {
     const allowed = Array.from({ length: MAX_LISTED_PATHS + 5 }, (_, i) => {
