@@ -121,7 +121,7 @@
   tests pin the real git format: `parseDiffPaths` keeps the trailing tab on `+++ b/sp ace.ts<TAB>`,
   and the clean name `sp ace.ts` is refused without a read.
 
-## Triage (2026-08-11)
+## Triage (2026-08-10)
 
 | Finding | Decision                                          |
 | ------- | ------------------------------------------------- |
