@@ -284,6 +284,18 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     },
   );
 
+  it("ignores an invalid REVIEW_FINDER_MAX_STEPS when the diff yields no reviewable paths", async () => {
+    const pipeline = okPipeline();
+    const code = await runReviewCli(
+      ["--source-root", "root"],
+      { REVIEW_FINDER_MAX_STEPS: "abc" },
+      fakeIo({ readStdin: () => "--- a/x.ts\n+++ /dev/null\n-x" }),
+      pipeline,
+    );
+    expect(code).toBe(0);
+    expect("finderMaxSteps" in inputOf(pipeline)).toBe(false);
+  });
+
   it("ignores an invalid REVIEW_FINDER_MAX_STEPS without the flag (legacy runs unchanged)", async () => {
     const code = await runReviewCli(
       [],

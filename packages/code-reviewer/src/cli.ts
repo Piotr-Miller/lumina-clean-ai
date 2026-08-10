@@ -143,11 +143,11 @@ export async function runReviewCli(
     // maxSteps, no step telemetry — byte-identical to the legacy invocation.
     let sourceInputs: Pick<PipelineInput, "source" | "finderMaxSteps" | "onFinderStep"> = {};
     if (args.sourceRoot !== undefined) {
-      const finderMaxSteps = parseMaxStepsEnv(env) ?? DEFAULT_FINDER_MAX_STEPS;
       const allowedPaths = parseDiffPaths(diff);
       // A diff with no post-change paths (e.g. deletions only) has nothing
       // the tool could serve — skip the source entirely, same as today.
       if (allowedPaths.size > 0) {
+        const finderMaxSteps = parseMaxStepsEnv(env) ?? DEFAULT_FINDER_MAX_STEPS;
         // CLI-maintained monotonic index: the SDK's stepNumber resets to 0 on
         // the retry attempt, which would make the log lie about real spend.
         let stepIndex = 0;

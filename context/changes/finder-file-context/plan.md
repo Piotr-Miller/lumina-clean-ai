@@ -250,14 +250,14 @@ None — all new inputs are optional; absent `--source-root` reproduces today's 
 
 #### Automated
 
-- [x] 2.1 Package unit tests pass incl. new cli.test.ts cases (`npm run test`)
-- [x] 2.2 Typecheck passes (`npm run typecheck`)
-- [x] 2.3 Lint clean on touched files (targeted eslint)
+- [x] 2.1 Package unit tests pass incl. new cli.test.ts cases (`npm run test`) — 0b1545c
+- [x] 2.2 Typecheck passes (`npm run typecheck`) — 0b1545c
+- [x] 2.3 Lint clean on touched files (targeted eslint) — 0b1545c
 
 #### Manual
 
-- [x] 2.4 action.yml diff re-read: flag inside ARGS, nothing else moved
-- [x] 2.5 review.yml diff re-read: checkout gains only persist-credentials: false
+- [x] 2.4 action.yml diff re-read: flag inside ARGS, nothing else moved — 0b1545c
+- [x] 2.5 review.yml diff re-read: checkout gains only persist-credentials: false — 0b1545c
 
 ### Phase 3: Live verification — planted-flaw scratch PR + evidence
 
