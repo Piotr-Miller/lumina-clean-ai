@@ -77,6 +77,8 @@ jobs:
           api-key: ${{ secrets.OPENROUTER_API_KEY }}
           # Scratch-branch only: pin a tool-capable finder for the planted-flaw probe.
           review-model: anthropic/claude-sonnet-5
+          # Scratch-branch only: sonnet spent all 5 default steps on fetches ("No output generated").
+          finder-max-steps: "8"
           judge-model: ${{ vars.OPENROUTER_JUDGE_MODEL }}
           finder-max-steps: ${{ vars.REVIEW_FINDER_MAX_STEPS }}
           pr-title: ${{ github.event.pull_request.title }}
