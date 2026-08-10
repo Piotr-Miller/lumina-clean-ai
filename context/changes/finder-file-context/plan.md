@@ -270,7 +270,7 @@ None — all new inputs are optional; absent `--source-root` reproduces today's 
 - [x] 3.2 Feature-PR review run green; telemetry in log + finderTelemetry in artifact — PR #120, run 31425307805 (retry after a transient TLS flake killed run 31423673980's comment upsert)
 - [x] 3.3 Scratch-PR run: tool called, cross-context flaw found, allowlist held — PR #121, run 31428446096: 2 getFileContext calls incl. canvas-helpers.ts:1-90; major finding quotes the out-of-hunk JPEG_QUALITY contract; all requested paths in the diff set. Needed a tool-capable finder (sonnet-5, scratch-only pin) — glm-4.6 made zero tool calls in 4/4 runs
 - [x] 3.4 Scratch PR closed + branch deleted — #121 closed with an explanatory comment, scratch/recovery-reencode-size deleted
-- [x] 3.5 Cost delta recorded and within ~3× tool-less baseline — ≈2.8× vs feature-diff baseline (within), ≈4.1× vs same-diff baseline (model-swap confound; sonnet wrote 12.3k output tokens vs glm's ≤1.3k, probe ran 8 steps); full table + verdict in verification.md §3
+- [x] 3.5 Cost delta recorded and within ~3× tool-less baseline — ≈2.8× vs feature-diff baseline (within), ≈4.1× vs same-diff baseline (model-swap confound; sonnet wrote 12.3k output tokens vs glm's ≤1.3k, probe ran 8 steps); full table + verdict in verification.md §3. Threshold waived per impl-review-phase-3 F1 (Fix B) — isolated measurement deferred to finder-tool-loop-evals
 
 Phase-3 addenda (fixes born from the live probes, on this branch): `09e6e03` finder-prompt
 cross-hunk trigger class; `f4d6666` `prepareFinalStep` tool-less final step (fetch-happy models

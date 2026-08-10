@@ -79,6 +79,14 @@ output tokens vs glm's ≤1.3k, and the probe ran a doubled 8-step budget. Verdi
 acceptable — production keeps glm-4.6 + default 5 steps (today: zero tool calls → zero extra
 cost), and `finder-max-steps` is the cost lever when a tool-capable finder is adopted.
 
+**Addendum (impl-review-phase-3 F1, Fix B, 2026-08-10):** the ~3× threshold is explicitly
+**waived** for this phase. Both measured ratios carry confounders (model swap, doubled step
+budget, different diff sizes) and neither isolates the tool loop's own overhead, so the observed
+variance is accepted as-is rather than re-measured with another paid probe. An isolated,
+controlled measurement (same diff, same model, fixed budget) is deferred to the
+`finder-tool-loop-evals` change, whose fixture-backed eval matrix can measure it offline and
+repeatably. Production cost is unaffected today: glm-4.6 makes no tool calls.
+
 ## 4. Surprises (and what they produced)
 
 1. **glm-4.6 never calls the tool** — 4/4 runs, even with the strengthened instruction. The

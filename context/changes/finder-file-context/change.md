@@ -1,7 +1,7 @@
 ---
 change_id: finder-file-context
 title: Finder file context
-status: implemented
+status: impl_reviewed
 created: 2026-08-10
 updated: 2026-08-10
 archived_at: null

@@ -29,6 +29,17 @@ describe("buildInstructions", () => {
     expect(buildInstructions("general")).toContain("getFileContext");
   });
 
+  it("spells out the cross-hunk dependency trigger class only with the context tool", () => {
+    // Probe-born guidance (finder-file-context phase 3): without the concrete
+    // trigger class the tool sentence alone never produced a tool call.
+    const withTool = buildInstructions("general", { fileContextTool: true });
+    expect(withTool).toContain("defined in the unchanged part of a changed file");
+    expect(withTool).toContain("documented module contract");
+    const withoutTool = buildInstructions("general", { fileContextTool: false });
+    expect(withoutTool).not.toContain("defined in the unchanged part of a changed file");
+    expect(withoutTool).not.toContain("documented module contract");
+  });
+
   it("appends trusted project rules when given and omits the section by default", () => {
     const rules = "Use the cn() helper for class merging. API errors: { error: { code, message } }.";
     const withRules = buildInstructions("general", { projectContext: rules });
