@@ -279,10 +279,10 @@ Cost, not latency, is the constraint: `maxConcurrency` default is fine at this s
 
 #### Automated
 
-- [x] 3.1 Snapshot file exists under `context/changes/code-review-evals/results/`
+- [x] 3.1 Snapshot file exists under `context/changes/code-review-evals/results/` — c12b7da
 
 #### Manual
 
-- [x] 3.2 Full-matrix run reviewed in promptfoo view (metrics populated on successful rows; error rows visible + counted)
-- [x] 3.3 Grader spot-check on 2–3 rows
-- [x] 3.4 Spend confirmed against estimate
+- [x] 3.2 Full-matrix run reviewed in promptfoo view (metrics populated on successful rows; error rows visible + counted) — c12b7da
+- [x] 3.3 Grader spot-check on 2–3 rows — c12b7da
+- [x] 3.4 Spend confirmed against estimate — c12b7da
