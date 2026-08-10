@@ -267,22 +267,22 @@ Cost, not latency, is the constraint: `maxConcurrency` default is fine at this s
 
 #### Automated
 
-- [x] 2.1 Lint passes (`npm run lint`)
-- [x] 2.2 Typecheck passes (`npm run typecheck`)
-- [x] 2.3 Harness surfaces validated (`node --check` + `promptfoo validate`)
+- [x] 2.1 Lint passes (`npm run lint`) — 74e8d28
+- [x] 2.2 Typecheck passes (`npm run typecheck`) — 74e8d28
+- [x] 2.3 Harness surfaces validated (`node --check` + `promptfoo validate`) — 74e8d28
 
 #### Manual
 
-- [x] 2.4 Rubric texts reviewed (one flaw each, concept-match phrasing)
+- [x] 2.4 Rubric texts reviewed (one flaw each, concept-match phrasing) — 74e8d28
 
 ### Phase 3: Live Verification Run + Evidence + Docs
 
 #### Automated
 
-- [ ] 3.1 Snapshot file exists under `context/changes/code-review-evals/results/`
+- [x] 3.1 Snapshot file exists under `context/changes/code-review-evals/results/`
 
 #### Manual
 
-- [ ] 3.2 Full-matrix run reviewed in promptfoo view (metrics populated on successful rows; error rows visible + counted)
-- [ ] 3.3 Grader spot-check on 2–3 rows
-- [ ] 3.4 Spend confirmed against estimate
+- [x] 3.2 Full-matrix run reviewed in promptfoo view (metrics populated on successful rows; error rows visible + counted)
+- [x] 3.3 Grader spot-check on 2–3 rows
+- [x] 3.4 Spend confirmed against estimate

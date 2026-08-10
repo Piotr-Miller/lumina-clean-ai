@@ -1,0 +1,121 @@
+{
+  "summary": "This PR adds a job-rename API endpoint and a title-highlight UI feature, but the endpoint contains a critical IDOR vulnerability that lets any authenticated user rename jobs they don't own, since the service-role write isn't scoped to the current user. Additional issues include missing zod-based input validation, non-standard error response shape, sensitive data being logged, and several minor style inconsistencies (manual class concatenation, import aliasing). There is no indication that the risky authorization path was tested. While the code is simple and low-complexity, the unresolved security flaw and lack of coverage for it make this change unsuitable to merge without fixes.",
+  "findings": [
+    {
+      "file": "src/components/JobTitle.tsx",
+      "startLine": 12,
+      "endLine": 12,
+      "severity": "minor",
+      "category": "style",
+      "description": "Manual class concatenation instead of cn() helper. Tailwind classes should be merged via cn().",
+      "suggestion": "Import cn from @/lib/utils and use: const classes = cn('text-lg font-medium', highlighted && 'bg-amber-100');",
+      "id": "F1"
+    },
+    {
+      "file": "src/pages/api/jobs/rename.ts",
+      "startLine": 1,
+      "endLine": 1,
+      "severity": "minor",
+      "category": "style",
+      "description": "Import uses absolute path without @/ alias. Should use @ alias for src imports.",
+      "suggestion": "Change import to: import type { APIRoute } from \"astro\"; // Note: this is a third-party import; if it were a local import, it would need @/ alias.",
+      "id": "F2"
+    },
+    {
+      "file": "src/pages/api/jobs/rename.ts",
+      "startLine": 7,
+      "endLine": 7,
+      "severity": "minor",
+      "category": "style",
+      "description": "API route function name not uppercase. According to rules, exports should be uppercase GET/POST.",
+      "suggestion": "Change export to: export const POST: APIRoute = ... (already uppercase).",
+      "id": "F3"
+    },
+    {
+      "file": "src/pages/api/jobs/rename.ts",
+      "startLine": 10,
+      "endLine": 10,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "Input validation missing. Should validate request body with zod schema.",
+      "suggestion": "Add zod schema: const schema = z.object({ jobId: z.string(), name: z.string() }); const body = schema.parse(await request.json());",
+      "id": "F4"
+    },
+    {
+      "file": "src/pages/api/jobs/rename.ts",
+      "startLine": 12,
+      "endLine": 14,
+      "severity": "minor",
+      "category": "style",
+      "description": "Error response not in required format. Should return { error: { code, message } } with snake_case code.",
+      "suggestion": "Change error responses to: return new Response(JSON.stringify({ error: { code: 'unauthorized', message: 'Unauthorized' } }), { status: 401 });",
+      "id": "F5"
+    },
+    {
+      "file": "src/pages/api/jobs/rename.ts",
+      "startLine": 17,
+      "endLine": 20,
+      "severity": "critical",
+      "category": "security",
+      "description": "IDOR vulnerability: service-role update without owner-scoped filter. The route uses admin client to update any job by client-supplied jobId, regardless of ownership. Must filter on locals.user.id in the same write.",
+      "suggestion": "Add .eq('user_id', locals.user.id) before .eq('id', body.jobId) to ensure users can only rename their own jobs.",
+      "id": "F6"
+    },
+    {
+      "file": "src/pages/api/jobs/rename.ts",
+      "startLine": 22,
+      "endLine": 22,
+      "severity": "minor",
+      "category": "security",
+      "description": "Sensitive data logged. User email and error details logged to console.",
+      "suggestion": "Remove console.log or sanitize PII. Consider logging only jobId and a generic error reference.",
+      "id": "F7"
+    }
+  ],
+  "scores": {
+    "implementation_correctness": {
+      "score": 4,
+      "justification": "The endpoint lacks input validation (F4) and, more importantly, performs an update without scoping to the authenticated user, meaning the core rename operation is not correctly implemented from a security/business-logic standpoint (F6). These are functional defects, not just style nits.",
+      "findingIds": ["F4", "F6"]
+    },
+    "idiomaticity": {
+      "score": 6,
+      "justification": "Several minor style deviations from project conventions were flagged: manual class concatenation instead of cn() (F1), inconsistent import aliasing (F2), and a naming/casing note on the API export (F3). These are cosmetic and don't affect behavior, but add up.",
+      "findingIds": ["F1", "F2", "F3"]
+    },
+    "complexity": {
+      "score": 8,
+      "justification": "No findings indicate unnecessary complexity, over-engineering, or tangled logic. The diff is small (+30/-2) and the reviewer raised no structural complexity concerns.",
+      "findingIds": []
+    },
+    "test_risk_coverage": {
+      "score": 3,
+      "justification": "No tests were mentioned or evidenced for either the new rename endpoint or the ownership-scoping logic, despite this being the riskiest part of the change (an IDOR vulnerability shipped undetected). This indicates the highest-risk path was not covered by any test.",
+      "findingIds": ["F6"]
+    },
+    "documentation": {
+      "score": 6,
+      "justification": "No documentation-related findings were raised, but there is also no evidence that the non-obvious security implications (e.g., ownership scoping requirements) were documented or explained, which would have been valuable given the missed IDOR check.",
+      "findingIds": []
+    },
+    "security_safety": {
+      "score": 2,
+      "justification": "A critical IDOR vulnerability allows any authenticated user to rename any job by supplying an arbitrary jobId, since the service-role update is not scoped to the requesting user (F6). Additionally, sensitive user data (email, error details) is logged (F7), compounding the security exposure.",
+      "findingIds": ["F6", "F7"]
+    }
+  },
+  "verdict": "failed",
+  "verdictReason": "A critical IDOR vulnerability (F6) allows unauthorized users to rename any job, and this risky path appears untested; combined with PII logging (F7) and missing input validation (F4), the change is unsafe to ship as-is.",
+  "diffStats": {
+    "files": 2,
+    "additions": 30,
+    "deletions": 2
+  },
+  "diffTruncated": false,
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-4.6",
+    "judge": "anthropic/claude-sonnet-5"
+  }
+}

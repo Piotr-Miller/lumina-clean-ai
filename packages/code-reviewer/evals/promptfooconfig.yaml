@@ -1,6 +1,14 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
 description: Compare the production finder prompt across the production baseline and three price/capability tiers
 
+# The React fixture contains literal Nunjucks delimiters (JSX
+# dangerouslySetInnerHTML={{ ... }}), which crash promptfoo's var templating
+# ("expected variable end"). Templating is safe to disable: finder-provider.ts
+# builds its own prompt from vars, and grader (llm-rubric) templates use a
+# separate engine that ignores this switch.
+env:
+  PROMPTFOO_DISABLE_TEMPLATING: "true"
+
 prompts:
   # The provider turns this diff into the same system + user prompt used by
   # createReviewer(). It also reports that rendered chat prompt to Promptfoo.
