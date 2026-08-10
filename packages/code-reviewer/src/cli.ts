@@ -1,7 +1,8 @@
 import { join } from "node:path";
 
-import { runReviewPipeline } from "./pipeline.js";
+import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
+import { createDiffScopedSource, parseDiffPaths } from "./source-provider.js";
 
 // The CLI's whole contract, extracted injectable so tests can pin the exact
 // boundary the composite action consumes (impl-review-phase-1 F6):
@@ -18,6 +19,10 @@ export interface CliIo {
   appendFile: (path: string, content: string) => void;
   log: (message: string) => void;
   logError: (message: string) => void;
+  /** Resolve symlinks to the canonical absolute path (fs.realpathSync). */
+  realpath: (path: string) => string;
+  /** True when the path is a regular file (fs.statSync().isFile()). */
+  isRegularFile: (path: string) => boolean;
 }
 
 export type CliEnv = Record<string, string | undefined>;
@@ -27,6 +32,8 @@ interface CliArgs {
   outDir: string;
   /** Trusted project review rules — the caller must source this from the base branch, never the PR head. */
   projectContextFile?: string;
+  /** Checkout root for the finder's diff-scoped file-context tool; absent → tool-less (legacy) run. */
+  sourceRoot?: string;
 }
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -43,14 +50,52 @@ export function parseArgs(argv: string[]): CliArgs {
     } else if (flag === "--project-context-file" && value !== undefined) {
       args.projectContextFile = value;
       i += 1;
+    } else if (flag === "--source-root" && value !== undefined) {
+      args.sourceRoot = value;
+      i += 1;
     } else {
       throw new Error(
-        `Unknown or valueless argument: ${flag ?? ""}. Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>]`,
+        `Unknown or valueless argument: ${flag ?? ""}. Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>] [--source-root <dir>]`,
       );
     }
   }
   return args;
 }
+
+/** CI default for the finder's loop budget when a source is active. */
+export const DEFAULT_FINDER_MAX_STEPS = 5;
+
+/** Optional positive-integer step budget; unset/empty → default, invalid → exit 1. */
+function parseMaxStepsEnv(env: CliEnv): number | undefined {
+  const raw = env.REVIEW_FINDER_MAX_STEPS;
+  if (!raw) return undefined;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new Error(`REVIEW_FINDER_MAX_STEPS must be a positive integer (steps), got: ${raw}`);
+  }
+  return value;
+}
+
+const tokenCount = (value: number | undefined): string =>
+  value === undefined ? "?" : String(value);
+
+const formatRange = (call: { startLine?: number; endLine?: number }): string =>
+  call.startLine === undefined && call.endLine === undefined
+    ? ""
+    : `:${String(call.startLine ?? 1)}-${call.endLine === undefined ? "end" : String(call.endLine)}`;
+
+// One stderr line per finder loop step — in an Actions log this is the only
+// live evidence of what the tool loop fetched and spent.
+const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
+  const calls =
+    info.fileContextCalls.length === 0
+      ? "no getFileContext call"
+      : info.fileContextCalls
+          .map((call) => `getFileContext ${call.path}${formatRange(call)}`)
+          .join(", ");
+  const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} total=${tokenCount(info.usage.totalTokens)}`;
+  return `finder step ${String(index)}: ${calls} (${usage})`;
+};
 
 /** Optional positive-integer ms override; unset/empty → pipeline default, invalid → exit 1. */
 function parseTimeoutEnv(env: CliEnv, name: string): number | undefined {
@@ -91,8 +136,41 @@ export async function runReviewCli(
     const diff = args.diffFile === undefined ? io.readStdin() : io.readFile(args.diffFile);
     if (diff.trim() === "") throw new Error("Empty diff — nothing to review.");
 
+    // Diff-scoped file-context source, opt-in via --source-root. The
+    // allowlist derives from the FULL diff read above — capDiff truncation
+    // happens later inside the pipeline, and a truncated allowlist would
+    // refuse legitimate requests. Absent flag → empty spread: no source, no
+    // maxSteps, no step telemetry — byte-identical to the legacy invocation.
+    let sourceInputs: Pick<PipelineInput, "source" | "finderMaxSteps" | "onFinderStep"> = {};
+    if (args.sourceRoot !== undefined) {
+      const finderMaxSteps = parseMaxStepsEnv(env) ?? DEFAULT_FINDER_MAX_STEPS;
+      const allowedPaths = parseDiffPaths(diff);
+      // A diff with no post-change paths (e.g. deletions only) has nothing
+      // the tool could serve — skip the source entirely, same as today.
+      if (allowedPaths.size > 0) {
+        // CLI-maintained monotonic index: the SDK's stepNumber resets to 0 on
+        // the retry attempt, which would make the log lie about real spend.
+        let stepIndex = 0;
+        sourceInputs = {
+          source: createDiffScopedSource({
+            allowedPaths,
+            root: args.sourceRoot,
+            readFile: io.readFile,
+            realpath: io.realpath,
+            isRegularFile: io.isRegularFile,
+          }),
+          finderMaxSteps,
+          onFinderStep: (info) => {
+            stepIndex += 1;
+            io.logError(formatFinderStepLine(stepIndex, info));
+          },
+        };
+      }
+    }
+
     const result = await pipeline({
       diff,
+      ...sourceInputs,
       prTitle: env.PR_TITLE,
       prBody: env.PR_BODY,
       timeouts: {

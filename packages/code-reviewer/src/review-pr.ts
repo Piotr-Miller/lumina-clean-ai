@@ -3,7 +3,14 @@
 // contract: any produced verdict (incl. "failed") is exit 0 — advisory data;
 // exit 1 means technical failure only (the action's posting steps rely on it).
 
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 
 import { runReviewCli, type CliIo } from "./cli.js";
 
@@ -25,6 +32,8 @@ const io: CliIo = {
   logError: (message) => {
     console.error(message);
   },
+  realpath: (path) => realpathSync(path),
+  isRegularFile: (path) => statSync(path).isFile(),
 };
 
 // exitCode + natural drain instead of process.exit(1): a hard exit while a
