@@ -20,6 +20,8 @@ Cases:
 
 Model-graded rubrics are judged by `openrouter:google/gemini-3.1-pro-preview` — deliberately not one of the four candidates, so no model grades itself. If Google retires the preview id, fall back to `openrouter:google/gemini-2.5-pro` in `defaultTest.options.provider`.
 
+`schema_validity` validates only the serialized output of successful provider calls; measure model schema reliability by the provider-error row count, not by this metric.
+
 ## Running
 
 From `packages/code-reviewer`:

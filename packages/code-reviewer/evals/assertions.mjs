@@ -22,9 +22,7 @@ export function reviewMustFail(output) {
     return { pass: false, score: 0, reason: "Review contains no findings" };
   }
 
-  const highest = SEVERITY_ORDER.find((severity) =>
-    findings.some((finding) => finding?.severity === severity),
-  );
+  const highest = SEVERITY_ORDER.find((severity) => findings.some((finding) => finding?.severity === severity));
   if (highest === undefined) {
     return { pass: false, score: 0, reason: "No finding carries a recognized severity" };
   }
@@ -57,7 +55,17 @@ export function scoreIssueRecall(output, context) {
   const searchable = JSON.stringify(review).toLowerCase();
   const componentResults = expectedIssues.map((issue) => {
     const patterns = Array.isArray(issue.patterns) ? issue.patterns : [];
-    const matched = patterns.some((pattern) => new RegExp(String(pattern), "iu").test(searchable));
+    let compiledPatterns;
+    try {
+      compiledPatterns = patterns.map((pattern) => new RegExp(String(pattern), "iu"));
+    } catch {
+      return {
+        pass: false,
+        score: 0,
+        reason: "invalid pattern for " + String(issue.label),
+      };
+    }
+    const matched = compiledPatterns.some((pattern) => pattern.test(searchable));
     return {
       pass: matched,
       score: matched ? 1 : 0,

@@ -286,3 +286,14 @@ Cost, not latency, is the constraint: `maxConcurrency` default is fine at this s
 - [x] 3.2 Full-matrix run reviewed in promptfoo view (metrics populated on successful rows; error rows visible + counted) — c12b7da
 - [x] 3.3 Grader spot-check on 2–3 rows — c12b7da
 - [x] 3.4 Spend confirmed against estimate — c12b7da
+
+## Addenda
+
+### Phase 3 smoke adaptations
+
+The live smoke exposed two harness compatibility requirements that were not anticipated in the original plan:
+
+- `review-result.schema.json` is pinned to JSON Schema draft-07 because Promptfoo 0.122.0's bundled Ajv does not load the 2020-12 meta-schema.
+- `env.PROMPTFOO_DISABLE_TEMPLATING: "true"` is set because the React fixture contains literal `{{` in `dangerouslySetInnerHTML={{ ... }}`, which otherwise crashes Promptfoo's Nunjucks variable rendering before the provider runs. The finder provider builds its prompt directly from variables, and grader templates use a separate engine, so this does not weaken the evaluated prompts.
+
+Both adaptations landed during Phase 3 in `c12b7da` and are also documented in the eval README's Gotchas section.

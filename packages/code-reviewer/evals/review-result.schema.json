@@ -13,8 +13,8 @@
         "required": ["file", "severity", "category", "description", "suggestion"],
         "properties": {
           "file": { "type": "string", "minLength": 1 },
-          "startLine": { "type": "number" },
-          "endLine": { "type": "number" },
+          "startLine": { "type": "integer", "minimum": 1 },
+          "endLine": { "type": "integer", "minimum": 1 },
           "severity": { "enum": ["critical", "major", "minor", "nit"] },
           "category": {
             "enum": ["security", "performance", "correctness", "style", "testing", "documentation"]

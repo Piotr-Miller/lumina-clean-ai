@@ -17,12 +17,22 @@ const cases = [
   { name: "1 of 3 hits fails", issues: threeIssues, output: reviewMentioning("alpha"), expectPass: false },
   { name: "1 of 1 hits passes", issues: oneIssue, output: reviewMentioning("alpha"), expectPass: true },
   { name: "0 of 1 hits fails", issues: oneIssue, output: reviewMentioning("delta"), expectPass: false },
+  {
+    name: "malformed pattern fails without throwing",
+    issues: [{ label: "bad-pattern", patterns: ["["] }],
+    output: reviewMentioning("alpha"),
+    expectPass: false,
+    expectReason: "invalid pattern for bad-pattern",
+  },
 ];
 
 let failures = 0;
 for (const testCase of cases) {
   const result = scoreIssueRecall(testCase.output, { vars: { expectedIssues: testCase.issues } });
-  const ok = result.pass === testCase.expectPass;
+  const actualReason = result.componentResults?.[0]?.reason;
+  const ok =
+    result.pass === testCase.expectPass &&
+    (testCase.expectReason === undefined || actualReason === testCase.expectReason);
   if (!ok) failures += 1;
   console.log(
     (ok ? "ok  " : "FAIL") +
