@@ -4,6 +4,7 @@ import {
   buildInstructions,
   buildPrompt,
   createReviewer,
+  DEFAULT_FINDER_TIMEOUT_MS,
   lensSchema,
   type Lens,
   type ReviewUnit,
@@ -61,7 +62,7 @@ export default class FinderProvider implements ApiProvider {
         lens: this.lens,
         projectContext,
       });
-      const result = await reviewer.review(unit);
+      const result = await reviewer.review(unit, { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS });
       return {
         output: JSON.stringify(result),
         prompt: actualPrompt,

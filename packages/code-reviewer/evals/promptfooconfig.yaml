@@ -32,6 +32,11 @@ defaultTest:
   options:
     # Keep expectedIssues as one array instead of expanding it into a matrix.
     disableVarExpansion: true
+    # Neutral grader for every model-graded assertion (llm-rubric): not one of
+    # the four candidate models, so no model grades itself. Same
+    # OPENROUTER_API_KEY. If Google retires the -preview id, fall back to the
+    # stable openrouter:google/gemini-2.5-pro.
+    provider: openrouter:google/gemini-3.1-pro-preview
   assert:
     - type: is-json
       value: file://./review-result.schema.json
@@ -91,3 +96,49 @@ tests:
             - "xss"
             - "dangerouslySetInnerHTML"
             - "sanitiz"
+    # Case-specific asserts; promptfoo merges them on top of defaultTest's
+    # schema + recall. Rubrics pass on concept identification in any wording —
+    # severity/category agreement is reviewMustFail's and the human's job.
+    assert:
+      - type: llm-rubric
+        value: >-
+          The reviewed diff migrates src/components/MetricsPanel.jsx from a
+          React class component to a function component. Planted flaw: the
+          subscription effect's dependency array is empty ([], post-change
+          line 25) while its handleMetrics callback reads the filter prop, so
+          the handler keeps using the first render's filter value forever and
+          never re-subscribes when filter or channel change. Pass if the
+          review identifies this issue in any wording (for example: stale
+          closure, missing or incomplete dependency array, effect not
+          reacting to prop changes). The exact terminology, severity, and
+          category do not matter. Fail if the review does not mention this
+          issue at all.
+        metric: flaw_stale_closure
+      - type: llm-rubric
+        value: >-
+          The reviewed diff migrates src/components/MetricsPanel.jsx from a
+          React class component to a function component. Planted flaw: the
+          effect that calls metricsClient.subscribe(channel, handleMetrics)
+          (post-change line 24) returns no cleanup function — the class's
+          componentWillUnmount unsubscribe was deleted and never ported, so
+          subscriptions leak and handlers duplicate on remount. Pass if the
+          review identifies this issue in any wording (for example: missing
+          cleanup or unsubscribe, subscription leak, unmount handling lost in
+          the migration). The exact terminology, severity, and category do
+          not matter. Fail if the review does not mention this issue at all.
+        metric: flaw_lost_cleanup
+      - type: llm-rubric
+        value: >-
+          The reviewed diff migrates src/components/MetricsPanel.jsx from a
+          React class component to a function component. Planted flaw: the
+          server-provided description prop, previously rendered as plain
+          text, is now rendered via dangerouslySetInnerHTML (post-change
+          line 39) without sanitization. Pass if the review identifies this
+          issue in any wording (for example: XSS, dangerouslySetInnerHTML on
+          untrusted or server content, needs sanitization or escaping). The
+          exact terminology, severity, and category do not matter. Fail if
+          the review does not mention this issue at all.
+        metric: flaw_unsafe_html
+      - type: javascript
+        value: file://./assertions.mjs:reviewMustFail
+        metric: review_fails

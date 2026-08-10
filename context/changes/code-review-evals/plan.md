@@ -253,27 +253,27 @@ Cost, not latency, is the constraint: `maxConcurrency` default is fine at this s
 
 #### Automated
 
-- [x] 1.1 Lint passes (`npm run lint`)
-- [x] 1.2 Typecheck passes (`npm run typecheck`)
-- [x] 1.3 Recall-gate self-check passes (`node evals/recall-selfcheck.mjs`)
-- [x] 1.4 Harness surfaces validated (`node --check` + `promptfoo validate`)
+- [x] 1.1 Lint passes (`npm run lint`) — 40e9a69
+- [x] 1.2 Typecheck passes (`npm run typecheck`) — 40e9a69
+- [x] 1.3 Recall-gate self-check passes (`node evals/recall-selfcheck.mjs`) — 40e9a69
+- [x] 1.4 Harness surfaces validated (`node --check` + `promptfoo validate`) — 40e9a69
 
 #### Manual
 
-- [x] 1.5 Fixture read-through: three flaws, distinct lines, three categories, rest clean
-- [x] 1.6 Hunk-header arithmetic checked
+- [x] 1.5 Fixture read-through: three flaws, distinct lines, three categories, rest clean — 40e9a69
+- [x] 1.6 Hunk-header arithmetic checked — 40e9a69
 
 ### Phase 2: Wire the Assertions (Static Fail + LLM Judge)
 
 #### Automated
 
-- [ ] 2.1 Lint passes (`npm run lint`)
-- [ ] 2.2 Typecheck passes (`npm run typecheck`)
-- [ ] 2.3 Harness surfaces validated (`node --check` + `promptfoo validate`)
+- [x] 2.1 Lint passes (`npm run lint`)
+- [x] 2.2 Typecheck passes (`npm run typecheck`)
+- [x] 2.3 Harness surfaces validated (`node --check` + `promptfoo validate`)
 
 #### Manual
 
-- [ ] 2.4 Rubric texts reviewed (one flaw each, concept-match phrasing)
+- [x] 2.4 Rubric texts reviewed (one flaw each, concept-match phrasing)
 
 ### Phase 3: Live Verification Run + Evidence + Docs
 
