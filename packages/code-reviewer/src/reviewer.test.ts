@@ -6,6 +6,7 @@ import {
   fetchBoundedContext,
   MAX_CONTEXT_CHARS,
   MAX_CONTEXT_LINES,
+  prepareFinalStep,
   type SourceProvider,
 } from "./reviewer.js";
 
@@ -71,6 +72,15 @@ describe("createReviewer", () => {
       .mockResolvedValue({ output: { summary: "s", findings: [] } } as never);
     await reviewer.review({ kind: "diff", diff: "+x" });
     expect(generate).toHaveBeenCalledWith(expect.objectContaining({ onStepEnd }));
+  });
+
+  it("disables tools on the final allowed step so the review always gets emitted", () => {
+    const guard = prepareFinalStep(true, 5);
+    expect(guard({ stepNumber: 0 })).toEqual({});
+    expect(guard({ stepNumber: 3 })).toEqual({});
+    expect(guard({ stepNumber: 4 })).toEqual({ activeTools: [] });
+    // Tool-less reviewers never restrict anything — there is nothing to strip.
+    expect(prepareFinalStep(false, 5)({ stepNumber: 4 })).toEqual({});
   });
 
   it("describes the getFileContext path in the allowlist's format (no a/ b/ prefix)", () => {

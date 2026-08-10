@@ -87,6 +87,19 @@ export async function fetchBoundedContext(
 }
 
 /**
+ * Per-step guard for the agent loop, extracted pure for testability: the
+ * final allowed step must carry no tools, or a fetch-happy model spends the
+ * whole budget on getFileContext and the run dies with "No output generated"
+ * — observed live in phase-3 scratch runs (sonnet-5 used all 5, then all 8
+ * steps on fetches). A tool-less final step forces the structured review out
+ * of whatever context is already gathered. No-op for tool-less reviewers.
+ */
+export const prepareFinalStep =
+  (hasSource: boolean, maxSteps: number) =>
+  ({ stepNumber }: { stepNumber: number }): { activeTools?: never[] } =>
+    hasSource && stepNumber >= maxSteps - 1 ? { activeTools: [] } : {};
+
+/**
  * Factory (deliberately not a singleton): each call builds a fresh
  * ToolLoopAgent so a future orchestrator can fan out one reviewer per lens.
  * Throws (never exits) when no API key is resolvable.
@@ -120,6 +133,7 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // single retry authority in the CI pipeline, keeping cost predictable.
     maxRetries: 0,
     stopWhen: isStepCount(maxSteps),
+    prepareStep: prepareFinalStep(hasSource, maxSteps),
     tools: hasSource
       ? {
           getFileContext: tool({
