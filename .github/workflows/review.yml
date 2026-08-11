@@ -89,14 +89,14 @@ jobs:
       # preDedupFindingCount) + comment.md survive here for post-hoc reads.
       # Lives at workflow level, NOT in the composite (per-step `if:` inside
       # composites is historically unreliable). include-hidden-files is
-      # MANDATORY: upload-artifact v4 excludes files inside dot-directories
-      # by default and .review-out is one — without it this step stays green
-      # while uploading nothing, masked by if-no-files-found: ignore (which
-      # is itself needed: technical failures produce no output dir and the
-      # step must not add a second red).
+      # MANDATORY: upload-artifact excludes files inside dot-directories by
+      # default (still true in v7) and .review-out is one — without it this
+      # step stays green while uploading nothing, masked by
+      # if-no-files-found: ignore (which is itself needed: technical failures
+      # produce no output dir and the step must not add a second red).
       - name: Upload review output artifact
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ai-review-output
           path: packages/code-reviewer/.review-out/
