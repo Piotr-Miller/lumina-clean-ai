@@ -174,6 +174,8 @@ score was never the decision input.
 
 ## Phase 3 — Run the matrix and decide
 
+Commit `b24e65d` (4 files, +12808/−6, including the 13k-line snapshot).
+
 ### Evidence
 
 | Criterion | Result                                                                                  |
@@ -199,6 +201,34 @@ context on 3/3 cross-hunk repeats. Recommendation is haiku-4.5, runner-up sonnet
 **3.4 detail.** Scanned for `sk-`/`Bearer`/`api_key` patterns, email addresses, Windows user paths
 and secret-bearing env var names — all zero hits. The snapshot's prompts carry the repo's own
 `.github/ai-review-rules.md` and the eval fixtures, both already tracked.
+
+### Impl-review follow-ups (`reviews/impl-review-phase-3.md`, NEEDS ATTENTION → 3 warnings closed)
+
+All three findings were about the honesty of `decision.md`'s claims rather than the run itself — the
+snapshot, telemetry, cost and secret-scan checks all passed on review. No data was re-gathered; the
+record was corrected to match it.
+
+- **F1 fixed (Fix A)** — quality metrics were conditional on a repeat producing output, but were
+  displayed as if they covered all three. Every quality cell now carries its denominator
+  (`0.952 (7/9)`, `1/1 (of 3)`, repairs `0/8`), with a lead-in paragraph separating telemetry
+  columns (all repeats) from quality columns (scored repeats only). Fix B — scoring provider errors
+  as quality zeros — was declined: it conflates "reviewed badly" with "never produced a review", and
+  those disqualify a model for different reasons.
+- **F2 fixed** — "0/12 zero-call rows" counted six canary/React rows that carried no tool and could
+  not have called it. Now stated as 0/6 tool-enabled rows plus 0/3 in the probe. The reviewer also
+  caught that the historical operands summed to 21, not the claimed 19; the cumulative figure is
+  dropped entirely and the prior runs are cited as corroboration under different harnesses.
+- **F3 fixed** — the projected ~11% / ~0.7% production failure rates squared the observed
+  single-attempt rates, assuming i.i.d. retries that no experiment tested. Replaced with the
+  observed 33.3% / 8.3% / 0% / 0%, with the removal recorded rather than silently rewritten.
+
+**F3 changed the recommendation's footing, not its conclusion.** The ~0.7% figure was the main
+defence of haiku's single parse failure; without it, haiku demonstrably loses to both glm-4.6 and
+sonnet-5 on observed schema reliability. `decision.md` now says so plainly and re-argues the choice
+on different grounds (advisory gate, retry + manual re-run label, and cross-hunk blindness being the
+defect the change exists to fix), and Phase 4's exit criteria gained the reviewer's asymmetry: one
+live run can only falsify — a failure is decisive against haiku, a success proves nothing about
+reliability. Fallback on failure is sonnet-5, not a revert to glm-4.6.
 
 ### Deviations from the plan
 
