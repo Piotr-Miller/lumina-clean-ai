@@ -81,7 +81,7 @@ jobs:
           # DEFAULT_MODEL, so pinning the literal here is the only way to run a
           # candidate against a real PR without changing production first.
           # This branch is closed and deleted unmerged after the observation.
-          review-model: anthropic/claude-haiku-4.5
+          review-model: anthropic/claude-sonnet-5
           judge-model: ${{ vars.OPENROUTER_JUDGE_MODEL }}
           finder-max-steps: ${{ vars.REVIEW_FINDER_MAX_STEPS }}
           pr-title: ${{ github.event.pull_request.title }}
