@@ -527,15 +527,15 @@ guarded by a live observation.
 
 #### Automated
 
-- [ ] 3.1 Snapshot file exists and is valid JSON
-- [ ] 3.2 Snapshot contains non-zero tool_calls for at least one model
-- [ ] 3.3 Snapshot contains non-zero cost for at least one row
+- [x] 3.1 Snapshot file exists and is valid JSON
+- [x] 3.2 Snapshot contains non-zero tool_calls for at least one model
+- [x] 3.3 Snapshot contains non-zero cost for at least one row
 
 #### Manual
 
-- [ ] 3.4 Snapshot scanned for secrets/PII before committing
-- [ ] 3.5 Decision recorded with cost delta against the glm-4.6 baseline and a repair-rate column
-- [ ] 3.6 Cross-hunk discriminates between models (best delivered-context rate >= 2/3, worst 0/3)
+- [x] 3.4 Snapshot scanned for secrets/PII before committing
+- [x] 3.5 Decision recorded with cost delta against the glm-4.6 baseline and a repair-rate column
+- [x] 3.6 Cross-hunk discriminates between models (best delivered-context rate >= 2/3, worst 0/3)
 
 ### Phase 4: Live validation and flip
 

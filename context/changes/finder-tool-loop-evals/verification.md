@@ -96,6 +96,9 @@ hunk and its context contain zero occurrences of `JPEG_QUALITY`.
 
 ## Phase 2 — Grading surface
 
+Commit `90dee42` (9 files, +606/−67), plus `e64c52f` for the follow-up fixes from
+`reviews/impl-review-phase-2.md` (11 files, +335/−32).
+
 ### Evidence
 
 | Criterion | Result                                                                       |
@@ -168,3 +171,51 @@ across rows, which makes the metric read as "getFileContext calls per row" per m
 `decision.md` needs. The cost is that a tool-enabled row's aggregate score column is no longer a
 ratio either; recorded in the README's metrics table rather than engineered around, since the row
 score was never the decision input.
+
+## Phase 3 — Run the matrix and decide
+
+### Evidence
+
+| Criterion | Result                                                                                  |
+| --------- | --------------------------------------------------------------------------------------- |
+| 3.1       | `results/2026-08-11-tool-loop-matrix.json` exists, parses, 48 rows                      |
+| 3.2       | Non-zero `tool_calls` for 3 of 4 models (haiku 6/6, deepseek 6/6, sonnet 4/6 rows)      |
+| 3.3       | Non-zero cost on every row; $0.6263 finder spend across the 48                          |
+| 3.4       | Snapshot scanned: no key-shaped strings, emails, or `C:\Users\…` paths                  |
+| 3.5       | `decision.md` written with the cost delta and the repair-rate column                    |
+| 3.6       | Cross-hunk discriminates: best 3/3 delivered (haiku/sonnet/deepseek) vs worst 0/3 (glm) |
+
+**Runs.** A cross-hunk-only probe was bought first (`eval-Rhd-2026-08-11T19:05:49`, 12 rows, $0.16)
+to check the full matrix was worth buying; the full run is `eval-P4k-2026-08-11T19:12:16` (48 rows,
+$0.6263 finder + ~51k grader tokens, 4m30s at concurrency 4). Actual spend came in under the plan's
+$1–2 estimate but above the $0.40 projected from the probe — sonnet-5's React rows ($0.108 each)
+dominate the total.
+
+**Outcome.** glm-4.6 made ZERO tool calls in all 12 of its rows, failing cross-hunk 0/3 while
+passing canary, React and clean 3/3 each. haiku-4.5 (11/12) and sonnet-5 (12/12) both deliver
+context on 3/3 cross-hunk repeats. Recommendation is haiku-4.5, runner-up sonnet-5, at 8.1× and
+48.2× the baseline cost per row respectively. Full reasoning and caveats: `decision.md`.
+
+**3.4 detail.** Scanned for `sk-`/`Bearer`/`api_key` patterns, email addresses, Windows user paths
+and secret-bearing env var names — all zero hits. The snapshot's prompts carry the repo's own
+`.github/ai-review-rules.md` and the eval fixtures, both already tracked.
+
+### Deviations from the plan
+
+**7. The probe was not in the plan.** The plan specifies one full-matrix run. A cross-hunk-only
+pass across all four models × 3 repeats was bought first ($0.16) because the load-bearing question —
+whether ANY model but sonnet-5 touches the tool — could be answered for a fifth of the price, and a
+"no" would have made the remaining three cases nearly moot. The full matrix was run immediately
+after and is the citable artifact; the probe is recorded here only because it is spent money and
+because it produced one finding the full run overturned (below).
+
+**8. The probe's deepseek reading was wrong and the full matrix corrected it.** Deepseek failed 0/3
+on cross-hunk in the probe, which was written up as a structural incompatibility of the same kind as
+qwen / gpt-5.4-mini. The full run shows 8/12 usable output spread across three cases — a ~33%
+single-attempt flake, not a wall. Recorded because the error is instructive: a 3-row sample of a
+one-in-three failure mode reads exactly like a deterministic failure.
+
+**9. The envelope-repair column could not be filled.** `output-repair.ts` fired zero times in 48
+rows, so the repair-rate figure the plan wanted as the argument against glm-4.6 does not exist. The
+harness did not reproduce the production drift — see `decision.md` § Caveats. This is a gap in the
+instrument, not evidence the drift is gone, and it moves the burden onto Phase 4's live run.
