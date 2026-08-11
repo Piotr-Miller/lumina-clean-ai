@@ -4,20 +4,20 @@ Running record of evidence and deviations, phase by phase.
 
 ## Phase 1 — Fixture tree + source wiring
 
-Commit `edf3982` (19 files, +1394/−107). Follow-up fixes from `reviews/impl-review-phase-1.md`
-land in the Phase 2 commit.
+Commit `edf3982` (19 files, +1394/−107), plus `084e7bc` for the follow-up fixes from
+`reviews/impl-review-phase-1.md` (8 files, +368/−56).
 
 ### Evidence
 
-| Criterion | Result                                                                                             |
-| --------- | -------------------------------------------------------------------------------------------------- |
-| 1.1       | `promptfoo validate config` → "Configuration is valid."                                            |
-| 1.2       | `tsc --noEmit` exit 0, fixture tree present                                                        |
-| 1.3       | `eslint evals/finder-provider.ts` exit 0                                                           |
-| 1.4       | 300 tests pass (288 before this phase); 317 after the impl-review fixes                            |
-| 1.5       | Paid smoke, eval `eval-Flr-2026-08-11T12:55:06`, sonnet-5 on cross-hunk                            |
-| 1.6       | Both fixture trees served through the shipped assembly on this Windows checkout                    |
-| 1.7       | **PENDING** — data confirms the tool-enabled prompt was persisted; visual viewer check outstanding |
+| Criterion | Result                                                                                              |
+| --------- | --------------------------------------------------------------------------------------------------- |
+| 1.1       | `promptfoo validate config` → "Configuration is valid."                                             |
+| 1.2       | `tsc --noEmit` exit 0, fixture tree present                                                         |
+| 1.3       | `eslint evals/finder-provider.ts` exit 0                                                            |
+| 1.4       | 300 tests pass (288 before this phase); 317 after the impl-review fixes                             |
+| 1.5       | Paid smoke, eval `eval-Flr-2026-08-11T12:55:06`, sonnet-5 on cross-hunk                             |
+| 1.6       | Both fixture trees served through the shipped assembly on this Windows checkout                     |
+| 1.7       | Viewer's **"Actual Prompt Sent"** panel shows the tool-enabled variant on the tool-enabled row only |
 
 **1.5 detail:** `toolCalls: 2`, `steps: 3` (budget 5), target delivered twice, **zero refusals**,
 finder cost **$0.042374**, and the review correctly identified the `JPEG_QUALITY` contract
@@ -28,6 +28,19 @@ see Deviation 2.
 path was refused in both trees. The cross-hunk case's load-bearing property was asserted directly:
 `JPEG_QUALITY` and "single-source" are present in the served file and **absent from the diff and
 its context**, so a model that never fetches cannot link the hardcoded `0.5` to the contract.
+
+**1.7 detail** (checked 2026-08-11, during Phase 2 — hence the Phase 2 sha on the row): promptfoo's
+row-detail dialog carries TWO prompt panels, and the distinction matters here. **"Prompt"** shows the
+config's raw template, which is the literal `{{diff}}` — templating is disabled repo-wide, so it is
+never rendered. **"Actual Prompt Sent"** shows what the provider reported, i.e. the real system +
+user pair. On the cross-hunk row (`fixtureRoot: ./fixtures/cross-hunk`) it carries all three
+tool sentences — "call the getFileContext tool before judging", the cross-hunk dependency-class
+sentence, and the untrusted-data sentence that names getFileContext as a channel. On the two
+tool-less rows in the same eval (JS canary, React migration) those sentences are absent and the
+SHORT untrusted-data variant appears instead — the phase-1 F3 tool-less variant, confirmed visually
+by A/B rather than by inspecting the provider's own reporting. Evidence: eval
+`eval-Flr-2026-08-11T12:55:06`, rows 3 vs 1 (`?rowId=3` / `?rowId=1`); underlying data cross-checked
+via the viewer API (`response.prompt`: 3 getFileContext mentions on row 3, zero on rows 1–2).
 
 ### Impl-review follow-ups (`reviews/impl-review-phase-1.md`)
 
@@ -80,3 +93,50 @@ call site, so its diff contained `- ... JPEG_QUALITY ...` — the constant's nam
 hunk, and a model could infer the contract without fetching. The fixture instead _adds_ a call site
 (`flattenForUpload`) in a region whose context mentions no constant, verified by assertion: the
 hunk and its context contain zero occurrences of `JPEG_QUALITY`.
+
+## Phase 2 — Grading surface
+
+### Evidence
+
+| Criterion | Result                                                                         |
+| --------- | ------------------------------------------------------------------------------ |
+| 2.1       | 337 tests pass (317 before this phase → 20 new assertion cases)                |
+| 2.2       | `node evals/recall-selfcheck.mjs` → 16/16, "grading surface self-check passed" |
+| 2.3       | `node --check evals/assertions.mjs` exit 0                                     |
+| 2.4       | `promptfoo validate config` → "Configuration is valid."                        |
+| 2.5       | Both failure modes fail `tool_required`, and are distinguishable at a glance   |
+| 2.6       | Clean-diff case passes for baseline glm-4.6, 3/3 assertions, $0.00081          |
+
+Also green, though not phase criteria: `tsc --noEmit` exit 0 and `eslint` exit 0 on the touched eval
+TS files (both are `code-reviewer` CI-job gates).
+
+**2.5 detail** — the two component results split "never asked" from "asked and was refused", which
+is the distinction the whole assertion exists for (a refusal is a model-facing STRING, so from the
+model's side it looks exactly like content):
+
+| Row                 | Verdict | Components                                                                            |
+| ------------------- | ------- | ------------------------------------------------------------------------------------- |
+| zero-call           | fail    | `Never called getFileContext` / `Never received <path> (requested: none)`             |
+| refused fetch       | fail    | `Called getFileContext 1 time(s)` / `Asked for <path> but the source refused it`      |
+| wrong path          | fail    | `Called getFileContext 1 time(s)` / `Never received <path> (requested: src/other.ts)` |
+| delivered (control) | pass    | `Called getFileContext 2 time(s)` / `Received content for <path>`                     |
+| absent metadata     | fail    | `No provider metadata on this row, so tool usage is unobservable`                     |
+
+**2.6 detail** — eval `eval-1YY-2026-08-11T18:15:38`, 1/1 passing: `schema_validity` 1.00,
+`no_false_alarms` 1.00, `findings: []`, cost $0.00081. **`tool_calls` was 0** — glm-4.6 did not
+fetch even on a tool-enabled case, which is the same inertia phase 3 of `finder-file-context`
+recorded live (0 calls in 4/4 runs). That is a Phase 3 data point, not a Phase 2 failure: the clean
+case is graded on precision only, and `tool_calls` gates nothing by design.
+
+### Deviations from the plan
+
+**5. `evals/README.md`'s snapshot-export command was corrected beyond the plan's wording.** It still
+pointed at `context/changes/code-review-evals/results/<date>-first-matrix.json`, the PRIOR change's
+folder — a path Phase 3 would have copy-pasted into an archived change. Repointed to this change's
+`results/<date>-tool-loop-matrix.json`.
+
+**6. `tool_calls` scores the raw count, so it is not a 0–1 ratio.** promptfoo averages a named metric
+across rows, which makes the metric read as "getFileContext calls per row" per model — the figure
+`decision.md` needs. The cost is that a tool-enabled row's aggregate score column is no longer a
+ratio either; recorded in the README's metrics table rather than engineered around, since the row
+score was never the decision input.

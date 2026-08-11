@@ -507,21 +507,21 @@ guarded by a live observation.
 
 - [x] 1.5 Paid single-provider smoke run reports non-zero toolCalls for sonnet-5 — edf3982
 - [x] 1.6 Fixture tree serves content through createDiffScopedSource (no realpath/symlink refusal) — edf3982
-- [ ] 1.7 Viewer shows the tool-enabled instruction variant for tool-enabled cases
+- [x] 1.7 Viewer shows the tool-enabled instruction variant for tool-enabled cases
 
 ### Phase 2: Grading surface
 
 #### Automated
 
-- [ ] 2.1 Package unit tests pass
-- [ ] 2.2 Assertion self-check passes
-- [ ] 2.3 Assertions file parses (node --check)
-- [ ] 2.4 Config validates
+- [x] 2.1 Package unit tests pass
+- [x] 2.2 Assertion self-check passes
+- [x] 2.3 Assertions file parses (node --check)
+- [x] 2.4 Config validates
 
 #### Manual
 
-- [ ] 2.5 A zero-call row and a refused-fetch row both fail tool_required with a readable reason
-- [ ] 2.6 Clean-diff case passes for the baseline model
+- [x] 2.5 A zero-call row and a refused-fetch row both fail tool_required with a readable reason
+- [x] 2.6 Clean-diff case passes for the baseline model
 
 ### Phase 3: Run the matrix and decide
 
