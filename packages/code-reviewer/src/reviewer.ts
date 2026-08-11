@@ -1,11 +1,12 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { isStepCount, Output, tool, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
+import { isStepCount, tool, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 import { z } from "zod";
 
 import { resolveConfig } from "./config.js";
 import { normalizeFindings } from "./findings.js";
 import { buildInstructions, buildPrompt } from "./prompts.js";
-import { reviewResultSchema, type Lens, type ReviewResult, type ReviewUnit } from "./schemas.js";
+import { tolerantReviewOutput } from "./output-repair.js";
+import { type Lens, type ReviewResult, type ReviewUnit } from "./schemas.js";
 
 // Defense-in-depth caps on the context tool: requested ranges and returned
 // context are bounded regardless of what the provider serves. Exported so
@@ -50,6 +51,13 @@ export interface ReviewerOptions {
    * unchanged.
    */
   onStepEnd?: (step: StepResult<ToolSet>) => void;
+  /**
+   * Observes an envelope repair (see output-repair.ts): the strict parse
+   * rejected the response and a shape fix rescued it. Purely observational,
+   * but worth logging — a model that needs repairing every run is a
+   * model-selection signal, not a steady state.
+   */
+  onOutputRepair?: (detail: { reason: string }) => void;
   /**
    * Trusted repository-maintainer review rules, appended to the system
    * instructions (never fenced with untrusted data). Source it from trusted
@@ -128,7 +136,7 @@ export function createReviewer(options: ReviewerOptions = {}) {
       fileContextTool: hasSource,
       projectContext: options.projectContext,
     }),
-    output: Output.object({ schema: reviewResultSchema }),
+    output: tolerantReviewOutput({ onRepair: options.onOutputRepair }),
     // SDK-internal retries off (default is 2): retry.ts's withOneRetry is the
     // single retry authority in the CI pipeline, keeping cost predictable.
     maxRetries: 0,

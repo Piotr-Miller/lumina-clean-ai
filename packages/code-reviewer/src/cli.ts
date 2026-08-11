@@ -192,6 +192,11 @@ export async function runReviewCli(
           `retrying ${pass} after ${errorLabel(error)} in ${String(Math.round(delayMs))}ms`,
         );
       },
+      // A repaired run is otherwise indistinguishable from a clean one; this
+      // line is how persistent model drift stays visible in the Actions log.
+      onOutputRepair: ({ reason }) => {
+        io.logError(`finder output repaired after strict-parse failure: ${reason}`);
+      },
     });
 
     io.mkdir(args.outDir);

@@ -188,6 +188,12 @@ export interface PipelineInput {
   finderMaxSteps?: number;
   /** Observes each finder loop step (across both retry attempts) for per-step telemetry. */
   onFinderStep?: (info: FinderStepInfo) => void;
+  /**
+   * Fires when the finder's response failed the strict parse and an envelope
+   * repair rescued it (see output-repair.ts). Without it a repaired run looks
+   * identical to a clean one, hiding model drift worth acting on.
+   */
+  onOutputRepair?: (detail: { reason: string }) => void;
   deps?: PipelineDeps;
 }
 
@@ -228,6 +234,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
       // a live source (impl-review-phase-1 F3).
       maxSteps: input.source === undefined ? undefined : input.finderMaxSteps,
       onStepEnd: observeFinderStep,
+      onOutputRepair: input.onOutputRepair,
     }).review;
   const judge =
     input.deps?.judge ??
