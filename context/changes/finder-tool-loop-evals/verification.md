@@ -98,14 +98,14 @@ hunk and its context contain zero occurrences of `JPEG_QUALITY`.
 
 ### Evidence
 
-| Criterion | Result                                                                         |
-| --------- | ------------------------------------------------------------------------------ |
-| 2.1       | 337 tests pass (317 before this phase → 20 new assertion cases)                |
-| 2.2       | `node evals/recall-selfcheck.mjs` → 16/16, "grading surface self-check passed" |
-| 2.3       | `node --check evals/assertions.mjs` exit 0                                     |
-| 2.4       | `promptfoo validate config` → "Configuration is valid."                        |
-| 2.5       | Both failure modes fail `tool_required`, and are distinguishable at a glance   |
-| 2.6       | Clean-diff case passes for baseline glm-4.6, 3/3 assertions, $0.00081          |
+| Criterion | Result                                                                       |
+| --------- | ---------------------------------------------------------------------------- |
+| 2.1       | 337 tests pass (317 before this phase); 357 after the impl-review fixes      |
+| 2.2       | `node evals/recall-selfcheck.mjs` → 16/16; 18/18 after the impl-review fixes |
+| 2.3       | `node --check evals/assertions.mjs` exit 0                                   |
+| 2.4       | `promptfoo validate config` → "Configuration is valid."                      |
+| 2.5       | Both failure modes fail `tool_required`, and are distinguishable at a glance |
+| 2.6       | Clean-diff case passes for baseline glm-4.6, 3/3 assertions, $0.00081        |
 
 Also green, though not phase criteria: `tsc --noEmit` exit 0 and `eslint` exit 0 on the touched eval
 TS files (both are `code-reviewer` CI-job gates).
@@ -127,6 +127,34 @@ model's side it looks exactly like content):
 fetch even on a tool-enabled case, which is the same inertia phase 3 of `finder-file-context`
 recorded live (0 calls in 4/4 runs). That is a Phase 3 data point, not a Phase 2 failure: the clean
 case is graded on precision only, and `tool_calls` gates nothing by design.
+
+### Impl-review follow-ups (`reviews/impl-review-phase-2.md`, APPROVED with 2 warnings)
+
+Both accepted and fixed before Phase 3 spends the paid run — a grading bug found after the matrix
+means paying for it twice.
+
+- **F1 fixed** — `requireToolContext` read only `deliveredPaths`, so telemetry claiming delivery
+  with `toolCalls: 0` passed the gate, and `readToolTelemetry` accepted `NaN` / `Infinity` /
+  negative counts (a `NaN` would have silently poisoned `tool_calls`' average for that model). The
+  count must now be a non-negative integer, and the gate requires delivery **and** invocation
+  **and** a matching request — the provider records the request and its outcome in the same
+  callback, so disagreement means the instrument is broken, and it now says so
+  ("Telemetry contradicts itself: …") rather than reading as an honest zero-call model.
+- **F2 fixed** — the `hardcod` recall pattern awarded full `issue_recall` to "the hardcoded 0.5
+  should be configurable", a finding the case's own rubric explicitly fails and which any model can
+  produce from the hunk alone. Removed; the four remaining patterns each require contract
+  reasoning. The row was never mis-gated (`tool_required` + the rubric held), but the named recall
+  metric would have misreported quality in `decision.md`.
+
+New hermetic gate: `evals/promptfooconfig.test.ts` parses the ACTUAL config and asserts 3 generic
+wordings miss while 4 contract wordings hit, plus two structural invariants (`scoreIssueRecall`
+stays off `defaultTest`; every case's graders match its vars). `js-yaml` was promoted from a
+transitive promptfoo dependency to an explicit devDependency so the test does not rely on hoisting
+— the only dependency change in this phase, and it installs 5.2.3 alongside promptfoo's own pinned
+5.2.2 rather than moving promptfoo's copy.
+
+Re-verified after the fixes: **357 tests** (337 → 20 new), self-check 18/18, `node --check` clean,
+config valid, typecheck and lint clean.
 
 ### Deviations from the plan
 

@@ -86,6 +86,20 @@ check(
 );
 check("absent metadata fails tool_required closed", requireToolContext("", { vars: {} }), false);
 check(
+  "delivery with zero calls is a self-contradiction, not adoption",
+  requireToolContext(
+    "",
+    withRequiredPath(telemetry({ toolCalls: 0, requestedPaths: [REQUIRED_PATH], deliveredPaths: [REQUIRED_PATH] })),
+  ),
+  false,
+  "contradicts itself",
+);
+check(
+  "a non-finite call count fails closed",
+  requireToolContext("", withRequiredPath(telemetry({ toolCalls: Number.NaN }))),
+  false,
+);
+check(
   "tool_calls scores the raw invocation count",
   countToolCalls("", { metadata: telemetry({ toolCalls: 3, refusedPaths: ["a.ts"] }) }),
   true,

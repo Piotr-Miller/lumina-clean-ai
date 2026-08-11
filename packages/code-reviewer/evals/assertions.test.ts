@@ -162,6 +162,15 @@ describe("countToolCalls", () => {
   it("fails closed on a tool-less row, which this assertion should never be attached to", () => {
     expect(countToolCalls("", { metadata: telemetry({ toolEnabled: false }) }).pass).toBe(false);
   });
+
+  // A NaN score would poison the metric's average across every row of that
+  // model, silently — worse than a visible failure.
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1, 1.5, "2"])(
+    "fails closed on an implausible toolCalls count: %s",
+    (toolCalls) => {
+      expect(countToolCalls("", { metadata: telemetry({ toolCalls }) })).toMatchObject({ pass: false, score: 0 });
+    },
+  );
 });
 
 describe("requireToolContext", () => {
@@ -216,6 +225,29 @@ describe("requireToolContext", () => {
 
   it("fails closed on a tool-less row", () => {
     expect(requireToolContext("", contextWith(telemetry({ toolEnabled: false }))).pass).toBe(false);
+  });
+
+  // The provider records the request and its outcome in the SAME callback, and
+  // a delivery cannot happen without a call — so these shapes mean the
+  // instrument disagrees with itself, and the optimistic half must not win.
+  it("fails telemetry that reports delivery with zero calls", () => {
+    const result = requireToolContext(
+      "",
+      contextWith(telemetry({ toolCalls: 0, requestedPaths: [REQUIRED_PATH], deliveredPaths: [REQUIRED_PATH] })),
+    );
+
+    expect(result.pass).toBe(false);
+    expect(result.reason).toContain("contradicts itself");
+  });
+
+  it("fails telemetry that reports delivery of a path it never requested", () => {
+    const result = requireToolContext(
+      "",
+      contextWith(telemetry({ toolCalls: 1, requestedPaths: [], deliveredPaths: [REQUIRED_PATH] })),
+    );
+
+    expect(result.pass).toBe(false);
+    expect(result.componentResults?.[1]?.reason).toContain("no request for it");
   });
 
   it("fails when the case configured no requiredContextPath", () => {

@@ -185,13 +185,20 @@ tests:
       # diff's `+++ b/<path>` names it — the allowlist is exact-match, and
       # tool_required checks DELIVERY of this path specifically.
       requiredContextPath: src/lib/engines/canvas-helpers.ts
+      # Every pattern must require CONTRACT reasoning, never mere observation of
+      # the literal. A bare "hardcod" pattern used to sit here and awarded full
+      # recall to "the hardcoded 0.5 should be configurable" — a finding the
+      # rubric below explicitly fails, and one any model can produce from the
+      # hunk alone, which would have made the metric misreport tool adoption as
+      # quality in decision.md (impl-review-phase-2 F2). Pinned by
+      # promptfooconfig.test.ts.
       expectedIssues:
         - label: hardcoded quality bypasses the shared JPEG_QUALITY constant
           patterns:
             - "JPEG_QUALITY"
             - "single[- ]source"
-            - "hardcod"
-            - "shared constant"
+            - "shared (jpeg )?(re-?encode )?(quality )?constant"
+            - "documented (module )?(invariant|contract)"
     assert:
       - type: javascript
         value: file://./assertions.mjs:scoreIssueRecall

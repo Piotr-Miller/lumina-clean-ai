@@ -97,8 +97,11 @@ function readToolTelemetry(context) {
   if (metadata.toolEnabled !== true) {
     return { reason: "Row ran tool-less; this assertion belongs on a case that declares a fixtureRoot" };
   }
-  if (typeof metadata.toolCalls !== "number") {
-    return { reason: "Provider metadata carries no numeric toolCalls" };
+  // Integer + non-negative, not merely `typeof === "number"`: NaN, Infinity and
+  // a negative count are all broken instruments, and NaN in particular would
+  // poison tool_calls' average for the whole model (impl-review-phase-2 F1).
+  if (!Number.isInteger(metadata.toolCalls) || metadata.toolCalls < 0) {
+    return { reason: "Provider metadata carries no usable toolCalls count: " + String(metadata.toolCalls) };
   }
   return {
     telemetry: {
@@ -162,6 +165,22 @@ export function requireToolContext(output, context) {
   const invoked = toolCalls > 0;
   const delivered = deliveredPaths.includes(requiredPath);
   const refused = refusedPaths.includes(requiredPath);
+  const requested = requestedPaths.includes(requiredPath);
+  // Delivery counts as evidence only when the rest of the telemetry agrees with
+  // it. finder-provider.ts records the request and its outcome in the SAME
+  // callback, and a delivery cannot happen without a call — so "delivered, but
+  // zero calls" or "delivered, but never requested" means the instrument
+  // contradicts itself, and reading the optimistic half would let a broken
+  // instrument report adoption (impl-review-phase-2 F1).
+  const consistent = invoked && requested;
+
+  const contradiction =
+    "Telemetry contradicts itself: " +
+    requiredPath +
+    " is reported delivered, but the run reports " +
+    String(toolCalls) +
+    " call(s)" +
+    (requested ? "" : " and no request for it");
 
   const componentResults = [
     {
@@ -170,24 +189,29 @@ export function requireToolContext(output, context) {
       reason: invoked ? "Called getFileContext " + String(toolCalls) + " time(s)" : "Never called getFileContext",
     },
     {
-      pass: delivered,
-      score: delivered ? 1 : 0,
+      pass: delivered && consistent,
+      score: delivered && consistent ? 1 : 0,
       reason: delivered
-        ? "Received content for " + requiredPath
+        ? consistent
+          ? "Received content for " + requiredPath
+          : contradiction
         : refused
           ? "Asked for " + requiredPath + " but the source refused it, so no context reached the model"
           : "Never received " + requiredPath + " (requested: " + listPaths(requestedPaths) + ")",
     },
   ];
 
-  // Delivery implies invocation, so it alone decides the gate; the component
-  // split exists to tell "never asked" apart from "asked and was refused".
+  // The component split exists to tell "never asked" from "asked and refused"
+  // from "the instrument disagrees with itself".
+  const pass = delivered && consistent;
   return {
-    pass: delivered,
-    score: delivered ? 1 : 0,
-    reason: delivered
+    pass,
+    score: pass ? 1 : 0,
+    reason: pass
       ? "Out-of-hunk context delivered: " + requiredPath
-      : "Out-of-hunk context never delivered: " + requiredPath,
+      : delivered
+        ? contradiction
+        : "Out-of-hunk context never delivered: " + requiredPath,
     componentResults,
   };
 }
