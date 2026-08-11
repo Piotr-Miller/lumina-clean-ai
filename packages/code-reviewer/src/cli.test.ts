@@ -59,6 +59,8 @@ const fakeIo = (overrides: Partial<CliIo> = {}): FakeIo => {
     logError: (message) => {
       errors.push(message);
     },
+    realpath: (path) => path,
+    isRegularFile: () => true,
     ...overrides,
   };
 };
@@ -201,5 +203,157 @@ describe("runReviewCli input routing and pipeline wiring", () => {
     expect(io.files.get(join(".review-out", "comment.md"))).toContain(
       "https://github.com/acme/repo/actions/runs/42",
     );
+  });
+});
+
+describe("runReviewCli --source-root (diff-scoped file context)", () => {
+  const inputOf = (pipeline: ReturnType<typeof vi.fn>): PipelineInput =>
+    pipeline.mock.calls[0]?.[0] as PipelineInput;
+
+  const DIFF = [
+    "diff --git a/src/a.ts b/src/a.ts",
+    "--- a/src/a.ts",
+    "+++ b/src/a.ts",
+    "@@ -1 +1 @@",
+    "+x",
+  ].join("\n");
+
+  it("stays byte-identical to today without the flag: no source, no maxSteps, no step callback", async () => {
+    const pipeline = okPipeline();
+    await runReviewCli([], {}, fakeIo({ readStdin: () => DIFF }), pipeline);
+    const input = inputOf(pipeline);
+    expect("source" in input).toBe(false);
+    expect("finderMaxSteps" in input).toBe(false);
+    expect("onFinderStep" in input).toBe(false);
+  });
+
+  it("wires a diff-scoped source over io with the 5-step default budget", async () => {
+    const io = fakeIo({
+      readFile: (path) => (path === "pr.diff" ? DIFF : `content of ${path}`),
+    });
+    const pipeline = okPipeline();
+    await runReviewCli(["--diff-file", "pr.diff", "--source-root", "root"], {}, io, pipeline);
+    const input = inputOf(pipeline);
+    expect(input.finderMaxSteps).toBe(5);
+    expect(input.onFinderStep).toBeDefined();
+    // The provider serves allowlisted reads through io.readFile...
+    await expect(
+      Promise.resolve(input.source?.({ path: "src/a.ts" })),
+    ).resolves.toBe(`content of ${join("root", "src/a.ts")}`);
+    // ...and refuses paths outside the diff.
+    await expect(
+      Promise.resolve(input.source?.({ path: "../secrets.env" })),
+    ).resolves.toContain("not part of the reviewed diff");
+  });
+
+  it("skips the source entirely when the diff yields no reviewable paths", async () => {
+    const io = fakeIo({ readStdin: () => "--- a/x.ts\n+++ /dev/null\n-x" });
+    const pipeline = okPipeline();
+    await runReviewCli(["--source-root", "root"], {}, io, pipeline);
+    const input = inputOf(pipeline);
+    expect("source" in input).toBe(false);
+    expect("finderMaxSteps" in input).toBe(false);
+    expect("onFinderStep" in input).toBe(false);
+  });
+
+  it("honors a valid REVIEW_FINDER_MAX_STEPS override", async () => {
+    const pipeline = okPipeline();
+    await runReviewCli(
+      ["--source-root", "root"],
+      { REVIEW_FINDER_MAX_STEPS: "7" },
+      fakeIo({ readStdin: () => DIFF }),
+      pipeline,
+    );
+    expect(inputOf(pipeline).finderMaxSteps).toBe(7);
+  });
+
+  it.each(["abc", "0", "-3", "2.5"])(
+    "returns 1 for REVIEW_FINDER_MAX_STEPS=%s before invoking the pipeline",
+    async (bad) => {
+      const io = fakeIo({ readStdin: () => DIFF });
+      const pipeline = okPipeline();
+      const code = await runReviewCli(
+        ["--source-root", "root"],
+        { REVIEW_FINDER_MAX_STEPS: bad },
+        io,
+        pipeline,
+      );
+      expect(code).toBe(1);
+      expect(io.errors.at(0)).toContain("REVIEW_FINDER_MAX_STEPS");
+      expect(pipeline).not.toHaveBeenCalled();
+    },
+  );
+
+  it("ignores an invalid REVIEW_FINDER_MAX_STEPS when the diff yields no reviewable paths", async () => {
+    const pipeline = okPipeline();
+    const code = await runReviewCli(
+      ["--source-root", "root"],
+      { REVIEW_FINDER_MAX_STEPS: "abc" },
+      fakeIo({ readStdin: () => "--- a/x.ts\n+++ /dev/null\n-x" }),
+      pipeline,
+    );
+    expect(code).toBe(0);
+    expect("finderMaxSteps" in inputOf(pipeline)).toBe(false);
+  });
+
+  it("ignores an invalid REVIEW_FINDER_MAX_STEPS without the flag (legacy runs unchanged)", async () => {
+    const code = await runReviewCli(
+      [],
+      { REVIEW_FINDER_MAX_STEPS: "abc" },
+      fakeIo({ readStdin: () => DIFF }),
+      okPipeline(),
+    );
+    expect(code).toBe(0);
+  });
+
+  it("writes one monotonic stderr line per finder step with targets and tokens", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onFinderStep?.({
+        fileContextCalls: [{ path: "src/a.ts", startLine: 10, endLine: 80 }],
+        toolCalls: 1,
+        usage: { inputTokens: 100, outputTokens: 10, totalTokens: 110 },
+      });
+      input.onFinderStep?.({ fileContextCalls: [], toolCalls: 0, usage: {} });
+      input.onFinderStep?.({
+        fileContextCalls: [
+          { path: "src/a.ts", startLine: 5 },
+          { path: "src/a.ts", endLine: 8 },
+        ],
+        toolCalls: 2,
+        usage: { totalTokens: 50 },
+      });
+      return Promise.resolve(pipelineResult());
+    });
+    expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
+    expect(io.errors).toEqual([
+      "finder step 1: getFileContext src/a.ts:10-80 (tokens in=100 out=10 total=110)",
+      "finder step 2: no getFileContext call (tokens in=? out=? total=?)",
+      "finder step 3: getFileContext src/a.ts:5-end, getFileContext src/a.ts:1-8 (tokens in=? out=? total=50)",
+    ]);
+  });
+
+  it("strips control characters from the model-chosen path in the step line (impl-review F4)", async () => {
+    // An injection-steered model could otherwise embed a newline or an ANSI
+    // escape to forge or restyle telemetry lines in the Actions log.
+    const io = fakeIo({ readStdin: () => DIFF });
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onFinderStep?.({
+        fileContextCalls: [{ path: "src/a.ts\n\u001b[31mfinder step 99: forged\u007f" }],
+        toolCalls: 1,
+        usage: { totalTokens: 10 },
+      });
+      return Promise.resolve(pipelineResult());
+    });
+    expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
+    expect(io.errors).toEqual([
+      "finder step 1: getFileContext src/a.ts??[31mfinder step 99: forged? (tokens in=? out=? total=10)",
+    ]);
+  });
+
+  it("mentions --source-root in the usage message", async () => {
+    const io = fakeIo();
+    expect(await runReviewCli(["--bogus"], {}, io, okPipeline())).toBe(1);
+    expect(io.errors.at(0)).toContain("--source-root");
   });
 });

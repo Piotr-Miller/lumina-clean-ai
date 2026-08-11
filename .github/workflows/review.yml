@@ -36,6 +36,9 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          # Defense-in-depth for the finder's file-context tool: no persisted
+          # job token in .git/config — the gh steps authenticate via GH_TOKEN.
+          persist-credentials: false
 
       # Own step, continue-on-error: label removal must not kill the review,
       # and removing it at run start means re-adding retriggers cleanly.
@@ -74,6 +77,7 @@ jobs:
           api-key: ${{ secrets.OPENROUTER_API_KEY }}
           review-model: ${{ vars.OPENROUTER_REVIEW_MODEL }}
           judge-model: ${{ vars.OPENROUTER_JUDGE_MODEL }}
+          finder-max-steps: ${{ vars.REVIEW_FINDER_MAX_STEPS }}
           pr-title: ${{ github.event.pull_request.title }}
           pr-body: ${{ github.event.pull_request.body }}
           diff-file: ${{ runner.temp }}/pr.diff

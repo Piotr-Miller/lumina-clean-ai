@@ -1,4 +1,4 @@
-import { APICallError } from "ai";
+import { APICallError, type StepResult, type ToolSet } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_JUDGE_MODEL, DEFAULT_MODEL } from "./config.js";
@@ -8,12 +8,15 @@ import {
   computeDiffStats,
   DEFAULT_FINDER_TIMEOUT_MS,
   DEFAULT_JUDGE_TIMEOUT_MS,
+  describeFinderStep,
   DIFF_CAP_BYTES,
   DIFF_TRUNCATION_MARKER,
   runReviewPipeline,
+  type FinderStepInfo,
 } from "./pipeline.js";
 import { type JudgePromptInput } from "./prompts.js";
 import { RATE_LIMIT_DELAY_MS, TRANSIENT_DELAY_MS } from "./retry.js";
+import type { ReviewerOptions } from "./reviewer.js";
 import { CRITERIA } from "./scorecard.js";
 import type { Finding, JudgeResult, ReviewUnit, Scores } from "./schemas.js";
 
@@ -328,6 +331,17 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     expectInJitterRange(calls.at(0), TRANSIENT_DELAY_MS);
   });
 
+  it("omits finderTelemetry when the finder is injected via deps", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect("finderTelemetry" in result).toBe(false);
+  });
+
   it("gives the judge its own single retry (rate-limit delay) and rethrows the second failure", async () => {
     const { calls, sleep } = recordingSleep();
     const second = apiError(500);
@@ -345,5 +359,115 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     expect(judge).toHaveBeenCalledTimes(2);
     expect(calls).toHaveLength(1);
     expectInJitterRange(calls.at(0), RATE_LIMIT_DELAY_MS);
+  });
+});
+
+// Partial step shapes cast once: the pipeline only reads toolCalls and usage.
+const finderStep = (over: {
+  toolCalls?: { toolName: string; input: unknown }[];
+  usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+}): StepResult<ToolSet> =>
+  ({ toolCalls: over.toolCalls ?? [], usage: over.usage ?? {} }) as unknown as StepResult<ToolSet>;
+
+describe("describeFinderStep", () => {
+  it("extracts getFileContext targets, counts every tool call, and maps usage", () => {
+    const info = describeFinderStep(
+      finderStep({
+        toolCalls: [
+          { toolName: "getFileContext", input: { path: "src/a.ts", startLine: 3, endLine: 9 } },
+          { toolName: "getFileContext", input: { path: 42 } }, // malformed — skipped
+          { toolName: "otherTool", input: { path: "src/b.ts" } }, // not a context call
+        ],
+        usage: { inputTokens: 7 },
+      }),
+    );
+    expect(info.fileContextCalls).toEqual([{ path: "src/a.ts", startLine: 3, endLine: 9 }]);
+    expect(info.toolCalls).toBe(3);
+    expect(info.usage).toEqual({ inputTokens: 7, outputTokens: undefined, totalTokens: undefined });
+  });
+});
+
+describe("runReviewPipeline finder source + telemetry seam", () => {
+  const reviewOk = () => Promise.resolve({ summary: "s", findings: [] });
+  const finderOptionsOf = (createFinder: ReturnType<typeof vi.fn>): ReviewerOptions =>
+    createFinder.mock.calls[0]?.[0] as ReviewerOptions;
+
+  it("forwards source and finderMaxSteps to the finder factory together", async () => {
+    const source = () => "ctx";
+    const createFinder = vi.fn().mockReturnValue({ review: reviewOk });
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      source,
+      finderMaxSteps: 5,
+      deps: { createFinder, judge: () => Promise.resolve(judgeResult()) },
+    });
+    const options = finderOptionsOf(createFinder);
+    expect(options.source).toBe(source);
+    expect(options.maxSteps).toBe(5);
+  });
+
+  it("never forwards finderMaxSteps without a source (tool-less cost ceiling)", async () => {
+    const createFinder = vi.fn().mockReturnValue({ review: reviewOk });
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      finderMaxSteps: 5,
+      deps: { createFinder, judge: () => Promise.resolve(judgeResult()) },
+    });
+    const options = finderOptionsOf(createFinder);
+    expect(options.source).toBeUndefined();
+    expect(options.maxSteps).toBeUndefined();
+  });
+
+  it("accumulates finderTelemetry across both attempts of a retried finder and reports each step", async () => {
+    const { sleep } = recordingSleep();
+    const attemptSteps = [
+      finderStep({
+        toolCalls: [
+          { toolName: "getFileContext", input: { path: "src/a.ts", startLine: 1, endLine: 40 } },
+        ],
+        usage: { inputTokens: 100, outputTokens: 10, totalTokens: 110 },
+      }),
+      finderStep({ usage: { inputTokens: 120, outputTokens: 30, totalTokens: 150 } }),
+    ];
+    let attempt = 0;
+    const createFinder = vi.fn().mockImplementation((options: ReviewerOptions) => ({
+      review: () => {
+        for (const step of attemptSteps) options.onStepEnd?.(step);
+        attempt += 1;
+        return attempt === 1
+          ? Promise.reject(apiError(503))
+          : Promise.resolve({ summary: "s", findings: [] });
+      },
+    }));
+    const infos: FinderStepInfo[] = [];
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      source: () => "ctx",
+      finderMaxSteps: 2,
+      onFinderStep: (info) => infos.push(info),
+      deps: { createFinder, judge: () => Promise.resolve(judgeResult()), retrySleep: sleep },
+    });
+    // 2 steps × 2 attempts: real spend — steps deliberately exceeds the
+    // per-attempt cap of 2 (the SDK's stepNumber resets on the retry attempt).
+    expect(result.finderTelemetry).toEqual({
+      steps: 4,
+      toolCalls: 2,
+      inputTokens: 440,
+      outputTokens: 80,
+      totalTokens: 520,
+    });
+    expect(infos).toHaveLength(4);
+    expect(infos.at(0)?.fileContextCalls).toEqual([{ path: "src/a.ts", startLine: 1, endLine: 40 }]);
+    expect(infos.at(1)?.fileContextCalls).toEqual([]);
+  });
+
+  it("omits finderTelemetry when no steps were observed", async () => {
+    const createFinder = vi.fn().mockReturnValue({ review: reviewOk });
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      source: () => "ctx",
+      deps: { createFinder, judge: () => Promise.resolve(judgeResult()) },
+    });
+    expect("finderTelemetry" in result).toBe(false);
   });
 });

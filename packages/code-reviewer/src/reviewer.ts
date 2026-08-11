@@ -1,5 +1,5 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { isStepCount, Output, tool, ToolLoopAgent } from "ai";
+import { isStepCount, Output, tool, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 import { z } from "zod";
 
 import { resolveConfig } from "./config.js";
@@ -43,6 +43,14 @@ export interface ReviewerOptions {
   /** Agent loop cap (cost guard); a positive integer, defaults to 8 steps. */
   maxSteps?: number;
   /**
+   * Observes each agent loop step (LLM call) as it completes — the step
+   * carries the step's tool calls and token usage. Forwarded to the
+   * underlying ToolLoopAgent's `onStepEnd` (`onStepFinish` is its deprecated
+   * alias in the installed SDK). Purely observational: the review contract is
+   * unchanged.
+   */
+  onStepEnd?: (step: StepResult<ToolSet>) => void;
+  /**
    * Trusted repository-maintainer review rules, appended to the system
    * instructions (never fenced with untrusted data). Source it from trusted
    * ground only — e.g. the base branch, not the PR head.
@@ -79,6 +87,19 @@ export async function fetchBoundedContext(
 }
 
 /**
+ * Per-step guard for the agent loop, extracted pure for testability: the
+ * final allowed step must carry no tools, or a fetch-happy model spends the
+ * whole budget on getFileContext and the run dies with "No output generated"
+ * — observed live in phase-3 scratch runs (sonnet-5 used all 5, then all 8
+ * steps on fetches). A tool-less final step forces the structured review out
+ * of whatever context is already gathered. No-op for tool-less reviewers.
+ */
+export const prepareFinalStep =
+  (hasSource: boolean, maxSteps: number) =>
+  ({ stepNumber }: { stepNumber: number }): { activeTools?: never[] } =>
+    hasSource && stepNumber >= maxSteps - 1 ? { activeTools: [] } : {};
+
+/**
  * Factory (deliberately not a singleton): each call builds a fresh
  * ToolLoopAgent so a future orchestrator can fan out one reviewer per lens.
  * Throws (never exits) when no API key is resolvable.
@@ -112,13 +133,19 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // single retry authority in the CI pipeline, keeping cost predictable.
     maxRetries: 0,
     stopWhen: isStepCount(maxSteps),
+    prepareStep: prepareFinalStep(hasSource, maxSteps),
     tools: hasSource
       ? {
           getFileContext: tool({
             description:
               "Fetch source-file context around the code under review. Use it when surrounding code would change a verdict.",
             inputSchema: z.object({
-              path: z.string().describe("File path exactly as given in the review unit"),
+              // The review unit's diff headers show b/-prefixed paths while
+              // the diff-scoped allowlist stores stripped ones — the model
+              // must request the stripped form or every fetch misses.
+              path: z
+                .string()
+                .describe("Repository-relative file path without git's a/ or b/ prefix (e.g. src/x.ts)"),
               startLine: z.number().int().min(1).optional().describe("First line of interest (1-based)"),
               endLine: z.number().int().min(1).optional().describe("Last line of interest (1-based)"),
             }),
@@ -133,6 +160,7 @@ export function createReviewer(options: ReviewerOptions = {}) {
       prompt: buildPrompt(unit),
       abortSignal: callOptions.abortSignal,
       timeout: callOptions.timeoutMs,
+      onStepEnd: options.onStepEnd,
     });
     return { ...result.output, findings: normalizeFindings(unit, result.output.findings) };
   }

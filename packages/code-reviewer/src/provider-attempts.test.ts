@@ -86,6 +86,48 @@ describe("finder tool surface (cost ceiling, impl-review-phase-1 F3)", () => {
   });
 });
 
+// A model that answers with another fetch whenever tools are offered — the
+// fetch-happy behavior observed live in phase 3 (sonnet-5 burned all 5, then
+// all 8 steps on getFileContext and the run died with "No output generated").
+const toolCallGeneration = () => ({
+  content: [
+    {
+      type: "tool-call" as const,
+      toolCallId: "call-1",
+      toolName: "getFileContext",
+      input: JSON.stringify({ path: "src/a.ts" }),
+    },
+  ],
+  finishReason: { unified: "tool-calls" as const },
+  usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+  warnings: [],
+});
+
+describe("final-step guard at the provider boundary (impl-review-phase-3 F2)", () => {
+  it("a fetch-happy model still emits the review: the last allowed step carries no tools", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockImplementation((request: { tools?: unknown[] }) =>
+        Promise.resolve(
+          (request.tools ?? []).length > 0 ? toolCallGeneration() : successfulGeneration(),
+        ),
+      );
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const reviewer = createReviewer({ apiKey: "test-key", source: () => "ctx", maxSteps: 3 });
+    const result = await reviewer.review({ kind: "diff", diff: "--- a\n+++ b" });
+    expect(result.findings).toEqual([]);
+    // Steps 1..2 offer the tool (and this model spends them on fetches); the
+    // final allowed step must offer none, forcing the structured review out
+    // within the maxSteps budget. Without prepareFinalStep wired into the
+    // agent this loop ends tool-calling at the step cap with no output.
+    expect(doGenerate).toHaveBeenCalledTimes(3);
+    const toolCounts = doGenerate.mock.calls.map(
+      (call) => ((call[0] as { tools?: unknown[] }).tools ?? []).length,
+    );
+    expect(toolCounts).toEqual([1, 1, 0]);
+  });
+});
+
 // Schema-valid judge generation for full-pipeline wiring tests.
 const judgeGeneration = () => ({
   content: [
