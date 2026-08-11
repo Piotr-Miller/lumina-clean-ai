@@ -75,7 +75,13 @@ jobs:
         uses: ./.github/actions/ai-review
         with:
           api-key: ${{ secrets.OPENROUTER_API_KEY }}
-          review-model: ${{ vars.OPENROUTER_REVIEW_MODEL }}
+          # ⚠️ SCRATCH-ONLY PIN — DO NOT MERGE. Phase 4 live observation for
+          # change `finder-tool-loop-evals`: the repository variable
+          # OPENROUTER_REVIEW_MODEL still reads z-ai/glm-4.6, and it outranks
+          # DEFAULT_MODEL, so pinning the literal here is the only way to run a
+          # candidate against a real PR without changing production first.
+          # This branch is closed and deleted unmerged after the observation.
+          review-model: anthropic/claude-haiku-4.5
           judge-model: ${{ vars.OPENROUTER_JUDGE_MODEL }}
           finder-max-steps: ${{ vars.REVIEW_FINDER_MAX_STEPS }}
           pr-title: ${{ github.event.pull_request.title }}

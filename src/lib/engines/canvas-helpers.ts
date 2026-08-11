@@ -72,3 +72,12 @@ export async function flattenToRgbJpeg(file: File): Promise<File> {
   const base = file.name.replace(/\.[^./\\]+$/, "");
   return new File([blob], `${base || "photo"}.jpg`, { type: "image/jpeg" });
 }
+
+/**
+ * Re-encode a rendered canvas for the before/after thumbnail strip, where the
+ * payload travels over the wire on every comparison drag and size matters more
+ * than fidelity at thumbnail scale.
+ */
+export function encodeThumbnailJpeg(canvas: HTMLCanvasElement): Promise<Blob> {
+  return canvasToBlob(canvas, "image/jpeg", 0.5);
+}
