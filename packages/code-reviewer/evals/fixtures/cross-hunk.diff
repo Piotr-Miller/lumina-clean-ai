@@ -1,0 +1,25 @@
+diff --git a/src/lib/engines/canvas-helpers.ts b/src/lib/engines/canvas-helpers.ts
+index fb16dad..e628e4c 100644
+--- a/src/lib/engines/canvas-helpers.ts
++++ b/src/lib/engines/canvas-helpers.ts
+@@ -44,6 +44,20 @@ export function aspectRatio(canvas: HTMLCanvasElement): number {
+   return canvas.height === 0 ? 1 : canvas.width / canvas.height;
+ }
+ 
++/**
++ * Flattens for the upload path, where payload size matters more than fidelity
++ * on the largest bitmaps we ever touch.
++ */
++export function flattenForUpload(canvas: HTMLCanvasElement, options: FlattenOptions = {}): string {
++  const context = canvas.getContext("2d");
++  if (context === null) throw new Error("2D context unavailable");
++  context.globalCompositeOperation = "destination-over";
++  context.fillStyle = options.background ?? "#000000";
++  context.fillRect(0, 0, canvas.width, canvas.height);
++  context.globalCompositeOperation = "source-over";
++  return canvas.toDataURL("image/jpeg", 0.5);
++}
++
+ /** Longest edge the upload path will accept before downscaling. */
+ export const MAX_UPLOAD_EDGE = 4096;
+ 

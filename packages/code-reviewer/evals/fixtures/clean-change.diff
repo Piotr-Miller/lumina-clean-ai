@@ -1,0 +1,30 @@
+diff --git a/src/lib/format-bytes.ts b/src/lib/format-bytes.ts
+index c66d5c0..7b8946c 100644
+--- a/src/lib/format-bytes.ts
++++ b/src/lib/format-bytes.ts
+@@ -4,15 +4,18 @@ const UNITS = ["B", "kB", "MB", "GB"] as const;
+ 
+ /**
+  * Formats a byte count for display, e.g. 1536 -> "1.5 kB".
++ *
++ * Base-10 units (1 kB = 1000 B) to match what the OS file browser shows the
++ * user, rather than base-2 KiB.
+  */
+ export function formatBytes(bytes: number): string {
+   if (!Number.isFinite(bytes) || bytes < 0) return "—";
+-  let n = bytes;
+-  let i = 0;
+-  while (n >= 1000 && i < UNITS.length - 1) {
+-    n /= 1000;
+-    i += 1;
++  let value = bytes;
++  let unitIndex = 0;
++  while (value >= 1000 && unitIndex < UNITS.length - 1) {
++    value /= 1000;
++    unitIndex += 1;
+   }
+-  const rounded = i === 0 ? String(n) : n.toFixed(1);
+-  return `${rounded} ${UNITS[i]}`;
++  const rounded = unitIndex === 0 ? String(value) : value.toFixed(1);
++  return `${rounded} ${UNITS[unitIndex]}`;
+ }

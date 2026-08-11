@@ -205,10 +205,7 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
 
   it("retries a retryable finder failure exactly once, after the transient delay", async () => {
     const { calls, sleep } = recordingSleep();
-    const finder = vi
-      .fn()
-      .mockRejectedValueOnce(apiError(503))
-      .mockResolvedValueOnce({ summary: "s", findings: [] });
+    const finder = vi.fn().mockRejectedValueOnce(apiError(503)).mockResolvedValueOnce({ summary: "s", findings: [] });
     const result = await runReviewPipeline({
       diff: SMALL_DIFF,
       deps: { finder, judge: () => Promise.resolve(judgeResult()), retrySleep: sleep },
@@ -242,10 +239,7 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
   it("reports retried passes through onRetry with the pass name and bounded delay", async () => {
     const events: { pass: "finder" | "judge"; error: unknown; delayMs: number }[] = [];
     const { sleep } = recordingSleep();
-    const finder = vi
-      .fn()
-      .mockRejectedValueOnce(apiError(503))
-      .mockResolvedValueOnce({ summary: "s", findings: [] });
+    const finder = vi.fn().mockRejectedValueOnce(apiError(503)).mockResolvedValueOnce({ summary: "s", findings: [] });
     const judge = vi.fn().mockRejectedValueOnce(apiError(429)).mockResolvedValueOnce(judgeResult());
     await runReviewPipeline({
       diff: SMALL_DIFF,
@@ -275,9 +269,7 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     const authError = apiError(401);
     const finder = vi.fn().mockRejectedValue(authError);
     const judge = vi.fn();
-    await expect(runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge } })).rejects.toBe(
-      authError,
-    );
+    await expect(runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge } })).rejects.toBe(authError);
     expect(finder).toHaveBeenCalledTimes(1);
     expect(judge).not.toHaveBeenCalled();
   });
@@ -322,9 +314,9 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     const timeout = () => new DOMException("timed out", "TimeoutError");
     const finder = vi.fn().mockRejectedValueOnce(timeout()).mockRejectedValueOnce(timeout());
     const judge = vi.fn();
-    await expect(
-      runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge, retrySleep: sleep } }),
-    ).rejects.toThrow("timed out");
+    await expect(runReviewPipeline({ diff: SMALL_DIFF, deps: { finder, judge, retrySleep: sleep } })).rejects.toThrow(
+      "timed out",
+    );
     expect(finder).toHaveBeenCalledTimes(2);
     expect(judge).not.toHaveBeenCalled();
     expect(calls).toHaveLength(1);
@@ -366,8 +358,16 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
 const finderStep = (over: {
   toolCalls?: { toolName: string; input: unknown }[];
   usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+  providerMetadata?: unknown;
 }): StepResult<ToolSet> =>
-  ({ toolCalls: over.toolCalls ?? [], usage: over.usage ?? {} }) as unknown as StepResult<ToolSet>;
+  ({
+    toolCalls: over.toolCalls ?? [],
+    usage: over.usage ?? {},
+    providerMetadata: over.providerMetadata,
+  }) as unknown as StepResult<ToolSet>;
+
+/** Shorthand for the provider bag OpenRouter fills under usage accounting. */
+const withCost = (cost: unknown): unknown => ({ openrouter: { usage: { cost } } });
 
 describe("describeFinderStep", () => {
   it("extracts getFileContext targets, counts every tool call, and maps usage", () => {
@@ -384,6 +384,33 @@ describe("describeFinderStep", () => {
     expect(info.fileContextCalls).toEqual([{ path: "src/a.ts", startLine: 3, endLine: 9 }]);
     expect(info.toolCalls).toBe(3);
     expect(info.usage).toEqual({ inputTokens: 7, outputTokens: undefined, totalTokens: undefined });
+  });
+
+  it("reads the provider-reported cost out of the usage-accounting metadata", () => {
+    expect(describeFinderStep(finderStep({ providerMetadata: withCost(0.0123) })).cost).toBe(0.0123);
+  });
+
+  it("keeps a zero cost — a free step is data, not a missing reading", () => {
+    const info = describeFinderStep(finderStep({ providerMetadata: withCost(0) }));
+    expect(info.cost).toBe(0);
+    expect("cost" in info).toBe(true);
+  });
+
+  it("omits the cost key entirely when the provider reported no usage accounting", () => {
+    // The absent case must stay distinguishable from a genuine 0, or an
+    // un-instrumented run reads as "this model was free".
+    expect("cost" in describeFinderStep(finderStep({}))).toBe(false);
+  });
+
+  it.each([
+    ["metadata from another provider", { anthropic: { usage: { cost: 1 } } }],
+    ["an openrouter bag with no usage", { openrouter: { provider: "x" } }],
+    ["usage with no cost", { openrouter: { usage: { totalTokens: 10 } } }],
+    ["a non-numeric cost", withCost("0.02")],
+    ["a non-finite cost", withCost(Number.NaN)],
+    ["a null usage bag", { openrouter: { usage: null } }],
+  ])("degrades to no cost on %s", (_label, providerMetadata) => {
+    expect("cost" in describeFinderStep(finderStep({ providerMetadata }))).toBe(false);
   });
 });
 
@@ -422,9 +449,7 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
     const { sleep } = recordingSleep();
     const attemptSteps = [
       finderStep({
-        toolCalls: [
-          { toolName: "getFileContext", input: { path: "src/a.ts", startLine: 1, endLine: 40 } },
-        ],
+        toolCalls: [{ toolName: "getFileContext", input: { path: "src/a.ts", startLine: 1, endLine: 40 } }],
         usage: { inputTokens: 100, outputTokens: 10, totalTokens: 110 },
       }),
       finderStep({ usage: { inputTokens: 120, outputTokens: 30, totalTokens: 150 } }),
@@ -434,9 +459,7 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
       review: () => {
         for (const step of attemptSteps) options.onStepEnd?.(step);
         attempt += 1;
-        return attempt === 1
-          ? Promise.reject(apiError(503))
-          : Promise.resolve({ summary: "s", findings: [] });
+        return attempt === 1 ? Promise.reject(apiError(503)) : Promise.resolve({ summary: "s", findings: [] });
       },
     }));
     const infos: FinderStepInfo[] = [];

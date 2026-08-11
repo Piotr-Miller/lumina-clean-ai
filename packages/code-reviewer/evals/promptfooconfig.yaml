@@ -150,3 +150,24 @@ tests:
       - type: javascript
         value: file://./assertions.mjs:reviewMustFail
         metric: review_fails
+
+  # TOOL-ENABLED. `fixtureRoot` is what switches the finder from a single
+  # generation to a real getFileContext loop, and it is a per-CASE var because
+  # tool-enablement varies by case, not by model.
+  #
+  # The planted flaw is the hardcoded 0.5 quality at post-change line 58: the
+  # diff adds flattenForUpload, and NOTHING inside the hunk (or its context)
+  # mentions JPEG_QUALITY. Knowing the change is wrong requires reading the
+  # module header + the constant, which live only OUTSIDE the hunk — so a model
+  # that never fetches has no way to link it to the single-source contract.
+  - description: Cross-hunk contract violation, knowable only by reading outside the hunk (post-change line 58)
+    vars:
+      diff: file://./fixtures/cross-hunk.diff
+      fixtureRoot: ./fixtures/cross-hunk
+      expectedIssues:
+        - label: hardcoded quality bypasses the shared JPEG_QUALITY constant
+          patterns:
+            - "JPEG_QUALITY"
+            - "single[- ]source"
+            - "hardcod"
+            - "shared constant"

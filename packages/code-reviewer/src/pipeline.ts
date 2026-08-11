@@ -1,4 +1,4 @@
-import type { StepResult, ToolSet } from "ai";
+import type { ProviderMetadata, StepResult, ToolSet } from "ai";
 
 import { resolveModels } from "./config.js";
 import { mergeFindings } from "./findings.js";
@@ -13,14 +13,7 @@ import {
   type SourceProvider,
 } from "./reviewer.js";
 import { assignFindingIds } from "./scorecard.js";
-import type {
-  DiffStats,
-  FinderTelemetry,
-  JudgeResult,
-  PipelineResult,
-  ReviewResult,
-  ReviewUnit,
-} from "./schemas.js";
+import type { DiffStats, FinderTelemetry, JudgeResult, PipelineResult, ReviewResult, ReviewUnit } from "./schemas.js";
 
 // Two-pass orchestration in plain code: finder (full diff) → normalize +
 // merge + assign F1..Fn → judge (findings + rubric + PR metadata) → result.
@@ -75,9 +68,7 @@ export function computeDiffStats(diff: string): DiffStats {
 function capDiff(diff: string): { diff: string; truncated: boolean } {
   const bytes = new TextEncoder().encode(diff);
   if (bytes.length <= DIFF_CAP_BYTES) return { diff, truncated: false };
-  const capped = new TextDecoder("utf-8", { fatal: false })
-    .decode(bytes.slice(0, DIFF_CAP_BYTES))
-    .replace(/�+$/u, "");
+  const capped = new TextDecoder("utf-8", { fatal: false }).decode(bytes.slice(0, DIFF_CAP_BYTES)).replace(/�+$/u, "");
   return { diff: capped + DIFF_TRUNCATION_MARKER, truncated: true };
 }
 
@@ -125,25 +116,50 @@ export interface FinderStepInfo {
   toolCalls: number;
   /** Token usage of the step's generation, where the provider reported it. */
   usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+  /**
+   * Provider-reported cost of the step in USD. Present only when the provider
+   * actually reported it — OpenRouter does so under usage accounting, which
+   * `createReviewer` enables. Token counts are a proxy that needs a price
+   * table and goes stale; this is the figure the provider billed.
+   */
+  cost?: number;
 }
+
+/**
+ * Exact per-step cost out of the provider's metadata bag.
+ *
+ * `providerMetadata` is typed `Record<string, JSONObject>` — the SDK makes no
+ * promise about the value shape, so narrow every hop instead of trusting it,
+ * same discipline as `asFileContextTarget` above. Absent metadata, a provider
+ * that reports no cost, or a non-finite value all degrade to `undefined`
+ * rather than a fabricated 0, which would read as "this step was free".
+ */
+const asStepCost = (metadata: ProviderMetadata | undefined): number | undefined => {
+  const openrouter: unknown = metadata?.openrouter;
+  if (typeof openrouter !== "object" || openrouter === null) return undefined;
+  if (!("usage" in openrouter)) return undefined;
+  const usage: unknown = openrouter.usage;
+  if (typeof usage !== "object" || usage === null) return undefined;
+  if (!("cost" in usage)) return undefined;
+  const cost: unknown = usage.cost;
+  return typeof cost === "number" && Number.isFinite(cost) ? cost : undefined;
+};
 
 // The tool input is model-chosen and reaches us untyped — narrow it instead
 // of trusting the schema validated elsewhere.
-const asFileContextTarget = (
-  input: unknown,
-): { path: string; startLine?: number; endLine?: number } | undefined => {
+const asFileContextTarget = (input: unknown): { path: string; startLine?: number; endLine?: number } | undefined => {
   if (typeof input !== "object" || input === null) return undefined;
   if (!("path" in input) || typeof input.path !== "string") return undefined;
   return {
     path: input.path,
-    startLine:
-      "startLine" in input && typeof input.startLine === "number" ? input.startLine : undefined,
+    startLine: "startLine" in input && typeof input.startLine === "number" ? input.startLine : undefined,
     endLine: "endLine" in input && typeof input.endLine === "number" ? input.endLine : undefined,
   };
 };
 
 /** Extract the small per-step description from the SDK's step result. */
 export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
+  const cost = asStepCost(step.providerMetadata);
   return {
     fileContextCalls: step.toolCalls.flatMap((call) => {
       if (call.toolName !== "getFileContext") return [];
@@ -156,6 +172,9 @@ export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
       outputTokens: step.usage.outputTokens,
       totalTokens: step.usage.totalTokens,
     },
+    // Key absent rather than undefined-valued when the provider reported
+    // nothing, matching the finderTelemetry convention below.
+    ...(cost === undefined ? {} : { cost }),
   };
 }
 
@@ -236,9 +255,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
       onStepEnd: observeFinderStep,
       onOutputRepair: input.onOutputRepair,
     }).review;
-  const judge =
-    input.deps?.judge ??
-    createJudge({ apiKey: input.overrides?.apiKey, model: models.judgeModel }).judge;
+  const judge = input.deps?.judge ?? createJudge({ apiKey: input.overrides?.apiKey, model: models.judgeModel }).judge;
 
   const retryOptions = (pass: "finder" | "judge") => ({
     sleep: input.deps?.retrySleep,
@@ -254,11 +271,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   const findings = assignFindingIds(mergeFindings(reviewResult.findings));
 
   const judgeResult = await withOneRetry(
-    () =>
-      judge(
-        { findings, prTitle: input.prTitle, prBody, diffStats },
-        { timeoutMs: timeouts.judgeTimeoutMs },
-      ),
+    () => judge({ findings, prTitle: input.prTitle, prBody, diffStats }, { timeoutMs: timeouts.judgeTimeoutMs }),
     retryOptions("judge"),
   );
 

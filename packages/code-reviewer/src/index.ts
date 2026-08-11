@@ -1,6 +1,7 @@
 // Pure barrel — the package's public surface. No executable statements: any
 // import-time side effect here would break embedders (promptfoo imports this).
 
+export { DEFAULT_FINDER_MAX_STEPS } from "./cli.js";
 export { DEFAULT_JUDGE_MODEL, DEFAULT_MODEL, resolveConfig, resolveModels } from "./config.js";
 export type { ConfigOverrides, ModelOverrides, ResolvedConfig, ResolvedModels } from "./config.js";
 export { findingKey, mergeFindings, normalizeFindings, severityRank } from "./findings.js";
@@ -25,7 +26,12 @@ export { createReviewer } from "./reviewer.js";
 export type { ReviewCallOptions, Reviewer, ReviewerOptions, SourceProvider } from "./reviewer.js";
 export { assignFindingIds, CRITERIA, validateJudgeReferences } from "./scorecard.js";
 export type { ValidatedJudgeOutput } from "./scorecard.js";
-export { createDiffScopedSource, MAX_LISTED_PATHS, parseDiffPaths } from "./source-provider.js";
+export {
+  createDiffScopedSource,
+  createDiffScopedSourceForDiff,
+  MAX_LISTED_PATHS,
+  parseDiffPaths,
+} from "./source-provider.js";
 export type { DiffScopedSourceOptions } from "./source-provider.js";
 export {
   categorySchema,

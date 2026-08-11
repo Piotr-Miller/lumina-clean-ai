@@ -145,3 +145,33 @@ export function createDiffScopedSource(options: DiffScopedSourceOptions): Source
     return slice.join("\n");
   };
 }
+
+/**
+ * The full assembly of a diff-scoped source, shared by every consumer so the
+ * allowlist is always derived the same way: post-change paths out of the
+ * diff, then the containment wiring above.
+ *
+ * `undefined` means "no source" rather than an empty allowlist: a diff with no
+ * post-change paths (deletions only) has nothing the tool could ever serve,
+ * and attaching a tool that can only refuse would cost loop steps for nothing
+ * — the caller should stay tool-less instead.
+ *
+ * Deliberately still pure over injected fs primitives, like the rest of this
+ * module: the CLI passes its `CliIo` members (kept hermetic by cli.test.ts),
+ * the promptfoo provider passes `node:fs`. Sharing THIS function is what keeps
+ * a future hardening of the allowlist derivation from reaching CI but not the
+ * evals.
+ */
+export function createDiffScopedSourceForDiff(options: {
+  /** Unified diff the allowlist is derived from — pass the FULL diff, never a truncated one. */
+  diff: string;
+  root: string;
+  readFile: (path: string) => string;
+  realpath: (path: string) => string;
+  isRegularFile: (path: string) => boolean;
+}): SourceProvider | undefined {
+  const { diff, ...fs } = options;
+  const allowedPaths = parseDiffPaths(diff);
+  if (allowedPaths.size === 0) return undefined;
+  return createDiffScopedSource({ allowedPaths, ...fs });
+}

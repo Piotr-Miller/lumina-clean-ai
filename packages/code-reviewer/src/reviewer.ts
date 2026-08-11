@@ -131,7 +131,14 @@ export function createReviewer(options: ReviewerOptions = {}) {
   const hasSource = options.source !== undefined;
 
   const agent = new ToolLoopAgent({
-    model: openrouter(model),
+    // Usage accounting is OPT-IN: the provider only puts `usage` (and with it
+    // the exact `cost`) on providerMetadata when the request carries
+    // `usage: { include: true }` (verified in the installed provider — the
+    // request body reads `usage: this.settings.usage`). Without this flag
+    // describeFinderStep's `cost` is permanently undefined and every eval row
+    // reports 0, which is exactly the blind spot #119 shipped with. Free:
+    // accounting adds response fields, not tokens.
+    model: openrouter(model, { usage: { include: true } }),
     instructions: buildInstructions(lens, {
       fileContextTool: hasSource,
       projectContext: options.projectContext,
@@ -151,9 +158,7 @@ export function createReviewer(options: ReviewerOptions = {}) {
               // The review unit's diff headers show b/-prefixed paths while
               // the diff-scoped allowlist stores stripped ones — the model
               // must request the stripped form or every fetch misses.
-              path: z
-                .string()
-                .describe("Repository-relative file path without git's a/ or b/ prefix (e.g. src/x.ts)"),
+              path: z.string().describe("Repository-relative file path without git's a/ or b/ prefix (e.g. src/x.ts)"),
               startLine: z.number().int().min(1).optional().describe("First line of interest (1-based)"),
               endLine: z.number().int().min(1).optional().describe("Last line of interest (1-based)"),
             }),
