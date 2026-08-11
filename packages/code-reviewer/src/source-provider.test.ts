@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   createDiffScopedSource,
@@ -369,5 +369,61 @@ describe("createDiffScopedSourceForDiff — the shared CI/eval assembly", () => 
     // deletions-only diff must produce no source at all, not an empty one.
     expect(build(DELETED_ONLY)).toBeUndefined();
     expect(build("")).toBeUndefined();
+  });
+});
+
+describe("createDiffScopedSource — outcome reporting (impl-review-phase-1 F4)", () => {
+  const results: { path: string; delivered: boolean }[] = [];
+  const sourceWith = (fs: FakeFs) =>
+    createDiffScopedSource({
+      allowedPaths: new Set(["src/a.ts"]),
+      root: ROOT,
+      realpath: (path) => fs.resolves?.[path] ?? path,
+      isRegularFile: (path) => !(fs.notRegular ?? []).includes(path),
+      readFile: (path) => {
+        const content = fs.files?.[path];
+        if (content === undefined) throw new Error("ENOENT");
+        return content;
+      },
+      onResult: (result) => results.push(result),
+    });
+
+  beforeEach(() => {
+    results.length = 0;
+  });
+
+  it("reports delivered for real content", () => {
+    expect(sourceWith({ files: { [join(ROOT, "src/a.ts")]: "l1\nl2" } })({ path: "src/a.ts" })).toBe("l1\nl2");
+    expect(results).toEqual([{ path: "src/a.ts", delivered: true }]);
+  });
+
+  it("reports delivered even when the content itself looks like a refusal", () => {
+    // The exact collision that killed the string-sniffing approach: a file
+    // whose first line is the quoted requested path.
+    const content = `"src/a.ts" is not part of the reviewed diff, so no context is available for it.`;
+    const result = sourceWith({ files: { [join(ROOT, "src/a.ts")]: content } })({ path: "src/a.ts" });
+    expect(result).toBe(content);
+    expect(results).toEqual([{ path: "src/a.ts", delivered: true }]);
+  });
+
+  const refusalCases: [string, { path: string; startLine?: number }, FakeFs][] = [
+    ["an unlisted path", { path: "src/other.ts" }, {}],
+    ["an unreadable file", { path: "src/a.ts" }, {}],
+    ["a non-regular file", { path: "src/a.ts" }, { notRegular: [join(ROOT, "src/a.ts")] }],
+    // Neither of these puts evidence in front of the model, so neither counts
+    // as proof that the model read anything.
+    ["an empty file", { path: "src/a.ts" }, { files: { [join(ROOT, "src/a.ts")]: "" } }],
+    ["an out-of-range slice", { path: "src/a.ts", startLine: 9 }, { files: { [join(ROOT, "src/a.ts")]: "l1" } }],
+  ];
+
+  it.each(refusalCases)("reports refused for %s", (_label, request, fs) => {
+    expect(typeof sourceWith(fs)(request)).toBe("string");
+    expect(results).toEqual([{ path: request.path, delivered: false }]);
+  });
+
+  it("stays optional — a source without onResult still serves and refuses", () => {
+    const source = makeSource(["src/a.ts"], { files: { [join(ROOT, "src/a.ts")]: "l1" } });
+    expect(source({ path: "src/a.ts" })).toBe("l1");
+    expect(source({ path: "nope.ts" })).toContain("not part of the reviewed diff");
   });
 });

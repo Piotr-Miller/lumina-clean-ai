@@ -498,15 +498,15 @@ guarded by a live observation.
 
 #### Automated
 
-- [x] 1.1 Config still validates (promptfoo validate)
-- [x] 1.2 Package typecheck passes with the fixture tree present
-- [x] 1.3 Targeted lint clean on touched eval files
-- [x] 1.4 Package unit tests pass (createFsDiffScopedSource + cost parser)
+- [x] 1.1 Config still validates (promptfoo validate) — edf3982
+- [x] 1.2 Package typecheck passes with the fixture tree present — edf3982
+- [x] 1.3 Targeted lint clean on touched eval files — edf3982
+- [x] 1.4 Package unit tests pass (createFsDiffScopedSource + cost parser) — edf3982
 
 #### Manual
 
-- [x] 1.5 Paid single-provider smoke run reports non-zero toolCalls for sonnet-5
-- [x] 1.6 Fixture tree serves content through createDiffScopedSource (no realpath/symlink refusal)
+- [x] 1.5 Paid single-provider smoke run reports non-zero toolCalls for sonnet-5 — edf3982
+- [x] 1.6 Fixture tree serves content through createDiffScopedSource (no realpath/symlink refusal) — edf3982
 - [ ] 1.7 Viewer shows the tool-enabled instruction variant for tool-enabled cases
 
 ### Phase 2: Grading surface

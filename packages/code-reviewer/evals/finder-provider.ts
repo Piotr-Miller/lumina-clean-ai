@@ -1,5 +1,5 @@
 import { readFileSync, realpathSync, statSync } from "node:fs";
-import { dirname, isAbsolute, resolve } from "node:path";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { ApiProvider, CallApiContextParams, ProviderOptions, ProviderResponse } from "promptfoo";
@@ -25,9 +25,37 @@ interface FinderProviderConfig {
 
 /** Fixture roots are authored relative to THIS directory, not the cwd promptfoo happens to run in. */
 const EVALS_DIR = dirname(fileURLToPath(import.meta.url));
+const FIXTURES_DIR = resolve(EVALS_DIR, "fixtures");
 
+/**
+ * Resolves a case's `fixtureRoot` and confines it to `evals/fixtures`.
+ *
+ * The root is what the diff-scoped allowlist is joined against, so it decides
+ * which files can be handed to an external model. Left unconstrained, an
+ * absolute path or a `../` walk (`"../../.."` reaches the repository root)
+ * plus a crafted diff would authorize arbitrary repository files for delivery
+ * — impl-review-phase-1 F2. Containment is checked on the REALPATH of both
+ * sides, so a fixture root that is itself a symlink out of the tree cannot
+ * slip past (`createDiffScopedSource` deliberately tolerates a symlinked root,
+ * which is exactly why this check cannot be lexical).
+ */
 export function resolveFixtureRoot(raw: string): string {
-  return isAbsolute(raw) ? raw : resolve(EVALS_DIR, raw);
+  const requested = isAbsolute(raw) ? raw : resolve(EVALS_DIR, raw);
+  let root: string;
+  let fixtures: string;
+  try {
+    root = realpathSync(requested);
+    fixtures = realpathSync(FIXTURES_DIR);
+  } catch {
+    throw new Error(`fixtureRoot "${raw}" does not exist under evals/fixtures.`);
+  }
+  const rel = relative(fixtures, root);
+  // "" means the fixtures directory itself — a root that broad would expose
+  // every other case's tree to whatever the diff happens to name.
+  if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) {
+    throw new Error(`fixtureRoot "${raw}" must name a directory INSIDE evals/fixtures.`);
+  }
+  return root;
 }
 
 /** What a tool-enabled row reports back to promptfoo, on success AND on error. */
@@ -47,29 +75,6 @@ export interface FinderTelemetry {
   totalTokens?: number;
   /** Provider-reported spend, summed across steps; absent when unreported. */
   cost?: number;
-}
-
-/**
- * Records, per tool call, whether real context reached the model.
- *
- * A tool CALL is not evidence: `createDiffScopedSource` answers an unlisted
- * path, a symlinked component, an unreadable file, an empty file, or an
- * out-of-range slice with a message rather than content, and the model is free
- * to guess the finding anyway. Every one of those answers opens with the
- * requested path in quotes (`"x" is not part of the reviewed diff…`), while a
- * real answer is a slice of the file — so that prefix is the discriminator.
- * Empty and out-of-range reads count as REFUSED on purpose: no evidence
- * reached the model either way.
- */
-export function instrumentSource(
-  source: SourceProvider,
-  onResult: (path: string, delivered: boolean) => void,
-): SourceProvider {
-  return async (request) => {
-    const result = await source(request);
-    onResult(request.path, !result.startsWith(`"${request.path}"`));
-    return result;
-  };
 }
 
 const sum = (a: number | undefined, b: number | undefined): number | undefined => (b === undefined ? a : (a ?? 0) + b);
@@ -119,25 +124,32 @@ export default class FinderProvider implements ApiProvider {
     const fixtureRoot = context?.vars.fixtureRoot;
     let source: SourceProvider | undefined;
     if (typeof fixtureRoot === "string" && fixtureRoot.length > 0) {
-      const root = resolveFixtureRoot(fixtureRoot);
+      let root: string;
+      try {
+        root = resolveFixtureRoot(fixtureRoot);
+      } catch (error) {
+        return { error: error instanceof Error ? error.message : String(error) };
+      }
       // The shipped CI assembly — same allowlist derivation and the same
-      // symlink containment that guards the real checkout.
-      const scoped = createDiffScopedSourceForDiff({
+      // symlink containment that guards the real checkout. The delivered /
+      // refused split is reported BY the source, which knows it exactly,
+      // rather than inferred from its prose (impl-review-phase-1 F4).
+      source = createDiffScopedSourceForDiff({
         diff,
         root,
         readFile: (path) => readFileSync(path, "utf8"),
         realpath: (path) => realpathSync(path),
         isRegularFile: (path) => statSync(path).isFile(),
+        onResult: ({ path, delivered }) => {
+          telemetry.requestedPaths.push(path);
+          (delivered ? telemetry.deliveredPaths : telemetry.refusedPaths).push(path);
+        },
       });
-      if (scoped === undefined) {
+      if (source === undefined) {
         return {
           error: `fixtureRoot "${fixtureRoot}" is set, but the diff declares no post-change paths, so the tool could never serve anything.`,
         };
       }
-      source = instrumentSource(scoped, (path, delivered) => {
-        telemetry.requestedPaths.push(path);
-        (delivered ? telemetry.deliveredPaths : telemetry.refusedPaths).push(path);
-      });
     }
 
     // Must mirror what createReviewer will actually send: with a source active
