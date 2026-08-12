@@ -251,9 +251,11 @@ rows, so the repair-rate figure the plan wanted as the argument against glm-4.6 
 harness did not reproduce the production drift — see `decision.md` § Caveats. This is a gap in the
 instrument, not evidence the drift is gone, and it moves the burden onto Phase 4's live run.
 
-## Phase 4 — Live validation (no flip yet)
+## Phase 4 — Live validation and no-change decision
 
-Uncommitted at time of writing; see the session hand-off note at the end.
+Commit `2caf9b8` (7 files). The outcome is a recorded NO-CHANGE: `z-ai/glm-4.6` stays the
+production finder by owner decision on 2026-08-12, so Phase 4 §2's flip was deliberately not
+executed. See `decision.md` § Final decision (no change).
 
 ### Evidence
 
