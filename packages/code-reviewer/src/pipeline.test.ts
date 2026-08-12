@@ -116,6 +116,21 @@ describe("capPlan", () => {
   it("handles an empty plan without marking it truncated", () => {
     expect(capPlan("")).toEqual({ plan: "", truncated: false });
   });
+
+  // Regression pin for the live re-calibration: at the original 40,000 this
+  // repo's own in-flight plan (47,217 chars, run 31631971640) truncated inside
+  // its `## Progress` section, so the pass would have judged plan adherence
+  // without ever seeing which steps were claimed done. Any future reduction
+  // below the observed real-world size has to break this test first.
+  it("accommodates a real in-flight plan of this repo's observed size", () => {
+    const OBSERVED_LIVE_PLAN_CHARS = 47_217;
+    expect(PLAN_CAP_CHARS).toBeGreaterThan(OBSERVED_LIVE_PLAN_CHARS);
+    expect(capPlan("p".repeat(OBSERVED_LIVE_PLAN_CHARS)).truncated).toBe(false);
+  });
+
+  it("keeps the marker text consistent with the configured cap", () => {
+    expect(PLAN_TRUNCATION_MARKER).toContain(PLAN_CAP_CHARS.toLocaleString("en-US"));
+  });
 });
 
 describe("computeDiffStats", () => {

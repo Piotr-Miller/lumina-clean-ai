@@ -487,7 +487,7 @@ Nothing to migrate. The feature is inert until `plan-file` is passed, so Phases 
 - [x] 1.9 Traversal-bearing or tree-absent override candidate is rejected as "no plan" — 368672f
 - [x] 1.10 A symlink `plan.md` (mode `120000`) is rejected and its target is never read — 368672f
 - [ ] 1.11 A plan-only PR skips the review step visibly, leaves labels and prior comment untouched, run stays green
-- [ ] 1.12 Actions log names the resolved plan (or its absence) and the filtered diff size
+- [x] 1.12 Actions log names the resolved plan (or its absence) and the filtered diff size — run [31631971640](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31631971640)
 
 ### Phase 2: The implementation-review agent
 

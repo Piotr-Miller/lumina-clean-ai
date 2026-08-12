@@ -91,13 +91,21 @@ function capProjectContext(text: string | undefined): string | undefined {
 // The plan is the implementation-review pass's ground truth and arrives from
 // the PR head, so it gets the same treatment as every other unbounded input:
 // an unbounded plan would dominate the context window and dilute attention
-// exactly as the diff cap prevents. 40,000 is measured, not round — the four
-// largest real plans in this repo run 20,784-30,874 chars, so it fits every
-// current plan with headroom while still bounding a pathological one. Unlike
-// capProjectContext this reports truncation, because a partial plan review
-// must never render as a complete one.
-export const PLAN_CAP_CHARS = 40_000;
-export const PLAN_TRUNCATION_MARKER = "\n[...plan truncated at 40,000 chars]";
+// exactly as the diff cap prevents. Unlike capProjectContext this reports
+// truncation, because a partial plan review must never render as a complete
+// one.
+//
+// 80,000 is calibrated on LIVE evidence, not on archived plans. The first
+// figure (40,000) came from the four largest plans in context/archive/
+// (20,784-30,874 chars) and looked generous — then the first real run of this
+// very feature reported planTruncated: true against its own plan at 47,217
+// chars (run 31631971640). An in-flight plan is much bigger than an archived
+// one: it carries a full Progress ledger and grows through review cycles. At
+// 40k the cut fell inside `## Progress`, so a pass would have judged adherence
+// without ever seeing which steps were claimed done. ~80k is roughly 20k
+// tokens, comfortable beside the 100KB diff cap.
+export const PLAN_CAP_CHARS = 80_000;
+export const PLAN_TRUNCATION_MARKER = "\n[...plan truncated at 80,000 chars]";
 
 // Exported for direct assertion: until the implementation-review pass lands
 // in phase 3 nothing consumes the capped text, so a result-level test can only
