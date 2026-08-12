@@ -263,13 +263,13 @@ executed. See `decision.md` § Final decision (no change).
 | --------- | ---------------------------------------------------------------------------------------------- |
 | 4.1       | 357 tests pass (unchanged by this phase)                                                       |
 | 4.2       | `tsc --noEmit` exit 0                                                                          |
-| 4.3       | **N/A pending the flip decision** — `config.ts` untouched, so its test is untouched            |
-| 4.4       | sonnet-5: 4 `getFileContext` calls, context delivered (proven by out-of-hunk quotation)        |
-| 4.5       | sonnet-5's findings are sane; **no envelope repair fired on any of the 8 live runs**           |
+| 4.3       | No-change branch of the criterion: `config.ts` + `config.test.ts` untouched (see F1)           |
+| 4.4       | **PARTIAL** — 4 calls logged; delivery INFERRED, not logged (see § Criterion 4.4 deviation)    |
+| 4.5       | sonnet-5's findings are sane; **no envelope repair fired on any of the 7 live runs**           |
 | 4.6       | Live cost recorded against a MATCHED glm-4.6 baseline on the identical diff                    |
 | 4.7       | All three scratch branches closed and deleted unmerged; `OPENROUTER_REVIEW_MODEL` NOT modified |
 
-### Live probes — eight runs across three scratch PRs
+### Live probes — seven runs across three scratch PRs
 
 All used a byte-identical planted hunk in `src/lib/engines/canvas-helpers.ts` (`encodeThumbnailJpeg`
 re-encoding at a hardcoded `0.5`, with the module's single-source contract and `JPEG_QUALITY` at
@@ -305,7 +305,7 @@ prompted an Exa-researched search of the current OpenRouter catalogue, two new c
 matrix, and three more live probes. Recorded as a deviation because it is a second decision cycle,
 not the one the plan scoped.
 
-**12. Eight live runs, not one.** The plan specifies a single live observation. The falsification of
+**12. Seven live runs, not one.** The plan specifies a single live observation. The falsification of
 haiku required a comparison run (sonnet), which required a matched baseline (glm-4.6) to turn the
 cost multiple from an estimate into a measurement, which then required the round-2 candidate probes.
 Total live spend is roughly $0.15 — the runs are cheap; the scratch-PR overhead is the real cost.
@@ -330,3 +330,95 @@ from token counts at published prices, not read from the provider.
 4. **PR metadata reaches the finder** (`pr-title`/`pr-body`), and at least one model reasoned from
    it rather than the code. Ruled out as a confound here by the neutral-metadata control, but it is
    a live prompt-surface worth knowing about.
+
+### Per-step live telemetry, verbatim (impl-review-phase-4 F3)
+
+The plan's criterion 4.4 asks for the per-step telemetry lines and delivered, non-refused context
+from the Actions log. The lines below are the complete `finder step` output of all SEVEN runs, copied
+from the run logs rather than summarized. Retention is 14 days from 2026-08-12.
+
+```
+run 31531406486  haiku-4.5, PR #123
+  finder step 1: getFileContext src/lib/engines/canvas-helpers.ts:1-72 (tokens in=3101 out=100 total=3201)
+  finder step 2: no getFileContext call (tokens in=4032 out=383 total=4415)
+  verdict=failed findings=2 (finder=anthropic/claude-haiku-4.5, judge=anthropic/claude-sonnet-5)
+
+run 31532477513  haiku-4.5 re-roll, PR #123
+  finder step 1: getFileContext src/lib/engines/canvas-helpers.ts:1-72 (tokens in=3101 out=100 total=3201)
+  finder step 2: getFileContext .github/workflows/review.yml:1-15 (tokens in=4032 out=99 total=4131)
+  finder step 3: getFileContext .github/workflows/review.yml:50-90 (tokens in=4310 out=96 total=4406)
+  finder step 4: getFileContext .github/workflows/review.yml:75-100 (tokens in=5073 out=100 total=5173)
+  finder step 5: no getFileContext call (tokens in=4934 out=522 total=5456)
+  verdict=failed findings=2 (finder=anthropic/claude-haiku-4.5, judge=anthropic/claude-sonnet-5)
+
+run 31533093356  sonnet-5, PR #123
+  finder step 1: getFileContext src/lib/engines/canvas-helpers.ts:1-84 (tokens in=3849 out=740 total=4589)
+  finder step 2: getFileContext .github/workflows/review.yml:60-95 (tokens in=5904 out=661 total=6565)
+  finder step 3: getFileContext .github/workflows/review.yml:1-30 (tokens in=7365 out=216 total=7581)
+  finder step 4: getFileContext .github/workflows/review.yml:75-40 (tokens in=8053 out=208 total=8261)
+  finder step 5: no getFileContext call (tokens in=7677 out=1113 total=8790)
+  verdict=failed findings=3 (finder=anthropic/claude-sonnet-5, judge=anthropic/claude-sonnet-5)
+
+run 31534348263  glm-4.6 matched baseline, PR #124
+  finder step 1: no getFileContext call (tokens in=1866 out=285 total=2151)
+  verdict=failed findings=2 (finder=z-ai/glm-4.6, judge=anthropic/claude-sonnet-5)
+
+run 31571470362  deepseek-v4-flash, PR #125
+  finder step 1: no getFileContext call (tokens in=2039 out=312 total=2351)
+  verdict=failed findings=0 (finder=deepseek/deepseek-v4-flash-0731, judge=anthropic/claude-sonnet-5)
+
+run 31571601768  deepseek-v4-flash re-roll, PR #125
+  finder step 1: no getFileContext call (tokens in=2039 out=352 total=2391)
+  verdict=failed findings=0 (finder=deepseek/deepseek-v4-flash-0731, judge=anthropic/claude-sonnet-5)
+
+run 31571725531  deepseek-v4-flash, neutral PR metadata control, PR #125
+  finder step 1: no getFileContext call (tokens in=2039 out=767 total=2806)
+  verdict=passed findings=0 (finder=deepseek/deepseek-v4-flash-0731, judge=anthropic/claude-sonnet-5)
+```
+
+**Note the step-4 line of run 31533093356: `review.yml:75-40`** — an inverted range (start > end).
+`createDiffScopedSource` answers that with its out-of-range refusal, so at least one of sonnet-5's
+four calls was certainly refused. The production log cannot tell us about the other three.
+
+#### Criterion 4.4 — recorded as a DEVIATION, not as passed
+
+What the log proves and what it does not:
+
+- **Directly observed**: the requested path and line range of every call, per step.
+- **NOT observed**: whether any call returned content or a refusal. `describeFinderStep` reports
+  requests only; the delivered/refused split (`onResult`) exists solely in the eval provider.
+- **Inferred**: sonnet-5 received real content, because its F2 quotes the module header and names
+  `JPEG_QUALITY`, neither of which appears anywhere in the diff. That inference is strong but it is
+  an inference, and the inverted-range call above shows refusals genuinely occur in these runs.
+
+Criterion 4.4 as written ("delivered (non-refused) context in the Actions log") is therefore
+**not literally satisfiable** with today's production telemetry. Recorded as a deviation rather than
+claimed as a pass. Closing it properly needs a delivered/refused counter in production
+(`describeFinderStep` + the pipeline's `finderTelemetry`), which is a production change with its own
+review — deliberately not bundled into a phase whose outcome is "change nothing".
+
+### Impl-review follow-ups (`reviews/impl-review-phase-4.md`, NEEDS ATTENTION → 4 warnings closed)
+
+- **F1 fixed** (production code, owner-approved) — `DEFAULT_MODEL` aligned to `z-ai/glm-4.6` plus two
+  literal assertions in `config.test.ts`, replacing a tautological check that could never have caught
+  the drift. The divergence predated this change; what this change added was the measurement of what
+  the fallback would cost (~58×).
+- **F2 fixed** — three factual errors in the write-up: "eight live runs" (actually **seven**, verified
+  by `gh run view` on each id), "five models evaluated" (actually **six** — `deepseek-v3.2` was
+  dropped from the count), and a criterion 4.3 row still reading "pending the flip decision" after
+  the decision landed. The "eight" also sits in commit message `2caf9b8`, which is immutable; the
+  files carry the correction.
+- **F3 fixed (Fix A)** — verbatim per-step telemetry for all seven runs appended above, and criterion
+  4.4 recorded as a deviation rather than a pass. Fix B (production delivered/refused telemetry) was
+  declined as out of scope for a no-change phase.
+- **F4 fixed (Fix A)** — the eval README advertised 4 models / 48 finder calls while the config had
+  grown to six providers; an unfiltered run is **72** calls. Matrix table, counts, measured costs and
+  per-round filter commands corrected.
+
+Re-verified after the fixes: **359 tests** (357 + 2 literal config assertions), typecheck clean,
+`eslint` clean on both touched `src/` files, config valid.
+
+**A pattern worth naming for future changes**: both F2 and the earlier "of five" were miscounts in
+prose written over data that was itself correct — the tables and snapshots were right every time.
+Counts in this change's documents are now derived mechanically (`gh run view` per id; provider labels
+enumerated from the snapshots) rather than tallied by hand.

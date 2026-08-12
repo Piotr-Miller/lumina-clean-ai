@@ -3,7 +3,15 @@
 // embedder) must be able to import the barrel side-effect-free; only demo.ts
 // may exit the process.
 
-export const DEFAULT_MODEL = "anthropic/claude-sonnet-5";
+// Must match what production actually runs (the OPENROUTER_REVIEW_MODEL
+// repository variable), because this is the value that takes over if that
+// variable is ever unset or cleared. It read anthropic/claude-sonnet-5 while
+// the variable read z-ai/glm-4.6, so a cleared variable would silently have
+// switched the finder to a model measured at ~58x the cost per review
+// (change `finder-tool-loop-evals`, impl-review-phase-4 F1). Pinned by a
+// literal assertion in config.test.ts: change both together, and only
+// alongside the repository variable.
+export const DEFAULT_MODEL = "z-ai/glm-4.6";
 export const DEFAULT_JUDGE_MODEL = "anthropic/claude-sonnet-5";
 
 export interface ModelOverrides {

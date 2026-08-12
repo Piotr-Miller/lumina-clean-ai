@@ -6,12 +6,16 @@ This eval sends the production finder prompt, including the trusted `.github/ai-
 
 Providers (all via `finder-provider.ts`, one provider attempt each — pipeline schema-retry deliberately bypassed so `--repeat --no-cache` exposes flakes):
 
-| Label                     | Model                        | Role                         |
-| ------------------------- | ---------------------------- | ---------------------------- |
-| `baseline-glm-4.6`        | `z-ai/glm-4.6`               | production baseline (anchor) |
-| `cheap-deepseek-v3.2`     | `deepseek/deepseek-v3.2`     | cheap tier                   |
-| `mid-claude-haiku-4.5`    | `anthropic/claude-haiku-4.5` | middle tier                  |
-| `premium-claude-sonnet-5` | `anthropic/claude-sonnet-5`  | premium tier                 |
+| Label                     | Model                             | Round | Role                         |
+| ------------------------- | --------------------------------- | ----- | ---------------------------- |
+| `baseline-glm-4.6`        | `z-ai/glm-4.6`                    | 1 + 2 | production baseline (anchor) |
+| `cheap-deepseek-v3.2`     | `deepseek/deepseek-v3.2`          | 1     | cheap tier                   |
+| `mid-claude-haiku-4.5`    | `anthropic/claude-haiku-4.5`      | 1     | middle tier                  |
+| `premium-claude-sonnet-5` | `anthropic/claude-sonnet-5`       | 1     | premium tier                 |
+| `cheap-deepseek-v4-flash` | `deepseek/deepseek-v4-flash-0731` | 2     | round-2 candidate            |
+| `mid-glm-5.2`             | `z-ai/glm-5.2`                    | 2     | round-2 candidate            |
+
+**Six providers are registered, so an UNFILTERED run is 6 models × 4 cases × 3 repeats = 72 finder calls**, not the 48 of round 1. The round-2 providers were added for the second decision cycle and kept registered for reproducibility. Use `--filter-providers` to run one round at a time rather than paying for both (commands below).
 
 `cheap-qwen3-coder-flash` and `middle-gpt-5.4-mini` were dropped after the 2026-08-10 run. Their failures were **structural, not quality**: qwen lacks `structured_outputs`, degrades to `json_object`, and Alibaba then rejects a prompt that does not contain the literal word "json"; OpenAI strict structured outputs demands every property appear in `required`, while `startLine`/`endLine` are `.optional()` for Anthropic compatibility (`src/schemas.ts`). Neither ever reached a model, and `gpt-5.4` would hit the identical wall — keeping them only added known-dead error rows to the decision snapshot.
 
@@ -53,7 +57,16 @@ node evals/recall-selfcheck.mjs
 # Cheap smoke next (one provider, all cases — validates all wiring):
 npm run eval -- --env-file .env --no-cache --filter-providers baseline-glm-4.6
 
-# Full matrix (4 models x 4 cases x 3 repeats = 48 finder calls + 48 grader calls):
+# Round 1 only (4 models x 4 cases x 3 repeats = 48 finder calls + 48 grader calls):
+npm run eval -- --env-file .env --no-cache --repeat 3 `
+  --filter-providers "baseline-glm-4.6|cheap-deepseek-v3.2|mid-claude-haiku-4.5|premium-claude-sonnet-5"
+
+# Round 2 only (anchor + the two round-2 candidates = 36 finder calls):
+npm run eval -- --env-file .env --no-cache --repeat 3 `
+  --filter-providers "baseline-glm-4.6|cheap-deepseek-v4-flash|mid-glm-5.2"
+
+# EVERYTHING (6 models x 4 cases x 3 repeats = 72 finder calls + graders) — costs roughly
+# $1.50-2.00, mostly sonnet-5. Prefer one of the filtered commands above.
 npm run eval -- --env-file .env --no-cache --repeat 3
 
 npm run eval:view
@@ -61,7 +74,7 @@ npm run eval:view
 
 `OPENROUTER_API_KEY` must be available in the environment. The commands above load it from the package's `.env` file; omit `--env-file .env` when the variable is already exported. `--no-cache --repeat 3` is the useful comparison: it exposes structured-output flakes as well as issue recall, and every tool-enabled cell becomes a RATE over three rows rather than a single value. A provider `error` row is signal, not breakage — it counts against that model's reliability and deliberately carries no per-assertion metrics, but its telemetry still lands (a row that died after burning four tool-loop steps cost real money).
 
-**Cost**: a full matrix run is roughly $1–2 (finder calls + Gemini rubric grading) — above the $0.30–0.60 of the pre-tool matrix because tool loops add both steps and input tokens. Every run is paid and manual; never wire this into CI.
+**Cost** (measured, not estimated): round 1 cost **$0.6263** in finder calls plus ~51k grader tokens; round 2 cost roughly **$0.08** (its three models are all cheap). An unfiltered six-provider run is therefore about **$1.50–2.00**, and sonnet-5 alone is ~$0.17 of every sweep. Every run is paid and manual; never wire this into CI.
 
 In the viewer, the row-detail dialog shows **"Prompt"** (the config's raw `{{diff}}` template, never rendered — templating is disabled) and **"Actual Prompt Sent"** (what the provider actually sent). Only the latter is the real prompt; it is where you can see the tool-enabled instruction variant on tool-enabled cases.
 
@@ -79,7 +92,7 @@ Inspect the export before committing — prompts and full model outputs land in 
 
 This suite is a decision-grade comparison of finder models: recall, per-flaw identification, failure-worthiness, precision on a clean diff, schema reliability under repeats, and — since the tool-enabled cases landed — real `getFileContext` adoption and cost. It still isolates the finder: no judge pass, no pipeline retry, no line-number or severity-calibration scoring. It informs the production finder-model decision (recorded in `context/changes/finder-tool-loop-evals/decision.md`); it does not make it. A fixture win is not by itself grounds to change what runs on every PR — the flip is gated on a live observation.
 
-**Outcome of the first decision cycle (2026-08-12): no change. `z-ai/glm-4.6` stays the production finder.** Five models were evaluated and four live-probed on a real PR. Only `anthropic/claude-sonnet-5` converted out-of-hunk context into a correct verdict live, at a matched-baseline **57.6×** the production cost per review, and that premium was declined. `claude-haiku-4.5` and `deepseek-v4-flash-0731` both cleared the fixture adoption bar and then failed live; `glm-5.2` never fetched in fixtures and was not probed.
+**Outcome of the first decision cycle (2026-08-12): no change. `z-ai/glm-4.6` stays the production finder.** Six models were evaluated across two matrix rounds and four were live-probed on a real PR. Only `anthropic/claude-sonnet-5` converted out-of-hunk context into a correct verdict live, at a matched-baseline **57.6×** the production cost per review, and that premium was declined. `claude-haiku-4.5` and `deepseek-v4-flash-0731` both cleared the fixture adoption bar and then failed live; `glm-5.2` never fetched in fixtures and was not probed.
 
 Take the warning seriously before trusting this harness again: **fixture tool-adoption did not predict live tool-adoption.** `deepseek-v4-flash-0731` fetched on 6/6 tool-enabled fixture rows and 0/3 live runs. Passing the cross-hunk case here is necessary, not sufficient — a live scratch-PR probe is the actual gate.
 

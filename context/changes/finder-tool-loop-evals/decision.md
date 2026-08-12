@@ -355,8 +355,10 @@ belongs to the round-2 matrix section above, not here.
 **`anthropic/claude-sonnet-5` is the only one of the four live-probed models that converts
 out-of-hunk context into a correct verdict on a real PR.** Every cheaper live-probed candidate
 fails, and two of the rejected models — haiku-4.5 and deepseek-v4-flash — looked good on fixtures
-first. Counting glm-5.2's fixture elimination, five models were evaluated in total and none of the
-four cheaper than sonnet-5 can see outside the hunk on a real pull request.
+first. **Six models were evaluated in total** across the two matrices — glm-4.6, deepseek-v3.2,
+haiku-4.5 and sonnet-5 in round 1; glm-5.2 and deepseek-v4-flash-0731 in round 2 — of which four
+were live-probed. None of the five cheaper than sonnet-5 can see outside the hunk on a real pull
+request.
 
 The decision is unchanged in shape but now much better evidenced: **sonnet-5 at ~58× the baseline
 (order $3–8/month at this repo's PR cadence), or keep glm-4.6 and accept that the `getFileContext`
@@ -392,13 +394,13 @@ scratch.
 
 ### Follow-ups this leaves open
 
-1. **`DEFAULT_MODEL` in `config.ts` is `anthropic/claude-sonnet-5` and now lies louder than before.**
-   It is overridden by `OPENROUTER_REVIEW_MODEL` in CI, so it changes nothing today — but if that
-   variable were ever unset or cleared, production would silently fall back to the model this
-   decision just declined, at ~58× the cost. Deliberately left untouched here (criterion 4.3 allows
-   "untouched on a no-change outcome") because changing it is a code change the owner did not ask
-   for. Recommended as a small follow-up: point `DEFAULT_MODEL` at `z-ai/glm-4.6` so the checked-in
-   fallback matches reality.
+1. ~~**`DEFAULT_MODEL` in `config.ts` is `anthropic/claude-sonnet-5`.**~~ **CLOSED** — raised again by
+   impl-review-phase-4 F1 and fixed with the owner's approval: `DEFAULT_MODEL` is now `z-ai/glm-4.6`,
+   matching the repository variable it takes over from. `config.test.ts` gained two LITERAL
+   assertions, because the existing check (`resolveModels().reviewModel === DEFAULT_MODEL`) was a
+   tautology that would pass whatever the constant said. Had the variable ever been cleared, the old
+   default would have silently switched the finder to the model this decision declined, at ~58× the
+   cost per review.
 2. **Re-test when a cheap tool-capable model appears.** The harness makes this ~$0.15 of fixtures
    plus one live probe. The bar to clear is in this document: deliver context on the cross-hunk case
    in ≥2/3 repeats, AND fetch on a real PR — the second half is the one three candidates failed.
