@@ -11,6 +11,7 @@ import {
   describeFinderStep,
   DIFF_CAP_BYTES,
   DIFF_TRUNCATION_MARKER,
+  PLAN_CAP_CHARS,
   runReviewPipeline,
   type FinderStepInfo,
 } from "./pipeline.js";
@@ -147,6 +148,45 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     expect(result.diffTruncated).toBe(false);
     expect(result.bodyTruncated).toBe(false);
     expect(result.models).toEqual({ finder: DEFAULT_MODEL, judge: DEFAULT_JUDGE_MODEL });
+  });
+
+  // The plan flows in and is capped here; nothing consumes it until the
+  // implementation-review pass lands in phase 3.
+  it("leaves a plan under the cap untouched and reports planTruncated: false", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: { text: "## Phase 1\n- do the thing", path: "context/changes/x/plan.md" },
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect(result.planTruncated).toBe(false);
+  });
+
+  it("caps an oversized plan at PLAN_CAP_CHARS and flags it", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: { text: "p".repeat(PLAN_CAP_CHARS + 1) },
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect(result.planTruncated).toBe(true);
+  });
+
+  // Key absent, not `false`: a plan-less review.json must stay byte-identical
+  // to the shape that shipped before this feature existed.
+  it("omits planTruncated entirely when the run carried no plan", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect("planTruncated" in result).toBe(false);
   });
 
   it("reports override models in the result metadata", async () => {

@@ -50,13 +50,116 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: gh pr edit "$PR_NUMBER" --remove-label "ai-cr:review"
 
+      # Runs BEFORE the diff step: the resolved path is needed twice — to
+      # stage the plan, and to exclude it from the diff that step computes.
+      # Resolution is deterministic on purpose. A model-invoked readPlan would
+      # make "the model declined to call the tool" indistinguishable from "this
+      # PR has no plan", and the finder-model evals measured exactly that
+      # (glm-4.6: 0 tool calls on 0/6 fixtures and 0/4 live runs).
+      - name: Resolve the plan this PR implements
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # Both trees, active-first. This repo archives BEFORE merge, so the
+          # plan lands under context/archive/<date>-<id>/ on the merge-base
+          # diff — a context/changes-only glob resolves nothing on 6 of the
+          # last 7 plan-bearing PRs. `sort -r` gives the right precedence for
+          # free: "context/changes" > "context/archive" lexicographically, so
+          # an active plan outranks an archived one, and inside the archive the
+          # date-prefixed slugs make newest-first meaningful.
+          PLAN=$(git diff --name-only "origin/${BASE_REF}...${HEAD_SHA}" \
+            -- ':(glob)**/context/changes/**/plan.md' ':(glob)**/context/archive/**/plan.md' \
+            | sort -r | head -1)
+
+          # Explicit override for bundled PRs, revived plans, and PRs that
+          # reorganize plan files while implementing a different one. The PR
+          # body is attacker-controlled: the anchoring to a context/{changes,
+          # archive}/…/plan.md shape is what stops it being a path-traversal
+          # primitive, and any `..` segment is rejected outright.
+          OVERRIDE=$(printf '%s' "$PR_BODY" \
+            | grep -oE 'Plan:[[:space:]]*[^[:space:]`]*context/(changes|archive)/[^[:space:]`]+/plan\.md' \
+            | head -1 | sed -E 's/Plan:[[:space:]]*//')
+          case "$OVERRIDE" in
+            *..*) echo "override candidate rejected (traversal segment)" ;;
+            "")   ;;
+            *)    PLAN="$OVERRIDE" ;;
+          esac
+
+          echo "PLAN_PATH=${PLAN}" >> "$GITHUB_ENV"
+          echo "resolved plan: ${PLAN:-<none>}"
+
+      # SECURITY, two layers. The threat: a `[ -f ]` test follows symlinks, and
+      # the process that ends up reading this file is the CLI — the one holding
+      # OPENROUTER_API_KEY. A PR-added `plan.md -> /proc/self/environ` read
+      # through the checkout would put that key into the prompt as untrusted
+      # data, from where a compliant model can echo it into a public PR comment
+      # (the Defender /proc/self/environ finding, in our own pipeline).
+      #
+      #   1. `git show` reads the OBJECT, never the working tree, so it cannot
+      #      follow a symlink at all — a symlink blob's content is the link
+      #      TARGET STRING (verified: the fabricated entry yields the literal
+      #      "/proc/self/environ", not the file behind it).
+      #   2. The ls-tree mode gate rejects the entry before that, so a symlink
+      #      (120000) or submodule (160000) never becomes a garbage "plan" the
+      #      model is asked to review as ground truth.
+      #
+      # Layer 1 is what stops the exfiltration; layer 2 stops the nonsense.
+      # Same object-read idiom as the base-branch rules step below.
+      - name: Stage the plan from the Git object
+        if: env.PLAN_PATH != ''
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          MODE=$(git ls-tree "$HEAD_SHA" -- "$PLAN_PATH" | awk '{print $1}')
+          case "$MODE" in
+            100644|100755)
+              git show "${HEAD_SHA}:${PLAN_PATH}" > "$RUNNER_TEMP/plan.md"
+              wc -c "$RUNNER_TEMP/plan.md"
+              ;;
+            *)
+              # Missing entry, symlink, submodule, or an unreadable blob all
+              # degrade to "no plan" — a known state with its own rendered
+              # output — never to a failed run.
+              echo "plan rejected (tree mode '${MODE:-none}' is not a regular blob) — treating as no plan"
+              echo "PLAN_PATH=" >> "$GITHUB_ENV"
+              ;;
+          esac
+
       - name: Compute PR diff (three-dot vs merge-base)
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          git diff "origin/${BASE_REF}...${HEAD_SHA}" > "$RUNNER_TEMP/pr.diff"
+          # Two exclusions. Committed review documents get echoed back by the
+          # finder as if they were current findings — a live bug that gets
+          # worse once a pass is explicitly hunting plan-shaped prose. And the
+          # plan itself arrives separately as fenced untrusted data, so
+          # reviewing it as changed code double-counts it and invites
+          # documentation findings about the plan's own wording.
+          # The getFileContext allowlist derives from this diff, so the
+          # exclusions correctly narrow the tool's reach too.
+          # Array, not `${PLAN_PATH:+…}`: an unquoted expansion word-splits a
+          # path containing a space into a broken pathspec and fails the step
+          # red. The PR controls its own filenames, so that is reachable.
+          EXCLUDES=(':(exclude,glob)**/reviews/*.md')
+          [ -n "$PLAN_PATH" ] && EXCLUDES+=(":(exclude)${PLAN_PATH}")
+          git diff "origin/${BASE_REF}...${HEAD_SHA}" -- . "${EXCLUDES[@]}" > "$RUNNER_TEMP/pr.diff"
           wc -c "$RUNNER_TEMP/pr.diff"
+
+          # A PR whose only content is a plan and/or review documents filters
+          # down to an exactly-empty diff, and the CLI rejects that before the
+          # pipeline is constructed (exit 1, no output dir, no comment). Skip
+          # visibly instead: no provider call, no upsert, no label touched, so
+          # the last valid verdict on the PR survives untouched. This class
+          # reviews fine today — the guard exists because the exclusions above
+          # introduce the regression.
+          if [ ! -s "$RUNNER_TEMP/pr.diff" ]; then
+            echo "SKIP_REVIEW=1" >> "$GITHUB_ENV"
+            echo "No reviewable code in this PR after excluding the plan and review documents — skipping the AI review." \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Stage trusted review rules from the base branch
         env:
@@ -72,6 +175,7 @@ jobs:
           wc -c "$RUNNER_TEMP/ai-review-rules.md"
 
       - name: AI review
+        if: env.SKIP_REVIEW != '1'
         uses: ./.github/actions/ai-review
         with:
           api-key: ${{ secrets.OPENROUTER_API_KEY }}
@@ -82,6 +186,11 @@ jobs:
           pr-body: ${{ github.event.pull_request.body }}
           diff-file: ${{ runner.temp }}/pr.diff
           project-context-file: ${{ runner.temp }}/ai-review-rules.md
+          # Empty when no plan resolved (or the candidate failed the blob-mode
+          # check) — the action then omits --plan-file entirely, and the
+          # package stays byte-identical to its pre-feature behavior.
+          plan-file: ${{ env.PLAN_PATH != '' && format('{0}/plan.md', runner.temp) || '' }}
+          plan-path: ${{ env.PLAN_PATH }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # Preserve the full review output beyond the runner's lifetime — the
@@ -95,7 +204,7 @@ jobs:
       # if-no-files-found: ignore (which is itself needed: technical failures
       # produce no output dir and the step must not add a second red).
       - name: Upload review output artifact
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && env.SKIP_REVIEW != '1' }}
         uses: actions/upload-artifact@v7
         with:
           name: ai-review-output

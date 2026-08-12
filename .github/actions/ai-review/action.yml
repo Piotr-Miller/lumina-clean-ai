@@ -44,6 +44,14 @@ inputs:
     description: Absolute path to trusted project review rules (must be sourced from the BASE branch, never the PR head); empty or empty-file = no rules
     required: false
     default: ""
+  plan-file:
+    description: Absolute path to the plan this PR implements (UNTRUSTED PR-head content; the caller must stage it from the Git object after a blob-mode check, never read it through the checkout); empty or empty-file = no plan
+    required: false
+    default: ""
+  plan-path:
+    description: Repo-relative location of the plan, for display in the review comment (untrusted metadata; passed via env, never interpolated into scripts)
+    required: false
+    default: ""
   github-token:
     description: Token for the sticky comment + label steps (needs pull-requests write)
     required: true
@@ -74,10 +82,18 @@ runs:
         PR_BODY: ${{ inputs.pr-body }}
         DIFF_FILE: ${{ inputs.diff-file }}
         PROJECT_CONTEXT_FILE: ${{ inputs.project-context-file }}
+        PLAN_FILE: ${{ inputs.plan-file }}
+        PLAN_PATH: ${{ inputs.plan-path }}
       run: |
         ARGS=(--diff-file "$DIFF_FILE" --out-dir .review-out --source-root "$GITHUB_WORKSPACE")
         if [[ -n "$PROJECT_CONTEXT_FILE" ]]; then
           ARGS+=(--project-context-file "$PROJECT_CONTEXT_FILE")
+        fi
+        # Omitted when no plan resolved, so a plan-less run is byte-identical
+        # to the pre-feature invocation. PLAN_PATH rides in via env, never as
+        # an argument — it is untrusted (the PR body can name the plan).
+        if [[ -n "$PLAN_FILE" ]]; then
+          ARGS+=(--plan-file "$PLAN_FILE")
         fi
         npm run review -- "${ARGS[@]}"
 

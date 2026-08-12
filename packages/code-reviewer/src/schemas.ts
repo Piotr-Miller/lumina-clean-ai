@@ -150,6 +150,12 @@ export interface PipelineResult {
   diffStats: DiffStats;
   diffTruncated: boolean;
   bodyTruncated: boolean;
+  /**
+   * Whether the plan was truncated at PLAN_CAP_CHARS. Present only when the
+   * run actually carried a plan — absent (not `false`) otherwise, so a
+   * plan-less review.json is byte-identical to the pre-feature shape.
+   */
+  planTruncated?: boolean;
   droppedFindingIdRefs: number;
   models: { finder: string; judge: string };
   /**

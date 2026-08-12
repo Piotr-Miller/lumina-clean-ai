@@ -34,6 +34,14 @@ interface CliArgs {
   projectContextFile?: string;
   /** Checkout root for the finder's diff-scoped file-context tool; absent → tool-less (legacy) run. */
   sourceRoot?: string;
+  /**
+   * The plan this PR claims to implement. UNTRUSTED (PR-head content) — the
+   * caller must stage it from the Git object after a blob-mode check, never
+   * read it through the checkout, because a symlinked plan.md would be
+   * resolved by THIS process, the one holding OPENROUTER_API_KEY. Absent or
+   * empty → no plan, which is a known state, not an error.
+   */
+  planFile?: string;
 }
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -53,9 +61,12 @@ export function parseArgs(argv: string[]): CliArgs {
     } else if (flag === "--source-root" && value !== undefined) {
       args.sourceRoot = value;
       i += 1;
+    } else if (flag === "--plan-file" && value !== undefined) {
+      args.planFile = value;
+      i += 1;
     } else {
       throw new Error(
-        `Unknown or valueless argument: ${flag ?? ""}. Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>] [--source-root <dir>]`,
+        `Unknown or valueless argument: ${flag ?? ""}. Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>] [--source-root <dir>] [--plan-file <path>]`,
       );
     }
   }
@@ -171,9 +182,36 @@ export async function runReviewCli(
       }
     }
 
+    // An empty staged plan file means "no plan", matching the
+    // --project-context-file convention: the workflow writes an empty file
+    // rather than branching, so emptiness must not read as a truncated plan.
+    // PLAN_PATH is display metadata and equally untrusted — the PR body can
+    // name it — so it rides in via env like PR_TITLE/PR_BODY and is escaped
+    // at render time, never interpolated.
+    let planInput: Pick<PipelineInput, "plan"> = {};
+    if (args.planFile !== undefined) {
+      const planText = io.readFile(args.planFile);
+      // The telemetry line is emitted ONLY when the flag was passed: without
+      // it, "the workflow resolved no plan" and "the plan pass silently never
+      // ran" are indistinguishable in an Actions log — the silent-inertness
+      // failure this design exists to avoid. Omitting the flag stays
+      // byte-identical to the legacy invocation, stderr included.
+      // logSafePath because PLAN_PATH is untrusted: control characters would
+      // let an injected value forge or restyle log lines (impl-review-full F4).
+      if (planText.trim() === "") {
+        io.logError("plan file is empty — treated as no plan");
+      } else {
+        planInput = { plan: { text: planText, ...(env.PLAN_PATH ? { path: env.PLAN_PATH } : {}) } };
+        io.logError(
+          `plan supplied: ${logSafePath(env.PLAN_PATH ?? "(path not given)")} (${String(planText.length)} chars)`,
+        );
+      }
+    }
+
     const result = await pipeline({
       diff,
       ...sourceInputs,
+      ...planInput,
       prTitle: env.PR_TITLE,
       prBody: env.PR_BODY,
       timeouts: {

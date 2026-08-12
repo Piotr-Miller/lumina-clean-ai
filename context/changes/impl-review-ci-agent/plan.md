@@ -473,19 +473,19 @@ Nothing to migrate. The feature is inert until `plan-file` is passed, so Phases 
 
 #### Automated
 
-- [ ] 1.1 Lint passes: `cd packages/code-reviewer && npm run lint`
-- [ ] 1.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck`
-- [ ] 1.3 Unit tests pass: `cd packages/code-reviewer && npm test`
-- [ ] 1.4 `parseArgs` accepts `--plan-file`, rejects it valueless, leaves it undefined when absent
-- [ ] 1.5 `capPlan` behaves under and over the cap, setting `planTruncated`
-- [ ] 1.6 No `--plan-file` → `review.json` has no `implReview` key and today's shape
+- [x] 1.1 Lint passes: `cd packages/code-reviewer && npm run lint`
+- [x] 1.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck`
+- [x] 1.3 Unit tests pass: `cd packages/code-reviewer && npm test`
+- [x] 1.4 `parseArgs` accepts `--plan-file`, rejects it valueless, leaves it undefined when absent
+- [x] 1.5 `capPlan` behaves under and over the cap, setting `planTruncated`
+- [x] 1.6 No `--plan-file` → `review.json` has no `implReview` key and today's shape
 
 #### Manual
 
-- [ ] 1.7 Plan resolution reproduces the verified results on #120 and #122
-- [ ] 1.8 PR-body `Plan:` override wins over the convention lookup
-- [ ] 1.9 Traversal-bearing or tree-absent override candidate is rejected as "no plan"
-- [ ] 1.10 A symlink `plan.md` (mode `120000`) is rejected and its target is never read
+- [x] 1.7 Plan resolution reproduces the verified results on #120 and #122
+- [x] 1.8 PR-body `Plan:` override wins over the convention lookup
+- [x] 1.9 Traversal-bearing or tree-absent override candidate is rejected as "no plan"
+- [x] 1.10 A symlink `plan.md` (mode `120000`) is rejected and its target is never read
 - [ ] 1.11 A plan-only PR skips the review step visibly, leaves labels and prior comment untouched, run stays green
 - [ ] 1.12 Actions log names the resolved plan (or its absence) and the filtered diff size
 

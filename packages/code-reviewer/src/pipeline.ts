@@ -88,6 +88,22 @@ function capProjectContext(text: string | undefined): string | undefined {
   return text.slice(0, PROJECT_CONTEXT_CAP_CHARS) + PROJECT_CONTEXT_TRUNCATION_MARKER;
 }
 
+// The plan is the implementation-review pass's ground truth and arrives from
+// the PR head, so it gets the same treatment as every other unbounded input:
+// an unbounded plan would dominate the context window and dilute attention
+// exactly as the diff cap prevents. 40,000 is measured, not round — the four
+// largest real plans in this repo run 20,784-30,874 chars, so it fits every
+// current plan with headroom while still bounding a pathological one. Unlike
+// capProjectContext this reports truncation, because a partial plan review
+// must never render as a complete one.
+export const PLAN_CAP_CHARS = 40_000;
+export const PLAN_TRUNCATION_MARKER = "\n[...plan truncated at 40,000 chars]";
+
+function capPlan(text: string): { plan: string; truncated: boolean } {
+  if (text.length <= PLAN_CAP_CHARS) return { plan: text, truncated: false };
+  return { plan: text.slice(0, PLAN_CAP_CHARS) + PLAN_TRUNCATION_MARKER, truncated: true };
+}
+
 export interface PipelineOverrides {
   apiKey?: string;
   reviewModel?: string;
@@ -192,6 +208,21 @@ export interface PipelineInput {
    */
   projectReviewContext?: string;
   /**
+   * The plan this PR claims to implement, resolved deterministically by the
+   * caller (never by a model — a declined tool call is indistinguishable from
+   * "no plan found"). UNTRUSTED: it looks like a repo file, but it arrives on
+   * the attacker-controlled PR head, and that mismatch between appearance and
+   * provenance is exactly what makes it dangerous. Capped at PLAN_CAP_CHARS.
+   *
+   * Absent means "this PR has no plan" — a known state with its own rendered
+   * output, not an ambiguous silence. `path` is repo-relative and is display
+   * metadata only; it is equally untrusted (the PR body can name it).
+   *
+   * Nothing consumes this yet: the implementation-review pass arrives in
+   * phase 3, and until then the plan flows in, is capped, and stops there.
+   */
+  plan?: { text: string; path?: string };
+  /**
    * Production observability: fires when a pass is about to be retried, with
    * the pass name, the swallowed first failure, and the pre-retry delay.
    * Without it a recovered flake leaves zero trace in the run's output.
@@ -221,6 +252,9 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   const timeouts = resolveTimeouts(input.timeouts);
   const { diff, truncated: diffTruncated } = capDiff(input.diff);
   const { body: prBody, truncated: bodyTruncated } = capBody(input.prBody);
+  // Capped here rather than at the CLI boundary so every embedder (promptfoo,
+  // a future orchestrator) gets the same bound without re-deriving it.
+  const plan = input.plan === undefined ? undefined : capPlan(input.plan.text);
   // Stats describe the real PR, so they're computed on the un-capped diff.
   const diffStats = computeDiffStats(input.diff);
 
@@ -285,6 +319,9 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     diffStats,
     diffTruncated,
     bodyTruncated,
+    // Key absent (not `false`) when the run had no plan, so a plan-less
+    // review.json stays byte-identical to what shipped before this feature.
+    ...(plan === undefined ? {} : { planTruncated: plan.truncated }),
     droppedFindingIdRefs: judgeResult.droppedFindingIdRefs,
     models: { finder: models.reviewModel, judge: models.judgeModel },
     // Key absent (not undefined-valued) when nothing was observed, so

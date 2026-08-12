@@ -15,6 +15,8 @@ export {
   describeFinderStep,
   DIFF_CAP_BYTES,
   DIFF_TRUNCATION_MARKER,
+  PLAN_CAP_CHARS,
+  PLAN_TRUNCATION_MARKER,
   runReviewPipeline,
 } from "./pipeline.js";
 export type { FinderStepInfo, PipelineDeps, PipelineInput, PipelineOverrides } from "./pipeline.js";

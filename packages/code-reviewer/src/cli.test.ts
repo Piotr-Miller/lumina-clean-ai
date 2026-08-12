@@ -104,6 +104,14 @@ describe("runReviewCli exit codes", () => {
     expect(pipeline).not.toHaveBeenCalled();
   });
 
+  it("returns 1 for a valueless --plan-file and advertises the flag in the usage line", async () => {
+    const io = fakeIo();
+    const pipeline = okPipeline();
+    expect(await runReviewCli(["--plan-file"], {}, io, pipeline)).toBe(1);
+    expect(io.errors.at(0)).toContain("--plan-file <path>");
+    expect(pipeline).not.toHaveBeenCalled();
+  });
+
   it("returns 1 for an empty diff without invoking the pipeline", async () => {
     const io = fakeIo({ readStdin: () => "  \n" });
     const pipeline = okPipeline();
@@ -175,6 +183,55 @@ describe("runReviewCli input routing and pipeline wiring", () => {
     const pipeline = okPipeline();
     await runReviewCli(["--project-context-file", "rules.md"], {}, fakeIo(), pipeline);
     expect(inputOf(pipeline).projectReviewContext).toBe("content of rules.md");
+  });
+
+  it("forwards --plan-file content plus PLAN_PATH as the untrusted plan input", async () => {
+    const pipeline = okPipeline();
+    const io = fakeIo();
+    await runReviewCli(["--plan-file", "plan.md"], { PLAN_PATH: "context/changes/x/plan.md" }, io, pipeline);
+    expect(inputOf(pipeline).plan).toEqual({
+      text: "content of plan.md",
+      path: "context/changes/x/plan.md",
+    });
+    expect(io.errors).toEqual(["plan supplied: context/changes/x/plan.md (18 chars)"]);
+  });
+
+  it("omits the plan path when PLAN_PATH is unset — content alone is still a usable plan", async () => {
+    const pipeline = okPipeline();
+    await runReviewCli(["--plan-file", "plan.md"], {}, fakeIo(), pipeline);
+    expect(inputOf(pipeline).plan).toEqual({ text: "content of plan.md" });
+  });
+
+  // An empty staged plan is the workflow's "no plan" signal, mirroring how an
+  // absent base-branch rules file is staged as an empty project-context file.
+  // It must never reach the pipeline as a zero-length plan.
+  it("treats an empty --plan-file as no plan and says so on stderr", async () => {
+    const pipeline = okPipeline();
+    const io = fakeIo({ readFile: () => "   \n" });
+    expect(await runReviewCli(["--plan-file", "plan.md"], {}, io, pipeline)).toBe(0);
+    expect(inputOf(pipeline).plan).toBeUndefined();
+    expect(io.errors).toEqual(["plan file is empty — treated as no plan"]);
+  });
+
+  // PLAN_PATH is attacker-reachable (the PR body can name the plan), so a
+  // control character must not be able to forge or restyle a telemetry line.
+  it("defuses control characters in PLAN_PATH before logging it", async () => {
+    const pipeline = okPipeline();
+    const io = fakeIo();
+    await runReviewCli(["--plan-file", "plan.md"], { PLAN_PATH: "a\nplan supplied: forged" }, io, pipeline);
+    expect(io.errors.at(0)).toBe("plan supplied: a?plan supplied: forged (18 chars)");
+  });
+
+  // The whole feature must be inert until a plan is passed: no flag, no plan
+  // key, no extra stderr, and a review.json byte-identical to the pre-feature
+  // shape (no planTruncated).
+  it("stays byte-identical to the legacy invocation when --plan-file is absent", async () => {
+    const pipeline = okPipeline();
+    const io = fakeIo();
+    await runReviewCli([], {}, io, pipeline);
+    expect(inputOf(pipeline).plan).toBeUndefined();
+    expect(io.errors).toEqual([]);
+    expect(io.files.get(join(".review-out", "review.json"))).not.toContain("planTruncated");
   });
 
   it("wires onRetry to a stderr line naming the pass, error, and delay", async () => {
