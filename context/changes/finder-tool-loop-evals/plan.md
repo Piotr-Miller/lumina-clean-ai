@@ -85,6 +85,12 @@ Verify by: a full matrix run whose snapshot shows non-zero `tool_calls` and non-
 least one model, the cross-hunk case passing for that model and failing for any zero-call model, and
 either a changed default model backed by a live PR observation or a recorded no-change decision.
 
+> **Addendum (2026-08-12, post-implementation).** Delivered as a **six**-provider matrix, not the
+> four described above: after the live probes falsified the round-1 winner, a second candidate
+> round added `cheap-deepseek-v4-flash` and `mid-glm-5.2`. See verification.md deviation 11.
+> The verification clause itself was met in full, and the outcome was the recorded no-change
+> decision — `z-ai/glm-4.6` stays the production finder (decision.md § Final decision).
+
 ## What We're NOT Doing
 
 - **Not touching the production prompt or `findingSchema` to unblock qwen / gpt-5.4-mini.** Their
@@ -548,6 +554,7 @@ guarded by a live observation.
 #### Manual
 
 - [x] 4.4 Live PR run shows non-zero getFileContext calls and delivered context for the chosen model — 2caf9b8
+      — PARTIAL: 4 calls logged, delivery INFERRED not logged; see verification.md § Criterion 4.4 deviation
 - [x] 4.5 Live review verdict and findings are sane (no envelope repair, no runaway cost) — 2caf9b8
 - [x] 4.6 Live-run cost recorded against the glm-4.6 baseline — 2caf9b8
 - [x] 4.7 Scratch probe branches closed/deleted unmerged; OPENROUTER_REVIEW_MODEL unchanged, matching the no-change decision — 2caf9b8

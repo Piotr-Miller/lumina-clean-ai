@@ -136,6 +136,11 @@ figure, which is the only one that should inform a cap or a rollback.
 
 ## Recommendation
 
+> ⛔ **SUPERSEDED — this is the ROUND-1 recommendation, overturned by the live runs.**
+> haiku-4.5 was falsified on a real PR (missed the planted defect 2/2 while holding the file
+> open). Production was NOT changed. See § Final decision (no change) at the end of this
+> document for what actually happens today.
+
 Adopt **`anthropic/claude-haiku-4.5`** as the production finder, conditional on the Phase 4 live
 observation. It clears the adoption bar, scored 1.000 recall and 3/3 precision on every repeat it
 could be scored on, and stays within an order of magnitude of the current spend.
@@ -185,6 +190,11 @@ ordinary review material, and it is exactly what the finder cannot currently see
   budget fixed at the CI default of 5, general lens only.
 
 ## What Phase 4 must confirm before anything changes
+
+> ⛔ **SUPERSEDED — Phase 4 is complete.** These were the exit criteria as written BEFORE the
+> live runs. Criterion 1 was met by sonnet-5 only; criterion 2's envelope-repair check passed on
+> all seven runs; criterion 3 became a recorded deviation (CI logs requests, not delivery); and
+> criterion 5's flip was declined. See § Live validation and § Final decision (no change).
 
 1. Haiku calls `getFileContext` on a real PR diff **and receives non-refused content** (the CI log's
    per-step telemetry lines).
