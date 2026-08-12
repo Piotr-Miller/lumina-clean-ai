@@ -20,7 +20,7 @@
 | Success Criteria    | WARNING |
 
 Every finding is a consistency defect in the change's own documents; there are no implementation
-defects. All 27 Progress rows are `[x]`. All automated criteria re-run green: 359 tests, `tsc` exit
+defects. All **26** Progress rows are `[x]` (7 + 6 + 6 + 7 across the four phases). All automated criteria re-run green: 359 tests, `tsc` exit
 0, `eslint` exit 0 on the touched eval files, `promptfoo validate` valid, both snapshots valid JSON
 (48 + 36 rows; 22 rows with `toolCalls > 0`; 84/84 rows with cost > 0).
 
@@ -30,7 +30,13 @@ under `packages/`. Fixture-tree exclusions intact in both `tsconfig.json` and `e
 
 **Method note**: this pass was performed by the change's author (standing session instruction
 forbids spawning sub-agents), which is structurally weak for the error class that slipped through
-earlier — two prose miscounts. Compensated by verifying every number mechanically (`gh run view`
+earlier — prose miscounts. It slipped through again here: the sentence above originally read
+"27 Progress rows", corrected to 26 at archive time when `/10x-archive`'s own row count
+disagreed. That is three miscounts across this change — "of five" models, "eight" live runs,
+and "27" rows — every one of them in hand-tallied prose written over data that was itself
+correct, and every one caught by something that counted mechanically. Treat any hand-tallied
+figure in this change's documents as suspect and re-derive it from the snapshots, the run logs,
+or the Progress section itself. Compensated by verifying every number mechanically (`gh run view`
 per run id, provider labels enumerated from the snapshots, guardrails diffed against master, all
 criteria re-executed) rather than by re-reading prose. The four per-phase Codex reviews are the
 independent coverage; this pass adds cross-phase coherence, which is where all four findings landed.
