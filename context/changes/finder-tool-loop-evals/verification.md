@@ -174,7 +174,8 @@ score was never the decision input.
 
 ## Phase 3 — Run the matrix and decide
 
-Commit `b24e65d` (4 files, +12808/−6, including the 13k-line snapshot).
+Commit `b24e65d` (4 files, +12808/−6, including the 13k-line snapshot), plus `f2d6998` for the
+follow-up fixes from `reviews/impl-review-phase-3.md` (4 files, +237/−56).
 
 ### Evidence
 
@@ -249,3 +250,81 @@ one-in-three failure mode reads exactly like a deterministic failure.
 rows, so the repair-rate figure the plan wanted as the argument against glm-4.6 does not exist. The
 harness did not reproduce the production drift — see `decision.md` § Caveats. This is a gap in the
 instrument, not evidence the drift is gone, and it moves the burden onto Phase 4's live run.
+
+## Phase 4 — Live validation (no flip yet)
+
+Uncommitted at time of writing; see the session hand-off note at the end.
+
+### Evidence
+
+| Criterion | Result                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| 4.1       | 357 tests pass (unchanged by this phase)                                                       |
+| 4.2       | `tsc --noEmit` exit 0                                                                          |
+| 4.3       | **N/A pending the flip decision** — `config.ts` untouched, so its test is untouched            |
+| 4.4       | sonnet-5: 4 `getFileContext` calls, context delivered (proven by out-of-hunk quotation)        |
+| 4.5       | sonnet-5's findings are sane; **no envelope repair fired on any of the 8 live runs**           |
+| 4.6       | Live cost recorded against a MATCHED glm-4.6 baseline on the identical diff                    |
+| 4.7       | All three scratch branches closed and deleted unmerged; `OPENROUTER_REVIEW_MODEL` NOT modified |
+
+### Live probes — eight runs across three scratch PRs
+
+All used a byte-identical planted hunk in `src/lib/engines/canvas-helpers.ts` (`encodeThumbnailJpeg`
+re-encoding at a hardcoded `0.5`, with the module's single-source contract and `JPEG_QUALITY` at
+lines 1–12, outside the hunk; `JPEG_QUALITY` appears zero times in the diff).
+
+- **PR #123** — haiku-4.5 ×2 (`31531406486`, `31532477513`), then sonnet-5 (`31533093356`).
+- **PR #124** — glm-4.6 matched baseline (`31534348263`).
+- **PR #125** — deepseek-v4-flash ×3 (`31571470362`, `31571601768`, `31571725531`), the last with
+  neutralized PR metadata as a control.
+
+Full tables and reasoning: `decision.md` §§ Live validation, Second round, Final live scoreboard.
+
+**Outcome: only sonnet-5 works.** Of the FOUR models live-probed (glm-4.6, deepseek-v4-flash,
+haiku-4.5, sonnet-5) it is the only one that fetched the out-of-hunk contract
+and converted it into a correct finding on a real PR, at $0.0951/review against the matched glm-4.6
+baseline of $0.00165 — **57.6×**. haiku-4.5 fetched and missed twice (and hallucinated a missing
+return-type annotation the diff contradicts); deepseek-v4-flash fetched 6/6 in fixtures and 0/3
+live. `glm-5.2` was **not live-probed** — it never fetched in fixtures (0/6 tool-enabled rows) and
+so failed qualification before a probe was warranted; its evidence is fixture-only.
+
+### Deviations from the plan
+
+**10. Phase 4 §2 (the flip) is NOT executed.** The plan makes it conditional on the live
+observation, and the observation invalidated the Phase 3 recommendation instead of confirming it —
+haiku-4.5 was falsified live. The replacement candidate (sonnet-5) is a materially different
+proposition at 57.6× baseline cost, which is a spending decision for the repository owner, not an
+implementation detail. `OPENROUTER_REVIEW_MODEL` remains `z-ai/glm-4.6`; `config.ts`,
+`config.test.ts` and `AGENTS.md` are untouched. Criterion 4.3 is therefore N/A rather than passed.
+
+**11. A second candidate search was run, beyond the plan's scope.** The plan assumed the winner
+would come from the Phase 3 matrix. After the live probes rejected haiku, the sonnet premium
+prompted an Exa-researched search of the current OpenRouter catalogue, two new candidates in the
+matrix, and three more live probes. Recorded as a deviation because it is a second decision cycle,
+not the one the plan scoped.
+
+**12. Eight live runs, not one.** The plan specifies a single live observation. The falsification of
+haiku required a comparison run (sonnet), which required a matched baseline (glm-4.6) to turn the
+cost multiple from an estimate into a measurement, which then required the round-2 candidate probes.
+Total live spend is roughly $0.15 — the runs are cheap; the scratch-PR overhead is the real cost.
+
+**13. The `finderTelemetry` cost field is absent from every live run.** The probes were based on
+master so they would review a small diff rather than this change's 13k-line snapshot, and master
+lacks the OpenRouter usage-accounting change from Phase 1 (deviation 2). All live costs are derived
+from token counts at published prices, not read from the provider.
+
+### Instrument gaps this phase exposed
+
+1. **Fixture tool-adoption does not predict live tool-adoption.** deepseek-v4-flash: 6/6 fixture
+   fetches, 0/3 live. haiku-4.5: 3/3 fixture cross-hunk delivery, and live it fetched but never
+   connected what it read. The matrix is necessary but not sufficient; the live probe is the gate.
+2. **`no_false_alarms` is blind to minor-severity hallucinations.** It counts only critical/major, so
+   haiku's fabricated "missing return-type annotation" finding — factually contradicted by the diff
+   line it cites — scored a clean 3/3 in the matrix.
+3. **CI logs requested paths, never delivery.** `describeFinderStep` reports what the model asked
+   for; the delivered/refused split (`onResult`) is eval-only. Criterion 4.4 asks for delivered
+   context "in the Actions log" and cannot be satisfied literally — delivery had to be inferred from
+   reviews quoting out-of-hunk text. A CI-side delivered/refused counter would close this.
+4. **PR metadata reaches the finder** (`pr-title`/`pr-body`), and at least one model reasoned from
+   it rather than the code. Ruled out as a confound here by the neutral-metadata control, but it is
+   a live prompt-surface worth knowing about.

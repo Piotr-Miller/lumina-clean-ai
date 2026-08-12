@@ -1,9 +1,9 @@
 ---
 change_id: finder-tool-loop-evals
 title: Eval tool-loop wiring + finder-model decision
-status: impl_reviewed
+status: implemented
 created: 2026-08-10
-updated: 2026-08-11
+updated: 2026-08-12
 archived_at: null
 ---
 

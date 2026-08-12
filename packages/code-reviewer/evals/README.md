@@ -79,6 +79,10 @@ Inspect the export before committing — prompts and full model outputs land in 
 
 This suite is a decision-grade comparison of finder models: recall, per-flaw identification, failure-worthiness, precision on a clean diff, schema reliability under repeats, and — since the tool-enabled cases landed — real `getFileContext` adoption and cost. It still isolates the finder: no judge pass, no pipeline retry, no line-number or severity-calibration scoring. It informs the production finder-model decision (recorded in `context/changes/finder-tool-loop-evals/decision.md`); it does not make it. A fixture win is not by itself grounds to change what runs on every PR — the flip is gated on a live observation.
 
+**Outcome of the first decision cycle (2026-08-12): no change. `z-ai/glm-4.6` stays the production finder.** Five models were evaluated and four live-probed on a real PR. Only `anthropic/claude-sonnet-5` converted out-of-hunk context into a correct verdict live, at a matched-baseline **57.6×** the production cost per review, and that premium was declined. `claude-haiku-4.5` and `deepseek-v4-flash-0731` both cleared the fixture adoption bar and then failed live; `glm-5.2` never fetched in fixtures and was not probed.
+
+Take the warning seriously before trusting this harness again: **fixture tool-adoption did not predict live tool-adoption.** `deepseek-v4-flash-0731` fetched on 6/6 tool-enabled fixture rows and 0/3 live runs. Passing the cross-hunk case here is necessary, not sufficient — a live scratch-PR probe is the actual gate.
+
 ## Gotchas
 
 - `env.PROMPTFOO_DISABLE_TEMPLATING` is set in the config: the React fixture contains literal `{{` (JSX `dangerouslySetInnerHTML={{ ... }}`), which otherwise crashes promptfoo's Nunjucks var rendering. The finder provider builds its own prompt from vars, and grader templates use a separate engine unaffected by this switch.

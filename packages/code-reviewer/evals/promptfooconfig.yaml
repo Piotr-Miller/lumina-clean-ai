@@ -40,6 +40,27 @@ providers:
     label: premium-claude-sonnet-5
     config:
       model: anthropic/claude-sonnet-5
+  # Second-round candidates (added 2026-08-11, after the live probes): the first
+  # round's winner (sonnet-5) is the only model observed converting out-of-hunk
+  # context into a correct verdict on a REAL PR, at ~58x the production
+  # baseline's cost per review. These two are the cheapest models whose vendors
+  # claim strong agentic tool use, and they exist to find out whether that
+  # premium is actually necessary. Run them with --filter-providers rather than
+  # paying for the whole matrix again; the earlier providers stay registered so
+  # the comparison remains reproducible.
+  #
+  # OpenAI's GPT-5.6 tier is deliberately absent despite topping the coding
+  # boards: strict structured outputs demands every property appear in
+  # `required`, and startLine/endLine are `.optional()` for Anthropic
+  # compatibility (schemas.ts) — the same wall gpt-5.4-mini hit.
+  - id: file://./finder-provider.ts
+    label: cheap-deepseek-v4-flash
+    config:
+      model: deepseek/deepseek-v4-flash-0731
+  - id: file://./finder-provider.ts
+    label: mid-glm-5.2
+    config:
+      model: z-ai/glm-5.2
 
 defaultTest:
   vars:

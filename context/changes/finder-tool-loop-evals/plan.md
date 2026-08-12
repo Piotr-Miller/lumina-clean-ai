@@ -541,13 +541,13 @@ guarded by a live observation.
 
 #### Automated
 
-- [ ] 4.1 Package unit tests pass
-- [ ] 4.2 Typecheck passes
-- [ ] 4.3 Config-default test reflects the chosen model (or untouched on no-change)
+- [x] 4.1 Package unit tests pass
+- [x] 4.2 Typecheck passes
+- [x] 4.3 Config-default test reflects the chosen model (or untouched on no-change) — no-change outcome: config.ts + config.test.ts untouched
 
 #### Manual
 
-- [ ] 4.4 Live PR run shows non-zero getFileContext calls and delivered context for the chosen model
-- [ ] 4.5 Live review verdict and findings are sane (no envelope repair, no runaway cost)
-- [ ] 4.6 Live-run cost recorded against the glm-4.6 baseline
-- [ ] 4.7 Scratch probe branch closed/deleted unmerged; OPENROUTER_REVIEW_MODEL matches the choice
+- [x] 4.4 Live PR run shows non-zero getFileContext calls and delivered context for the chosen model
+- [x] 4.5 Live review verdict and findings are sane (no envelope repair, no runaway cost)
+- [x] 4.6 Live-run cost recorded against the glm-4.6 baseline
+- [x] 4.7 Scratch probe branches closed/deleted unmerged; OPENROUTER_REVIEW_MODEL deliberately unchanged (flip pending owner decision)
