@@ -99,7 +99,11 @@ function capProjectContext(text: string | undefined): string | undefined {
 export const PLAN_CAP_CHARS = 40_000;
 export const PLAN_TRUNCATION_MARKER = "\n[...plan truncated at 40,000 chars]";
 
-function capPlan(text: string): { plan: string; truncated: boolean } {
+// Exported for direct assertion: until the implementation-review pass lands
+// in phase 3 nothing consumes the capped text, so a result-level test can only
+// observe the boolean — and removing the slice or the marker would leave such
+// a test green (impl-review-phase-1 F3).
+export function capPlan(text: string): { plan: string; truncated: boolean } {
   if (text.length <= PLAN_CAP_CHARS) return { plan: text, truncated: false };
   return { plan: text.slice(0, PLAN_CAP_CHARS) + PLAN_TRUNCATION_MARKER, truncated: true };
 }

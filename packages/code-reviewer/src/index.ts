@@ -10,6 +10,7 @@ export type { Judge, JudgeCallOptions, JudgeOptions } from "./judge.js";
 export {
   BODY_CAP_CHARS,
   BODY_TRUNCATION_MARKER,
+  capPlan,
   computeDiffStats,
   DEFAULT_FINDER_TIMEOUT_MS,
   describeFinderStep,

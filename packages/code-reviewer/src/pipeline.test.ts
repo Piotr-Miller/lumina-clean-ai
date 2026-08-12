@@ -9,9 +9,11 @@ import {
   DEFAULT_FINDER_TIMEOUT_MS,
   DEFAULT_JUDGE_TIMEOUT_MS,
   describeFinderStep,
+  capPlan,
   DIFF_CAP_BYTES,
   DIFF_TRUNCATION_MARKER,
   PLAN_CAP_CHARS,
+  PLAN_TRUNCATION_MARKER,
   runReviewPipeline,
   type FinderStepInfo,
 } from "./pipeline.js";
@@ -89,6 +91,32 @@ const expectInJitterRange = (value: number | undefined, base: number): void => {
   expect(value).toBeGreaterThanOrEqual(base);
   expect(value).toBeLessThanOrEqual(base + 1_000);
 };
+
+// Direct assertions on the returned TEXT, not just the flag: nothing consumes
+// the capped plan until phase 3, so a result-level test alone would stay green
+// if the slice or the marker were dropped (impl-review-phase-1 F3).
+describe("capPlan", () => {
+  it("returns text at or under the cap byte-for-byte, with no marker", () => {
+    const exact = "p".repeat(PLAN_CAP_CHARS);
+    expect(capPlan(exact)).toEqual({ plan: exact, truncated: false });
+    expect(capPlan("## Phase 1")).toEqual({ plan: "## Phase 1", truncated: false });
+  });
+
+  it("slices at exactly PLAN_CAP_CHARS and appends the marker once", () => {
+    const over = `${"p".repeat(PLAN_CAP_CHARS)}TAIL`;
+    const { plan, truncated } = capPlan(over);
+    expect(truncated).toBe(true);
+    expect(plan).toBe("p".repeat(PLAN_CAP_CHARS) + PLAN_TRUNCATION_MARKER);
+    // The dropped tail is genuinely gone, and the marker is the last thing a
+    // reader (or a model) sees — a partial plan must never look complete.
+    expect(plan).not.toContain("TAIL");
+    expect(plan.endsWith(PLAN_TRUNCATION_MARKER)).toBe(true);
+  });
+
+  it("handles an empty plan without marking it truncated", () => {
+    expect(capPlan("")).toEqual({ plan: "", truncated: false });
+  });
+});
 
 describe("computeDiffStats", () => {
   it("counts files, additions, and deletions, excluding +++/--- headers", () => {

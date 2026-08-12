@@ -74,13 +74,30 @@ jobs:
             | sort -r | head -1)
 
           # Explicit override for bundled PRs, revived plans, and PRs that
-          # reorganize plan files while implementing a different one. The PR
-          # body is attacker-controlled: the anchoring to a context/{changes,
-          # archive}/…/plan.md shape is what stops it being a path-traversal
-          # primitive, and any `..` segment is rejected outright.
-          OVERRIDE=$(printf '%s' "$PR_BODY" \
-            | grep -oE 'Plan:[[:space:]]*[^[:space:]`]*context/(changes|archive)/[^[:space:]`]+/plan\.md' \
-            | head -1 | sed -E 's/Plan:[[:space:]]*//')
+          # reorganize plan files while implementing a different one.
+          #
+          # The PR body is attacker-controlled, so this is anchored at BOTH
+          # ends of a line. The skill's original regex allowed any non-space
+          # run between "Plan:" and "context/", which reproducibly accepted
+          # `NotAPlan: …`, `MyPlan: …` (grep -o matches "Plan:" as a substring)
+          # and `Plan: docs/context/changes/x/plan.md` — each selecting a
+          # different head blob than the author meant (impl-review-phase-1 F1).
+          # The value must now START at context/{changes,archive}/ and the line
+          # must END at plan.md.
+          #
+          # The character class is an explicit safe path set rather than
+          # "anything but whitespace": that alone excludes backticks, quotes,
+          # and control characters, so the value cannot restyle or forge the
+          # Actions log line echoed below. `tr -d '\r'` because GitHub bodies
+          # are CRLF and the `$` anchor must not trip on the carriage return.
+          #
+          # sed -n (not grep -o) also removes a latent trap: grep exits 1 when
+          # nothing matches, which is harmless under the default `bash -e`
+          # shell but would fail the step on every override-less PR the moment
+          # anyone added `shell: bash` and turned pipefail on.
+          OVERRIDE=$(printf '%s' "$PR_BODY" | tr -d '\r' \
+            | sed -nE 's#^[[:space:]]*Plan:[[:space:]]+(context/(changes|archive)/[A-Za-z0-9._/-]+/plan\.md)[[:space:]]*$#\1#p' \
+            | head -1)
           case "$OVERRIDE" in
             *..*) echo "override candidate rejected (traversal segment)" ;;
             "")   ;;
@@ -115,8 +132,20 @@ jobs:
           MODE=$(git ls-tree "$HEAD_SHA" -- "$PLAN_PATH" | awk '{print $1}')
           case "$MODE" in
             100644|100755)
-              git show "${HEAD_SHA}:${PLAN_PATH}" > "$RUNNER_TEMP/plan.md"
-              wc -c "$RUNNER_TEMP/plan.md"
+              # Guarded: under the default `bash -e` shell a bare `git show`
+              # failure (corrupt object, disk full, a race with the checkout)
+              # would fail the STEP red, contradicting the contract that every
+              # read failure degrades to "no plan" (impl-review-phase-1 F2).
+              # The partial file is removed so a half-written plan can never be
+              # picked up as if it were whole — same shape as the base-rules
+              # staging step below.
+              if git show "${HEAD_SHA}:${PLAN_PATH}" > "$RUNNER_TEMP/plan.md"; then
+                wc -c "$RUNNER_TEMP/plan.md"
+              else
+                echo "plan blob could not be read — treating as no plan"
+                rm -f "$RUNNER_TEMP/plan.md"
+                echo "PLAN_PATH=" >> "$GITHUB_ENV"
+              fi
               ;;
             *)
               # Missing entry, symlink, submodule, or an unreadable blob all

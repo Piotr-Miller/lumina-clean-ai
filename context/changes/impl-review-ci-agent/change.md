@@ -3,7 +3,7 @@ change_id: impl-review-ci-agent
 title: Plan-aware implementation review in the AI-SDK review agent
 updated: 2026-08-12
 created: 2026-08-11
-status: implementing
+status: impl_reviewed
 archived_at: null
 ---
 
