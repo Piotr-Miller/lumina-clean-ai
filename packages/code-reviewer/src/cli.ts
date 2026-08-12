@@ -2,7 +2,7 @@ import { join } from "node:path";
 
 import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
-import { createDiffScopedSource, parseDiffPaths } from "./source-provider.js";
+import { createDiffScopedSourceForDiff } from "./source-provider.js";
 
 // The CLI's whole contract, extracted injectable so tests can pin the exact
 // boundary the composite action consumes (impl-review-phase-1 F6):
@@ -76,8 +76,7 @@ function parseMaxStepsEnv(env: CliEnv): number | undefined {
   return value;
 }
 
-const tokenCount = (value: number | undefined): string =>
-  value === undefined ? "?" : String(value);
+const tokenCount = (value: number | undefined): string => (value === undefined ? "?" : String(value));
 
 const formatRange = (call: { startLine?: number; endLine?: number }): string =>
   call.startLine === undefined && call.endLine === undefined
@@ -96,9 +95,7 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
   const calls =
     info.fileContextCalls.length === 0
       ? "no getFileContext call"
-      : info.fileContextCalls
-          .map((call) => `getFileContext ${logSafePath(call.path)}${formatRange(call)}`)
-          .join(", ");
+      : info.fileContextCalls.map((call) => `getFileContext ${logSafePath(call.path)}${formatRange(call)}`).join(", ");
   const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} total=${tokenCount(info.usage.totalTokens)}`;
   return `finder step ${String(index)}: ${calls} (${usage})`;
 };
@@ -115,11 +112,7 @@ function parseTimeoutEnv(env: CliEnv, name: string): number | undefined {
 }
 
 const errorLabel = (error: unknown): string =>
-  typeof error === "object" &&
-  error !== null &&
-  "name" in error &&
-  typeof error.name === "string" &&
-  error.name !== ""
+  typeof error === "object" && error !== null && "name" in error && typeof error.name === "string" && error.name !== ""
     ? error.name
     : String(error);
 
@@ -149,22 +142,26 @@ export async function runReviewCli(
     // maxSteps, no step telemetry — byte-identical to the legacy invocation.
     let sourceInputs: Pick<PipelineInput, "source" | "finderMaxSteps" | "onFinderStep"> = {};
     if (args.sourceRoot !== undefined) {
-      const allowedPaths = parseDiffPaths(diff);
-      // A diff with no post-change paths (e.g. deletions only) has nothing
-      // the tool could serve — skip the source entirely, same as today.
-      if (allowedPaths.size > 0) {
+      // The allowlist derives from the FULL diff read above — capDiff
+      // truncation happens later inside the pipeline, and a truncated
+      // allowlist would refuse legitimate requests. `undefined` back means the
+      // diff has no post-change paths (e.g. deletions only), so there is
+      // nothing the tool could serve: empty spread, no source, no maxSteps, no
+      // step telemetry — byte-identical to the legacy invocation.
+      const source = createDiffScopedSourceForDiff({
+        diff,
+        root: args.sourceRoot,
+        readFile: io.readFile,
+        realpath: io.realpath,
+        isRegularFile: io.isRegularFile,
+      });
+      if (source !== undefined) {
         const finderMaxSteps = parseMaxStepsEnv(env) ?? DEFAULT_FINDER_MAX_STEPS;
         // CLI-maintained monotonic index: the SDK's stepNumber resets to 0 on
         // the retry attempt, which would make the log lie about real spend.
         let stepIndex = 0;
         sourceInputs = {
-          source: createDiffScopedSource({
-            allowedPaths,
-            root: args.sourceRoot,
-            readFile: io.readFile,
-            realpath: io.realpath,
-            isRegularFile: io.isRegularFile,
-          }),
+          source,
           finderMaxSteps,
           onFinderStep: (info) => {
             stepIndex += 1;
@@ -183,14 +180,11 @@ export async function runReviewCli(
         finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
         judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
       },
-      projectReviewContext:
-        args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
+      projectReviewContext: args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
       // In an ultimately-green run this stderr line is the only evidence that
       // a transient flake happened and the single retry recovered it.
       onRetry: (pass, error, delayMs) => {
-        io.logError(
-          `retrying ${pass} after ${errorLabel(error)} in ${String(Math.round(delayMs))}ms`,
-        );
+        io.logError(`retrying ${pass} after ${errorLabel(error)} in ${String(Math.round(delayMs))}ms`);
       },
       // A repaired run is otherwise indistinguishable from a clean one; this
       // line is how persistent model drift stays visible in the Actions log.
@@ -201,10 +195,7 @@ export async function runReviewCli(
 
     io.mkdir(args.outDir);
     io.writeFile(join(args.outDir, "review.json"), `${JSON.stringify(result, null, 2)}\n`);
-    io.writeFile(
-      join(args.outDir, "comment.md"),
-      renderStickyComment(result, { runUrl: resolveRunUrl(env) }),
-    );
+    io.writeFile(join(args.outDir, "comment.md"), renderStickyComment(result, { runUrl: resolveRunUrl(env) }));
 
     io.log(
       `verdict=${result.verdict} findings=${String(result.findings.length)} ` +

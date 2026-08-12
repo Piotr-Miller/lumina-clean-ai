@@ -15,6 +15,13 @@ prompts:
   - id: "{{diff}}"
     label: production-finder-prompt
 
+# qwen3-coder-flash and gpt-5.4-mini were dropped after the 2026-08-10 run:
+# their failures are STRUCTURAL, not quality. qwen has no `structured_outputs`
+# support, degrades to `json_object`, and Alibaba then rejects a prompt that
+# lacks the literal word "json"; OpenAI strict structured outputs demands every
+# property appear in `required`, while startLine/endLine are `.optional()` for
+# Anthropic compatibility (schemas.ts). Neither ever reached a model, so keeping
+# them would only add known-dead error rows to the decision snapshot.
 providers:
   # Production baseline first: every comparison is anchored to what runs today.
   - id: file://./finder-provider.ts
@@ -22,17 +29,38 @@ providers:
     config:
       model: z-ai/glm-4.6
   - id: file://./finder-provider.ts
-    label: cheap-qwen3-coder-flash
+    label: cheap-deepseek-v3.2
     config:
-      model: qwen/qwen3-coder-flash
+      model: deepseek/deepseek-v3.2
   - id: file://./finder-provider.ts
-    label: middle-gpt-5.4-mini
+    label: mid-claude-haiku-4.5
     config:
-      model: openai/gpt-5.4-mini
+      model: anthropic/claude-haiku-4.5
   - id: file://./finder-provider.ts
     label: premium-claude-sonnet-5
     config:
       model: anthropic/claude-sonnet-5
+  # Second-round candidates (added 2026-08-11, after the live probes): the first
+  # round's winner (sonnet-5) is the only model observed converting out-of-hunk
+  # context into a correct verdict on a REAL PR, at ~58x the production
+  # baseline's cost per review. These two are the cheapest models whose vendors
+  # claim strong agentic tool use, and they exist to find out whether that
+  # premium is actually necessary. Run them with --filter-providers rather than
+  # paying for the whole matrix again; the earlier providers stay registered so
+  # the comparison remains reproducible.
+  #
+  # OpenAI's GPT-5.6 tier is deliberately absent despite topping the coding
+  # boards: strict structured outputs demands every property appear in
+  # `required`, and startLine/endLine are `.optional()` for Anthropic
+  # compatibility (schemas.ts) — the same wall gpt-5.4-mini hit.
+  - id: file://./finder-provider.ts
+    label: cheap-deepseek-v4-flash
+    config:
+      model: deepseek/deepseek-v4-flash-0731
+  - id: file://./finder-provider.ts
+    label: mid-glm-5.2
+    config:
+      model: z-ai/glm-5.2
 
 defaultTest:
   vars:
@@ -45,15 +73,15 @@ defaultTest:
     # OPENROUTER_API_KEY. If Google retires the -preview id, fall back to the
     # stable openrouter:google/gemini-2.5-pro.
     provider: openrouter:google/gemini-3.1-pro-preview
+  # Only the schema check is universal. scoreIssueRecall lives on each
+  # defect-bearing case instead: promptfoo PREPENDS defaultTest assertions to
+  # every case, and the recall assertion fails outright when `expectedIssues` is
+  # absent — as a default it would fail the clean-diff case by construction,
+  # which is the one case whose whole point is that there is nothing to find.
   assert:
     - type: is-json
       value: file://./review-result.schema.json
       metric: schema_validity
-    # No threshold here: scoreIssueRecall's integer hit-count decides pass/fail
-    # (a rounded 0.67 ratio threshold would silently demand 3-of-3, since 2/3 < 0.67).
-    - type: javascript
-      value: file://./assertions.mjs:scoreIssueRecall
-      metric: issue_recall
 
 tests:
   - description: Finds the material defects in a small JavaScript loop
@@ -83,6 +111,13 @@ tests:
             - "out[- ]of[- ]bounds"
             - 'i <= users\.length'
             - 'i < users\.length'
+    assert:
+      # No threshold on any recall assert: scoreIssueRecall's integer hit-count
+      # decides pass/fail (a rounded 0.67 ratio threshold would silently demand
+      # 3-of-3, since 2/3 < 0.67).
+      - type: javascript
+        value: file://./assertions.mjs:scoreIssueRecall
+        metric: issue_recall
 
   - description: React 16->19 class-to-function migration with three planted flaws (post-change lines - 24 lost cleanup, 25 stale closure, 39 unsafe HTML)
     vars:
@@ -105,9 +140,12 @@ tests:
             - "dangerouslySetInnerHTML"
             - "sanitiz"
     # Case-specific asserts; promptfoo merges them on top of defaultTest's
-    # schema + recall. Rubrics pass on concept identification in any wording —
+    # schema check. Rubrics pass on concept identification in any wording —
     # severity/category agreement is reviewMustFail's and the human's job.
     assert:
+      - type: javascript
+        value: file://./assertions.mjs:scoreIssueRecall
+        metric: issue_recall
       - type: llm-rubric
         value: >-
           The reviewed diff migrates src/components/MetricsPanel.jsx from a
@@ -150,3 +188,87 @@ tests:
       - type: javascript
         value: file://./assertions.mjs:reviewMustFail
         metric: review_fails
+
+  # TOOL-ENABLED. `fixtureRoot` is what switches the finder from a single
+  # generation to a real getFileContext loop, and it is a per-CASE var because
+  # tool-enablement varies by case, not by model.
+  #
+  # The planted flaw is the hardcoded 0.5 quality at post-change line 58: the
+  # diff adds flattenForUpload, and NOTHING inside the hunk (or its context)
+  # mentions JPEG_QUALITY. Knowing the change is wrong requires reading the
+  # module header + the constant, which live only OUTSIDE the hunk — so a model
+  # that never fetches has no way to link it to the single-source contract.
+  - description: Cross-hunk contract violation, knowable only by reading outside the hunk (post-change line 58)
+    vars:
+      diff: file://./fixtures/cross-hunk.diff
+      fixtureRoot: ./fixtures/cross-hunk
+      # The file carrying the out-of-hunk contract, spelled exactly as the
+      # diff's `+++ b/<path>` names it — the allowlist is exact-match, and
+      # tool_required checks DELIVERY of this path specifically.
+      requiredContextPath: src/lib/engines/canvas-helpers.ts
+      # Every pattern must require CONTRACT reasoning, never mere observation of
+      # the literal. A bare "hardcod" pattern used to sit here and awarded full
+      # recall to "the hardcoded 0.5 should be configurable" — a finding the
+      # rubric below explicitly fails, and one any model can produce from the
+      # hunk alone, which would have made the metric misreport tool adoption as
+      # quality in decision.md (impl-review-phase-2 F2). Pinned by
+      # promptfooconfig.test.ts.
+      expectedIssues:
+        - label: hardcoded quality bypasses the shared JPEG_QUALITY constant
+          patterns:
+            - "JPEG_QUALITY"
+            - "single[- ]source"
+            - "shared (jpeg )?(re-?encode )?(quality )?constant"
+            - "documented (module )?(invariant|contract)"
+    assert:
+      - type: javascript
+        value: file://./assertions.mjs:scoreIssueRecall
+        metric: issue_recall
+      # Observational, gates nothing: its score is the RAW CALL COUNT, so the
+      # metric averages to "getFileContext calls per row" for each model.
+      - type: javascript
+        value: file://./assertions.mjs:countToolCalls
+        metric: tool_calls
+      # The gate: the model must have RECEIVED requiredContextPath. A refused
+      # call delivers no evidence, and invocation alone is not adoption.
+      - type: javascript
+        value: file://./assertions.mjs:requireToolContext
+        metric: tool_required
+      - type: llm-rubric
+        value: >-
+          The reviewed diff adds a flattenForUpload function to
+          src/lib/engines/canvas-helpers.ts. Planted flaw: it re-encodes with a
+          hardcoded quality literal (canvas.toDataURL("image/jpeg", 0.5),
+          post-change line 58) while the module's own header and the exported
+          JPEG_QUALITY constant — both OUTSIDE the diff hunk — state that every
+          re-encode path must go through the shared constant and that a literal
+          quality argument anywhere in the file is a bug. Pass if the review
+          identifies this contradiction in any wording (for example: bypasses
+          or duplicates the shared JPEG_QUALITY constant, violates the
+          single-source rule, hardcoded quality where the module requires the
+          constant). The exact terminology, severity, and category do not
+          matter. Fail if the review only observes the literal generically
+          (for example "0.5 seems low" or "consider making quality
+          configurable") without connecting it to the module's shared-constant
+          contract, or does not mention it at all.
+        metric: flaw_cross_hunk_contract
+
+  # TOOL-ENABLED, and deliberately so: the risk it measures is tool-INDUCED
+  # over-reporting, and without a fixtureRoot createReviewer drops the tool
+  # entirely — the case would then measure nothing of the kind. The change is
+  # genuinely defect-free (a local-variable rename plus a comment explaining
+  # the base-10 unit choice), so a healthy reviewer has nothing to escalate.
+  # No expectedIssues and no recall assertion: there is nothing to recall.
+  - description: Defect-free mechanical rename, tool-enabled — measures manufactured findings, not recall
+    vars:
+      diff: file://./fixtures/clean-change.diff
+      fixtureRoot: ./fixtures/clean-change
+    assert:
+      # Precision, the inverse of reviewMustFail: nits and minors are fine, a
+      # critical or major on this diff is a manufactured finding.
+      - type: javascript
+        value: file://./assertions.mjs:reviewMustPass
+        metric: no_false_alarms
+      - type: javascript
+        value: file://./assertions.mjs:countToolCalls
+        metric: tool_calls

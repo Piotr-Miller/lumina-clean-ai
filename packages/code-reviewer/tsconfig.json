@@ -7,5 +7,11 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src", "evals/**/*.ts"]
+  "include": ["src", "evals/**/*.ts"],
+  // Eval fixtures are DATA, not package source: they are deliberately-flawed
+  // files served to the finder through createDiffScopedSource, and they must
+  // stay byte-for-byte identical to the diff that names them. Type-checking
+  // them would pressure an author into "fixing" a planted flaw, which
+  // silently breaks the diff<->disk contract the tool depends on.
+  "exclude": ["evals/fixtures/**"]
 }

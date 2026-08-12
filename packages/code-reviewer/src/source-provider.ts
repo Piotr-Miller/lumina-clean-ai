@@ -83,6 +83,19 @@ export interface DiffScopedSourceOptions {
   readFile: (path: string) => string;
   realpath: (path: string) => string;
   isRegularFile: (path: string) => boolean;
+  /**
+   * Observes the OUTCOME of each request, reported from here because this is
+   * the only place that knows it for certain. `delivered` is true only when
+   * real file content was returned; an unlisted path, a failed containment
+   * check, an unreadable or empty file, and an out-of-range slice are all
+   * `false` — no evidence reached the model in any of those cases.
+   *
+   * Consumers must not re-derive this by inspecting the returned string: the
+   * refusals are prose aimed at the model, and a file whose first line happens
+   * to look like one would be misread (impl-review-phase-1 F4). Purely
+   * observational — the model-facing return value is unchanged.
+   */
+  onResult?: (result: { path: string; delivered: boolean }) => void;
 }
 
 // The refusal repeats the required format and enumerates a deterministic,
@@ -114,10 +127,20 @@ const refuseUnreadable = (path: string): string =>
  * here unclamped and MAX_CONTEXT_CHARS bounds the response.
  */
 export function createDiffScopedSource(options: DiffScopedSourceOptions): SourceProvider {
-  const { allowedPaths, root, readFile, realpath, isRegularFile } = options;
+  const { allowedPaths, root, readFile, realpath, isRegularFile, onResult } = options;
+  // Every exit goes through one of these two, so a future return path cannot
+  // silently skip the outcome report.
+  const refuse = (path: string, message: string): string => {
+    onResult?.({ path, delivered: false });
+    return message;
+  };
+  const deliver = (path: string, content: string): string => {
+    onResult?.({ path, delivered: true });
+    return content;
+  };
   return (request) => {
     const { path, startLine, endLine } = request;
-    if (!allowedPaths.has(path)) return refuseUnlisted(path, allowedPaths);
+    if (!allowedPaths.has(path)) return refuse(path, refuseUnlisted(path, allowedPaths));
     let content: string;
     try {
       // Symlink-free containment: resolving the full path must change nothing
@@ -125,13 +148,13 @@ export function createDiffScopedSource(options: DiffScopedSourceOptions): Source
       // symlinked path component, breaks the equality.
       const resolved = realpath(join(root, path));
       if (resolved !== join(realpath(root), path) || !isRegularFile(resolved)) {
-        return refuseUnreadable(path);
+        return refuse(path, refuseUnreadable(path));
       }
       content = readFile(resolved);
     } catch {
-      return refuseUnreadable(path);
+      return refuse(path, refuseUnreadable(path));
     }
-    if (content === "") return `"${path}" is empty.`;
+    if (content === "") return refuse(path, `"${path}" is empty.`);
     const lines = content.split("\n");
     // Defensive floors: the tool schema already enforces >= 1, but a negative
     // index must never turn into a from-the-end slice — a sub-1 startLine
@@ -140,8 +163,39 @@ export function createDiffScopedSource(options: DiffScopedSourceOptions): Source
     const last = endLine === undefined ? lines.length : endLine < 1 ? 0 : endLine;
     const slice = lines.slice(first - 1, last);
     if (slice.length === 0) {
-      return `"${path}" has ${String(lines.length)} line(s); lines ${String(first)}-${String(last)} are outside that range.`;
+      return refuse(
+        path,
+        `"${path}" has ${String(lines.length)} line(s); lines ${String(first)}-${String(last)} are outside that range.`,
+      );
     }
-    return slice.join("\n");
+    return deliver(path, slice.join("\n"));
   };
+}
+
+/**
+ * The full assembly of a diff-scoped source, shared by every consumer so the
+ * allowlist is always derived the same way: post-change paths out of the
+ * diff, then the containment wiring above.
+ *
+ * `undefined` means "no source" rather than an empty allowlist: a diff with no
+ * post-change paths (deletions only) has nothing the tool could ever serve,
+ * and attaching a tool that can only refuse would cost loop steps for nothing
+ * — the caller should stay tool-less instead.
+ *
+ * Deliberately still pure over injected fs primitives, like the rest of this
+ * module: the CLI passes its `CliIo` members (kept hermetic by cli.test.ts),
+ * the promptfoo provider passes `node:fs`. Sharing THIS function is what keeps
+ * a future hardening of the allowlist derivation from reaching CI but not the
+ * evals.
+ */
+export function createDiffScopedSourceForDiff(
+  options: Omit<DiffScopedSourceOptions, "allowedPaths"> & {
+    /** Unified diff the allowlist is derived from — pass the FULL diff, never a truncated one. */
+    diff: string;
+  },
+): SourceProvider | undefined {
+  const { diff, ...fs } = options;
+  const allowedPaths = parseDiffPaths(diff);
+  if (allowedPaths.size === 0) return undefined;
+  return createDiffScopedSource({ allowedPaths, ...fs });
 }

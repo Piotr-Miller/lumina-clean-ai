@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { reviewMustFail, scoreIssueRecall } from "./assertions.mjs";
+import { countToolCalls, requireToolContext, reviewMustFail, reviewMustPass, scoreIssueRecall } from "./assertions.mjs";
 
 const threeIssues = [
   { label: "issue-a", patterns: ["alpha"] },
@@ -77,5 +77,183 @@ describe("reviewMustFail", () => {
 
   it("fails a review with no findings", () => {
     expect(reviewMustFail(JSON.stringify({ findings: [] })).pass).toBe(false);
+  });
+});
+
+describe("reviewMustPass", () => {
+  const reviewWith = (...severities: string[]) =>
+    JSON.stringify({
+      summary: "s",
+      findings: severities.map((severity) => ({ severity, file: "src/lib/format-bytes.ts" })),
+    });
+
+  it.each([
+    { name: "a clean review with no findings", output: reviewWith(), expectedPass: true },
+    { name: "nit-only", output: reviewWith("nit"), expectedPass: true },
+    // The boundary the metric is defined by: minor is tolerated, major is not.
+    { name: "minor-only", output: reviewWith("minor", "nit"), expectedPass: true },
+    { name: "one major among minors", output: reviewWith("minor", "major"), expectedPass: false },
+    { name: "critical", output: reviewWith("critical"), expectedPass: false },
+  ])("returns $expectedPass for $name", ({ output, expectedPass }) => {
+    expect(reviewMustPass(output).pass).toBe(expectedPass);
+  });
+
+  it("names the manufactured findings so the viewer says what was invented", () => {
+    expect(reviewMustPass(reviewWith("major", "critical")).reason).toContain("src/lib/format-bytes.ts");
+  });
+
+  it("fails output that is not JSON", () => {
+    expect(reviewMustPass("not json at all").pass).toBe(false);
+  });
+
+  it("fails a drifted envelope with no findings array rather than reading it as clean", () => {
+    // glm-4.6 under tool-attachment emits a bare findings ARRAY (output-repair.ts).
+    expect(reviewMustPass(JSON.stringify([{ severity: "major" }])).pass).toBe(false);
+  });
+});
+
+// --- Tool-loop telemetry assertions ------------------------------------------
+// Metadata shapes mirror what finder-provider.ts reports; every unreadable
+// shape must FAIL, never silently read as an observed zero-call run.
+
+const REQUIRED_PATH = "src/lib/engines/canvas-helpers.ts";
+
+const telemetry = (overrides: Record<string, unknown> = {}) => ({
+  lens: "general",
+  model: "test/model",
+  toolEnabled: true,
+  toolCalls: 0,
+  requestedPaths: [] as string[],
+  deliveredPaths: [] as string[],
+  refusedPaths: [] as string[],
+  ...overrides,
+});
+
+const delivered = telemetry({
+  toolCalls: 2,
+  requestedPaths: [REQUIRED_PATH, REQUIRED_PATH],
+  deliveredPaths: [REQUIRED_PATH, REQUIRED_PATH],
+});
+
+const refusedOnly = telemetry({
+  toolCalls: 1,
+  requestedPaths: ["src/lib/engines/canvas-helpers.js"],
+  refusedPaths: ["src/lib/engines/canvas-helpers.js"],
+});
+
+describe("countToolCalls", () => {
+  it("scores the raw invocation count, refusals included", () => {
+    const result = countToolCalls("", {
+      metadata: telemetry({ toolCalls: 3, deliveredPaths: [REQUIRED_PATH], refusedPaths: ["nope.ts", "nope.ts"] }),
+    });
+
+    expect(result).toMatchObject({ pass: true, score: 3 });
+    expect(result.reason).toContain(REQUIRED_PATH);
+  });
+
+  it("reports zero calls without failing the row — adoption is tool_required's gate", () => {
+    expect(countToolCalls("", { metadata: telemetry() })).toMatchObject({ pass: true, score: 0 });
+  });
+
+  it("fails closed when the provider reported no metadata", () => {
+    expect(countToolCalls("", {})).toMatchObject({ pass: false, score: 0 });
+  });
+
+  it("fails closed on a tool-less row, which this assertion should never be attached to", () => {
+    expect(countToolCalls("", { metadata: telemetry({ toolEnabled: false }) }).pass).toBe(false);
+  });
+
+  // A NaN score would poison the metric's average across every row of that
+  // model, silently — worse than a visible failure.
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, -1, 1.5, "2"])(
+    "fails closed on an implausible toolCalls count: %s",
+    (toolCalls) => {
+      expect(countToolCalls("", { metadata: telemetry({ toolCalls }) })).toMatchObject({ pass: false, score: 0 });
+    },
+  );
+});
+
+describe("requireToolContext", () => {
+  const contextWith = (metadata?: Record<string, unknown>) => ({
+    vars: { requiredContextPath: REQUIRED_PATH },
+    ...(metadata === undefined ? {} : { metadata }),
+  });
+
+  it("passes when the required path was actually delivered", () => {
+    expect(requireToolContext("", contextWith(delivered))).toMatchObject({ pass: true, score: 1 });
+  });
+
+  it("fails a zero-call row and says the tool was never called", () => {
+    const result = requireToolContext("", contextWith(telemetry()));
+
+    expect(result.pass).toBe(false);
+    expect(result.componentResults?.[0]?.reason).toBe("Never called getFileContext");
+  });
+
+  it("fails a row whose only call was refused — an invocation is not evidence", () => {
+    const result = requireToolContext("", contextWith(refusedOnly));
+
+    expect(result.pass).toBe(false);
+    // The refusal is a model-facing string, so from the model's side it looks
+    // exactly like content; only the source's own report tells them apart.
+    expect(result.componentResults?.[0]?.pass).toBe(true);
+    expect(result.componentResults?.[1]?.reason).toContain("Never received");
+  });
+
+  it("fails when a DIFFERENT allowlisted path was delivered instead", () => {
+    const result = requireToolContext(
+      "",
+      contextWith(telemetry({ toolCalls: 1, requestedPaths: ["src/other.ts"], deliveredPaths: ["src/other.ts"] })),
+    );
+
+    expect(result.pass).toBe(false);
+    expect(result.componentResults?.[1]?.reason).toContain("src/other.ts");
+  });
+
+  it("says the path was refused when it was asked for and turned down", () => {
+    const result = requireToolContext("", {
+      vars: { requiredContextPath: "src/lib/engines/canvas-helpers.js" },
+      metadata: refusedOnly,
+    });
+
+    expect(result.componentResults?.[1]?.reason).toContain("refused");
+  });
+
+  it("fails closed when the provider reported no metadata", () => {
+    expect(requireToolContext("", contextWith())).toMatchObject({ pass: false, score: 0 });
+  });
+
+  it("fails closed on a tool-less row", () => {
+    expect(requireToolContext("", contextWith(telemetry({ toolEnabled: false }))).pass).toBe(false);
+  });
+
+  // The provider records the request and its outcome in the SAME callback, and
+  // a delivery cannot happen without a call — so these shapes mean the
+  // instrument disagrees with itself, and the optimistic half must not win.
+  it("fails telemetry that reports delivery with zero calls", () => {
+    const result = requireToolContext(
+      "",
+      contextWith(telemetry({ toolCalls: 0, requestedPaths: [REQUIRED_PATH], deliveredPaths: [REQUIRED_PATH] })),
+    );
+
+    expect(result.pass).toBe(false);
+    expect(result.reason).toContain("contradicts itself");
+  });
+
+  it("fails telemetry that reports delivery of a path it never requested", () => {
+    const result = requireToolContext(
+      "",
+      contextWith(telemetry({ toolCalls: 1, requestedPaths: [], deliveredPaths: [REQUIRED_PATH] })),
+    );
+
+    expect(result.pass).toBe(false);
+    expect(result.componentResults?.[1]?.reason).toContain("no request for it");
+  });
+
+  it("fails when the case configured no requiredContextPath", () => {
+    expect(requireToolContext("", { vars: {}, metadata: delivered })).toMatchObject({
+      pass: false,
+      reason: "No requiredContextPath configured for this case",
+    });
   });
 });

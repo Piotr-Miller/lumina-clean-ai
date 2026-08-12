@@ -20,6 +20,20 @@ describe("resolveModels — finder chain", () => {
     expect(resolveModels().reviewModel).toBe(DEFAULT_MODEL);
   });
 
+  // Literal, not a tautology: the assertion above passes whatever the constant
+  // says, so it could not catch the checked-in default drifting away from the
+  // model production actually runs. These pin the strings themselves — the
+  // finder default must equal the OPENROUTER_REVIEW_MODEL repository variable,
+  // because it is what takes over when that variable is unset or cleared
+  // (impl-review-phase-4 F1). Update these ONLY together with that variable.
+  it("defaults the finder to the model production runs", () => {
+    expect(DEFAULT_MODEL).toBe("z-ai/glm-4.6");
+  });
+
+  it("defaults the judge to the model production runs", () => {
+    expect(DEFAULT_JUDGE_MODEL).toBe("anthropic/claude-sonnet-5");
+  });
+
   it("prefers the override over every env var", () => {
     vi.stubEnv("OPENROUTER_REVIEW_MODEL", "env/review");
     vi.stubEnv("OPENROUTER_MODEL", "env/legacy");
