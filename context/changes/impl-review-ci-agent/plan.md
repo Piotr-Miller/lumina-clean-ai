@@ -550,5 +550,5 @@ Nothing to migrate. The feature is inert until `plan-file` is passed, so Phases 
 - [x] 4.5 Pass flags the prohibited EXTRA (excluded by the plan, implemented anyway) — P3 CRITICAL/scope_discipline, quotes the exclusion
 - [x] 4.6 Pass does not raise the benign unplanned helper above WARNING — P6 OBSERVATION/LOW, reasoned as incidental
 - [x] 4.7 Pass makes no claim about having run or observed a command
-- [ ] 4.8 Per-run cost read from `implReviewTelemetry` and stated as a ratio against the run's finder+judge spend — **BLOCKED, criterion not computable as written**: impl cost is instrumented ($0.292746) but `finderTelemetry` carries no `cost` key and the judge has no telemetry block at all. Fix the instrumentation or restate the criterion (verification.md)
+- [x] 4.8 Per-run cost read from `implReviewTelemetry` and stated as a ratio against the run's finder+judge spend — **9.47×** (impl $0.199620 vs finder $0.003983 + judge $0.017104 = $0.021087), run [31735830016](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31735830016). Required building the instrumentation first (PR #132): `finderTelemetry` had no `cost` key and the judge had no telemetry block nor usage accounting at all
 - [x] 4.9 `verification.md` states the outcome against every pre-registered criterion, including the two that did not pass
