@@ -2,8 +2,14 @@ import type { ProviderMetadata, StepResult, ToolSet } from "ai";
 
 import { resolveModels } from "./config.js";
 import { mergeFindings } from "./findings.js";
+import {
+  createImplReviewer,
+  type ImplReviewCallOptions,
+  type ImplReviewer,
+  type ImplReviewerOptions,
+} from "./impl-reviewer.js";
 import { createJudge, type JudgeCallOptions } from "./judge.js";
-import { type JudgePromptInput } from "./prompts.js";
+import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
 import { withOneRetry } from "./retry.js";
 import {
   createReviewer,
@@ -13,7 +19,17 @@ import {
   type SourceProvider,
 } from "./reviewer.js";
 import { assignFindingIds } from "./scorecard.js";
-import type { DiffStats, FinderTelemetry, JudgeResult, PipelineResult, ReviewResult, ReviewUnit } from "./schemas.js";
+import type {
+  DiffStats,
+  FinderTelemetry,
+  ImplReviewBlock,
+  ImplReviewResult,
+  ImplReviewTelemetry,
+  JudgeResult,
+  PipelineResult,
+  ReviewResult,
+  ReviewUnit,
+} from "./schemas.js";
 
 // Two-pass orchestration in plain code: finder (full diff) → normalize +
 // merge + assign F1..Fn → judge (findings + rubric + PR metadata) → result.
@@ -31,10 +47,14 @@ export const BODY_TRUNCATION_MARKER = "\n[...body truncated at 2,000 chars]";
 // Per attempt, so worst case = 2×finder + 2×judge with withOneRetry.
 export const DEFAULT_FINDER_TIMEOUT_MS = 300_000; // up to 8 tool-loop steps
 export const DEFAULT_JUDGE_TIMEOUT_MS = 120_000; // single structured call
+// Mirrors the judge: the implementation review is one structured call over a
+// capped plan + capped diff, with no tool loop to budget for.
+export const DEFAULT_IMPL_REVIEW_TIMEOUT_MS = 120_000;
 
 export interface PipelineTimeouts {
   finderTimeoutMs?: number;
   judgeTimeoutMs?: number;
+  implReviewTimeoutMs?: number;
 }
 
 // Same guard style as reviewer.ts's maxSteps: a zero, negative, fractional,
@@ -42,12 +62,13 @@ export interface PipelineTimeouts {
 function resolveTimeouts(overrides: PipelineTimeouts = {}): Required<PipelineTimeouts> {
   const finderTimeoutMs = overrides.finderTimeoutMs ?? DEFAULT_FINDER_TIMEOUT_MS;
   const judgeTimeoutMs = overrides.judgeTimeoutMs ?? DEFAULT_JUDGE_TIMEOUT_MS;
-  for (const [name, value] of Object.entries({ finderTimeoutMs, judgeTimeoutMs })) {
+  const implReviewTimeoutMs = overrides.implReviewTimeoutMs ?? DEFAULT_IMPL_REVIEW_TIMEOUT_MS;
+  for (const [name, value] of Object.entries({ finderTimeoutMs, judgeTimeoutMs, implReviewTimeoutMs })) {
     if (!Number.isSafeInteger(value) || value < 1) {
       throw new Error(`${name} must be a positive integer (ms), got: ${String(value)}`);
     }
   }
-  return { finderTimeoutMs, judgeTimeoutMs };
+  return { finderTimeoutMs, judgeTimeoutMs, implReviewTimeoutMs };
 }
 
 /** Files/additions/deletions from unified-diff text (headers excluded). */
@@ -120,18 +141,26 @@ export interface PipelineOverrides {
   apiKey?: string;
   reviewModel?: string;
   judgeModel?: string;
+  implReviewModel?: string;
 }
 
-/** Injection seam for hermetic tests: swap either pass for a pure function. */
+/** Injection seam for hermetic tests: swap any pass for a pure function. */
 export interface PipelineDeps {
   finder?: (unit: ReviewUnit, callOptions?: ReviewCallOptions) => Promise<ReviewResult>;
   judge?: (input: JudgePromptInput, callOptions?: JudgeCallOptions) => Promise<JudgeResult>;
+  implReviewer?: (input: ImplReviewPromptInput, callOptions?: ImplReviewCallOptions) => Promise<ImplReviewResult>;
   /**
    * Replaces createReviewer for the finder pass so the source/maxSteps/step-
    * telemetry wiring is hermetically testable; `finder` (above) bypasses
    * construction entirely and therefore produces no finderTelemetry.
    */
   createFinder?: (options: ReviewerOptions) => Pick<Reviewer, "review">;
+  /**
+   * The same construction seam for the third pass. `implReviewer` above
+   * bypasses construction and therefore produces no implReviewTelemetry, so
+   * accumulation across a retried run is only observable through this one.
+   */
+  createImplReviewer?: (options: ImplReviewerOptions) => Pick<ImplReviewer, "implReview">;
   /** Replaces the real pre-retry sleep so retry-path tests never wait. */
   retrySleep?: (ms: number) => Promise<void>;
 }
@@ -162,7 +191,7 @@ export interface FinderStepInfo {
  * that reports no cost, or a non-finite value all degrade to `undefined`
  * rather than a fabricated 0, which would read as "this step was free".
  */
-const asStepCost = (metadata: ProviderMetadata | undefined): number | undefined => {
+export const asStepCost = (metadata: ProviderMetadata | undefined): number | undefined => {
   const openrouter: unknown = metadata?.openrouter;
   if (typeof openrouter !== "object" || openrouter === null) return undefined;
   if (!("usage" in openrouter)) return undefined;
@@ -230,8 +259,8 @@ export interface PipelineInput {
    * output, not an ambiguous silence. `path` is repo-relative and is display
    * metadata only; it is equally untrusted (the PR body can name it).
    *
-   * Nothing consumes this yet: the implementation-review pass arrives in
-   * phase 3, and until then the plan flows in, is capped, and stops there.
+   * Present → the implementation-review pass runs; absent → it does not, and
+   * `implReview` is absent from the result.
    */
   plan?: { text: string; path?: string };
   /**
@@ -239,7 +268,7 @@ export interface PipelineInput {
    * the pass name, the swallowed first failure, and the pre-retry delay.
    * Without it a recovered flake leaves zero trace in the run's output.
    */
-  onRetry?: (pass: "finder" | "judge", error: unknown, delayMs: number) => void;
+  onRetry?: (pass: "finder" | "judge" | "impl-review", error: unknown, delayMs: number) => void;
   /**
    * File-context provider for the finder's getFileContext tool. Absent (all
    * legacy callers) → the finder stays tool-less and single-generation — the
@@ -303,7 +332,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     }).review;
   const judge = input.deps?.judge ?? createJudge({ apiKey: input.overrides?.apiKey, model: models.judgeModel }).judge;
 
-  const retryOptions = (pass: "finder" | "judge") => ({
+  const retryOptions = (pass: "finder" | "judge" | "impl-review") => ({
     sleep: input.deps?.retrySleep,
     onRetry: (error: unknown, delayMs: number) => input.onRetry?.(pass, error, delayMs),
   });
@@ -320,6 +349,16 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     () => judge({ findings, prTitle: input.prTitle, prBody, diffStats }, { timeoutMs: timeouts.judgeTimeoutMs }),
     retryOptions("judge"),
   );
+
+  const { implReview, implReviewTelemetry } = await runImplReviewPass({
+    input,
+    plan,
+    diff,
+    apiKey: input.overrides?.apiKey,
+    model: models.implReviewModel,
+    timeoutMs: timeouts.implReviewTimeoutMs,
+    retryOptions: retryOptions("impl-review"),
+  });
 
   return {
     summary: judgeResult.summary,
@@ -339,5 +378,101 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     // Key absent (not undefined-valued) when nothing was observed, so
     // review.json and `in` checks stay clean for injected-finder runs.
     ...(telemetry.steps > 0 ? { finderTelemetry: telemetry } : {}),
+    ...(implReview === undefined ? {} : { implReview }),
+    ...(implReviewTelemetry === undefined ? {} : { implReviewTelemetry }),
   };
+}
+
+interface ImplReviewPassInput {
+  input: PipelineInput;
+  plan: { plan: string; truncated: boolean } | undefined;
+  /** The already-capped diff — the pass judges exactly what the finder saw. */
+  diff: string;
+  apiKey: string | undefined;
+  model: string;
+  timeoutMs: number;
+  retryOptions: { sleep?: (ms: number) => Promise<void>; onRetry: (error: unknown, delayMs: number) => void };
+}
+
+/**
+ * The third pass, fully isolated.
+ *
+ * Two guarantees hold here and are worth stating because both are easy to
+ * lose in a refactor:
+ *
+ * 1. No plan → no call, and no `implReview` key at all. Absence IS the no-plan
+ *    signal; there is no `skipped` shape to accidentally render as reviewed.
+ * 2. A terminal failure NEVER propagates. This pass is advisory and lands
+ *    after the judge, so throwing here would discard a complete, paid-for code
+ *    review over an advisory extra. The failure becomes a rendered block
+ *    instead — visible, but never fatal.
+ */
+async function runImplReviewPass(
+  args: ImplReviewPassInput,
+): Promise<{ implReview?: ImplReviewBlock; implReviewTelemetry?: ImplReviewTelemetry }> {
+  const { input, plan } = args;
+  if (plan === undefined || input.plan === undefined) return {};
+
+  // Accumulated across BOTH attempts of a retried run, same reasoning as the
+  // finder's: it measures the run's real spend, not the surviving attempt's.
+  const telemetry: ImplReviewTelemetry = { attempts: 0 };
+  // Assigns only what the provider actually reported: `telemetry.cost =
+  // undefined` would still CREATE the key, and an `"cost" in telemetry` check
+  // downstream would then read an un-instrumented run as an instrumented one
+  // that cost nothing.
+  const accumulate = (key: "inputTokens" | "outputTokens" | "totalTokens" | "cost", next: number | undefined): void => {
+    if (next === undefined) return;
+    telemetry[key] = (telemetry[key] ?? 0) + next;
+  };
+  const observeStep = (step: StepResult<ToolSet>): void => {
+    telemetry.attempts += 1;
+    accumulate("inputTokens", step.usage.inputTokens);
+    accumulate("outputTokens", step.usage.outputTokens);
+    accumulate("totalTokens", step.usage.totalTokens);
+    accumulate("cost", asStepCost(step.providerMetadata));
+  };
+
+  // Telemetry survives the catch: a failed pass still spent provider money on
+  // the attempts it made, and dropping that would understate the run's cost
+  // exactly when someone is investigating why it failed.
+  const withTelemetry = <T extends { implReview?: ImplReviewBlock }>(result: T) => ({
+    ...result,
+    ...(telemetry.attempts > 0 ? { implReviewTelemetry: telemetry } : {}),
+  });
+
+  try {
+    // CONSTRUCTION IS INSIDE THE GUARD ON PURPOSE. createImplReviewer throws on
+    // an unresolvable API key, and this pass runs after a completed, paid-for
+    // code review — a throw here would discard that review over an advisory
+    // extra. Every way this pass can fail has to degrade to the failed block.
+    const factory = input.deps?.createImplReviewer ?? createImplReviewer;
+    const implReview =
+      input.deps?.implReviewer ??
+      factory({ apiKey: args.apiKey, model: args.model, onStepEnd: observeStep }).implReview;
+
+    const result = await withOneRetry(
+      () =>
+        implReview(
+          {
+            plan: plan.plan,
+            diff: args.diff,
+            ...(input.plan?.path === undefined ? {} : { planPath: input.plan.path }),
+            ...(plan.truncated ? { planTruncated: true } : {}),
+          },
+          { timeoutMs: args.timeoutMs },
+        ),
+      args.retryOptions,
+    );
+    return withTelemetry({
+      implReview: {
+        status: "reviewed",
+        ...(input.plan.path === undefined ? {} : { planPath: input.plan.path }),
+        ...result,
+      },
+    });
+  } catch (error) {
+    return withTelemetry({
+      implReview: { status: "failed", error: error instanceof Error ? error.message : String(error) },
+    });
+  }
 }

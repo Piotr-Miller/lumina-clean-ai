@@ -493,41 +493,41 @@ Nothing to migrate. The feature is inert until `plan-file` is passed, so Phases 
 
 #### Automated
 
-- [ ] 2.1 Lint passes: `cd packages/code-reviewer && npm run lint`
-- [ ] 2.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck`
-- [ ] 2.3 Unit tests pass: `cd packages/code-reviewer && npm test`
-- [ ] 2.4 `resolveModels` resolves the impl-review model across unset / empty / set / override
-- [ ] 2.5 `config.test.ts` pins `DEFAULT_IMPL_REVIEW_MODEL` by literal assertion
-- [ ] 2.6 Instructions carry no run-commands directive and state command results are unavailable
-- [ ] 2.7 Instructions state the clarified exclusion rule (absence never a finding; implementing one is a violation)
-- [ ] 2.8 Prompt fences plan and diff separately and defuses a fence-escape attempt
-- [ ] 2.9 Schema rejects unknown dimension, bad grade, and invalid line number
-- [ ] 2.10 Findings capped at 10 with ids assigned in code
-- [ ] 2.11 Model client constructed with `usage: { include: true }`, pinned by a provider-attempt test
-- [ ] 2.12 `onStepEnd` surfaces tokens and cost, with `undefined` (never 0) when the provider reports none
+- [x] 2.1 Lint passes: `cd packages/code-reviewer && npm run lint`
+- [x] 2.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck`
+- [x] 2.3 Unit tests pass: `cd packages/code-reviewer && npm test`
+- [x] 2.4 `resolveModels` resolves the impl-review model across unset / empty / set / override
+- [x] 2.5 `config.test.ts` pins `DEFAULT_IMPL_REVIEW_MODEL` by literal assertion
+- [x] 2.6 Instructions carry no run-commands directive and state command results are unavailable
+- [x] 2.7 Instructions state the clarified exclusion rule (absence never a finding; implementing one is a violation)
+- [x] 2.8 Prompt fences plan and diff separately and defuses a fence-escape attempt
+- [x] 2.9 Schema rejects unknown dimension, bad grade, and invalid line number
+- [x] 2.10 Findings capped at 10 with ids assigned in code
+- [x] 2.11 Model client constructed with `usage: { include: true }`, pinned by a provider-attempt test
+- [x] 2.12 `onStepEnd` surfaces tokens and cost, with `undefined` (never 0) when the provider reports none
 
 #### Manual
 
-- [ ] 2.13 Vendored criteria spot-checked as a faithful port of the seven dimensions and thresholds
-- [ ] 2.14 The one deliberate divergence (exclusion semantics) is present, commented, and unambiguous
-- [ ] 2.15 One-off local call against a real archived plan returns a plausible, traceable verdict and a non-zero cost
+- [x] 2.13 Vendored criteria spot-checked as a faithful port of the seven dimensions and thresholds
+- [x] 2.14 The one deliberate divergence (exclusion semantics) is present, commented, and unambiguous
+- [x] 2.15 One-off local call against a real archived plan returns a plausible, traceable verdict and a non-zero cost — probe vs `bf15246` (finder-file-context): `NEEDS_ATTENTION`, 2 traceable findings (unplanned `finder-max-steps` action input; contradicted Progress claim 2.4), 51407/13327 tokens, cost $0.236084
 
 ### Phase 3: Pipeline wiring, render, and failure isolation
 
 #### Automated
 
-- [ ] 3.1 Lint passes: `cd packages/code-reviewer && npm run lint`
-- [ ] 3.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck`
-- [ ] 3.3 Unit tests pass: `cd packages/code-reviewer && npm test`
-- [ ] 3.4 No plan → no third call, `implReview` absent, and no `skipped` variant exists in the type
-- [ ] 3.5 Plan + injected reviewer → populated `implReview` in `review.json`
-- [ ] 3.6 Throwing reviewer → exit 0, complete code review, failed-state block
-- [ ] 3.7 `onRetry` fires with `"impl-review"` on a retryable failure
-- [ ] 3.8 `implReviewTelemetry` accumulates across both attempts and is absent when the pass did not run
-- [ ] 3.9 CLI emits one stderr line carrying the pass's tokens and cost
-- [ ] 3.10 All three render states produced and distinguishable
-- [ ] 3.11 Plan path with Markdown control characters or an `@mention` is escaped
-- [ ] 3.12 Over-long comment still terminates with `STICKY_MARKER`
+- [x] 3.1 Lint passes: `cd packages/code-reviewer && npm run lint`
+- [x] 3.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck`
+- [x] 3.3 Unit tests pass: `cd packages/code-reviewer && npm test` — 18 files, 454 tests
+- [x] 3.4 No plan → no third call, `implReview` absent, and no `skipped` variant exists in the type — runtime test + a `Record<ImplReviewBlock["status"], true>` compile-time guard, verified to fail when a third variant is added
+- [x] 3.5 Plan + injected reviewer → populated `implReview` in `review.json` — asserted on the parsed artifact, not just the result object
+- [x] 3.6 Throwing reviewer → exit 0, complete code review, failed-state block — plus a throwing CONSTRUCTION (unresolvable API key) degrading the same way
+- [x] 3.7 `onRetry` fires with `"impl-review"` on a retryable failure
+- [x] 3.8 `implReviewTelemetry` accumulates across both attempts and is absent when the pass did not run — also retained for a pass that ultimately failed, and `cost` key absent (never 0) when unreported
+- [x] 3.9 CLI emits one stderr line carrying the pass's tokens and cost
+- [x] 3.10 All three render states produced and distinguishable
+- [x] 3.11 Plan path with Markdown control characters or an `@mention` is escaped
+- [x] 3.12 Over-long comment still terminates with `STICKY_MARKER`
 
 #### Manual
 

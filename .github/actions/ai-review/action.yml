@@ -9,9 +9,13 @@
 # "$GITHUB_WORKSPACE": file reads restricted to the diff's paths); its loop
 # budget defaults to 5 steps, tunable via the finder-max-steps input
 # (mapped to REVIEW_FINDER_MAX_STEPS).
+# A THIRD pass runs only when plan-file resolved to a non-empty plan: the
+# implementation review judges the diff against that plan. It is advisory and
+# fully isolated — its failure renders as a warning inside the same comment and
+# never changes the exit code, the ai-cr:* labels, or the code review above.
 
 name: AI Code Review
-description: Two-pass AI review (finder + judge) over the PR diff; posts a sticky scorecard comment and flips ai-cr:* labels.
+description: Two-pass AI review (finder + judge) over the PR diff, plus a plan-aware implementation review when a plan resolves; posts a sticky scorecard comment and flips ai-cr:* labels.
 
 inputs:
   api-key:
@@ -23,6 +27,10 @@ inputs:
     default: ""
   judge-model:
     description: Judge model override (maps to OPENROUTER_JUDGE_MODEL; empty = package default chain)
+    required: false
+    default: ""
+  impl-review-model:
+    description: Implementation-review model override (maps to OPENROUTER_IMPL_REVIEW_MODEL; empty = package default chain)
     required: false
     default: ""
   finder-max-steps:
@@ -77,6 +85,7 @@ runs:
         OPENROUTER_API_KEY: ${{ inputs.api-key }}
         OPENROUTER_REVIEW_MODEL: ${{ inputs.review-model }}
         OPENROUTER_JUDGE_MODEL: ${{ inputs.judge-model }}
+        OPENROUTER_IMPL_REVIEW_MODEL: ${{ inputs.impl-review-model }}
         REVIEW_FINDER_MAX_STEPS: ${{ inputs.finder-max-steps }}
         PR_TITLE: ${{ inputs.pr-title }}
         PR_BODY: ${{ inputs.pr-body }}

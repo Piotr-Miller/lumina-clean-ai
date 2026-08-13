@@ -8,7 +8,15 @@ import {
   STICKY_MARKER,
 } from "./render.js";
 import { CRITERIA } from "./scorecard.js";
-import type { IdentifiedFinding, PipelineResult, Scores, Severity } from "./schemas.js";
+import type {
+  IdentifiedFinding,
+  IdentifiedImplFinding,
+  ImplGrades,
+  ImplReviewBlock,
+  PipelineResult,
+  Scores,
+  Severity,
+} from "./schemas.js";
 
 const identified = (id: string, overrides: Partial<IdentifiedFinding> = {}): IdentifiedFinding => ({
   id,
@@ -170,5 +178,136 @@ describe("renderStickyComment (model-controlled Markdown isolation)", () => {
     expect(comment.length).toBeLessThanOrEqual(MAX_COMMENT_CHARS);
     expect(comment).toContain("comment truncated");
     expect(comment.trimEnd().endsWith(STICKY_MARKER)).toBe(true);
+  });
+});
+
+// --- Implementation review section (phase 3) ---
+
+const implFinding = (id: string, overrides: Partial<IdentifiedImplFinding> = {}): IdentifiedImplFinding => ({
+  id,
+  dimension: "plan_adherence",
+  severity: "WARNING",
+  impact: "LOW",
+  title: `title ${id}`,
+  file: "src/a.ts",
+  startLine: 12,
+  detail: `detail ${id}`,
+  fix: `fix ${id}`,
+  ...overrides,
+});
+
+const implGrades = (overrides: Partial<ImplGrades> = {}): ImplGrades => ({
+  plan_adherence: "PASS",
+  scope_discipline: "PASS",
+  safety_quality: "PASS",
+  architecture: "PASS",
+  pattern_consistency: "PASS",
+  test_coverage: "PASS",
+  success_criteria: "PASS",
+  ...overrides,
+});
+
+const reviewed = (overrides: Partial<Extract<ImplReviewBlock, { status: "reviewed" }>> = {}): ImplReviewBlock => ({
+  status: "reviewed",
+  planPath: "context/changes/x/plan.md",
+  grades: implGrades(),
+  verdict: "APPROVED",
+  verdictReason: "matches the plan",
+  findings: [],
+  ...overrides,
+});
+
+describe("renderStickyComment implementation-review section", () => {
+  // Three states, each pinned by a stable string the action and the tests can
+  // both anchor on.
+  it("renders the no-plan state from the ABSENCE of the key, never silence", () => {
+    const comment = renderStickyComment(result());
+    expect(comment).toContain("Implementation review — not run");
+    expect(comment).toContain("No plan found for this PR");
+    // A reader must be told how to opt in, or the section is just noise.
+    expect(comment).toContain("Plan:");
+  });
+
+  it("renders the failed state and says the code review is unaffected", () => {
+    const comment = renderStickyComment(result({ implReview: { status: "failed", error: "provider exploded" } }));
+    expect(comment).toContain("Implementation review — ⚠️ could not complete");
+    expect(comment).toContain("provider exploded");
+    expect(comment).toContain("The code review above is unaffected.");
+  });
+
+  it("renders the reviewed state with verdict, plan path, findings, and grade table", () => {
+    const comment = renderStickyComment(
+      result({
+        implReview: reviewed({
+          verdict: "NEEDS_ATTENTION",
+          grades: implGrades({ scope_discipline: "WARNING" }),
+          findings: [implFinding("P1")],
+        }),
+      }),
+    );
+    expect(comment).toContain("Implementation review — 🟡 NEEDS ATTENTION");
+    expect(comment).toContain("Reviewed against `context/changes/x/plan.md`");
+    expect(comment).toContain("**P1** [WARNING/LOW]");
+    expect(comment).toContain("detail P1");
+    expect(comment).toContain("fix: fix P1");
+    expect(comment).toContain("<details><summary>Dimension grades</summary>");
+    expect(comment).toContain("| Scope Discipline | ▲ WARNING |");
+    expect(comment).toContain("| Plan Adherence | ✔ PASS |");
+  });
+
+  // The two verdicts answer different questions; a reader who conflates them
+  // reads a 🔴 plan verdict as a failed code review (criterion 3.15).
+  it("keeps the two verdict vocabularies disjoint", () => {
+    const comment = renderStickyComment(result({ implReview: reviewed({ verdict: "REJECTED" }) }));
+    expect(comment).toContain("### AI Code Review — ✅ PASSED");
+    expect(comment).toContain("Implementation review — 🔴 REJECTED");
+    // No glyph appears in both headlines.
+    for (const glyph of ["🟢", "🟡", "🔴"]) expect(comment.split("\n").at(0)).not.toContain(glyph);
+  });
+
+  it("caps rendered impl findings and says how many are left", () => {
+    const findings = Array.from({ length: MAX_RENDERED_FINDINGS + 3 }, (_, i) => implFinding(`P${String(i + 1)}`));
+    const comment = renderStickyComment(result({ implReview: reviewed({ findings }) }));
+    expect(comment).toContain(`**P${String(MAX_RENDERED_FINDINGS)}**`);
+    expect(comment).not.toContain(`**P${String(MAX_RENDERED_FINDINGS + 1)}**`);
+    expect(comment).toContain("…and 3 more finding(s) in review.json.");
+  });
+
+  it("omits the location entirely for a finding about something missing", () => {
+    const comment = renderStickyComment(
+      result({ implReview: reviewed({ findings: [implFinding("P1", { file: undefined, startLine: undefined })] }) }),
+    );
+    // No fabricated path, no bare `:12`.
+    expect(comment).toContain("**P1** [WARNING/LOW] — title P1");
+  });
+
+  // The plan path is UNTRUSTED: the PR body names it (criterion 3.11).
+  it("escapes a plan path carrying Markdown control characters and an @mention", () => {
+    const comment = renderStickyComment(
+      result({ implReview: reviewed({ planPath: "a|b\n# heading @someone [x](y)" }) }),
+    );
+    const section = comment.slice(comment.indexOf("Reviewed against"));
+    const firstLine = section.split("\n").at(0) ?? "";
+    // Flattened onto one line: nothing can open a heading or a new table row.
+    expect(firstLine).toContain("# heading");
+    expect(comment).not.toMatch(/^# heading/mu);
+    // Inside a code span, so the pipe cannot break the table and the mention
+    // cannot ping — GitHub does not linkify inside code spans.
+    expect(firstLine).toMatch(/`[^`]*a\|b[^`]*`/u);
+  });
+
+  it("still ends with the sticky marker when the impl section pushes it over the ceiling", () => {
+    const findings = Array.from({ length: 2_000 }, (_, i) => identified(`F${String(i + 1)}`));
+    const comment = renderStickyComment(
+      result({ findings, scores: scores(findings.map((f) => f.id)), implReview: reviewed() }),
+    );
+    expect(comment.length).toBeLessThanOrEqual(MAX_COMMENT_CHARS);
+    expect(comment.trimEnd().endsWith(STICKY_MARKER)).toBe(true);
+  });
+
+  it("notes a truncated plan so a partial review never reads as a complete one", () => {
+    const comment = renderStickyComment(result({ implReview: reviewed(), planTruncated: true }));
+    expect(comment).toContain("plan truncated at 80,000 chars");
+    expect(renderStickyComment(result({ implReview: reviewed() }))).not.toContain("plan truncated");
   });
 });

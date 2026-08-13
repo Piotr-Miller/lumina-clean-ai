@@ -210,6 +210,7 @@ jobs:
           api-key: ${{ secrets.OPENROUTER_API_KEY }}
           review-model: ${{ vars.OPENROUTER_REVIEW_MODEL }}
           judge-model: ${{ vars.OPENROUTER_JUDGE_MODEL }}
+          impl-review-model: ${{ vars.OPENROUTER_IMPL_REVIEW_MODEL }}
           finder-max-steps: ${{ vars.REVIEW_FINDER_MAX_STEPS }}
           pr-title: ${{ github.event.pull_request.title }}
           pr-body: ${{ github.event.pull_request.body }}

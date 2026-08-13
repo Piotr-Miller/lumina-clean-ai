@@ -2,6 +2,7 @@ import { join } from "node:path";
 
 import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
+import type { PipelineResult } from "./schemas.js";
 import { createDiffScopedSourceForDiff } from "./source-provider.js";
 
 // The CLI's whole contract, extracted injectable so tests can pin the exact
@@ -109,6 +110,28 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
       : info.fileContextCalls.map((call) => `getFileContext ${logSafePath(call.path)}${formatRange(call)}`).join(", ");
   const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} total=${tokenCount(info.usage.totalTokens)}`;
   return `finder step ${String(index)}: ${calls} (${usage})`;
+};
+
+// One stderr line for the whole third pass — in an Actions log this is the
+// only live evidence that the pass ran and what it cost. Cost is printed only
+// when the provider reported it: a fabricated "$0.000000" would read as free.
+const formatImplReviewLine = (result: PipelineResult): string | undefined => {
+  const block = result.implReview;
+  if (block === undefined) return undefined;
+  const telemetry = result.implReviewTelemetry;
+  const usage =
+    telemetry === undefined
+      ? "no usage reported"
+      : `attempts=${String(telemetry.attempts)} tokens in=${tokenCount(telemetry.inputTokens)} out=${tokenCount(
+          telemetry.outputTokens,
+        )} total=${tokenCount(telemetry.totalTokens)}${
+          telemetry.cost === undefined ? "" : ` cost=$${telemetry.cost.toFixed(6)}`
+        }`;
+  const outcome =
+    block.status === "reviewed"
+      ? `${block.verdict} with ${String(block.findings.length)} finding(s)`
+      : `FAILED (${block.error})`;
+  return `impl review: ${outcome} (${usage})`;
 };
 
 /** Optional positive-integer ms override; unset/empty → pipeline default, invalid → exit 1. */
@@ -230,6 +253,9 @@ export async function runReviewCli(
         io.logError(`finder output repaired after strict-parse failure: ${reason}`);
       },
     });
+
+    const implReviewLine = formatImplReviewLine(result);
+    if (implReviewLine !== undefined) io.logError(implReviewLine);
 
     io.mkdir(args.outDir);
     io.writeFile(join(args.outDir, "review.json"), `${JSON.stringify(result, null, 2)}\n`);
