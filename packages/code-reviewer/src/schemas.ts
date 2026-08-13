@@ -286,8 +286,23 @@ export const implFindingSchema = z.object({
   severity: implSeveritySchema.describe("How bad this is if left unaddressed"),
   impact: implImpactSchema.describe("How much reviewer attention the decision needs"),
   title: z.string().describe("One short line naming the problem"),
-  file: z.string().optional().describe("Repo-relative path, omitted when the issue is something missing"),
-  startLine: lineNumber("Absolute 1-based line the finding anchors to, when it has one"),
+  // These two descriptions are the ones the model actually acts on, and they
+  // used to lead with the EXCEPTION ("omitted when...", "when it has one").
+  // Measured result: file 2/10 and startLine 0/10 across every run, while the
+  // finder — whose equivalent field is required and described directively —
+  // anchored 20/20 on the same runs. Strengthening the system instruction alone
+  // did not move it; the field description wins. `file` stays optional because
+  // a finding about MISSING work genuinely has no place in the diff, but the
+  // description now leads with the rule and names the exception second.
+  file: z
+    .string()
+    .optional()
+    .describe(
+      "Repo-relative path of the file this finding is about, exactly as it appears in the diff. Set it whenever the finding concerns changed code. Omit it ONLY when the finding has no place in the diff at all — work that is missing, or a plan-level observation.",
+    ),
+  startLine: lineNumber(
+    "Absolute 1-based line in that file where the issue is. Set it whenever file is set and the finding points at specific code; omit it only for findings about a file as a whole.",
+  ),
   detail: z
     .string()
     .describe("What is wrong, with evidence: plan quote vs actual behavior, or code excerpt vs expected"),
