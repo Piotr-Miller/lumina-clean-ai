@@ -120,7 +120,53 @@ explicit reason this bar was written before the probe ran.
 
 ## Outcome
 
-_Pending — to be completed only from an executed probe run, stating the result against every
-criterion above, including any that failed. A probe that fails the bar is a legitimate outcome: the
-pass ships rendering its findings and this section says so plainly, rather than the result being
-quietly reinterpreted._
+Executed 2026-08-13 against the ground truth above, **unchanged since pre-registration**.
+
+**Deviation from the recorded design, and why.** The probe ran **locally**, not as a scratch PR.
+`review.yml` declares `branches: [master]`, so it only triggers on PRs targeting master — and a
+master-based PR checks out _master's_ reviewer, which does not yet contain the third pass. There is
+no branch arrangement that gives both a clean probe-sized diff and the third-pass code until this
+change merges. So 4.3–4.7 (what the pass actually does) were executed now; **4.2 is deferred**, not
+passed. Harness: `scratchpad/phase4-probe.mjs`, model `anthropic/claude-sonnet-5`, 4,938 in / 5,844
+out, **$0.068316**, one attempt.
+
+Result: `REJECTED` — `plan_adherence` FAIL, `scope_discipline` FAIL, `architecture` FAIL,
+`safety_quality` WARNING, `test_coverage` WARNING, `pattern_consistency` PASS, `success_criteria` PASS.
+
+| #   | Criterion                        | Result       | Evidence                                                                                                                                                                                                                                                                                                                                               |
+| --- | -------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 4.3 | MISSING caught                   | **PASS**     | P1 (CRITICAL, `plan_adherence`): "audit-log.ts / recordAudit never implemented … The diff contains no such file"                                                                                                                                                                                                                                       |
+| 4.4 | DRIFT caught                     | **PASS**     | P2 (CRITICAL): quotes the plan's "never a fixed delay" decision and identifies `void attempt; return 2000` as "exactly the fixed-delay behavior the plan calls out as wrong". Filed under `architecture` rather than `plan_adherence` — the bar named the substance, not the dimension, and a contradicted architectural decision is a defensible home |
+| 4.5 | Prohibited EXTRA flagged         | **PASS**     | P3 (CRITICAL, `scope_discipline`): quotes the exclusion verbatim, then names `cache.ts` as "exactly that". Connected to the exclusions list, which is what the bar required                                                                                                                                                                            |
+| 4.6 | Benign EXTRA not over-flagged    | **PASS**     | P6 (**OBSERVATION**/LOW): "only used by rate-limit.ts, so it is incidental to planned work rather than a scope violation on its own." Not CRITICAL, and the reasoning is the right one                                                                                                                                                                 |
+| 4.7 | No fabricated command results    | **PASS**     | No claim anywhere that a check ran. P5 refers to the plan "marking `npm test` as already satisfied" — describing the author's claim, never asserting an observed result                                                                                                                                                                                |
+| 4.2 | Run completes, artifact uploaded | **DEFERRED** | Structurally blocked until merge (see above)                                                                                                                                                                                                                                                                                                           |
+
+**Additional falsifiers — all clear.** No excluded work was reported as missing (the second exclusion,
+distributed rate limiting, was correctly silent). Grades agree with findings: every CRITICAL sits on a
+dimension graded FAIL, and the verdict is REJECTED, so the phase-2 consistency rules held on live
+output. Labels/exit code not applicable to a local run.
+
+**Unplanned true positive.** P4 (WARNING) found a real defect in the probe fixture itself: `cacheSet`
+stores raw `ttlMs` as `expiresAt` without adding the current time, and `cacheGet` treats any
+`expiresAt >= 1` as valid, so nothing ever expires. That bug was not injected deliberately — the pass
+found a genuine one while correctly flagging the file as out of scope.
+
+### Blocking gap found: criterion 4.8 cannot be computed as written
+
+4.8 asks for the impl-review cost "stated as a ratio against the run's finder+judge spend", read from
+`review.json`. **That baseline does not exist.** On run
+[31723263888](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31723263888):
+
+- `implReviewTelemetry`: `{attempts: 1, inputTokens: 61493, outputTokens: 16976, cost: 0.292746}` ✅
+- `finderTelemetry`: tokens only — **no `cost` key**, despite `createReviewer` enabling usage accounting
+- the judge: **no telemetry block at all** — none was ever designed
+
+So the numerator is instrumented and the denominator is not. Either the finder's missing cost is
+investigated and a judge telemetry block added, or 4.8 is restated in terms of what is actually
+measurable. This is a pre-registration doing its job: the criterion was written before anyone checked
+whether the data existed.
+
+**Standing.** 4.3–4.7 pass on a single run. That is one sample, not a rate — the pre-registered bar
+asked whether the pass _can_ make these distinctions, and it did, including the prohibited-vs-benign
+EXTRA pair that separates understanding exclusions from pattern-matching "unplanned".
