@@ -46,7 +46,12 @@ export const BODY_TRUNCATION_MARKER = "\n[...body truncated at 2,000 chars]";
 // TimeoutError retry path) instead of hanging until an external job limit.
 // Per attempt, so worst case = 2×finder + 2×judge with withOneRetry.
 export const DEFAULT_FINDER_TIMEOUT_MS = 300_000; // up to 8 tool-loop steps
-export const DEFAULT_JUDGE_TIMEOUT_MS = 120_000; // single structured call
+// Was 120_000 on the reasoning that a single structured call is quick. Measured
+// on PR #127's finding set: the judge exceeded even 300s once in 5 calls, and
+// failed 1 in 4 at 120s. The load is not the input (7.4k chars) but the output —
+// six justifications referencing ten findings. Same reference class as the
+// finder, and REVIEW_JUDGE_TIMEOUT_MS already exists to tune it per-run.
+export const DEFAULT_JUDGE_TIMEOUT_MS = 300_000;
 // Calibrated on LIVE evidence, not on the judge analogy this started with.
 //
 // The first figure was 120_000, "mirroring the judge's single-structured-call
@@ -297,6 +302,12 @@ export interface PipelineInput {
    * identical to a clean one, hiding model drift worth acting on.
    */
   onOutputRepair?: (detail: { reason: string }) => void;
+  /**
+   * The same signal for the JUDGE's response. Separate from onOutputRepair so a
+   * log line names which pass drifted — they are different models and the
+   * remedies differ.
+   */
+  onJudgeOutputRepair?: (detail: { reason: string }) => void;
   deps?: PipelineDeps;
 }
 
@@ -342,7 +353,13 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
       onStepEnd: observeFinderStep,
       onOutputRepair: input.onOutputRepair,
     }).review;
-  const judge = input.deps?.judge ?? createJudge({ apiKey: input.overrides?.apiKey, model: models.judgeModel }).judge;
+  const judge =
+    input.deps?.judge ??
+    createJudge({
+      apiKey: input.overrides?.apiKey,
+      model: models.judgeModel,
+      onOutputRepair: input.onJudgeOutputRepair,
+    }).judge;
 
   const retryOptions = (pass: "finder" | "judge" | "impl-review") => ({
     sleep: input.deps?.retrySleep,

@@ -253,6 +253,9 @@ export async function runReviewCli(
       onOutputRepair: ({ reason }) => {
         io.logError(`finder output repaired after strict-parse failure: ${reason}`);
       },
+      onJudgeOutputRepair: ({ reason }) => {
+        io.logError(`judge output repaired after strict-parse failure: ${reason}`);
+      },
     });
 
     const implReviewLine = formatImplReviewLine(result);
