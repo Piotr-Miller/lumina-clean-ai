@@ -2,11 +2,14 @@ import { NoObjectGeneratedError } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  extractJsonObject,
   REPAIRED_SUMMARY_PLACEHOLDER,
+  repairParsedJudgeOutput,
   repairParsedOutput,
   repairReviewResultShape,
   tolerantReviewOutput,
 } from "./output-repair.js";
+import { CRITERIA } from "./scorecard.js";
 import { reviewResultSchema } from "./schemas.js";
 
 // The live drift this layer exists for (glm-4.6, tool-active): a bare findings
@@ -159,5 +162,86 @@ describe("tolerantReviewOutput", () => {
     expect(repairParsedOutput(schemaFailure(text), text)?.findings[0].file).toBe(
       "packages/code-reviewer/src/cli.ts",
     );
+  });
+});
+
+describe("extractJsonObject", () => {
+  it("returns a bare object unchanged", () => {
+    expect(extractJsonObject('{"a":1}')).toBe('{"a":1}');
+  });
+
+  it("unwraps a Markdown-fenced object", () => {
+    expect(extractJsonObject('```json\n{"a":1}\n```')).toBe('{"a":1}');
+  });
+
+  it("extracts an object buried in surrounding prose", () => {
+    expect(extractJsonObject('Here is my scorecard:\n{"a":1}\nHope that helps!')).toBe('{"a":1}');
+  });
+
+  // A brace inside a justification string must not end the scan early — the
+  // judge writes prose, and prose contains braces.
+  it("ignores braces inside strings and escapes", () => {
+    const text = '{"j":"use {this} and \\"that\\"","k":2}';
+    expect(extractJsonObject(text)).toBe(text);
+  });
+
+  it("handles nested objects", () => {
+    expect(extractJsonObject('noise {"a":{"b":{"c":1}}} tail')).toBe('{"a":{"b":{"c":1}}}');
+  });
+
+  // A truncated object must NOT come back as a partial slice: half an object
+  // parses as valid-looking nonsense and would be scored as a real verdict.
+  it("returns undefined for an unbalanced object rather than a partial slice", () => {
+    expect(extractJsonObject('{"a":1, "b":')).toBeUndefined();
+  });
+
+  it("returns undefined when there is no object at all", () => {
+    expect(extractJsonObject("I cannot produce that.")).toBeUndefined();
+    expect(extractJsonObject(undefined)).toBeUndefined();
+  });
+});
+
+describe("repairParsedJudgeOutput", () => {
+  const validJudge = () => ({
+    scores: Object.fromEntries(
+      CRITERIA.map(({ key }) => [key, { score: 7, justification: "j", findingIds: [] }]),
+    ),
+    verdict: "passed",
+    verdictReason: "fine",
+    summary: "s",
+  });
+
+  // Reuses the same construction the finder's tests use — the SDK error needs
+  // response/usage/finishReason, not just a message.
+  const noObjectError = schemaFailure;
+
+  it("rescues a fenced scorecard", () => {
+    const text = "```json\n" + JSON.stringify(validJudge()) + "\n```";
+    expect(repairParsedJudgeOutput(noObjectError(text), text)?.verdict).toBe("passed");
+  });
+
+  it("rescues a scorecard wrapped in prose", () => {
+    const text = `Here you go:\n${JSON.stringify(validJudge())}\nLet me know.`;
+    expect(repairParsedJudgeOutput(noObjectError(text), text)?.verdict).toBe("passed");
+  });
+
+  // The strict schema stays the authority: a repair that does not validate is
+  // not a repair, and must rethrow rather than invent a verdict.
+  it("refuses output that is well-formed JSON but not a scorecard", () => {
+    const text = '{"verdict":"passed"}';
+    expect(repairParsedJudgeOutput(noObjectError(text), text)).toBeUndefined();
+  });
+
+  it("refuses a truncated scorecard", () => {
+    const text = JSON.stringify(validJudge()).slice(0, 80);
+    expect(repairParsedJudgeOutput(noObjectError(text), text)).toBeUndefined();
+  });
+
+  // Only NoObjectGeneratedError is a repair candidate — a timeout or provider
+  // error has no text to salvage, and measurement showed aborts surface as
+  // TimeoutError, never as this class.
+  it("ignores non-schema failures", () => {
+    const text = JSON.stringify(validJudge());
+    expect(repairParsedJudgeOutput(new Error("boom"), text)).toBeUndefined();
   });
 });

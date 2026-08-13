@@ -1,6 +1,13 @@
 import { severityRank } from "./findings.js";
 import { CRITERIA } from "./scorecard.js";
-import type { IdentifiedFinding, PipelineResult } from "./schemas.js";
+import type {
+  IdentifiedImplFinding,
+  ImplDimension,
+  ImplGrade,
+  ImplVerdict,
+  IdentifiedFinding,
+  PipelineResult,
+} from "./schemas.js";
 
 // Package-side sticky-comment markdown (testable): the composite action posts
 // what this renders, it never assembles content itself.
@@ -56,6 +63,109 @@ const renderFinding = (finding: IdentifiedFinding): string =>
     `  - fix: ${sanitizeInline(finding.suggestion)}`,
   ].join("\n");
 
+// --- Implementation review section ---
+//
+// A deliberately DIFFERENT emoji vocabulary from the code review's ✅/❌: the
+// two verdicts answer different questions ("is this code good" vs "does it
+// match its plan") and a reader who conflates them will read a 🔴 plan verdict
+// as a failed code review. Distinct glyphs make that misread impossible at a
+// glance.
+const IMPL_VERDICT_EMOJI: Record<ImplVerdict, string> = {
+  APPROVED: "🟢",
+  NEEDS_ATTENTION: "🟡",
+  REJECTED: "🔴",
+};
+
+const IMPL_GRADE_EMOJI: Record<ImplGrade, string> = { PASS: "✔", WARNING: "▲", FAIL: "✘" };
+
+const IMPL_DIMENSION_LABEL: Record<ImplDimension, string> = {
+  plan_adherence: "Plan Adherence",
+  scope_discipline: "Scope Discipline",
+  safety_quality: "Safety & Quality",
+  architecture: "Architecture",
+  pattern_consistency: "Pattern Consistency",
+  test_coverage: "Test Coverage",
+  success_criteria: "Success Criteria",
+};
+
+/** Same shape as renderFinding, over the impl vocabulary (severity/impact, no category). */
+const renderImplFinding = (finding: IdentifiedImplFinding): string => {
+  const location =
+    finding.file === undefined
+      ? ""
+      : ` ${codeSpan(finding.startLine === undefined ? finding.file : `${finding.file}:${String(finding.startLine)}`)}`;
+  return [
+    `- **${finding.id}** [${finding.severity}/${finding.impact}]${location} — ${sanitizeInline(finding.title)}`,
+    `  - ${sanitizeInline(finding.detail)}`,
+    `  - fix: ${sanitizeInline(finding.fix)}`,
+  ].join("\n");
+};
+
+/**
+ * Three states, one of which is the ABSENCE of `implReview` — a run with no
+ * plan gets a neutral line telling the reader how to point at one, never
+ * silence. Silence would be indistinguishable from a pass that ran and found
+ * nothing, which is the exact misread this whole feature exists to prevent.
+ */
+function renderImplReviewSection(result: PipelineResult): string[] {
+  const block = result.implReview;
+
+  if (block === undefined) {
+    return [
+      "",
+      "#### Implementation review — not run",
+      "",
+      "No plan found for this PR. Add a `Plan: context/changes/<change-id>/plan.md` line to the PR body, or place the change under a conventional path, to have the diff reviewed against its plan.",
+    ];
+  }
+
+  if (block.status === "failed") {
+    return [
+      "",
+      "#### Implementation review — ⚠️ could not complete",
+      "",
+      `The implementation review failed and was skipped: ${sanitizeInline(block.error)}. The code review above is unaffected.`,
+    ];
+  }
+
+  const lines = [
+    "",
+    `#### Implementation review — ${IMPL_VERDICT_EMOJI[block.verdict]} ${block.verdict.replace("_", " ")}`,
+    "",
+    // The plan path is untrusted (the PR body can name it) — codeSpan, never
+    // raw interpolation.
+    block.planPath === undefined
+      ? "Reviewed against the supplied plan."
+      : `Reviewed against ${codeSpan(block.planPath)}.`,
+    "",
+    sanitizeInline(block.verdictReason),
+  ];
+
+  if (block.findings.length > 0) {
+    const top = block.findings.slice(0, MAX_RENDERED_FINDINGS);
+    lines.push("", ...top.map(renderImplFinding));
+    const remaining = block.findings.length - top.length;
+    if (remaining > 0) lines.push("", `…and ${String(remaining)} more finding(s) in review.json.`);
+  }
+
+  // The grade table is reference detail, not the headline — collapsed so the
+  // section never doubles the comment's visual weight.
+  lines.push(
+    "",
+    "<details><summary>Dimension grades</summary>",
+    "",
+    "| Dimension | Grade |",
+    "| --- | --- |",
+    ...Object.entries(IMPL_DIMENSION_LABEL).map(([key, label]) => {
+      const grade = block.grades[key as ImplDimension];
+      return `| ${label} | ${IMPL_GRADE_EMOJI[grade]} ${grade} |`;
+    }),
+    "",
+    "</details>",
+  );
+  return lines;
+}
+
 export function renderStickyComment(result: PipelineResult, options: { runUrl?: string } = {}): string {
   const emoji = result.verdict === "passed" ? "✅" : "❌";
   const lines: string[] = [
@@ -87,9 +197,14 @@ export function renderStickyComment(result: PipelineResult, options: { runUrl?: 
     lines.push("", "No findings.");
   }
 
+  lines.push(...renderImplReviewSection(result));
+
   const notes: string[] = [];
   if (result.diffTruncated) notes.push("diff truncated at 100 KB — the review covers the truncated portion");
   if (result.bodyTruncated) notes.push("PR body truncated at 2,000 chars");
+  // A partial plan review must never read as a complete one.
+  if (result.planTruncated === true)
+    notes.push("plan truncated at 80,000 chars — the implementation review covers the truncated portion");
   if (result.droppedFindingIdRefs > 0)
     notes.push(`${String(result.droppedFindingIdRefs)} unknown finding reference(s) dropped from scores`);
   if (notes.length > 0) lines.push("", `⚠️ ${notes.join("; ")}.`);

@@ -1,10 +1,11 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { Output, ToolLoopAgent } from "ai";
+import { ToolLoopAgent } from "ai";
 
 import { resolveConfig, resolveModels } from "./config.js";
 import { buildJudgeInstructions, buildJudgePrompt, type JudgePromptInput } from "./prompts.js";
+import { tolerantJudgeOutput } from "./output-repair.js";
 import { validateJudgeReferences } from "./scorecard.js";
-import { judgeOutputSchema, type JudgeResult } from "./schemas.js";
+import { type JudgeResult } from "./schemas.js";
 
 // Second-pass factory mirroring createReviewer's shape: a tool-less
 // structured call on the quality model. The judge never sees the diff (user
@@ -16,6 +17,12 @@ export interface JudgeOptions {
   model?: string;
   /** OpenRouter API key; defaults to OPENROUTER_API_KEY env. */
   apiKey?: string;
+  /**
+   * Fires when the judge's response failed the strict parse and an envelope
+   * repair rescued it. Same contract as the finder's: a repaired run must not
+   * look identical to a clean one, or persistent drift stays invisible.
+   */
+  onOutputRepair?: (detail: { reason: string }) => void;
 }
 
 export interface JudgeCallOptions {
@@ -37,7 +44,10 @@ export function createJudge(options: JudgeOptions = {}) {
   const agent = new ToolLoopAgent({
     model: openrouter(judgeModel),
     instructions: buildJudgeInstructions(),
-    output: Output.object({ schema: judgeOutputSchema }),
+    // Repair added after four consecutive AI_NoObjectGeneratedError failures
+    // killed PR #127's review (runs 31707888975 + re-run). The original
+    // "has never needed it" reasoning was falsified, not wrong in principle.
+    output: tolerantJudgeOutput({ onRepair: options.onOutputRepair }),
     // SDK-internal retries off (default is 2): retry.ts's withOneRetry is the
     // single retry authority in the CI pipeline, keeping cost predictable.
     maxRetries: 0,

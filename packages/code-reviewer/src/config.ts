@@ -14,14 +14,30 @@
 export const DEFAULT_MODEL = "z-ai/glm-4.6";
 export const DEFAULT_JUDGE_MODEL = "anthropic/claude-sonnet-5";
 
+// Its own constant, deliberately NOT an alias of DEFAULT_JUDGE_MODEL: the two
+// passes do different work and must be retunable apart, so a future judge
+// change must not silently move the implementation reviewer with it.
+//
+// sonnet-5 because plan-vs-diff conformance IS the cross-context reasoning
+// task the finder-model evals measured. glm-4.6 made 0 tool calls on 0/6
+// tool-enabled fixture rows and 0/4 live runs, glm-5.2 inherited it, and
+// haiku-4.5 fetched the right file live then never connected what it read;
+// sonnet-5 was the only model that converted out-of-hunk context into a
+// correct verdict (change `finder-tool-loop-evals`). It was declined for the
+// finder at 57.6x the cost per review — but that ratio runs the other way
+// here: this pass is one tool-less call, not a tool loop over every PR.
+export const DEFAULT_IMPL_REVIEW_MODEL = "anthropic/claude-sonnet-5";
+
 export interface ModelOverrides {
   reviewModel?: string;
   judgeModel?: string;
+  implReviewModel?: string;
 }
 
 export interface ResolvedModels {
   reviewModel: string;
   judgeModel: string;
+  implReviewModel: string;
 }
 
 /**
@@ -40,8 +56,10 @@ export function resolveModels(overrides: ModelOverrides = {}): ResolvedModels {
     process.env.OPENROUTER_MODEL ||
     DEFAULT_MODEL;
   const judgeModel = overrides.judgeModel || process.env.OPENROUTER_JUDGE_MODEL || DEFAULT_JUDGE_MODEL;
+  const implReviewModel =
+    overrides.implReviewModel || process.env.OPENROUTER_IMPL_REVIEW_MODEL || DEFAULT_IMPL_REVIEW_MODEL;
   /* eslint-enable @typescript-eslint/prefer-nullish-coalescing */
-  return { reviewModel, judgeModel };
+  return { reviewModel, judgeModel, implReviewModel };
 }
 
 export interface ConfigOverrides extends ModelOverrides {

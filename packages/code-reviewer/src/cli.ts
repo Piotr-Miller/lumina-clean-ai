@@ -2,6 +2,7 @@ import { join } from "node:path";
 
 import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
+import type { PipelineResult } from "./schemas.js";
 import { createDiffScopedSourceForDiff } from "./source-provider.js";
 
 // The CLI's whole contract, extracted injectable so tests can pin the exact
@@ -34,6 +35,14 @@ interface CliArgs {
   projectContextFile?: string;
   /** Checkout root for the finder's diff-scoped file-context tool; absent → tool-less (legacy) run. */
   sourceRoot?: string;
+  /**
+   * The plan this PR claims to implement. UNTRUSTED (PR-head content) — the
+   * caller must stage it from the Git object after a blob-mode check, never
+   * read it through the checkout, because a symlinked plan.md would be
+   * resolved by THIS process, the one holding OPENROUTER_API_KEY. Absent or
+   * empty → no plan, which is a known state, not an error.
+   */
+  planFile?: string;
 }
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -53,9 +62,12 @@ export function parseArgs(argv: string[]): CliArgs {
     } else if (flag === "--source-root" && value !== undefined) {
       args.sourceRoot = value;
       i += 1;
+    } else if (flag === "--plan-file" && value !== undefined) {
+      args.planFile = value;
+      i += 1;
     } else {
       throw new Error(
-        `Unknown or valueless argument: ${flag ?? ""}. Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>] [--source-root <dir>]`,
+        `Unknown or valueless argument: ${flag ?? ""}. Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>] [--source-root <dir>] [--plan-file <path>]`,
       );
     }
   }
@@ -98,6 +110,28 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
       : info.fileContextCalls.map((call) => `getFileContext ${logSafePath(call.path)}${formatRange(call)}`).join(", ");
   const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} total=${tokenCount(info.usage.totalTokens)}`;
   return `finder step ${String(index)}: ${calls} (${usage})`;
+};
+
+// One stderr line for the whole third pass — in an Actions log this is the
+// only live evidence that the pass ran and what it cost. Cost is printed only
+// when the provider reported it: a fabricated "$0.000000" would read as free.
+const formatImplReviewLine = (result: PipelineResult): string | undefined => {
+  const block = result.implReview;
+  if (block === undefined) return undefined;
+  const telemetry = result.implReviewTelemetry;
+  const usage =
+    telemetry === undefined
+      ? "no usage reported"
+      : `attempts=${String(telemetry.attempts)} tokens in=${tokenCount(telemetry.inputTokens)} out=${tokenCount(
+          telemetry.outputTokens,
+        )} total=${tokenCount(telemetry.totalTokens)}${
+          telemetry.cost === undefined ? "" : ` cost=$${telemetry.cost.toFixed(6)}`
+        }`;
+  const outcome =
+    block.status === "reviewed"
+      ? `${block.verdict} with ${String(block.findings.length)} finding(s)`
+      : `FAILED (${block.error})`;
+  return `impl review: ${outcome} (${usage})`;
 };
 
 /** Optional positive-integer ms override; unset/empty → pipeline default, invalid → exit 1. */
@@ -171,14 +205,42 @@ export async function runReviewCli(
       }
     }
 
+    // An empty staged plan file means "no plan", matching the
+    // --project-context-file convention: the workflow writes an empty file
+    // rather than branching, so emptiness must not read as a truncated plan.
+    // PLAN_PATH is display metadata and equally untrusted — the PR body can
+    // name it — so it rides in via env like PR_TITLE/PR_BODY and is escaped
+    // at render time, never interpolated.
+    let planInput: Pick<PipelineInput, "plan"> = {};
+    if (args.planFile !== undefined) {
+      const planText = io.readFile(args.planFile);
+      // The telemetry line is emitted ONLY when the flag was passed: without
+      // it, "the workflow resolved no plan" and "the plan pass silently never
+      // ran" are indistinguishable in an Actions log — the silent-inertness
+      // failure this design exists to avoid. Omitting the flag stays
+      // byte-identical to the legacy invocation, stderr included.
+      // logSafePath because PLAN_PATH is untrusted: control characters would
+      // let an injected value forge or restyle log lines (impl-review-full F4).
+      if (planText.trim() === "") {
+        io.logError("plan file is empty — treated as no plan");
+      } else {
+        planInput = { plan: { text: planText, ...(env.PLAN_PATH ? { path: env.PLAN_PATH } : {}) } };
+        io.logError(
+          `plan supplied: ${logSafePath(env.PLAN_PATH ?? "(path not given)")} (${String(planText.length)} chars)`,
+        );
+      }
+    }
+
     const result = await pipeline({
       diff,
       ...sourceInputs,
+      ...planInput,
       prTitle: env.PR_TITLE,
       prBody: env.PR_BODY,
       timeouts: {
         finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
         judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
+        implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
       },
       projectReviewContext: args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
       // In an ultimately-green run this stderr line is the only evidence that
@@ -191,7 +253,13 @@ export async function runReviewCli(
       onOutputRepair: ({ reason }) => {
         io.logError(`finder output repaired after strict-parse failure: ${reason}`);
       },
+      onJudgeOutputRepair: ({ reason }) => {
+        io.logError(`judge output repaired after strict-parse failure: ${reason}`);
+      },
     });
+
+    const implReviewLine = formatImplReviewLine(result);
+    if (implReviewLine !== undefined) io.logError(implReviewLine);
 
     io.mkdir(args.outDir);
     io.writeFile(join(args.outDir, "review.json"), `${JSON.stringify(result, null, 2)}\n`);

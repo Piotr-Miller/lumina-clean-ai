@@ -9,8 +9,11 @@ import {
   DEFAULT_FINDER_TIMEOUT_MS,
   DEFAULT_JUDGE_TIMEOUT_MS,
   describeFinderStep,
+  capPlan,
   DIFF_CAP_BYTES,
   DIFF_TRUNCATION_MARKER,
+  PLAN_CAP_CHARS,
+  PLAN_TRUNCATION_MARKER,
   runReviewPipeline,
   type FinderStepInfo,
 } from "./pipeline.js";
@@ -18,13 +21,22 @@ import { type JudgePromptInput } from "./prompts.js";
 import { RATE_LIMIT_DELAY_MS, TRANSIENT_DELAY_MS } from "./retry.js";
 import type { ReviewerOptions } from "./reviewer.js";
 import { CRITERIA } from "./scorecard.js";
-import type { Finding, JudgeResult, ReviewUnit, Scores } from "./schemas.js";
+import type {
+  Finding,
+  ImplGrades,
+  ImplReviewBlock,
+  ImplReviewResult,
+  JudgeResult,
+  ReviewUnit,
+  Scores,
+} from "./schemas.js";
 
 beforeEach(() => {
   vi.stubEnv("OPENROUTER_API_KEY", undefined);
   vi.stubEnv("OPENROUTER_MODEL", undefined);
   vi.stubEnv("OPENROUTER_REVIEW_MODEL", undefined);
   vi.stubEnv("OPENROUTER_JUDGE_MODEL", undefined);
+  vi.stubEnv("OPENROUTER_IMPL_REVIEW_MODEL", undefined);
 });
 
 afterEach(() => {
@@ -51,6 +63,25 @@ const judgeResult = (overrides: Partial<JudgeResult> = {}): JudgeResult => ({
   verdictReason: "solid change",
   summary: "judge summary",
   droppedFindingIdRefs: 0,
+  ...overrides,
+});
+
+const implGrades = (overrides: Partial<ImplGrades> = {}): ImplGrades => ({
+  plan_adherence: "PASS",
+  scope_discipline: "PASS",
+  safety_quality: "PASS",
+  architecture: "PASS",
+  pattern_consistency: "PASS",
+  test_coverage: "PASS",
+  success_criteria: "PASS",
+  ...overrides,
+});
+
+const implReviewResult = (overrides: Partial<ImplReviewResult> = {}): ImplReviewResult => ({
+  grades: implGrades(),
+  verdict: "APPROVED",
+  verdictReason: "matches the plan",
+  findings: [],
   ...overrides,
 });
 
@@ -88,6 +119,47 @@ const expectInJitterRange = (value: number | undefined, base: number): void => {
   expect(value).toBeGreaterThanOrEqual(base);
   expect(value).toBeLessThanOrEqual(base + 1_000);
 };
+
+// Direct assertions on the returned TEXT, not just the flag: nothing consumes
+// the capped plan until phase 3, so a result-level test alone would stay green
+// if the slice or the marker were dropped (impl-review-phase-1 F3).
+describe("capPlan", () => {
+  it("returns text at or under the cap byte-for-byte, with no marker", () => {
+    const exact = "p".repeat(PLAN_CAP_CHARS);
+    expect(capPlan(exact)).toEqual({ plan: exact, truncated: false });
+    expect(capPlan("## Phase 1")).toEqual({ plan: "## Phase 1", truncated: false });
+  });
+
+  it("slices at exactly PLAN_CAP_CHARS and appends the marker once", () => {
+    const over = `${"p".repeat(PLAN_CAP_CHARS)}TAIL`;
+    const { plan, truncated } = capPlan(over);
+    expect(truncated).toBe(true);
+    expect(plan).toBe("p".repeat(PLAN_CAP_CHARS) + PLAN_TRUNCATION_MARKER);
+    // The dropped tail is genuinely gone, and the marker is the last thing a
+    // reader (or a model) sees — a partial plan must never look complete.
+    expect(plan).not.toContain("TAIL");
+    expect(plan.endsWith(PLAN_TRUNCATION_MARKER)).toBe(true);
+  });
+
+  it("handles an empty plan without marking it truncated", () => {
+    expect(capPlan("")).toEqual({ plan: "", truncated: false });
+  });
+
+  // Regression pin for the live re-calibration: at the original 40,000 this
+  // repo's own in-flight plan (47,217 chars, run 31631971640) truncated inside
+  // its `## Progress` section, so the pass would have judged plan adherence
+  // without ever seeing which steps were claimed done. Any future reduction
+  // below the observed real-world size has to break this test first.
+  it("accommodates a real in-flight plan of this repo's observed size", () => {
+    const OBSERVED_LIVE_PLAN_CHARS = 47_217;
+    expect(PLAN_CAP_CHARS).toBeGreaterThan(OBSERVED_LIVE_PLAN_CHARS);
+    expect(capPlan("p".repeat(OBSERVED_LIVE_PLAN_CHARS)).truncated).toBe(false);
+  });
+
+  it("keeps the marker text consistent with the configured cap", () => {
+    expect(PLAN_TRUNCATION_MARKER).toContain(PLAN_CAP_CHARS.toLocaleString("en-US"));
+  });
+});
 
 describe("computeDiffStats", () => {
   it("counts files, additions, and deletions, excluding +++/--- headers", () => {
@@ -147,6 +219,54 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     expect(result.diffTruncated).toBe(false);
     expect(result.bodyTruncated).toBe(false);
     expect(result.models).toEqual({ finder: DEFAULT_MODEL, judge: DEFAULT_JUDGE_MODEL });
+  });
+
+  // A plan present means the third pass runs, so these two cap tests inject it
+  // — they are about capPlan, not about the pass.
+  it("leaves a plan under the cap untouched and reports planTruncated: false", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: { text: "## Phase 1\n- do the thing", path: "context/changes/x/plan.md" },
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult()),
+        implReviewer: () => Promise.resolve(implReviewResult()),
+      },
+    });
+    expect(result.planTruncated).toBe(false);
+  });
+
+  it("caps an oversized plan at PLAN_CAP_CHARS and flags it", async () => {
+    const seen: string[] = [];
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: { text: "p".repeat(PLAN_CAP_CHARS + 1) },
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult()),
+        implReviewer: (input) => {
+          seen.push(input.plan);
+          return Promise.resolve(implReviewResult());
+        },
+      },
+    });
+    expect(result.planTruncated).toBe(true);
+    // The pass must receive the CAPPED text, not the original — otherwise the
+    // cap protects the boolean and nothing else (impl-review-phase-1 F3).
+    expect(seen.at(0)?.length).toBe(PLAN_CAP_CHARS + PLAN_TRUNCATION_MARKER.length);
+  });
+
+  // Key absent, not `false`: a plan-less review.json must stay byte-identical
+  // to the shape that shipped before this feature existed.
+  it("omits planTruncated entirely when the run carried no plan", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect("planTruncated" in result).toBe(false);
   });
 
   it("reports override models in the result metadata", async () => {
@@ -237,7 +357,7 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
   });
 
   it("reports retried passes through onRetry with the pass name and bounded delay", async () => {
-    const events: { pass: "finder" | "judge"; error: unknown; delayMs: number }[] = [];
+    const events: { pass: "finder" | "judge" | "impl-review"; error: unknown; delayMs: number }[] = [];
     const { sleep } = recordingSleep();
     const finder = vi.fn().mockRejectedValueOnce(apiError(503)).mockResolvedValueOnce({ summary: "s", findings: [] });
     const judge = vi.fn().mockRejectedValueOnce(apiError(429)).mockResolvedValueOnce(judgeResult());
@@ -492,5 +612,243 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
       deps: { createFinder, judge: () => Promise.resolve(judgeResult()) },
     });
     expect("finderTelemetry" in result).toBe(false);
+  });
+});
+
+describe("runReviewPipeline implementation-review pass", () => {
+  const twoPasses = {
+    finder: () => Promise.resolve({ summary: "s", findings: [] }),
+    judge: () => Promise.resolve(judgeResult()),
+  };
+  const PLAN = { text: "## Phase 1\n- do the thing", path: "context/changes/x/plan.md" };
+
+  // Absence of the key IS the no-plan signal (plan-review F5). A `skipped`
+  // variant would be a second way to say the same thing, and the renderer
+  // would then have two states to keep in sync instead of one.
+  it("makes no third call and emits no implReview key when there is no plan", async () => {
+    const implReviewer = vi.fn();
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: { ...twoPasses, implReviewer },
+    });
+    expect(implReviewer).not.toHaveBeenCalled();
+    expect("implReview" in result).toBe(false);
+    expect("implReviewTelemetry" in result).toBe(false);
+  });
+
+  it("has exactly two block shapes — no `skipped` variant to drift out of sync", () => {
+    // The real guarantee is compile-time: a Record over the union stops
+    // type-checking the moment a third status is added, so "no skipped
+    // variant" cannot rot into a stale comment (plan-review F5).
+    const shapes: Record<ImplReviewBlock["status"], true> = { reviewed: true, failed: true };
+    expect(Object.keys(shapes).sort()).toEqual(["failed", "reviewed"]);
+  });
+
+  it("populates implReview with the reviewed shape and the plan path", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: {
+        ...twoPasses,
+        implReviewer: () =>
+          Promise.resolve(
+            implReviewResult({
+              verdict: "NEEDS_ATTENTION",
+              grades: implGrades({ scope_discipline: "WARNING" }),
+            }),
+          ),
+      },
+    });
+    expect(result.implReview).toMatchObject({
+      status: "reviewed",
+      planPath: "context/changes/x/plan.md",
+      verdict: "NEEDS_ATTENTION",
+    });
+  });
+
+  it("hands the pass the capped diff and the plan-truncation flag", async () => {
+    const seen: { diff: string; planPath?: string; planTruncated?: boolean }[] = [];
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: { text: "p".repeat(PLAN_CAP_CHARS + 1), path: "plan.md" },
+      deps: {
+        ...twoPasses,
+        implReviewer: (input) => {
+          seen.push({ diff: input.diff, planPath: input.planPath, planTruncated: input.planTruncated });
+          return Promise.resolve(implReviewResult());
+        },
+      },
+    });
+    expect(seen.at(0)?.planTruncated).toBe(true);
+    expect(seen.at(0)?.planPath).toBe("plan.md");
+    expect(seen.at(0)?.diff).toBe(SMALL_DIFF);
+  });
+
+  // The pass runs AFTER the judge, so a throw here would discard a complete,
+  // already-paid-for code review over an advisory extra.
+  it("degrades a throwing pass to the failed block, leaving the code review intact", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: {
+        ...twoPasses,
+        implReviewer: () => Promise.reject(new Error("provider exploded")),
+        retrySleep: () => Promise.resolve(),
+      },
+    });
+    expect(result.implReview).toEqual({ status: "failed", error: "provider exploded" });
+    // The code review survived whole.
+    expect(result.verdict).toBe("passed");
+    expect(result.summary).toBe("judge summary");
+    expect(result.scores).toBeDefined();
+  });
+
+  // Construction throws on an unresolvable API key — that is a failure of this
+  // pass like any other and must not become the run's failure.
+  it("degrades a throwing CONSTRUCTION to the failed block", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: {
+        ...twoPasses,
+        createImplReviewer: () => {
+          throw new Error("OPENROUTER_API_KEY is missing");
+        },
+      },
+    });
+    expect(result.implReview).toMatchObject({ status: "failed" });
+    expect(result.verdict).toBe("passed");
+  });
+
+  it("reports a retried third pass through onRetry as \"impl-review\"", async () => {
+    const events: string[] = [];
+    let attempt = 0;
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      onRetry: (pass) => events.push(pass),
+      deps: {
+        ...twoPasses,
+        implReviewer: () => {
+          attempt += 1;
+          return attempt === 1 ? Promise.reject(apiError(503)) : Promise.resolve(implReviewResult());
+        },
+        retrySleep: () => Promise.resolve(),
+      },
+    });
+    expect(events).toEqual(["impl-review"]);
+    expect(result.implReview).toMatchObject({ status: "reviewed" });
+  });
+
+  const implStep = (inputTokens: number, cost?: number): StepResult<ToolSet> =>
+    ({
+      toolCalls: [],
+      usage: { inputTokens, outputTokens: 10, totalTokens: inputTokens + 10 },
+      providerMetadata: cost === undefined ? undefined : { openrouter: { usage: { cost } } },
+    }) as unknown as StepResult<ToolSet>;
+
+  it("accumulates implReviewTelemetry across BOTH attempts of a retried run", async () => {
+    let attempt = 0;
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: {
+        ...twoPasses,
+        createImplReviewer: (options) => ({
+          implReview: () => {
+            options.onStepEnd?.(implStep(100, 0.01));
+            attempt += 1;
+            return attempt === 1 ? Promise.reject(apiError(503)) : Promise.resolve(implReviewResult());
+          },
+        }),
+        retrySleep: () => Promise.resolve(),
+      },
+    });
+    // Real spend for the run, not the surviving attempt's.
+    expect(result.implReviewTelemetry).toEqual({
+      attempts: 2,
+      inputTokens: 200,
+      outputTokens: 20,
+      totalTokens: 220,
+      cost: 0.02,
+    });
+  });
+
+  // A failed pass still spent money; dropping its telemetry would understate
+  // the run's cost exactly when someone is investigating the failure.
+  it("keeps the telemetry of a pass that ultimately failed", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: {
+        ...twoPasses,
+        createImplReviewer: (options) => ({
+          implReview: () => {
+            options.onStepEnd?.(implStep(100, 0.01));
+            return Promise.reject(new Error("nope"));
+          },
+        }),
+        retrySleep: () => Promise.resolve(),
+      },
+    });
+    expect(result.implReview).toMatchObject({ status: "failed" });
+    expect(result.implReviewTelemetry).toMatchObject({ attempts: 1, cost: 0.01 });
+  });
+
+  it("omits cost (never 0) when the provider reported none", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: {
+        ...twoPasses,
+        createImplReviewer: (options) => ({
+          implReview: () => {
+            options.onStepEnd?.(implStep(100));
+            return Promise.resolve(implReviewResult());
+          },
+        }),
+      },
+    });
+    expect("cost" in (result.implReviewTelemetry ?? {})).toBe(false);
+  });
+
+  it("omits implReviewTelemetry entirely for an injected pass that never constructs", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: { ...twoPasses, implReviewer: () => Promise.resolve(implReviewResult()) },
+    });
+    expect("implReview" in result).toBe(true);
+    expect("implReviewTelemetry" in result).toBe(false);
+  });
+
+  it("forwards the resolved model and timeout to the constructed reviewer", async () => {
+    vi.stubEnv("OPENROUTER_IMPL_REVIEW_MODEL", "env/impl-model");
+    const seen: { model?: string; timeoutMs?: number } = {};
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      timeouts: { implReviewTimeoutMs: 4_242 },
+      deps: {
+        ...twoPasses,
+        createImplReviewer: (options) => {
+          seen.model = options.model;
+          return {
+            implReview: (_input, callOptions) => {
+              seen.timeoutMs = callOptions?.timeoutMs;
+              return Promise.resolve(implReviewResult());
+            },
+          };
+        },
+      },
+    });
+    expect(seen.model).toBe("env/impl-model");
+    expect(seen.timeoutMs).toBe(4_242);
+  });
+
+  it("rejects a non-positive implReviewTimeoutMs like the other budgets", async () => {
+    await expect(
+      runReviewPipeline({ diff: SMALL_DIFF, timeouts: { implReviewTimeoutMs: 0 }, deps: twoPasses }),
+    ).rejects.toThrow(/implReviewTimeoutMs must be a positive integer/);
   });
 });

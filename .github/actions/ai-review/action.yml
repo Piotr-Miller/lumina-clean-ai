@@ -9,9 +9,13 @@
 # "$GITHUB_WORKSPACE": file reads restricted to the diff's paths); its loop
 # budget defaults to 5 steps, tunable via the finder-max-steps input
 # (mapped to REVIEW_FINDER_MAX_STEPS).
+# A THIRD pass runs only when plan-file resolved to a non-empty plan: the
+# implementation review judges the diff against that plan. It is advisory and
+# fully isolated — its failure renders as a warning inside the same comment and
+# never changes the exit code, the ai-cr:* labels, or the code review above.
 
 name: AI Code Review
-description: Two-pass AI review (finder + judge) over the PR diff; posts a sticky scorecard comment and flips ai-cr:* labels.
+description: Two-pass AI review (finder + judge) over the PR diff, plus a plan-aware implementation review when a plan resolves; posts a sticky scorecard comment and flips ai-cr:* labels.
 
 inputs:
   api-key:
@@ -23,6 +27,10 @@ inputs:
     default: ""
   judge-model:
     description: Judge model override (maps to OPENROUTER_JUDGE_MODEL; empty = package default chain)
+    required: false
+    default: ""
+  impl-review-model:
+    description: Implementation-review model override (maps to OPENROUTER_IMPL_REVIEW_MODEL; empty = package default chain)
     required: false
     default: ""
   finder-max-steps:
@@ -42,6 +50,14 @@ inputs:
     required: true
   project-context-file:
     description: Absolute path to trusted project review rules (must be sourced from the BASE branch, never the PR head); empty or empty-file = no rules
+    required: false
+    default: ""
+  plan-file:
+    description: Absolute path to the plan this PR implements (UNTRUSTED PR-head content; the caller must stage it from the Git object after a blob-mode check, never read it through the checkout); empty or empty-file = no plan
+    required: false
+    default: ""
+  plan-path:
+    description: Repo-relative location of the plan, for display in the review comment (untrusted metadata; passed via env, never interpolated into scripts)
     required: false
     default: ""
   github-token:
@@ -69,15 +85,24 @@ runs:
         OPENROUTER_API_KEY: ${{ inputs.api-key }}
         OPENROUTER_REVIEW_MODEL: ${{ inputs.review-model }}
         OPENROUTER_JUDGE_MODEL: ${{ inputs.judge-model }}
+        OPENROUTER_IMPL_REVIEW_MODEL: ${{ inputs.impl-review-model }}
         REVIEW_FINDER_MAX_STEPS: ${{ inputs.finder-max-steps }}
         PR_TITLE: ${{ inputs.pr-title }}
         PR_BODY: ${{ inputs.pr-body }}
         DIFF_FILE: ${{ inputs.diff-file }}
         PROJECT_CONTEXT_FILE: ${{ inputs.project-context-file }}
+        PLAN_FILE: ${{ inputs.plan-file }}
+        PLAN_PATH: ${{ inputs.plan-path }}
       run: |
         ARGS=(--diff-file "$DIFF_FILE" --out-dir .review-out --source-root "$GITHUB_WORKSPACE")
         if [[ -n "$PROJECT_CONTEXT_FILE" ]]; then
           ARGS+=(--project-context-file "$PROJECT_CONTEXT_FILE")
+        fi
+        # Omitted when no plan resolved, so a plan-less run is byte-identical
+        # to the pre-feature invocation. PLAN_PATH rides in via env, never as
+        # an argument — it is untrusted (the PR body can name the plan).
+        if [[ -n "$PLAN_FILE" ]]; then
+          ARGS+=(--plan-file "$PLAN_FILE")
         fi
         npm run review -- "${ARGS[@]}"
 

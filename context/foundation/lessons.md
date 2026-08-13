@@ -155,3 +155,10 @@
 - **Problem**: The representative real photos may not actually exhibit the defect the pass targets (here: flat-shadow chroma noise), so the decisive A/B falls back to a synthetic ground-truth injection. That proves the algorithm's invariants (luminance preserved within tolerance, no color bleeding, deterministic) but NOT a real-world visual benefit — the two are different claims.
 - **Rule**: Record the synthetic-vs-real caveat explicitly in the tuning doc, ship the feature flag-OFF, and gate the production-enable (a separate change) on a real before/after with genuinely affected inputs. Treat a synthetic GO as sufficient to merge the code dark, never as sufficient to turn it on.
 - **Applies to**: plan, implement, impl-review
+
+## An offline eval proves capability exists, not that it will be used — gate adoption on a live probe
+
+- **Context**: Any decision to adopt or change a model/agent capability on the strength of an offline eval or fixture matrix — e.g. the promptfoo finder matrix in `packages/code-reviewer/evals/`.
+- **Problem**: Fixture behaviour does not transfer. `deepseek-v4-flash-0731` called the tool on 6/6 tool-enabled fixture rows and 0/3 live runs on a real PR; `claude-haiku-4.5` delivered context on 3/3 fixture repeats, then live fetched the right file twice and never connected what it read. Both were nearly adopted into production on fixture evidence alone.
+- **Rule**: Treat an offline eval as necessary but not sufficient for any agent-capability claim. Before changing production, gate adoption on a live probe against a real PR or diff, and pre-register what result would falsify the claim.
+- **Applies to**: plan, plan-review, implement, impl-review

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { runReviewCli, type CliEnv, type CliIo } from "./cli.js";
 import type { PipelineInput } from "./pipeline.js";
 import { CRITERIA } from "./scorecard.js";
-import type { PipelineResult, Scores } from "./schemas.js";
+import type { ImplGrades, PipelineResult, Scores } from "./schemas.js";
 
 // Hermetic process-contract tests (impl-review-phase-1 F6): everything the
 // composite action consumes — exit codes, artifacts, env wiring — pinned
@@ -104,6 +104,14 @@ describe("runReviewCli exit codes", () => {
     expect(pipeline).not.toHaveBeenCalled();
   });
 
+  it("returns 1 for a valueless --plan-file and advertises the flag in the usage line", async () => {
+    const io = fakeIo();
+    const pipeline = okPipeline();
+    expect(await runReviewCli(["--plan-file"], {}, io, pipeline)).toBe(1);
+    expect(io.errors.at(0)).toContain("--plan-file <path>");
+    expect(pipeline).not.toHaveBeenCalled();
+  });
+
   it("returns 1 for an empty diff without invoking the pipeline", async () => {
     const io = fakeIo({ readStdin: () => "  \n" });
     const pipeline = okPipeline();
@@ -162,19 +170,81 @@ describe("runReviewCli input routing and pipeline wiring", () => {
       PR_BODY: "body",
       REVIEW_FINDER_TIMEOUT_MS: "10000",
       REVIEW_JUDGE_TIMEOUT_MS: "5000",
+      REVIEW_IMPL_REVIEW_TIMEOUT_MS: "7000",
     };
     await runReviewCli([], env, fakeIo(), pipeline);
     expect(inputOf(pipeline)).toMatchObject({
       prTitle: "feat: x",
       prBody: "body",
-      timeouts: { finderTimeoutMs: 10_000, judgeTimeoutMs: 5_000 },
+      timeouts: { finderTimeoutMs: 10_000, judgeTimeoutMs: 5_000, implReviewTimeoutMs: 7_000 },
     });
+  });
+
+  // All three passes must be tunable without a release — the impl-review budget
+  // was miscalibrated on its first live run (PR #127, run 31703938953) and
+  // having no override meant the only remedy was a code change.
+  it("rejects an invalid impl-review timeout like the other two budgets", async () => {
+    const io = fakeIo();
+    const pipeline = okPipeline();
+    const code = await runReviewCli([], { REVIEW_IMPL_REVIEW_TIMEOUT_MS: "-1" }, io, pipeline);
+    expect(code).toBe(1);
+    expect(io.errors.at(0)).toContain("REVIEW_IMPL_REVIEW_TIMEOUT_MS");
+    expect(pipeline).not.toHaveBeenCalled();
   });
 
   it("forwards --project-context-file content as projectReviewContext", async () => {
     const pipeline = okPipeline();
     await runReviewCli(["--project-context-file", "rules.md"], {}, fakeIo(), pipeline);
     expect(inputOf(pipeline).projectReviewContext).toBe("content of rules.md");
+  });
+
+  it("forwards --plan-file content plus PLAN_PATH as the untrusted plan input", async () => {
+    const pipeline = okPipeline();
+    const io = fakeIo();
+    await runReviewCli(["--plan-file", "plan.md"], { PLAN_PATH: "context/changes/x/plan.md" }, io, pipeline);
+    expect(inputOf(pipeline).plan).toEqual({
+      text: "content of plan.md",
+      path: "context/changes/x/plan.md",
+    });
+    expect(io.errors).toEqual(["plan supplied: context/changes/x/plan.md (18 chars)"]);
+  });
+
+  it("omits the plan path when PLAN_PATH is unset — content alone is still a usable plan", async () => {
+    const pipeline = okPipeline();
+    await runReviewCli(["--plan-file", "plan.md"], {}, fakeIo(), pipeline);
+    expect(inputOf(pipeline).plan).toEqual({ text: "content of plan.md" });
+  });
+
+  // An empty staged plan is the workflow's "no plan" signal, mirroring how an
+  // absent base-branch rules file is staged as an empty project-context file.
+  // It must never reach the pipeline as a zero-length plan.
+  it("treats an empty --plan-file as no plan and says so on stderr", async () => {
+    const pipeline = okPipeline();
+    const io = fakeIo({ readFile: () => "   \n" });
+    expect(await runReviewCli(["--plan-file", "plan.md"], {}, io, pipeline)).toBe(0);
+    expect(inputOf(pipeline).plan).toBeUndefined();
+    expect(io.errors).toEqual(["plan file is empty — treated as no plan"]);
+  });
+
+  // PLAN_PATH is attacker-reachable (the PR body can name the plan), so a
+  // control character must not be able to forge or restyle a telemetry line.
+  it("defuses control characters in PLAN_PATH before logging it", async () => {
+    const pipeline = okPipeline();
+    const io = fakeIo();
+    await runReviewCli(["--plan-file", "plan.md"], { PLAN_PATH: "a\nplan supplied: forged" }, io, pipeline);
+    expect(io.errors.at(0)).toBe("plan supplied: a?plan supplied: forged (18 chars)");
+  });
+
+  // The whole feature must be inert until a plan is passed: no flag, no plan
+  // key, no extra stderr, and a review.json byte-identical to the pre-feature
+  // shape (no planTruncated).
+  it("stays byte-identical to the legacy invocation when --plan-file is absent", async () => {
+    const pipeline = okPipeline();
+    const io = fakeIo();
+    await runReviewCli([], {}, io, pipeline);
+    expect(inputOf(pipeline).plan).toBeUndefined();
+    expect(io.errors).toEqual([]);
+    expect(io.files.get(join(".review-out", "review.json"))).not.toContain("planTruncated");
   });
 
   it("wires onRetry to a stderr line naming the pass, error, and delay", async () => {
@@ -355,5 +425,107 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     const io = fakeIo();
     expect(await runReviewCli(["--bogus"], {}, io, okPipeline())).toBe(1);
     expect(io.errors.at(0)).toContain("--source-root");
+  });
+});
+
+describe("runReviewCli implementation-review telemetry line", () => {
+  const implGrades = (): ImplGrades => ({
+    plan_adherence: "PASS",
+    scope_discipline: "PASS",
+    safety_quality: "PASS",
+    architecture: "PASS",
+    pattern_consistency: "PASS",
+    test_coverage: "PASS",
+    success_criteria: "PASS",
+  });
+
+  const reviewedResult = (implReview: Partial<PipelineResult> = {}) =>
+    pipelineResult({
+      implReview: {
+        status: "reviewed",
+        planPath: "context/changes/x/plan.md",
+        grades: implGrades(),
+        verdict: "NEEDS_ATTENTION",
+        verdictReason: "one gap",
+        findings: [],
+      },
+      ...implReview,
+    });
+
+  // In an Actions log this line is the only live evidence the pass ran and
+  // what it cost (criterion 3.9).
+  it("emits one stderr line with the outcome, tokens, and cost", async () => {
+    const io = fakeIo();
+    await runReviewCli(
+      [],
+      {},
+      io,
+      okPipeline(
+        reviewedResult({
+          implReviewTelemetry: { attempts: 1, inputTokens: 51_407, outputTokens: 13_327, totalTokens: 64_734, cost: 0.236084 },
+        }),
+      ),
+    );
+    const line = io.errors.find((error) => error.startsWith("impl review:"));
+    expect(line).toBe(
+      "impl review: NEEDS_ATTENTION with 0 finding(s) (attempts=1 tokens in=51407 out=13327 total=64734 cost=$0.236084)",
+    );
+  });
+
+  // A fabricated "$0.000000" would read as free — the absent case must stay
+  // visibly different from a genuine zero.
+  it("prints no cost field when the provider reported none", async () => {
+    const io = fakeIo();
+    await runReviewCli(
+      [],
+      {},
+      io,
+      okPipeline(reviewedResult({ implReviewTelemetry: { attempts: 1, inputTokens: 10 } })),
+    );
+    const line = io.errors.find((error) => error.startsWith("impl review:"));
+    expect(line).toContain("attempts=1");
+    expect(line).not.toContain("cost=");
+  });
+
+  // A failed advisory pass must not become a technical failure: exit stays 0,
+  // the artifacts are still written, and the code-review verdict is intact.
+  it("names a failed pass, still exits 0, and still writes both artifacts", async () => {
+    const io = fakeIo();
+    const code = await runReviewCli(
+      [],
+      {},
+      io,
+      okPipeline(pipelineResult({ implReview: { status: "failed", error: "provider exploded" } })),
+    );
+    expect(code).toBe(0);
+    expect(io.errors.find((error) => error.startsWith("impl review:"))).toBe(
+      "impl review: FAILED (provider exploded) (no usage reported)",
+    );
+    expect(io.files.get(join(".review-out", "comment.md"))).toContain("could not complete");
+    const written: unknown = JSON.parse(io.files.get(join(".review-out", "review.json")) ?? "{}");
+    expect(written).toMatchObject({ verdict: "passed", implReview: { status: "failed" } });
+  });
+
+  // review.json is what the Phase 4 probe reads its cost and verdict out of.
+  it("carries the reviewed block and its telemetry into review.json", async () => {
+    const io = fakeIo();
+    await runReviewCli(
+      [],
+      {},
+      io,
+      okPipeline(reviewedResult({ implReviewTelemetry: { attempts: 1, totalTokens: 100, cost: 0.5 } })),
+    );
+    const written: unknown = JSON.parse(io.files.get(join(".review-out", "review.json")) ?? "{}");
+    expect(written).toMatchObject({
+      implReview: { status: "reviewed", verdict: "NEEDS_ATTENTION", planPath: "context/changes/x/plan.md" },
+      implReviewTelemetry: { attempts: 1, cost: 0.5 },
+    });
+  });
+
+  // A run with no plan stays byte-identical on stderr to the legacy shape.
+  it("emits nothing when the pass did not run", async () => {
+    const io = fakeIo();
+    await runReviewCli([], {}, io, okPipeline(pipelineResult()));
+    expect(io.errors.some((error) => error.startsWith("impl review:"))).toBe(false);
   });
 });

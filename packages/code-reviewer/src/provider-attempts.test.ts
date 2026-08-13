@@ -2,6 +2,7 @@ import { APICallError } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createImplReviewer } from "./impl-reviewer.js";
 import { createJudge } from "./judge.js";
 import { PROJECT_CONTEXT_CAP_CHARS, runReviewPipeline } from "./pipeline.js";
 import { createReviewer } from "./reviewer.js";
@@ -27,6 +28,7 @@ beforeEach(() => {
   vi.stubEnv("OPENROUTER_MODEL", undefined);
   vi.stubEnv("OPENROUTER_REVIEW_MODEL", undefined);
   vi.stubEnv("OPENROUTER_JUDGE_MODEL", undefined);
+  vi.stubEnv("OPENROUTER_IMPL_REVIEW_MODEL", undefined);
 });
 
 afterEach(() => {
@@ -206,6 +208,15 @@ describe("provider attempts with maxRetries: 0", () => {
     await expect(
       judge({ findings, diffStats: { files: 1, additions: 1, deletions: 0 } }),
     ).rejects.toBe(error);
+    expect(doGenerate).toHaveBeenCalledTimes(1);
+  });
+
+  it("impl reviewer: a failing implementation-review call makes exactly one provider attempt", async () => {
+    const error = retryableError();
+    const doGenerate = vi.fn().mockRejectedValue(error);
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const { implReview } = createImplReviewer({ apiKey: "test-key" });
+    await expect(implReview({ plan: "p", diff: "d" })).rejects.toBe(error);
     expect(doGenerate).toHaveBeenCalledTimes(1);
   });
 });
