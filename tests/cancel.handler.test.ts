@@ -244,3 +244,48 @@ describe("cancelCloudJobResponse — canceled copy", () => {
     expect(STRINGS.cloudErrors.canceled).toContain("canceled");
   });
 });
+
+describe("cancelCloudJobResponse — unconfigured compute-cancel seam", () => {
+  // The degradation itself is deliberate (never an error), but it used to be
+  // INVISIBLE: a prod Worker missing EDGE_FUNCTION_URL / DB_WEBHOOK_SECRET
+  // reported a clean cancel while the Replicate prediction kept running and
+  // billing, and nothing in the logs said so. The warning is the only signal
+  // that distinguishes a true hard-cancel from a DB-flip, so it is pinned here.
+  it("warns that the prediction was not stopped when the seam is absent", async () => {
+    // A matched row is what makes `canceled` true — the only case where a real
+    // in-flight prediction exists to leak.
+    const { admin } = makeStubAdmin(null, [{ id: JOB_ID, source_path: `u/${JOB_ID}/source.jpg` }]);
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const res = await cancelCloudJobResponse({
+      user: USER,
+      request: jsonRequest({ jobId: JOB_ID }),
+      admin,
+      edge: null,
+    });
+
+    expect(res.status).toBe(200);
+    expect((await readBody(res)).canceled).toBe(true);
+    const warned = spy.mock.calls.flat().join(" ");
+    expect(warned).toContain("compute-cancel seam not configured");
+    expect(warned).toContain("keeps billing");
+    spy.mockRestore();
+  });
+
+  // A no-op flip (foreign or already-terminal job) has no in-flight prediction,
+  // so warning there would cry wolf on every stale request.
+  it("stays quiet when nothing was actually cancelled", async () => {
+    const { admin } = makeStubAdmin(null, []);
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await cancelCloudJobResponse({
+      user: USER,
+      request: jsonRequest({ jobId: JOB_ID }),
+      admin,
+      edge: null,
+    });
+
+    expect(spy.mock.calls.flat().join(" ")).not.toContain("compute-cancel seam not configured");
+    spy.mockRestore();
+  });
+});
