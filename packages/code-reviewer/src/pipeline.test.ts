@@ -604,6 +604,94 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
     expect(infos.at(1)?.fileContextCalls).toEqual([]);
   });
 
+  // The per-step cost was computed from the start but never accumulated, so
+  // review.json carried finder tokens and no finder cost — the gap that made
+  // criterion 4.8's ratio uncomputable (numerator instrumented, denominator not).
+  it("accumulates the finder's provider cost across steps", async () => {
+    const withCostStep = (cost?: number): StepResult<ToolSet> =>
+      ({
+        toolCalls: [],
+        usage: { inputTokens: 10, outputTokens: 2, totalTokens: 12 },
+        providerMetadata: cost === undefined ? undefined : { openrouter: { usage: { cost } } },
+      }) as unknown as StepResult<ToolSet>;
+    const createFinder = vi.fn().mockImplementation((options: ReviewerOptions) => ({
+      review: () => {
+        options.onStepEnd?.(withCostStep(0.004));
+        options.onStepEnd?.(withCostStep(0.006));
+        return Promise.resolve({ summary: "s", findings: [] });
+      },
+    }));
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      source: () => "ctx",
+      deps: { createFinder, judge: () => Promise.resolve(judgeResult()) },
+    });
+    expect(result.finderTelemetry?.cost).toBeCloseTo(0.01, 10);
+  });
+
+  it("omits the finder cost key entirely when the provider reported none", async () => {
+    const bareStep = {
+      toolCalls: [],
+      usage: { inputTokens: 10 },
+    } as unknown as StepResult<ToolSet>;
+    const createFinder = vi.fn().mockImplementation((options: ReviewerOptions) => ({
+      review: () => {
+        options.onStepEnd?.(bareStep);
+        return Promise.resolve({ summary: "s", findings: [] });
+      },
+    }));
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      source: () => "ctx",
+      deps: { createFinder, judge: () => Promise.resolve(judgeResult()) },
+    });
+    expect("cost" in (result.finderTelemetry ?? {})).toBe(false);
+  });
+
+  // The judge had NO telemetry at all until criterion 4.8 needed it, and it is
+  // the pass that reaches for the expensive model.
+  it("accumulates judgeTelemetry across BOTH attempts of a retried run", async () => {
+    const judgeStep = (cost: number): StepResult<ToolSet> =>
+      ({
+        toolCalls: [],
+        usage: { inputTokens: 40, outputTokens: 8, totalTokens: 48 },
+        providerMetadata: { openrouter: { usage: { cost } } },
+      }) as unknown as StepResult<ToolSet>;
+    let attempt = 0;
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        createJudge: (options) => ({
+          judge: () => {
+            options.onStepEnd?.(judgeStep(0.015));
+            attempt += 1;
+            return attempt === 1 ? Promise.reject(apiError(503)) : Promise.resolve(judgeResult());
+          },
+        }),
+        retrySleep: () => Promise.resolve(),
+      },
+    });
+    expect(result.judgeTelemetry).toEqual({
+      attempts: 2,
+      inputTokens: 80,
+      outputTokens: 16,
+      totalTokens: 96,
+      cost: 0.03,
+    });
+  });
+
+  it("omits judgeTelemetry entirely for an injected judge that never constructs", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect("judgeTelemetry" in result).toBe(false);
+  });
+
   it("omits finderTelemetry when no steps were observed", async () => {
     const createFinder = vi.fn().mockReturnValue({ review: reviewOk });
     const result = await runReviewPipeline({

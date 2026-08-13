@@ -1,5 +1,5 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { ToolLoopAgent } from "ai";
+import { ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 
 import { resolveConfig, resolveModels } from "./config.js";
 import { buildJudgeInstructions, buildJudgePrompt, type JudgePromptInput } from "./prompts.js";
@@ -23,6 +23,12 @@ export interface JudgeOptions {
    * look identical to a clean one, or persistent drift stays invisible.
    */
   onOutputRepair?: (detail: { reason: string }) => void;
+  /**
+   * Observes the single generation of each attempt, carrying token usage and
+   * the provider-reported cost. Fires on BOTH attempts of a retried run, so
+   * accumulated spend measures the run rather than the surviving attempt.
+   */
+  onStepEnd?: (step: StepResult<ToolSet>) => void;
 }
 
 export interface JudgeCallOptions {
@@ -42,7 +48,10 @@ export function createJudge(options: JudgeOptions = {}) {
   const openrouter = createOpenRouter({ apiKey });
 
   const agent = new ToolLoopAgent({
-    model: openrouter(judgeModel),
+    // Usage accounting is OPT-IN and the judge shipped without it, which is why
+    // its cost was permanently undefined — the gap that made criterion 4.8
+    // uncomputable. Free: accounting adds response fields, not tokens.
+    model: openrouter(judgeModel, { usage: { include: true } }),
     instructions: buildJudgeInstructions(),
     // Repair added after four consecutive AI_NoObjectGeneratedError failures
     // killed PR #127's review (runs 31707888975 + re-run). The original
@@ -58,6 +67,7 @@ export function createJudge(options: JudgeOptions = {}) {
       prompt: buildJudgePrompt(input),
       abortSignal: callOptions.abortSignal,
       timeout: callOptions.timeoutMs,
+      onStepEnd: options.onStepEnd,
     });
     const { output, droppedFindingIdRefs } = validateJudgeReferences(
       result.output,

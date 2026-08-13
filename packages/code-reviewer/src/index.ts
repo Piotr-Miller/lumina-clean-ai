@@ -96,6 +96,7 @@ export type {
   ImplVerdict,
   JudgeOutput,
   JudgeResult,
+  JudgeTelemetry,
   Lens,
   PipelineResult,
   ReviewResult,

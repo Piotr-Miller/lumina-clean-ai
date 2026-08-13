@@ -134,6 +134,35 @@ const formatImplReviewLine = (result: PipelineResult): string | undefined => {
   return `impl review: ${outcome} (${usage})`;
 };
 
+const usd = (value: number): string => `$${value.toFixed(6)}`;
+
+/**
+ * The whole run's provider spend, and the one number criterion 4.8 actually
+ * asks for: the implementation review stated as a RATIO of the code review it
+ * rides alongside. An absolute nobody can calibrate is how a 57.6x finder
+ * premium nearly got adopted once.
+ *
+ * Emitted only when at least one pass reported a cost, and the ratio only when
+ * the baseline is non-zero — dividing by an unreported baseline would print a
+ * confident Infinity.
+ */
+const formatCostLine = (result: PipelineResult): string | undefined => {
+  const finder = result.finderTelemetry?.cost;
+  const judge = result.judgeTelemetry?.cost;
+  const impl = result.implReviewTelemetry?.cost;
+  if (finder === undefined && judge === undefined && impl === undefined) return undefined;
+  const parts = [
+    `finder=${finder === undefined ? "?" : usd(finder)}`,
+    `judge=${judge === undefined ? "?" : usd(judge)}`,
+    `impl=${impl === undefined ? "(not run)" : usd(impl)}`,
+  ];
+  const baseline = (finder ?? 0) + (judge ?? 0);
+  if (impl !== undefined && finder !== undefined && judge !== undefined && baseline > 0) {
+    parts.push(`impl/(finder+judge)=${(impl / baseline).toFixed(2)}x`);
+  }
+  return `review cost: ${parts.join(" ")}`;
+};
+
 /** Optional positive-integer ms override; unset/empty → pipeline default, invalid → exit 1. */
 function parseTimeoutEnv(env: CliEnv, name: string): number | undefined {
   const raw = env[name];
@@ -260,6 +289,8 @@ export async function runReviewCli(
 
     const implReviewLine = formatImplReviewLine(result);
     if (implReviewLine !== undefined) io.logError(implReviewLine);
+    const costLine = formatCostLine(result);
+    if (costLine !== undefined) io.logError(costLine);
 
     io.mkdir(args.outDir);
     io.writeFile(join(args.outDir, "review.json"), `${JSON.stringify(result, null, 2)}\n`);
