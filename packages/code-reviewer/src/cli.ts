@@ -240,6 +240,7 @@ export async function runReviewCli(
       timeouts: {
         finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
         judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
+        implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
       },
       projectReviewContext: args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
       // In an ultimately-green run this stderr line is the only evidence that

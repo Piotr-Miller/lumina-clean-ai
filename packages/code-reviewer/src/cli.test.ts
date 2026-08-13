@@ -170,13 +170,26 @@ describe("runReviewCli input routing and pipeline wiring", () => {
       PR_BODY: "body",
       REVIEW_FINDER_TIMEOUT_MS: "10000",
       REVIEW_JUDGE_TIMEOUT_MS: "5000",
+      REVIEW_IMPL_REVIEW_TIMEOUT_MS: "7000",
     };
     await runReviewCli([], env, fakeIo(), pipeline);
     expect(inputOf(pipeline)).toMatchObject({
       prTitle: "feat: x",
       prBody: "body",
-      timeouts: { finderTimeoutMs: 10_000, judgeTimeoutMs: 5_000 },
+      timeouts: { finderTimeoutMs: 10_000, judgeTimeoutMs: 5_000, implReviewTimeoutMs: 7_000 },
     });
+  });
+
+  // All three passes must be tunable without a release — the impl-review budget
+  // was miscalibrated on its first live run (PR #127, run 31703938953) and
+  // having no override meant the only remedy was a code change.
+  it("rejects an invalid impl-review timeout like the other two budgets", async () => {
+    const io = fakeIo();
+    const pipeline = okPipeline();
+    const code = await runReviewCli([], { REVIEW_IMPL_REVIEW_TIMEOUT_MS: "-1" }, io, pipeline);
+    expect(code).toBe(1);
+    expect(io.errors.at(0)).toContain("REVIEW_IMPL_REVIEW_TIMEOUT_MS");
+    expect(pipeline).not.toHaveBeenCalled();
   });
 
   it("forwards --project-context-file content as projectReviewContext", async () => {

@@ -283,7 +283,7 @@ Connect the pass, render its three states into the sticky comment, and guarantee
 
 **Intent**: Run the pass when a plan resolved, after the judge, isolated so its failure degrades to a rendered warning rather than a failed run.
 
-**Contract**: `PipelineInput` gains `plan?: { text: string; path?: string }` and `timeouts.implReviewTimeoutMs`; `PipelineDeps` gains `implReviewer` for hermetic injection. `DEFAULT_IMPL_REVIEW_TIMEOUT_MS = 120_000`, mirroring the judge's single-structured-call budget. The pass is wrapped in `withOneRetry` with a new `"impl-review"` arm on the `onRetry` pass union, and the whole thing in a try/catch that converts a terminal failure into an error record rather than a throw.
+**Contract**: `PipelineInput` gains `plan?: { text: string; path?: string }` and `timeouts.implReviewTimeoutMs`; `PipelineDeps` gains `implReviewer` for hermetic injection. ~~`DEFAULT_IMPL_REVIEW_TIMEOUT_MS = 120_000`, mirroring the judge's single-structured-call budget.~~ **Re-calibrated to `300_000` on live evidence** — the judge analogy was wrong. The judge sees findings plus PR metadata; this pass sees a full plan plus the capped diff and emits up to 10 findings of prose. On the first real run (PR #127, run [31703938953](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31703938953)) **both** attempts timed out at 120s, burning ~4 minutes for a failed pass with no telemetry. The finder's budget is the right reference class. Also adds a `REVIEW_IMPL_REVIEW_TIMEOUT_MS` override, which the other two passes always had — without it the only remedy for a bad budget was a release. The pass is wrapped in `withOneRetry` with a new `"impl-review"` arm on the `onRetry` pass union, and the whole thing in a try/catch that converts a terminal failure into an error record rather than a throw.
 
 `PipelineResult` gains `implReview?: ImplReviewBlock` with exactly **two** shapes — reviewed, or failed. There is no `skipped` variant: absence of the key _is_ the no-plan signal (plan-review F5), matching the `finderTelemetry` convention so `in` checks and `review.json` stay clean, and leaving one canonical representation rather than two competing ones. The renderer interprets absence as the neutral no-plan section.
 
@@ -531,10 +531,10 @@ Nothing to migrate. The feature is inert until `plan-file` is passed, so Phases 
 
 #### Manual
 
-- [ ] 3.13 Populated section renders on a plan-bearing PR and `<details>` expands on GitHub
+- [ ] 3.13 Populated section renders on a plan-bearing PR and `<details>` expands on GitHub — **not yet observed**: the first plan-bearing run (#127, [31703938953](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31703938953)) hit the failed state via the 120s timeout, so the populated section has never rendered on GitHub. Re-run after the 300s re-calibration.
 - [ ] 3.14 Plan-free PR shows the neutral one-liner and nothing else moved
-- [ ] 3.15 The two verdict vocabularies are visually distinct at a glance
-- [ ] 3.16 `ai-cr:*` labels behave as before, including on a failed-third-pass run
+- [x] 3.15 The two verdict vocabularies are visually distinct at a glance — verified offline via `scratchpad/render-preview.mjs` across all three states
+- [x] 3.16 `ai-cr:*` labels behave as before, including on a failed-third-pass run — verified **naturally, not by forcing it**: run 31703938953 had a genuinely failed third pass; the run stayed green, the code review completed with 10 findings, `verdict=failed → +ai-cr:failed -ai-cr:passed` flipped from the CODE verdict alone, and the CLI exited 0
 
 ### Phase 4: Live probe and rollout
 

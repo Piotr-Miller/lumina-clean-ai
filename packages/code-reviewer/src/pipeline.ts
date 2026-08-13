@@ -47,9 +47,21 @@ export const BODY_TRUNCATION_MARKER = "\n[...body truncated at 2,000 chars]";
 // Per attempt, so worst case = 2×finder + 2×judge with withOneRetry.
 export const DEFAULT_FINDER_TIMEOUT_MS = 300_000; // up to 8 tool-loop steps
 export const DEFAULT_JUDGE_TIMEOUT_MS = 120_000; // single structured call
-// Mirrors the judge: the implementation review is one structured call over a
-// capped plan + capped diff, with no tool loop to budget for.
-export const DEFAULT_IMPL_REVIEW_TIMEOUT_MS = 120_000;
+// Calibrated on LIVE evidence, not on the judge analogy this started with.
+//
+// The first figure was 120_000, "mirroring the judge's single-structured-call
+// budget". That reasoning was wrong and the first real run proved it: BOTH
+// attempts timed out on PR #127 (run 31703938953), burning ~4 minutes and
+// producing a failed pass with no telemetry at all. The judge sees findings plus
+// PR metadata — tiny in, small out. This pass sees a full plan (47,896 chars
+// there) plus the capped diff, and emits up to 10 findings each carrying detail
+// and fix prose; the phase-2 local probe needed 13,327 output tokens, which
+// takes minutes regardless of how fast the input is read.
+//
+// The right reference class is therefore the finder's budget, not the judge's.
+// Overridable per-run via REVIEW_IMPL_REVIEW_TIMEOUT_MS so a recalibration does
+// not need a release.
+export const DEFAULT_IMPL_REVIEW_TIMEOUT_MS = 300_000;
 
 export interface PipelineTimeouts {
   finderTimeoutMs?: number;
