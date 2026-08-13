@@ -130,7 +130,9 @@ const formatImplReviewLine = (result: PipelineResult): string | undefined => {
   const outcome =
     block.status === "reviewed"
       ? `${block.verdict} with ${String(block.findings.length)} finding(s)`
-      : `FAILED (${block.error})`;
+      : block.status === "skipped"
+        ? `SKIPPED (${block.reason})`
+        : `FAILED (${block.error})`;
   return `impl review: ${outcome} (${usage})`;
 };
 
@@ -272,6 +274,9 @@ export async function runReviewCli(
         implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
       },
       projectReviewContext: args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
+      // CI policy, not a library default: the pass costs ~9.47x the code review
+      // it accompanies, and a red code review means the diff is about to change.
+      implReviewGate: "code-review-passed",
       // In an ultimately-green run this stderr line is the only evidence that
       // a transient flake happened and the single retry recovered it.
       onRetry: (pass, error, delayMs) => {

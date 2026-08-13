@@ -724,12 +724,64 @@ describe("runReviewPipeline implementation-review pass", () => {
     expect("implReviewTelemetry" in result).toBe(false);
   });
 
-  it("has exactly two block shapes — no `skipped` variant to drift out of sync", () => {
-    // The real guarantee is compile-time: a Record over the union stops
-    // type-checking the moment a third status is added, so "no skipped
-    // variant" cannot rot into a stale comment (plan-review F5).
-    const shapes: Record<ImplReviewBlock["status"], true> = { reviewed: true, failed: true };
-    expect(Object.keys(shapes).sort()).toEqual(["failed", "reviewed"]);
+  it("has exactly three block shapes, and absence still means no plan", () => {
+    // Compile-time guarantee: a Record over the union stops type-checking the
+    // moment a status is added or removed. It did exactly that when the cost
+    // gate introduced `skipped`, which is the point — the contract cannot drift
+    // without someone deciding to change this line.
+    //
+    // `skipped` does NOT reopen plan-review F5. F5 forbade a second way to say
+    // "no plan"; this says something different — "not run because the code
+    // review failed". Absence of the whole key remains the only no-plan signal.
+    const shapes: Record<ImplReviewBlock["status"], true> = { reviewed: true, failed: true, skipped: true };
+    expect(Object.keys(shapes).sort()).toEqual(["failed", "reviewed", "skipped"]);
+  });
+
+  it("skips the pass when gated and the code review did not pass", async () => {
+    const implReviewer = vi.fn();
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      implReviewGate: "code-review-passed",
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult({ verdict: "failed" })),
+        implReviewer,
+      },
+    });
+    // No provider call at all — the gate exists to not spend the money.
+    expect(implReviewer).not.toHaveBeenCalled();
+    expect(result.implReview).toMatchObject({ status: "skipped" });
+    expect("implReviewTelemetry" in result).toBe(false);
+  });
+
+  it("still runs the pass when gated and the code review passed", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      implReviewGate: "code-review-passed",
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult({ verdict: "passed" })),
+        implReviewer: () => Promise.resolve(implReviewResult()),
+      },
+    });
+    expect(result.implReview).toMatchObject({ status: "reviewed" });
+  });
+
+  // The gate is CI policy, not a library default — embedders and evals that do
+  // not opt in keep the original behavior.
+  it("runs on a failed code review when ungated (the default)", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        judge: () => Promise.resolve(judgeResult({ verdict: "failed" })),
+        implReviewer: () => Promise.resolve(implReviewResult()),
+      },
+    });
+    expect(result.implReview).toMatchObject({ status: "reviewed" });
   });
 
   it("populates implReview with the reviewed shape and the plan path", async () => {
