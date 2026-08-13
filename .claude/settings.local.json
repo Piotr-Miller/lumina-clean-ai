@@ -201,7 +201,12 @@
       "Bash(exit 0)",
       "Bash(echo \"UP: http://localhost:4321 responds\")",
       "Bash(grep -qiE 'EADDRINUSE|error|failed|address in use' /c/Users/prmi/AppData/Local/Temp/claude/C--Source-Trainings-AI-10xDevs-LuminaClean-AI/3cf149f4-da1d-41b0-87db-e57f1d4f3eda/tasks/bhh9ie4kv.output)",
-      "Bash(gh pr create --base master --title 'docs\\(prod-config\\): refresh local-toolchain state after #106/#107' --body ' *)"
+      "Bash(gh pr create --base master --title 'docs\\(prod-config\\): refresh local-toolchain state after #106/#107' --body ' *)",
+      "Bash(python -c ' *)",
+      "Bash(node -e ' *)",
+      "Bash(mkdir -p C:/Users/prmi/AppData/Local/Temp/claude/C--Source-Trainings-AI-10xDevs-LuminaClean-AI/cdf627b4-052e-42fd-81aa-9c59662518f5/scratchpad)",
+      "Bash(gh pr create --base master --head scratch/deepseek-v4-probe --title 'DO NOT MERGE — scratch: deepseek-v4-flash finder probe' --body ' *)",
+      "Bash(python -)"
     ],
     "deny": [
       "Bash(rm -rf *)"

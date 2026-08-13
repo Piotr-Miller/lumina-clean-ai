@@ -1,11 +1,48 @@
 ---
 change_id: impl-review-ci-agent
 title: Plan-aware implementation review in the AI-SDK review agent
-updated: 2026-08-12
+updated: 2026-08-13
 created: 2026-08-11
-status: impl_reviewed
-archived_at: null
+status: archived
+archived_at: 2026-08-13T20:15:00Z
 ---
+
+## Outcome
+
+**Shipped and archived 2026-08-13.** All four phases plus two reliability fixes the work exposed.
+
+| PR                                                               | What                                                                                 |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [#127](https://github.com/Piotr-Miller/lumina-clean-ai/pull/127) | Phases 1-4: plan resolution, the agent, pipeline/render wiring, pre-registered probe |
+| [#131](https://github.com/Piotr-Miller/lumina-clean-ai/pull/131) | Post-merge verification (4.2, 3.14, 1.11, 4.1) via three scratch PRs                 |
+| [#132](https://github.com/Piotr-Miller/lumina-clean-ai/pull/132) | Finder + judge cost instrumentation, closing 4.8                                     |
+| [#133](https://github.com/Piotr-Miller/lumina-clean-ai/pull/133) | Cost gate: the pass runs only on a passing code review                               |
+
+Every criterion in the plan's Progress ledger is checked. The phase-4 probe caught all three
+injected deviations (MISSING, DRIFT, prohibited EXTRA) and correctly left the benign unplanned
+helper at OBSERVATION — the pair that separates understanding exclusions from pattern-matching
+"unplanned" — reproduced identically locally and in CI.
+
+**The headline number: the pass costs ~9.47x the code review it rides alongside** ($0.199620 vs a
+$0.021087 finder+judge baseline). That is why it is now gated behind a passing code review, and why
+4.8 was written as a ratio rather than an absolute in the first place.
+
+### Two things this work exposed in the EXISTING pipeline
+
+- The judge's 120s budget was miscalibrated (the load is output, not input) and it had no envelope
+  repair, on the reasoning that it "has never needed it". Four consecutive failures falsified that.
+- Neither the finder nor the judge reported cost: the finder computed a per-step value and dropped
+  it, and the judge had no usage accounting at all. 4.8 was uncomputable until that was built.
+
+### Known open, deliberately not fixed here
+
+- **The finder returns a degenerate finding set on security-saturated diffs** — 10/10
+  `critical`/`security` on #127, versus a healthy spread on ordinary code (#128: 8 findings across
+  4 categories and 3 severities). Diff-dependent, not a general defect. Fixing it means changing the
+  finder prompt, which needs an eval run of its own.
+- **The cost gate has never fired in production.** Every run since it shipped either passed its code
+  review or resolved no plan.
+- **The judge's envelope repair has never fired**, so only the timeout raise has evidence behind it.
 
 ## Notes
 

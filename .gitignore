@@ -66,3 +66,9 @@ playwright/.auth/
 # Playwright run artifacts (traces, screenshots, HTML report — CI uploads the report)
 test-results/
 playwright-report/
+
+# Ad-hoc probe/diagnostic scratch space. Durable harnesses are tracked in
+# packages/code-reviewer/scripts/ instead.
+scratchpad/
+# Cached findings from scripts/judge-diagnose.mjs
+packages/code-reviewer/scripts/judge-diagnose-findings.json

@@ -299,6 +299,19 @@ describe("buildImplReviewInstructions", () => {
     expect(instructions).toContain("WARNING at most");
   });
 
+  // Measured across every impl-review run to date: startLine 0/10 and file
+  // 2/10, while the FINDER — given a directive "attribute every finding"
+  // instruction — anchors 20/20. The weak "when it has one" phrasing was read
+  // as permission to omit, so this mirrors the finder's proven wording.
+  it("instructs anchoring directively, not permissively", () => {
+    const instructions = buildImplReviewInstructions();
+    expect(instructions).toContain("Attribute every finding that concerns changed code");
+    expect(instructions).toContain("absolute 1-based line number");
+    expect(instructions).toContain("a line number without a file is never valid");
+    // The old permissive formulation must not creep back.
+    expect(instructions).not.toContain("Anchor a finding to file and line when it has one");
+  });
+
   it("carries the severity/impact split and the finding cap", () => {
     const instructions = buildImplReviewInstructions();
     expect(instructions).toContain("at most 10 findings");
