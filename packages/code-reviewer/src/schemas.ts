@@ -226,20 +226,26 @@ export interface ImplReviewTelemetry {
 }
 
 /**
- * Exactly TWO shapes — reviewed, or failed.
+ * Three shapes — reviewed, failed, or skipped.
  *
- * There is deliberately no `skipped` variant: absence of the whole key IS the
- * no-plan signal (plan-review F5), matching the finderTelemetry convention so
- * `in` checks and review.json stay clean, and leaving one canonical
- * representation of "no plan" rather than two competing ones. The renderer
- * reads absence as the neutral no-plan section.
+ * Absence of the whole key still means "no plan" (plan-review F5): that is the
+ * one signal that must not have two representations, and the renderer reads
+ * absence as the neutral no-plan section.
+ *
+ * `skipped` was added later, when the pass was gated behind a passing code
+ * review on cost grounds (measured at 9.47x the code review it rides alongside).
+ * F5 rejected a `skipped` variant because it would have been a redundant SECOND
+ * way to say "no plan" — but "not run because the code review failed" is a
+ * different statement, and without its own shape a gated run would render as
+ * "no plan found for this PR", which is simply false.
  *
  * `planPath` is display metadata and UNTRUSTED — the PR body can name it — so
  * it is escaped at render time, never interpolated.
  */
 export type ImplReviewBlock =
   | ({ status: "reviewed"; planPath?: string } & ImplReviewResult)
-  | { status: "failed"; error: string };
+  | { status: "failed"; error: string }
+  | { status: "skipped"; reason: string };
 
 // --- Implementation review (third pass) ---
 // Judges the PR against the plan it claims to implement. The vocabulary is

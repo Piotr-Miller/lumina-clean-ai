@@ -119,6 +119,15 @@ function renderImplReviewSection(result: PipelineResult): string[] {
     ];
   }
 
+  if (block.status === "skipped") {
+    return [
+      "",
+      "#### Implementation review — not run",
+      "",
+      `Skipped: ${sanitizeInline(block.reason)}. It runs once the code review above passes.`,
+    ];
+  }
+
   if (block.status === "failed") {
     return [
       "",

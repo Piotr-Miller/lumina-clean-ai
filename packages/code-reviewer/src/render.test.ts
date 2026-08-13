@@ -311,3 +311,25 @@ describe("renderStickyComment implementation-review section", () => {
     expect(renderStickyComment(result({ implReview: reviewed() }))).not.toContain("plan truncated");
   });
 });
+
+describe("renderStickyComment gated implementation review", () => {
+  // A gated run must never render as "no plan found" — that tells the reader
+  // something false about their own PR.
+  it("names the gate rather than borrowing the no-plan wording", () => {
+    const comment = renderStickyComment(
+      result({ implReview: { status: "skipped", reason: "the code review did not pass, so the implementation review was not run" } }),
+    );
+    expect(comment).toContain("Implementation review — not run");
+    expect(comment).toContain("the code review did not pass");
+    expect(comment).toContain("It runs once the code review above passes.");
+    expect(comment).not.toContain("No plan found for this PR");
+  });
+
+  it("escapes a model- or config-supplied reason like every other field", () => {
+    const comment = renderStickyComment(
+      result({ implReview: { status: "skipped", reason: "bad\n# heading @someone" } }),
+    );
+    expect(comment).not.toMatch(/^# heading/mu);
+    expect(comment).toContain("@<!-- -->someone");
+  });
+});

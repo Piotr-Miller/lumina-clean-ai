@@ -315,6 +315,19 @@ export interface PipelineInput {
    * remedies differ.
    */
   onJudgeOutputRepair?: (detail: { reason: string }) => void;
+  /**
+   * When the implementation review is allowed to run, given a plan resolved.
+   *
+   * `"always"` (default) preserves the library's original behavior. The CI
+   * pipeline sets `"code-review-passed"`: the pass costs ~9.47x the code review
+   * it rides alongside (measured, run 31735830016), and a PR whose code review
+   * already failed is going back for changes and will be reviewed again — so
+   * that spend buys a verdict on a diff that is about to change.
+   *
+   * The gate NEVER hides the pass silently: a gated run emits the `skipped`
+   * block with its reason, which the renderer states plainly.
+   */
+  implReviewGate?: "always" | "code-review-passed";
   deps?: PipelineDeps;
 }
 
@@ -406,6 +419,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   const { implReview, implReviewTelemetry } = await runImplReviewPass({
     input,
     plan,
+    codeReviewVerdict: judgeResult.verdict,
     diff,
     apiKey: input.overrides?.apiKey,
     model: models.implReviewModel,
@@ -440,6 +454,8 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
 interface ImplReviewPassInput {
   input: PipelineInput;
   plan: { plan: string; truncated: boolean } | undefined;
+  /** The code review's own verdict — the gate's input, never the pass's. */
+  codeReviewVerdict: JudgeResult["verdict"];
   /** The already-capped diff — the pass judges exactly what the finder saw. */
   diff: string;
   apiKey: string | undefined;
@@ -466,6 +482,17 @@ async function runImplReviewPass(
 ): Promise<{ implReview?: ImplReviewBlock; implReviewTelemetry?: ImplReviewTelemetry }> {
   const { input, plan } = args;
   if (plan === undefined || input.plan === undefined) return {};
+
+  // Cost gate. Stated, never silent: rendering this as the no-plan section
+  // would tell the reader something false about their own PR.
+  if ((input.implReviewGate ?? "always") === "code-review-passed" && args.codeReviewVerdict !== "passed") {
+    return {
+      implReview: {
+        status: "skipped",
+        reason: "the code review did not pass, so the implementation review was not run",
+      },
+    };
+  }
 
   // Accumulated across BOTH attempts of a retried run, same reasoning as the
   // finder's: it measures the run's real spend, not the surviving attempt's.
