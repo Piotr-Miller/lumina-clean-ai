@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_JUDGE_MODEL, DEFAULT_MODEL, resolveConfig, resolveModels } from "./config.js";
+import {
+  DEFAULT_IMPL_REVIEW_MODEL,
+  DEFAULT_JUDGE_MODEL,
+  DEFAULT_MODEL,
+  resolveConfig,
+  resolveModels,
+} from "./config.js";
 
 // Hermetic: scrub every OpenRouter env var so results don't depend on a
 // developer's .env or shell (same pattern as reviewer.test.ts).
@@ -9,6 +15,7 @@ beforeEach(() => {
   vi.stubEnv("OPENROUTER_MODEL", undefined);
   vi.stubEnv("OPENROUTER_REVIEW_MODEL", undefined);
   vi.stubEnv("OPENROUTER_JUDGE_MODEL", undefined);
+  vi.stubEnv("OPENROUTER_IMPL_REVIEW_MODEL", undefined);
 });
 
 afterEach(() => {
@@ -81,6 +88,49 @@ describe("resolveModels — judge chain", () => {
   it("treats a set-but-empty OPENROUTER_JUDGE_MODEL as missing", () => {
     vi.stubEnv("OPENROUTER_JUDGE_MODEL", "");
     expect(resolveModels().judgeModel).toBe(DEFAULT_JUDGE_MODEL);
+  });
+});
+
+describe("resolveModels — implementation-review chain", () => {
+  it("falls back to DEFAULT_IMPL_REVIEW_MODEL when nothing is set", () => {
+    expect(resolveModels().implReviewModel).toBe(DEFAULT_IMPL_REVIEW_MODEL);
+  });
+
+  // Same literal pin as the finder and judge defaults: the assertion above
+  // passes whatever the constant says, so only this one catches the checked-in
+  // default drifting from the model production runs. Update ONLY together with
+  // the OPENROUTER_IMPL_REVIEW_MODEL repository variable.
+  it("defaults the implementation reviewer to the model production runs", () => {
+    expect(DEFAULT_IMPL_REVIEW_MODEL).toBe("anthropic/claude-sonnet-5");
+  });
+
+  // Same string as the judge today, but a SEPARATE constant on purpose: the
+  // two passes must be retunable apart, so retuning the judge must not silently
+  // move the implementation reviewer with it.
+  it("is an independent constant, not an alias of the judge default", () => {
+    vi.stubEnv("OPENROUTER_JUDGE_MODEL", "env/judge");
+    expect(resolveModels().implReviewModel).toBe(DEFAULT_IMPL_REVIEW_MODEL);
+    expect(resolveModels().judgeModel).toBe("env/judge");
+  });
+
+  it("prefers the override over the env var", () => {
+    vi.stubEnv("OPENROUTER_IMPL_REVIEW_MODEL", "env/impl");
+    expect(resolveModels({ implReviewModel: "override/z" }).implReviewModel).toBe("override/z");
+  });
+
+  it("resolves from OPENROUTER_IMPL_REVIEW_MODEL", () => {
+    vi.stubEnv("OPENROUTER_IMPL_REVIEW_MODEL", "env/impl");
+    expect(resolveModels().implReviewModel).toBe("env/impl");
+  });
+
+  it("never falls back to legacy OPENROUTER_MODEL (finder-only knob)", () => {
+    vi.stubEnv("OPENROUTER_MODEL", "env/legacy");
+    expect(resolveModels().implReviewModel).toBe(DEFAULT_IMPL_REVIEW_MODEL);
+  });
+
+  it("treats a set-but-empty OPENROUTER_IMPL_REVIEW_MODEL as missing", () => {
+    vi.stubEnv("OPENROUTER_IMPL_REVIEW_MODEL", "");
+    expect(resolveModels().implReviewModel).toBe(DEFAULT_IMPL_REVIEW_MODEL);
   });
 });
 
