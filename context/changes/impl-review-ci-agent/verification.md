@@ -1,8 +1,9 @@
 # Phase 4 — Live probe: pre-registered design
 
-**Status: PRE-REGISTERED, NOT YET RUN.** Everything above the `## Outcome` heading was written
-**before** the probe executed. The outcome section is empty by design and must only be filled from an
-actual run.
+**Status: EXECUTED 2026-08-13 — 4.3–4.7 pass, 4.2 deferred, 4.8 blocked.** Everything above the
+`## Outcome` heading was written **before** the probe ran and has not been edited since; the git
+history shows the pre-registration (`e5e33b1`) landing before the outcome. See `## Outcome` for the
+result against each criterion, including the two that did not pass.
 
 ## Why this file exists before the run
 
