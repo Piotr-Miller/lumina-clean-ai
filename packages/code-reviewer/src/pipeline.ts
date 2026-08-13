@@ -8,7 +8,7 @@ import {
   type ImplReviewer,
   type ImplReviewerOptions,
 } from "./impl-reviewer.js";
-import { createJudge, type JudgeCallOptions } from "./judge.js";
+import { createJudge, type Judge, type JudgeCallOptions, type JudgeOptions } from "./judge.js";
 import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
 import { withOneRetry } from "./retry.js";
 import {
@@ -26,6 +26,7 @@ import type {
   ImplReviewResult,
   ImplReviewTelemetry,
   JudgeResult,
+  JudgeTelemetry,
   PipelineResult,
   ReviewResult,
   ReviewUnit,
@@ -178,6 +179,12 @@ export interface PipelineDeps {
    * accumulation across a retried run is only observable through this one.
    */
   createImplReviewer?: (options: ImplReviewerOptions) => Pick<ImplReviewer, "implReview">;
+  /**
+   * The same construction seam for the judge. `judge` above bypasses
+   * construction and therefore produces no judgeTelemetry, so accumulation
+   * across a retried run is only observable through this one.
+   */
+  createJudge?: (options: JudgeOptions) => Pick<Judge, "judge">;
   /** Replaces the real pre-retry sleep so retry-path tests never wait. */
   retrySleep?: (ms: number) => Promise<void>;
 }
@@ -336,6 +343,10 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     telemetry.inputTokens = addTokens(telemetry.inputTokens, info.usage.inputTokens);
     telemetry.outputTokens = addTokens(telemetry.outputTokens, info.usage.outputTokens);
     telemetry.totalTokens = addTokens(telemetry.totalTokens, info.usage.totalTokens);
+    // Assigned only when the provider reported it: `= undefined` would still
+    // CREATE the key, and an un-instrumented run would then read as an
+    // instrumented one that cost nothing.
+    if (info.cost !== undefined) telemetry.cost = (telemetry.cost ?? 0) + info.cost;
     input.onFinderStep?.(info);
   };
 
@@ -353,12 +364,25 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
       onStepEnd: observeFinderStep,
       onOutputRepair: input.onOutputRepair,
     }).review;
+  // Same accumulate-across-both-attempts contract as the finder's.
+  const judgeTelemetry: JudgeTelemetry = { attempts: 0 };
+  const observeJudgeStep = (step: StepResult<ToolSet>): void => {
+    judgeTelemetry.attempts += 1;
+    judgeTelemetry.inputTokens = addTokens(judgeTelemetry.inputTokens, step.usage.inputTokens);
+    judgeTelemetry.outputTokens = addTokens(judgeTelemetry.outputTokens, step.usage.outputTokens);
+    judgeTelemetry.totalTokens = addTokens(judgeTelemetry.totalTokens, step.usage.totalTokens);
+    const cost = asStepCost(step.providerMetadata);
+    if (cost !== undefined) judgeTelemetry.cost = (judgeTelemetry.cost ?? 0) + cost;
+  };
+
+  const judgeFactory = input.deps?.createJudge ?? createJudge;
   const judge =
     input.deps?.judge ??
-    createJudge({
+    judgeFactory({
       apiKey: input.overrides?.apiKey,
       model: models.judgeModel,
       onOutputRepair: input.onJudgeOutputRepair,
+      onStepEnd: observeJudgeStep,
     }).judge;
 
   const retryOptions = (pass: "finder" | "judge" | "impl-review") => ({
@@ -407,6 +431,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     // Key absent (not undefined-valued) when nothing was observed, so
     // review.json and `in` checks stay clean for injected-finder runs.
     ...(telemetry.steps > 0 ? { finderTelemetry: telemetry } : {}),
+    ...(judgeTelemetry.attempts > 0 ? { judgeTelemetry } : {}),
     ...(implReview === undefined ? {} : { implReview }),
     ...(implReviewTelemetry === undefined ? {} : { implReviewTelemetry }),
   };

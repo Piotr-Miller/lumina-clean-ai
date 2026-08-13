@@ -131,6 +131,31 @@ export interface FinderTelemetry {
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
+  /**
+   * Provider-reported spend, accumulated across every observed step. Absent
+   * (never 0) when the provider reported none — a fabricated 0 reads as "free".
+   *
+   * This existed per-step in describeFinderStep from the start but was never
+   * accumulated here, so review.json carried finder tokens and no finder cost.
+   * That is what made criterion 4.8's ratio uncomputable: the numerator was
+   * instrumented and the denominator was not.
+   */
+  cost?: number;
+}
+
+/**
+ * Judge spend, accumulated across BOTH attempts of a retried run.
+ *
+ * The judge had no telemetry at all until 4.8 needed it — it was the one pass
+ * whose cost was never observable, and it is also the pass that reaches for the
+ * expensive model.
+ */
+export interface JudgeTelemetry {
+  attempts: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  cost?: number;
 }
 
 /** Full result of the two-pass review pipeline (what review.json carries). */
@@ -164,6 +189,12 @@ export interface PipelineResult {
    * renders it; it rides along in review.json as the per-run cost record.
    */
   finderTelemetry?: FinderTelemetry;
+  /**
+   * Present only when the pipeline constructed the real judge and observed at
+   * least one generation — absent with an injected deps.judge. Same convention
+   * as finderTelemetry and implReviewTelemetry.
+   */
+  judgeTelemetry?: JudgeTelemetry;
   /**
    * The implementation-review pass's outcome — see ImplReviewBlock. Absent
    * (not a `skipped` variant) when the run carried no plan.

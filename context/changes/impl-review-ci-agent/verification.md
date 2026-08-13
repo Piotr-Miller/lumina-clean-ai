@@ -1,9 +1,9 @@
 # Phase 4 — Live probe: pre-registered design
 
-**Status: EXECUTED 2026-08-13 — 4.2–4.7 pass, 4.8 blocked.** Everything above the `## Outcome`
+**Status: EXECUTED 2026-08-13 — all criteria closed (4.2–4.8).** Everything above the `## Outcome`
 heading was written **before** the probe ran and has not been edited since; the git history shows the
 pre-registration (`e5e33b1`) landing before any result existed. See `## Outcome` for the result
-against each criterion, including the one that did not pass.
+against each criterion. 4.8 initially could not be computed at all; the instrumentation it needed was built in PR #132 and the ratio is recorded below.
 
 ## Why this file exists before the run
 
@@ -88,13 +88,28 @@ has failed to make the distinction even if its raw hit-rate looks fine.
 Read from the uploaded `review.json`, not from a provider dashboard — a dashboard figure cannot be
 correlated across retries or concurrent runs (plan-review F3).
 
-| Measure                 | Source                                           | Value     |
-| ----------------------- | ------------------------------------------------ | --------- |
-| Impl-review spend       | `implReviewTelemetry.cost`                       | _pending_ |
-| Impl-review tokens      | `implReviewTelemetry.{inputTokens,outputTokens}` | _pending_ |
-| Attempts                | `implReviewTelemetry.attempts`                   | _pending_ |
-| Finder + judge baseline | `finderTelemetry` + judge spend, same run        | _pending_ |
-| **Ratio**               | impl-review ÷ (finder + judge)                   | _pending_ |
+| Measure            | Source                         | Value                             |
+| ------------------ | ------------------------------ | --------------------------------- |
+| Impl-review spend  | `implReviewTelemetry.cost`     | **$0.199620**                     |
+| Impl-review tokens | `implReviewTelemetry`          | 33,675 in / 13,227 out, 1 attempt |
+| Finder spend       | `finderTelemetry.cost`         | $0.003983 (7,940 in / 325 out)    |
+| Judge spend        | `judgeTelemetry.cost`          | $0.017104 (3,852 in / 940 out)    |
+| Baseline           | finder + judge                 | $0.021087                         |
+| **Ratio**          | impl-review ÷ (finder + judge) | **9.47×**                         |
+
+Source: run [31735830016](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31735830016) on
+PR #132, read from the uploaded `review.json` and echoed by the CLI as
+`review cost: finder=$0.003983 judge=$0.017104 impl=$0.199620 impl/(finder+judge)=9.47x`.
+
+**The criterion was uncomputable until the instrumentation was built.** `finderTelemetry` had no
+`cost` key — the per-step value was computed by `describeFinderStep` and dropped — and the judge had
+neither a telemetry block nor `usage: { include: true }`, so its cost was permanently undefined. The
+numerator was instrumented and the denominator did not exist. Built in PR #132.
+
+**9.47× is the number to sit with.** The implementation review costs nearly ten times the entire code
+review it rides alongside, on a moderate PR. That is not a rounding error on the existing bill — it
+is the bill. Whether it is worth paying on every plan-bearing PR is a product decision, not a
+technical one, but it should now be made deliberately rather than discovered in an invoice.
 
 The ratio is the decision-relevant number, not the absolute — an absolute nobody can calibrate is how
 the 57.6× finder premium nearly got adopted. Pre-registered reference point: the phase-2 local probe

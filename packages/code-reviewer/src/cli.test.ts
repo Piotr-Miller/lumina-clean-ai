@@ -529,3 +529,50 @@ describe("runReviewCli implementation-review telemetry line", () => {
     expect(io.errors.some((error) => error.startsWith("impl review:"))).toBe(false);
   });
 });
+
+describe("runReviewCli cost summary line (criterion 4.8)", () => {
+  const withCosts = (over: Partial<PipelineResult>) =>
+    pipelineResult({
+      finderTelemetry: { steps: 1, toolCalls: 0, inputTokens: 100, cost: 0.01 },
+      judgeTelemetry: { attempts: 1, inputTokens: 50, cost: 0.03 },
+      ...over,
+    });
+
+  const costLine = (io: { errors: string[] }) => io.errors.find((e) => e.startsWith("review cost:"));
+
+  // The ratio is the decision-relevant number: an absolute nobody can calibrate
+  // is how a 57.6x finder premium nearly got adopted once.
+  it("states the impl-review spend as a ratio of the code review", async () => {
+    const io = fakeIo();
+    await runReviewCli([], {}, io, okPipeline(withCosts({ implReviewTelemetry: { attempts: 1, cost: 0.08 } })));
+    expect(costLine(io)).toBe(
+      "review cost: finder=$0.010000 judge=$0.030000 impl=$0.080000 impl/(finder+judge)=2.00x",
+    );
+  });
+
+  it("marks the impl pass as not run rather than implying it was free", async () => {
+    const io = fakeIo();
+    await runReviewCli([], {}, io, okPipeline(withCosts({})));
+    expect(costLine(io)).toContain("impl=(not run)");
+    expect(costLine(io)).not.toContain("x");
+  });
+
+  // An unreported baseline must not become a confident Infinity.
+  it("omits the ratio when a baseline cost is missing", async () => {
+    const io = fakeIo();
+    const result = pipelineResult({
+      finderTelemetry: { steps: 1, toolCalls: 0 },
+      implReviewTelemetry: { attempts: 1, cost: 0.08 },
+    });
+    await runReviewCli([], {}, io, okPipeline(result));
+    expect(costLine(io)).toContain("finder=?");
+    expect(costLine(io)).not.toContain("x=");
+    expect(costLine(io)).not.toContain("Infinity");
+  });
+
+  it("emits nothing when no pass reported a cost", async () => {
+    const io = fakeIo();
+    await runReviewCli([], {}, io, okPipeline(pipelineResult()));
+    expect(costLine(io)).toBeUndefined();
+  });
+});
