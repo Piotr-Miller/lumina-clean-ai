@@ -162,3 +162,17 @@
 - **Problem**: Fixture behaviour does not transfer. `deepseek-v4-flash-0731` called the tool on 6/6 tool-enabled fixture rows and 0/3 live runs on a real PR; `claude-haiku-4.5` delivered context on 3/3 fixture repeats, then live fetched the right file twice and never connected what it read. Both were nearly adopted into production on fixture evidence alone.
 - **Rule**: Treat an offline eval as necessary but not sufficient for any agent-capability claim. Before changing production, gate adoption on a live probe against a real PR or diff, and pre-register what result would falsify the claim.
 - **Applies to**: plan, plan-review, implement, impl-review
+
+## An optional field in a structured-output schema will be skipped, no matter how the prompt asks for it
+
+- **Context**: Any model-facing zod/JSON schema where a field is wanted on most outputs but cannot be required on all of them — finding anchors, optional metadata, provenance fields.
+- **Problem**: The implementation-review pass anchored **0/10** findings to a line and 2/10 to a file, while the code-review finder anchored **20/20** on the same runs. Two fixes were attempted and both failed at ~$0.06 a probe: strengthening the system instruction ("Attribute every finding..."), then rewriting the field descriptions to lead with the rule instead of the exception. Neither moved the number. Dumping the emitted JSON Schema showed why, for free: the descriptions arrived intact, but the finder's `file` is in `required` and the implementation reviewer's is not. A model filling a structured output reliably fills required fields and skips optional ones; prompt wording does not override that.
+- **Rule**: If a field must be populated in practice, make it **required** in the schema and model the genuine exception structurally (a discriminated union, or an explicit sentinel variant) — do not leave it optional and ask nicely in the prompt. When an optional field comes back empty, dump the JSON Schema the provider actually receives _before_ spending another call on prompt wording: `required` is the first thing to check, not the description text.
+- **Applies to**: plan, plan-review, implement, impl-review
+
+## A best-effort integration that degrades silently is indistinguishable from a working one
+
+- **Context**: Any optional external leg wired behind `if (config) { ... }` — a compute-cancel proxy, a webhook, a telemetry sink — where absent config is a legitimate state rather than an error.
+- **Problem**: `cloud-job-cancel`'s Replicate compute-kill is best-effort: absent `EDGE_FUNCTION_URL` / `DB_WEBHOOK_SECRET` degrades to a DB-flip and returns a clean `{ canceled: true }`. Correct behavior, but the `else` branch logged nothing, so a misconfigured prod Worker would report cancelled jobs to users while Replicate kept running and billing them — with zero evidence in the logs. Both vars are `optional: true` in the env schema, so no startup check catches it either. The failure mode is silent, ongoing, and costs money.
+- **Rule**: Every silent-degradation branch gets a log line that names the missing configuration **and states the consequence** ("the prediction was NOT stopped and keeps billing"), and a test pinning it. Log only when the degradation actually mattered — a no-op path has nothing to leak, and warning there trains people to ignore the message.
+- **Applies to**: plan, plan-review, implement, impl-review

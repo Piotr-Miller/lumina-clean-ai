@@ -140,6 +140,18 @@ export async function cancelCloudJobResponse(input: CancelCloudJobInput): Promis
     // DB-flip + source-delete). Best-effort: never fails the route.
     if (canceled && edge) {
       await fireEdgeCancel(edge, parsed.data.jobId);
+    } else if (canceled) {
+      // The degradation is deliberate (never an error), but it was also
+      // INVISIBLE: with `edge` null this branch used to be skipped silently, so
+      // a prod Worker missing EDGE_FUNCTION_URL / DB_WEBHOOK_SECRET would report
+      // a clean cancel to the user while the Replicate prediction kept running
+      // and billing. The only way to notice was a live smoke nobody runs twice.
+      // One line makes it self-reporting.
+      // eslint-disable-next-line no-console
+      console.error(
+        "cancel: compute-cancel seam not configured (EDGE_FUNCTION_URL / DB_WEBHOOK_SECRET) — " +
+          "job flipped and source deleted, but the Replicate prediction was NOT stopped and keeps billing",
+      );
     }
     return json({ canceled }, 200);
   } catch (err) {
