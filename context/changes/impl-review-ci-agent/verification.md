@@ -1,9 +1,9 @@
 # Phase 4 — Live probe: pre-registered design
 
-**Status: EXECUTED 2026-08-13 — 4.3–4.7 pass, 4.2 deferred, 4.8 blocked.** Everything above the
-`## Outcome` heading was written **before** the probe ran and has not been edited since; the git
-history shows the pre-registration (`e5e33b1`) landing before the outcome. See `## Outcome` for the
-result against each criterion, including the two that did not pass.
+**Status: EXECUTED 2026-08-13 — 4.2–4.7 pass, 4.8 blocked.** Everything above the `## Outcome`
+heading was written **before** the probe ran and has not been edited since; the git history shows the
+pre-registration (`e5e33b1`) landing before any result existed. See `## Outcome` for the result
+against each criterion, including the one that did not pass.
 
 ## Why this file exists before the run
 
@@ -123,25 +123,39 @@ explicit reason this bar was written before the probe ran.
 
 Executed 2026-08-13 against the ground truth above, **unchanged since pre-registration**.
 
-**Deviation from the recorded design, and why.** The probe ran **locally**, not as a scratch PR.
-`review.yml` declares `branches: [master]`, so it only triggers on PRs targeting master — and a
-master-based PR checks out _master's_ reviewer, which does not yet contain the third pass. There is
-no branch arrangement that gives both a clean probe-sized diff and the third-pass code until this
-change merges. So 4.3–4.7 (what the pass actually does) were executed now; **4.2 is deferred**, not
-passed. Harness: `scratchpad/phase4-probe.mjs`, model `anthropic/claude-sonnet-5`, 4,938 in / 5,844
-out, **$0.068316**, one attempt.
+**Run twice — locally first, then as the recorded design.** The first execution was local
+(`scratchpad/phase4-probe.mjs`), because `review.yml` declares `branches: [master]` and a
+master-based PR would have checked out _master's_ reviewer, which did not yet contain the third
+pass. After #127 merged, the probe ran **exactly as pre-registered**: scratch branch
+`scratch/impl-review-probe`, PR [#128](https://github.com/Piotr-Miller/lumina-clean-ai/pull/128) to
+master, `Plan:` body override, probe files under `context/changes/probe-impl-review/`.
+
+Both runs agree, which is the useful part:
+
+|          | Local (`phase4-probe.mjs`)  | CI, run [31732703115](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31732703115) |
+| -------- | --------------------------- | ----------------------------------------------------------------------------------------------- |
+| Verdict  | REJECTED                    | REJECTED                                                                                        |
+| Findings | 6                           | 6 (same six, same dimensions and severities)                                                    |
+| Grades   | 3 FAIL / 2 WARNING / 2 PASS | identical                                                                                       |
+| Cost     | $0.068316                   | $0.057188                                                                                       |
+| Attempts | 1                           | 1                                                                                               |
+
+One difference worth recording: the CI run anchored **none** of its findings to a file, while the
+local run anchored four of six. The bar never required file anchors, so this is not a criterion
+failure — but a finding that names `cache.ts` only in its prose is harder to act on than one the
+renderer can link, and it is drift worth watching rather than discovering later.
 
 Result: `REJECTED` — `plan_adherence` FAIL, `scope_discipline` FAIL, `architecture` FAIL,
 `safety_quality` WARNING, `test_coverage` WARNING, `pattern_consistency` PASS, `success_criteria` PASS.
 
-| #   | Criterion                        | Result       | Evidence                                                                                                                                                                                                                                                                                                                                               |
-| --- | -------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 4.3 | MISSING caught                   | **PASS**     | P1 (CRITICAL, `plan_adherence`): "audit-log.ts / recordAudit never implemented … The diff contains no such file"                                                                                                                                                                                                                                       |
-| 4.4 | DRIFT caught                     | **PASS**     | P2 (CRITICAL): quotes the plan's "never a fixed delay" decision and identifies `void attempt; return 2000` as "exactly the fixed-delay behavior the plan calls out as wrong". Filed under `architecture` rather than `plan_adherence` — the bar named the substance, not the dimension, and a contradicted architectural decision is a defensible home |
-| 4.5 | Prohibited EXTRA flagged         | **PASS**     | P3 (CRITICAL, `scope_discipline`): quotes the exclusion verbatim, then names `cache.ts` as "exactly that". Connected to the exclusions list, which is what the bar required                                                                                                                                                                            |
-| 4.6 | Benign EXTRA not over-flagged    | **PASS**     | P6 (**OBSERVATION**/LOW): "only used by rate-limit.ts, so it is incidental to planned work rather than a scope violation on its own." Not CRITICAL, and the reasoning is the right one                                                                                                                                                                 |
-| 4.7 | No fabricated command results    | **PASS**     | No claim anywhere that a check ran. P5 refers to the plan "marking `npm test` as already satisfied" — describing the author's claim, never asserting an observed result                                                                                                                                                                                |
-| 4.2 | Run completes, artifact uploaded | **DEFERRED** | Structurally blocked until merge (see above)                                                                                                                                                                                                                                                                                                           |
+| #   | Criterion                        | Result   | Evidence                                                                                                                                                                                                                                                                                                                                               |
+| --- | -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 4.3 | MISSING caught                   | **PASS** | P1 (CRITICAL, `plan_adherence`): "audit-log.ts / recordAudit never implemented … The diff contains no such file"                                                                                                                                                                                                                                       |
+| 4.4 | DRIFT caught                     | **PASS** | P2 (CRITICAL): quotes the plan's "never a fixed delay" decision and identifies `void attempt; return 2000` as "exactly the fixed-delay behavior the plan calls out as wrong". Filed under `architecture` rather than `plan_adherence` — the bar named the substance, not the dimension, and a contradicted architectural decision is a defensible home |
+| 4.5 | Prohibited EXTRA flagged         | **PASS** | P3 (CRITICAL, `scope_discipline`): quotes the exclusion verbatim, then names `cache.ts` as "exactly that". Connected to the exclusions list, which is what the bar required                                                                                                                                                                            |
+| 4.6 | Benign EXTRA not over-flagged    | **PASS** | P6 (**OBSERVATION**/LOW): "only used by rate-limit.ts, so it is incidental to planned work rather than a scope violation on its own." Not CRITICAL, and the reasoning is the right one                                                                                                                                                                 |
+| 4.7 | No fabricated command results    | **PASS** | No claim anywhere that a check ran. P5 refers to the plan "marking `npm test` as already satisfied" — describing the author's claim, never asserting an observed result                                                                                                                                                                                |
+| 4.2 | Run completes, artifact uploaded | **PASS** | PR #128, run 31732703115: green, `ai-review-output` carries `review.json` + `comment.md`, `implReview.status: reviewed`                                                                                                                                                                                                                                |
 
 **Additional falsifiers — all clear.** No excluded work was reported as missing (the second exclusion,
 distributed rate limiting, was correctly silent). Grades agree with findings: every CRITICAL sits on a
@@ -168,6 +182,7 @@ investigated and a judge telemetry block added, or 4.8 is restated in terms of w
 measurable. This is a pre-registration doing its job: the criterion was written before anyone checked
 whether the data existed.
 
-**Standing.** 4.3–4.7 pass on a single run. That is one sample, not a rate — the pre-registered bar
-asked whether the pass _can_ make these distinctions, and it did, including the prohibited-vs-benign
-EXTRA pair that separates understanding exclusions from pattern-matching "unplanned".
+**Standing.** 4.2–4.7 pass, reproduced identically across a local run and the pre-registered CI run.
+That is two samples, not a rate — the bar asked whether the pass _can_ make these distinctions, and it
+did, including the prohibited-vs-benign EXTRA pair that separates understanding exclusions from
+pattern-matching "unplanned". It does not tell you how often it will.

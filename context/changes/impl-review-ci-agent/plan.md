@@ -486,7 +486,7 @@ Nothing to migrate. The feature is inert until `plan-file` is passed, so Phases 
 - [x] 1.8 PR-body `Plan:` override wins over the convention lookup — 368672f
 - [x] 1.9 Traversal-bearing or tree-absent override candidate is rejected as "no plan" — 368672f
 - [x] 1.10 A symlink `plan.md` (mode `120000`) is rejected and its target is never read — 368672f
-- [ ] 1.11 A plan-only PR skips the review step visibly, leaves labels and prior comment untouched, run stays green
+- [x] 1.11 A plan-only PR skips the review step visibly, leaves labels and prior comment untouched, run stays green — PR #130, run [31733492814](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31733492814): green; "No reviewable code in this PR after excluding the plan and review documents"; `AI review` + `Upload review output artifact` steps both `skipped`; no labels, and the only PR comment is Cloudflare's bot
 - [x] 1.12 Actions log names the resolved plan (or its absence) and the filtered diff size — run [31631971640](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31631971640)
 
 ### Phase 2: The implementation-review agent
@@ -532,7 +532,7 @@ Nothing to migrate. The feature is inert until `plan-file` is passed, so Phases 
 #### Manual
 
 - [x] 3.13 Populated section renders on a plan-bearing PR and `<details>` expands on GitHub — verified on run [31723263888](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31723263888): `🟢 APPROVED`, plan path rendered in a code span, 2 findings, collapsed grade table. The two findings were substantively correct (an unplanned `onJudgeOutputRepair` callback, and Phase 4 scaffolding drafted before Phase 3's manual gate cleared), and the phase-2 consistency rules held on live output. Took three runs to get here: 120s timeout (31703938953), then two judge failures (31707888975).
-- [ ] 3.14 Plan-free PR shows the neutral one-liner and nothing else moved
+- [x] 3.14 Plan-free PR shows the neutral one-liner and nothing else moved — PR #129, run [31733419168](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31733419168): `implReview` and `implReviewTelemetry` both ABSENT from review.json (absence is the signal), section renders "Implementation review — not run" with the how-to-opt-in line
 - [x] 3.15 The two verdict vocabularies are visually distinct at a glance — verified offline via `scratchpad/render-preview.mjs` across all three states
 - [x] 3.16 `ai-cr:*` labels behave as before, including on a failed-third-pass run — verified **naturally, not by forcing it**: run 31703938953 had a genuinely failed third pass; the run stayed green, the code review completed with 10 findings, `verdict=failed → +ai-cr:failed -ai-cr:passed` flipped from the CODE verdict alone, and the CLI exited 0
 
@@ -540,8 +540,8 @@ Nothing to migrate. The feature is inert until `plan-file` is passed, so Phases 
 
 #### Automated
 
-- [ ] 4.1 Full package gate passes: `cd packages/code-reviewer && npm run lint && npm run typecheck && npm test`
-- [ ] 4.2 Probe PR's `ai-review` run completes green and uploads the `ai-review-output` artifact
+- [x] 4.1 Full package gate passes: `cd packages/code-reviewer && npm run lint && npm run typecheck && npm test` — lint clean, typecheck clean, 18 files / 467 tests
+- [x] 4.2 Probe PR's `ai-review` run completes green and uploads the `ai-review-output` artifact — PR #128, run [31732703115](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31732703115): green, artifact carries review.json + comment.md, `REJECTED` with 6 findings, attempts=1, $0.057188
 
 #### Manual
 
@@ -551,4 +551,4 @@ Nothing to migrate. The feature is inert until `plan-file` is passed, so Phases 
 - [x] 4.6 Pass does not raise the benign unplanned helper above WARNING — P6 OBSERVATION/LOW, reasoned as incidental
 - [x] 4.7 Pass makes no claim about having run or observed a command
 - [ ] 4.8 Per-run cost read from `implReviewTelemetry` and stated as a ratio against the run's finder+judge spend — **BLOCKED, criterion not computable as written**: impl cost is instrumented ($0.292746) but `finderTelemetry` carries no `cost` key and the judge has no telemetry block at all. Fix the instrumentation or restate the criterion (verification.md)
-- [ ] 4.9 `verification.md` states the outcome against every pre-registered criterion
+- [x] 4.9 `verification.md` states the outcome against every pre-registered criterion, including the two that did not pass
