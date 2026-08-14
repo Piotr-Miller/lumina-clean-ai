@@ -267,7 +267,25 @@ already enforces for every other grader.
 `scoreIssueRecall` ⟺ `expectedIssues`, plus a check that none of the three appears in `defaultTest`.
 `recall-selfcheck.mjs` gains bare-node cases.
 
-### Success Criteria:
+#### 7. The rubric gate
+
+**File**: `packages/code-reviewer/evals/promptfooconfig.yaml`
+
+**Added 2026-08-14 by the inversion amendment**, and recorded here rather than left implicit: this
+grader was introduced under the Phase 2 policy section but it lives on a Phase 1 case, so Phase 1
+shipped four graders against a contract naming three. That drift is exactly what an implementation
+review flags, and it is cheaper to reconcile than to explain.
+
+**Intent**: The fabrication gate itself. Six rounds established that a regex matcher cannot be made
+trustworthy for recall over open-ended review prose; negation scope and clause attachment are native to
+a model and were not reachable lexically.
+
+**Contract**: An `llm-rubric` on the defended case carrying the metric name `no_fabricated_absence` —
+the name the pre-registered bar reads — judged by `defaultTest.options.provider`, the neutral grader
+that already serves every other rubric here and is none of the candidate models. Its text must name all
+four defences the fixture contains and must instruct a FAIL only on a claim that one of them is missing,
+explicitly excluding approving mentions, test or documentation gaps, and improvement suggestions. The
+deterministic matcher keeps the metric name `fabrication_floor` and gates nothing.
 
 #### Automated Verification:
 
@@ -289,8 +307,13 @@ already enforces for every other grader.
 
 - Both fixtures read correctly as a reviewer would: the defended one has nothing critical to find, the
   vulnerable one's defect is indisputable
-- `presentDefences` patterns match the wording a reviewer would actually use, and do not fire on a
-  finding that merely mentions a defence approvingly
+- The floor never false-positives: approving wording, unrelated omissions and negated permissions are
+  all graded clean. Recall is explicitly NOT verified here — the floor is high-precision by design and
+  its blind spots are pinned as "documented miss" tests; recall belongs to the rubric gate and is
+  validated by criterion 2.6
+- The rubric text names all four defences the defended fixture contains, and its pass/fail instruction
+  states the same criterion the pre-registered bar reads. Nothing else checks this before the spend, and
+  a rubric that misdescribes the fixture misgrades every row silently
 
 **Implementation Note**: After automated verification passes, pause for manual confirmation before
 proceeding.
@@ -729,7 +752,17 @@ kept in every branch, since they document the defect whether or not it is fixed.
 #### Manual
 
 - [x] 1.13 Both fixtures read correctly: defended has nothing critical, vulnerable is indisputable
-- [ ] 1.14 `presentDefences` patterns match real reviewer wording and do not fire on approving mentions
+- [ ] 1.14 The floor never false-positives: no approving, unrelated or negated-permission wording is
+      graded as a fabricated absence. **Rescoped 2026-08-14** — originally "`presentDefences` patterns
+      match real reviewer wording and do not fire on approving mentions", written when the matcher was
+      the gate. Recall is no longer its job, so the recall half of that criterion moved to the rubric and
+      is validated by 2.6; precision is the only property the floor still needs. Rescoped deliberately
+      and recorded rather than reworded quietly, because the original was failed six times.
+- [ ] 1.15 A human has read the rubric text against the defended fixture and confirms it names all four
+      present defences, and that its pass/fail instruction states the same criterion the bar reads.
+      **Added 2026-08-14** with the inversion: the rubric is now the gate, and nothing else checks its
+      wording before money is spent. A rubric that misdescribes the fixture misgrades every row silently,
+      and 2.6 would surface that only after the baseline is paid for.
 
 ### Phase 2: Pre-register a total decision table, then measure the baseline
 
