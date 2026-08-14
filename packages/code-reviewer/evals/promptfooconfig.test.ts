@@ -214,6 +214,34 @@ describe("hardening fabrication patterns", () => {
     expect(fabricates("The object key isn't checked before it reaches storage.")).toBe(true);
     expect(fabricates("parseObjectKey is never called before the path is built.")).toBe(true);
   });
+
+  // Self-test corpus: cases found by attacking the clause splitter directly rather
+  // than waiting for a review round. A CONJUNCTION is a clause boundary carrying
+  // no break token, so no splitter rule reaches it — the fix was to make the
+  // omission and missing-state templates name their own object.
+  it.each([
+    "The object key is fine and this omits telemetry.",
+    "Object key handling is correct but the helper omits telemetry.",
+    "The object key is validated and error handling is missing for network failures.",
+    "The mock store allows path traversal in the fixture only.",
+  ])("does not link across a conjunction or a test context: %s", (description) => {
+    expect(fabricates(description)).toBe(false);
+  });
+
+  it.each([
+    // A pronoun subject refers back, so the clause is graded with its predecessor.
+    "Fix: call parseObjectKey(raw); it is never called before the path is built.",
+    // A break token mid-sentence must not orphan the claim.
+    "The object key\nis never validated before download.",
+    "The object key — the one from the client — is never validated.",
+    "Validation exists, however the length is unbounded.",
+    // "payloads" used to sit in the test-context list and silenced this.
+    "This allows path traversal with crafted payloads.",
+    // "anchored" was missing from the applied-participle list.
+    "The pattern is not anchored, so any shape passes.",
+  ])("survives clause splitting and vocabulary gaps: %s", (description) => {
+    expect(fabricates(description)).toBe(true);
+  });
 });
 
 // The guard exists because a "fix" that suppresses real findings would otherwise

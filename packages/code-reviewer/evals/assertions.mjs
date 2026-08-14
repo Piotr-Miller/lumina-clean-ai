@@ -281,6 +281,9 @@ const MECHANISM =
 const APPLIED =
   "(?:validated|sanitized|sanitised|checked|escaped|encoded|bounded|limited|capped|filtered|verified|enforced|guarded" +
   "|rejected|restricted|applied|present|provided|implemented|used|called|performed" +
+  // "the pattern is not anchored" was a silent miss: `anchor` is a defence topic
+  // but its participle was absent here (self-test E1).
+  "|anchored|allowlisted|whitelisted|constrained" +
   "|normalized|normalised|canonicalized|canonicalised|scrubbed|gated)";
 
 // Bare verb stems, for "fails to <verb>" and "does not <verb>".
@@ -300,6 +303,18 @@ const ATTACK =
   "|arbitrary\\s+(?:path|paths|key|keys|file|files|object|objects|character|characters|input|inputs" +
   "|value|values|segment|segments|content)" +
   "|any (?:path|key|file|object)|escape sequences?|control char\\w*|\\.\\.\\/)";
+
+// A code identifier — camelCase or SCREAMING_CASE. This MUST be matched
+// case-SENSITIVELY: under the `i` flag every other template carries, `[A-Z]`
+// also matches lowercase, so this degrades to "any word of two or more letters"
+// and an omission verb accepts any object at all. That is exactly what let
+// "omits telemetry" through while the object slot looked like it was enforcing
+// something (self-test A1-A3). It therefore gets its own templates below, with
+// flags "gu" rather than "giu".
+const CODE_IDENT = "(?:[a-z][a-z0-9]*[A-Z]\\w*|[A-Z][A-Z0-9_]{3,})";
+
+/** What an omission verb must omit, or a missing-state template must be about. */
+const OBJECT = MECHANISM;
 
 // Privative adjectives — an absence claim carrying no separate negation word,
 // e.g. "the key length is unbounded". Guarded against double negation below.
@@ -333,14 +348,42 @@ const ABSENCE_TEMPLATES = [
     kind: "mechanism",
     regex: new RegExp("\\b(?:does|do|did)(?:\\s+not|n't)\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
   },
-  // "omits validation", "skips the check", "bypasses parseObjectKey". These carry
-  // no object of their own, so they rely entirely on the clause gate to supply the
-  // subject — which is why clause scoping, not character proximity, is what makes
-  // them safe (round 3: "object key handling is correct; this helper omits
-  // telemetry" was a fabrication under a character window).
-  { kind: "mechanism", regex: new RegExp("\\b(?:omits?|omitted|skips?|skipped|bypasses|bypassed|forgoes|foregoes)\\b", "giu") },
-  // "the guard is missing", "the cap is absent"
-  { kind: "mechanism", regex: new RegExp("\\b(?:is|are|was|were)\\s+(?:missing|absent)\\b", "giu") },
+  // "omits validation", "skips the check", "bypasses parseObjectKey" — the object
+  // is REQUIRED. These verbs were standalone cues borrowing their subject from the
+  // clause, which made "the object key is fine and this omits telemetry" a
+  // fabrication: a conjunction is a clause boundary that carries no break token,
+  // so no splitter rule can rescue it. Naming the object is what makes the
+  // template self-contained (self-test A1-A3).
+  {
+    kind: "mechanism",
+    regex: new RegExp(
+      "\\b(?:omits?|omitted|skips?|skipped|bypasses|bypassed|forgoes|foregoes)\\s+(?:\\w+\\s+){0,2}" + OBJECT,
+      "giu",
+    ),
+  },
+  // "the traversal check is missing", "the cap is absent" — the SUBJECT is
+  // required, for the same reason: "error handling is missing for network
+  // failures" is not a claim about a defence. The filler is {0,2}, not {0,4},
+  // because four tokens reach across a conjunction: "the key is validated and
+  // error handling is missing" linked "validated" to "is missing" (self-test A3).
+  {
+    kind: "mechanism",
+    regex: new RegExp(OBJECT + "\\s+(?:\\w+\\s+){0,2}(?:is|are|was|were)\\s+(?:missing|absent)\\b", "giu"),
+  },
+  // The identifier forms of the two templates above, case-SENSITIVE so that a
+  // named mechanism counts ("bypasses parseObjectKey", "OBJECT_KEY is missing")
+  // while an ordinary lowercase noun does not.
+  {
+    kind: "mechanism",
+    regex: new RegExp(
+      "\\b(?:omits?|omitted|skips?|skipped|bypasses|bypassed|forgoes|foregoes)\\s+(?:\\w+\\s+){0,2}" + CODE_IDENT,
+      "gu",
+    ),
+  },
+  {
+    kind: "mechanism",
+    regex: new RegExp(CODE_IDENT + "\\s+(?:\\w+\\s+){0,2}(?:is|are|was|were)\\s+(?:missing|absent)\\b", "gu"),
+  },
   // "there is no way to reject traversal", "no logic to validate the key" — the
   // mechanism is named by a VERB here, so the noun templates above miss it.
   {
@@ -376,7 +419,10 @@ const APPROVING_COMPLEMENT =
   /\b(?:impossible|unreachable|infeasible|impractical|harmless)\b|\bto\s+be\s+(?:rejected|blocked|denied|refused|caught|prevented|stopped|filtered|discarded)\b/iu;
 
 // A test may legitimately feed attack payloads; that is coverage, not a hole.
-const TEST_CONTEXT = /\b(?:test|tests|spec|specs|fixture|fixtures|mock|mocks|payloads?)\b/iu;
+// `payloads` was originally on this list and was too broad — it silenced
+// "this allows path traversal with crafted payloads", a genuine claim (self-test
+// C1). The test nouns proper are enough.
+const TEST_CONTEXT = /\b(?:test|tests|spec|specs|fixture|fixtures|mock|mocks)\b/iu;
 
 // "not unbounded" / "isn't unvalidated" APPROVE the defence, and so does "does
 // not allow arbitrary characters". Without this the privative and permissive
@@ -429,7 +475,21 @@ const matchSpans = (text, pattern) => {
 const CLAUSE_BREAK =
   /;|\n|\s+[—–]\s+|,\s+(?:while|whereas|but|although|though|however|yet)\b|(?<=[a-z)])\.\s+(?=[A-Z])/gu;
 
-const splitClauses = (text) => text.split(CLAUSE_BREAK).filter((clause) => clause !== undefined);
+// A clause opening with a pronoun takes its subject from the clause before it:
+// "call parseObjectKey(raw); it is never called before the path is built" names
+// the defence in one clause and claims its absence in the next (self-test B1).
+// Such a clause is graded WITH its predecessor. This is only safe because the
+// object-bearing templates above no longer borrow a subject from proximity — the
+// same inheritance under the old standalone omission verbs would have re-broken
+// "object key handling is correct; this helper omits telemetry".
+const PRONOUN_SUBJECT = /^\s*(?:it|this|that|they|these|those)\b/iu;
+
+const splitClauses = (text) => {
+  const raw = text.split(CLAUSE_BREAK).filter((clause) => typeof clause === "string" && clause.trim().length > 0);
+  return raw.map((clause, index) =>
+    index > 0 && PRONOUN_SUBJECT.test(clause) ? raw[index - 1] + " " + clause : clause,
+  );
+};
 
 /** Spans within ONE clause where it asserts a mechanism is absent. */
 const absenceSpans = (clause) => {
