@@ -59,35 +59,65 @@ export type ReviewResult = z.infer<typeof reviewResultSchema>;
 // --- Two-pass scorecard vocabulary (judge output; user decisions: named
 // criterion fields, model-owned verdict) ---
 
-export const criterionScoreSchema = z.object({
-  // Integer + range live in a refine (parse-time enforced), NOT in .int()/
-  // .min()/.max(): Anthropic's structured-output endpoint rejects JSON Schema
-  // minimum/maximum on integer types, and zod v4's .int() alone already emits
-  // safe-integer minimum/maximum bounds (live-run finding, Phase 1).
+/**
+ * WIRE shape for one criterion. `score` is a STRING ENUM, not a number.
+ *
+ * The integer-1-to-10 rule used to live in a `.refine()`, which emits nothing
+ * into the JSON Schema — so all the model ever saw was
+ * `{"type":"number","description":"Integer score from 1 … to 10 …"}` and the
+ * constraint was carried by prose alone. That was forced: `.int()/.min()/.max()`
+ * emit `minimum`/`maximum`, which this provider rejects (Phase 1 live finding).
+ *
+ * The cost of that displacement was real. A model returning `7.5`, `0`, or an
+ * `85` on a 0-100 scale produces valid JSON that then fails validation as
+ * `AI_NoObjectGeneratedError: response did not match schema` — observed on PR
+ * #137's run — and the judge's envelope repair cannot help, because the JSON was
+ * never malformed, only out of range.
+ *
+ * An enum puts the constraint back where the model can SEE it, and emits
+ * `enum: ["1", … "10"]` rather than the rejected numeric bounds. `absent` of any
+ * `anyOf`, so it stays inside the provider's subset. Strings because a numeric
+ * enum in zod requires a literal union, which renders as `anyOf` — the exact
+ * construct proven unusable in lessons.md #26.
+ *
+ * The trusted type is a NUMBER, produced once by `normalizeJudgeOutput`.
+ */
+export const criterionScoreWireSchema = z.object({
   score: z
-    .number()
-    .describe("Integer score from 1 (worst outcome) to 10 (best outcome)")
-    .refine((value) => Number.isInteger(value) && value >= 1 && value <= 10, {
-      message: "score must be an integer between 1 and 10",
-    }),
+    .enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
+    .describe("Score from 1 (worst outcome) to 10 (best outcome), as a string"),
   justification: z.string().describe("Why this score, grounded in the referenced findings"),
   findingIds: z
     .array(z.string())
     .describe("IDs of the findings supporting a deduction; empty when nothing applies"),
 });
-export type CriterionScore = z.infer<typeof criterionScoreSchema>;
+
+/** The trusted per-criterion contract: score is a number, 1-10, guaranteed by the enum. */
+export interface CriterionScore {
+  score: number;
+  justification: string;
+  findingIds: string[];
+}
 
 // Named fields, never a positional array — models and evals both address
 // criteria by name (user decision).
-export const scoresSchema = z.object({
-  implementation_correctness: criterionScoreSchema,
-  idiomaticity: criterionScoreSchema,
-  complexity: criterionScoreSchema,
-  test_risk_coverage: criterionScoreSchema,
-  documentation: criterionScoreSchema,
-  security_safety: criterionScoreSchema,
+export const scoresWireSchema = z.object({
+  implementation_correctness: criterionScoreWireSchema,
+  idiomaticity: criterionScoreWireSchema,
+  complexity: criterionScoreWireSchema,
+  test_risk_coverage: criterionScoreWireSchema,
+  documentation: criterionScoreWireSchema,
+  security_safety: criterionScoreWireSchema,
 });
-export type Scores = z.infer<typeof scoresSchema>;
+
+export interface Scores {
+  implementation_correctness: CriterionScore;
+  idiomaticity: CriterionScore;
+  complexity: CriterionScore;
+  test_risk_coverage: CriterionScore;
+  documentation: CriterionScore;
+  security_safety: CriterionScore;
+}
 
 export const verdictSchema = z.enum(["passed", "failed"]);
 export type Verdict = z.infer<typeof verdictSchema>;
@@ -96,16 +126,53 @@ export type Verdict = z.infer<typeof verdictSchema>;
 // in the prompt, not a code rule. The judge-authored summary is the scorecard
 // summary; the finder's internal summary is not surfaced.
 export const judgeOutputSchema = z.object({
-  scores: scoresSchema,
+  scores: scoresWireSchema,
   verdict: verdictSchema.describe("Overall verdict for the change, weighed from the findings"),
-  // Non-emptiness via refine for the same provider-compat reason as `score`.
-  verdictReason: z
-    .string()
-    .describe("1-2 sentences explaining the verdict")
-    .refine((value) => value.length > 0, { message: "verdictReason must not be empty" }),
-  summary: z.string().describe("One-paragraph overall assessment of the reviewed change"),
+  // minLength (not a refine) so the model actually sees the requirement. Unlike
+  // minimum/maximum this one IS accepted by the provider — the finder's schema
+  // has used it since day one.
+  verdictReason: z.string().min(1).describe("1-2 sentences explaining the verdict"),
+  summary: z.string().min(1).describe("One-paragraph overall assessment of the reviewed change"),
 });
-export type JudgeOutput = z.infer<typeof judgeOutputSchema>;
+
+/** What the model returns: scores as strings. Normalize before use. */
+export type JudgeOutputWire = z.infer<typeof judgeOutputSchema>;
+
+/** The trusted contract every consumer sees. */
+export interface JudgeOutput {
+  scores: Scores;
+  verdict: Verdict;
+  verdictReason: string;
+  summary: string;
+}
+
+const toCriterionScore = (wire: z.infer<typeof criterionScoreWireSchema>): CriterionScore => ({
+  // Exact by construction: the enum admits only "1".."10".
+  score: Number(wire.score),
+  justification: wire.justification,
+  findingIds: wire.findingIds,
+});
+
+/**
+ * Normalize once, immediately after validation — each criterion constructed
+ * explicitly rather than mapped through a cast, so the compiler checks that the
+ * six named fields survive rather than being told to trust it.
+ */
+export function normalizeJudgeOutput(wire: JudgeOutputWire): JudgeOutput {
+  return {
+    scores: {
+      implementation_correctness: toCriterionScore(wire.scores.implementation_correctness),
+      idiomaticity: toCriterionScore(wire.scores.idiomaticity),
+      complexity: toCriterionScore(wire.scores.complexity),
+      test_risk_coverage: toCriterionScore(wire.scores.test_risk_coverage),
+      documentation: toCriterionScore(wire.scores.documentation),
+      security_safety: toCriterionScore(wire.scores.security_safety),
+    },
+    verdict: wire.verdict,
+    verdictReason: wire.verdictReason,
+    summary: wire.summary,
+  };
+}
 
 /** Judge result: validated judge output + reference-integrity metadata. */
 export type JudgeResult = JudgeOutput & { droppedFindingIdRefs: number };

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_JUDGE_MODEL } from "./config.js";
 import { createJudge } from "./judge.js";
 import { CRITERIA } from "./scorecard.js";
-import type { IdentifiedFinding, JudgeOutput, Scores } from "./schemas.js";
+import type { IdentifiedFinding, Scores } from "./schemas.js";
 
 // The OpenRouter provider is mocked at module level so the factory wires its
 // agent to a test-controlled model. Construction-only tests get a benign
@@ -26,16 +26,14 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-const scores = (findingIds: Partial<Record<keyof Scores, string[]>> = {}): Scores =>
-  Object.fromEntries(
-    CRITERIA.map(({ key }) => [
-      key,
-      { score: 8, justification: "j", findingIds: findingIds[key] ?? [] },
-    ]),
-  ) as Scores;
-
-const judgeOutput = (findingIds: Partial<Record<keyof Scores, string[]>> = {}): JudgeOutput => ({
-  scores: scores(findingIds),
+// WIRE fixture — what the MODEL returns, so scores are strings. The judge
+// normalizes them to numbers on the way out, which is what the assertions below
+// check. Keeping these two shapes distinct is the point: a single fixture serving
+// both roles would hide the normalization entirely.
+const wireJudgeOutput = (findingIds: Partial<Record<keyof Scores, string[]>> = {}) => ({
+  scores: Object.fromEntries(
+    CRITERIA.map(({ key }) => [key, { score: "8", justification: "j", findingIds: findingIds[key] ?? [] }]),
+  ),
   verdict: "passed",
   verdictReason: "well-evidenced change",
   summary: "solid overall",
@@ -101,7 +99,7 @@ describe("createJudge", () => {
 
 describe("judge()", () => {
   it("returns the model-owned verdict fields with reference integrity applied", async () => {
-    currentModel = textModel(JSON.stringify(judgeOutput({ security_safety: ["F1", "F9"] })));
+    currentModel = textModel(JSON.stringify(wireJudgeOutput({ security_safety: ["F1", "F9"] })));
     const { judge } = createJudge({ apiKey: "test-key" });
     const result = await judge(input);
     expect(result.verdict).toBe("passed");
@@ -110,6 +108,8 @@ describe("judge()", () => {
     // Unknown F9 stripped and counted; known F1 kept.
     expect(result.scores.security_safety.findingIds).toEqual(["F1"]);
     expect(result.droppedFindingIdRefs).toBe(1);
+    // Normalized on the way out: the wire carried "8", consumers see 8.
+    expect(result.scores.security_safety.score).toBe(8);
   });
 
   it("rejects on a schema-mismatching output (no silent repair)", async () => {

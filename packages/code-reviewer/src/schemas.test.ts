@@ -6,8 +6,9 @@ import {
   implReviewOutputSchema,
   judgeOutputSchema,
   normalizeImplFinding,
+  normalizeJudgeOutput,
   reviewUnitSchema,
-  scoresSchema,
+  scoresWireSchema,
   findingSchema,
   reviewResultSchema,
 } from "./schemas.js";
@@ -59,9 +60,12 @@ describe("categorySchema (rubric-signal categories)", () => {
   });
 });
 
-const criterion = { score: 8, justification: "j", findingIds: ["F1"] };
+// WIRE fixture: score is a string, because that is what the model returns and
+// what the enum constrains. The numeric score is produced by
+// normalizeJudgeOutput, exercised separately below.
+const criterion = { score: "8", justification: "j", findingIds: ["F1"] };
 const validScores = Object.fromEntries(
-  Object.keys(scoresSchema.shape).map((key) => [key, criterion]),
+  Object.keys(scoresWireSchema.shape).map((key) => [key, criterion]),
 );
 const validJudgeOutput = {
   scores: validScores,
@@ -80,20 +84,59 @@ describe("judgeOutputSchema", () => {
     ["an unknown verdict", { ...validJudgeOutput, verdict: "maybe" }],
     ["an empty verdictReason", { ...validJudgeOutput, verdictReason: "" }],
     ["a missing summary", { scores: validScores, verdict: "passed", verdictReason: "r" }],
-    [
-      "an out-of-range score",
-      { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: 11 } } },
-    ],
-    [
-      "a zero score",
-      { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: 0 } } },
-    ],
-    [
-      "a fractional score",
-      { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: 6.5 } } },
-    ],
+    // These were the live failure: a model returning any of them produces valid
+    // JSON that then fails validation. They used to be caught by an invisible
+    // refine; the enum now states the constraint in the schema itself.
+    ["an out-of-range score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "11" } } }],
+    ["a zero score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "0" } } }],
+    ["a fractional score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "6.5" } } }],
+    ["a 0-100 scale score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "85" } } }],
+    ["a numeric score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: 8 } } }],
+    ["an empty summary", { ...validJudgeOutput, summary: "" }],
   ])("rejects %s", (_name, invalid) => {
     expect(judgeOutputSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  // The constraint must be VISIBLE to the model — that is the whole point of
+  // moving it out of a refine. `minimum`/`maximum` stay absent because the
+  // provider rejects them (Phase 1 live finding).
+  it("emits the score range as a schema enum, with no numeric bounds", () => {
+    const json = z.toJSONSchema(judgeOutputSchema);
+    // The emitted schema is deliberately untyped here — the assertion is about
+    // what the PROVIDER receives, not about zod's TS surface.
+    const walk = (node: unknown, ...keys: string[]): unknown =>
+      keys.reduce<unknown>((acc, key) => (acc as Record<string, unknown> | undefined)?.[key], node);
+    const score = walk(json, "properties", "scores", "properties", "complexity", "properties", "score");
+    expect((score as { enum?: unknown }).enum).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
+    const asText = JSON.stringify(json);
+    expect(asText).not.toContain('"minimum"');
+    expect(asText).not.toContain('"maximum"');
+    expect(asText).not.toContain('"anyOf"');
+  });
+});
+
+describe("normalizeJudgeOutput", () => {
+  it("turns every wire score into its exact number", () => {
+    const out = normalizeJudgeOutput(judgeOutputSchema.parse(validJudgeOutput));
+    for (const key of Object.keys(scoresWireSchema.shape)) {
+      expect(out.scores[key as keyof typeof out.scores].score).toBe(8);
+    }
+    expect(out.verdict).toBe("passed");
+    expect(out.summary).toBe("overall fine");
+  });
+
+  it("preserves each criterion's own justification and findingIds", () => {
+    const wire = judgeOutputSchema.parse({
+      ...validJudgeOutput,
+      scores: {
+        ...validScores,
+        idiomaticity: { score: "3", justification: "idiom-specific", findingIds: ["F2", "F3"] },
+      },
+    });
+    const out = normalizeJudgeOutput(wire);
+    expect(out.scores.idiomaticity).toEqual({ score: 3, justification: "idiom-specific", findingIds: ["F2", "F3"] });
+    // Not cross-contaminated by the explicit per-field construction.
+    expect(out.scores.complexity.score).toBe(8);
   });
 });
 

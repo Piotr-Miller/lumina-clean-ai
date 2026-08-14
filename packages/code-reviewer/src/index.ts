@@ -57,7 +57,7 @@ export {
 export type { DiffScopedSourceOptions } from "./source-provider.js";
 export {
   categorySchema,
-  criterionScoreSchema,
+  criterionScoreWireSchema,
   findingSchema,
   implDimensionSchema,
   implGradeSchema,
@@ -71,7 +71,7 @@ export {
   lensSchema,
   reviewResultSchema,
   reviewUnitSchema,
-  scoresSchema,
+  scoresWireSchema,
   severitySchema,
   verdictSchema,
 } from "./schemas.js";

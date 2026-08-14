@@ -14,7 +14,7 @@ import type { ImplGrades, PipelineResult, Scores } from "./schemas.js";
 const scores = (): Scores =>
   Object.fromEntries(
     CRITERIA.map(({ key }) => [key, { score: 8, justification: "j", findingIds: [] as string[] }]),
-  ) as Scores;
+  ) as unknown as Scores;
 
 const pipelineResult = (overrides: Partial<PipelineResult> = {}): PipelineResult => ({
   summary: "overall assessment",
