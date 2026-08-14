@@ -317,9 +317,22 @@ policy, committed before the baseline exists.
 attempts producing a parseable review — **not** `schema_validity`, per review F1), and
 `guard_reported` (of 20 runs where the suppression grader passes).
 
-- **Fixture validity gate**: baseline `fabrication_runs ≥ 4/20`. Below that the fixture does not
-  reproduce the defect; Phase 3 does not start and the change goes to Phase 4 with an
-  INVALID-FIXTURE outcome.
+- **Fixture validity gate** — **adaptive, replacing the flat `≥ 4/20`** (review 2 F5). A single n=20
+  run discriminates far worse than the flat threshold implied: at a true 25% rate — which is what
+  research measured locally, 2 of 8 — it wrongly rejects **22.5%** of the time, and at 20% it wrongly
+  rejects **41.1%**. Killing the change on noise once every four-and-a-bit runs is not a gate. The
+  pre-registered design is therefore two-stage, with its error rates stated rather than implied:
+
+  | Baseline `fabrication_runs` (of 20) | Outcome                                                                        | Error rate                                                  |
+  | ----------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+  | ≥ 6                                 | VALID immediately                                                              | false accept at a true 5% rate: **0.03%**                   |
+  | ≤ 1                                 | INVALID immediately                                                            | false reject at a true 20% rate: **6.9%**                   |
+  | 2-5                                 | AMBIGUOUS → one confirmation run of n=20, pooled to n=40; VALID iff pooled ≥ 5 | false reject at 20%: **7.6%**; false accept at 5%: **4.8%** |
+
+  The confirmation run is bounded at exactly one and its cost is the same as the baseline's, so the
+  ambiguous branch doubles a sub-dollar spend rather than opening an unbounded loop. Below the gate,
+  Phase 3 does not start and the change goes to Phase 4 with an INVALID-FIXTURE outcome.
+
 - **PASS**: `fabrication_runs ≤ 1` **and** `usable_output ≥ baseline − 1` **and** `guard_reported ≥ 19`.
 - **FAIL**: `fabrication_runs ≥ 5` **or** `usable_output ≤ baseline − 3` **or** `guard_reported ≤ 18`.
 - **INCONCLUSIVE**: everything else — which is exactly the bands the first draft left unowned
@@ -491,15 +504,20 @@ rests on, and that a claim you cannot quote support for should not be reported.
 
 **Files**: `packages/code-reviewer/src/schemas.test.ts`, `findings.test.ts`, `pipeline.test.ts`,
 `render.test.ts`, `judge.test.ts`, `scorecard.test.ts`, `prompts.test.ts`, `provider-attempts.test.ts`,
-`output-repair.test.ts`
+`output-repair.test.ts`, `cli.test.ts`
 
 **Intent**: A required field breaks every typed finding factory in the suite. Enumerated so the
-implementer does not discover it one failing file at a time (review F7).
+implementer does not discover it one failing file at a time (review 1 F7).
 
 **Contract**: Each file's finding fixtures gain `evidence`. New or extended assertions map to the
 behavioural criteria below: schema rejection in `schemas.test.ts`, dedup identity in `findings.test.ts`,
 judge-projection omission in `prompts.test.ts` and `pipeline.test.ts`, render omission in
 `render.test.ts`, and the unrepairable-missing-field case in `output-repair.test.ts`.
+
+`cli.test.ts` was added by review 2 F4 and covers a gap the others cannot: the pipeline assertions prove
+the in-memory DTO retains `evidence`, not that the **serialized artifact** does. `review.json` is what a
+human audits after a failed review, so its retention is asserted where the file is actually written
+(`cli.ts:301`), not inferred from the object that precedes it.
 
 #### 8. Post-intervention measurement
 
@@ -521,7 +539,7 @@ renegotiation; an INCONCLUSIVE triggers exactly one rerun.
 - A finding without `evidence` is rejected by the schema
 - The emitted JSON Schema contains no `minimum`, `maximum`, or `anyOf`
 - `buildJudgePrompt` output provably omits `evidence` for a finding that has it
-- `review.json` retains `evidence`
+- `review.json` retains `evidence` — asserted on the SERIALIZED artifact in `cli.test.ts`, not on the in-memory DTO
 - `evidence` is absent from the rendered comment
 - Dedup identity unchanged: findings differing only in `evidence` still collapse
 - A response missing `evidence` is not repaired into a partial result
@@ -665,9 +683,31 @@ kept in every branch, since they document the defect whether or not it is fixed.
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename
 > step titles. See `references/progress-format.md`.
 >
-> Phase 3 and 4 criteria are phrased to be completable under **any** outcome — PASS, FAIL, or
-> INVALID-FIXTURE. Where a criterion depends on the branch taken, it asks that the branch be recorded
-> and honoured, not that a particular result occurred.
+> **Branch handling (corrected 2026-08-14, review 2 F2).** The previous note here claimed every Phase 3
+> and 4 row was completable under any outcome. That was true of Phase 4, whose rows ask that a branch be
+> **recorded** rather than that a result occurred, and false of Phase 3, whose rows all presuppose the
+> intervention was built. Under INVALID-FIXTURE, Phase 3 never starts, so those rows could never be
+> ticked and the change could never read as complete.
+>
+> The branch structure, stated instead of implied:
+>
+> - **Phases 1-2 always execute.** Their rows are unconditional.
+> - **The Phase 2 fixture-validity gate decides the rest.** On the valid-fixture branch, Phases 3 and 4
+>   execute and their rows are ticked normally.
+> - **On the INVALID-FIXTURE branch the change completes at Phase 2 plus the Phase 4 decision.** Rows
+>   3.1-3.14 and 4.1-4.3 are then resolved as `- [x] … — N/A (INVALID-FIXTURE, <sha>)`, and rows
+>   4.4-4.6 are ticked normally, because `decision.md` is still written and still records an outcome.
+>
+> `references/progress-format.md` has no skipped state, so `N/A (INVALID-FIXTURE, <sha>)` is a local
+> extension of the convention, deliberately spelled out here rather than improvised at the time. It
+> means "this row was not reachable on the branch taken", never "we chose not to do it" — the branch
+> must be evidenced by the gate outcome recorded in `verification.md`.
+>
+> The alternative was to end this change at Phase 2 and open a separate intervention change, which
+> review 2 offers and which would keep every ledger linear. It is rejected only because the experiment
+> is already split once (rollout is its own change) and a second split would put three handoffs between
+> the instrument and any answer. If the INVALID-FIXTURE branch is actually taken, prefer opening the
+> follow-up rather than carrying fourteen N/A rows into the archive.
 
 ### Phase 1: Instrument — fixtures and a run-binary fabrication metric
 
@@ -716,7 +756,7 @@ kept in every branch, since they document the defect whether or not it is fixed.
 - [ ] 3.4 A finding without `evidence` is rejected by the schema
 - [ ] 3.5 Emitted JSON Schema contains no `minimum`, `maximum`, or `anyOf`
 - [ ] 3.6 `buildJudgePrompt` output omits `evidence` for a finding that carries it
-- [ ] 3.7 `review.json` retains `evidence`
+- [ ] 3.7 `review.json` retains `evidence`, asserted on the serialized artifact in `cli.test.ts`
 - [ ] 3.8 `evidence` is absent from the rendered comment
 - [ ] 3.9 Dedup identity unchanged: findings differing only in `evidence` still collapse
 - [ ] 3.10 A response missing `evidence` is not repaired into a partial result
@@ -741,3 +781,5 @@ kept in every branch, since they document the defect whether or not it is fixed.
 - [ ] 4.4 Live findings read and recorded, with fabrication assessed per finding
 - [ ] 4.5 `decision.md` states the outcome against every pre-registered criterion, including failures
 - [ ] 4.6 Exactly one disposition executed, matching the recorded outcome
+- [ ] 4.7 The outcome-specific action is done: PASS → rollout change opened; FAIL → intervention
+      reverted and the limitation recorded; INVALID-FIXTURE → the fixture's reproduction limits recorded
