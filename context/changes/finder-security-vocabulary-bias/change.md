@@ -1,7 +1,7 @@
 ---
 change_id: finder-security-vocabulary-bias
 title: Finder returns a degenerate all-critical/security finding set on security-saturated diffs
-status: preparing
+status: plan_reviewed
 created: 2026-08-13
 updated: 2026-08-14
 archived_at: null
@@ -138,6 +138,34 @@ a collapsed run and check whether they are genuinely security-class and
 critical-class, looking specifically for mislabelled correctness/testing gaps. It
 is free, and it decides whether this change has a subject at all. Then
 `/10x-plan`, whose first deliverable is the distribution metric, not a fixture.
+
+### Plan reviewed and revised (2026-08-14) — verdict RETHINK, plan reshaped
+
+`reviews/plan-review.md` (deep mode, Codex) returned **RETHINK**: 3 critical, 4
+warnings, with End-State Alignment, Blind Spots, and Plan Completeness all FAIL.
+All seven findings were accepted; the plan was rewritten rather than patched,
+because one of them changed its shape. Dispositions are recorded per-finding in
+the review doc. What changed materially:
+
+1. **The change no longer ships the fix.** Its deliverable is a recorded
+   decision; rollout is a separate change opened only on a PASS (F3, via Fix B
+   rather than the recommended Fix A — precedent: `finder-tool-loop-evals`
+   archived cleanly on exactly this shape). The pre-registered bar is now a
+   **total** PASS/FAIL/INCONCLUSIVE function with one bounded rerun; the first
+   draft left 2-4 fabrications and a reliability delta of exactly 2 owned by no
+   outcome, and Progress rows that only a PASS could truthfully complete.
+2. **Both guards were measuring the wrong thing** (F1, F2) — see the new
+   `lessons.md` entry "A guard metric that only exists on success cannot detect
+   failure". `schema_validity` is replaced by usable-output-over-attempts, and
+   the suppression guard gets its own field-scoped grader because `evidence`
+   would otherwise satisfy `scoreIssueRecall`'s blob search with a quote.
+3. **Quote fidelity is measured, not claimed** (F4, resolved via a third option
+   neither offered): `min(1)` proves non-emptiness, so a schema-level quote check
+   was rejected — it would reject a whole review over one bad quote — in favour
+   of a deterministic observational metric on every row.
+4. Judge sanitization moved to the prompt boundary (F6), the fabrication metric
+   became binary-per-run and deduplicated (F5), and Phase 3 now enumerates the
+   nine-file test blast radius plus the unrepairable-missing-field path (F7).
 
 ### Reference
 
