@@ -51,7 +51,7 @@ hardening diffs — and an instrument that will still measure the defect if the 
 
 Concretely, when this change is done:
 
-- Two hardening fixtures and a binary `no_fabricated_absence` metric exist and run under
+- Two hardening fixtures and the `no_fabricated_absence` rubric gate exist and run under
   `npm run eval`, with a companion observational metric reporting what share of `evidence` strings are
   verbatim diff quotes.
 - `verification.md` carries a **total** PASS / FAIL / INCONCLUSIVE table written before any number
@@ -285,7 +285,8 @@ the name the pre-registered bar reads — judged by `defaultTest.options.provide
 that already serves every other rubric here and is none of the candidate models. Its text must name all
 four defences the fixture contains and must instruct a FAIL only on a claim that one of them is missing,
 explicitly excluding approving mentions, test or documentation gaps, and improvement suggestions. The
-deterministic matcher keeps the metric name `fabrication_floor` and gates nothing.
+deterministic matcher was **retired on 2026-08-14** (see the amendment) and no longer exists, so the
+rubric is the only fabrication signal.
 
 #### Automated Verification:
 
@@ -307,10 +308,9 @@ deterministic matcher keeps the metric name `fabrication_floor` and gates nothin
 
 - Both fixtures read correctly as a reviewer would: the defended one has nothing critical to find, the
   vulnerable one's defect is indisputable
-- The floor never false-positives: approving wording, unrelated omissions and negated permissions are
-  all graded clean. Recall is explicitly NOT verified here — the floor is high-precision by design and
-  its blind spots are pinned as "documented miss" tests; recall belongs to the rubric gate and is
-  validated by criterion 2.6
+- ~~The floor never false-positives~~ — **retired 2026-08-14 with the instrument itself.** Demoted to a
+  cross-check it still raised false alarms on 16 of 20 clean adversarial sentences, and precision was
+  by then its only remaining job. Fabrication is measured solely by the rubric gate
 - The rubric text names all four defences the defended fixture contains, and its pass/fail instruction
   states the same criterion the pre-registered bar reads. Nothing else checks this before the spend, and
   a rubric that misdescribes the fixture misgrades every row silently
@@ -394,6 +394,25 @@ so paying for a baseline read by that instrument would have measured the instrum
 an observational cross-check**, narrowed to high-precision templates that name their own mechanism.
 Its blind spots are pinned as explicit "documented miss" tests rather than left implicit.
 
+#### The floor was retired outright, one round later (2026-08-14)
+
+The demotion did not survive its own criterion. Narrowed to a precision floor, the matcher still raised
+false alarms on **16 of 20** clean adversarial sentences — `"No further validation is necessary because
+OBJECT_KEY is anchored"`, `"OBJECT_KEY rejects unvalidated input"`, `"The test fails to validate
+malformed fixtures"` — and precision was by then the _only_ property it needed. Verified independently
+before acting: 5 of 6 reproduced locally.
+
+So it is **deleted**, not patched an eighth time. A cross-check that has to be second-guessed is not a
+cross-check; on a paid run it would have generated noise that a human then had to adjudicate, spending
+exactly the attention it was supposed to save. Criterion 1.14 is retired with it, and the metric
+`fabrication_floor` no longer exists.
+
+That leaves the rubric as the sole fabrication signal, which is why the two safeguards below matter more
+than they did when written — and both survive the retirement intact: 1.15 validates the rubric's wording
+before any spend (**passed**), and 2.6 validates its verdicts against a hand-read afterwards. The
+alternative considered and rejected was keeping the floor and measuring its false-alarm rate in Phase 2;
+that spends real rows to quantify an instrument we have already decided not to trust.
+
 Two consequences, both recorded so they cannot be quietly forgotten:
 
 - **What validates the rubric.** Its error rate is now the load-bearing unknown, and it cannot validate
@@ -402,9 +421,9 @@ Two consequences, both recorded so they cannot be quietly forgotten:
   against that reading row by row. If the rubric misgrades ≥3 of 20, it is unfit too and the change
   routes to INVALID-FIXTURE with the finding recorded — an honest negative about our ability to measure
   the defect, which is a real result.
-- **Which disagreement is interesting.** The floor is high-precision, so **floor fires + rubric clean**
-  is very likely a rubric miss and that row must be read. The reverse — rubric fires, floor clean — is
-  expected and unremarkable, because the floor's documented misses cover exactly those forms.
+- ~~**Which disagreement is interesting.**~~ **Moot from 2026-08-14** — there is no second signal to
+  disagree with. The rubric's only check is 1.15 before the spend and 2.6's hand-read after it, which is
+  why 2.6 is a gate on this change rather than a formality.
 
 The honest risk in this amendment: moving a gate because the instrument keeps failing it is what
 pre-registration exists to prevent. What makes it legitimate rather than convenient is that the
@@ -734,6 +753,10 @@ kept in every branch, since they document the defect whether or not it is fixed.
 
 ### Phase 1: Instrument — fixtures and a run-binary fabrication metric
 
+> Rows 1.4-1.9 graded the deterministic matcher, which was retired on 2026-08-14. They were satisfied
+> when they landed and are left checked rather than rewritten — the ledger records what happened, and
+> deleting them would erase the six rounds that led to the retirement.
+
 #### Automated
 
 - [x] 1.1 Package lint passes: `cd packages/code-reviewer && npm run lint` — 4d15f8c
@@ -752,13 +775,12 @@ kept in every branch, since they document the defect whether or not it is fixed.
 #### Manual
 
 - [x] 1.13 Both fixtures read correctly: defended has nothing critical, vulnerable is indisputable
-- [ ] 1.14 The floor never false-positives: no approving, unrelated or negated-permission wording is
-      graded as a fabricated absence. **Rescoped 2026-08-14** — originally "`presentDefences` patterns
-      match real reviewer wording and do not fire on approving mentions", written when the matcher was
-      the gate. Recall is no longer its job, so the recall half of that criterion moved to the rubric and
-      is validated by 2.6; precision is the only property the floor still needs. Rescoped deliberately
-      and recorded rather than reworded quietly, because the original was failed six times.
-- [ ] 1.15 A human has read the rubric text against the defended fixture and confirms it names all four
+- [x] 1.14 ~~The floor never false-positives~~ — **N/A (instrument retired, see amendment).** Rescoped
+      once from its original "`presentDefences` patterns match real reviewer wording", then retired
+      outright when the narrowed floor still false-alarmed on 16 of 20 clean adversarial sentences and
+      the matcher was deleted. The criterion has no subject left; it is resolved as N/A rather than
+      ticked, because it was never satisfied.
+- [x] 1.15 A human has read the rubric text against the defended fixture and confirms it names all four
       present defences, and that its pass/fail instruction states the same criterion the bar reads.
       **Added 2026-08-14** with the inversion: the rubric is now the gate, and nothing else checks its
       wording before money is spent. A rubric that misdescribes the fixture misgrades every row silently,

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   countToolCalls,
-  noFabricatedAbsence,
   requireDefectReported,
   requireToolContext,
   reviewMustFail,
@@ -267,111 +266,14 @@ describe("requireToolContext", () => {
   });
 });
 
-// --- Hardening precision assertions ------------------------------------------
-// Every automated criterion in plan Phase 1 lands here. The metric feeds a
-// pre-registered bar counted in RUNS, so its scoring unit is the thing most
-// worth pinning: binary per run, deduplicated, and blind to `evidence`.
-
-const DEFENCES = [
-  { label: "sanitization", patterns: ["sanitiz", "control[- ]char"] },
-  { label: "validation", patterns: ["validat", "allow[- ]?list"] },
-  { label: "traversal rejection", patterns: ["travers"] },
-];
+// --- Hardening fixture assertions --------------------------------------------
+// The fabrication metric is an llm-rubric and has no unit test; what it grades is
+// pinned by the rubric text itself (plan criterion 1.15) and validated against a
+// hand-read of the baseline (2.6). The deterministic matcher that used to live
+// here was retired on 2026-08-14 after seven review rounds — see the header of
+// assertions.mjs. What remains is the over-suppression guard and quote fidelity.
 
 const findingsReview = (...findings: Record<string, unknown>[]) => JSON.stringify({ summary: "s", findings });
-
-describe("noFabricatedAbsence", () => {
-  const grade = (output: string) => noFabricatedAbsence(output, { vars: { presentDefences: DEFENCES } });
-
-  it("scores 1 when nothing claims a declared defence is missing", () => {
-    expect(grade(findingsReview({ description: "The anchored pattern is correct." }))).toMatchObject({
-      pass: true,
-      score: 1,
-    });
-  });
-
-  it("scores 0 for an absence claim about a declared defence", () => {
-    const result = grade(findingsReview({ description: "There is no validation of the key." }));
-
-    expect(result).toMatchObject({ pass: false, score: 0 });
-    expect(result.reason).toContain("validation");
-  });
-
-  // The registered bar counts runs, so the score must be binary — a
-  // finding-weighted ratio would read 0.9 for the same single fabrication in a
-  // ten-finding review (plan review F5).
-  it("stays binary regardless of how many clean findings surround the fabrication", () => {
-    const clean = Array.from({ length: 9 }, () => ({ description: "Minor style nit." }));
-    const result = grade(findingsReview({ description: "No sanitization is applied." }, ...clean));
-
-    expect(result.score).toBe(0);
-  });
-
-  it("counts one finding once even when it matches several defences", () => {
-    const result = grade(
-      findingsReview({ description: "No validation, no sanitization, and traversal is not rejected." }),
-    );
-
-    expect(result.score).toBe(0);
-    expect(result.reason).toContain("1 of 1 finding(s)");
-  });
-
-  it("scores 1 for a review with no findings", () => {
-    expect(grade(findingsReview())).toMatchObject({ pass: true, score: 1 });
-  });
-
-  // After Phase 3 the evidence quote contains the defence verbatim. Reading it
-  // would turn a correct report into a fabrication and vice versa.
-  it("ignores evidence, summary and file when matching", () => {
-    const output = JSON.stringify({
-      summary: "There is no validation anywhere in this diff.",
-      findings: [
-        {
-          description: "Naming could be clearer.",
-          file: "src/no-validation-helper.ts",
-          evidence: "if (!OBJECT_KEY.test(raw)) { return { ok: false }; } // not validated",
-        },
-      ],
-    });
-
-    expect(grade(output)).toMatchObject({ pass: true, score: 1 });
-  });
-
-  it("reads the suggestion field, not only the description", () => {
-    expect(
-      grade(findingsReview({ description: "See below.", suggestion: "Add the missing traversal check." })).score,
-    ).toBe(0);
-  });
-
-  it("does not fire when the negation is far from the defence mention", () => {
-    const description =
-      "The traversal rejection is correct and the anchored pattern is explicit. " +
-      "Separately, and for entirely unrelated reasons that take a while to spell out here, " +
-      "the module does not export a helper for callers that need the parsed key shape.";
-
-    expect(grade(findingsReview({ description })).score).toBe(1);
-  });
-
-  it("fails closed on a broken envelope rather than reading it as clean", () => {
-    expect(grade(JSON.stringify([{ description: "bare array" }]))).toMatchObject({ pass: false, score: 0 });
-  });
-
-  it("fails closed when a declared defence has an uncompilable pattern", () => {
-    const result = noFabricatedAbsence(findingsReview({ description: "All good." }), {
-      vars: { presentDefences: [{ label: "bad", patterns: ["["] }] },
-    });
-
-    expect(result).toMatchObject({ pass: false, score: 0 });
-    expect(result.reason).toContain("unusable patterns");
-  });
-
-  it("fails when the case configured no defences", () => {
-    expect(noFabricatedAbsence(findingsReview(), { vars: {} })).toMatchObject({
-      pass: false,
-      reason: "No presentDefences configured for this case",
-    });
-  });
-});
 
 describe("requireDefectReported", () => {
   const DEFECT = { label: "traversal", patterns: ["travers", "unvalidated"] };

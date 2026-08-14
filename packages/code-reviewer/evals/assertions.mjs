@@ -216,15 +216,35 @@ export function requireToolContext(output, context) {
   };
 }
 
-// --- Hardening precision -----------------------------------------------------
-// What these three grade: the finder asserting that a defence PRESENT in the
+// --- Hardening fixtures ------------------------------------------------------
+// The defect under study: the finder asserting that a defence PRESENT in the
 // diff is MISSING ("no validation", "not sanitized", "not provided"). Every
 // fabricated finding on PR #127 had that shape — one flagged a line two below
-// the comment explaining the very defence it called absent. The metrics are
-// deliberately narrow: absence claims only, not severity and not category,
-// which belong to the deferred calibration layer.
+// the comment explaining the very defence it called absent.
+//
+// THE FABRICATION METRIC ITSELF IS NOT HERE. It is the `no_fabricated_absence`
+// llm-rubric in promptfooconfig.yaml, judged by the neutral grader.
+//
+// A deterministic matcher held that job through seven review rounds and was
+// retired on 2026-08-14 without ever passing. The pattern never broke: each round
+// fixed its named cases and broke adjacent ones. Demoted to a high-precision
+// cross-check, it still raised false alarms on 16 of 20 clean adversarial
+// sentences — "No further validation is necessary because OBJECT_KEY is
+// anchored", "OBJECT_KEY rejects unvalidated input", "The test fails to validate
+// malformed fixtures" — and precision was by then the ONLY property it needed. A
+// cross-check that must be second-guessed is not one, so it was deleted rather
+// than patched an eighth time.
+//
+// If a deterministic signal is ever wanted here again, the lesson is in
+// context/foundation/lessons.md: negation scope, clause attachment and
+// approving-but-negative phrasing are not reachable lexically, and each guard
+// added to catch one class opened another.
+//
+// What remains: the over-suppression guard and the quote-fidelity metric. Both
+// are narrow, both name their own subject, and neither judges natural-language
+// negation.
 
-/** Shared JSON gate for the three graders below, so each stays readable. */
+/** Shared JSON gate for the graders below, so each stays readable. */
 function readReview(output) {
   try {
     return { review: parseOutput(output) };
@@ -269,295 +289,11 @@ function compilePatterns(patterns) {
 // The nouns a defence is. Deliberately excludes attack nouns (traversal,
 // injection, XSS): those are what a defence PREVENTS, and negating them is
 // approval.
-const MECHANISM =
-  "(?:validat\\w*|sanitiz\\w*|sanitis\\w*|escap\\w*|encod\\w*|check\\w*|guard\\w*|limit\\w*|bound\\w*|cap|caps|capping" +
-  "|filter\\w*|verif\\w*|enforc\\w*|protection|rejection|restrict\\w*|constraint\\w*|allow-?list\\w*|white-?list\\w*" +
-  // Path defences get described in these terms as often as in "validation"
-  // terms, and a missed fabrication biases the baseline DOWN — which is the
-  // direction that could wrongly trip Phase 2's does-not-reproduce gate.
-  "|normaliz\\w*|normalis\\w*|canonicaliz\\w*|canonicalis\\w*|scrub\\w*|gating|gate|gates|deny-?list\\w*|block-?list\\w*)";
-
-// Past participles of applying a defence, for "is/are not <participle>".
-const APPLIED =
-  "(?:validated|sanitized|sanitised|checked|escaped|encoded|bounded|limited|capped|filtered|verified|enforced|guarded" +
-  "|rejected|restricted|applied|present|provided|implemented|used|called|performed" +
-  // "the pattern is not anchored" was a silent miss: `anchor` is a defence topic
-  // but its participle was absent here (self-test E1).
-  "|anchored|allowlisted|whitelisted|constrained" +
-  "|normalized|normalised|canonicalized|canonicalised|scrubbed|gated)";
-
-// Bare verb stems, for "fails to <verb>" and "does not <verb>".
-const DEFEND =
-  "(?:validat|sanitiz|sanitis|escap|encod|check|bound|limit|cap|filter|verif|enforc|guard|reject|restrict" +
-  "|normaliz|normalis|canonicaliz|canonicalis|scrub)\\w*";
-
-// What a defence PREVENTS. Used only by the permissive template — "allows path
-// Privative adjectives — an absence claim carrying no separate negation word,
-// e.g. "the key length is unbounded". Guarded against double negation below.
-const PRIVATIVE =
-  "\\bun(?:validated|sanitized|sanitised|checked|escaped|encoded|bounded|limited|filtered|verified|guarded|restricted)\\b";
-
-// A HIGH-PRECISION FLOOR, not a complete detector.
-//
-// This matcher was the fabrication gate for six review rounds and never
-// converged: each round fixed the named cases and broke adjacent ones, and the
-// last round's own fixes produced five new defect classes (sentence-initial
-// capitals, backticks between verb and identifier, a determiner read as a
-// pronoun, non-transitive inheritance, and a filler still crossing
-// conjunctions). The `llm-rubric` on the same case is now the gate; this is a
-// deterministic cross-check.
-//
-// That changes the design target. A floor must never cry fabrication on a clean
-// review; missing one is acceptable and expected, because the rubric carries
-// recall. So every template whose failures were being chased is GONE:
-//
-//   - omission verbs (omits/skips/bypasses) — needed an object slot, and the
-//     case-sensitive identifier variant broke on capitals and backticks;
-//   - the missing-state subject template — its filler crossed conjunctions at
-//     every width tried;
-//   - the permissive family (allows/permits/enables) — reversible by words after
-//     the match, which cost 11 of 14 adversarial probes in one round;
-//   - pronoun-clause inheritance — matched determiners, and only ever existed to
-//     serve the identifier templates now dropped.
-//
-// What remains names its own mechanism, so it cannot borrow a subject from
-// surrounding text. `documented misses` in promptfooconfig.test.ts pins what this
-// deliberately no longer catches, so the scope is explicit rather than accidental.
-const ABSENCE_TEMPLATES = [
-  // "no validation", "missing traversal check", "without sanitization"
-  {
-    kind: "mechanism",
-    regex: new RegExp("\\b(?:no|missing|absent|without|lacks?|lacking)\\s+(?:\\w+[\\s-]){0,2}" + MECHANISM + "\\b", "giu"),
-  },
-  // "is not validated", "was never checked", "isn't checked", "is not provided"
-  {
-    kind: "mechanism",
-    regex: new RegExp("\\b(?:is|are|was|were)(?:\\s+(?:not|never)|n't)\\s+(?:\\w+\\s+){0,2}" + APPLIED + "\\b", "giu"),
-  },
-  // "fails to sanitize", "neglects to check" — this family genuinely takes "to".
-  {
-    kind: "mechanism",
-    regex: new RegExp("\\b(?:fails?|failed|neglects?|neglected|forgets?|forgot)\\s+to\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
-  },
-  // "does not validate", "doesn't check" — a DIRECT negated verb, no "to". These
-  // were previously folded into the "fails to" family above, so the matcher only
-  // recognised the ungrammatical "does not TO validate" and missed every natural
-  // form (Phase 1 re-review, 1.14).
-  {
-    kind: "mechanism",
-    regex: new RegExp("\\b(?:does|do|did)(?:\\s+not|n't)\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
-  },
-  // "there is no way to reject traversal", "no logic to validate the key" — the
-  // mechanism is named by a VERB here, so the noun templates above miss it.
-  {
-    kind: "mechanism",
-    regex: new RegExp(
-      "\\b(?:no|without)\\s+(?:\\w+\\s+){0,2}(?:way|ways|means|mechanism|logic|code|step|steps|attempt|handling)\\s+to\\s+(?:\\w+\\s+){0,2}" +
-        DEFEND,
-      "giu",
-    ),
-  },
-  { kind: "privative", regex: new RegExp(PRIVATIVE, "giu") },
-];
-
-// The permissive family and its three guards (post-verbal negation, approving
-// complements, test context) were removed with it. Every one of them existed to
-// stop that family inverting, and the family cost 11 of 14 adversarial probes in
-// a single round. Recall for "allows path traversal" now belongs to the rubric.
-
-// "not unbounded" / "isn't unvalidated" APPROVE the defence, and so does "does
-// not allow arbitrary characters". Without this the privative and permissive
-// templates invert the very sentences they were added to catch. `cannot` is
-// listed separately because \bnot\b cannot match inside it.
-const DOUBLE_NEGATION = /(?:\b(?:not|never|nor)|n't|\bcannot)\s+$/iu;
-
-// A blocked head noun inside the filler means the negation attaches to something
-// other than the defence: "no need to sanitize further", "no documentation of
-// the validation". "no test covering X" already fails the templates, because
-// "test" is not a mechanism.
-const NEUTRALIZED_HEAD =
-  /\b(?:need|needs|reason|reasons|point|harm|issue|issues|problem|problems|concern|concerns|change|changes|test|tests|testing|coverage|spec|specs|assertion|assertions|documentation|docs|comment|comments)\b/iu;
-
-// The reversing noun can also come AFTER the mechanism: "no validation problem"
-// and "no sanitization issue" are approvals, but template 1 stops matching at
-// the mechanism, so the head-noun check above never sees the word that flips the
-// meaning. Only a defect noun counts here — "no validation of the key" must stay
-// a fabrication.
-const NEUTRALIZED_TAIL =
-  /^\s*(?:problem|problems|issue|issues|concern|concerns|gap|gaps|risk|risks|bug|bugs|defect|defects|error|errors|weakness|weaknesses)\b/iu;
-
-// A negation anywhere in a long finding is not evidence that it attaches to the
-// defence. Requiring proximity is what separates "no validation of the key"
-// from "the key is validated; there is no test for the reject path".
-const NEGATION_WINDOW = 80;
-
-const matchSpans = (text, pattern) => {
-  const scanner = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g");
-  const spans = [];
-  let match;
-  while ((match = scanner.exec(text)) !== null) {
-    spans.push({ start: match.index, end: match.index + match[0].length });
-    if (match[0].length === 0) scanner.lastIndex += 1;
-  }
-  return spans;
-};
-
-/**
- * Splits a finding into CLAUSES, the unit a claim actually lives in.
- *
- * Character proximity is not attachment: within an 80-character window,
- * "Object key handling is correct; this helper omits telemetry on success" linked
- * a defence in one clause to an omission in the next and scored a fabrication
- * (Phase 1 re-verification round 3). A clause boundary is the fix.
- *
- * The sentence break requires a lowercase letter or `)` before the period and a
- * capital after it, so a quoted `../.` or a decimal is never split.
- */
-const CLAUSE_BREAK =
-  /;|\n|\s+[—–]\s+|,\s+(?:while|whereas|but|although|though|however|yet)\b|(?<=[a-z)])\.\s+(?=[A-Z])/gu;
-
-// Pronoun-clause inheritance was removed with the identifier templates it served.
-// It matched `this helper` — a determiner plus noun, not a pronoun — and so
-// re-created the very cross-clause false positive the clause split had just
-// fixed. It was also non-transitive, losing the subject across two hops.
-const splitClauses = (text) =>
-  text.split(CLAUSE_BREAK).filter((clause) => typeof clause === "string" && clause.trim().length > 0);
-
-/** Spans within ONE clause where it asserts a mechanism is absent. */
-const absenceSpans = (clause) => {
-  const spans = [];
-  for (const { regex } of ABSENCE_TEMPLATES) {
-    for (const span of matchSpans(clause, regex)) {
-      const matched = clause.slice(span.start, span.end);
-      if (NEUTRALIZED_HEAD.test(matched)) continue;
-      if (NEUTRALIZED_TAIL.test(clause.slice(span.end, span.end + 24))) continue;
-      if (DOUBLE_NEGATION.test(clause.slice(Math.max(0, span.start - 12), span.start))) continue;
-      spans.push(span);
-    }
-  }
-  return spans;
-};
-
-const isNear = (a, b) => a.start - b.end <= NEGATION_WINDOW && b.start - a.end <= NEGATION_WINDOW;
-
 const oneLine = (text, limit = 160) => {
   const flat = text.replace(/\s+/gu, " ").trim();
   return flat.length <= limit ? flat : flat.slice(0, limit) + "…";
 };
 
-/**
- * Fabrication gate for a diff whose defences are present and commented.
- *
- * `score` is BINARY PER RUN — 1 when no finding claims a declared defence is
- * missing, 0 otherwise — because the pre-registered bar counts RUNS out of 20.
- * A finding-weighted ratio would score one fabricated claim as 0 in a
- * one-finding review and 0.9 in a ten-finding review while the bar counts both
- * as one failed run (plan review F5). Findings are deduplicated for the same
- * reason: one finding matching three defences is one fabricating finding.
- *
- * Reads the case's `presentDefences` var: [{ label, patterns[] }].
- */
-export function noFabricatedAbsence(output, context) {
-  const read = readReview(output);
-  if (read.review === undefined) return { pass: false, score: 0, reason: read.reason };
-  const review = read.review;
-
-  const defences = context?.vars?.presentDefences;
-  if (!Array.isArray(defences) || defences.length === 0) {
-    return { pass: false, score: 0, reason: "No presentDefences configured for this case" };
-  }
-
-  // Fails closed, like reviewMustPass: a broken envelope is not a clean run.
-  if (!Array.isArray(review?.findings)) {
-    return { pass: false, score: 0, reason: "Review carries no findings array" };
-  }
-  const total = review.findings.length;
-  if (total === 0) {
-    return { pass: true, score: 1, reason: "No findings, so nothing claims a present defence is missing" };
-  }
-
-  const offenders = new Map();
-  const componentResults = [];
-  let brokenPatterns = 0;
-
-  for (const defence of defences) {
-    const label = String(defence?.label ?? "(unlabelled)");
-    const compiled = compilePatterns(defence?.patterns);
-    if (compiled.compiled === undefined) {
-      brokenPatterns += 1;
-      componentResults.push({ pass: false, score: 0, reason: compiled.reason + " for " + label });
-      continue;
-    }
-
-    const claimedBy = [];
-    review.findings.forEach((finding, index) => {
-      const prose = findingProse(finding);
-      if (prose.length === 0) return;
-      // The defence and the absence claim must sit in the SAME clause. Proximity
-      // survives only as a secondary constraint inside it.
-      const claimed = splitClauses(prose).some((clause) => {
-        const absences = absenceSpans(clause);
-        if (absences.length === 0) return false;
-        return compiled.compiled.some((pattern) =>
-          matchSpans(clause, pattern).some((span) => absences.some((absence) => isNear(span, absence))),
-        );
-      });
-      if (!claimed) return;
-      claimedBy.push(index);
-      const entry = offenders.get(index) ?? { labels: new Set(), prose };
-      entry.labels.add(label);
-      offenders.set(index, entry);
-    });
-
-    componentResults.push({
-      pass: claimedBy.length === 0,
-      score: claimedBy.length === 0 ? 1 : 0,
-      reason:
-        claimedBy.length === 0
-          ? "Not claimed missing: " + label
-          : "Claimed missing by finding(s) " + claimedBy.join(", ") + ": " + label,
-    });
-  }
-
-  // A defence whose patterns did not compile was never graded, so a clean
-  // result here would be a broken instrument reading as a clean run.
-  if (brokenPatterns > 0) {
-    return {
-      pass: false,
-      score: 0,
-      reason: String(brokenPatterns) + " of " + String(defences.length) + " defence(s) have unusable patterns",
-      componentResults,
-    };
-  }
-
-  const fabricating = [...offenders.keys()];
-  if (fabricating.length === 0) {
-    return {
-      pass: true,
-      score: 1,
-      reason: "No finding claims a present defence is missing (" + String(total) + " finding(s) graded)",
-      componentResults,
-    };
-  }
-
-  const detail = fabricating
-    .map((index) => {
-      const entry = offenders.get(index);
-      return "#" + String(index) + " [" + [...entry.labels].join(", ") + '] "' + oneLine(entry.prose) + '"';
-    })
-    .join("; ");
-  return {
-    pass: false,
-    score: 0,
-    reason:
-      String(fabricating.length) +
-      " of " +
-      String(total) +
-      " finding(s) claim a present defence is missing: " +
-      detail,
-    componentResults,
-  };
-}
 
 /**
  * Over-suppression guard for the paired vulnerable fixture: the planted defect

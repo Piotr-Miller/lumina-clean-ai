@@ -258,58 +258,15 @@ tests:
   # zero getFileContext calls in every recorded configuration — so attaching a
   # fixtureRoot would add cost without changing what the case can observe.
   #
-  # Ground truth: there is nothing critical to find. All three defences are
+  # Ground truth: there is nothing critical to find. All four defences are
   # present AND commented, which is the shape that produced PR #127's
   # fabrications (one flagged a line two below the comment explaining the very
-  # defence it called missing).
+  # defence it called missing). The rubric below is the gate; it names those
+  # four defences itself, which is why this case carries no pattern vars.
   - description: Hardening diff whose defences are present and commented — measures fabricated absence claims
     vars:
       diff: file://./fixtures/hardening-defended.diff
-      # Each label is a defence the diff DEMONSTRABLY contains. `patterns` match
-      # the topic wording a finding would use; the grader additionally requires a
-      # nearby negation, so an approving mention is not a fabrication.
-      presentDefences:
-        - label: control-character stripping before logging
-          patterns:
-            - "sanitiz"
-            - "control[- ]char"
-            - "log (inject|forg|spoof)"
-            - "logSafeKey"
-        - label: anchored allowlist pattern on the object key
-          patterns:
-            - "validat"
-            - "anchor"
-            - "allow[- ]?list"
-            - "OBJECT_KEY"
-            # The finder names the validator and its subject far more often than
-            # it says "validation". Without these, "the object key isn't checked"
-            # and "parseObjectKey is never called" matched an absence template but
-            # no defence, so both scored as clean runs (Phase 1 re-review, 1.14).
-            - "parseObjectKey"
-            - "object[- ]?key"
-        - label: path-traversal rejection
-          patterns:
-            - "travers"
-            - 'path (escape|injection)'
-            - '\.\.\/'
-        - label: key length bound
-          patterns:
-            - "length (limit|cap|bound|check)"
-            - "size limit"
-            - "MAX_KEY_LENGTH"
-            - "unbounded"
     assert:
-      # DETERMINISTIC FLOOR, not the gate. Binary per run, so it shares the bar's
-      # unit, but it is high-precision and deliberately low-recall: it catches
-      # only unambiguous absence templates that name their own mechanism. Six
-      # review rounds failed to make a regex matcher trustworthy for recall over
-      # open-ended review prose, so recall moved to the rubric below and this
-      # became the free signal that corroborates it. A disagreement where the
-      # floor fires and the rubric does not is the interesting one — that is a
-      # rubric miss, and it is worth reading the row.
-      - type: javascript
-        value: file://./assertions.mjs:noFabricatedAbsence
-        metric: fabrication_floor
       # Observational: 1 until findings carry evidence (Phase 3), then the share
       # of offered quotes that are verbatim. Gates nothing.
       - type: javascript

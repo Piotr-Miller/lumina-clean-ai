@@ -35,19 +35,11 @@ export function scoreIssueRecall(
   context: { vars: { expectedIssues: ExpectedIssue[] } },
 ): AssertionResult;
 
-/** A defence the fixture declares as PRESENT, so claiming it missing is a fabrication. */
-export interface PresentDefence {
-  label: string;
-  patterns: unknown[];
-}
-
 /** The single planted vulnerability the over-suppression guard requires reported. */
 export interface ExpectedDefect {
   label: string;
   patterns: unknown[];
 }
-
-export function noFabricatedAbsence(output: unknown, context: ToolAssertionContext): AssertionResult;
 
 export function requireDefectReported(output: unknown, context: ToolAssertionContext): AssertionResult;
 

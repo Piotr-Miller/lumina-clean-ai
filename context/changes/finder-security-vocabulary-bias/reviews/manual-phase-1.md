@@ -335,3 +335,41 @@ does not cover the new attachment and grammatical-direction failures.
   be attached within the same claim/clause. Generic omission and missing-state templates should name
   the missing mechanism rather than borrowing it solely through proximity.
 - Add the focused clean cases above to the shipping-pattern regression matrix and repeat this gate.
+
+---
+
+## Round 3 disposition (2026-08-14, Claude)
+
+**1.15 — accepted as PASS and checked.** The independent read is what makes it worth having: the rubric
+is now the only fabrication signal, and I wrote it, so my own confirmation would have been close to
+worthless as validation.
+
+**1.14 — RETIRED with the instrument, on this review's recommendation.**
+
+Verified before acting, as with every previous round: 5 of 6 of the reported clean sentences raised a
+false alarm locally. The narrowed floor fails at precision, which after the inversion was the only
+property it still needed.
+
+So it is deleted rather than patched an eighth time — `noFabricatedAbsence`, the template vocabulary,
+the clause splitter, the neutralizers, the `fabrication_floor` metric, its wiring, its tests and its
+"documented miss" corpus. 676 lines removed, 41 added. Criterion 1.14 is resolved as
+`N/A (instrument retired)` rather than ticked, because it was never satisfied and marking it done would
+misrepresent seven rounds of failure as a pass.
+
+The reasoning behind retiring rather than keeping it as noisy corroboration: on a paid run a
+cross-check with this false-alarm rate produces disagreements a human must then adjudicate, spending
+exactly the attention it was supposed to save. The alternative — keep it and measure its false-alarm
+rate in Phase 2 — spends real rows quantifying an instrument already decided against.
+
+The two safeguards on the remaining gate are unaffected, and now carry the full weight: 1.15 validates
+the rubric's wording before any spend (passed, this review), and 2.6 validates its verdicts against a
+hand-read of the 20 baseline rows afterwards, with ≥3 misgrades routing the change to INVALID-FIXTURE.
+
+**Stale prose** — both fixed. `promptfooconfig.yaml` said "All three defences" where the fixture carries
+four; `assertions.mjs` still called the matcher the "Fabrication gate". That header is now a record of
+why no deterministic matcher lives there.
+
+**Recorded as a lesson.** `context/foundation/lessons.md` gains "Don't grade natural language with
+regexes — set a round budget before you start, and spend it on the model instead". Seven rounds is the
+most expensive thing in this change, and the generalizable part is not "regexes are bad" but that the
+round count was itself the evidence, and nobody was counting it.

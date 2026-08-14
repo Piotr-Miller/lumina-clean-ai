@@ -8,7 +8,6 @@
 // node, so it stays available when the vitest gate is not the tool at hand.
 import {
   countToolCalls,
-  noFabricatedAbsence,
   requireDefectReported,
   requireToolContext,
   reviewMustPass,
@@ -126,43 +125,9 @@ check("a manufactured critical fails no_false_alarms", reviewMustPass(reviewWith
 check("a drifted bare array fails no_false_alarms", reviewMustPass(JSON.stringify([{ severity: "major" }])), false);
 
 
-// --- Hardening precision -----------------------------------------------------
-// The fabrication metric decides a pre-registered bar, so its two boundaries get
-// bare-node cover too: the absence claim it must catch, and the approving
-// mention it must NOT read as a fabrication.
-
-const defences = [
-  { label: "sanitization", patterns: ["sanitiz", "control[- ]char"] },
-  { label: "validation", patterns: ["validat"] },
-  { label: "traversal rejection", patterns: ["travers"] },
-];
-const claiming = (description) => JSON.stringify({ summary: "s", findings: [{ description }] });
-const withDefences = (output) => noFabricatedAbsence(output, { vars: { presentDefences: defences } });
-
-check("an absence claim about a present defence scores 0", withDefences(claiming("There is no validation.")), false);
-check(
-  "an approving mention is not a fabrication",
-  withDefences(claiming("logSafeKey strips control characters correctly.")),
-  true,
-);
-check(
-  "a neutralized negation is not a fabrication",
-  withDefences(claiming("No need to sanitize further; the pattern already rejects it.")),
-  true,
-);
-check(
-  "one finding matching three defences counts once",
-  withDefences(claiming("No validation, no sanitization, traversal not rejected.")),
-  false,
-  "1 of 1 finding(s)",
-);
-check("a review with no findings scores 1", withDefences(JSON.stringify({ summary: "s", findings: [] })), true);
-check(
-  "evidence is not searched for absence claims",
-  withDefences(JSON.stringify({ summary: "s", findings: [{ description: "Naming.", evidence: "not validated" }] })),
-  true,
-);
-check("a broken envelope fails closed", withDefences(JSON.stringify([{ description: "x" }])), false);
+// --- Hardening fixtures ------------------------------------------------------
+// The fabrication metric is an llm-rubric and cannot be checked from bare node.
+// What remains here is the over-suppression guard and quote fidelity.
 
 const defect = { label: "traversal", patterns: ["travers", "unvalidated"] };
 const guard = (finding) =>
