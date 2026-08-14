@@ -177,6 +177,43 @@ describe("hardening fabrication patterns", () => {
   ])("does not fire on a negated or benign permission: %s", (description) => {
     expect(fabricates(description)).toBe(false);
   });
+
+  // Round 3 of the manual re-verification: 11 of 14 adversarial clean probes were
+  // false positives, from two causes. POST-VERBAL negation and approving
+  // complements are invisible to a lookbehind guard, and the permissive template
+  // stops at the attack phrase so it never sees "impossible" or "to be rejected".
+  it.each([
+    "OBJECT_KEY allows no path traversal sequences.",
+    "The object-key validator permits no arbitrary path characters.",
+    "The anchored allowlist leaves path traversal impossible.",
+    "parseObjectKey allows path traversal attempts to be rejected before download.",
+    "The explicit object-key check enables unauthorized paths to be rejected.",
+    "The parseObjectKey test allows path traversal payloads to exercise the rejection branch.",
+    "OBJECT_KEY is anchored; this allows arbitrary metadata in a separate audit field.",
+  ])("does not fire on an approving permissive form: %s", (description) => {
+    expect(fabricates(description)).toBe(false);
+  });
+
+  // The other cause: character proximity is not ATTACHMENT. Each of these pairs a
+  // satisfied defence with an omission of something else entirely, and every one
+  // scored as a fabrication once `object[- ]?key` widened the topic. Clause
+  // scoping is what separates them — the topic and the absence are in different
+  // clauses.
+  it.each([
+    "Object key handling is correct; this helper omits telemetry on success.",
+    "The object-key is valid, while documentation is absent.",
+    "The object key is valid; error handling is missing for network failures.",
+    "Object-key construction is safe; the function skips an optional debug log.",
+  ])("does not link a satisfied defence to an unrelated omission: %s", (description) => {
+    expect(fabricates(description)).toBe(false);
+  });
+
+  // …while a single-clause absence about the same topic must still fire, which is
+  // what makes clause scoping the fix rather than just dropping the topic pattern.
+  it("still fires when the absence and the defence share one clause", () => {
+    expect(fabricates("The object key isn't checked before it reaches storage.")).toBe(true);
+    expect(fabricates("parseObjectKey is never called before the path is built.")).toBe(true);
+  });
 });
 
 // The guard exists because a "fix" that suppresses real findings would otherwise

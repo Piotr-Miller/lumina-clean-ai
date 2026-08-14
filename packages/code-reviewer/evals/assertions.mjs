@@ -292,8 +292,13 @@ const DEFEND =
 // traversal" claims an absence by naming what gets through. Kept strictly
 // separate from MECHANISM, because negating one of these is approval while
 // negating a mechanism is a fabrication.
+// `arbitrary` must MODIFY a security-relevant object: "arbitrary characters" is
+// an attack, "arbitrary metadata in a separate audit field" is not (Phase 1
+// re-verification round 3).
 const ATTACK =
-  "(?:travers\\w*|inject\\w*|xss|csrf|ssrf|arbitrary|unauthoriz\\w*|unauthoris\\w*|cross-user|other users?" +
+  "(?:travers\\w*|inject\\w*|xss|csrf|ssrf|unauthoriz\\w*|unauthoris\\w*|cross-user|other users?" +
+  "|arbitrary\\s+(?:path|paths|key|keys|file|files|object|objects|character|characters|input|inputs" +
+  "|value|values|segment|segments|content)" +
   "|any (?:path|key|file|object)|escape sequences?|control char\\w*|\\.\\.\\/)";
 
 // Privative adjectives — an absence claim carrying no separate negation word,
@@ -301,42 +306,77 @@ const ATTACK =
 const PRIVATIVE =
   "\\bun(?:validated|sanitized|sanitised|checked|escaped|encoded|bounded|limited|filtered|verified|guarded|restricted)\\b";
 
+// Templates are TAGGED, because the permissive family needs guards none of the
+// others do: it is the only one whose match can be reversed by words that come
+// AFTER it.
 const ABSENCE_TEMPLATES = [
   // "no validation", "missing traversal check", "without sanitization"
-  new RegExp("\\b(?:no|missing|absent|without|lacks?|lacking)\\s+(?:\\w+[\\s-]){0,2}" + MECHANISM + "\\b", "giu"),
+  {
+    kind: "mechanism",
+    regex: new RegExp("\\b(?:no|missing|absent|without|lacks?|lacking)\\s+(?:\\w+[\\s-]){0,2}" + MECHANISM + "\\b", "giu"),
+  },
   // "is not validated", "was never checked", "isn't checked", "is not provided"
-  new RegExp("\\b(?:is|are|was|were)(?:\\s+(?:not|never)|n't)\\s+(?:\\w+\\s+){0,2}" + APPLIED + "\\b", "giu"),
+  {
+    kind: "mechanism",
+    regex: new RegExp("\\b(?:is|are|was|were)(?:\\s+(?:not|never)|n't)\\s+(?:\\w+\\s+){0,2}" + APPLIED + "\\b", "giu"),
+  },
   // "fails to sanitize", "neglects to check" — this family genuinely takes "to".
-  new RegExp("\\b(?:fails?|failed|neglects?|neglected|forgets?|forgot)\\s+to\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
+  {
+    kind: "mechanism",
+    regex: new RegExp("\\b(?:fails?|failed|neglects?|neglected|forgets?|forgot)\\s+to\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
+  },
   // "does not validate", "doesn't check" — a DIRECT negated verb, no "to". These
   // were previously folded into the "fails to" family above, so the matcher only
   // recognised the ungrammatical "does not TO validate" and missed every natural
   // form (Phase 1 re-review, 1.14).
-  new RegExp("\\b(?:does|do|did)(?:\\s+not|n't)\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
-  // "omits validation", "skips the check", "bypasses parseObjectKey" — omission
-  // verbs carry the absence themselves; the defence proximity gate supplies the
-  // subject, so the verb needs no object vocabulary of its own.
-  new RegExp("\\b(?:omits?|omitted|skips?|skipped|bypasses|bypassed|forgoes|foregoes)\\b", "giu"),
+  {
+    kind: "mechanism",
+    regex: new RegExp("\\b(?:does|do|did)(?:\\s+not|n't)\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
+  },
+  // "omits validation", "skips the check", "bypasses parseObjectKey". These carry
+  // no object of their own, so they rely entirely on the clause gate to supply the
+  // subject — which is why clause scoping, not character proximity, is what makes
+  // them safe (round 3: "object key handling is correct; this helper omits
+  // telemetry" was a fabrication under a character window).
+  { kind: "mechanism", regex: new RegExp("\\b(?:omits?|omitted|skips?|skipped|bypasses|bypassed|forgoes|foregoes)\\b", "giu") },
   // "the guard is missing", "the cap is absent"
-  new RegExp("\\b(?:is|are|was|were)\\s+(?:missing|absent)\\b", "giu"),
+  { kind: "mechanism", regex: new RegExp("\\b(?:is|are|was|were)\\s+(?:missing|absent)\\b", "giu") },
   // "there is no way to reject traversal", "no logic to validate the key" — the
   // mechanism is named by a VERB here, so the noun templates above miss it.
-  new RegExp(
-    "\\b(?:no|without)\\s+(?:\\w+\\s+){0,2}(?:way|ways|means|mechanism|logic|code|step|steps|attempt|handling)\\s+to\\s+(?:\\w+\\s+){0,2}" +
-      DEFEND,
-    "giu",
-  ),
+  {
+    kind: "mechanism",
+    regex: new RegExp(
+      "\\b(?:no|without)\\s+(?:\\w+\\s+){0,2}(?:way|ways|means|mechanism|logic|code|step|steps|attempt|handling)\\s+to\\s+(?:\\w+\\s+){0,2}" +
+        DEFEND,
+      "giu",
+    ),
+  },
   // "allows path traversal", "permits arbitrary characters" — an absence stated
-  // POSITIVELY, through what the missing defence lets through. There is no
-  // negation anywhere in these, so every template above misses them, and they are
-  // among the most natural ways to report a missing guard.
-  new RegExp(
-    "\\b(?:allows?|allowed|allowing|permits?|permitted|enables?|enabled|lets?|leaves?)\\s+(?:\\w+[\\s-]){0,3}" +
-      ATTACK,
-    "giu",
-  ),
-  new RegExp(PRIVATIVE, "giu"),
+  // POSITIVELY, through what the missing defence lets through. No negation appears
+  // anywhere in these, so every template above misses them by construction.
+  {
+    kind: "permissive",
+    regex: new RegExp(
+      "\\b(?:allows?|allowed|allowing|permits?|permitted|enables?|enabled|lets?|leaves?)\\s+(?:\\w+[\\s-]){0,3}" +
+        ATTACK,
+      "giu",
+    ),
+  },
+  { kind: "privative", regex: new RegExp(PRIVATIVE, "giu") },
 ];
+
+// A permissive verb is reversed by a negative object — "allows NO path traversal"
+// — which no lookbehind can see because the negation follows the verb.
+const POST_VERBAL_NEGATION = /\b(?:no|never|nothing|none|neither)\b/iu;
+
+// …and by a complement stating the attack is prevented or exists only to be
+// rejected: "leaves traversal impossible", "allows traversal attempts to be
+// rejected". Both describe a WORKING defence.
+const APPROVING_COMPLEMENT =
+  /\b(?:impossible|unreachable|infeasible|impractical|harmless)\b|\bto\s+be\s+(?:rejected|blocked|denied|refused|caught|prevented|stopped|filtered|discarded)\b/iu;
+
+// A test may legitimately feed attack payloads; that is coverage, not a hole.
+const TEST_CONTEXT = /\b(?:test|tests|spec|specs|fixture|fixtures|mock|mocks|payloads?)\b/iu;
 
 // "not unbounded" / "isn't unvalidated" APPROVE the defence, and so does "does
 // not allow arbitrary characters". Without this the privative and permissive
@@ -375,15 +415,36 @@ const matchSpans = (text, pattern) => {
   return spans;
 };
 
-/** Spans where the text asserts a MECHANISM is absent, direction included. */
-const absenceSpans = (text) => {
+/**
+ * Splits a finding into CLAUSES, the unit a claim actually lives in.
+ *
+ * Character proximity is not attachment: within an 80-character window,
+ * "Object key handling is correct; this helper omits telemetry on success" linked
+ * a defence in one clause to an omission in the next and scored a fabrication
+ * (Phase 1 re-verification round 3). A clause boundary is the fix.
+ *
+ * The sentence break requires a lowercase letter or `)` before the period and a
+ * capital after it, so a quoted `../.` or a decimal is never split.
+ */
+const CLAUSE_BREAK =
+  /;|\n|\s+[—–]\s+|,\s+(?:while|whereas|but|although|though|however|yet)\b|(?<=[a-z)])\.\s+(?=[A-Z])/gu;
+
+const splitClauses = (text) => text.split(CLAUSE_BREAK).filter((clause) => clause !== undefined);
+
+/** Spans within ONE clause where it asserts a mechanism is absent. */
+const absenceSpans = (clause) => {
   const spans = [];
-  for (const template of ABSENCE_TEMPLATES) {
-    for (const span of matchSpans(text, template)) {
-      const matched = text.slice(span.start, span.end);
+  for (const { kind, regex } of ABSENCE_TEMPLATES) {
+    for (const span of matchSpans(clause, regex)) {
+      const matched = clause.slice(span.start, span.end);
       if (NEUTRALIZED_HEAD.test(matched)) continue;
-      if (NEUTRALIZED_TAIL.test(text.slice(span.end, span.end + 24))) continue;
-      if (DOUBLE_NEGATION.test(text.slice(Math.max(0, span.start - 12), span.start))) continue;
+      if (NEUTRALIZED_TAIL.test(clause.slice(span.end, span.end + 24))) continue;
+      if (DOUBLE_NEGATION.test(clause.slice(Math.max(0, span.start - 12), span.start))) continue;
+      if (kind === "permissive") {
+        if (POST_VERBAL_NEGATION.test(matched)) continue;
+        if (APPROVING_COMPLEMENT.test(clause.slice(span.end, span.end + 48))) continue;
+        if (TEST_CONTEXT.test(clause)) continue;
+      }
       spans.push(span);
     }
   }
@@ -445,11 +506,15 @@ export function noFabricatedAbsence(output, context) {
     review.findings.forEach((finding, index) => {
       const prose = findingProse(finding);
       if (prose.length === 0) return;
-      const absences = absenceSpans(prose);
-      if (absences.length === 0) return;
-      const claimed = compiled.compiled.some((pattern) =>
-        matchSpans(prose, pattern).some((span) => absences.some((absence) => isNear(span, absence))),
-      );
+      // The defence and the absence claim must sit in the SAME clause. Proximity
+      // survives only as a secondary constraint inside it.
+      const claimed = splitClauses(prose).some((clause) => {
+        const absences = absenceSpans(clause);
+        if (absences.length === 0) return false;
+        return compiled.compiled.some((pattern) =>
+          matchSpans(clause, pattern).some((span) => absences.some((absence) => isNear(span, absence))),
+        );
+      });
       if (!claimed) return;
       claimedBy.push(index);
       const entry = offenders.get(index) ?? { labels: new Set(), prose };

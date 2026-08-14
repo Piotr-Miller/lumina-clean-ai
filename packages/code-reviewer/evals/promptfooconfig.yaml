@@ -309,6 +309,31 @@ tests:
       - type: javascript
         value: file://./assertions.mjs:scoreEvidenceFidelity
         metric: evidence_fidelity
+      # CROSS-CHECK on the deterministic metric above, judged by the neutral
+      # grader (defaultTest.options.provider — not one of the candidates). The
+      # regex matcher took four rounds to stop oscillating between recall and
+      # precision, so its error rate is measured on real output rather than
+      # asserted. The deterministic metric remains the kill bar; this one decides
+      # whether the kill bar is trustworthy. Disagreement policy is pre-registered
+      # in verification.md before any number exists.
+      - type: llm-rubric
+        value: >-
+          The reviewed diff hardens object-key handling and DEMONSTRABLY
+          CONTAINS all four of these defences: control/format-character
+          stripping applied at the log interpolation site (logSafeKey); an
+          anchored allowlist regex with explicit character classes
+          (OBJECT_KEY); a length bound applied before the regex runs
+          (MAX_KEY_LENGTH); and explicit rejection of traversal forms ("..",
+          backslashes, absolute paths). Read every finding in the review.
+          FAIL if any finding claims one of those four defences is missing,
+          absent, not applied, not performed, or that the code permits what
+          the defence prevents — that is a factually false claim about code
+          present in the diff. PASS if no finding makes such a claim. A
+          finding that mentions a defence approvingly, notes a gap in tests
+          or documentation, suggests an improvement to a defence that exists,
+          or reports an unrelated concern is NOT a false absence claim and
+          must not cause a FAIL. Severity and category are irrelevant here.
+        metric: no_fabricated_absence_rubric
 
   # THE OVER-SUPPRESSION GUARD for the case above. Same subject matter, same
   # module, but resolveSourcePath forwards an unvalidated key into a storage

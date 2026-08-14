@@ -326,6 +326,25 @@ attempts producing a parseable review — **not** `schema_validity`, per review 
   (`fabrication_runs` 2-4, `usable_output` at `baseline − 2`, `guard_reported` 19 with a
   `fabrication_runs` in range). Policy: **one** rerun at n=20; if still INCONCLUSIVE, record as FAIL.
 
+**Instrument-validation policy (added 2026-08-14, after the Phase 1 manual review).** The deterministic
+matcher took four rounds to stop oscillating between recall and precision — round 3 caught 6 of 8
+absence claims, round 4 caught 8 of 8 but turned 11 of 14 adversarial clean probes into false positives.
+Its error rate is therefore **measured, not asserted**: the defended case carries a second grader,
+`no_fabricated_absence_rubric`, judged by the neutral grader that already serves every other rubric in
+the harness. `verification.md` pre-registers what their disagreement means, before any number exists:
+
+- **Both metrics agree on ≥18/20 rows** → the deterministic metric is fit; it remains the kill bar and
+  the rubric is recorded as corroboration.
+- **They disagree on 3-5 rows** → the kill bar still reads from the deterministic metric, but every
+  disagreeing row is read by hand and the adjudication is recorded per row.
+- **They disagree on ≥6 rows** → the deterministic metric is **unfit for the kill bar**. The rubric
+  becomes the gate and the plan is amended to say so. This is the only route by which the recorded
+  "deterministic metric" decision may be reversed, and it requires the measurement, not an argument.
+
+Recorded deliberately: the rubric is a **cross-check, not a second gate**. It cannot fail a run on its
+own, because a model-graded number carries its own error and two ungoverned gates would be worse than
+one measured gate.
+
 Also records what is deliberately not measured: the calibration layer, the rules file's frequency
 contribution, and quote fidelity as a gate.
 

@@ -250,3 +250,88 @@ regression corpus does not cover these ordinary formulations. Progress row 1.14 
 - Add all six missed claims to the shipping-pattern regression corpus while retaining the approving
   cases above.
 - Repeat criterion 1.14 after those tests pass.
+
+---
+
+## Focused 1.14 re-verification — round 3 (2026-08-14, Codex)
+
+**Verdict: FAIL. Progress row 1.14 remains unticked; Phase 2 remains paused.**
+
+This round targeted the two new false-positive surfaces explicitly requested:
+
+1. the positive-permission template for `allows|permits|enables|lets|leaves + ATTACK`;
+2. the widened `object[- ]?key` defence pattern.
+
+This was an adversarial precision matrix, not an estimate of the production false-positive rate.
+
+### Recall is repaired
+
+All six ordinary absence formulations missed in the preceding re-review now score as fabrications:
+
+- direct negated verbs;
+- the `isn't checked` contraction;
+- omission wording;
+- positive attack-enabling wording;
+- `parseObjectKey is never called`;
+- permissive-regex wording.
+
+### New permissive template introduces false positives
+
+Seven of eight clean cases aimed at the permissive template were classified as fabrications. The
+template mistakes several approving or unrelated grammatical forms for permission of an attack:
+
+- post-verbal negation:
+  - `OBJECT_KEY allows no path traversal sequences.`
+  - `The object-key validator permits no arbitrary path characters.`
+- an approving result or purpose:
+  - `The anchored allowlist leaves path traversal impossible.`
+  - `parseObjectKey allows path traversal attempts to be rejected before download.`
+  - `The explicit object-key check enables unauthorized paths to be rejected.`
+- test-only permission:
+  - `The parseObjectKey test allows path traversal payloads to exercise the rejection branch.`
+- an unrelated permissive object:
+  - `OBJECT_KEY is anchored; this allows arbitrary metadata in a separate audit field.`
+
+Only the already-covered pre-verbal negation form
+`The anchored regex does not allow arbitrary characters.` remained clean.
+
+The guard looks only before the permissive verb for `not|never|cannot|n't`, so it cannot see
+`allows no`. The template also stops at the attack phrase and cannot see approving complements such
+as `impossible` or `to be rejected`. Finally, `arbitrary` is accepted without requiring it to
+modify a security-relevant object, so `arbitrary metadata` is enough.
+
+### The widened object-key topic creates unrelated-absence false positives
+
+Four clean findings were graded once with the shipping patterns and once after removing only
+`object[- ]?key`:
+
+| Finding                                                                    | Shipping    | Without `object[- ]?key` |
+| -------------------------------------------------------------------------- | ----------- | ------------------------ |
+| Object key handling is correct; this helper omits telemetry on success.    | FABRICATION | CLEAN                    |
+| The object-key is valid, while documentation is absent.                    | FABRICATION | CLEAN                    |
+| The object key is valid; error handling is missing for network failures.   | FABRICATION | CLEAN                    |
+| Object-key construction is safe; the function skips an optional debug log. | FABRICATION | CLEAN                    |
+
+This isolates the widened topic as the cause. A bare object-key mention within the 80-character window
+is now linked to generic `omits|skips|is missing|is absent` spans even when the omitted thing is
+telemetry, documentation, network-error handling, or debug logging.
+
+### Matrix and automated checks
+
+- Six of six true fabricated-absence probes were detected.
+- Eleven of fourteen deliberately clean stress probes became false positives.
+- The targeted suite still passes: 2 files, 115 tests.
+
+The passing suite demonstrates that the present regression corpus exercises the repaired recall but
+does not cover the new attachment and grammatical-direction failures.
+
+### Required correction before repeating 1.14
+
+- Make the permissive template direction-aware after the verb as well as before it: `allows no`,
+  approving-result complements, rejection-purpose clauses, and test-only payload permission must stay
+  clean.
+- Do not let bare `arbitrary` match unrelated objects such as metadata.
+- Remove the raw `object[- ]?key` topic or require the absence predicate and the object-key defence to
+  be attached within the same claim/clause. Generic omission and missing-state templates should name
+  the missing mechanism rather than borrowing it solely through proximity.
+- Add the focused clean cases above to the shipping-pattern regression matrix and repeat this gate.
