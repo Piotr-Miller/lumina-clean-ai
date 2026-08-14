@@ -193,23 +193,39 @@ The absence-phrase set decides what counts, so it is fixed here:
 ```
 
 **Implementation deviation (2026-08-14, Phase 1).** The pinned regex above was
-replaced during implementation, because testing it against the fixture's own
-wording showed it both over- and under-fires. Pinning the wrong detector is not
-what pinning was for, so the shipped design is:
+replaced during implementation, in two rounds. Pinning the wrong detector is not
+what pinning was for, and the wording of the fixture itself is what falsified
+each attempt.
 
-1. **Proximity, not co-occurrence.** A negation anywhere in a long finding is not
-   evidence that it attaches to the defence. The cue must fall within 80
-   characters of the defence match. Without this,
-   `"Validation looks solid; there is no test covering the traversal branch"`
-   scored as a fabrication.
-2. **Neutralized cues.** A negation whose head noun is not the defence
-   (`no need to…`, `no test covering…`, `no documentation of…`) is excluded.
-3. **Privative adjectives are cues in their own right.**
-   `"the key length is unbounded"` is an absence claim containing no negation
-   word at all, and the pinned regex missed it.
+_Round 1 (own tests)_ replaced bare co-occurrence with negation cues plus an
+80-character proximity window and a neutralized-cue blocklist, after
+`"Validation looks solid; there is no test covering the traversal branch"` scored
+as a fabrication and `"the key length is unbounded"` — an absence claim with no
+negation word in it — was missed entirely.
 
-Both corrections came from the automated pattern-quality tests, which is why
-those tests run the SHIPPING fixture vars rather than stand-ins.
+_Round 2 (Phase 1 manual review, 1.14)_ discarded cue-proximity as the basis.
+A negation near a defence says nothing about **what the negation attaches to**,
+and reviewers routinely use negative wording to APPROVE a defence, so all four of
+these scored as fabrications:
+`"No path traversal is possible because parseObjectKey rejects dot segments"`,
+`"No control characters can reach the logger because logSafeKey strips them"`,
+`"The key length is not unbounded: MAX_KEY_LENGTH caps it"`,
+`"The key is not unvalidated; OBJECT_KEY is an anchored allowlist"`.
+
+**Shipped design: absence TEMPLATES over a mechanism vocabulary.** A negation
+counts only when it attaches to the thing a defence _is_ — validation,
+sanitization, a check, a guard, a bound — and attack nouns (traversal, injection,
+XSS) are deliberately excluded from that vocabulary, because negating the attack
+is approval. Five templates cover `no <mechanism>`, `is not <applied>`,
+`fails to <defend>`, `is missing/absent`, and privative adjectives, the last
+guarded against double negation so `not unbounded` reads as approval. Proximity
+survives only as the link between an absence match and which defence it concerns.
+
+This separates the pair the manual review named:
+`"No traversal is possible because the check rejects it"` (approval) from
+`"No traversal check exists"` (fabrication). All eleven classification cases are
+pinned in `promptfooconfig.test.ts` against the SHIPPING fixture vars, which is
+why both rounds of falsification came from tests rather than from a paid run.
 
 #### 4. Suppression guard grader — field-scoped
 

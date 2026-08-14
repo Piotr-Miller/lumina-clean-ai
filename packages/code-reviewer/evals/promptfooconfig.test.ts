@@ -111,8 +111,23 @@ describe("hardening fabrication patterns", () => {
     "The allowlist pattern is anchored and the character classes are explicit, which is the right approach.",
     "Validation looks solid; there is no test covering the traversal rejection branch though.",
     "Consider extracting MAX_KEY_LENGTH into shared config so other modules reuse the same bound.",
+    // Regression set from the Phase 1 manual review (1.14). Every one of these
+    // uses NEGATIVE wording to APPROVE a defence, and the first cue-proximity
+    // implementation scored all four as fabrications.
+    "No control characters can reach the logger because logSafeKey strips them.",
+    "No path traversal is possible because parseObjectKey rejects dot segments.",
+    "The key length is not unbounded: MAX_KEY_LENGTH caps it before matching.",
+    "The key is not unvalidated; OBJECT_KEY is an anchored allowlist.",
   ])("does not fire on approving or unrelated wording: %s", (description) => {
     expect(fabricates(description)).toBe(false);
+  });
+
+  // The pair the manual review asked the metric to separate: same attack noun,
+  // opposite claims. Negating the ATTACK is approval; negating the MECHANISM is
+  // the fabrication.
+  it("separates a negated attack from a negated mechanism", () => {
+    expect(fabricates("No traversal is possible because the check rejects it.")).toBe(false);
+    expect(fabricates("No traversal check exists.")).toBe(true);
   });
 });
 

@@ -256,20 +256,63 @@ function compilePatterns(patterns) {
 
 // Negation cues, kept as a source string so every call compiles a FRESH regex —
 // a shared /g/ regex carries lastIndex between calls and would skip matches.
-// The privative adjectives are cues in their own right: "the key length is
-// unbounded" is an absence claim with no separate negation word in it, and the
-// metric missed that shape until the fixture's own wording was tested.
-const NEGATION_CUE_SOURCE =
-  "\\b(?:no|not|never|without|missing|absent|lacks?|lacking|omits?|omitted|fails? to|neglects? to|does not|doesn't|isn't|aren't" +
-  "|un(?:bounded|validated|sanitiz(?:ed|es)|sanitised|checked|restricted|limited|guarded|escaped|filtered|verified))\\b";
+// Absence detection is TEMPLATE-based, not cue-based, because a negation near a
+// defence says nothing about what the negation attaches to. Reviewers routinely
+// use negative wording to APPROVE a defence — "no path traversal is possible
+// because parseObjectKey rejects dot segments" — and a nearby-cue heuristic
+// scores every one of those as a fabrication (Phase 1 manual review, 1.14).
+//
+// So a negation only counts when it attaches to a MECHANISM: the thing a defence
+// IS. "no traversal check exists" claims an absence; "no traversal is possible"
+// asserts the opposite. The templates below encode that direction.
 
-// A negation whose head noun is NOT the defence does not claim the defence is
-// missing: "no need to sanitize further" negates the need, and "no test covering
-// the traversal branch" is a coverage finding about a defence it agrees exists.
-// Both would otherwise score an APPROVING review as a fabrication — the metric's
-// most likely false positive (plan Phase 1 manual criterion 1.14).
-const NEUTRALIZED_CUE =
-  /^(?:no|not)\s+(?:need|needs|reason|reasons|point|harm|issue|issues|problem|problems|concern|concerns|change|changes|test|tests|testing|coverage|spec|specs|assertion|assertions|documentation|docs|comment|comments)\b/iu;
+// The nouns a defence is. Deliberately excludes attack nouns (traversal,
+// injection, XSS): those are what a defence PREVENTS, and negating them is
+// approval.
+const MECHANISM =
+  "(?:validat\\w*|sanitiz\\w*|sanitis\\w*|escap\\w*|encod\\w*|check\\w*|guard\\w*|limit\\w*|bound\\w*|cap|caps|capping" +
+  "|filter\\w*|verif\\w*|enforc\\w*|protection|rejection|restrict\\w*|constraint\\w*|allow-?list\\w*|white-?list\\w*)";
+
+// Past participles of applying a defence, for "is/are not <participle>".
+const APPLIED =
+  "(?:validated|sanitized|sanitised|checked|escaped|encoded|bounded|limited|capped|filtered|verified|enforced|guarded" +
+  "|rejected|restricted|applied|present|provided|implemented|used|called|performed)";
+
+// Bare verb stems, for "fails to <verb>".
+const DEFEND =
+  "(?:validat|sanitiz|sanitis|escap|encod|check|bound|limit|cap|filter|verif|enforc|guard|reject|restrict)\\w*";
+
+// Privative adjectives — an absence claim carrying no separate negation word,
+// e.g. "the key length is unbounded". Guarded against double negation below.
+const PRIVATIVE =
+  "\\bun(?:validated|sanitized|sanitised|checked|escaped|encoded|bounded|limited|filtered|verified|guarded|restricted)\\b";
+
+const ABSENCE_TEMPLATES = [
+  // "no validation", "missing traversal check", "without sanitization"
+  new RegExp("\\b(?:no|missing|absent|without|lacks?|lacking)\\s+(?:\\w+[\\s-]){0,2}" + MECHANISM + "\\b", "giu"),
+  // "is not validated", "was never checked", "is not provided"
+  new RegExp("\\b(?:is|are|was|were)\\s+(?:not|never)\\s+(?:\\w+\\s+){0,2}" + APPLIED + "\\b", "giu"),
+  // "fails to sanitize", "does not to check" style constructions
+  new RegExp(
+    "\\b(?:fails?|failed|neglects?|neglected|omits?|omitted|does not|doesn't|do not|don't)\\s+to\\s+(?:\\w+\\s+){0,2}" +
+      DEFEND,
+    "giu",
+  ),
+  // "the guard is missing", "the cap is absent"
+  new RegExp("\\b(?:is|are|was|were)\\s+(?:missing|absent)\\b", "giu"),
+  new RegExp(PRIVATIVE, "giu"),
+];
+
+// "not unbounded" / "isn't unvalidated" APPROVE the defence. Without this the
+// privative template inverts the very sentences it was added to catch.
+const DOUBLE_NEGATION = /\b(?:not|never|isn't|aren't|nor)\s+$/iu;
+
+// A blocked head noun inside the filler means the negation attaches to something
+// other than the defence: "no need to sanitize further", "no documentation of
+// the validation". "no test covering X" already fails the templates, because
+// "test" is not a mechanism.
+const NEUTRALIZED_HEAD =
+  /\b(?:need|needs|reason|reasons|point|harm|issue|issues|problem|problems|concern|concerns|change|changes|test|tests|testing|coverage|spec|specs|assertion|assertions|documentation|docs|comment|comments)\b/iu;
 
 // A negation anywhere in a long finding is not evidence that it attaches to the
 // defence. Requiring proximity is what separates "no validation of the key"
@@ -287,13 +330,16 @@ const matchSpans = (text, pattern) => {
   return spans;
 };
 
-const negationSpans = (text) => {
-  const scanner = new RegExp(NEGATION_CUE_SOURCE, "giu");
+/** Spans where the text asserts a MECHANISM is absent, direction included. */
+const absenceSpans = (text) => {
   const spans = [];
-  let match;
-  while ((match = scanner.exec(text)) !== null) {
-    if (NEUTRALIZED_CUE.test(text.slice(match.index))) continue;
-    spans.push({ start: match.index, end: match.index + match[0].length });
+  for (const template of ABSENCE_TEMPLATES) {
+    for (const span of matchSpans(text, template)) {
+      const matched = text.slice(span.start, span.end);
+      if (NEUTRALIZED_HEAD.test(matched)) continue;
+      if (DOUBLE_NEGATION.test(text.slice(Math.max(0, span.start - 12), span.start))) continue;
+      spans.push(span);
+    }
   }
   return spans;
 };
@@ -353,10 +399,10 @@ export function noFabricatedAbsence(output, context) {
     review.findings.forEach((finding, index) => {
       const prose = findingProse(finding);
       if (prose.length === 0) return;
-      const negations = negationSpans(prose);
-      if (negations.length === 0) return;
+      const absences = absenceSpans(prose);
+      if (absences.length === 0) return;
       const claimed = compiled.compiled.some((pattern) =>
-        matchSpans(prose, pattern).some((span) => negations.some((cue) => isNear(span, cue))),
+        matchSpans(prose, pattern).some((span) => absences.some((absence) => isNear(span, absence))),
       );
       if (!claimed) return;
       claimedBy.push(index);
