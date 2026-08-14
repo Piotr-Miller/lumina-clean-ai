@@ -345,6 +345,37 @@ Recorded deliberately: the rubric is a **cross-check, not a second gate**. It ca
 own, because a model-graded number carries its own error and two ungoverned gates would be worse than
 one measured gate.
 
+### AMENDMENT — roles inverted before Phase 2 (2026-08-14)
+
+The reversal above was taken, but on evidence the route did not name, so the deviation is recorded
+rather than glossed. The route anticipated disagreement measured on 20 real rows in Phase 2. What
+arrived first was cheaper and more decisive: the deterministic matcher failed a focused adversarial
+matrix **14/14** at `f5db073`, in the sixth review round, with every defect introduced by the fix from
+the fifth. Six rounds produced no convergence — each fixed its named cases and broke adjacent ones —
+so paying for a baseline read by that instrument would have measured the instrument, not the finder.
+
+**The rubric `no_fabricated_absence` is now the gate. The deterministic matcher is `fabrication_floor`,
+an observational cross-check**, narrowed to high-precision templates that name their own mechanism.
+Its blind spots are pinned as explicit "documented miss" tests rather than left implicit.
+
+Two consequences, both recorded so they cannot be quietly forgotten:
+
+- **What validates the rubric.** Its error rate is now the load-bearing unknown, and it cannot validate
+  itself. Phase 2's manual criterion 2.6 is therefore promoted from a sanity check to **the rubric's
+  validation**: the 20 defended-fixture reviews are read by hand, and the rubric's verdict is compared
+  against that reading row by row. If the rubric misgrades ≥3 of 20, it is unfit too and the change
+  routes to INVALID-FIXTURE with the finding recorded — an honest negative about our ability to measure
+  the defect, which is a real result.
+- **Which disagreement is interesting.** The floor is high-precision, so **floor fires + rubric clean**
+  is very likely a rubric miss and that row must be read. The reverse — rubric fires, floor clean — is
+  expected and unremarkable, because the floor's documented misses cover exactly those forms.
+
+The honest risk in this amendment: moving a gate because the instrument keeps failing it is what
+pre-registration exists to prevent. What makes it legitimate rather than convenient is that the
+criterion is unchanged — a run still fails on a fabricated absence claim — and only the instrument
+implementing it changed, on recorded evidence, with the replacement's own validation pre-registered
+above before any number exists.
+
 Also records what is deliberately not measured: the calibration layer, the rules file's frequency
 contribution, and quote fidelity as a gate.
 

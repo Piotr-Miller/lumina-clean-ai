@@ -292,38 +292,37 @@ const DEFEND =
   "|normaliz|normalis|canonicaliz|canonicalis|scrub)\\w*";
 
 // What a defence PREVENTS. Used only by the permissive template — "allows path
-// traversal" claims an absence by naming what gets through. Kept strictly
-// separate from MECHANISM, because negating one of these is approval while
-// negating a mechanism is a fabrication.
-// `arbitrary` must MODIFY a security-relevant object: "arbitrary characters" is
-// an attack, "arbitrary metadata in a separate audit field" is not (Phase 1
-// re-verification round 3).
-const ATTACK =
-  "(?:travers\\w*|inject\\w*|xss|csrf|ssrf|unauthoriz\\w*|unauthoris\\w*|cross-user|other users?" +
-  "|arbitrary\\s+(?:path|paths|key|keys|file|files|object|objects|character|characters|input|inputs" +
-  "|value|values|segment|segments|content)" +
-  "|any (?:path|key|file|object)|escape sequences?|control char\\w*|\\.\\.\\/)";
-
-// A code identifier — camelCase or SCREAMING_CASE. This MUST be matched
-// case-SENSITIVELY: under the `i` flag every other template carries, `[A-Z]`
-// also matches lowercase, so this degrades to "any word of two or more letters"
-// and an omission verb accepts any object at all. That is exactly what let
-// "omits telemetry" through while the object slot looked like it was enforcing
-// something (self-test A1-A3). It therefore gets its own templates below, with
-// flags "gu" rather than "giu".
-const CODE_IDENT = "(?:[a-z][a-z0-9]*[A-Z]\\w*|[A-Z][A-Z0-9_]{3,})";
-
-/** What an omission verb must omit, or a missing-state template must be about. */
-const OBJECT = MECHANISM;
-
 // Privative adjectives — an absence claim carrying no separate negation word,
 // e.g. "the key length is unbounded". Guarded against double negation below.
 const PRIVATIVE =
   "\\bun(?:validated|sanitized|sanitised|checked|escaped|encoded|bounded|limited|filtered|verified|guarded|restricted)\\b";
 
-// Templates are TAGGED, because the permissive family needs guards none of the
-// others do: it is the only one whose match can be reversed by words that come
-// AFTER it.
+// A HIGH-PRECISION FLOOR, not a complete detector.
+//
+// This matcher was the fabrication gate for six review rounds and never
+// converged: each round fixed the named cases and broke adjacent ones, and the
+// last round's own fixes produced five new defect classes (sentence-initial
+// capitals, backticks between verb and identifier, a determiner read as a
+// pronoun, non-transitive inheritance, and a filler still crossing
+// conjunctions). The `llm-rubric` on the same case is now the gate; this is a
+// deterministic cross-check.
+//
+// That changes the design target. A floor must never cry fabrication on a clean
+// review; missing one is acceptable and expected, because the rubric carries
+// recall. So every template whose failures were being chased is GONE:
+//
+//   - omission verbs (omits/skips/bypasses) — needed an object slot, and the
+//     case-sensitive identifier variant broke on capitals and backticks;
+//   - the missing-state subject template — its filler crossed conjunctions at
+//     every width tried;
+//   - the permissive family (allows/permits/enables) — reversible by words after
+//     the match, which cost 11 of 14 adversarial probes in one round;
+//   - pronoun-clause inheritance — matched determiners, and only ever existed to
+//     serve the identifier templates now dropped.
+//
+// What remains names its own mechanism, so it cannot borrow a subject from
+// surrounding text. `documented misses` in promptfooconfig.test.ts pins what this
+// deliberately no longer catches, so the scope is explicit rather than accidental.
 const ABSENCE_TEMPLATES = [
   // "no validation", "missing traversal check", "without sanitization"
   {
@@ -348,42 +347,6 @@ const ABSENCE_TEMPLATES = [
     kind: "mechanism",
     regex: new RegExp("\\b(?:does|do|did)(?:\\s+not|n't)\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
   },
-  // "omits validation", "skips the check", "bypasses parseObjectKey" — the object
-  // is REQUIRED. These verbs were standalone cues borrowing their subject from the
-  // clause, which made "the object key is fine and this omits telemetry" a
-  // fabrication: a conjunction is a clause boundary that carries no break token,
-  // so no splitter rule can rescue it. Naming the object is what makes the
-  // template self-contained (self-test A1-A3).
-  {
-    kind: "mechanism",
-    regex: new RegExp(
-      "\\b(?:omits?|omitted|skips?|skipped|bypasses|bypassed|forgoes|foregoes)\\s+(?:\\w+\\s+){0,2}" + OBJECT,
-      "giu",
-    ),
-  },
-  // "the traversal check is missing", "the cap is absent" — the SUBJECT is
-  // required, for the same reason: "error handling is missing for network
-  // failures" is not a claim about a defence. The filler is {0,2}, not {0,4},
-  // because four tokens reach across a conjunction: "the key is validated and
-  // error handling is missing" linked "validated" to "is missing" (self-test A3).
-  {
-    kind: "mechanism",
-    regex: new RegExp(OBJECT + "\\s+(?:\\w+\\s+){0,2}(?:is|are|was|were)\\s+(?:missing|absent)\\b", "giu"),
-  },
-  // The identifier forms of the two templates above, case-SENSITIVE so that a
-  // named mechanism counts ("bypasses parseObjectKey", "OBJECT_KEY is missing")
-  // while an ordinary lowercase noun does not.
-  {
-    kind: "mechanism",
-    regex: new RegExp(
-      "\\b(?:omits?|omitted|skips?|skipped|bypasses|bypassed|forgoes|foregoes)\\s+(?:\\w+\\s+){0,2}" + CODE_IDENT,
-      "gu",
-    ),
-  },
-  {
-    kind: "mechanism",
-    regex: new RegExp(CODE_IDENT + "\\s+(?:\\w+\\s+){0,2}(?:is|are|was|were)\\s+(?:missing|absent)\\b", "gu"),
-  },
   // "there is no way to reject traversal", "no logic to validate the key" — the
   // mechanism is named by a VERB here, so the noun templates above miss it.
   {
@@ -394,35 +357,13 @@ const ABSENCE_TEMPLATES = [
       "giu",
     ),
   },
-  // "allows path traversal", "permits arbitrary characters" — an absence stated
-  // POSITIVELY, through what the missing defence lets through. No negation appears
-  // anywhere in these, so every template above misses them by construction.
-  {
-    kind: "permissive",
-    regex: new RegExp(
-      "\\b(?:allows?|allowed|allowing|permits?|permitted|enables?|enabled|lets?|leaves?)\\s+(?:\\w+[\\s-]){0,3}" +
-        ATTACK,
-      "giu",
-    ),
-  },
   { kind: "privative", regex: new RegExp(PRIVATIVE, "giu") },
 ];
 
-// A permissive verb is reversed by a negative object — "allows NO path traversal"
-// — which no lookbehind can see because the negation follows the verb.
-const POST_VERBAL_NEGATION = /\b(?:no|never|nothing|none|neither)\b/iu;
-
-// …and by a complement stating the attack is prevented or exists only to be
-// rejected: "leaves traversal impossible", "allows traversal attempts to be
-// rejected". Both describe a WORKING defence.
-const APPROVING_COMPLEMENT =
-  /\b(?:impossible|unreachable|infeasible|impractical|harmless)\b|\bto\s+be\s+(?:rejected|blocked|denied|refused|caught|prevented|stopped|filtered|discarded)\b/iu;
-
-// A test may legitimately feed attack payloads; that is coverage, not a hole.
-// `payloads` was originally on this list and was too broad — it silenced
-// "this allows path traversal with crafted payloads", a genuine claim (self-test
-// C1). The test nouns proper are enough.
-const TEST_CONTEXT = /\b(?:test|tests|spec|specs|fixture|fixtures|mock|mocks)\b/iu;
+// The permissive family and its three guards (post-verbal negation, approving
+// complements, test context) were removed with it. Every one of them existed to
+// stop that family inverting, and the family cost 11 of 14 adversarial probes in
+// a single round. Recall for "allows path traversal" now belongs to the rubric.
 
 // "not unbounded" / "isn't unvalidated" APPROVE the defence, and so does "does
 // not allow arbitrary characters". Without this the privative and permissive
@@ -475,36 +416,22 @@ const matchSpans = (text, pattern) => {
 const CLAUSE_BREAK =
   /;|\n|\s+[—–]\s+|,\s+(?:while|whereas|but|although|though|however|yet)\b|(?<=[a-z)])\.\s+(?=[A-Z])/gu;
 
-// A clause opening with a pronoun takes its subject from the clause before it:
-// "call parseObjectKey(raw); it is never called before the path is built" names
-// the defence in one clause and claims its absence in the next (self-test B1).
-// Such a clause is graded WITH its predecessor. This is only safe because the
-// object-bearing templates above no longer borrow a subject from proximity — the
-// same inheritance under the old standalone omission verbs would have re-broken
-// "object key handling is correct; this helper omits telemetry".
-const PRONOUN_SUBJECT = /^\s*(?:it|this|that|they|these|those)\b/iu;
-
-const splitClauses = (text) => {
-  const raw = text.split(CLAUSE_BREAK).filter((clause) => typeof clause === "string" && clause.trim().length > 0);
-  return raw.map((clause, index) =>
-    index > 0 && PRONOUN_SUBJECT.test(clause) ? raw[index - 1] + " " + clause : clause,
-  );
-};
+// Pronoun-clause inheritance was removed with the identifier templates it served.
+// It matched `this helper` — a determiner plus noun, not a pronoun — and so
+// re-created the very cross-clause false positive the clause split had just
+// fixed. It was also non-transitive, losing the subject across two hops.
+const splitClauses = (text) =>
+  text.split(CLAUSE_BREAK).filter((clause) => typeof clause === "string" && clause.trim().length > 0);
 
 /** Spans within ONE clause where it asserts a mechanism is absent. */
 const absenceSpans = (clause) => {
   const spans = [];
-  for (const { kind, regex } of ABSENCE_TEMPLATES) {
+  for (const { regex } of ABSENCE_TEMPLATES) {
     for (const span of matchSpans(clause, regex)) {
       const matched = clause.slice(span.start, span.end);
       if (NEUTRALIZED_HEAD.test(matched)) continue;
       if (NEUTRALIZED_TAIL.test(clause.slice(span.end, span.end + 24))) continue;
       if (DOUBLE_NEGATION.test(clause.slice(Math.max(0, span.start - 12), span.start))) continue;
-      if (kind === "permissive") {
-        if (POST_VERBAL_NEGATION.test(matched)) continue;
-        if (APPROVING_COMPLEMENT.test(clause.slice(span.end, span.end + 48))) continue;
-        if (TEST_CONTEXT.test(clause)) continue;
-      }
       spans.push(span);
     }
   }

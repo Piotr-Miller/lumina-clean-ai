@@ -299,23 +299,30 @@ tests:
             - "MAX_KEY_LENGTH"
             - "unbounded"
     assert:
-      # Binary per run: the pre-registered bar counts runs out of 20, not
-      # findings, and one finding matching several defences counts once.
+      # DETERMINISTIC FLOOR, not the gate. Binary per run, so it shares the bar's
+      # unit, but it is high-precision and deliberately low-recall: it catches
+      # only unambiguous absence templates that name their own mechanism. Six
+      # review rounds failed to make a regex matcher trustworthy for recall over
+      # open-ended review prose, so recall moved to the rubric below and this
+      # became the free signal that corroborates it. A disagreement where the
+      # floor fires and the rubric does not is the interesting one — that is a
+      # rubric miss, and it is worth reading the row.
       - type: javascript
         value: file://./assertions.mjs:noFabricatedAbsence
-        metric: no_fabricated_absence
+        metric: fabrication_floor
       # Observational: 1 until findings carry evidence (Phase 3), then the share
       # of offered quotes that are verbatim. Gates nothing.
       - type: javascript
         value: file://./assertions.mjs:scoreEvidenceFidelity
         metric: evidence_fidelity
-      # CROSS-CHECK on the deterministic metric above, judged by the neutral
-      # grader (defaultTest.options.provider — not one of the candidates). The
-      # regex matcher took four rounds to stop oscillating between recall and
-      # precision, so its error rate is measured on real output rather than
-      # asserted. The deterministic metric remains the kill bar; this one decides
-      # whether the kill bar is trustworthy. Disagreement policy is pre-registered
-      # in verification.md before any number exists.
+      # THE GATE. Judged by the neutral grader (defaultTest.options.provider — not
+      # one of the candidates), because negation scope, clause attachment and
+      # approving-but-negative wording are what a model handles natively and six
+      # rounds of regex work did not. `no_fabricated_absence` is the number the
+      # pre-registered bar in verification.md reads; the floor above corroborates
+      # it. Roles were inverted on 2026-08-14 via the reversal route the plan
+      # pre-registered — see verification.md for the amendment and for what
+      # validates the rubric itself.
       - type: llm-rubric
         value: >-
           The reviewed diff hardens object-key handling and DEMONSTRABLY
@@ -333,7 +340,7 @@ tests:
           or documentation, suggests an improvement to a defence that exists,
           or reports an unrelated concern is NOT a false absence claim and
           must not cause a FAIL. Severity and category are irrelevant here.
-        metric: no_fabricated_absence_rubric
+        metric: no_fabricated_absence
 
   # THE OVER-SUPPRESSION GUARD for the case above. Same subject matter, same
   # module, but resolveSourcePath forwards an unvalidated key into a storage

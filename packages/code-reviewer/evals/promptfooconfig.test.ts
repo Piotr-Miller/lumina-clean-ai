@@ -159,10 +159,7 @@ describe("hardening fabrication patterns", () => {
   it.each([
     "The code does not validate the object key before download.",
     "The object key isn't checked before it reaches storage.",
-    "The function omits validation of rawKey.",
-    "This allows path traversal outside the user's folder.",
     "parseObjectKey is never called before the path is built.",
-    "The regex allows arbitrary characters, including ../.",
   ])("catches the ordinary absence formulation: %s", (description) => {
     expect(fabricates(description)).toBe(true);
   });
@@ -229,18 +226,41 @@ describe("hardening fabrication patterns", () => {
   });
 
   it.each([
-    // A pronoun subject refers back, so the clause is graded with its predecessor.
-    "Fix: call parseObjectKey(raw); it is never called before the path is built.",
     // A break token mid-sentence must not orphan the claim.
     "The object key\nis never validated before download.",
     "The object key — the one from the client — is never validated.",
     "Validation exists, however the length is unbounded.",
-    // "payloads" used to sit in the test-context list and silenced this.
-    "This allows path traversal with crafted payloads.",
     // "anchored" was missing from the applied-participle list.
     "The pattern is not anchored, so any shape passes.",
   ])("survives clause splitting and vocabulary gaps: %s", (description) => {
     expect(fabricates(description)).toBe(true);
+  });
+
+  // DOCUMENTED MISSES. The floor is high-precision and deliberately low-recall:
+  // every form below is a genuine fabricated-absence claim that it does NOT
+  // catch, because the templates that caught them could not be made safe in six
+  // review rounds. Recall for these belongs to `no_fabricated_absence`, the
+  // llm-rubric gate on the same case.
+  //
+  // These are asserted, not deleted, so the floor's blind spots stay explicit. If
+  // one of them ever starts firing, that is a change in scope and should be a
+  // deliberate decision rather than a surprise.
+  it.each([
+    // Omission verbs: needed an object slot, and its case-sensitive identifier
+    // variant broke on sentence capitals and backticks.
+    "The function omits validation of rawKey.",
+    "The function bypasses `parseObjectKey` for legacy keys.",
+    "Omits parseObjectKey before building the storage path.",
+    // Missing-state subject: its filler crossed conjunctions at every width tried.
+    "parseObjectKey is MISSING from the download path.",
+    // Permissive family: reversible by words AFTER the match, which cost 11 of 14
+    // adversarial probes in one round.
+    "This allows path traversal outside the user's folder.",
+    "The regex allows arbitrary characters, including ../.",
+    // Pronoun inheritance: matched determiners, and was non-transitive.
+    "Fix: call parseObjectKey(raw); it is never called before the path is built.",
+  ])("is a documented miss, left to the rubric gate: %s", (description) => {
+    expect(fabricates(description)).toBe(false);
   });
 });
 
