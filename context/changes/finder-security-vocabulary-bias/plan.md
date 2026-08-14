@@ -607,18 +607,18 @@ kept in every branch, since they document the defect whether or not it is fixed.
 
 #### Automated
 
-- [ ] 1.1 Package lint passes: `cd packages/code-reviewer && npm run lint`
-- [ ] 1.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck`
-- [ ] 1.3 Unit tests pass: `cd packages/code-reviewer && npm test`
-- [ ] 1.4 Fabrication metric is binary per run: `0` with a fabrication, `1` without
-- [ ] 1.5 Fabrication metric counts one finding once across several matched defences
-- [ ] 1.6 Fabrication metric returns `1` for a zero-finding review
-- [ ] 1.7 Fabrication metric ignores `evidence`, `summary`, and `file` when matching
-- [ ] 1.8 Suppression grader fails when the defect appears only in `evidence`
-- [ ] 1.9 Suppression grader fails when the matching finding is below critical/major
-- [ ] 1.10 Quote-fidelity metric: verbatim `1`, invented `0`, canonicalizes markers and whitespace
-- [ ] 1.11 Config test fails if a new grader lands on `defaultTest` or its var is missing
-- [ ] 1.12 `node evals/recall-selfcheck.mjs` passes with the new cases
+- [x] 1.1 Package lint passes: `cd packages/code-reviewer && npm run lint` — 4d15f8c
+- [x] 1.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck` — 4d15f8c
+- [x] 1.3 Unit tests pass: `cd packages/code-reviewer && npm test` — 4d15f8c
+- [x] 1.4 Fabrication metric is binary per run: `0` with a fabrication, `1` without — 4d15f8c
+- [x] 1.5 Fabrication metric counts one finding once across several matched defences — 4d15f8c
+- [x] 1.6 Fabrication metric returns `1` for a zero-finding review — 4d15f8c
+- [x] 1.7 Fabrication metric ignores `evidence`, `summary`, and `file` when matching — 4d15f8c
+- [x] 1.8 Suppression grader fails when the defect appears only in `evidence` — 4d15f8c
+- [x] 1.9 Suppression grader fails when the matching finding is below critical/major — 4d15f8c
+- [x] 1.10 Quote-fidelity metric: verbatim `1`, invented `0`, canonicalizes markers and whitespace — 4d15f8c
+- [x] 1.11 Config test fails if a new grader lands on `defaultTest` or its var is missing — 4d15f8c
+- [x] 1.12 `node evals/recall-selfcheck.mjs` passes with the new cases — 4d15f8c
 
 #### Manual
 
