@@ -1,0 +1,60 @@
+diff --git a/src/lib/storage/object-key.ts b/src/lib/storage/object-key.ts
+index 4a1d7c2..b93f5e1 100644
+--- a/src/lib/storage/object-key.ts
++++ b/src/lib/storage/object-key.ts
+@@ -1,4 +1,55 @@
+ import { logger } from "@/lib/logger";
+ 
+ // Object keys arrive from the client and address rows the caller may not own,
+ // so every helper in this module treats its input as untrusted.
++
++// Control and format characters (CR/LF included) are stripped before any key
++// reaches a log line, so a crafted key cannot forge log entries or smuggle
++// terminal escapes into an operator's console.
++const CONTROL_CHARS = /[\p{Cc}\p{Cf}]/gu;
++
++export function logSafeKey(raw: string): string {
++  return raw.replace(CONTROL_CHARS, "");
++}
++
++// Anchored allowlist: exactly "<uuid>/source.<ext>" and nothing else. The
++// character classes are explicit rather than a permissive dot-star, so "..",
++// backslashes, absolute paths and extra path segments cannot satisfy it.
++const OBJECT_KEY =
++  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/source\.(?:jpg|jpeg|png)$/u;
++
++// Length is bounded before the pattern runs: a key is a UUID plus a short
++// suffix, so a longer input is rejected without being matched at all.
++const MAX_KEY_LENGTH = 64;
++
++export type ParsedKey = { ok: true; key: string } | { ok: false; reason: string };
++
++export function parseObjectKey(raw: unknown): ParsedKey {
++  if (typeof raw !== "string" || raw.length === 0) {
++    return { ok: false, reason: "empty" };
++  }
++  if (raw.length > MAX_KEY_LENGTH) {
++    return { ok: false, reason: "too_long" };
++  }
++  // Defence in depth: the anchored pattern below already rejects each of these,
++  // but checking them explicitly keeps the rejection reason precise and holds
++  // if the pattern is ever relaxed.
++  if (raw.includes("..") || raw.includes("\\") || raw.startsWith("/")) {
++    return { ok: false, reason: "traversal" };
++  }
++  if (!OBJECT_KEY.test(raw)) {
++    return { ok: false, reason: "shape" };
++  }
++  return { ok: true, key: raw };
++}
++
++export function resolveSourcePath(userId: string, raw: unknown): string | null {
++  const parsed = parseObjectKey(raw);
++  if (!parsed.ok) {
++    // logSafeKey is applied HERE, at the interpolation site, so the log line
++    // never receives the raw value.
++    logger.warn(`rejected object key ${logSafeKey(String(raw))}: ${parsed.reason}`);
++    return null;
++  }
++  return `${userId}/${parsed.key}`;
++}

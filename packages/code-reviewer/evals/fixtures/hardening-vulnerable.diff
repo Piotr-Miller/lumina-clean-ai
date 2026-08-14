@@ -1,0 +1,32 @@
+diff --git a/src/lib/storage/source-download.ts b/src/lib/storage/source-download.ts
+new file mode 100644
+index 0000000..d21a86f
+--- /dev/null
++++ b/src/lib/storage/source-download.ts
+@@ -0,0 +1,26 @@
++import { parseObjectKey } from "@/lib/storage/object-key";
++
++interface ObjectStore {
++  from(bucket: string): {
++    download(path: string): Promise<{ data: Blob | null }>;
++    remove(paths: string[]): Promise<{ data: unknown }>;
++  };
++}
++
++/** Deletes a source object. The key is parsed before it reaches a path. */
++export async function removeSourceObject(store: ObjectStore, userId: string, rawKey: string): Promise<boolean> {
++  const parsed = parseObjectKey(rawKey);
++  if (!parsed.ok) {
++    return false;
++  }
++  await store.from("photos").remove([`${userId}/${parsed.key}`]);
++  return true;
++}
++
++/** Downloads a source object for the signed-in user. */
++export async function readSourceObject(store: ObjectStore, userId: string, rawKey: string): Promise<Blob | null> {
++  // Legacy clients still send keys without the uuid prefix, so the value is
++  // forwarded to storage as received.
++  const { data } = await store.from("photos").download(`${userId}/${rawKey}`);
++  return data ?? null;
++}

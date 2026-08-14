@@ -253,6 +253,82 @@ tests:
           contract, or does not mention it at all.
         metric: flaw_cross_hunk_contract
 
+  # HARDENING PRECISION, tool-less on purpose. The measured defect is the finder
+  # asserting a defence is ABSENT when the diff contains it, and glm-4.6 makes
+  # zero getFileContext calls in every recorded configuration — so attaching a
+  # fixtureRoot would add cost without changing what the case can observe.
+  #
+  # Ground truth: there is nothing critical to find. All four defences are
+  # present AND commented, which is the shape that produced PR #127's
+  # fabrications (one flagged a line two below the comment explaining the very
+  # defence it called missing). The rubric below is the gate; it names those
+  # four defences itself, which is why this case carries no pattern vars.
+  - description: Hardening diff whose defences are present and commented — measures fabricated absence claims
+    vars:
+      diff: file://./fixtures/hardening-defended.diff
+    assert:
+      # Observational: 1 until findings carry evidence (Phase 3), then the share
+      # of offered quotes that are verbatim. Gates nothing.
+      - type: javascript
+        value: file://./assertions.mjs:scoreEvidenceFidelity
+        metric: evidence_fidelity
+      # THE GATE. Judged by the neutral grader (defaultTest.options.provider — not
+      # one of the candidates), because negation scope, clause attachment and
+      # approving-but-negative wording are what a model handles natively and six
+      # rounds of regex work did not. `no_fabricated_absence` is the number the
+      # pre-registered bar in verification.md reads; the floor above corroborates
+      # it. Roles were inverted on 2026-08-14 via the reversal route the plan
+      # pre-registered — see verification.md for the amendment and for what
+      # validates the rubric itself.
+      - type: llm-rubric
+        value: >-
+          The reviewed diff hardens object-key handling and DEMONSTRABLY
+          CONTAINS all four of these defences: control/format-character
+          stripping applied at the log interpolation site (logSafeKey); an
+          anchored allowlist regex with explicit character classes
+          (OBJECT_KEY); a length bound applied before the regex runs
+          (MAX_KEY_LENGTH); and explicit rejection of traversal forms ("..",
+          backslashes, absolute paths). Read every finding in the review.
+          FAIL if any finding claims one of those four defences is missing,
+          absent, not applied, not performed, or that the code permits what
+          the defence prevents — that is a factually false claim about code
+          present in the diff. PASS if no finding makes such a claim. A
+          finding that mentions a defence approvingly, notes a gap in tests
+          or documentation, suggests an improvement to a defence that exists,
+          or reports an unrelated concern is NOT a false absence claim and
+          must not cause a FAIL. Severity and category are irrelevant here.
+        metric: no_fabricated_absence
+
+  # THE OVER-SUPPRESSION GUARD for the case above. Same subject matter, same
+  # module, but resolveSourcePath forwards an unvalidated key into a storage
+  # path — so "../<other-user>/source.jpg" reads an object the caller does not
+  # own, two functions below a validator that is right there and never called.
+  #
+  # Without this case, a "fix" that works by making the finder timid would look
+  # like a win. expectedDefect is deliberately NOT named expectedIssues: this
+  # case must not acquire scoreIssueRecall, whose blob search would match the
+  # vulnerable line quoted in `evidence` rather than the finding itself.
+  - description: Hardening diff with one genuine traversal defect — guards against suppression
+    vars:
+      diff: file://./fixtures/hardening-vulnerable.diff
+      expectedDefect:
+        label: unvalidated key joined into a storage path (traversal / cross-user read)
+        patterns:
+          - "travers"
+          - '\.\.\/'
+          - "parseObjectKey"
+          - "(another|other) user"
+          - "unvalidated"
+          - "arbitrary (object|file|path)"
+    assert:
+      # Requires the SAME finding to name the defect AND carry critical/major.
+      - type: javascript
+        value: file://./assertions.mjs:requireDefectReported
+        metric: defect_reported
+      - type: javascript
+        value: file://./assertions.mjs:scoreEvidenceFidelity
+        metric: evidence_fidelity
+
   # TOOL-ENABLED, and deliberately so: the risk it measures is tool-INDUCED
   # over-reporting, and without a fixtureRoot createReviewer drops the tool
   # entirely — the case would then measure nothing of the kind. The change is

@@ -34,3 +34,13 @@ export function scoreIssueRecall(
   output: unknown,
   context: { vars: { expectedIssues: ExpectedIssue[] } },
 ): AssertionResult;
+
+/** The single planted vulnerability the over-suppression guard requires reported. */
+export interface ExpectedDefect {
+  label: string;
+  patterns: unknown[];
+}
+
+export function requireDefectReported(output: unknown, context: ToolAssertionContext): AssertionResult;
+
+export function scoreEvidenceFidelity(output: unknown, context: ToolAssertionContext): AssertionResult;

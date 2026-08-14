@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { countToolCalls, requireToolContext, reviewMustFail, reviewMustPass, scoreIssueRecall } from "./assertions.mjs";
+import {
+  countToolCalls,
+  requireDefectReported,
+  requireToolContext,
+  reviewMustFail,
+  reviewMustPass,
+  scoreEvidenceFidelity,
+  scoreIssueRecall,
+} from "./assertions.mjs";
 
 const threeIssues = [
   { label: "issue-a", patterns: ["alpha"] },
@@ -254,6 +262,125 @@ describe("requireToolContext", () => {
     expect(requireToolContext("", { vars: {}, metadata: delivered })).toMatchObject({
       pass: false,
       reason: "No requiredContextPath configured for this case",
+    });
+  });
+});
+
+// --- Hardening fixture assertions --------------------------------------------
+// The fabrication metric is an llm-rubric and has no unit test; what it grades is
+// pinned by the rubric text itself (plan criterion 1.15) and validated against a
+// hand-read of the baseline (2.6). The deterministic matcher that used to live
+// here was retired on 2026-08-14 after seven review rounds — see the header of
+// assertions.mjs. What remains is the over-suppression guard and quote fidelity.
+
+const findingsReview = (...findings: Record<string, unknown>[]) => JSON.stringify({ summary: "s", findings });
+
+describe("requireDefectReported", () => {
+  const DEFECT = { label: "traversal", patterns: ["travers", "unvalidated"] };
+  const grade = (output: string) => requireDefectReported(output, { vars: { expectedDefect: DEFECT } });
+
+  it("passes a critical finding that names the defect", () => {
+    expect(
+      grade(findingsReview({ severity: "critical", description: "Unvalidated key allows traversal." })),
+    ).toMatchObject({ pass: true, score: 1 });
+  });
+
+  it("passes at major severity", () => {
+    expect(grade(findingsReview({ severity: "major", description: "Path traversal is possible." })).pass).toBe(true);
+  });
+
+  // The whole point of not reusing scoreIssueRecall: its JSON.stringify search
+  // would match the quoted vulnerable line (plan review F2).
+  it("fails when the defect text appears only in the evidence quote", () => {
+    const result = grade(
+      findingsReview({
+        severity: "critical",
+        description: "Consider renaming this function.",
+        evidence: "return `${userId}/${rawKey}`; // traversal",
+      }),
+    );
+
+    expect(result).toMatchObject({ pass: false, score: 0 });
+    expect(result.reason).toContain("evidence and summary are not searched");
+  });
+
+  it("fails when the defect appears only in the summary", () => {
+    const output = JSON.stringify({
+      summary: "The diff allows path traversal.",
+      findings: [{ severity: "critical", description: "Unrelated concern." }],
+    });
+
+    expect(grade(output).pass).toBe(false);
+  });
+
+  it.each(["minor", "nit"])("fails when the defect is reported only at %s severity", (severity) => {
+    const result = grade(findingsReview({ severity, description: "Traversal is possible here." }));
+
+    expect(result.pass).toBe(false);
+    expect(result.reason).toContain("below major severity");
+  });
+
+  it("fails when the case configured no defect", () => {
+    expect(requireDefectReported(findingsReview(), { vars: {} })).toMatchObject({
+      pass: false,
+      reason: "No expectedDefect configured for this case",
+    });
+  });
+});
+
+describe("scoreEvidenceFidelity", () => {
+  const diff = [
+    "diff --git a/src/lib/storage/object-key.ts b/src/lib/storage/object-key.ts",
+    "index 4a1d7c2..b93f5e1 100644",
+    "--- a/src/lib/storage/object-key.ts",
+    "+++ b/src/lib/storage/object-key.ts",
+    "@@ -1,2 +1,4 @@",
+    ' import { logger } from "@/lib/logger";',
+    "+const MAX_KEY_LENGTH = 64;",
+    '+  return raw.replace(CONTROL_CHARS, "");',
+  ].join("\n");
+  const grade = (output: string) => scoreEvidenceFidelity(output, { vars: { diff } });
+
+  it("scores a verbatim quote as fully faithful", () => {
+    expect(grade(findingsReview({ evidence: "const MAX_KEY_LENGTH = 64;" }))).toMatchObject({ pass: true, score: 1 });
+  });
+
+  it("scores an invented quote as unfaithful without failing the row", () => {
+    const result = grade(findingsReview({ evidence: "const MAX_KEY_LENGTH = 4096;" }));
+
+    expect(result).toMatchObject({ pass: true, score: 0 });
+    expect(result.reason).toContain("not found");
+  });
+
+  it("canonicalizes the diff marker and collapsed whitespace", () => {
+    expect(grade(findingsReview({ evidence: '+  return   raw.replace(CONTROL_CHARS, "");' })).score).toBe(1);
+  });
+
+  it("does not credit a quote of the diff's own header lines", () => {
+    expect(grade(findingsReview({ evidence: "+++ b/src/lib/storage/object-key.ts" })).score).toBe(0);
+  });
+
+  it("reports the ratio when only some quotes are real", () => {
+    const result = grade(
+      findingsReview({ evidence: "const MAX_KEY_LENGTH = 64;" }, { evidence: "totally invented line" }),
+    );
+
+    expect(result.score).toBe(0.5);
+  });
+
+  // Baseline rows predate the field entirely; scoring them 0 would drag the
+  // average and read as a fidelity collapse that never happened.
+  it("reads as not applicable when no finding carries evidence", () => {
+    const result = grade(findingsReview({ description: "no evidence field here" }));
+
+    expect(result).toMatchObject({ pass: true, score: 1 });
+    expect(result.reason).toContain("Not applicable");
+  });
+
+  it("fails closed when the row carries no diff var", () => {
+    expect(scoreEvidenceFidelity(findingsReview({ evidence: "x" }), { vars: {} })).toMatchObject({
+      pass: false,
+      score: 0,
     });
   });
 });

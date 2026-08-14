@@ -6,7 +6,14 @@
 //
 // Same ground as evals/assertions.test.ts, deliberately: this one runs on bare
 // node, so it stays available when the vitest gate is not the tool at hand.
-import { countToolCalls, requireToolContext, reviewMustPass, scoreIssueRecall } from "./assertions.mjs";
+import {
+  countToolCalls,
+  requireDefectReported,
+  requireToolContext,
+  reviewMustPass,
+  scoreEvidenceFidelity,
+  scoreIssueRecall,
+} from "./assertions.mjs";
 
 let failures = 0;
 
@@ -117,6 +124,48 @@ check("a manufactured major fails no_false_alarms", reviewMustPass(reviewWith("m
 check("a manufactured critical fails no_false_alarms", reviewMustPass(reviewWith("critical")), false);
 check("a drifted bare array fails no_false_alarms", reviewMustPass(JSON.stringify([{ severity: "major" }])), false);
 
+
+// --- Hardening fixtures ------------------------------------------------------
+// The fabrication metric is an llm-rubric and cannot be checked from bare node.
+// What remains here is the over-suppression guard and quote fidelity.
+
+const defect = { label: "traversal", patterns: ["travers", "unvalidated"] };
+const guard = (finding) =>
+  requireDefectReported(JSON.stringify({ summary: "s", findings: [finding] }), { vars: { expectedDefect: defect } });
+
+check(
+  "a critical finding naming the defect passes the guard",
+  guard({ severity: "critical", description: "Unvalidated key allows traversal." }),
+  true,
+);
+check(
+  "the defect quoted only in evidence fails the guard",
+  guard({ severity: "critical", description: "Rename this.", evidence: "traversal via ../" }),
+  false,
+);
+check(
+  "the defect reported as a nit fails the guard",
+  guard({ severity: "nit", description: "Traversal is possible." }),
+  false,
+  "below major severity",
+);
+
+const fidelityDiff = ["@@ -1,1 +1,2 @@", "+const MAX_KEY_LENGTH = 64;"].join("\n");
+const fidelity = (evidence) =>
+  scoreEvidenceFidelity(JSON.stringify({ summary: "s", findings: [{ evidence }] }), {
+    vars: { diff: fidelityDiff },
+  });
+
+check("a verbatim quote scores full fidelity", fidelity("const MAX_KEY_LENGTH = 64;"), true, "1 of 1");
+check("an invented quote scores zero without failing the row", fidelity("const MAX_KEY_LENGTH = 4096;"), true, "0 of 1");
+check(
+  "a run with no evidence reads as not applicable",
+  scoreEvidenceFidelity(JSON.stringify({ summary: "s", findings: [{ description: "x" }] }), {
+    vars: { diff: fidelityDiff },
+  }),
+  true,
+  "Not applicable",
+);
 if (failures > 0) {
   console.error(String(failures) + " self-check case(s) violated the grading surface");
   process.exit(1);
