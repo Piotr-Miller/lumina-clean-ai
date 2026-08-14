@@ -1,10 +1,10 @@
 ---
 change_id: cancel-degradation-visibility
 title: Make the cloud-cancel compute-kill degradation visible in prod logs
-status: implemented
+status: archived
 created: 2026-08-13
 updated: 2026-08-14
-archived_at: null
+archived_at: 2026-08-14T08:30:00Z
 ---
 
 ## Notes
@@ -106,7 +106,33 @@ is no historical log query, and the observability API needs a token this
 environment does not have. A live tail was set up for a second attempt and then
 stood down.
 
-### Still open: proving the compute-kill
+### Compute-kill PROVEN 2026-08-14
+
+Settled from the Cloudflare Worker logs (`observability` retains them), read via the
+dashboard since `wrangler tail` is live-only.
+
+Two cancels are recorded — `09:53:43` and `10:08:50` GMT+2 — both level `info`,
+**2 Success / 0 Errors**. A full-text search for `compute-cancel` across the same
+window returns **no events**, which rules out all three failure paths at once:
+
+| Absent log line                                 | What its absence proves                                                    |
+| ----------------------------------------------- | -------------------------------------------------------------------------- |
+| `cancel: compute-cancel seam not configured`    | the seam WAS configured — both secrets reached the running Worker          |
+| `cancel: edge compute-cancel returned <status>` | the Edge Function answered **2xx**, so `DB_WEBHOOK_SECRET` is byte-correct |
+| `cancel: edge compute-cancel failed`            | the fetch did not throw                                                    |
+
+So the Replicate prediction was genuinely told to stop. **The billing leak is closed
+and verified, not assumed.**
+
+**Why this absence counts and the earlier one did not.** The Supabase Edge Function
+logs were unusable because they provably missed events that had happened (the
+`07:53` job start, which must have run since a prediction id was written) — absence
+there was a tooling gap. Here the same query returns the two cancel requests under
+investigation, so the pipeline is demonstrably current and complete for this window.
+A control search was run first precisely to establish that before drawing any
+conclusion from silence.
+
+### Closed
 
 Two ways, whenever it is worth doing:
 
