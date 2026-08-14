@@ -844,7 +844,7 @@ kept in every branch, since they document the defect whether or not it is fixed.
 
 #### Manual
 
-- [ ] 2.4 Decision table committed before the baseline run, verifiable from git history
+- [ ] 2.4 Decision table committed before the baseline run, verifiable from git history — `verification.md` committed; the ordering claim is only provable once the run lands, so this stays open until then
 - [x] 2.5 Decision table is total: every combination maps to exactly one outcome — d374930
 - [ ] 2.6 Baseline fabrications read as genuinely false claims, not metric mis-fires
 - [ ] 2.7 Fixture-validity gate outcome recorded and the branch taken stated explicitly
