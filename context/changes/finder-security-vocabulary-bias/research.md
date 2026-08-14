@@ -9,6 +9,7 @@ tags: [research, codebase, code-reviewer, finder, evals, glm-4.6, structured-out
 status: complete
 last_updated: 2026-08-14
 last_updated_by: Piotr Miller
+last_updated_note: "Added follow-up research excluding the null hypothesis — the collapsed findings are largely FALSE, not merely mislabelled"
 ---
 
 # Research: finder-security-vocabulary-bias
@@ -338,3 +339,79 @@ _is_ the thing under review; there is no subset you can drop and still have revi
    (`promptfooconfig.test.ts:86-88`) and must not punish legitimate zero-finding rows.
 7. **Is the finder's 1-in-8 schema mismatch (§7) the same drift the judge had?** Out of scope here,
    but it wants its own capture of `error.text`.
+
+## Follow-up Research 2026-08-14 — the null hypothesis is excluded
+
+Open question 1 said the null hypothesis ("a security PR legitimately yields a security-heavy set")
+had not been excluded and should be tested first, because it is cheap and would invalidate the
+investigation. Done, for free, by reading #127's retained `review.json` — the actual collapsed CI run,
+with `preDedupFindingCount: 10` against `findings.length: 10`, so no dedup artifact.
+
+**Result: excluded decisively. The findings are not mislabelled truths — most are false.**
+
+| Class                                            | Count | Findings        |
+| ------------------------------------------------ | ----- | --------------- |
+| **Factually contradicted by the code they cite** | **4** | F1, F2, F7, F10 |
+| Real-ish concern, wrong category _and_ severity  | 4     | F3, F4, F5, F9  |
+| Vacuous / unsubstantiated                        | 2     | F6, F8          |
+| **Genuinely security-class AND critical-class**  | **0** | —               |
+
+### The four false findings, verified against the reviewed diff
+
+- **F10** — "Missing implementation for `impl-reviewer.ts` referenced in tests but not provided in the
+  diff. This is a critical security gap." The file **is** in the diff
+  (`git diff --name-only 7c9c12f^1 7c9c12f -- packages/code-reviewer/src/impl-reviewer.ts` returns it).
+  It also calls an allegedly missing implementation "a critical security gap" — the mislabelling made
+  verbatim, in a single sentence.
+- **F2** — "The sed regex allows any characters in the path segment including shell metacharacters."
+  The character class is `[A-Za-z0-9._/-]`, and the adjacent comment states it is "an explicit safe
+  path set rather than 'anything but whitespace': that alone excludes backticks, quotes, and control
+  characters."
+- **F7** — "`PLAN_PATH` is directly interpolated into log messages without proper sanitization,
+  allowing potential log injection or ANSI escape sequence attacks", citing `cli.ts:220`. `logSafePath`
+  strips control characters at `cli.ts:102`, is applied to that exact call site, and **`cli.ts:222` is
+  a comment explaining precisely this defence** — two lines below the line flagged.
+- **F1** — "`PLAN_PATH` is passed through as environment variable without validation." It is validated
+  (anchored regex, safe character class, traversal rejection), and passing an untrusted value via env
+  rather than argv is the mitigation, not the vulnerability.
+
+### Why this changes the fix target again
+
+A severity anchor cannot repair a **false** finding. Calibration would relabel F3/F4/F5/F9 correctly
+and leave F1/F2/F7/F10 as confidently-worded fabrications at whatever severity they land on. The defect
+has two separable layers, and the research above characterised only the outer one:
+
+1. **Precision failure (newly established, and the more serious).** On a hardening diff the finder
+   asserts a defence is **absent** when the diff contains it — sometimes in the adjacent line or its
+   explanatory comment. Four of ten.
+2. **Calibration failure (characterised above).** Severity monotony, and category defaulting to
+   `security` for non-security concerns.
+
+### The precision failure connects to the recorded tool blindness
+
+Every false finding is an **absence claim** — "no validation", "without proper sanitization", "not
+provided", "no size limits are enforced". Verifying an absence requires looking beyond the hunk, and
+`z-ai/glm-4.6` is measured at **zero** `getFileContext` calls in every recorded configuration
+(`finder-tool-loop-evals/decision.md:70-86`; `finder-file-context/verification.md:41`), including with
+a deliberately strengthened instruction. The tool that exists to answer "is this really missing?" is
+never invoked, and nothing in the prompt says what to do with an unverifiable suspicion instead. On
+ordinary code an unverified suspicion surfaces as a nit; on hardening code it surfaces as
+`critical`/`security`.
+
+This also predicts the observed asymmetry better than vocabulary mirroring does: a UI-refresh diff
+offers few absence claims to make, which is consistent with 0% `critical` across all eight control
+runs.
+
+### Revised next step
+
+The change now has a clear subject, and a sharper one than it started with. Before `/10x-plan`:
+
+- The eval target is **precision on a hardening diff**, not distribution spread — a fixture where the
+  defences ARE present and correctly commented, asserting that the finder does **not** report them
+  missing. That is more tractable than "severity spread" and it targets the layer that actually
+  produces unusable output.
+- `no_false_alarms` as it exists would catch these (they are `critical`), but only on a fixture with
+  that shape, and none exists. Note its known blind spot for the calibration layer: it counts only
+  critical/major (`finder-tool-loop-evals/verification.md:323-325`).
+- The open risk is whether the tool blindness is addressable at all under this model.
+  `decision.md` already answered that in the negative once, for a different trigger class.

@@ -108,9 +108,32 @@ under glm-4.6. The finder's `severitySchema` has no calibration, no ceiling, and
 no orthogonal pressure valve — unlike the judge's anchored score and the impl
 reviewer's severity/impact pair. That is the likely fix surface.
 
-### Next step
+### Null hypothesis EXCLUDED (2026-08-14, free)
 
-**Exclude the null hypothesis before building anything** — read the findings from
+Read #127's retained `review.json` — the actual collapsed run. Of ten findings:
+**four are factually contradicted by the code they cite**, four are real-ish
+concerns with the wrong category and severity, two are vacuous, and **zero are
+genuinely security-class and critical-class**.
+
+The sharpest example: F7 reports `PLAN_PATH` "interpolated into log messages
+without proper sanitization" at `cli.ts:220` — where `logSafePath` strips control
+characters and `cli.ts:222` is a comment explaining that very defence. F10 reports
+`impl-reviewer.ts` as "not provided in the diff" and calls it "a critical security
+gap"; the file is in the diff.
+
+**So the defect is worse than miscalibration — it is a PRECISION failure.** Every
+false finding is an _absence_ claim ("no validation", "not provided", "no size
+limits"), and verifying an absence needs more than the hunk, while glm-4.6 is
+measured at zero `getFileContext` calls in every recorded configuration. A
+severity anchor cannot fix a false finding.
+
+That reframes the eval target: this needs **precision on a hardening diff** — a
+fixture where the defences ARE present and commented, asserting the finder does
+not report them missing — rather than a distribution-spread metric.
+
+### Superseded next step
+
+~~**Exclude the null hypothesis before building anything**~~ — read the findings from
 a collapsed run and check whether they are genuinely security-class and
 critical-class, looking specifically for mislabelled correctness/testing gaps. It
 is free, and it decides whether this change has a subject at all. Then
