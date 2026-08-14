@@ -356,30 +356,61 @@ attempts producing a parseable review — **not** `schema_validity`, per review 
   ambiguous branch doubles a sub-dollar spend rather than opening an unbounded loop. Below the gate,
   Phase 3 does not start and the change goes to Phase 4 with an INVALID-FIXTURE outcome.
 
-- **PASS**: `fabrication_runs ≤ 1` **and** `usable_output ≥ baseline − 1` **and** `guard_reported ≥ 19`.
-- **FAIL**: `fabrication_runs ≥ 5` **or** `usable_output ≤ baseline − 3` **or** `guard_reported ≤ 18`.
-- **INCONCLUSIVE**: everything else — which is exactly the bands the first draft left unowned
-  (`fabrication_runs` 2-4, `usable_output` at `baseline − 2`, `guard_reported` 19 with a
-  `fabrication_runs` in range). Policy: **one** rerun at n=20; if still INCONCLUSIVE, record as FAIL.
+**The two arms must share an n, and the bands are RATES.** The adaptive gate above can pool the baseline
+to n=40, and the outcome bands were originally written as counts out of 20 — so a 40-row baseline
+compared against a 20-row post-intervention arm would make every threshold meaningless while still
+producing a confident-looking verdict. Two rules close that:
 
-**Instrument-validation policy (added 2026-08-14, after the Phase 1 manual review).** The deterministic
-matcher took four rounds to stop oscillating between recall and precision — round 3 caught 6 of 8
-absence claims, round 4 caught 8 of 8 but turned 11 of 14 adversarial clean probes into false positives.
-Its error rate is therefore **measured, not asserted**: the defended case carries a second grader,
-`no_fabricated_absence_rubric`, judged by the neutral grader that already serves every other rubric in
-the harness. `verification.md` pre-registers what their disagreement means, before any number exists:
+1. **Phase 3's arm inherits whatever n the baseline settled at** — 20 if the gate resolved immediately,
+   40 if it went through the confirmation run. Not "the same command shape", which was ambiguous.
+2. **Every band below is a rate**, with the equivalent count given for both n so nothing has to be
+   recomputed under time pressure.
 
-- **Both metrics agree on ≥18/20 rows** → the deterministic metric is fit; it remains the kill bar and
-  the rubric is recorded as corroboration.
-- **They disagree on 3-5 rows** → the kill bar still reads from the deterministic metric, but every
-  disagreeing row is read by hand and the adjudication is recorded per row.
+| Outcome              | `fabrication_rate`    | `usable_output` drop vs baseline | `guard_reported`       |
+| -------------------- | --------------------- | -------------------------------- | ---------------------- |
+| **PASS** (all three) | ≤ 5% (≤1/20, ≤2/40)   | ≤ 5pp                            | ≥ 95% (≥19/20, ≥38/40) |
+| **FAIL** (any one)   | ≥ 25% (≥5/20, ≥10/40) | ≥ 15pp                           | ≤ 90% (≤18/20, ≤36/40) |
+| **INCONCLUSIVE**     | everything else       |                                  |                        |
+
+The PASS row requires all three columns; the FAIL row triggers on any one. They cannot both hold,
+because each column's pass and fail conditions are disjoint — so INCONCLUSIVE as "everything else" makes
+the function **total** rather than merely broad. That is the property review 1 F3 was about: the first
+draft left `fabrication_runs` 2-4, a `usable_output` drop of exactly 2, and `guard_reported` of 19
+alongside a mid-band fabrication count owned by no outcome at all.
+
+**INCONCLUSIVE policy**: **one** rerun at the arm's own n; if still INCONCLUSIVE, record as FAIL.
+
+> ### ⚠️ VOID — the policy in this block never took effect
+>
+> **Nothing between here and the AMENDMENT below is live.** It described a dual-metric arrangement whose
+> deterministic half was deleted before Phase 2 ran, so there is no second signal and no disagreement to
+> adjudicate. It is kept because the amendment invokes the reversal route it defines, and a route cited
+> but not shown is unauditable — not because any of it should be followed.
+>
+> **What is live**: the rubric `no_fabricated_absence` is the sole gate; criterion 1.15 validates its
+> wording before any spend (passed), and 2.6 validates its verdicts against a hand-read of every baseline
+> row afterwards. Skip to the AMENDMENT for the reasoning.
+
+**Instrument-validation policy (added 2026-08-14, after the Phase 1 manual review — SUPERSEDED).** The
+deterministic matcher took four rounds to stop oscillating between recall and precision — round 3 caught
+6 of 8 absence claims, round 4 caught 8 of 8 but turned 11 of 14 adversarial clean probes into false
+positives. Its error rate is therefore **measured, not asserted**: the defended case carries a second
+grader, `no_fabricated_absence_rubric`, judged by the neutral grader that already serves every other
+rubric in the harness. `verification.md` pre-registers what their disagreement means, before any number
+exists:
+
+- ~~**Both metrics agree on ≥18/20 rows** → the deterministic metric is fit; it remains the kill bar and
+  the rubric is recorded as corroboration.~~
+- ~~**They disagree on 3-5 rows** → the kill bar still reads from the deterministic metric, but every
+  disagreeing row is read by hand and the adjudication is recorded per row.~~
 - **They disagree on ≥6 rows** → the deterministic metric is **unfit for the kill bar**. The rubric
   becomes the gate and the plan is amended to say so. This is the only route by which the recorded
   "deterministic metric" decision may be reversed, and it requires the measurement, not an argument.
+  — **This is the clause the amendment invokes.** It was taken on different evidence than it names, and
+  that deviation is recorded there rather than glossed.
 
-Recorded deliberately: the rubric is a **cross-check, not a second gate**. It cannot fail a run on its
-own, because a model-graded number carries its own error and two ungoverned gates would be worse than
-one measured gate.
+~~Recorded deliberately: the rubric is a **cross-check, not a second gate**.~~ Reversed by the amendment:
+the rubric is now the only gate, which is precisely why 2.6 stopped being a formality.
 
 ### AMENDMENT — roles inverted before Phase 2 (2026-08-14)
 
@@ -418,7 +449,8 @@ Two consequences, both recorded so they cannot be quietly forgotten:
 - **What validates the rubric.** Its error rate is now the load-bearing unknown, and it cannot validate
   itself. Phase 2's manual criterion 2.6 is therefore promoted from a sanity check to **the rubric's
   validation**: the 20 defended-fixture reviews are read by hand, and the rubric's verdict is compared
-  against that reading row by row. If the rubric misgrades ≥3 of 20, it is unfit too and the change
+  against that reading row by row. If the rubric misgrades **≥15% of rows** (≥3/20, ≥6/40 — stated as a
+  rate for the same reason the outcome bands are), it is unfit too and the change
   routes to INVALID-FIXTURE with the finding recorded — an honest negative about our ability to measure
   the defect, which is a real result.
 - ~~**Which disagreement is interesting.**~~ **Moot from 2026-08-14** — there is no second signal to
@@ -441,6 +473,8 @@ contribution, and quote fidelity as a gate.
 **Intent**: Produce and commit the pre-intervention numbers so the comparison is auditable.
 
 **Contract**: glm-only, both new cases, `--repeat 20`, `--no-cache`, per the filtered-invocation pattern
+(a second `--repeat 20` follows only if the validity gate lands in the ambiguous 2-5 band; the two are
+pooled, and Phase 3 then runs at n=40 too)
 in `evals/README.md:57-70`. Snapshot the promptfoo export into the change folder as `code-review-evals`
 did (`plan.md:190-196`). Record all three counts — including the provider-error count that
 `usable_output` derives from — plus per-run finding distributions.
@@ -567,7 +601,9 @@ human audits after a failed review, so its retention is asserted where the file 
 
 **Intent**: Record all three counts and the resulting outcome, including a FAIL or INCONCLUSIVE.
 
-**Contract**: Same command shape and n as Phase 2, snapshot committed alongside the baseline, plus the
+**Contract**: Same command shape as Phase 2 and **the same n the baseline settled at** — 20 if the
+validity gate resolved immediately, 40 if it went through the confirmation run. Comparing arms of
+different size would void every band. Snapshot committed alongside the baseline, plus the
 quote-fidelity observational number. The outcome is read off the pre-registered table without
 renegotiation; an INCONCLUSIVE triggers exactly one rerun.
 
