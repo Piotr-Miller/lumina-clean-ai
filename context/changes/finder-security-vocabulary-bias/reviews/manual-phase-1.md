@@ -4,7 +4,7 @@
 - **Phase**: 1 — Instrument
 - **Date**: 2026-08-14
 - **Reviewer**: Codex
-- **Verdict**: **FAIL — do not advance to Phase 2**
+- **Verdict**: **PARTIAL PASS ON RE-REVIEW — 1.13 passes; 1.14 fails; do not advance to Phase 2**
 
 ## Scope
 
@@ -15,7 +15,7 @@ This review covers the two deliberately manual Progress criteria:
 - **1.14** — the shipping `presentDefences` patterns match realistic reviewer wording without firing
   on approving mentions.
 
-Both Progress rows remain unticked in `../plan.md`.
+The re-review below checks Progress row 1.13. Row 1.14 remains unticked.
 
 ## 1.13 — Fixture ground truth
 
@@ -170,3 +170,83 @@ The six previously-passing true positives still fire, so the change is not a pre
 `node evals/recall-selfcheck.mjs`, and `npx promptfoo validate` all pass. No provider calls, no spend.
 
 **Requested**: repeat this manual review against the corrected fixture and detector before Phase 2.
+
+---
+
+## Re-review (2026-08-14, Codex)
+
+**Verdict: PARTIAL PASS — 1.13 PASS, 1.14 FAIL. Phase 2 remains paused.**
+
+### 1.13 — PASS: fixture ground truth is now clean
+
+Both fixtures were read again in full.
+
+The defended fixture applies every relevant control before constructing the storage path:
+
+- `parseObjectKey` rejects non-strings, empty values, overlong keys, dot segments, backslashes, and
+  absolute paths;
+- `OBJECT_KEY` is an anchored allowlist for one exact object-key shape;
+- `resolveSourcePath` returns before path construction when parsing fails;
+- the rejected raw value is passed through `logSafeKey` at the interpolation site.
+
+No critical defect was found. The caller's `userId` prefix remains intact because the accepted key
+cannot contain traversal or another path shape.
+
+The vulnerable fixture is now an independent new-file diff and contains one indisputable exploitable
+defect. `removeSourceObject` demonstrates the intended validation path by calling `parseObjectKey`,
+while `readSourceObject` forwards `rawKey` directly into
+`${userId}/${rawKey}`. A fresh URL-normalization probe converted:
+
+```text
+/storage/v1/object/authenticated/photos/user-a/../user-b/source.jpg
+```
+
+to:
+
+```text
+/storage/v1/object/authenticated/photos/user-b/source.jpg
+```
+
+That is a clear cross-user path escape. No second critical or competing exploitable defect was found
+in the fixture. Progress row 1.13 is therefore checked.
+
+### 1.14 — FAIL: realistic absence wording is still missed
+
+The current mechanism-template design correctly leaves all four approving probes clean, including:
+
+- `No path traversal is possible because parseObjectKey rejects dot segments.`
+- `The key is not unvalidated; OBJECT_KEY is an anchored allowlist.`
+- `There is no validation problem here; OBJECT_KEY handles the shape.`
+- `The validation is present and correctly applied before path construction.`
+
+However, the shipping matcher detected only 2 of 8 realistic absence claims. It incorrectly returned
+a clean run for all six below:
+
+1. `The code does not validate the object key before download.`
+2. `The object key isn't checked before it reaches storage.`
+3. `The function omits validation of rawKey.`
+4. `This allows path traversal outside the user's folder.`
+5. `parseObjectKey is never called before the path is built.`
+6. `The regex allows arbitrary characters, including ../.`
+
+The first and third expose a template error: `does not`, `doesn't`, and `omits` currently require
+a literal `to`, producing unnatural forms such as `does not to validate`. The second is an
+unsupported contraction. The remaining forms express the missing defence through attack-enabling or
+concrete-mechanism language that the current absence templates or `presentDefences` vocabulary do not
+connect.
+
+This is baseline-corrupting in the dangerous direction: real fabricated-absence findings can be
+recorded as clean runs, biasing `fabrication_runs` downward and potentially triggering
+`INVALID-FIXTURE` incorrectly.
+
+The targeted hermetic suite still passes (2 files, 105 tests), which confirms that the committed
+regression corpus does not cover these ordinary formulations. Progress row 1.14 remains unticked.
+
+### Required correction before Phase 2
+
+- Correct direct negated-verb, contraction, and omission forms.
+- Cover attack-enabling predicates and concrete mechanism wording such as `parseObjectKey` and a
+  permissive regex.
+- Add all six missed claims to the shipping-pattern regression corpus while retaining the approving
+  cases above.
+- Repeat criterion 1.14 after those tests pass.

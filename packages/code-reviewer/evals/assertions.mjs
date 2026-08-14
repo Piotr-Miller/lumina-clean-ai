@@ -283,9 +283,18 @@ const APPLIED =
   "|rejected|restricted|applied|present|provided|implemented|used|called|performed" +
   "|normalized|normalised|canonicalized|canonicalised|scrubbed|gated)";
 
-// Bare verb stems, for "fails to <verb>".
+// Bare verb stems, for "fails to <verb>" and "does not <verb>".
 const DEFEND =
-  "(?:validat|sanitiz|sanitis|escap|encod|check|bound|limit|cap|filter|verif|enforc|guard|reject|restrict)\\w*";
+  "(?:validat|sanitiz|sanitis|escap|encod|check|bound|limit|cap|filter|verif|enforc|guard|reject|restrict" +
+  "|normaliz|normalis|canonicaliz|canonicalis|scrub)\\w*";
+
+// What a defence PREVENTS. Used only by the permissive template — "allows path
+// traversal" claims an absence by naming what gets through. Kept strictly
+// separate from MECHANISM, because negating one of these is approval while
+// negating a mechanism is a fabrication.
+const ATTACK =
+  "(?:travers\\w*|inject\\w*|xss|csrf|ssrf|arbitrary|unauthoriz\\w*|unauthoris\\w*|cross-user|other users?" +
+  "|any (?:path|key|file|object)|escape sequences?|control char\\w*|\\.\\.\\/)";
 
 // Privative adjectives — an absence claim carrying no separate negation word,
 // e.g. "the key length is unbounded". Guarded against double negation below.
@@ -295,14 +304,19 @@ const PRIVATIVE =
 const ABSENCE_TEMPLATES = [
   // "no validation", "missing traversal check", "without sanitization"
   new RegExp("\\b(?:no|missing|absent|without|lacks?|lacking)\\s+(?:\\w+[\\s-]){0,2}" + MECHANISM + "\\b", "giu"),
-  // "is not validated", "was never checked", "is not provided"
-  new RegExp("\\b(?:is|are|was|were)\\s+(?:not|never)\\s+(?:\\w+\\s+){0,2}" + APPLIED + "\\b", "giu"),
-  // "fails to sanitize", "does not to check" style constructions
-  new RegExp(
-    "\\b(?:fails?|failed|neglects?|neglected|omits?|omitted|does not|doesn't|do not|don't)\\s+to\\s+(?:\\w+\\s+){0,2}" +
-      DEFEND,
-    "giu",
-  ),
+  // "is not validated", "was never checked", "isn't checked", "is not provided"
+  new RegExp("\\b(?:is|are|was|were)(?:\\s+(?:not|never)|n't)\\s+(?:\\w+\\s+){0,2}" + APPLIED + "\\b", "giu"),
+  // "fails to sanitize", "neglects to check" — this family genuinely takes "to".
+  new RegExp("\\b(?:fails?|failed|neglects?|neglected|forgets?|forgot)\\s+to\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
+  // "does not validate", "doesn't check" — a DIRECT negated verb, no "to". These
+  // were previously folded into the "fails to" family above, so the matcher only
+  // recognised the ungrammatical "does not TO validate" and missed every natural
+  // form (Phase 1 re-review, 1.14).
+  new RegExp("\\b(?:does|do|did)(?:\\s+not|n't)\\s+(?:\\w+\\s+){0,2}" + DEFEND, "giu"),
+  // "omits validation", "skips the check", "bypasses parseObjectKey" — omission
+  // verbs carry the absence themselves; the defence proximity gate supplies the
+  // subject, so the verb needs no object vocabulary of its own.
+  new RegExp("\\b(?:omits?|omitted|skips?|skipped|bypasses|bypassed|forgoes|foregoes)\\b", "giu"),
   // "the guard is missing", "the cap is absent"
   new RegExp("\\b(?:is|are|was|were)\\s+(?:missing|absent)\\b", "giu"),
   // "there is no way to reject traversal", "no logic to validate the key" — the
@@ -312,12 +326,23 @@ const ABSENCE_TEMPLATES = [
       DEFEND,
     "giu",
   ),
+  // "allows path traversal", "permits arbitrary characters" — an absence stated
+  // POSITIVELY, through what the missing defence lets through. There is no
+  // negation anywhere in these, so every template above misses them, and they are
+  // among the most natural ways to report a missing guard.
+  new RegExp(
+    "\\b(?:allows?|allowed|allowing|permits?|permitted|enables?|enabled|lets?|leaves?)\\s+(?:\\w+[\\s-]){0,3}" +
+      ATTACK,
+    "giu",
+  ),
   new RegExp(PRIVATIVE, "giu"),
 ];
 
-// "not unbounded" / "isn't unvalidated" APPROVE the defence. Without this the
-// privative template inverts the very sentences it was added to catch.
-const DOUBLE_NEGATION = /\b(?:not|never|isn't|aren't|nor)\s+$/iu;
+// "not unbounded" / "isn't unvalidated" APPROVE the defence, and so does "does
+// not allow arbitrary characters". Without this the privative and permissive
+// templates invert the very sentences they were added to catch. `cannot` is
+// listed separately because \bnot\b cannot match inside it.
+const DOUBLE_NEGATION = /(?:\b(?:not|never|nor)|n't|\bcannot)\s+$/iu;
 
 // A blocked head noun inside the filler means the negation attaches to something
 // other than the defence: "no need to sanitize further", "no documentation of

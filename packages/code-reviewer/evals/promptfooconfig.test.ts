@@ -150,6 +150,33 @@ describe("hardening fabrication patterns", () => {
   ])("still catches an absence phrased outside the validation vocabulary: %s", (description) => {
     expect(fabricates(description)).toBe(true);
   });
+
+  // The six ordinary formulations the Phase 1 re-review found missed (2 of 8
+  // detected). Three were template bugs — "does not", "doesn't" and "omits" all
+  // required a literal "to", so only the ungrammatical "does not TO validate"
+  // matched. Two state the absence POSITIVELY via what gets through. One matched
+  // an absence template but no defence pattern.
+  it.each([
+    "The code does not validate the object key before download.",
+    "The object key isn't checked before it reaches storage.",
+    "The function omits validation of rawKey.",
+    "This allows path traversal outside the user's folder.",
+    "parseObjectKey is never called before the path is built.",
+    "The regex allows arbitrary characters, including ../.",
+  ])("catches the ordinary absence formulation: %s", (description) => {
+    expect(fabricates(description)).toBe(true);
+  });
+
+  // The permissive template must not invert on a negated permission, which is
+  // how a reviewer states the defence WORKS.
+  it.each([
+    "The anchored pattern does not allow arbitrary characters.",
+    "The regex cannot permit path traversal because the class is explicit.",
+    "This allows only the exact uuid/source.jpg shape.",
+    "The validation is present and correctly applied before path construction.",
+  ])("does not fire on a negated or benign permission: %s", (description) => {
+    expect(fabricates(description)).toBe(false);
+  });
 });
 
 // The guard exists because a "fix" that suppresses real findings would otherwise

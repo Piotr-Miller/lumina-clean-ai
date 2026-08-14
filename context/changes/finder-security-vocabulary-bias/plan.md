@@ -638,7 +638,7 @@ kept in every branch, since they document the defect whether or not it is fixed.
 
 #### Manual
 
-- [ ] 1.13 Both fixtures read correctly: defended has nothing critical, vulnerable is indisputable
+- [x] 1.13 Both fixtures read correctly: defended has nothing critical, vulnerable is indisputable
 - [ ] 1.14 `presentDefences` patterns match real reviewer wording and do not fire on approving mentions
 
 ### Phase 2: Pre-register a total decision table, then measure the baseline

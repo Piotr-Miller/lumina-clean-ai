@@ -281,6 +281,12 @@ tests:
             - "anchor"
             - "allow[- ]?list"
             - "OBJECT_KEY"
+            # The finder names the validator and its subject far more often than
+            # it says "validation". Without these, "the object key isn't checked"
+            # and "parseObjectKey is never called" matched an absence template but
+            # no defence, so both scored as clean runs (Phase 1 re-review, 1.14).
+            - "parseObjectKey"
+            - "object[- ]?key"
         - label: path-traversal rejection
           patterns:
             - "travers"
