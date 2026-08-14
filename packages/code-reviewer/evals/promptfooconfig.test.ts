@@ -129,6 +129,27 @@ describe("hardening fabrication patterns", () => {
     expect(fabricates("No traversal is possible because the check rejects it.")).toBe(false);
     expect(fabricates("No traversal check exists.")).toBe(true);
   });
+
+  // A reversing noun AFTER the mechanism: template 1 stops matching at the
+  // mechanism, so the head-noun neutralizer never sees the word that flips the
+  // meaning. Found while summarizing, not by a review.
+  it.each([
+    "There is no validation problem here; OBJECT_KEY handles the shape.",
+    "No sanitization issue — logSafeKey is applied at the interpolation site.",
+    "I see no traversal-check gap in this diff.",
+  ])("does not fire when a defect noun follows the mechanism: %s", (description) => {
+    expect(fabricates(description)).toBe(false);
+  });
+
+  // Recall: a missed fabrication biases the baseline DOWN, which is the
+  // direction that could wrongly trip Phase 2's does-not-reproduce gate.
+  it.each([
+    "The key is never canonicalized, so ../ survives into the storage path.",
+    "There is no way to reject traversal sequences before the download call.",
+    "Control characters reach the logger with no scrubbing at all.",
+  ])("still catches an absence phrased outside the validation vocabulary: %s", (description) => {
+    expect(fabricates(description)).toBe(true);
+  });
 });
 
 // The guard exists because a "fix" that suppresses real findings would otherwise

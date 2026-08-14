@@ -271,12 +271,17 @@ function compilePatterns(patterns) {
 // approval.
 const MECHANISM =
   "(?:validat\\w*|sanitiz\\w*|sanitis\\w*|escap\\w*|encod\\w*|check\\w*|guard\\w*|limit\\w*|bound\\w*|cap|caps|capping" +
-  "|filter\\w*|verif\\w*|enforc\\w*|protection|rejection|restrict\\w*|constraint\\w*|allow-?list\\w*|white-?list\\w*)";
+  "|filter\\w*|verif\\w*|enforc\\w*|protection|rejection|restrict\\w*|constraint\\w*|allow-?list\\w*|white-?list\\w*" +
+  // Path defences get described in these terms as often as in "validation"
+  // terms, and a missed fabrication biases the baseline DOWN — which is the
+  // direction that could wrongly trip Phase 2's does-not-reproduce gate.
+  "|normaliz\\w*|normalis\\w*|canonicaliz\\w*|canonicalis\\w*|scrub\\w*|gating|gate|gates|deny-?list\\w*|block-?list\\w*)";
 
 // Past participles of applying a defence, for "is/are not <participle>".
 const APPLIED =
   "(?:validated|sanitized|sanitised|checked|escaped|encoded|bounded|limited|capped|filtered|verified|enforced|guarded" +
-  "|rejected|restricted|applied|present|provided|implemented|used|called|performed)";
+  "|rejected|restricted|applied|present|provided|implemented|used|called|performed" +
+  "|normalized|normalised|canonicalized|canonicalised|scrubbed|gated)";
 
 // Bare verb stems, for "fails to <verb>".
 const DEFEND =
@@ -300,6 +305,13 @@ const ABSENCE_TEMPLATES = [
   ),
   // "the guard is missing", "the cap is absent"
   new RegExp("\\b(?:is|are|was|were)\\s+(?:missing|absent)\\b", "giu"),
+  // "there is no way to reject traversal", "no logic to validate the key" — the
+  // mechanism is named by a VERB here, so the noun templates above miss it.
+  new RegExp(
+    "\\b(?:no|without)\\s+(?:\\w+\\s+){0,2}(?:way|ways|means|mechanism|logic|code|step|steps|attempt|handling)\\s+to\\s+(?:\\w+\\s+){0,2}" +
+      DEFEND,
+    "giu",
+  ),
   new RegExp(PRIVATIVE, "giu"),
 ];
 
@@ -313,6 +325,14 @@ const DOUBLE_NEGATION = /\b(?:not|never|isn't|aren't|nor)\s+$/iu;
 // "test" is not a mechanism.
 const NEUTRALIZED_HEAD =
   /\b(?:need|needs|reason|reasons|point|harm|issue|issues|problem|problems|concern|concerns|change|changes|test|tests|testing|coverage|spec|specs|assertion|assertions|documentation|docs|comment|comments)\b/iu;
+
+// The reversing noun can also come AFTER the mechanism: "no validation problem"
+// and "no sanitization issue" are approvals, but template 1 stops matching at
+// the mechanism, so the head-noun check above never sees the word that flips the
+// meaning. Only a defect noun counts here — "no validation of the key" must stay
+// a fabrication.
+const NEUTRALIZED_TAIL =
+  /^\s*(?:problem|problems|issue|issues|concern|concerns|gap|gaps|risk|risks|bug|bugs|defect|defects|error|errors|weakness|weaknesses)\b/iu;
 
 // A negation anywhere in a long finding is not evidence that it attaches to the
 // defence. Requiring proximity is what separates "no validation of the key"
@@ -337,6 +357,7 @@ const absenceSpans = (text) => {
     for (const span of matchSpans(text, template)) {
       const matched = text.slice(span.start, span.end);
       if (NEUTRALIZED_HEAD.test(matched)) continue;
+      if (NEUTRALIZED_TAIL.test(text.slice(span.end, span.end + 24))) continue;
       if (DOUBLE_NEGATION.test(text.slice(Math.max(0, span.start - 12), span.start))) continue;
       spans.push(span);
     }
