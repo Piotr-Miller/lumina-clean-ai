@@ -1,7 +1,7 @@
 ---
 change_id: finder-security-vocabulary-bias
 title: Finder returns a degenerate all-critical/security finding set on security-saturated diffs
-status: plan_reviewed
+status: implemented
 created: 2026-08-13
 updated: 2026-08-14
 archived_at: null
@@ -166,6 +166,23 @@ the review doc. What changed materially:
 4. Judge sanitization moved to the prompt boundary (F6), the fabrication metric
    became binary-per-run and deduplicated (F5), and Phase 3 now enumerates the
    nine-file test blast radius plus the unrepairable-missing-field path (F7).
+
+### Outcome (2026-08-14) — INVALID-FIXTURE, and the hypothesis in this change's name is not supported
+
+See `decision.md`. The baseline measured **0 of 20** fabrications on a purpose-built hardening fixture,
+which is the `≤1` band: the fixture does not reproduce the defect, so Phase 3 never started and no
+intervention was attempted. PR #143's own live review agreed — 7 findings, all `nit`, zero fabrications
+on a diff full of sanitizers and traversal checks.
+
+Three results now stand against "security-saturated subject matter triggers the collapse": the CONTROL
+diff showed the same monotony, the fixture produced 0/20, and the live pipeline produced 0. Fabrication
+is handed to **research** — characterize which real-diff properties trigger it _before_ designing
+another fixture.
+
+The valuable finding was accidental. `guard_reported = 10/20`: the finder usually notices a real
+cross-user path traversal and files it as `minor`. That is severity calibration, not suppression, and it
+is the next change — scoped to "detected cross-user authorization-boundary violations cannot be
+classified as minor", starting from the recorded 10/20 baseline and reusing this change's fixture.
 
 ### Reference
 

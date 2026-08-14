@@ -862,36 +862,40 @@ kept in every branch, since they document the defect whether or not it is fixed.
 
 #### Automated
 
-- [ ] 3.1 Package lint passes: `cd packages/code-reviewer && npm run lint`
-- [ ] 3.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck`
-- [ ] 3.3 Unit tests pass: `cd packages/code-reviewer && npm test`
-- [ ] 3.4 A finding without `evidence` is rejected by the schema
-- [ ] 3.5 Emitted JSON Schema contains no `minimum`, `maximum`, or `anyOf`
-- [ ] 3.6 `buildJudgePrompt` output omits `evidence` for a finding that carries it
-- [ ] 3.7 `review.json` retains `evidence`, asserted on the serialized artifact in `cli.test.ts`
-- [ ] 3.8 `evidence` is absent from the rendered comment
-- [ ] 3.9 Dedup identity unchanged: findings differing only in `evidence` still collapse
-- [ ] 3.10 A response missing `evidence` is not repaired into a partial result
-- [ ] 3.11 Post-intervention eval run completes and its snapshot is committed
+- [x] 3.1 Package lint passes: `cd packages/code-reviewer && npm run lint` — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.2 Type checking passes: `cd packages/code-reviewer && npm run typecheck` — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.3 Unit tests pass: `cd packages/code-reviewer && npm test` — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.4 A finding without `evidence` is rejected by the schema — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.5 Emitted JSON Schema contains no `minimum`, `maximum`, or `anyOf` — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.6 `buildJudgePrompt` output omits `evidence` for a finding that carries it — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.7 `review.json` retains `evidence`, asserted on the serialized artifact in `cli.test.ts` — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.8 `evidence` is absent from the rendered comment — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.9 Dedup identity unchanged: findings differing only in `evidence` still collapse — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.10 A response missing `evidence` is not repaired into a partial result — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.11 Post-intervention eval run completes and its snapshot is committed — N/A (INVALID-FIXTURE, c8f921d)
 
 #### Manual
 
-- [ ] 3.12 All three counts recorded and the outcome read off the table without renegotiation
-- [ ] 3.13 Quote-fidelity number recorded and interpreted
-- [ ] 3.14 Rerun policy honoured: at most one rerun, second INCONCLUSIVE recorded as FAIL
+- [x] 3.12 All three counts recorded and the outcome read off the table without renegotiation — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.13 Quote-fidelity number recorded and interpreted — N/A (INVALID-FIXTURE, c8f921d)
+- [x] 3.14 Rerun policy honoured: at most one rerun, second INCONCLUSIVE recorded as FAIL — N/A (INVALID-FIXTURE, c8f921d)
 
 ### Phase 4: Live observation and recorded decision
 
 #### Automated
 
-- [ ] 4.1 Full package gate passes: `cd packages/code-reviewer && npm run lint && npm run typecheck && npm test`
-- [ ] 4.2 The branch's `ai-review` run completes and uploads its artifact
-- [ ] 4.3 Instrument present on the branch regardless of outcome: both fixtures and all three graders
+- [x] 4.1 Full package gate passes: `cd packages/code-reviewer && npm run lint && npm run typecheck && npm test`
+- [x] 4.2 The branch's `ai-review` run completes and uploads its artifact
+- [x] 4.3 Instrument present on the branch regardless of outcome: both fixtures and ~~all three~~ the
+      shipped graders — `requireDefectReported`, `scoreEvidenceFidelity`, and the `no_fabricated_absence`
+      rubric gate. **Restated 2026-08-14**: "three graders" counted the deterministic matcher, retired
+      after seven failed rounds, so the row as written was unfulfillable — the same drift impl-review P2
+      caught in Phase 1. Verified present: 2 fixtures, 2 JS graders, 1 rubric — c8f921d
 
 #### Manual
 
-- [ ] 4.4 Live findings read and recorded, with fabrication assessed per finding
-- [ ] 4.5 `decision.md` states the outcome against every pre-registered criterion, including failures
-- [ ] 4.6 Exactly one disposition executed, matching the recorded outcome
-- [ ] 4.7 The outcome-specific action is done: PASS → rollout change opened; FAIL → intervention
+- [x] 4.4 Live findings read and recorded, with fabrication assessed per finding — live findings read and recorded in verification.md
+- [x] 4.5 `decision.md` states the outcome against every pre-registered criterion, including failures — decision.md
+- [x] 4.6 Exactly one disposition executed, matching the recorded outcome — instrument ships; no intervention was attempted
+- [x] 4.7 The outcome-specific action is done: PASS → rollout change opened; FAIL → intervention — INVALID-FIXTURE: reproduction limits recorded, follow-ups named
       reverted and the limitation recorded; INVALID-FIXTURE → the fixture's reproduction limits recorded
