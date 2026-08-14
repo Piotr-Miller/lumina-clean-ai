@@ -5,7 +5,7 @@ import { load } from "js-yaml";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { scoreIssueRecall } from "./assertions.mjs";
+import { noFabricatedAbsence, requireDefectReported, scoreIssueRecall } from "./assertions.mjs";
 
 // Free hermetic cover for the eval CONFIG itself, not just the assertion code.
 // The matrix is a paid instrument feeding a model decision, and its ground
@@ -28,6 +28,8 @@ const configSchema = z.object({
         fixtureRoot: z.string().optional(),
         requiredContextPath: z.string().optional(),
         expectedIssues: z.array(z.object({ label: z.string(), patterns: z.array(z.string()) })).optional(),
+        presentDefences: z.array(z.object({ label: z.string(), patterns: z.array(z.string()) })).optional(),
+        expectedDefect: z.object({ label: z.string(), patterns: z.array(z.string()) }).optional(),
       }),
       assert: z.array(assertionSchema).optional(),
     }),
@@ -79,6 +81,77 @@ describe("cross-hunk recall patterns", () => {
   });
 });
 
+// The fabrication metric's real risk is the opposite of a miss: firing on a
+// finding that mentions a defence APPROVINGLY, which would turn a healthy review
+// into a recorded fabrication and corrupt the baseline the whole change rests on.
+// These run the SHIPPING patterns, not stand-ins.
+describe("hardening fabrication patterns", () => {
+  const presentDefences = findCase(/^Hardening diff whose defences are present/u).vars.presentDefences ?? [];
+  const reviewClaiming = (description: string) => JSON.stringify({ summary: "s", findings: [{ description }] });
+  const fabricates = (description: string) =>
+    !noFabricatedAbsence(reviewClaiming(description), { vars: { presentDefences } }).pass;
+
+  it("is configured with declared defences at all", () => {
+    expect(presentDefences.length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    "The object key is interpolated into the log message without sanitization.",
+    "There is no validation of the object key before it is used as a storage path.",
+    "Path traversal is not rejected, so ../ escapes the user's folder.",
+    "The key length is unbounded, which allows a very large input to reach the regex.",
+    "parseObjectKey fails to sanitize control characters before logging.",
+  ])("catches the fabricated absence claim: %s", (description) => {
+    expect(fabricates(description)).toBe(true);
+  });
+
+  it.each([
+    "logSafeKey correctly strips control characters before the value reaches the log line.",
+    "No need to sanitize further here — the anchored pattern already rejects traversal sequences.",
+    "The allowlist pattern is anchored and the character classes are explicit, which is the right approach.",
+    "Validation looks solid; there is no test covering the traversal rejection branch though.",
+    "Consider extracting MAX_KEY_LENGTH into shared config so other modules reuse the same bound.",
+  ])("does not fire on approving or unrelated wording: %s", (description) => {
+    expect(fabricates(description)).toBe(false);
+  });
+});
+
+// The guard exists because a "fix" that suppresses real findings would otherwise
+// look like a win. Its failure mode after Phase 3 is passing on the vulnerable
+// line quoted in `evidence` while the finding says nothing (plan review F2).
+describe("hardening suppression guard patterns", () => {
+  const expectedDefect = findCase(/^Hardening diff with one genuine traversal defect/u).vars.expectedDefect;
+  const guard = (finding: Record<string, unknown>) =>
+    requireDefectReported(JSON.stringify({ summary: "s", findings: [finding] }), { vars: { expectedDefect } }).pass;
+
+  it("is configured with a defect at all", () => {
+    expect(expectedDefect).toBeDefined();
+  });
+
+  it("passes when a critical finding names the defect", () => {
+    expect(
+      guard({
+        severity: "critical",
+        description: "resolveSourcePath joins an unvalidated key, so ../ reaches another user's object.",
+      }),
+    ).toBe(true);
+  });
+
+  it("fails when the defect appears only in the evidence quote", () => {
+    expect(
+      guard({
+        severity: "critical",
+        description: "This function could use a clearer name.",
+        evidence: "  return `${userId}/${rawKey}`; // traversal via ../ is possible",
+      }),
+    ).toBe(false);
+  });
+
+  it("fails when the defect is reported below major severity", () => {
+    expect(guard({ severity: "nit", description: "Unvalidated key allows path traversal." })).toBe(false);
+  });
+});
+
 describe("case wiring", () => {
   // promptfoo PREPENDS defaultTest assertions to every case, and scoreIssueRecall
   // fails when expectedIssues is absent — as a default it would fail the
@@ -86,6 +159,15 @@ describe("case wiring", () => {
   it("keeps scoreIssueRecall off defaultTest", () => {
     expect(gradersOf(config.defaultTest.assert)).not.toContain("scoreIssueRecall");
   });
+
+  // Same trap for the hardening graders: each fails closed without its own var,
+  // so as a default it would fail every unrelated case by construction.
+  it.each(["noFabricatedAbsence", "requireDefectReported", "scoreEvidenceFidelity"])(
+    "keeps %s off defaultTest",
+    (grader) => {
+      expect(gradersOf(config.defaultTest.assert)).not.toContain(grader);
+    },
+  );
 
   it.each(config.tests.map((test) => [test.description, test] as const))(
     "grades %s consistently with its vars",
@@ -103,6 +185,12 @@ describe("case wiring", () => {
       const toolGraders = graders.filter((grader) => grader === "countToolCalls" || grader === "requireToolContext");
       if (toolGraders.length > 0) expect(test.vars.fixtureRoot).toBeDefined();
       expect(graders.includes("requireToolContext")).toBe(test.vars.requiredContextPath !== undefined);
+
+      // The hardening pair, same rule in both directions: the fabrication gate
+      // must not lose the defences it grades, and a case that declares defences
+      // must not lose the gate.
+      expect(graders.includes("noFabricatedAbsence")).toBe(test.vars.presentDefences !== undefined);
+      expect(graders.includes("requireDefectReported")).toBe(test.vars.expectedDefect !== undefined);
     },
   );
 });

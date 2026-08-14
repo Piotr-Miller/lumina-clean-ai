@@ -253,6 +253,87 @@ tests:
           contract, or does not mention it at all.
         metric: flaw_cross_hunk_contract
 
+  # HARDENING PRECISION, tool-less on purpose. The measured defect is the finder
+  # asserting a defence is ABSENT when the diff contains it, and glm-4.6 makes
+  # zero getFileContext calls in every recorded configuration — so attaching a
+  # fixtureRoot would add cost without changing what the case can observe.
+  #
+  # Ground truth: there is nothing critical to find. All three defences are
+  # present AND commented, which is the shape that produced PR #127's
+  # fabrications (one flagged a line two below the comment explaining the very
+  # defence it called missing).
+  - description: Hardening diff whose defences are present and commented — measures fabricated absence claims
+    vars:
+      diff: file://./fixtures/hardening-defended.diff
+      # Each label is a defence the diff DEMONSTRABLY contains. `patterns` match
+      # the topic wording a finding would use; the grader additionally requires a
+      # nearby negation, so an approving mention is not a fabrication.
+      presentDefences:
+        - label: control-character stripping before logging
+          patterns:
+            - "sanitiz"
+            - "control[- ]char"
+            - "log (inject|forg|spoof)"
+            - "logSafeKey"
+        - label: anchored allowlist pattern on the object key
+          patterns:
+            - "validat"
+            - "anchor"
+            - "allow[- ]?list"
+            - "OBJECT_KEY"
+        - label: path-traversal rejection
+          patterns:
+            - "travers"
+            - 'path (escape|injection)'
+            - '\.\.\/'
+        - label: key length bound
+          patterns:
+            - "length (limit|cap|bound|check)"
+            - "size limit"
+            - "MAX_KEY_LENGTH"
+            - "unbounded"
+    assert:
+      # Binary per run: the pre-registered bar counts runs out of 20, not
+      # findings, and one finding matching several defences counts once.
+      - type: javascript
+        value: file://./assertions.mjs:noFabricatedAbsence
+        metric: no_fabricated_absence
+      # Observational: 1 until findings carry evidence (Phase 3), then the share
+      # of offered quotes that are verbatim. Gates nothing.
+      - type: javascript
+        value: file://./assertions.mjs:scoreEvidenceFidelity
+        metric: evidence_fidelity
+
+  # THE OVER-SUPPRESSION GUARD for the case above. Same subject matter, same
+  # module, but resolveSourcePath forwards an unvalidated key into a storage
+  # path — so "../<other-user>/source.jpg" reads an object the caller does not
+  # own, two functions below a validator that is right there and never called.
+  #
+  # Without this case, a "fix" that works by making the finder timid would look
+  # like a win. expectedDefect is deliberately NOT named expectedIssues: this
+  # case must not acquire scoreIssueRecall, whose blob search would match the
+  # vulnerable line quoted in `evidence` rather than the finding itself.
+  - description: Hardening diff with one genuine traversal defect — guards against suppression
+    vars:
+      diff: file://./fixtures/hardening-vulnerable.diff
+      expectedDefect:
+        label: unvalidated key joined into a storage path (traversal / cross-user read)
+        patterns:
+          - "travers"
+          - '\.\.\/'
+          - "parseObjectKey"
+          - "(another|other) user"
+          - "unvalidated"
+          - "arbitrary (object|file|path)"
+    assert:
+      # Requires the SAME finding to name the defect AND carry critical/major.
+      - type: javascript
+        value: file://./assertions.mjs:requireDefectReported
+        metric: defect_reported
+      - type: javascript
+        value: file://./assertions.mjs:scoreEvidenceFidelity
+        metric: evidence_fidelity
+
   # TOOL-ENABLED, and deliberately so: the risk it measures is tool-INDUCED
   # over-reporting, and without a fixtureRoot createReviewer drops the tool
   # entirely — the case would then measure nothing of the kind. The change is

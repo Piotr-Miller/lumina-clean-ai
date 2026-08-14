@@ -216,6 +216,349 @@ export function requireToolContext(output, context) {
   };
 }
 
+// --- Hardening precision -----------------------------------------------------
+// What these three grade: the finder asserting that a defence PRESENT in the
+// diff is MISSING ("no validation", "not sanitized", "not provided"). Every
+// fabricated finding on PR #127 had that shape — one flagged a line two below
+// the comment explaining the very defence it called absent. The metrics are
+// deliberately narrow: absence claims only, not severity and not category,
+// which belong to the deferred calibration layer.
+
+/** Shared JSON gate for the three graders below, so each stays readable. */
+function readReview(output) {
+  try {
+    return { review: parseOutput(output) };
+  } catch (error) {
+    return { reason: "Reviewer output is not JSON: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+/**
+ * The ONLY fields these graders read. `evidence` is excluded on purpose: from
+ * Phase 3 it carries a verbatim source quote, so a grader searching the whole
+ * finding would match the quoted defence and score a fabrication as a correct
+ * report (plan review F2 — the reason scoreIssueRecall is not reused here).
+ * `summary` is excluded because a per-finding verdict needs a per-finding
+ * subject.
+ */
+const findingProse = (finding) =>
+  [finding?.description, finding?.suggestion].filter((part) => typeof part === "string" && part.length > 0).join("\n");
+
+function compilePatterns(patterns) {
+  const list = Array.isArray(patterns) ? patterns : [];
+  if (list.length === 0) return { reason: "no patterns" };
+  try {
+    return { compiled: list.map((pattern) => new RegExp(String(pattern), "iu")) };
+  } catch {
+    return { reason: "invalid pattern" };
+  }
+}
+
+// Negation cues, kept as a source string so every call compiles a FRESH regex —
+// a shared /g/ regex carries lastIndex between calls and would skip matches.
+// The privative adjectives are cues in their own right: "the key length is
+// unbounded" is an absence claim with no separate negation word in it, and the
+// metric missed that shape until the fixture's own wording was tested.
+const NEGATION_CUE_SOURCE =
+  "\\b(?:no|not|never|without|missing|absent|lacks?|lacking|omits?|omitted|fails? to|neglects? to|does not|doesn't|isn't|aren't" +
+  "|un(?:bounded|validated|sanitiz(?:ed|es)|sanitised|checked|restricted|limited|guarded|escaped|filtered|verified))\\b";
+
+// A negation whose head noun is NOT the defence does not claim the defence is
+// missing: "no need to sanitize further" negates the need, and "no test covering
+// the traversal branch" is a coverage finding about a defence it agrees exists.
+// Both would otherwise score an APPROVING review as a fabrication — the metric's
+// most likely false positive (plan Phase 1 manual criterion 1.14).
+const NEUTRALIZED_CUE =
+  /^(?:no|not)\s+(?:need|needs|reason|reasons|point|harm|issue|issues|problem|problems|concern|concerns|change|changes|test|tests|testing|coverage|spec|specs|assertion|assertions|documentation|docs|comment|comments)\b/iu;
+
+// A negation anywhere in a long finding is not evidence that it attaches to the
+// defence. Requiring proximity is what separates "no validation of the key"
+// from "the key is validated; there is no test for the reject path".
+const NEGATION_WINDOW = 80;
+
+const matchSpans = (text, pattern) => {
+  const scanner = new RegExp(pattern.source, pattern.flags.includes("g") ? pattern.flags : pattern.flags + "g");
+  const spans = [];
+  let match;
+  while ((match = scanner.exec(text)) !== null) {
+    spans.push({ start: match.index, end: match.index + match[0].length });
+    if (match[0].length === 0) scanner.lastIndex += 1;
+  }
+  return spans;
+};
+
+const negationSpans = (text) => {
+  const scanner = new RegExp(NEGATION_CUE_SOURCE, "giu");
+  const spans = [];
+  let match;
+  while ((match = scanner.exec(text)) !== null) {
+    if (NEUTRALIZED_CUE.test(text.slice(match.index))) continue;
+    spans.push({ start: match.index, end: match.index + match[0].length });
+  }
+  return spans;
+};
+
+const isNear = (a, b) => a.start - b.end <= NEGATION_WINDOW && b.start - a.end <= NEGATION_WINDOW;
+
+const oneLine = (text, limit = 160) => {
+  const flat = text.replace(/\s+/gu, " ").trim();
+  return flat.length <= limit ? flat : flat.slice(0, limit) + "…";
+};
+
+/**
+ * Fabrication gate for a diff whose defences are present and commented.
+ *
+ * `score` is BINARY PER RUN — 1 when no finding claims a declared defence is
+ * missing, 0 otherwise — because the pre-registered bar counts RUNS out of 20.
+ * A finding-weighted ratio would score one fabricated claim as 0 in a
+ * one-finding review and 0.9 in a ten-finding review while the bar counts both
+ * as one failed run (plan review F5). Findings are deduplicated for the same
+ * reason: one finding matching three defences is one fabricating finding.
+ *
+ * Reads the case's `presentDefences` var: [{ label, patterns[] }].
+ */
+export function noFabricatedAbsence(output, context) {
+  const read = readReview(output);
+  if (read.review === undefined) return { pass: false, score: 0, reason: read.reason };
+  const review = read.review;
+
+  const defences = context?.vars?.presentDefences;
+  if (!Array.isArray(defences) || defences.length === 0) {
+    return { pass: false, score: 0, reason: "No presentDefences configured for this case" };
+  }
+
+  // Fails closed, like reviewMustPass: a broken envelope is not a clean run.
+  if (!Array.isArray(review?.findings)) {
+    return { pass: false, score: 0, reason: "Review carries no findings array" };
+  }
+  const total = review.findings.length;
+  if (total === 0) {
+    return { pass: true, score: 1, reason: "No findings, so nothing claims a present defence is missing" };
+  }
+
+  const offenders = new Map();
+  const componentResults = [];
+  let brokenPatterns = 0;
+
+  for (const defence of defences) {
+    const label = String(defence?.label ?? "(unlabelled)");
+    const compiled = compilePatterns(defence?.patterns);
+    if (compiled.compiled === undefined) {
+      brokenPatterns += 1;
+      componentResults.push({ pass: false, score: 0, reason: compiled.reason + " for " + label });
+      continue;
+    }
+
+    const claimedBy = [];
+    review.findings.forEach((finding, index) => {
+      const prose = findingProse(finding);
+      if (prose.length === 0) return;
+      const negations = negationSpans(prose);
+      if (negations.length === 0) return;
+      const claimed = compiled.compiled.some((pattern) =>
+        matchSpans(prose, pattern).some((span) => negations.some((cue) => isNear(span, cue))),
+      );
+      if (!claimed) return;
+      claimedBy.push(index);
+      const entry = offenders.get(index) ?? { labels: new Set(), prose };
+      entry.labels.add(label);
+      offenders.set(index, entry);
+    });
+
+    componentResults.push({
+      pass: claimedBy.length === 0,
+      score: claimedBy.length === 0 ? 1 : 0,
+      reason:
+        claimedBy.length === 0
+          ? "Not claimed missing: " + label
+          : "Claimed missing by finding(s) " + claimedBy.join(", ") + ": " + label,
+    });
+  }
+
+  // A defence whose patterns did not compile was never graded, so a clean
+  // result here would be a broken instrument reading as a clean run.
+  if (brokenPatterns > 0) {
+    return {
+      pass: false,
+      score: 0,
+      reason: String(brokenPatterns) + " of " + String(defences.length) + " defence(s) have unusable patterns",
+      componentResults,
+    };
+  }
+
+  const fabricating = [...offenders.keys()];
+  if (fabricating.length === 0) {
+    return {
+      pass: true,
+      score: 1,
+      reason: "No finding claims a present defence is missing (" + String(total) + " finding(s) graded)",
+      componentResults,
+    };
+  }
+
+  const detail = fabricating
+    .map((index) => {
+      const entry = offenders.get(index);
+      return "#" + String(index) + " [" + [...entry.labels].join(", ") + '] "' + oneLine(entry.prose) + '"';
+    })
+    .join("; ");
+  return {
+    pass: false,
+    score: 0,
+    reason:
+      String(fabricating.length) +
+      " of " +
+      String(total) +
+      " finding(s) claim a present defence is missing: " +
+      detail,
+    componentResults,
+  };
+}
+
+/**
+ * Over-suppression guard for the paired vulnerable fixture: the planted defect
+ * must be REPORTED, not merely quoted.
+ *
+ * Deliberately not scoreIssueRecall, which regex-tests JSON.stringify(review) —
+ * once findings carry an `evidence` quote of the vulnerable line, that search
+ * matches the quote and passes while the finding text says nothing about the
+ * vulnerability (plan review F2). This grader reads findingProse only, and
+ * requires the SAME finding to carry critical or major severity, so a defect
+ * mentioned in passing as a nit does not clear the guard.
+ *
+ * Reads the case's `expectedDefect` var: { label, patterns[] }.
+ */
+export function requireDefectReported(output, context) {
+  const read = readReview(output);
+  if (read.review === undefined) return { pass: false, score: 0, reason: read.reason };
+  const review = read.review;
+
+  const defect = context?.vars?.expectedDefect;
+  if (defect === null || typeof defect !== "object" || Array.isArray(defect)) {
+    return { pass: false, score: 0, reason: "No expectedDefect configured for this case" };
+  }
+  const label = String(defect.label ?? "(unlabelled)");
+  const compiled = compilePatterns(defect.patterns);
+  if (compiled.compiled === undefined) {
+    return { pass: false, score: 0, reason: compiled.reason + " for " + label };
+  }
+
+  if (!Array.isArray(review?.findings)) {
+    return { pass: false, score: 0, reason: "Review carries no findings array" };
+  }
+
+  const matching = review.findings.filter((finding) =>
+    compiled.compiled.some((pattern) => pattern.test(findingProse(finding))),
+  );
+  if (matching.length === 0) {
+    return {
+      pass: false,
+      score: 0,
+      reason:
+        "No finding reports " +
+        label +
+        " in its description or suggestion (" +
+        String(review.findings.length) +
+        " finding(s); evidence and summary are not searched)",
+    };
+  }
+
+  const escalated = matching.filter((finding) => finding?.severity === "critical" || finding?.severity === "major");
+  if (escalated.length === 0) {
+    const severities = matching.map((finding) => String(finding?.severity)).join(", ");
+    return {
+      pass: false,
+      score: 0,
+      reason: "Reported " + label + " only below major severity: " + severities,
+    };
+  }
+
+  return {
+    pass: true,
+    score: 1,
+    reason: "Reported " + label + " at " + String(escalated[0].severity) + " severity",
+  };
+}
+
+const collapse = (text) => text.replace(/\s+/gu, " ").trim();
+
+// Diff headers first, THEN marker stripping: "--- a/x" and "+++ b/x" both start
+// with a marker character and would otherwise survive as content.
+const canonicalDiffBody = (diff) =>
+  collapse(
+    diff
+      .split(/\r?\n/u)
+      .filter((line) => !/^(?:diff --git |index |--- |\+\+\+ |@@)/u.test(line))
+      .map((line) => line.replace(/^[+\- ]/u, ""))
+      .join("\n"),
+  );
+
+const canonicalQuote = (text) =>
+  collapse(
+    text
+      .split(/\r?\n/u)
+      .map((line) => line.replace(/^\s*[+\-]\s?/u, ""))
+      .join("\n"),
+  );
+
+/**
+ * Observational quote-fidelity metric. Gates nothing; the number is the point.
+ *
+ * The schema can only require `evidence` to be non-empty — it cannot prove the
+ * string is a real quote (plan review F4), and enforcing that in a superRefine
+ * would reject a whole review over one bad quote. So fidelity is MEASURED here:
+ * the share of offered evidence strings that appear verbatim in the diff after
+ * canonicalization (diff markers stripped, whitespace collapsed).
+ *
+ * The denominator is evidence OFFERED, not findings, and a run with no evidence
+ * at all scores 1 as "not applicable". That keeps pre-intervention baseline rows
+ * — where the field does not exist yet — from dragging the average, and makes
+ * the metric read as "of the quotes offered, how many are real".
+ */
+export function scoreEvidenceFidelity(output, context) {
+  const read = readReview(output);
+  if (read.review === undefined) return { pass: false, score: 0, reason: read.reason };
+  const review = read.review;
+
+  const diff = context?.vars?.diff;
+  if (typeof diff !== "string" || diff.length === 0) {
+    return { pass: false, score: 0, reason: "No diff var on this row, so quotes are unverifiable" };
+  }
+  if (!Array.isArray(review?.findings)) {
+    return { pass: false, score: 0, reason: "Review carries no findings array" };
+  }
+
+  const offered = review.findings
+    .map((finding, index) => ({ index, evidence: typeof finding?.evidence === "string" ? finding.evidence.trim() : "" }))
+    .filter((entry) => entry.evidence.length > 0);
+
+  if (offered.length === 0) {
+    return {
+      pass: true,
+      score: 1,
+      reason:
+        "Not applicable: no finding carries an evidence field (" + String(review.findings.length) + " finding(s))",
+    };
+  }
+
+  const body = canonicalDiffBody(diff);
+  const invented = offered.filter((entry) => !body.includes(canonicalQuote(entry.evidence)));
+  const score = (offered.length - invented.length) / offered.length;
+
+  return {
+    pass: true,
+    score,
+    reason:
+      String(offered.length - invented.length) +
+      " of " +
+      String(offered.length) +
+      " evidence string(s) quote the diff verbatim" +
+      (invented.length === 0
+        ? ""
+        : " — not found: " + invented.map((entry) => '#' + String(entry.index) + ' "' + oneLine(entry.evidence, 80) + '"').join("; ")),
+  };
+}
+
 export function scoreIssueRecall(output, context) {
   let review;
   try {

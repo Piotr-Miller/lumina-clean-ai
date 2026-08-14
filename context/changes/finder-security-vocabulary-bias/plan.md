@@ -192,6 +192,25 @@ The absence-phrase set decides what counts, so it is fixed here:
 /\b(no|without|missing|absent|lacks?|fails? to|not (present|provided|implemented|validated|sanitiz\w+|enforced|checked))\b/i
 ```
 
+**Implementation deviation (2026-08-14, Phase 1).** The pinned regex above was
+replaced during implementation, because testing it against the fixture's own
+wording showed it both over- and under-fires. Pinning the wrong detector is not
+what pinning was for, so the shipped design is:
+
+1. **Proximity, not co-occurrence.** A negation anywhere in a long finding is not
+   evidence that it attaches to the defence. The cue must fall within 80
+   characters of the defence match. Without this,
+   `"Validation looks solid; there is no test covering the traversal branch"`
+   scored as a fabrication.
+2. **Neutralized cues.** A negation whose head noun is not the defence
+   (`no need to…`, `no test covering…`, `no documentation of…`) is excluded.
+3. **Privative adjectives are cues in their own right.**
+   `"the key length is unbounded"` is an absence claim containing no negation
+   word at all, and the pinned regex missed it.
+
+Both corrections came from the automated pattern-quality tests, which is why
+those tests run the SHIPPING fixture vars rather than stand-ins.
+
 #### 4. Suppression guard grader — field-scoped
 
 **File**: `packages/code-reviewer/evals/assertions.mjs`

@@ -1,0 +1,25 @@
+diff --git a/src/lib/storage/object-key.ts b/src/lib/storage/object-key.ts
+index b93f5e1..d21a86f 100644
+--- a/src/lib/storage/object-key.ts
++++ b/src/lib/storage/object-key.ts
+@@ -34,5 +34,20 @@ export function parseObjectKey(raw: unknown): ParsedKey {
+   if (!OBJECT_KEY.test(raw)) {
+     return { ok: false, reason: "shape" };
+   }
+   return { ok: true, key: raw };
+ }
++
++interface ObjectStore {
++  from(bucket: string): { download(path: string): Promise<{ data: Blob | null }> };
++}
++
++export function resolveSourcePath(userId: string, rawKey: string): string {
++  // Legacy clients still send keys without the uuid prefix, so the value is
++  // forwarded as received and joined onto the caller's own folder.
++  return `${userId}/${rawKey}`;
++}
++
++export async function readSourceObject(store: ObjectStore, userId: string, rawKey: string): Promise<Blob | null> {
++  const { data } = await store.from("photos").download(resolveSourcePath(userId, rawKey));
++  return data ?? null;
++}

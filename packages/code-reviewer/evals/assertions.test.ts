@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { countToolCalls, requireToolContext, reviewMustFail, reviewMustPass, scoreIssueRecall } from "./assertions.mjs";
+import {
+  countToolCalls,
+  noFabricatedAbsence,
+  requireDefectReported,
+  requireToolContext,
+  reviewMustFail,
+  reviewMustPass,
+  scoreEvidenceFidelity,
+  scoreIssueRecall,
+} from "./assertions.mjs";
 
 const threeIssues = [
   { label: "issue-a", patterns: ["alpha"] },
@@ -254,6 +263,222 @@ describe("requireToolContext", () => {
     expect(requireToolContext("", { vars: {}, metadata: delivered })).toMatchObject({
       pass: false,
       reason: "No requiredContextPath configured for this case",
+    });
+  });
+});
+
+// --- Hardening precision assertions ------------------------------------------
+// Every automated criterion in plan Phase 1 lands here. The metric feeds a
+// pre-registered bar counted in RUNS, so its scoring unit is the thing most
+// worth pinning: binary per run, deduplicated, and blind to `evidence`.
+
+const DEFENCES = [
+  { label: "sanitization", patterns: ["sanitiz", "control[- ]char"] },
+  { label: "validation", patterns: ["validat", "allow[- ]?list"] },
+  { label: "traversal rejection", patterns: ["travers"] },
+];
+
+const findingsReview = (...findings: Record<string, unknown>[]) => JSON.stringify({ summary: "s", findings });
+
+describe("noFabricatedAbsence", () => {
+  const grade = (output: string) => noFabricatedAbsence(output, { vars: { presentDefences: DEFENCES } });
+
+  it("scores 1 when nothing claims a declared defence is missing", () => {
+    expect(grade(findingsReview({ description: "The anchored pattern is correct." }))).toMatchObject({
+      pass: true,
+      score: 1,
+    });
+  });
+
+  it("scores 0 for an absence claim about a declared defence", () => {
+    const result = grade(findingsReview({ description: "There is no validation of the key." }));
+
+    expect(result).toMatchObject({ pass: false, score: 0 });
+    expect(result.reason).toContain("validation");
+  });
+
+  // The registered bar counts runs, so the score must be binary — a
+  // finding-weighted ratio would read 0.9 for the same single fabrication in a
+  // ten-finding review (plan review F5).
+  it("stays binary regardless of how many clean findings surround the fabrication", () => {
+    const clean = Array.from({ length: 9 }, () => ({ description: "Minor style nit." }));
+    const result = grade(findingsReview({ description: "No sanitization is applied." }, ...clean));
+
+    expect(result.score).toBe(0);
+  });
+
+  it("counts one finding once even when it matches several defences", () => {
+    const result = grade(
+      findingsReview({ description: "No validation, no sanitization, and traversal is not rejected." }),
+    );
+
+    expect(result.score).toBe(0);
+    expect(result.reason).toContain("1 of 1 finding(s)");
+  });
+
+  it("scores 1 for a review with no findings", () => {
+    expect(grade(findingsReview())).toMatchObject({ pass: true, score: 1 });
+  });
+
+  // After Phase 3 the evidence quote contains the defence verbatim. Reading it
+  // would turn a correct report into a fabrication and vice versa.
+  it("ignores evidence, summary and file when matching", () => {
+    const output = JSON.stringify({
+      summary: "There is no validation anywhere in this diff.",
+      findings: [
+        {
+          description: "Naming could be clearer.",
+          file: "src/no-validation-helper.ts",
+          evidence: "if (!OBJECT_KEY.test(raw)) { return { ok: false }; } // not validated",
+        },
+      ],
+    });
+
+    expect(grade(output)).toMatchObject({ pass: true, score: 1 });
+  });
+
+  it("reads the suggestion field, not only the description", () => {
+    expect(
+      grade(findingsReview({ description: "See below.", suggestion: "Add the missing traversal check." })).score,
+    ).toBe(0);
+  });
+
+  it("does not fire when the negation is far from the defence mention", () => {
+    const description =
+      "The traversal rejection is correct and the anchored pattern is explicit. " +
+      "Separately, and for entirely unrelated reasons that take a while to spell out here, " +
+      "the module does not export a helper for callers that need the parsed key shape.";
+
+    expect(grade(findingsReview({ description })).score).toBe(1);
+  });
+
+  it("fails closed on a broken envelope rather than reading it as clean", () => {
+    expect(grade(JSON.stringify([{ description: "bare array" }]))).toMatchObject({ pass: false, score: 0 });
+  });
+
+  it("fails closed when a declared defence has an uncompilable pattern", () => {
+    const result = noFabricatedAbsence(findingsReview({ description: "All good." }), {
+      vars: { presentDefences: [{ label: "bad", patterns: ["["] }] },
+    });
+
+    expect(result).toMatchObject({ pass: false, score: 0 });
+    expect(result.reason).toContain("unusable patterns");
+  });
+
+  it("fails when the case configured no defences", () => {
+    expect(noFabricatedAbsence(findingsReview(), { vars: {} })).toMatchObject({
+      pass: false,
+      reason: "No presentDefences configured for this case",
+    });
+  });
+});
+
+describe("requireDefectReported", () => {
+  const DEFECT = { label: "traversal", patterns: ["travers", "unvalidated"] };
+  const grade = (output: string) => requireDefectReported(output, { vars: { expectedDefect: DEFECT } });
+
+  it("passes a critical finding that names the defect", () => {
+    expect(
+      grade(findingsReview({ severity: "critical", description: "Unvalidated key allows traversal." })),
+    ).toMatchObject({ pass: true, score: 1 });
+  });
+
+  it("passes at major severity", () => {
+    expect(grade(findingsReview({ severity: "major", description: "Path traversal is possible." })).pass).toBe(true);
+  });
+
+  // The whole point of not reusing scoreIssueRecall: its JSON.stringify search
+  // would match the quoted vulnerable line (plan review F2).
+  it("fails when the defect text appears only in the evidence quote", () => {
+    const result = grade(
+      findingsReview({
+        severity: "critical",
+        description: "Consider renaming this function.",
+        evidence: "return `${userId}/${rawKey}`; // traversal",
+      }),
+    );
+
+    expect(result).toMatchObject({ pass: false, score: 0 });
+    expect(result.reason).toContain("evidence and summary are not searched");
+  });
+
+  it("fails when the defect appears only in the summary", () => {
+    const output = JSON.stringify({
+      summary: "The diff allows path traversal.",
+      findings: [{ severity: "critical", description: "Unrelated concern." }],
+    });
+
+    expect(grade(output).pass).toBe(false);
+  });
+
+  it.each(["minor", "nit"])("fails when the defect is reported only at %s severity", (severity) => {
+    const result = grade(findingsReview({ severity, description: "Traversal is possible here." }));
+
+    expect(result.pass).toBe(false);
+    expect(result.reason).toContain("below major severity");
+  });
+
+  it("fails when the case configured no defect", () => {
+    expect(requireDefectReported(findingsReview(), { vars: {} })).toMatchObject({
+      pass: false,
+      reason: "No expectedDefect configured for this case",
+    });
+  });
+});
+
+describe("scoreEvidenceFidelity", () => {
+  const diff = [
+    "diff --git a/src/lib/storage/object-key.ts b/src/lib/storage/object-key.ts",
+    "index 4a1d7c2..b93f5e1 100644",
+    "--- a/src/lib/storage/object-key.ts",
+    "+++ b/src/lib/storage/object-key.ts",
+    "@@ -1,2 +1,4 @@",
+    ' import { logger } from "@/lib/logger";',
+    "+const MAX_KEY_LENGTH = 64;",
+    '+  return raw.replace(CONTROL_CHARS, "");',
+  ].join("\n");
+  const grade = (output: string) => scoreEvidenceFidelity(output, { vars: { diff } });
+
+  it("scores a verbatim quote as fully faithful", () => {
+    expect(grade(findingsReview({ evidence: "const MAX_KEY_LENGTH = 64;" }))).toMatchObject({ pass: true, score: 1 });
+  });
+
+  it("scores an invented quote as unfaithful without failing the row", () => {
+    const result = grade(findingsReview({ evidence: "const MAX_KEY_LENGTH = 4096;" }));
+
+    expect(result).toMatchObject({ pass: true, score: 0 });
+    expect(result.reason).toContain("not found");
+  });
+
+  it("canonicalizes the diff marker and collapsed whitespace", () => {
+    expect(grade(findingsReview({ evidence: '+  return   raw.replace(CONTROL_CHARS, "");' })).score).toBe(1);
+  });
+
+  it("does not credit a quote of the diff's own header lines", () => {
+    expect(grade(findingsReview({ evidence: "+++ b/src/lib/storage/object-key.ts" })).score).toBe(0);
+  });
+
+  it("reports the ratio when only some quotes are real", () => {
+    const result = grade(
+      findingsReview({ evidence: "const MAX_KEY_LENGTH = 64;" }, { evidence: "totally invented line" }),
+    );
+
+    expect(result.score).toBe(0.5);
+  });
+
+  // Baseline rows predate the field entirely; scoring them 0 would drag the
+  // average and read as a fidelity collapse that never happened.
+  it("reads as not applicable when no finding carries evidence", () => {
+    const result = grade(findingsReview({ description: "no evidence field here" }));
+
+    expect(result).toMatchObject({ pass: true, score: 1 });
+    expect(result.reason).toContain("Not applicable");
+  });
+
+  it("fails closed when the row carries no diff var", () => {
+    expect(scoreEvidenceFidelity(findingsReview({ evidence: "x" }), { vars: {} })).toMatchObject({
+      pass: false,
+      score: 0,
     });
   });
 });
