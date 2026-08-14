@@ -173,6 +173,28 @@ _Only if the baseline lands in the ambiguous 2-5 band. Bounded at one._
 _Not applicable. Phase 3 does not start on the INVALID-FIXTURE branch, so no intervention was built and
 there is nothing to measure against the baseline._
 
+## Live observation (criterion 4.4)
+
+PR #143, run `31841839498`, finder `z-ai/glm-4.6` — the production pipeline on a real PR, not the eval
+harness. All checks green, label `ai-cr:passed`.
+
+**7 findings, every one `nit` severity. Zero fabrications, zero critical, zero major.** The reviewed
+diff is saturated with exactly the vocabulary this change is named after — `logSafeKey`, `OBJECT_KEY`,
+control-character stripping, anchored allowlists, path-traversal rejection, plus a fixture whose entire
+subject is a traversal vulnerability. Finding F5 cites `hardening-defended.diff:9`, which confirms the
+fixture was inside the reviewed portion despite the diff being truncated at 100 KB.
+
+**This is a second, independent negative against the change's founding hypothesis.** The premise in the
+name — that security-saturated subject matter triggers the collapse — now has three results against it:
+research found the same severity monotony on an ordinary-code CONTROL diff, the eval found 0/20
+fabrications on a purpose-built hardening fixture, and the live pipeline found 0 on a real hardening PR.
+Whatever produced #127's ten uniform criticals, "the diff is about security" is not a sufficient
+condition for it.
+
+The implementation-review pass also fired on this run (it is gated on a passing code review), and its
+P2 caught a stale checklist in this plan — four Phase 1 criteria still describing the deleted
+deterministic matcher. Fixed rather than argued with.
+
 ## Outcome
 
 **INVALID-FIXTURE.** The instrument is sound and validated; the fixture does not reproduce the defect.

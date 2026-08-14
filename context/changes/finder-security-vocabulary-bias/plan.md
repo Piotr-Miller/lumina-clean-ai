@@ -293,10 +293,16 @@ rubric is the only fabrication signal.
 - Package lint passes: `cd packages/code-reviewer && npm run lint`
 - Type checking passes: `cd packages/code-reviewer && npm run typecheck`
 - Unit tests pass: `cd packages/code-reviewer && npm test`
-- Fabrication metric returns `0` for a review claiming a declared defence is missing, `1` otherwise
-- Fabrication metric counts one finding once even when it matches several declared defences
-- Fabrication metric returns `1` for a zero-finding review
-- Fabrication metric ignores `evidence`, `summary`, and `file` when matching
+- ~~Fabrication metric returns `0` for a review claiming a declared defence is missing, `1` otherwise~~
+- ~~Fabrication metric counts one finding once even when it matches several declared defences~~
+- ~~Fabrication metric returns `1` for a zero-finding review~~
+- ~~Fabrication metric ignores `evidence`, `summary`, and `file` when matching~~
+- **SUPERSEDED (2026-08-14, impl review P2)** — those four described the deterministic matcher, which
+  was deleted after seven failed review rounds. The rubric that replaced it needs a live provider call
+  and has no unit-testable equivalent, so its validation is **manual by design**: criterion 1.15 reviews
+  its wording before any spend, and 2.6 hand-checks its verdicts after. Progress rows 1.4-1.9 stay
+  checked because they were true when they landed; struck through here so the checklist stops asserting
+  criteria that can no longer be met.
 - Suppression grader fails when the defect appears **only** in `evidence` and not in the finding text
 - Suppression grader fails when a matching finding exists at `minor`/`nit` severity
 - Quote-fidelity metric scores a verbatim quote `1` and an invented string `0`, and canonicalizes diff
@@ -784,9 +790,12 @@ kept in every branch, since they document the defect whether or not it is fixed.
 > - **Phases 1-2 always execute.** Their rows are unconditional.
 > - **The Phase 2 fixture-validity gate decides the rest.** On the valid-fixture branch, Phases 3 and 4
 >   execute and their rows are ticked normally.
-> - **On the INVALID-FIXTURE branch the change completes at Phase 2 plus the Phase 4 decision.** Rows
->   3.1-3.14 and 4.1-4.3 are then resolved as `- [x] … — N/A (INVALID-FIXTURE, <sha>)`, and rows
->   4.4-4.6 are ticked normally, because `decision.md` is still written and still records an outcome.
+> - **On the INVALID-FIXTURE branch the change completes at Phase 2 plus all of Phase 4.** Only rows
+>   3.1-3.14 resolve as `- [x] … — N/A (INVALID-FIXTURE, <sha>)`. **Corrected 2026-08-14**: this rule
+>   originally sent 4.1-4.3 to N/A as well, which was wrong — the package gate, the ai-review artifact
+>   and "the instrument is present" depend on the branch not at all, and marking three reachable
+>   criteria as skipped would have understated what this change actually delivered. Every Phase 4 row
+>   ticks normally.
 >
 > `references/progress-format.md` has no skipped state, so `N/A (INVALID-FIXTURE, <sha>)` is a local
 > extension of the convention, deliberately spelled out here rather than improvised at the time. It
