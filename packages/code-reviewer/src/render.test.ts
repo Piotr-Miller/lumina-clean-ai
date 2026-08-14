@@ -183,8 +183,14 @@ describe("renderStickyComment (model-controlled Markdown isolation)", () => {
 
 // --- Implementation review section (phase 3) ---
 
-const implFinding = (id: string, overrides: Partial<IdentifiedImplFinding> = {}): IdentifiedImplFinding => ({
+// Defaults to the `code` locus because most render assertions are about the
+// rendered location. Other loci are passed explicitly as whole objects.
+const implFinding = (
+  id: string,
+  overrides: Partial<Omit<Extract<IdentifiedImplFinding, { locus: "code" }>, "locus">> = {},
+): IdentifiedImplFinding => ({
   id,
+  locus: "code",
   dimension: "plan_adherence",
   severity: "WARNING",
   impact: "LOW",
@@ -273,12 +279,40 @@ describe("renderStickyComment implementation-review section", () => {
     expect(comment).toContain("…and 3 more finding(s) in review.json.");
   });
 
-  it("omits the location entirely for a finding about something missing", () => {
-    const comment = renderStickyComment(
-      result({ implReview: reviewed({ findings: [implFinding("P1", { file: undefined, startLine: undefined })] }) }),
-    );
+  // One assertion per locus, so the exhaustive switch in implLocation is covered
+  // rather than just compiled.
+  it("renders a location per locus and none for absent", () => {
+    const at = (finding: IdentifiedImplFinding) =>
+      renderStickyComment(result({ implReview: reviewed({ findings: [finding] }) }));
+
+    expect(at(implFinding("P1"))).toContain("`src/a.ts:12`");
+    expect(
+      at({
+        id: "P2",
+        locus: "file",
+        file: "src/b.ts",
+        dimension: "plan_adherence",
+        severity: "WARNING",
+        impact: "LOW",
+        title: "title P2",
+        detail: "d",
+        fix: "f",
+      }),
+    ).toContain("`src/b.ts`");
+
     // No fabricated path, no bare `:12`.
-    expect(comment).toContain("**P1** [WARNING/LOW] — title P1");
+    const absent = at({
+      id: "P3",
+      locus: "absent",
+      dimension: "plan_adherence",
+      severity: "WARNING",
+      impact: "LOW",
+      title: "title P3",
+      detail: "d",
+      fix: "f",
+    });
+    expect(absent).toContain("**P3** [WARNING/LOW] — title P3");
+    expect(absent).not.toContain(":12");
   });
 
   // The plan path is UNTRUSTED: the PR body names it (criterion 3.11).

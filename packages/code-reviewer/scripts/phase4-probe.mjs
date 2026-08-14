@@ -1,12 +1,14 @@
 // Phase 4 probe — executes the ground truth pre-registered in
 // context/changes/impl-review-ci-agent/verification.md.
 //
-// Run LOCALLY rather than as a PR: review.yml only triggers on PRs targeting
-// master, and a master-based PR runs MASTER's reviewer, which has no third pass
-// yet. So 4.3-4.7 (behaviour) are testable now; 4.2 (CI run + artifact) is not,
-// and is deferred to after the branch merges. The plan and diff below are byte
-// -identical in intent to the pre-registered table — nothing was adjusted after
-// seeing any result.
+// Originally a local stand-in while review.yml (branches: [master]) could not run
+// the pass on an unmerged branch; 4.2 has since passed on PR #128 with this same
+// ground truth. It stays because it is the cheapest way to exercise the pass
+// against a KNOWN diff — it is how the locus anchoring fix was measured, and how
+// the oneOf incompatibility was caught before it shipped.
+//
+// The plan and diff below are byte-identical in intent to the pre-registered
+// table; nothing was adjusted after seeing any result.
 import { createImplReviewer } from "../src/impl-reviewer.ts";
 
 const PLAN = `# Probe: request throttling helpers — Implementation Plan
@@ -135,16 +137,33 @@ const reviewer = createImplReviewer({
   },
 });
 
-const result = await reviewer.implReview(
-  { plan: PLAN, diff: DIFF, planPath: "context/changes/probe-impl-review/plan.md" },
-  { timeoutMs: 300_000 },
-);
+// Capture the raw model text on a schema failure — without it a
+// NoObjectGeneratedError tells you only THAT the shape was wrong, never how,
+// which is the difference between diagnosing and guessing.
+let result;
+try {
+  result = await reviewer.implReview(
+    { plan: PLAN, diff: DIFF, planPath: "context/changes/probe-impl-review/plan.md" },
+    { timeoutMs: 300_000 },
+  );
+} catch (error) {
+  const text = error?.text;
+  console.log("FAILED:", error?.name, "-", error?.message);
+  console.log(`
+===== RAW MODEL TEXT (${String(text?.length ?? 0)} chars) =====`);
+  console.log(text === undefined ? "(no text)" : text.slice(0, 2500));
+  console.log("===== END =====");
+  process.exit(1);
+}
 
 console.log(JSON.stringify({ model: reviewer.model, grades: result.grades, verdict: result.verdict }, null, 2));
 console.log("\nverdictReason:", result.verdictReason);
 console.log("\nfindings:");
 for (const f of result.findings) {
-  console.log(`\n  ${f.id} [${f.severity}/${f.impact}] ${f.dimension} :: ${f.file ?? "(no file)"}`);
+  const anchor =
+    f.locus === "code" ? `${f.file}:${String(f.startLine)}` : f.locus === "file" ? f.file : "(absent)";
+  console.log(`
+  ${f.id} [${f.severity}/${f.impact}] ${f.dimension} :: locus=${f.locus} ${anchor}`);
   console.log(`    ${f.title}`);
   console.log(`    detail: ${f.detail}`);
 }
