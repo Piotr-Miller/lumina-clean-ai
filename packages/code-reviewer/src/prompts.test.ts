@@ -9,7 +9,7 @@ import {
   buildPrompt,
   type JudgePromptInput,
 } from "./prompts.js";
-import { implDimensionSchema, lensSchema, scoresSchema, type IdentifiedFinding } from "./schemas.js";
+import { implDimensionSchema, lensSchema, scoresWireSchema, type IdentifiedFinding } from "./schemas.js";
 
 describe("buildInstructions", () => {
   it("produces a distinct instruction set per lens", () => {
@@ -95,9 +95,9 @@ const judgeInput = (overrides: Partial<JudgePromptInput> = {}): JudgePromptInput
 });
 
 describe("buildJudgeInstructions", () => {
-  it("carries the rubric for every scoresSchema criterion by exact key", () => {
+  it("carries the rubric for every scoresWireSchema criterion by exact key", () => {
     const instructions = buildJudgeInstructions();
-    for (const key of Object.keys(scoresSchema.shape)) {
+    for (const key of Object.keys(scoresWireSchema.shape)) {
       expect(instructions).toContain(key);
     }
   });

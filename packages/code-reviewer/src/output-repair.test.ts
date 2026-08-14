@@ -204,7 +204,7 @@ describe("extractJsonObject", () => {
 describe("repairParsedJudgeOutput", () => {
   const validJudge = () => ({
     scores: Object.fromEntries(
-      CRITERIA.map(({ key }) => [key, { score: 7, justification: "j", findingIds: [] }]),
+      CRITERIA.map(({ key }) => [key, { score: "7", justification: "j", findingIds: [] }]),
     ),
     verdict: "passed",
     verdictReason: "fine",

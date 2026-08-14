@@ -5,7 +5,7 @@ import { resolveConfig, resolveModels } from "./config.js";
 import { buildJudgeInstructions, buildJudgePrompt, type JudgePromptInput } from "./prompts.js";
 import { tolerantJudgeOutput } from "./output-repair.js";
 import { validateJudgeReferences } from "./scorecard.js";
-import { type JudgeResult } from "./schemas.js";
+import { normalizeJudgeOutput, type JudgeResult } from "./schemas.js";
 
 // Second-pass factory mirroring createReviewer's shape: a tool-less
 // structured call on the quality model. The judge never sees the diff (user
@@ -69,8 +69,10 @@ export function createJudge(options: JudgeOptions = {}) {
       timeout: callOptions.timeoutMs,
       onStepEnd: options.onStepEnd,
     });
+    // Normalize immediately: everything downstream — reference validation, the
+    // scorecard, render.ts — sees numeric scores and never the wire strings.
     const { output, droppedFindingIdRefs } = validateJudgeReferences(
-      result.output,
+      normalizeJudgeOutput(result.output),
       input.findings.map((finding) => finding.id),
     );
     return { ...output, droppedFindingIdRefs };

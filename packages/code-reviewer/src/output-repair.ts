@@ -1,6 +1,6 @@
 import { NoObjectGeneratedError, Output } from "ai";
 
-import { judgeOutputSchema, reviewResultSchema, type JudgeOutput, type ReviewResult } from "./schemas.js";
+import { judgeOutputSchema, reviewResultSchema, type JudgeOutputWire, type ReviewResult } from "./schemas.js";
 
 // Envelope repair for the finder's structured output.
 //
@@ -170,7 +170,7 @@ export function extractJsonObject(text: string | undefined): string | undefined 
  * the finder's: a repair that does not produce a schema-valid result is not a
  * repair.
  */
-export function repairParsedJudgeOutput(error: unknown, text: string | undefined): JudgeOutput | undefined {
+export function repairParsedJudgeOutput(error: unknown, text: string | undefined): JudgeOutputWire | undefined {
   if (!NoObjectGeneratedError.isInstance(error)) return undefined;
   const json = extractJsonObject(text);
   if (json === undefined) return undefined;
@@ -186,14 +186,14 @@ export function repairParsedJudgeOutput(error: unknown, text: string | undefined
 
 /** `Output.object(judgeOutputSchema)` with the same one recovery pass the finder gets. */
 export function tolerantJudgeOutput(options: TolerantReviewOutputOptions = {}) {
-  const base = Output.object<JudgeOutput>({
+  const base = Output.object<JudgeOutputWire>({
     schema: judgeOutputSchema,
     name: "judge_scorecard",
     description: "A single JSON object with `scores`, `verdict`, `verdictReason`, and `summary` — no prose around it.",
   });
   return {
     ...base,
-    async parseCompleteOutput(...args: Parameters<typeof base.parseCompleteOutput>): Promise<JudgeOutput> {
+    async parseCompleteOutput(...args: Parameters<typeof base.parseCompleteOutput>): Promise<JudgeOutputWire> {
       const [parseOptions] = args;
       try {
         return await base.parseCompleteOutput(...args);

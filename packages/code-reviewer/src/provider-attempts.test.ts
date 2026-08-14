@@ -137,7 +137,7 @@ const judgeGeneration = () => ({
       type: "text" as const,
       text: JSON.stringify({
         scores: Object.fromEntries(
-          CRITERIA.map(({ key }) => [key, { score: 8, justification: "j", findingIds: [] }]),
+          CRITERIA.map(({ key }) => [key, { score: "8", justification: "j", findingIds: [] }]),
         ),
         verdict: "passed",
         verdictReason: "ok",

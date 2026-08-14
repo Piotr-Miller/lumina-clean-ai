@@ -32,7 +32,7 @@ const identified = (id: string, overrides: Partial<IdentifiedFinding> = {}): Ide
 const scores = (findingIds: string[] = []): Scores =>
   Object.fromEntries(
     CRITERIA.map(({ key }) => [key, { score: 7, justification: "j", findingIds }]),
-  ) as Scores;
+  ) as unknown as Scores;
 
 const result = (overrides: Partial<PipelineResult> = {}): PipelineResult => ({
   summary: "overall assessment",

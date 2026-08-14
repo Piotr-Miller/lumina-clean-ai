@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { mergeFindings } from "./findings.js";
 import { assignFindingIds, CRITERIA, validateJudgeReferences } from "./scorecard.js";
-import { scoresSchema, type Finding, type JudgeOutput, type Scores } from "./schemas.js";
+import { scoresWireSchema, type Finding, type JudgeOutput, type Scores } from "./schemas.js";
 
 const finding = (overrides: Partial<Finding>): Finding => ({
   file: "src/a.ts",
@@ -19,7 +19,7 @@ const scores = (findingIds: Partial<Record<keyof Scores, string[]>> = {}): Score
       key,
       { score: 8, justification: "j", findingIds: findingIds[key] ?? [] },
     ]),
-  ) as Scores;
+  ) as unknown as Scores;
 
 const judgeOutput = (findingIds: Partial<Record<keyof Scores, string[]>> = {}): JudgeOutput => ({
   scores: scores(findingIds),
@@ -29,8 +29,8 @@ const judgeOutput = (findingIds: Partial<Record<keyof Scores, string[]>> = {}): 
 });
 
 describe("CRITERIA", () => {
-  it("carries exactly the six scoresSchema keys, labelled", () => {
-    expect(CRITERIA.map(({ key }) => key).sort()).toEqual(Object.keys(scoresSchema.shape).sort());
+  it("carries exactly the six scoresWireSchema keys, labelled", () => {
+    expect(CRITERIA.map(({ key }) => key).sort()).toEqual(Object.keys(scoresWireSchema.shape).sort());
     for (const { label } of CRITERIA) expect(label.length).toBeGreaterThan(0);
   });
 });

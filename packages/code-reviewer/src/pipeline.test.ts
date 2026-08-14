@@ -55,7 +55,7 @@ const finding = (overrides: Partial<Finding>): Finding => ({
 const scores = (): Scores =>
   Object.fromEntries(
     CRITERIA.map(({ key }) => [key, { score: 8, justification: "j", findingIds: [] as string[] }]),
-  ) as Scores;
+  ) as unknown as Scores;
 
 const judgeResult = (overrides: Partial<JudgeResult> = {}): JudgeResult => ({
   scores: scores(),
