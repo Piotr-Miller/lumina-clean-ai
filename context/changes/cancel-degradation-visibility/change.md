@@ -84,7 +84,47 @@ the deployed version known code, and only then touch secrets.
 
 **Operational rule: deploy from master, then set secrets — never the reverse.**
 
-### Still open: the smoke
+### Smoke: half verified (2026-08-14)
+
+A real cancel was run against prod. Job `cb2b72a6-949b-4e53-b8eb-cb4cd7cb5cb8`:
+created `07:53:32` with a `replicate_prediction_id` already written, cancelled
+`07:53:41` — nine seconds in, so there genuinely was in-flight compute to kill.
+Result: `status: failed`, `error_code: canceled`.
+
+**Verified: the DB-flip half works in production.**
+
+**NOT verified: the compute-kill half.** The Supabase Edge Function logs could not
+answer it — they show nothing after `07:00`, missing not only the cancel but the
+`07:53` job START, which provably happened because only the Edge Function holds
+the Replicate token and a prediction id got written. Those logs are lagging, so
+their emptiness is a **tooling gap, not evidence**; reading it as "the cancel
+never fired" would be an artifact dressed up as a finding.
+
+Cloudflare Worker logs would answer it (`observability` is enabled in
+`wrangler.jsonc`, so they are retained), but `wrangler tail` is live-only — there
+is no historical log query, and the observability API needs a token this
+environment does not have. A live tail was set up for a second attempt and then
+stood down.
+
+### Still open: proving the compute-kill
+
+Two ways, whenever it is worth doing:
+
+1. **Free, evidence already exists** — Cloudflare dashboard → Workers →
+   `lumina-clean-ai` → Logs, around `07:53:41`. A
+   `cancel: edge compute-cancel returned 401 (best-effort)` line means the secret
+   is present but WRONG and Replicate is still billing; no `cancel:` line at all
+   means it worked.
+2. **Deterministic, costs one cloud op** — run `npx wrangler tail lumina-clean-ai`
+   (positional; `--name` is rejected for tail) and repeat the cancel while it
+   streams. Do NOT pass `--search cancel`: a successful cancel logs nothing, so
+   the filter makes success indistinguishable from a dead tail.
+
+Until one of those runs, treat the compute-kill as unproven. A wrong
+`DB_WEBHOOK_SECRET` produces exactly what was observed above: clean UI, correct DB
+row, prediction left running.
+
+### Previously stated as still open
 
 Presence is not correctness. A wrong `DB_WEBHOOK_SECRET` fails exactly like a
 missing one — the compute-cancel is best-effort, so a 401 is logged and swallowed
