@@ -36,26 +36,27 @@ non-emptiness; quote fidelity is measured as a separate number, not guaranteed.
 
 ## Key Decisions Made
 
-| Decision            | Choice                                                        | Why (1 sentence)                                                                                                                          | Source    |
-| ------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| Which defect layer  | Precision now, calibration deferred                           | Fabrications are the actual harm; measuring two interventions at once confounds one paid run.                                             | Plan      |
-| Change shape        | Experiment ending in a decision; rollout is a separate change | A single change cannot mechanically complete a rollout it may never do — `finder-tool-loop-evals` archived cleanly on exactly this shape. | Review F3 |
-| Fix surface         | Required `evidence` quote per finding                         | An absence claim has no line to quote, and required-schema-field is the only lever with a winning record here.                            | Plan      |
-| Quote fidelity      | Measured, not enforced                                        | A `superRefine` quote check would reject a whole review over one bad quote, colliding with the reliability risk.                          | Review F4 |
-| Reliability guard   | Usable-output rate over all attempts                          | `schema_validity` exists only on successful calls, so it stays green exactly when failures rise.                                          | Review F1 |
-| Suppression guard   | Dedicated field-scoped grader, not `scoreIssueRecall`         | Once findings carry a verbatim quote, a blob search matches the quote instead of the finding.                                             | Review F2 |
-| Fabrication metric  | Binary per run, deduplicated                                  | The registered bar counts runs, so a finding-weighted ratio measures a different thing than it gates.                                     | Review F5 |
-| Judge sanitization  | At the judge prompt boundary, not one caller                  | `buildJudgePrompt` serializes whole findings and `judge-diagnose.mjs` bypasses the pipeline.                                              | Review F6 |
-| Graded fixture      | Purpose-built small hardening diff                            | Cheap enough for the repeats an intermittent defect needs; the real diff stays as an out-of-suite canary.                                 | Plan      |
-| Budget              | glm-only, n=20 per arm                                        | n=8 cannot distinguish a 25% rate from 10%; n=20 can, for under a dollar.                                                                 | Plan      |
-| Decision function   | Total PASS/FAIL/INCONCLUSIVE + one bounded rerun              | The first draft left 2-4 fabrications and a reliability delta of exactly 2 owned by no outcome.                                           | Review F3 |
-| Mechanism ruled out | Trusted project-rules file                                    | Removing it entirely still produced a full collapse (1/5).                                                                                | Research  |
+| Decision            | Choice                                                        | Why (1 sentence)                                                                                                                               | Source    |
+| ------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| Which defect layer  | Precision now, calibration deferred                           | Fabrications are the actual harm; measuring two interventions at once confounds one paid run.                                                  | Plan      |
+| Change shape        | Experiment ending in a decision; rollout is a separate change | A single change cannot mechanically complete a rollout it may never do — `finder-tool-loop-evals` archived cleanly on exactly this shape.      | Review F3 |
+| Fix surface         | Required `evidence` quote per finding                         | An absence claim has no line to quote, and required-schema-field is the only lever with a winning record here.                                 | Plan      |
+| Quote fidelity      | Measured, not enforced                                        | A `superRefine` quote check would reject a whole review over one bad quote, colliding with the reliability risk.                               | Review F4 |
+| Reliability guard   | Usable-output rate over all attempts                          | `schema_validity` exists only on successful calls, so it stays green exactly when failures rise.                                               | Review F1 |
+| Suppression guard   | Dedicated field-scoped grader, not `scoreIssueRecall`         | Once findings carry a verbatim quote, a blob search matches the quote instead of the finding.                                                  | Review F2 |
+| Fabrication metric  | Binary per run, deduplicated                                  | The registered bar counts runs, so a finding-weighted ratio measures a different thing than it gates.                                          | Review F5 |
+| Judge sanitization  | At the judge prompt boundary, not one caller                  | `buildJudgePrompt` serializes whole findings and `judge-diagnose.mjs` bypasses the pipeline.                                                   | Review F6 |
+| Graded fixture      | Purpose-built small hardening diff                            | Cheap enough for the repeats an intermittent defect needs; the real diff stays as an out-of-suite canary.                                      | Plan      |
+| Budget              | glm-only, n=20 per arm, pooling to 40 if ambiguous            | n=8 cannot distinguish a 25% rate from 10%; a flat n=20 gate wrongly rejects 22.5% of the time at the measured rate, so the gate is two-stage. | Plan      |
+| Decision function   | Total PASS/FAIL/INCONCLUSIVE + one bounded rerun              | The first draft left 2-4 fabrications and a reliability delta of exactly 2 owned by no outcome.                                                | Review F3 |
+| Mechanism ruled out | Trusted project-rules file                                    | Removing it entirely still produced a full collapse (1/5).                                                                                     | Research  |
 
 ## Scope
 
 **In scope:** two hardening fixtures (defended + vulnerable guard); three graders — run-binary
 fabrication, field-scoped suppression, observational quote fidelity — and their wiring; a total
-pre-registered decision table with baseline and post-intervention measurement at n=20; a required
+pre-registered decision table with baseline and post-intervention measurement at the arm's settled n
+(20, or 40 after a confirmation run); a required
 `evidence` field on the finder's finding schema, sanitized at the judge boundary; a live observation from
 this change's own PR; a recorded decision.
 
@@ -80,12 +81,12 @@ away.
 
 ## Phases at a Glance
 
-| Phase                          | What it delivers                                                               | Key risk                                                                                   |
-| ------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| 1. Instrument                  | Two fixtures + three graders, fully hermetic, no cost                          | A grader mis-fires on legitimately-worded findings                                         |
-| 2. Pre-register + baseline     | A total decision table committed before any number, then the baseline at n=20  | Fixture does not reproduce the defect — change goes straight to the decision               |
-| 3. The intervention            | Required `evidence` field, judge boundary, re-measured against the table       | A required field raises the unrepairable-response rate and trades away glm's best property |
-| 4. Live observation + decision | Live reading from this PR's own review, then `decision.md` and one disposition | Offline result does not transfer live                                                      |
+| Phase                          | What it delivers                                                                                | Key risk                                                                                   |
+| ------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1. Instrument                  | Two fixtures + three graders, fully hermetic, no cost                                           | A grader mis-fires on legitimately-worded findings                                         |
+| 2. Pre-register + baseline     | A total decision table committed before any number, then the baseline at n=20 (40 if ambiguous) | Fixture does not reproduce the defect — change goes straight to the decision               |
+| 3. The intervention            | Required `evidence` field, judge boundary, re-measured against the table                        | A required field raises the unrepairable-response rate and trades away glm's best property |
+| 4. Live observation + decision | Live reading from this PR's own review, then `decision.md` and one disposition                  | Offline result does not transfer live                                                      |
 
 **Prerequisites:** `OPENROUTER_API_KEY` for Phases 2-4 (evals make real paid calls, no dry-run mode).
 Phase 4's live observation comes free from this change's own PR — `review.yml` runs the finder from the

@@ -336,9 +336,12 @@ if the fixture does not reproduce fabrication, the change ends here with a docum
 **Intent**: A **total** decision function — no numeric band unowned (review F3) — plus a bounded rerun
 policy, committed before the baseline exists.
 
-**Contract**: Defines `fabrication_runs` (of 20, on the defended fixture), `usable_output` (of 20
-attempts producing a parseable review — **not** `schema_validity`, per review F1), and
-`guard_reported` (of 20 runs where the suppression grader passes).
+**Contract**: Defines all three counts over the arm's settled sample size `n` (`n=20` when the validity
+gate resolves immediately, `n=40` after a confirmation run): `fabrication_runs` is the number of
+defended-fixture rows where the `no_fabricated_absence` rubric **fails** (`n` minus its PASS rows),
+`usable_output` is the number of attempts producing a parseable review — **not** `schema_validity`, per
+review F1 — and `guard_reported` is the number of vulnerable-fixture rows where the suppression grader
+passes.
 
 - **Fixture validity gate** — **adaptive, replacing the flat `≥ 4/20`** (review 2 F5). A single n=20
   run discriminates far worse than the flat threshold implied: at a true 25% rate — which is what
@@ -346,11 +349,20 @@ attempts producing a parseable review — **not** `schema_validity`, per review 
   rejects **41.1%**. Killing the change on noise once every four-and-a-bit runs is not a gate. The
   pre-registered design is therefore two-stage, with its error rates stated rather than implied:
 
-  | Baseline `fabrication_runs` (of 20) | Outcome                                                                        | Error rate                                                  |
+  | Baseline `fabrication_runs` (of 20) | Outcome                                                                        | Contribution to whole-procedure error                       |
   | ----------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------- |
   | ≥ 6                                 | VALID immediately                                                              | false accept at a true 5% rate: **0.03%**                   |
   | ≤ 1                                 | INVALID immediately                                                            | false reject at a true 20% rate: **6.9%**                   |
-  | 2-5                                 | AMBIGUOUS → one confirmation run of n=20, pooled to n=40; VALID iff pooled ≥ 5 | false reject at 20%: **7.6%**; false accept at 5%: **4.8%** |
+  | 2-5                                 | AMBIGUOUS → one confirmation run of n=20, pooled to n=40; VALID iff pooled ≥ 5 | false reject at 20%: **4.5%**; false accept at 5%: **4.1%** |
+
+  Those row values are unconditional contributions, not errors conditional on entering a row. Summed
+  across the terminal branches, the stated early-stop procedure has an **11.4% false-reject rate at a
+  true 20% rate** and a **4.1% false-accept rate at a true 5% rate**. More precisely, for independent
+  `X,Y ~ Binomial(20,p)`, false reject is
+  `P(X≤1) + Σ[x=2..5] P(X=x)P(Y≤4-x) = 11.4112%`, and false accept is
+  `P(X≥6) + Σ[x=2..5] P(X=x)P(Y≥5-x) = 4.1105%`. The superficially plausible 7.6% / 4.8% pair belongs
+  to an always-pooled `Binomial(40,p)` test; it does not describe this design because this design stops
+  after the first 20 at `≤1` and `≥6`.
 
   The confirmation run is bounded at exactly one and its cost is the same as the baseline's, so the
   ambiguous branch doubles a sub-dollar spend rather than opening an unbounded loop. Below the gate,
@@ -368,8 +380,8 @@ producing a confident-looking verdict. Two rules close that:
 
 | Outcome              | `fabrication_rate`    | `usable_output` drop vs baseline | `guard_reported`       |
 | -------------------- | --------------------- | -------------------------------- | ---------------------- |
-| **PASS** (all three) | ≤ 5% (≤1/20, ≤2/40)   | ≤ 5pp                            | ≥ 95% (≥19/20, ≥38/40) |
-| **FAIL** (any one)   | ≥ 25% (≥5/20, ≥10/40) | ≥ 15pp                           | ≤ 90% (≤18/20, ≤36/40) |
+| **PASS** (all three) | ≤ 5% (≤1/20, ≤2/40)   | ≤ 5pp (drop ≤1/20, ≤2/40)        | ≥ 95% (≥19/20, ≥38/40) |
+| **FAIL** (any one)   | ≥ 25% (≥5/20, ≥10/40) | ≥ 15pp (drop ≥3/20, ≥6/40)       | ≤ 90% (≤18/20, ≤36/40) |
 | **INCONCLUSIVE**     | everything else       |                                  |                        |
 
 The PASS row requires all three columns; the FAIL row triggers on any one. They cannot both hold,
@@ -833,7 +845,7 @@ kept in every branch, since they document the defect whether or not it is fixed.
 #### Manual
 
 - [ ] 2.4 Decision table committed before the baseline run, verifiable from git history
-- [ ] 2.5 Decision table is total: every combination maps to exactly one outcome
+- [x] 2.5 Decision table is total: every combination maps to exactly one outcome
 - [ ] 2.6 Baseline fabrications read as genuinely false claims, not metric mis-fires
 - [ ] 2.7 Fixture-validity gate outcome recorded and the branch taken stated explicitly
 

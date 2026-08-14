@@ -180,5 +180,9 @@ would have killed the change on noise roughly one run in four and a half.
 Replaced with a two-stage adaptive gate whose error rates are pre-registered rather than implied:
 immediate VALID at ≥6/20 (false accept at a true 5% rate: 0.03%), immediate INVALID at ≤1/20 (false
 reject at 20%: 6.9%), and one bounded confirmation run for the ambiguous 2-5 band pooled to n=40 with a
-≥5 threshold (false reject at 20%: 7.6%; false accept at 5%: 4.8%). The confirmation run is capped at
+≥5 threshold. **Corrected 2026-08-14 after an independent check of criterion 2.5**: I first recorded
+the ambiguous branch as 7.6% / 4.8%, which is the always-pooled `Binomial(40,p)` test in isolation.
+The design stops early at ≤1 and ≥6, so the whole-procedure rates are **11.4112% false reject at a
+true 20% rate** and **4.1105% false accept at 5%** — a two-stage design's error rate is not its
+second stage's error rate. The confirmation run is capped at
 exactly one, so the ambiguous branch doubles a sub-dollar spend rather than opening a loop.
