@@ -3,7 +3,7 @@ change_id: cancel-degradation-visibility
 title: Make the cloud-cancel compute-kill degradation visible in prod logs
 status: implemented
 created: 2026-08-13
-updated: 2026-08-13
+updated: 2026-08-14
 archived_at: null
 ---
 
@@ -63,6 +63,38 @@ npx wrangler secret list --name <prod-worker>
 This change means that if they are missing, the _next real cancel_ says so in the
 logs instead of failing silently forever. Verification and visibility are
 different things; only the second one shipped here.
+
+### Prod remediation — done 2026-08-14
+
+Both secrets are now set on the prod Worker `lumina-clean-ai` (verified: 9 secrets,
+`EDGE_FUNCTION_URL` and `DB_WEBHOOK_SECRET` both listed). The value was copied from
+the existing Vault row `db_webhook_secret` rather than regenerated, because that
+secret is shared by three consumers — the DB webhook that drives the whole cloud
+pipeline, the enhance Edge Function, and now the Worker — and rotating it would
+have required updating all three in lockstep.
+
+Getting there needed one detour worth recording: `wrangler secret put` refused with
+_"the latest version of your Worker isn't currently deployed"_. Cloudflare Workers
+Builds uploads a version for every branch push, so any branch built after the last
+production deploy leaves an undeployed version and trips that guard. The error
+suggests deploying the latest version — which here would have shipped an
+unidentified branch build (`Source: Unknown`, no tag, no message) to production.
+The safe route was to deploy from **master** first (merge → CI `deploy`), which makes
+the deployed version known code, and only then touch secrets.
+
+**Operational rule: deploy from master, then set secrets — never the reverse.**
+
+### Still open: the smoke
+
+Presence is not correctness. A wrong `DB_WEBHOOK_SECRET` fails exactly like a
+missing one — the compute-cancel is best-effort, so a 401 is logged and swallowed
+and Replicate keeps billing. The remaining verification is a prod smoke: start a
+cloud job, hit "Start over" mid-processing, and confirm the Replicate prediction
+actually stops.
+
+The log line this change added is what makes that smoke readable either way: if the
+seam is still misconfigured it now says so explicitly instead of the run looking
+clean.
 
 ### Follow-up
 
