@@ -116,8 +116,53 @@ repeats would fake the independence n=20 exists to provide). Snapshot the prompt
 
 ## Results — baseline
 
-_Not yet run. `fabrication_runs`, `usable_output`, `guard_reported`, the gate outcome, and the branch
-taken get recorded here, with the snapshot path._
+Run 2026-08-14, promptfoo eval `eval-E7G-2026-08-14T21:28:30`. glm-only, both hardening cases,
+`--repeat 20`, `--no-cache`. Snapshot: `results/baseline-n20.json`. 40 rows, 0 provider errors,
+102,189 tokens. **This file was committed at 21:16:00 UTC, 12 minutes before the run — criterion 2.4.**
+
+| Count              | Result      |
+| ------------------ | ----------- |
+| `fabrication_runs` | **0 of 20** |
+| `usable_output`    | 20 of 20    |
+| `guard_reported`   | 10 of 20    |
+
+### Gate outcome: INVALID-FIXTURE (immediate)
+
+`fabrication_runs = 0` falls in the `≤ 1` band. **The fixture does not reproduce the defect.** Phase 3
+does not start; the change proceeds to Phase 4 with an INVALID-FIXTURE outcome. Read off the table
+without renegotiation — which is what the pre-registration was for, and this is the branch it was most
+likely to be needed on.
+
+The plan predicted exactly this risk: no fixture had ever produced the collapse across 30 glm rows in
+three committed matrices. It is now **50 rows without a single fabrication** on purpose-built fixtures,
+against 2 of 8 on the real PR #127 diff. Whatever triggers the defect is not present in a 51-line
+single-file hardening diff.
+
+### Criterion 2.6 — rubric validation: PASSED, 0 misgrades of 20
+
+The rubric's 20 PASS verdicts were checked by hand against all 56 findings the defended rows produced
+(46 `minor`, 10 `nit`, **zero critical or major**). 45 of the 56 touch a declared defence, and none
+claims one is absent. They are style notes on regex flags, missing-test and missing-JSDoc observations
+(both true and correctly not absence claims about a defence), suggestions to widen the extension
+allowlist, and the accurate remark that the explicit `..` checks are redundant given the anchored regex.
+
+The rubric was right on every row. **Caveat recorded:** the fixture and rubric are mine, so this read is
+not fully independent — 1.15 was independently validated, and the rows are unambiguous, but an outside
+spot-check would be stronger evidence than my own reading.
+
+### Side finding, outside this bar
+
+`guard_reported = 10 of 20` is not part of the validity gate, but it is the most interesting number
+here. Reading the ten failures: the finder usually **does** notice the unvalidated key — one row says
+"could lead to directory traversal" verbatim — and grades it `minor`. The misses are severity
+calibration, not suppression. That is the layer this change explicitly deferred, and the baseline just
+measured it by accident: **a real, indisputable cross-user path traversal is under-graded in half of
+runs.**
+
+## Results — confirmation run
+
+_Not applicable. The gate resolved immediately at `≤ 1`; the confirmation run exists only for the
+ambiguous 2-5 band._
 
 ## Results — confirmation run
 
@@ -125,8 +170,11 @@ _Only if the baseline lands in the ambiguous 2-5 band. Bounded at one._
 
 ## Results — post-intervention
 
-_Only on the valid-fixture branch, at the baseline's settled `n`._
+_Not applicable. Phase 3 does not start on the INVALID-FIXTURE branch, so no intervention was built and
+there is nothing to measure against the baseline._
 
 ## Outcome
 
-_Read off the tables above without renegotiation, and recorded in `decision.md`._
+**INVALID-FIXTURE.** The instrument is sound and validated; the fixture does not reproduce the defect.
+Recorded in `decision.md`, along with what the 50-row negative implies about which properties of the
+real diff the synthetic one fails to capture.

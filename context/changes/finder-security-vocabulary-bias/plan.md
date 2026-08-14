@@ -838,16 +838,16 @@ kept in every branch, since they document the defect whether or not it is fixed.
 
 #### Automated
 
-- [ ] 2.1 Filtered eval command completes and produces a result export
-- [ ] 2.2 Snapshot file exists under the change folder
-- [ ] 2.3 Baseline record includes `fabrication_runs`, `usable_output`, and `guard_reported`
+- [x] 2.1 Filtered eval command completes and produces a result export
+- [x] 2.2 Snapshot file exists under the change folder
+- [x] 2.3 Baseline record includes `fabrication_runs`, `usable_output`, and `guard_reported`
 
 #### Manual
 
-- [ ] 2.4 Decision table committed before the baseline run, verifiable from git history — `verification.md` committed; the ordering claim is only provable once the run lands, so this stays open until then
+- [x] 2.4 Decision table committed before the baseline run, verifiable from git history — `verification.md` committed; the ordering claim is only provable once the run lands, so this stays open until then
 - [x] 2.5 Decision table is total: every combination maps to exactly one outcome — d374930
-- [ ] 2.6 Baseline fabrications read as genuinely false claims, not metric mis-fires
-- [ ] 2.7 Fixture-validity gate outcome recorded and the branch taken stated explicitly
+- [x] 2.6 Baseline fabrications read as genuinely false claims, not metric mis-fires — VACUOUSLY: there were zero fabrications to read. Promoted duty discharged instead: all 20 rubric verdicts hand-checked against 56 findings, 0 misgrades
+- [x] 2.7 Fixture-validity gate outcome recorded and the branch taken stated explicitly — INVALID-FIXTURE, immediate
 
 ### Phase 3: The intervention — a required evidence field
 
