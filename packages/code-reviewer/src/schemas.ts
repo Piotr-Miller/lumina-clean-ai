@@ -281,34 +281,118 @@ export type ImplVerdict = z.infer<typeof implVerdictSchema>;
 // instructions but is deliberately NOT a schema field: only deviations
 // surface, as findings under plan_adherence. A per-planned-change verdict
 // table would dominate the comment for no added signal.
-export const implFindingSchema = z.object({
+/** The three real places a finding can point. Required, so it is never unsaid. */
+export const implLocusSchema = z.enum(["code", "file", "absent"]);
+export type ImplLocus = z.infer<typeof implLocusSchema>;
+
+const implFindingBase = {
   dimension: implDimensionSchema.describe("Which of the seven dimensions this finding belongs to"),
   severity: implSeveritySchema.describe("How bad this is if left unaddressed"),
   impact: implImpactSchema.describe("How much reviewer attention the decision needs"),
   title: z.string().describe("One short line naming the problem"),
-  // These two descriptions are the ones the model actually acts on, and they
-  // used to lead with the EXCEPTION ("omitted when...", "when it has one").
-  // Measured result: file 2/10 and startLine 0/10 across every run, while the
-  // finder — whose equivalent field is required and described directively —
-  // anchored 20/20 on the same runs. Strengthening the system instruction alone
-  // did not move it; the field description wins. `file` stays optional because
-  // a finding about MISSING work genuinely has no place in the diff, but the
-  // description now leads with the rule and names the exception second.
-  file: z
-    .string()
-    .optional()
-    .describe(
-      "Repo-relative path of the file this finding is about, exactly as it appears in the diff. Set it whenever the finding concerns changed code. Omit it ONLY when the finding has no place in the diff at all — work that is missing, or a plan-level observation.",
-    ),
-  startLine: lineNumber(
-    "Absolute 1-based line in that file where the issue is. Set it whenever file is set and the finding points at specific code; omit it only for findings about a file as a whole.",
-  ),
   detail: z
     .string()
     .describe("What is wrong, with evidence: plan quote vs actual behavior, or code excerpt vs expected"),
   fix: z.string().describe("The concrete fix, or the tradeoff between two options when one genuinely exists"),
-});
-export type ImplFinding = z.infer<typeof implFindingSchema>;
+};
+
+/**
+ * WIRE shape — deliberately internal, deliberately flat.
+ *
+ * Anchoring was measured at `startLine` 0/10 and `file` 2/10 while the finder,
+ * whose equivalent field is REQUIRED, anchored 20/20. Two prompt-level fixes
+ * failed; `scripts/schema-dump.mjs` showed the cause was structural, not textual.
+ *
+ * The obvious fix — `z.discriminatedUnion("locus", …)` — was built and PROVEN
+ * unusable: `z.toJSONSchema` renders it as `oneOf`, which Anthropic's
+ * structured-output subset does not support. The provider accepted the request
+ * and the model answered in Markdown prose instead of JSON, so nothing validated.
+ * Notably it used all three loci CORRECTLY in that prose (4 of 6 findings
+ * anchored), so the design is sound and only its encoding was not.
+ *
+ * Hence: flat on the wire so the emitted schema stays a single object, with
+ * `locus` REQUIRED so the model must still decide explicitly, and every
+ * combination enforced below. Omission is a validation failure, not a default.
+ * The trusted union type begins after validation — see `normalizeImplFinding`.
+ */
+const implFindingWireSchema = z
+  .object({
+    ...implFindingBase,
+    locus: implLocusSchema.describe(
+      'Where this finding points: "code" for specific changed code (requires file AND startLine), "file" for a file as a whole (requires file, no startLine), "absent" when it has no place in the diff at all — missing work or a plan-level observation (no file, no startLine)',
+    ),
+    file: z
+      .string()
+      .min(1)
+      .optional()
+      .describe('Repo-relative path exactly as it appears in the diff. Required for locus "code" and "file".'),
+    startLine: lineNumber('Absolute 1-based line in that file. Required for locus "code", forbidden otherwise.'),
+  })
+  .superRefine((finding, ctx) => {
+    // All three combinations, stated positively so an unhandled locus cannot
+    // slip through as "valid by omission".
+    const need = (field: "file" | "startLine") => {
+      if (finding[field] === undefined) {
+        ctx.addIssue({ code: "custom", path: [field], message: `locus "${finding.locus}" requires ${field}` });
+      }
+    };
+    const forbid = (field: "file" | "startLine") => {
+      if (finding[field] !== undefined) {
+        ctx.addIssue({ code: "custom", path: [field], message: `locus "${finding.locus}" must not carry ${field}` });
+      }
+    };
+    switch (finding.locus) {
+      case "code":
+        need("file");
+        need("startLine");
+        break;
+      case "file":
+        need("file");
+        forbid("startLine");
+        break;
+      case "absent":
+        forbid("file");
+        forbid("startLine");
+        break;
+    }
+  });
+
+type ImplFindingWire = z.infer<typeof implFindingWireSchema>;
+type ImplFindingCommon = Omit<ImplFindingWire, "locus" | "file" | "startLine">;
+
+/**
+ * The exported contract: a discriminated union, so consumers switch exhaustively
+ * and a new variant becomes a compile error rather than an unlabelled finding.
+ */
+export type ImplFinding =
+  | (ImplFindingCommon & { locus: "code"; file: string; startLine: number })
+  | (ImplFindingCommon & { locus: "file"; file: string })
+  | (ImplFindingCommon & { locus: "absent" });
+
+/**
+ * Normalize a validated wire finding into the union — each variant CONSTRUCTED
+ * explicitly, never asserted, so the compiler checks the mapping rather than
+ * being told to trust it.
+ *
+ * The guards are unreachable once `implFindingWireSchema` has accepted the value;
+ * they exist so this function is sound on its own terms instead of depending on a
+ * caller having validated first.
+ */
+export function normalizeImplFinding(wire: ImplFindingWire): ImplFinding {
+  const { locus, file, startLine, ...common } = wire;
+  switch (locus) {
+    case "code":
+      if (file === undefined || startLine === undefined) {
+        throw new Error('impl finding with locus "code" is missing file or startLine');
+      }
+      return { ...common, locus: "code", file, startLine };
+    case "file":
+      if (file === undefined) throw new Error('impl finding with locus "file" is missing file');
+      return { ...common, locus: "file", file };
+    case "absent":
+      return { ...common, locus: "absent" };
+  }
+}
 
 // Named fields over the seven dimensions, never a positional array — the same
 // decision scoresSchema records: models and renderers both address dimensions
@@ -331,7 +415,7 @@ const implReviewOutputShape = z.object({
     .string()
     .describe("1-2 sentences explaining the verdict")
     .refine((value) => value.length > 0, { message: "verdictReason must not be empty" }),
-  findings: z.array(implFindingSchema),
+  findings: z.array(implFindingWireSchema),
 });
 
 /**
@@ -355,14 +439,10 @@ const implReviewOutputShape = z.object({
  * single re-roll, then a reported failure.
  */
 const checkImplReviewConsistency = (output: z.infer<typeof implReviewOutputShape>, ctx: z.RefinementCtx): void => {
-  for (const [index, finding] of output.findings.entries()) {
-    if (finding.startLine !== undefined && finding.file === undefined) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["findings", index, "startLine"],
-        message: "a line number is meaningless without the file it indexes into",
-      });
-    }
+  for (const finding of output.findings) {
+    // The old "startLine requires file" rule lived here. It is gone because the
+    // locus union makes that state UNREPRESENTABLE rather than merely invalid —
+    // a structural guarantee beats a post-parse check.
     const grade = output.grades[finding.dimension];
     if (finding.severity === "CRITICAL" && grade !== "FAIL") {
       ctx.addIssue({

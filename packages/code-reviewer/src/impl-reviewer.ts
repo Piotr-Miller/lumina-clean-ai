@@ -6,8 +6,9 @@ import { buildImplReviewInstructions, buildImplReviewPrompt, type ImplReviewProm
 import type { SourceProvider } from "./reviewer.js";
 import {
   implReviewOutputSchema,
+  normalizeImplFinding,
   type IdentifiedImplFinding,
-  type ImplFinding,
+  type ImplReviewOutput,
   type ImplReviewResult,
 } from "./schemas.js";
 
@@ -62,11 +63,14 @@ export interface ImplReviewCallOptions {
  */
 const implSeverityRank = { CRITICAL: 3, WARNING: 2, OBSERVATION: 1 } as const;
 
-export function identifyImplFindings(findings: ImplFinding[]): IdentifiedImplFinding[] {
+export function identifyImplFindings(findings: ImplReviewOutput["findings"]): IdentifiedImplFinding[] {
   return [...findings]
     .sort((a, b) => implSeverityRank[b.severity] - implSeverityRank[a.severity])
     .slice(0, MAX_IMPL_FINDINGS)
-    .map((finding, index) => ({ ...finding, id: `P${String(index + 1)}` }));
+    // The single normalization point: wire shape in, discriminated union out.
+    // Everything downstream — render.ts's exhaustive locus switch included —
+    // sees only the union, so the trusted contract starts exactly here.
+    .map((finding, index) => ({ ...normalizeImplFinding(finding), id: `P${String(index + 1)}` }));
 }
 
 /**

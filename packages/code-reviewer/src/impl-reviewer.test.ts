@@ -45,7 +45,11 @@ const grades = (): ImplGrades => ({
   success_criteria: "PASS",
 });
 
-const implFinding = (overrides: Partial<ImplFinding> = {}): ImplFinding => ({
+// Defaults to the `absent` locus — the variant with no extra required fields.
+// Overrides are a full ImplFinding so a partial cannot smuggle in an invalid
+// locus/field combination, which is the whole point of the union.
+const implFinding = (overrides: Partial<Omit<ImplFinding, "locus">> = {}): ImplFinding => ({
+  locus: "absent",
   dimension: "plan_adherence",
   severity: "WARNING",
   impact: "LOW",

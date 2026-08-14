@@ -303,13 +303,19 @@ describe("buildImplReviewInstructions", () => {
   // 2/10, while the FINDER — given a directive "attribute every finding"
   // instruction — anchors 20/20. The weak "when it has one" phrasing was read
   // as permission to omit, so this mirrors the finder's proven wording.
-  it("instructs anchoring directively, not permissively", () => {
+  // Two prompt-only attempts failed to move anchoring off 0/10 before the schema
+  // was changed, so the prompt's job here is only to EXPLAIN the locus union the
+  // schema now enforces — not to carry the guarantee on its own.
+  it("explains all three loci and pushes toward code over absent", () => {
     const instructions = buildImplReviewInstructions();
-    expect(instructions).toContain("Attribute every finding that concerns changed code");
-    expect(instructions).toContain("absolute 1-based line number");
-    expect(instructions).toContain("a line number without a file is never valid");
-    // The old permissive formulation must not creep back.
+    expect(instructions).toContain("must declare WHERE it points via locus");
+    for (const locus of ['locus "code"', 'locus "file"', 'locus "absent"']) {
+      expect(instructions).toContain(locus);
+    }
+    expect(instructions).toContain('is not a reason to fall back to "absent"');
+    // The superseded permissive formulations must not creep back.
     expect(instructions).not.toContain("Anchor a finding to file and line when it has one");
+    expect(instructions).not.toContain("Omit BOTH only when");
   });
 
   it("carries the severity/impact split and the finding cap", () => {

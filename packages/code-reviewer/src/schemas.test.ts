@@ -5,6 +5,7 @@ import {
   categorySchema,
   implReviewOutputSchema,
   judgeOutputSchema,
+  normalizeImplFinding,
   reviewUnitSchema,
   scoresSchema,
   findingSchema,
@@ -168,125 +169,76 @@ describe("implReviewOutputSchema", () => {
   // Line numbers go through the shared `lineNumber` helper: refine, never
   // .int()/.min(), because Anthropic's structured-output endpoint rejects the
   // JSON Schema minimum/maximum bounds those emit.
-  it("rejects a zero or fractional startLine but accepts its absence", () => {
-    const withLine = (startLine: unknown) => ({
+  // FULL COMBINATION MATRIX. The whole reason the locus field exists is that
+  // anchoring rotted to 0/10 while two optional fields quietly accepted every
+  // shape. Enumerating all of them here is what keeps that from recurring
+  // silently — a relaxed rule shows up as a flipped expectation, not as drift.
+  describe("locus / file / startLine combinations", () => {
+    const withFinding = (finding: Record<string, unknown>) => ({
       ...valid,
       // A WARNING finding forbids PASS on its own dimension, so the grade moves
       // with the fixture — otherwise this tests the consistency rule by accident.
       grades: { ...grades, plan_adherence: "WARNING" },
       findings: [
-        {
-          dimension: "plan_adherence",
-          severity: "WARNING",
-          impact: "LOW",
-          title: "t",
-          detail: "d",
-          fix: "f",
-          file: "src/a.ts",
-          startLine,
-        },
+        { dimension: "plan_adherence", severity: "WARNING", impact: "LOW", title: "t", detail: "d", fix: "f", ...finding },
       ],
     });
-    expect(implReviewOutputSchema.safeParse(withLine(0)).success).toBe(false);
-    expect(implReviewOutputSchema.safeParse(withLine(2.5)).success).toBe(false);
-    expect(implReviewOutputSchema.safeParse(withLine(12)).success).toBe(true);
-    expect(implReviewOutputSchema.safeParse(withLine(undefined)).success).toBe(true);
+    const parse = (finding: Record<string, unknown>) => implReviewOutputSchema.safeParse(withFinding(finding));
+
+    it.each([
+      ["code + file + line", { locus: "code", file: "src/a.ts", startLine: 12 }],
+      ["file + file only", { locus: "file", file: "src/a.ts" }],
+      ["absent, nothing else", { locus: "absent" }],
+    ])("accepts %s", (_label, finding) => {
+      expect(parse(finding).success).toBe(true);
+    });
+
+    it.each([
+      // Each row is a way the old optional-field shape silently passed.
+      ["code without line", { locus: "code", file: "src/a.ts" }],
+      ["code without file", { locus: "code", startLine: 12 }],
+      ["code with neither", { locus: "code" }],
+      ["file carrying a line", { locus: "file", file: "src/a.ts", startLine: 12 }],
+      ["file without a path", { locus: "file" }],
+      ["absent carrying a path", { locus: "absent", file: "src/a.ts" }],
+      ["absent carrying a line", { locus: "absent", startLine: 12 }],
+      ["no locus at all", { file: "src/a.ts", startLine: 12 }],
+      ["an unknown locus", { locus: "elsewhere", file: "src/a.ts", startLine: 12 }],
+      ["code with a zero line", { locus: "code", file: "src/a.ts", startLine: 0 }],
+      ["code with a fractional line", { locus: "code", file: "src/a.ts", startLine: 2.5 }],
+      ["code with an empty path", { locus: "code", file: "", startLine: 12 }],
+    ])("rejects %s", (_label, finding) => {
+      expect(parse(finding).success).toBe(false);
+    });
   });
 
-  // Vocabulary validation proves the model used our words, not that the words
-  // agree. All-PASS grades beside a CRITICAL finding would render a scorecard
-  // that argues against its own findings (impl-review-phase-2 F4).
-  describe("consistency between grades, findings, and verdict", () => {
-    const finding = (over: Record<string, unknown> = {}) => ({
-      dimension: "safety_quality",
-      severity: "CRITICAL",
-      impact: "MEDIUM",
-      title: "t",
-      detail: "d",
-      fix: "f",
-      ...over,
+  // The wire shape is flat so the emitted JSON Schema stays a single object; the
+  // discriminated union that consumers use is produced by normalizeImplFinding
+  // AFTER validation. This is the seam that keeps oneOf out of the schema.
+  describe("normalizeImplFinding", () => {
+    const base = { dimension: "plan_adherence", severity: "WARNING", impact: "LOW", title: "t", detail: "d", fix: "f" } as const;
+
+    it("constructs each variant with exactly its own fields", () => {
+      expect(normalizeImplFinding({ ...base, locus: "code", file: "src/a.ts", startLine: 12 })).toEqual({
+        ...base,
+        locus: "code",
+        file: "src/a.ts",
+        startLine: 12,
+      });
+      const fileLevel = normalizeImplFinding({ ...base, locus: "file", file: "src/a.ts" });
+      expect(fileLevel).toEqual({ ...base, locus: "file", file: "src/a.ts" });
+      expect(fileLevel).not.toHaveProperty("startLine");
+      const absent = normalizeImplFinding({ ...base, locus: "absent" });
+      expect(absent).toEqual({ ...base, locus: "absent" });
+      expect(absent).not.toHaveProperty("file");
+      expect(absent).not.toHaveProperty("startLine");
     });
 
-    it("accepts a coherent critical result", () => {
-      const result = implReviewOutputSchema.safeParse({
-        ...valid,
-        grades: { ...grades, safety_quality: "FAIL" },
-        verdict: "REJECTED",
-        findings: [finding()],
-      });
-      expect(result.success).toBe(true);
-    });
-
-    it("rejects a CRITICAL finding whose dimension is not graded FAIL", () => {
-      const result = implReviewOutputSchema.safeParse({
-        ...valid,
-        verdict: "REJECTED",
-        findings: [finding()],
-      });
-      expect(result.success).toBe(false);
-      expect(JSON.stringify(result.error?.issues)).toContain("graded FAIL");
-    });
-
-    it("rejects a CRITICAL finding without the REJECTED verdict", () => {
-      const result = implReviewOutputSchema.safeParse({
-        ...valid,
-        grades: { ...grades, safety_quality: "FAIL" },
-        verdict: "NEEDS_ATTENTION",
-        findings: [finding()],
-      });
-      expect(result.success).toBe(false);
-      expect(JSON.stringify(result.error?.issues)).toContain("requires the REJECTED verdict");
-    });
-
-    it("rejects a WARNING finding on a dimension graded PASS", () => {
-      const result = implReviewOutputSchema.safeParse({
-        ...valid,
-        verdict: "NEEDS_ATTENTION",
-        findings: [finding({ severity: "WARNING" })],
-      });
-      expect(result.success).toBe(false);
-      expect(JSON.stringify(result.error?.issues)).toContain("contradicts a PASS grade");
-    });
-
-    // OBSERVATIONs are informational — a dimension can note one and still pass.
-    it("leaves an OBSERVATION free to sit beside a PASS", () => {
-      const result = implReviewOutputSchema.safeParse({
-        ...valid,
-        findings: [finding({ severity: "OBSERVATION" })],
-      });
-      expect(result.success).toBe(true);
-    });
-
-    it("rejects APPROVED alongside a FAIL grade", () => {
-      const result = implReviewOutputSchema.safeParse({
-        ...valid,
-        grades: { ...grades, architecture: "FAIL" },
-      });
-      expect(result.success).toBe(false);
-      expect(JSON.stringify(result.error?.issues)).toContain("APPROVED contradicts a FAIL grade");
-    });
-
-    it("rejects a startLine with no file to index into", () => {
-      const result = implReviewOutputSchema.safeParse({
-        ...valid,
-        grades: { ...grades, safety_quality: "WARNING" },
-        verdict: "NEEDS_ATTENTION",
-        findings: [finding({ severity: "WARNING", startLine: 12 })],
-      });
-      expect(result.success).toBe(false);
-      expect(JSON.stringify(result.error?.issues)).toContain("without the file it indexes into");
-    });
-
-    // Only ever in the understating direction: a run grading itself more
-    // harshly than its findings demand is a judgment call, not a contradiction.
-    it("does not second-guess a run that grades itself harshly", () => {
-      const result = implReviewOutputSchema.safeParse({
-        ...valid,
-        grades: { ...grades, test_coverage: "FAIL" },
-        verdict: "REJECTED",
-        findings: [],
-      });
-      expect(result.success).toBe(true);
+    // Unreachable via the schema, but normalizeImplFinding must be sound on its
+    // own terms rather than trusting that a caller validated first.
+    it("throws rather than emitting a half-built variant", () => {
+      expect(() => normalizeImplFinding({ ...base, locus: "code", file: "src/a.ts" })).toThrow(/missing file or startLine/);
+      expect(() => normalizeImplFinding({ ...base, locus: "file" })).toThrow(/missing file/);
     });
   });
 

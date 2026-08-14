@@ -88,12 +88,28 @@ const IMPL_DIMENSION_LABEL: Record<ImplDimension, string> = {
   success_criteria: "Success Criteria",
 };
 
+/**
+ * Location from the finding's locus, as an EXHAUSTIVE switch.
+ *
+ * No `default` and no fallback: the return type makes a new locus variant a
+ * compile error here rather than a silently unlabelled finding. That is the
+ * whole point of the union — the old code inferred location from two optional
+ * fields, which is exactly the shape that let anchoring rot to 0/10.
+ */
+const implLocation = (finding: IdentifiedImplFinding): string => {
+  switch (finding.locus) {
+    case "code":
+      return ` ${codeSpan(`${finding.file}:${String(finding.startLine)}`)}`;
+    case "file":
+      return ` ${codeSpan(finding.file)}`;
+    case "absent":
+      return "";
+  }
+};
+
 /** Same shape as renderFinding, over the impl vocabulary (severity/impact, no category). */
 const renderImplFinding = (finding: IdentifiedImplFinding): string => {
-  const location =
-    finding.file === undefined
-      ? ""
-      : ` ${codeSpan(finding.startLine === undefined ? finding.file : `${finding.file}:${String(finding.startLine)}`)}`;
+  const location = implLocation(finding);
   return [
     `- **${finding.id}** [${finding.severity}/${finding.impact}]${location} — ${sanitizeInline(finding.title)}`,
     `  - ${sanitizeInline(finding.detail)}`,
