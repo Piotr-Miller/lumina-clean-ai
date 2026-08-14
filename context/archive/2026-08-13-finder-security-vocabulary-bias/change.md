@@ -1,10 +1,10 @@
 ---
 change_id: finder-security-vocabulary-bias
 title: Finder returns a degenerate all-critical/security finding set on security-saturated diffs
-status: implemented
+status: archived
 created: 2026-08-13
 updated: 2026-08-14
-archived_at: null
+archived_at: 2026-08-14T22:08:40Z
 ---
 
 ## Notes
