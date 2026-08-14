@@ -1,9 +1,9 @@
 ---
 change_id: finder-security-vocabulary-bias
 title: Finder returns a degenerate all-critical/security finding set on security-saturated diffs
-status: new
+status: preparing
 created: 2026-08-13
-updated: 2026-08-13
+updated: 2026-08-14
 archived_at: null
 ---
 
@@ -76,11 +76,45 @@ version of that rule. So:
   that question on cost evidence (sonnet-5 at 57.6x); re-opening it needs its own
   live probe and its own budget.
 
+### Research outcome (2026-08-14) — three premises above are WRONG
+
+See `research.md`. Corrections to what is written above, kept rather than edited
+away so the reasoning stays auditable:
+
+1. **Reproduces offline: YES**, on the real #127 diff run locally, tool-less —
+   2 of 8 runs produced the exact CI signature. No fixture needed to see it.
+2. **"10/10 critical/security" is too narrow a framing.** The invariant is
+   **severity monotony** — one severity for a whole run — and it holds on an
+   ordinary-code CONTROL diff too (6/8 runs, all `nit`). Subject matter selects
+   the _value_, not the monotony. The "healthy spread on ordinary code" claim
+   above came from a single CI run of #128; with repeats, ordinary code is also
+   monotone.
+3. **It is intermittent** (2/8 full collapse, 4/8 all-critical, 2/8 fine), so it
+   is a distributional defect. A single fixture row cannot detect it.
+4. **The most promising mechanism was REFUTED for ~$0.02.** The trusted
+   project-rules file — which holds the only instruction-level "critical" the
+   finder ever sees — is _not necessary_: removing it entirely still produced a
+   full collapse (1/5).
+5. **The eval harness cannot grade this even with a fixture.** `category` is read
+   by zero assertions; severity is only ever "is any finding critical/major?". A
+   distribution metric has to come first.
+
+### Revised direction
+
+The prompt is probably the wrong surface. `lessons.md` now records three cases in
+this package where a prompt fix failed and a structural one worked, and the one
+prior direct attempt on the _finder's_ prompt (`09e6e03`) changed nothing at all
+under glm-4.6. The finder's `severitySchema` has no calibration, no ceiling, and
+no orthogonal pressure valve — unlike the judge's anchored score and the impl
+reviewer's severity/impact pair. That is the likely fix surface.
+
 ### Next step
 
-`/10x-research finder-security-vocabulary-bias` — establish whether the collapse
-reproduces offline in promptfoo at all, since a bug that only appears live is a
-different (harder) change than one a fixture can pin.
+**Exclude the null hypothesis before building anything** — read the findings from
+a collapsed run and check whether they are genuinely security-class and
+critical-class, looking specifically for mislabelled correctness/testing gaps. It
+is free, and it decides whether this change has a subject at all. Then
+`/10x-plan`, whose first deliverable is the distribution metric, not a fixture.
 
 ### Reference
 
