@@ -7,6 +7,11 @@
 // against a KNOWN diff — it is how the locus anchoring fix was measured, and how
 // the oneOf incompatibility was caught before it shipped.
 //
+// It is also now the ONLY way to probe the pass end to end: since the cost gate
+// shipped (#133), a deliberately-buggy fixture fails the code review on CI and
+// the gate then skips the implementation review, so a probe PR measures nothing.
+// This harness calls the pass directly and bypasses the gate.
+//
 // The plan and diff below are byte-identical in intent to the pre-registered
 // table; nothing was adjusted after seeing any result.
 import { createImplReviewer } from "../src/impl-reviewer.ts";
