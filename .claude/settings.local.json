@@ -207,7 +207,8 @@
       "Bash(mkdir -p C:/Users/prmi/AppData/Local/Temp/claude/C--Source-Trainings-AI-10xDevs-LuminaClean-AI/cdf627b4-052e-42fd-81aa-9c59662518f5/scratchpad)",
       "Bash(gh pr create --base master --head scratch/deepseek-v4-probe --title 'DO NOT MERGE — scratch: deepseek-v4-flash finder probe' --body ' *)",
       "Bash(python -)",
-      "Skill(10x-archive)"
+      "Skill(10x-archive)",
+      "Bash(gh pr *)"
     ],
     "deny": [
       "Bash(rm -rf *)"
