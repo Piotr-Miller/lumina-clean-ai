@@ -119,14 +119,14 @@ the old snapshot is not a valid comparator and Phase 2's before/after uses **thi
 
 #### Automated Verification:
 
-- [ ] `verification.md` is committed before the run — provable from `git log` ordering
-- [ ] The run completes and the snapshot lands under `results/`
-- [ ] Monotony rate computed for the baseline and recorded
+- [x] `verification.md` is committed before the run — provable from `git log` ordering (19c05a1 precedes the results commit)
+- [x] The run completes and the snapshot lands under `results/` — `baseline-rerun-n20.json`, $0.0234
+- [x] Monotony rate computed for the baseline and recorded — 6/20 (4× `minor`, 2× `critical`)
 
 #### Manual Verification:
 
-- [ ] The decision table covers every outcome combination, with no "we'll decide when we see it" cell
-- [ ] Baseline is compared against the committed 10/20 and the drift question answered explicitly
+- [x] The decision table covers every outcome combination, with no "we'll decide when we see it" cell
+- [x] Baseline is compared against the committed 10/20 and the drift question answered explicitly — **15/20 vs 10/20, outside the 7–13 band, so the drift rule FIRED and 15/20 is the comparator**
 
 ## Phase 2: The rubric — the smallest attributable intervention
 
@@ -240,14 +240,14 @@ matter how the prompt asks — so if it is wanted in practice, it must be `requi
 
 #### Automated
 
-- [ ] 1.1 Write and commit `verification.md` BEFORE any run
-- [ ] 1.2 Baseline n=20 run on the vulnerable fixture; snapshot committed
-- [ ] 1.3 Monotony rate computed and recorded
+- [x] 1.1 Write and commit `verification.md` BEFORE any run — 19c05a1
+- [x] 1.2 Baseline n=20 run on the vulnerable fixture; snapshot committed
+- [x] 1.3 Monotony rate computed and recorded
 
 #### Manual
 
-- [ ] 1.4 Decision table is total over the outcome space
-- [ ] 1.5 Drift question answered against the committed 10/20
+- [x] 1.4 Decision table is total over the outcome space
+- [x] 1.5 Drift question answered against the committed 10/20 — re-measured 15/20, drift rule FIRED; 15/20 adopted as the comparator
 
 ### Phase 2: The rubric — the smallest attributable intervention
 

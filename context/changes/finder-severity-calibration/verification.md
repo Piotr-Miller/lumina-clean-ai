@@ -109,3 +109,44 @@ asking, not quietly continuing.
 - Not that the fixture reproduces every real-world instance of this defect. It reproduces **one**
   indisputable case, which is what makes it a usable instrument — and the predecessor's finding that a
   fixture can fail to reproduce a live defect applies here too.
+
+---
+
+## AMENDMENT — Phase 1 result, 2026-08-19 (appended after the run; nothing above was edited)
+
+**Re-measured baseline: `defect_reported` = 15 / 20.** Committed 2026-08-14 baseline: 10 / 20.
+Cost: $0.0234. Snapshot: `results/baseline-rerun-n20.json`.
+
+**The drift rule fires.** 15 is outside the pre-registered 7–13 band, so by the rule written above the
+2026-08-14 snapshot is **not a valid comparator**, and every Phase 2 comparison uses **15 / 20** as the
+baseline. This is the disposition the rule assigned in advance; it is being applied as written, and it is
+the less convenient of the two options — a 15/20 baseline leaves the rubric far less room to look
+impressive than a 10/20 one would.
+
+| Metric             | 2026-08-14 (n=20) | 2026-08-19 (n=20)     |
+| ------------------ | ----------------- | --------------------- |
+| `defect_reported`  | 10                | **15**                |
+| Monotone draws     | 8                 | **6**                 |
+| Monotone constant  | 7× minor, 1× nit  | 4× minor, 2× critical |
+| Zero-finding draws | 0                 | 0                     |
+
+**What this does and does not establish.** Two n=20 draws differing 10 vs 15 is a large gap, but the
+sample cannot separate three explanations: genuine provider drift behind the stable `z-ai/glm-4.6` id,
+ordinary sampling variance (already documented at extreme levels — PR #146 produced 8 findings and 0
+findings from a byte-identical prompt), or some difference between the promptfoo invocations. **No claim
+is made about which.** The rule exists precisely so this ambiguity is resolved by a rule rather than by
+preference, and the conservative baseline is the one adopted.
+
+**The defect class is unchanged and still present.** All five failing draws reported findings — zero
+silence, consistent with the earlier read — and four of the five graded **every** finding `minor`. The
+fifth mixed `critical` + `minor` but still filed the traversal below `major`. So the target is intact:
+a detected cross-user authorization-boundary violation is still being filed below `major` in 5 of 20
+draws.
+
+**Monotony is more informative than the count suggests.** 6/20 monotone, but the constant is now `minor`
+4× and **`critical` 2×** — the collapse runs in both directions on the same fixture. This corroborates
+what PR #146 run `32255940666` showed live and confirms the Phase 2 wording constraint: a rubric that
+only pushes authorization findings up would convert one collapse into the other, and the monotony metric
+is what will catch it.
+
+**Budget consumed: $0.0234 of ~$0.15.**
