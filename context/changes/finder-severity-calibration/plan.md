@@ -1,5 +1,11 @@
 # Finder Severity Calibration — Implementation Plan
 
+> **Outcome, 2026-08-19:** Phase 2 (rubric) SHIPPED — `defect_reported` 15→18/20, monotony 6/20→0/20,
+> counter-checks clean. Phase 3 (structural consequence field) **REGRESSED to 14/20 and was reverted**;
+> its enum vocabulary was never selected by the model. The scope target (`cannot` be `minor`) is **NOT
+> met** — 2/20 draws remain. A redesigned structural lever needs its own pre-registration. See
+> `decision.md`; the two unticked steps below are deliberate, not abandoned.
+
 ## Overview
 
 The finder detects a cross-user path traversal and files it as `minor`. This change makes that
@@ -181,7 +187,7 @@ Identical invocation to Phase 1, output to `results/rubric-n20.json`. Then the c
 - [x] Result read against the **pre-registered** table, not against a bar adjusted after seeing it
 - [x] Monotony rate compared before/after — did the distribution differentiate, or did the constant just
       move up? **Differentiated: 6/20 → 0/20 monotone, all four levels used**
-- [ ] Decision recorded in `decision.md`: PASS (stop) or SHORT (escalate to Phase 3), with the numbers
+- [x] Decision recorded in `decision.md`: PASS (stop) or SHORT (escalate to Phase 3), with the numbers
 
 ## Phase 3: Structural — only if Phase 2 falls short
 
@@ -212,14 +218,14 @@ matter how the prompt asks — so if it is wanted in practice, it must be `requi
 
 #### Automated Verification:
 
-- [ ] Full package gate green
-- [ ] Structural run completes; snapshot committed
-- [ ] Counter-checks re-run and still clean
+- [x] Full package gate green — 530 before the revert, 524 after
+- [x] Structural run completes; snapshot committed — 14/20, regression
+- [ ] Counter-checks re-run and still clean — NOT RUN, deliberately: the arm was reverted, so this would measure discarded code
 
 #### Manual Verification:
 
-- [ ] Attribution stated plainly: how much of the movement came from the rubric versus the structure
-- [ ] Total spend against the ~$0.15 ceiling recorded
+- [x] Attribution stated plainly: how much of the movement came from the rubric versus the structure
+- [x] Total spend against the ~$0.15 ceiling recorded — $0.0886
 
 ## References
 
@@ -263,19 +269,19 @@ matter how the prompt asks — so if it is wanted in practice, it must be `requi
 
 - [x] 2.6 Read against the pre-registered table — 18/20 lands in the 17–19 SHORT row
 - [x] 2.7 Monotony before/after compared — differentiated, or constant merely moved? **6/20 → 0/20, genuinely differentiated**
-- [ ] 2.8 `decision.md` written: PASS (stop) or SHORT (escalate)
+- [x] 2.8 `decision.md` written: PASS (stop) or SHORT (escalate) — SHORT, escalated
 
 ### Phase 3: Structural — only if Phase 2 falls short
 
 #### Automated
 
-- [ ] 3.1 Design and add the consequence field (shape informed by Phase 2's failure mode)
-- [ ] 3.2 Thread through judge, renderer, eval schema, fixtures
-- [ ] 3.3 Package gate green
-- [ ] 3.4 Structural n=20 run; snapshot committed
-- [ ] 3.5 Counter-checks re-run and clean
+- [x] 3.1 Design and add the consequence field (shape informed by Phase 2's failure mode) — built, then REVERTED
+- [x] 3.2 Thread through judge, renderer, eval schema, fixtures — done, then reverted with 3.1
+- [x] 3.3 Package gate green — 530 tests green before the revert; 524 after
+- [x] 3.4 Structural n=20 run; snapshot committed — **14/20, REGRESSION**
+- [ ] 3.5 Counter-checks re-run and clean — NOT RUN: the arm regressed and was reverted, so counter-checks on it would measure discarded code
 
 #### Manual
 
-- [ ] 3.6 Attribution stated: rubric versus structure
-- [ ] 3.7 Total spend recorded against the ~$0.15 ceiling
+- [x] 3.6 Attribution stated: rubric versus structure — rubric owns 15→18 and 6/20→0/20; structure contributed nothing and cost 4 points
+- [x] 3.7 Total spend recorded against the ~$0.15 ceiling — $0.0886, under ceiling

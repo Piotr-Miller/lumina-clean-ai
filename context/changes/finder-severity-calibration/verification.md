@@ -204,3 +204,74 @@ Whatever Phase 3 achieves, the rubric alone is responsible for: `defect_reported
 **Budget consumed: $0.0629 of ~$0.15** (baseline $0.0234, rubric $0.0247, counter-checks $0.0074 +
 $0.0037, plus $0.0037 for a mis-filtered run that measured the React recall case instead of
 `no_false_alarms` — recorded rather than omitted; the correct case was then run).
+
+---
+
+## AMENDMENT — Phase 3 result, 2026-08-19 (appended after the run; nothing above was edited)
+
+**The structural lever REGRESSED and was reverted.** `defect_reported` = **14 / 20**, below the rubric's
+18/20 and below the 15/20 baseline. Snapshot kept as evidence: `results/structural-n20.json`.
+
+### What was built
+
+A required `consequence` enum on every finding (`boundary-crossing` / `data-loss` / `wrong-behavior` /
+`bounded-defect` / `none`), a `SEVERITY_FLOOR` mapping each value to a severity it cannot be filed below,
+and `applySeverityFloor` raising — never lowering — any finding below its own stated consequence.
+
+### Why it failed, measured
+
+**`boundary-crossing` was chosen ZERO times in 20 draws.** Not under-used: never used. The distribution
+across all findings:
+
+| consequence → severity      | Count |
+| --------------------------- | ----- |
+| `data-loss` → critical      | 23    |
+| `none` → minor              | 21    |
+| `none` → nit                | 16    |
+| `bounded-defect` → minor    | 10    |
+| `none` → **critical**       | 6     |
+| `bounded-defect` → major    | 3     |
+| `bounded-defect` → critical | 3     |
+| `none` → major              | 2     |
+| **`boundary-crossing`**     | **0** |
+
+Three things follow. The traversal was filed as `none` — which floors at `nit`, so the floor was inert
+exactly where it was designed to fire. `data-loss` was selected 23 times for findings that involve no
+data loss. And `none` appears alongside `critical` 6 times, which is self-contradictory: a finding with
+"no functional impact" cannot be critical, so the model was not reading the field as a consequence at
+all.
+
+**The cause is the vocabulary, and it was an authoring error.** `boundary-crossing` is a term of art that
+the model does not map to "user A can read user B's file", even though it describes exactly that in
+prose. The structural approach was not tested by this experiment; a badly-named enum was.
+
+### Disposition: REGRESSION — reverted, per the pre-registered row
+
+The table's `< baseline` row reads _"REGRESSION — revert the rubric, record it"_. Applied to the
+structural lever, which is the change that regressed: **Phase 3 code is reverted in full** (it was never
+committed), the rubric from Phase 2 stands, and the package gate is green at 524 tests.
+
+**A vocabulary retry was considered and rejected — deliberately.** The diagnosis is specific and the fix
+looks cheap (~$0.026, within the remaining ceiling), which is exactly what makes it dangerous: it is a
+hypothesis formed _after_ seeing the results, and running it inside this experiment would convert a
+pre-registered test into post-hoc tuning. **Any redesigned structural approach belongs in a follow-up
+change with its own fresh pre-registration.** (User decision, 2026-08-19.)
+
+### Two artifacts worth carrying forward, not silently discarded
+
+Both were bundled into the failed Phase 3 and are therefore **unmeasured in isolation** — neither may be
+claimed as a win, and both are candidates for the follow-up's design:
+
+1. **The in-diff rationalisation finding.** One of Phase 2's two residual failures was talked down by the
+   fixture's own comment — _"Legacy clients still send keys without the uuid prefix, so the value is
+   forwarded to storage as received."_ The model read an untrusted in-code comment rationalising a defect
+   as evidence the defect was acceptable. The existing fencing sentence does not cover this: it addresses
+   embedded _instructions and approvals_, not in-code justifications. A prompt sentence targeting it was
+   written and reverted with the rest.
+2. **The repair-layer default.** `consequence` being required broke `repairFinding` against the recorded
+   live drift shape, which predates the field. The resolution — default to the one value whose floor is
+   the bottom rank, so a repaired-in value can never manufacture severity — is a reusable pattern for any
+   future required field.
+
+**Budget consumed: $0.0886 of ~$0.15** (baseline $0.0234, rubric $0.0247, counter-checks $0.0111,
+structural $0.0256). Under ceiling, and no further spend on this change.
