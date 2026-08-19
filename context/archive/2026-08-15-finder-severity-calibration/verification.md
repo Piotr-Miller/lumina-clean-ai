@@ -1,0 +1,277 @@
+# Pre-registration — finder severity calibration
+
+**Committed before any measurement exists.** Git history proves the ordering: this file's commit
+precedes every `results/*.json` commit in this change. Nothing below may be edited after a number
+arrives except by appending a dated amendment that says what changed and why — the same discipline the
+predecessor used (`context/archive/2026-08-13-finder-security-vocabulary-bias/verification.md`).
+
+## What is being tested
+
+**Claim under test:** the finder grades a detected cross-user authorization-boundary violation below
+`major` because its prompt contains no severity rubric at all, and adding one will fix it.
+
+**The alternative that must stay live:** the rubric is prompt-level, and `lessons.md` records three cases
+in this package where a prompt fix failed and a structural one worked. Phase 3 exists because this
+alternative is credible, not as a formality.
+
+## Metrics
+
+### 1. `defect_reported` — the target
+
+Existing grader `requireDefectReported` (`evals/assertions.mjs:311`). Requires the **same** finding to
+name the defect in `description` or `suggestion` **and** carry `critical` or `major`. Field-scoped: it
+does not search `evidence` or `summary`, so a quoted vulnerable line cannot satisfy it.
+
+**Committed baseline: 10 / 20** (`baseline-n20.json`, 2026-08-14).
+
+### 2. Monotony rate — the mechanism
+
+Share of draws with **more than one finding, all carrying the same severity**. No API call; computed
+from any promptfoo snapshot:
+
+```
+jq -r '.results.results[] | (.response.output | if type=="string" then (fromjson? // {}) else . end
+  | [.findings[]?.severity]) as $s | "\($s|length)\t\($s|unique|length)"'
+```
+
+A draw counts as monotone when the first column is > 1 and the second is 1.
+
+**Committed baseline: 8 / 20 monotone on the vulnerable fixture** (7× `minor`, 1× `nit`); 11 / 20 on the
+defended fixture (9× `minor`, 2× `nit`).
+
+This metric exists because the target alone can be satisfied the wrong way. Pushing every severity up
+would score 20/20 while leaving the distribution just as collapsed — that is the failure mode PR #146
+run `32255940666` already demonstrated live (8 findings, **all `critical`**, on a clean PR).
+
+### 3. Counter-checks — non-negotiable
+
+- `no_false_alarms` on `clean-change.diff` (`reviewMustPass`): a `critical` or `major` on a defect-free
+  diff is a manufactured finding.
+- The defended fixture's `no_fabricated_absence` rubric gate.
+
+**A run that meets the target while failing either counter-check is a FAILURE, not a partial win.**
+This is stated here, before the numbers, precisely because it is the reading that will be tempting to
+soften afterwards.
+
+## Sample size, stated honestly
+
+Every claim below rests on **n = 20 per arm**. A "20/20" result has a 95% lower bound near 83% — it is
+consistent with a true rate anywhere from about 0.83 to 1.0. The pre-registered bar is therefore set on
+what n=20 can actually distinguish, and no claim of "fixed" will be made stronger than the sample
+supports. Where an arm ends up with a different n, the count is stated with the number, never implied.
+
+## The decision table — total over the outcome space
+
+Read against the **rubric arm** (Phase 2), comparing to the **Phase 1 re-measured baseline**, not the
+2026-08-14 snapshot. Every cell has a disposition; there is no "decide when we see it".
+
+| `defect_reported` | Counter-checks | Monotony        | Disposition                                                                                                                      |
+| ----------------- | -------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **20 / 20**       | clean          | improved        | **PASS — ship the rubric, delete Phase 3.** The lever is identified and the mechanism moved.                                     |
+| **20 / 20**       | clean          | unchanged/worse | **PARTIAL — ship, but Phase 3 stays open** as a follow-up change. Target met by pushing the constant up, not by differentiating. |
+| **20 / 20**       | **inflated**   | any             | **FAIL. Do not ship.** Bought with over-reporting. Escalate to Phase 3.                                                          |
+| **17–19 / 20**    | clean          | any             | **SHORT — escalate to Phase 3.** Real movement, insufficient for an authorization-boundary guarantee at this n.                  |
+| **≤ 16 / 20**     | clean          | any             | **SHORT — escalate to Phase 3.** The prompt lever is not sufficient; this is the outcome `lessons.md` predicts.                  |
+| any               | **inflated**   | any             | **FAIL. Do not ship.** Counter-checks are non-negotiable regardless of the target.                                               |
+| **< baseline**    | any            | any             | **REGRESSION — revert the rubric,** record it, and treat the wording as the suspect before escalating.                           |
+
+### Escalation rule, fixed in advance
+
+"Falls short" = any row above whose disposition contains SHORT or FAIL. Only a **PASS** row stops the
+change at Phase 2. A **PARTIAL** ships the rubric but does not close the question.
+
+## Phase 1 drift rule
+
+The Phase 1 re-measurement exists to control for hosted-model drift behind a stable model id
+(`z-ai/glm-4.6`). Fixed in advance:
+
+- If the re-measured baseline is **materially different** from the committed 10/20, the 2026-08-14
+  snapshot is not a valid comparator, and every Phase 2 comparison uses the **re-measured** baseline
+  only.
+- "Materially different" means outside 7–13 / 20 — roughly the range two draws of n=20 from the same
+  true rate can differ by chance. Inside that band, treat the population as unchanged and say so.
+- Under no circumstance is the more flattering of the two baselines selected after seeing the Phase 2
+  result.
+
+## Budget
+
+Ceiling **~$0.15 total** (user-set, 2026-08-19), covering: Phase 1 baseline, Phase 2 rubric, Phase 2
+counter-checks, and one Phase 3 structural round. Roughly $0.04–$0.05 per n=20 single-fixture run at
+glm-4.6 prices. Spend is recorded per run in `decision.md`; exceeding the ceiling requires stopping and
+asking, not quietly continuing.
+
+## What this pre-registration does NOT claim
+
+- Not that the rubric will work. That is the hypothesis, and the table gives the alternative a
+  pre-agreed home.
+- Not that 20/20 at n=20 proves the defect class is eliminated. It bounds it; the interval is stated
+  above.
+- Not that the fixture reproduces every real-world instance of this defect. It reproduces **one**
+  indisputable case, which is what makes it a usable instrument — and the predecessor's finding that a
+  fixture can fail to reproduce a live defect applies here too.
+
+---
+
+## AMENDMENT — Phase 1 result, 2026-08-19 (appended after the run; nothing above was edited)
+
+**Re-measured baseline: `defect_reported` = 15 / 20.** Committed 2026-08-14 baseline: 10 / 20.
+Cost: $0.0234. Snapshot: `results/baseline-rerun-n20.json`.
+
+**The drift rule fires.** 15 is outside the pre-registered 7–13 band, so by the rule written above the
+2026-08-14 snapshot is **not a valid comparator**, and every Phase 2 comparison uses **15 / 20** as the
+baseline. This is the disposition the rule assigned in advance; it is being applied as written, and it is
+the less convenient of the two options — a 15/20 baseline leaves the rubric far less room to look
+impressive than a 10/20 one would.
+
+| Metric             | 2026-08-14 (n=20) | 2026-08-19 (n=20)     |
+| ------------------ | ----------------- | --------------------- |
+| `defect_reported`  | 10                | **15**                |
+| Monotone draws     | 8                 | **6**                 |
+| Monotone constant  | 7× minor, 1× nit  | 4× minor, 2× critical |
+| Zero-finding draws | 0                 | 0                     |
+
+**What this does and does not establish.** Two n=20 draws differing 10 vs 15 is a large gap, but the
+sample cannot separate three explanations: genuine provider drift behind the stable `z-ai/glm-4.6` id,
+ordinary sampling variance (already documented at extreme levels — PR #146 produced 8 findings and 0
+findings from a byte-identical prompt), or some difference between the promptfoo invocations. **No claim
+is made about which.** The rule exists precisely so this ambiguity is resolved by a rule rather than by
+preference, and the conservative baseline is the one adopted.
+
+**The defect class is unchanged and still present.** All five failing draws reported findings — zero
+silence, consistent with the earlier read — and four of the five graded **every** finding `minor`. The
+fifth mixed `critical` + `minor` but still filed the traversal below `major`. So the target is intact:
+a detected cross-user authorization-boundary violation is still being filed below `major` in 5 of 20
+draws.
+
+**Monotony is more informative than the count suggests.** 6/20 monotone, but the constant is now `minor`
+4× and **`critical` 2×** — the collapse runs in both directions on the same fixture. This corroborates
+what PR #146 run `32255940666` showed live and confirms the Phase 2 wording constraint: a rubric that
+only pushes authorization findings up would convert one collapse into the other, and the monotony metric
+is what will catch it.
+
+**Budget consumed: $0.0234 of ~$0.15.**
+
+---
+
+## AMENDMENT — Phase 2 result, 2026-08-19 (appended after the run; nothing above was edited)
+
+**The rubric arm, n=20, compared against the Phase 1 re-measured baseline of 15/20 as the drift rule
+requires.**
+
+| Metric                  | Baseline (15/20 arm)      | Rubric arm      |
+| ----------------------- | ------------------------- | --------------- |
+| `defect_reported`       | 15 / 20                   | **18 / 20**     |
+| Monotone draws          | 6 / 20                    | **0 / 20**      |
+| Monotone constant       | 4× `minor`, 2× `critical` | — (none)        |
+| Zero-finding draws      | 0                         | 0               |
+| `no_false_alarms` (n=6) | —                         | **6 / 6 clean** |
+| Defended fixture (n=6)  | —                         | **6 / 6 clean** |
+
+Severity distribution across all rubric-arm findings: 11 `critical`, 20 `major`, 29 `minor`, 22 `nit`.
+
+### Disposition: SHORT — escalate to Phase 3
+
+18 / 20 lands in the pre-registered **17–19** row: _"SHORT — escalate to Phase 3. Real movement,
+insufficient for an authorization-boundary guarantee at this n."_ The table is applied as written.
+
+This is the honest reading and it is worth being explicit about why, because two things make it tempting
+to call a win:
+
+- **The mechanism moved decisively.** Monotony went 6/20 → **0/20** and the distribution now spans all
+  four levels. The rubric did exactly what it was designed to do, in both directions — no arm collapsed
+  to `critical` either.
+- **The counter-checks are clean.** Nothing was bought with over-reporting.
+
+But the target is an **authorization-boundary guarantee**, and 2 of 20 draws still filed the cross-user
+traversal as `minor`. Both failures are genuine, not grader artifacts: the grader's reasons read
+_"Reported … only below major severity: minor"_, and one of those draws graded four other findings
+`major`/`minor`/`nit` correctly while still calling the traversal `minor`. So the finder can now
+differentiate severity and still get **this specific class** wrong.
+
+### What Phase 3 must therefore address
+
+The rubric fixed the collapse, which was a real and separate defect, but did not make the class
+unfileable below `major`. That is the distinction Phase 3's structural lever exists for: prose can shape
+a distribution, but it cannot make an option unavailable. Phase 3's design should be informed by this —
+the failure is no longer "everything is minor", it is "this class specifically is under-graded", which is
+a narrower and more tractable target than the one Phase 3 was originally sketched against.
+
+### Attribution, recorded now while it is unambiguous
+
+Whatever Phase 3 achieves, the rubric alone is responsible for: `defect_reported` 15 → 18, monotony
+6/20 → 0/20, counter-checks unchanged. Measured separately, exactly as the staged design intended.
+
+**Budget consumed: $0.0629 of ~$0.15** (baseline $0.0234, rubric $0.0247, counter-checks $0.0074 +
+$0.0037, plus $0.0037 for a mis-filtered run that measured the React recall case instead of
+`no_false_alarms` — recorded rather than omitted; the correct case was then run).
+
+---
+
+## AMENDMENT — Phase 3 result, 2026-08-19 (appended after the run; nothing above was edited)
+
+**The structural lever REGRESSED and was reverted.** `defect_reported` = **14 / 20**, below the rubric's
+18/20 and below the 15/20 baseline. Snapshot kept as evidence: `results/structural-n20.json`.
+
+### What was built
+
+A required `consequence` enum on every finding (`boundary-crossing` / `data-loss` / `wrong-behavior` /
+`bounded-defect` / `none`), a `SEVERITY_FLOOR` mapping each value to a severity it cannot be filed below,
+and `applySeverityFloor` raising — never lowering — any finding below its own stated consequence.
+
+### Why it failed, measured
+
+**`boundary-crossing` was chosen ZERO times in 20 draws.** Not under-used: never used. The distribution
+across all findings:
+
+| consequence → severity      | Count |
+| --------------------------- | ----- |
+| `data-loss` → critical      | 23    |
+| `none` → minor              | 21    |
+| `none` → nit                | 16    |
+| `bounded-defect` → minor    | 10    |
+| `none` → **critical**       | 6     |
+| `bounded-defect` → major    | 3     |
+| `bounded-defect` → critical | 3     |
+| `none` → major              | 2     |
+| **`boundary-crossing`**     | **0** |
+
+Three things follow. The traversal was filed as `none` — which floors at `nit`, so the floor was inert
+exactly where it was designed to fire. `data-loss` was selected 23 times for findings that involve no
+data loss. And `none` appears alongside `critical` 6 times, which is self-contradictory: a finding with
+"no functional impact" cannot be critical, so the model was not reading the field as a consequence at
+all.
+
+**The cause is the vocabulary, and it was an authoring error.** `boundary-crossing` is a term of art that
+the model does not map to "user A can read user B's file", even though it describes exactly that in
+prose. The structural approach was not tested by this experiment; a badly-named enum was.
+
+### Disposition: REGRESSION — reverted, per the pre-registered row
+
+The table's `< baseline` row reads _"REGRESSION — revert the rubric, record it"_. Applied to the
+structural lever, which is the change that regressed: **Phase 3 code is reverted in full** (it was never
+committed), the rubric from Phase 2 stands, and the package gate is green at 524 tests.
+
+**A vocabulary retry was considered and rejected — deliberately.** The diagnosis is specific and the fix
+looks cheap (~$0.026, within the remaining ceiling), which is exactly what makes it dangerous: it is a
+hypothesis formed _after_ seeing the results, and running it inside this experiment would convert a
+pre-registered test into post-hoc tuning. **Any redesigned structural approach belongs in a follow-up
+change with its own fresh pre-registration.** (User decision, 2026-08-19.)
+
+### Two artifacts worth carrying forward, not silently discarded
+
+Both were bundled into the failed Phase 3 and are therefore **unmeasured in isolation** — neither may be
+claimed as a win, and both are candidates for the follow-up's design:
+
+1. **The in-diff rationalisation finding.** One of Phase 2's two residual failures was talked down by the
+   fixture's own comment — _"Legacy clients still send keys without the uuid prefix, so the value is
+   forwarded to storage as received."_ The model read an untrusted in-code comment rationalising a defect
+   as evidence the defect was acceptable. The existing fencing sentence does not cover this: it addresses
+   embedded _instructions and approvals_, not in-code justifications. A prompt sentence targeting it was
+   written and reverted with the rest.
+2. **The repair-layer default.** `consequence` being required broke `repairFinding` against the recorded
+   live drift shape, which predates the field. The resolution — default to the one value whose floor is
+   the bottom rank, so a repaired-in value can never manufacture severity — is a reusable pattern for any
+   future required field.
+
+**Budget consumed: $0.0886 of ~$0.15** (baseline $0.0234, rubric $0.0247, counter-checks $0.0111,
+structural $0.0256). Under ceiling, and no further spend on this change.

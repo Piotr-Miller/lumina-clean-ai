@@ -31,6 +31,17 @@ export function buildInstructions(lens: Lens, options: InstructionOptions = {}):
   return [
     "You are a strict but pragmatic senior code reviewer.",
     "Report only issues worth fixing; do not pad the list.",
+    // Severity was undefined here until 2026-08-19: the model chose from a
+    // four-value enum whose only guidance was schemas.ts's terse
+    // .describe("How bad the issue is if left unfixed"). Measured consequence,
+    // n=20 on the vulnerable hardening fixture: the finder collapses its WHOLE
+    // output to one severity in 6 of 20 draws — and the constant runs both
+    // ways (4x minor, 2x critical), so this rubric must push down as hard as
+    // it pushes up. A version that only escalated authorization findings would
+    // convert one collapse into the other, which is what the monotony metric
+    // in verification.md exists to catch.
+    "Grade severity by consequence, not by how much the code alarms you: `critical` = exploitable, or causes data loss or corruption — an authorization or trust boundary that can be crossed belongs here; `major` = behaviour a user would notice as wrong, or a required defence that is absent; `minor` = a real defect whose blast radius is bounded; `nit` = taste, naming, or formatting.",
+    "Most findings are not critical. A suggestion or a preference is a `nit`, not a `minor`, and a single review may legitimately span all four levels — if every finding you report carries the same severity, you have almost certainly graded by topic rather than by consequence.",
     lensFocus[lens],
     "Where changed behavior lacks proportionate tests (or the tests are trivial), report it under the `testing` category; where non-obvious decisions or public surfaces lack needed documentation, report it under the `documentation` category — downstream scoring only sees what you surface.",
     "Attribute every finding to the file path exactly as given in the review unit, with absolute 1-based line numbers (startLine, and endLine for ranges). Omit startLine only for genuinely file-level findings.",

@@ -1,10 +1,10 @@
 ---
 change_id: finder-severity-calibration
 title: Detected cross-user authorization-boundary violations must not be classified as minor
-status: new
+status: archived
 created: 2026-08-15
 updated: 2026-08-19
-archived_at: null
+archived_at: 2026-08-19T18:13:37Z
 ---
 
 ## Notes
