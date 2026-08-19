@@ -2,7 +2,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { isStepCount, tool, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 import { z } from "zod";
 
-import { resolveConfig } from "./config.js";
+import { MAX_OUTPUT_TOKENS, resolveConfig } from "./config.js";
 import { normalizeFindings } from "./findings.js";
 import { buildInstructions, buildPrompt } from "./prompts.js";
 import { tolerantReviewOutput } from "./output-repair.js";
@@ -139,6 +139,10 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // reports 0, which is exactly the blind spot #119 shipped with. Free:
     // accounting adds response fields, not tokens.
     model: openrouter(model, { usage: { include: true } }),
+    // See MAX_OUTPUT_TOKENS. NOTE this bounds each generation in the tool
+    // loop, not the run total — a multi-step finder run can emit more
+    // overall, which is fine: the reservation is per call.
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     instructions: buildInstructions(lens, {
       fileContextTool: hasSource,
       projectContext: options.projectContext,

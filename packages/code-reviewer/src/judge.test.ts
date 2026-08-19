@@ -1,4 +1,5 @@
 import { MockLanguageModelV3 } from "ai/test";
+import { MAX_OUTPUT_TOKENS } from "./config.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_JUDGE_MODEL } from "./config.js";
@@ -116,5 +117,16 @@ describe("judge()", () => {
     currentModel = textModel(JSON.stringify({ scores: {}, verdict: "maybe" }));
     const { judge } = createJudge({ apiKey: "test-key" });
     await expect(judge(input)).rejects.toThrow();
+  });
+
+  // Uncapped, the provider requests the model maximum (65,536) and OpenRouter
+  // reserves credit against that REQUESTED figure, not actual use — which killed
+  // a whole review on a funded account ("can only afford 62849"). Pinned per
+  // factory because the cap must reach every call, not just the one we checked.
+  it("caps output tokens so the credit reservation matches real usage", () => {
+    const agent = createJudge({ apiKey: "k" }).agent as unknown as {
+      settings?: { maxOutputTokens?: number };
+    };
+    expect(agent.settings?.maxOutputTokens).toBe(MAX_OUTPUT_TOKENS);
   });
 });
