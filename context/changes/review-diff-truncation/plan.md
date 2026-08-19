@@ -120,7 +120,7 @@ Three existing properties carry over and must be preserved:
 
 #### Manual Verification:
 
-- [ ] On this change's own PR, confirm the sticky comment does **not** carry the "diff truncated" note.
+- [x] On this change's own PR, confirm the sticky comment does **not** carry the "diff truncated" note. Verified on PR #146.
 - [x] Re-read the exclusion comment as a stranger: does it say _why_ each glob is excluded, not just
       that it is?
 
@@ -219,7 +219,9 @@ no signature change needed. Keep the existing footnote at line 228 as well; they
 
 #### Manual
 
-- [ ] 1.4 This change's own PR shows no "diff truncated" note
+- [x] 1.4 This change's own PR shows no "diff truncated" note — verified on PR #146, run 32255940666: the
+      footnote reads only "PR body truncated at 2,000 chars". Code review PASSED, implementation review
+      APPROVED on all seven dimensions.
 - [x] 1.5 Exclusion comment states why, not just what — 9703f9e
 
 ### Phase 2: Tell the implementation review its diff was cut
