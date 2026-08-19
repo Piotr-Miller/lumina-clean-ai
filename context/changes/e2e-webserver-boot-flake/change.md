@@ -100,3 +100,70 @@ twice.
 **Candidate fix, for whenever this change is planned:** cache the apt layer too, or drop `--with-deps` in
 favour of a pinned dependency install, or raise the job timeout. Do not raise the timeout alone — that
 hides the trend rather than fixing it, the same trap as adding a blanket retry.
+
+---
+
+## DIAGNOSIS + partial fix, 2026-08-19 (PR #151 hit BOTH signatures in one PR)
+
+Both were diagnosed from **existing run history and a log we were already discarding** — no new
+instrumentation was needed, which is the opposite of what this change assumed.
+
+### Signature 2 (install timeout) — CAUSE FOUND, FIXED
+
+Per-step durations, slowest observed run vs fastest:
+
+| Step                                          | Slow (18m total) | Fast (5m total) |
+| --------------------------------------------- | ---------------- | --------------- |
+| `npx playwright install chromium --with-deps` | **13.6 min**     | **0.3 min**     |
+| `npm run test:e2e`                            | 1.0 min          | 1.0 min         |
+| Supabase boot + migrations                    | ~1.0 min         | ~0.9 min        |
+
+**One step, 45× spread, and it is the entire variance of this job.** Everything else — including the
+tests — is stable to within seconds. Job durations across 11 runs: 5, 6, 6, 6, 7, 8, 9, 9, 9, 13, **18**
+against a 20-minute cap, so the tail was already touching the limit before it blew it.
+
+The `actions/cache` step never helped, and could not: it caches `~/.cache/ms-playwright` (the browser
+binary), while `--with-deps` runs `apt-get` for system libraries, which is not cacheable. A cache **hit**
+still paid the apt cost — exactly what run 32293188132 shows.
+
+**Fix:** drop `--with-deps`. `ubuntu-latest` ships Chrome and Firefox preinstalled, so chromium's shared
+libraries are already on the image — which is why the good runs take 18 seconds. This cannot degrade
+silently: a genuinely missing library means chromium fails to launch and the specs go red at once.
+
+`timeout-minutes` deliberately **not** raised. Sizing the cap to the old tail would hide the trend, the
+same trap as a blanket retry.
+
+### Signature 1 (blank webServer error) — EVIDENCE PATH FOUND, still undiagnosed
+
+Third occurrence, run
+[`32296344491`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32296344491). The blank
+error is real:
+
+```
+[WebServer] ✘ [ERROR]
+[WebServer] 🪵  Logs were written to "/home/runner/.config/.wrangler/logs/wrangler-2026-08-19_20-09-38_414.log"
+```
+
+**Wrangler has been writing a detailed log every time, and announcing the path in output we already
+capture.** This change's stated first deliverable — "capture `webServer` stdout/stderr … so the next
+occurrence leaves something to read" — was mostly already satisfied; we were simply discarding the file.
+Now collected into the failure artifact.
+
+**So the next occurrence has a readable cause. That is the deliverable; the cause itself is still
+unknown.**
+
+Two observations recorded as leads, neither acted on:
+
+- The failure surfaced as `net::ERR_CONNECTION_REFUSED` **during the specs**, not as a `webServer`
+  readiness timeout (`webServer.timeout` is 180s). So wrangler came up far enough for Playwright to
+  proceed, then died. That narrows it: this is a **crash after start**, not a failure to bind.
+- `Default inspector port 9229 not available, using 9230 instead` appears immediately before. 9229 is
+  Deno's default inspector, and `supabase functions serve enhance` runs backgrounded in the same job.
+  Suggestive of process interaction — **speculation, not a finding.**
+
+### Still do NOT
+
+- Do not add a blanket `e2e` retry. Two of the three re-runs this session were legitimate (a diagnosed
+  signature, or unblocking a docs PR) and each was recorded with its run URL — that is the discipline,
+  not the retry.
+- Do not raise `timeout-minutes` to make the tail fit.

@@ -165,10 +165,16 @@ jobs:
     # The live cold-boot path stays a manual smoke
     # (context/foundation/cloud-live-smoke.md), never a PR gate.
     runs-on: ubuntu-latest
-    # Cold ~5-7 min (stack boot + browser install + the ~30s stall spec); warm
-    # ~4-5 with both caches. 20 fails a wedged container/serve fast — this job
-    # gates `deploy` via `needs:`, so a hang must not sit at GitHub's 360-min
-    # default.
+    # Measured over 11 runs (2026-08-19): 5,6,6,6,7,8,9,9,9,13,18 min. The old
+    # note here claimed "cold ~5-7, warm ~4-5", which the data contradicts — the
+    # tail reached 18 min against this 20-min cap, and one run blew it entirely.
+    # ALL of that spread was `playwright install --with-deps` (see the step
+    # below); with apt gone the job should sit near the low end with real
+    # headroom. The cap stays at 20 deliberately: it is NOT sized to absorb the
+    # old tail, it exists so a wedged container/serve fails fast rather than
+    # sitting at GitHub's 360-min default, and this job gates `deploy` via
+    # `needs:`. If runs start approaching it again, that is a signal to
+    # investigate, not to raise the number.
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
@@ -289,15 +295,29 @@ jobs:
           cat "$RUNNER_TEMP/functions-serve.log" || true
           exit 1
       # Cache the chromium binary (keyed on the lockfile — pins @playwright/test →
-      # browser build). `install --with-deps` pulls the apt system libs (not
-      # cacheable) and downloads the binary only on a cache miss.
+      # browser build).
       - name: Cache Playwright browser
         id: playwright-cache
         uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npx playwright install chromium --with-deps
+      # NO `--with-deps`, deliberately. Measured across 11 runs, this single step
+      # was the entire source of this job's duration variance — 0.3 min on a good
+      # run vs 13.6 min on a bad one (45x), while every other step, including the
+      # tests themselves, stayed stable to within seconds. It blew the 20-minute
+      # job cap outright on run 32293188132.
+      #
+      # The cache above never helped it: `--with-deps` runs apt-get for system
+      # libraries, which is not cacheable, so a cache HIT still paid the apt cost.
+      # ubuntu-latest ships Chrome and Firefox preinstalled, so chromium's shared
+      # libraries are already on the image — which is why the good runs take 18
+      # seconds.
+      #
+      # If a library really is missing, chromium fails to launch and the e2e specs
+      # go red immediately and visibly — this cannot degrade silently, and the
+      # revert is one word.
+      - run: npx playwright install chromium
       # Playwright builds + serves the worker itself (webServer =
       # `npm run test:e2e:serve`, reuseExistingServer false) on :4321 — the
       # fixture-server's :8787 stays clear — then runs setup → seed/anon →
@@ -306,12 +326,34 @@ jobs:
       # spec's own warmup precondition (tests/e2e/helpers/realtime-ready.ts) —
       # no extra CI step needed.
       - run: npm run test:e2e
+      # The `webServer` boot flake (change `e2e-webserver-boot-flake`) reports
+      # `[WebServer] ✘ [ERROR]` with an EMPTY message, which makes every
+      # hypothesis about it unfalsifiable — three occurrences so far, each
+      # answered with a re-run because nothing was left to read.
+      #
+      # But wrangler does write a detailed log, and says so in the very output we
+      # already capture: `🪵 Logs were written to
+      # /home/runner/.config/.wrangler/logs/wrangler-<timestamp>.log`. We were
+      # discarding the one artifact that could explain the blank error. Collect it
+      # on failure alongside the Playwright report.
+      #
+      # continue-on-error so a missing log directory (a failure that never reached
+      # wrangler) cannot turn a real test failure into a confusing upload error.
+      - name: Collect wrangler dev logs
+        if: ${{ failure() }}
+        continue-on-error: true
+        run: |
+          mkdir -p wrangler-logs
+          cp -r ~/.config/.wrangler/logs/. wrangler-logs/ 2>/dev/null || echo "no wrangler logs found"
+          ls -la wrangler-logs/ || true
       - name: Upload Playwright report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
-          path: playwright-report/
+          path: |
+            playwright-report/
+            wrangler-logs/
           retention-days: 7
 
   code-reviewer:
