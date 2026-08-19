@@ -1,10 +1,10 @@
 ---
 change_id: edge-function-url-hardening
 title: Fail-fast guard for the Edge callback URL (no silent no-webhook branch in prod)
-status: implemented
+status: archived
 created: 2026-06-08
 updated: 2026-08-19
-archived_at: null
+archived_at: 2026-08-19T20:28:33Z
 ---
 
 ## Notes
@@ -76,3 +76,47 @@ reaches `/start` — the Replicate pipeline is stubbed via a self-signed `/callb
 - **Not adding a startup/config check.** `EDGE_FUNCTION_URL` is legitimately absent locally, so a boot
   assertion would fire on every dev run. The check belongs where the URL is used.
 - **Not touching the watchdog.** It remains the backstop for stalls from other causes.
+
+---
+
+## Archived 2026-08-19 — with the verification gap stated, not glossed
+
+Shipped in PR #150 (`bb23ec9`), which deploys both the Worker and the `enhance` Edge Function on merge
+to master. **That deploy is not evidence the guard works.**
+
+### Why a green deploy proves nothing here
+
+The guard fires only when the resolved callback URL is not HTTPS. Prod has `EDGE_FUNCTION_URL` set
+(`production-config.md`, set 2026-06-08), so in production it is a **deliberate no-op**. A successful
+deploy and a healthy cloud pipeline are exactly what you would see whether the guard worked perfectly or
+was never wired at all.
+
+Verifying it live would mean temporarily unsetting `EDGE_FUNCTION_URL` on prod to watch a job fail
+loudly — i.e. deliberately breaking the cloud pipeline on a live product to test an error path. Not
+worth it, and not something to do without an explicit decision.
+
+### What IS verified
+
+- `deno check` passes; 327 unit tests green; CI green across all six checks on #150.
+- The throw is placed **before** `claimJobForProcessing`, so it reuses the existing `/start` catch —
+  Sentry capture, `markJobFailed` on the row, HTTP 500. That path is exercised by other failure modes
+  and is not new code.
+- CI's `e2e` never reaches `/start` (stubbed pipeline, `CLOUD_PIPELINE_ENABLED=false`, no token), which
+  was **predicted before the run and confirmed by it** — `e2e` passed on #150.
+
+### What is NOT verified
+
+The guard has never fired, in any environment. Its message text, and the assumption that a fail-fast at
+this point produces a better operator experience than the silent stall, are both **untested in
+practice**.
+
+### How it would get verified, without breaking anything
+
+The next `cloud-live-smoke` run (`context/foundation/cloud-live-smoke.md`) exercises the live cold-boot
+path. A deliberate, temporary local run with `EDGE_FUNCTION_URL` unset and
+`ALLOW_WEBHOOKLESS_PREDICTION` also unset would exercise the throw against a real stack in seconds — the
+cheap check, if anyone wants it. Archiving does not block that; it just stops the change sitting open
+waiting for a verification nobody scheduled.
+
+Recorded here rather than in `review-pipeline-verification.md` because that log is scoped to the AI
+review pipeline; this is an application-side guard.
