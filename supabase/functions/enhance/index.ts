@@ -214,10 +214,51 @@ function buildAdminClient() {
 }
 
 // Public base URL of THIS function, used to build the Replicate webhook
-// callback. Prefer an explicit override (local dev points Replicate at a public
-// tunnel, since Replicate cannot reach host.docker.internal); otherwise derive
-// from the auto-injected SUPABASE_URL (correct in prod:
-// https://<ref>.supabase.co/functions/v1/enhance).
+// callback. Prefer an explicit override; otherwise derive from the auto-injected
+// SUPABASE_URL.
+//
+// ⚠️ The derived fallback is NOT reliable in the hosted Edge runtime: there the
+// injected SUPABASE_URL is not the public https URL, so the derived callback is
+// not https and /start silently drops the webhook — every prod prediction was
+// created webhook-less at S-08/S-09 flip-ON until EDGE_FUNCTION_URL was set
+// explicitly. This comment used to claim the derivation was "correct in prod";
+// production proved otherwise (lessons.md, and production-config.md marks
+// EDGE_FUNCTION_URL REQUIRED). Treat the fallback as a local-dev convenience
+// only — assertHttpsCallback below is what stops the silent stall.
+/**
+ * Local/CI-only escape hatch, default OFF — the same shape as
+ * E2E_ALLOWED_OUTPUT_ORIGIN, and it carries the same warning: **never set this
+ * in production.** Without a webhook a prediction cannot report completion, so
+ * setting it in prod converts a loud start failure back into the silent stall
+ * this guard exists to prevent.
+ *
+ * It exists because local dev legitimately runs without a public tunnel: the
+ * derived callback is http://host.docker.internal:54321/..., Replicate rejects
+ * it with a 422, and creating the prediction anyway is the intended manual-test
+ * affordance.
+ */
+const ALLOW_WEBHOOKLESS_ENV = "ALLOW_WEBHOOKLESS_PREDICTION";
+
+/**
+ * Fail loudly when the callback we would register is not a public HTTPS URL.
+ *
+ * The failure this replaces was invisible in the worst way: prod created every
+ * prediction webhook-less, Replicate completed them, nothing called back, and
+ * the rows sat `processing` with no error on the row, no 500, and only a
+ * console.warn nobody reads (S-08/S-09 flip-ON; lessons.md). A stalled job that
+ * says nothing is strictly worse than a failed job that says why.
+ */
+function assertHttpsCallback(callbackUrl: string): void {
+  if (callbackUrl.startsWith("https://")) return;
+  if (Deno.env.get(ALLOW_WEBHOOKLESS_ENV) === "true") return;
+  throw new Error(
+    `enhance/start: refusing to create a prediction with no webhook — the callback URL is not HTTPS ` +
+      `(${callbackUrl}). In the hosted Edge runtime the auto-injected SUPABASE_URL is not the public ` +
+      `https URL, so EDGE_FUNCTION_URL must be set explicitly to the public function URL. ` +
+      `For local dev without a tunnel, set ${ALLOW_WEBHOOKLESS_ENV}=true (never in production).`,
+  );
+}
+
 function enhanceFunctionBaseUrl(): string {
   const override = Deno.env.get("EDGE_FUNCTION_URL");
   if (override) return override.replace(/\/$/, "");
@@ -356,12 +397,14 @@ async function handleStart(req: Request): Promise<Response> {
     const signedSourceUrl = toPublicStorageUrl(await signSourceWithRetry(admin, job.source_path));
     const callbackUrl = `${enhanceFunctionBaseUrl()}/callback?jobId=${encodeURIComponent(jobId)}`;
 
-    // Replicate requires the webhook to be a public HTTPS URL. In prod the
-    // derived URL is https://<ref>.supabase.co/... — set normally. In local dev
-    // it's http://host.docker.internal:54321/... which Replicate rejects with a
-    // 422; omit the webhook so the prediction is still created. The completion
-    // callback then needs a public HTTPS tunnel (set EDGE_FUNCTION_URL) — that
-    // tunnel is the Phase-3 manual-testing setup anyway.
+    // Replicate requires the webhook to be a public HTTPS URL, and without one
+    // the prediction completes into the void: the job sits `processing` until a
+    // watchdog times it out, with nothing anywhere saying why. So a non-HTTPS
+    // callback is FATAL by default and only tolerated behind an explicit
+    // local-only opt-in. Throwing here (before claimJobForProcessing) reuses the
+    // /start catch: Sentry, markJobFailed on the row, 500 to the caller.
+    assertHttpsCallback(callbackUrl);
+
     const predictionBody: Record<string, unknown> = {
       version: BREAD_VERSION,
       // S-12: per-job Bread params ride the persisted row (loaded by getJobById
@@ -372,9 +415,11 @@ async function handleStart(req: Request): Promise<Response> {
       predictionBody.webhook = callbackUrl;
       predictionBody.webhook_events_filter = ["completed"];
     } else {
+      // Only reachable with the opt-in set — assertHttpsCallback threw otherwise.
       console.warn(
-        `enhance/start: callback URL ${callbackUrl} is not HTTPS — creating prediction without a webhook. ` +
-          `Set EDGE_FUNCTION_URL to a public HTTPS tunnel to receive completion callbacks.`,
+        `enhance/start: callback URL ${callbackUrl} is not HTTPS and ${ALLOW_WEBHOOKLESS_ENV} is set — ` +
+          `creating prediction without a webhook. The job will NOT complete on its own; it stalls until a ` +
+          `watchdog times it out. Set EDGE_FUNCTION_URL to a public HTTPS tunnel to receive callbacks.`,
       );
     }
 
