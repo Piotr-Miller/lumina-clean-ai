@@ -3,7 +3,7 @@ change_id: finder-severity-calibration
 title: Detected cross-user authorization-boundary violations must not be classified as minor
 status: new
 created: 2026-08-15
-updated: 2026-08-15
+updated: 2026-08-19
 archived_at: null
 ---
 
@@ -36,6 +36,36 @@ indisputable defect — `readSourceObject` forwards `rawKey` into a storage path
 grader, which requires the _same_ finding to name the defect **and** carry `critical`/`major`.
 
 **This change starts at Phase 2, not Phase 1.** Do not rebuild the instrument.
+
+### Re-read of the same snapshot, 2026-08-19 — the defect is a COLLAPSE, not one finding's severity
+
+No new spend; all of this comes out of the committed `baseline-n20.json` (40 draws, 20 per fixture) plus
+three live runs on PR #146. Full workings in `context/foundation/review-pipeline-verification.md`.
+
+| Fixture    | Draws | Zero-finding draws | Severity-monotone draws | Monotone constant    |
+| ---------- | ----- | ------------------ | ----------------------- | -------------------- |
+| Vulnerable | 20    | **0**              | 8                       | 7× `minor`, 1× `nit` |
+| Defended   | 20    | 7                  | 11                      | 9× `minor`, 2× `nit` |
+
+"Monotone" = more than one finding, every one carrying the same severity.
+
+**Two things this settles before planning starts.**
+
+1. **There is no silence problem, so the 20/20 target stands as scoped.** All ten `defect_reported = 0`
+   draws emitted findings (1–8 each) — the finder never declines to report on this fixture. This was
+   worth checking because "reported at the wrong severity" and "not reported at all" need different
+   fixes while `requireDefectReported` scores them identically. It is the former, every time.
+2. **Aim the intervention at the collapse.** The traversal being graded `minor` is a symptom: in 16 of
+   19 monotone draws the whole finding set collapses to `minor`. A change that raises traversal severity
+   specifically would move the metric without touching the mechanism — and the counter-check above is
+   exactly what such a change would fail. PR #146 run `32255940666` shows the constant is not always
+   `minor` either: 8 findings, **all `critical`**, on a clean PR — narration graded critical.
+
+**Monotony rate is a free second metric.** It is computable from any promptfoo snapshot with `jq`, needs
+no API call, and it measures the mechanism rather than one instance of it. Track it alongside
+`defect_reported` from the first measurement so before/after are comparable.
+
+**Do not spend on a `--repeat` run to size run-to-run variance.** The 40 committed draws already do it.
 
 ### Target and the counter-check
 
