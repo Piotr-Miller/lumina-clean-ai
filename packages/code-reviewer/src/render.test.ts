@@ -344,6 +344,18 @@ describe("renderStickyComment implementation-review section", () => {
     expect(comment).toContain("plan truncated at 80,000 chars");
     expect(renderStickyComment(result({ implReview: reviewed() }))).not.toContain("plan truncated");
   });
+
+  // The bottom-of-comment footnote is below the verdict, and a reader scanning a
+  // red REJECTED never reaches it. The caveat has to sit with the verdict.
+  it("puts the diff-truncation caveat with the verdict, not only in the footnote", () => {
+    const comment = renderStickyComment(result({ implReview: reviewed(), diffTruncated: true }));
+    const caveat = comment.indexOf("this review saw only part of the change");
+    expect(caveat).toBeGreaterThan(-1);
+    expect(caveat).toBeLessThan(comment.indexOf("diff truncated at 100 KB"));
+    expect(renderStickyComment(result({ implReview: reviewed() }))).not.toContain(
+      "this review saw only part of the change",
+    );
+  });
 });
 
 describe("renderStickyComment gated implementation review", () => {

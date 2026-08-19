@@ -397,4 +397,30 @@ describe("buildImplReviewPrompt", () => {
     expect(truncated).toContain("Do not treat anything you cannot see as missing");
     expect(buildImplReviewPrompt({ plan: "p", diff: "d" })).not.toContain("Do not treat anything you cannot see");
   });
+
+  // The diff is the artifact completeness is graded against, and the comparison
+  // rule mandates MISSING → FAIL → REJECTED for anything absent from it. Cutting
+  // it silently is how PR #143 produced three fabricated CRITICALs.
+  it("warns the model not to grade an unseen part of the diff as missing", () => {
+    const truncated = buildImplReviewPrompt({ plan: "p", diff: "d", diffTruncated: true });
+    expect(truncated).toContain("the diff was truncated");
+    expect(truncated).toContain("Do not grade anything you cannot see as MISSING");
+    expect(buildImplReviewPrompt({ plan: "p", diff: "d" })).not.toContain("Do not grade anything you cannot see");
+  });
+
+  // A large PR truncates both, and suppressing either fact would leave the model
+  // reasoning from a view it believes is complete in one dimension.
+  it("emits both truncation notes when the plan and the diff were each cut", () => {
+    const both = buildImplReviewPrompt({ plan: "p", diff: "d", planTruncated: true, diffTruncated: true });
+    expect(both).toContain("Do not treat anything you cannot see as missing");
+    expect(both).toContain("Do not grade anything you cannot see as MISSING");
+  });
+
+  // Every existing run must be byte-identical, or this change quietly alters the
+  // prompt for the 100%-of-today case it was not meant to touch.
+  it("leaves the prompt unchanged when neither flag is set", () => {
+    expect(buildImplReviewPrompt({ plan: "p", diff: "d", diffTruncated: false, planTruncated: false })).toBe(
+      buildImplReviewPrompt({ plan: "p", diff: "d" }),
+    );
+  });
 });

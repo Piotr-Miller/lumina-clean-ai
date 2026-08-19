@@ -421,6 +421,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     plan,
     codeReviewVerdict: judgeResult.verdict,
     diff,
+    diffTruncated,
     apiKey: input.overrides?.apiKey,
     model: models.implReviewModel,
     timeoutMs: timeouts.implReviewTimeoutMs,
@@ -458,6 +459,8 @@ interface ImplReviewPassInput {
   codeReviewVerdict: JudgeResult["verdict"];
   /** The already-capped diff — the pass judges exactly what the finder saw. */
   diff: string;
+  /** Whether that capping actually cut anything, so the pass can be told. */
+  diffTruncated: boolean;
   apiKey: string | undefined;
   model: string;
   timeoutMs: number;
@@ -539,6 +542,11 @@ async function runImplReviewPass(
             diff: args.diff,
             ...(input.plan?.path === undefined ? {} : { planPath: input.plan.path }),
             ...(plan.truncated ? { planTruncated: true } : {}),
+            // args.diff above is already the CAPPED diff, so this pass has always
+            // been reading a truncated view — it just was not told. The flag is
+            // what separates "the plan's work is absent" from "absent from the
+            // 100 KB we showed you".
+            ...(args.diffTruncated ? { diffTruncated: true } : {}),
           },
           { timeoutMs: args.timeoutMs },
         ),

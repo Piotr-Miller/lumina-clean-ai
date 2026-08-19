@@ -199,6 +199,13 @@ export interface ImplReviewPromptInput {
   planPath?: string;
   /** Whether the plan was truncated — the model must not read absence as deletion. */
   planTruncated?: boolean;
+  /**
+   * Whether the reviewed diff was truncated. Distinct from planTruncated and
+   * strictly more dangerous: the plan is read for INTENT, but the diff is what
+   * completeness is graded against, so an unannounced cut turns our own cap
+   * into MISSING findings about work that is present on the branch.
+   */
+  diffTruncated?: boolean;
 }
 
 // The path is PR-head content like everything else here, but it is the one
@@ -219,6 +226,20 @@ export function buildImplReviewPrompt(input: ImplReviewPromptInput): string {
       ? [
           "",
           "NOTE: the plan was truncated to fit the context budget. Its later sections are absent from what you can see. Do not treat anything you cannot see as missing, unplanned, or out of scope.",
+        ]
+      : []),
+    // The diff needs its own note, not a shared one: IMPL_REVIEW_COMPARISON_RULE
+    // instructs a MISSING grade for anything "absent from the diff", dimension 1
+    // turns that into FAIL, and the verdict rule turns FAIL into REJECTED. That
+    // chain is sound only while the diff is complete, and until this note existed
+    // nothing told the model when it was not — PR #143 ran with 85% of its diff
+    // cut and correctly followed the rule into three fabricated CRITICALs.
+    // A separate array entry, never an if/else with the plan note: a large PR
+    // can truncate both, and the reader needs both facts.
+    ...(input.diffTruncated === true
+      ? [
+          "",
+          "NOTE: the diff was truncated to fit the context budget. Files and hunks belonging to this change are absent from what you can see. Do not grade anything you cannot see as MISSING and do not conclude that planned work is unimplemented — state that you could not verify it instead.",
         ]
       : []),
     ...(input.planPath === undefined ? [] : ["", fence("plan-metadata", planMetadata(input.planPath))]),

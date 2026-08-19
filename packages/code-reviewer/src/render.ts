@@ -162,6 +162,16 @@ function renderImplReviewSection(result: PipelineResult): string[] {
     block.planPath === undefined
       ? "Reviewed against the supplied plan."
       : `Reviewed against ${codeSpan(block.planPath)}.`,
+    // The footnote at the bottom of the comment is not enough on its own: a
+    // reader scanning a red REJECTED verdict never gets that far, which is
+    // exactly how PR #143's three fabricated "file missing" CRITICALs read as
+    // real. The caveat has to sit with the verdict it qualifies.
+    ...(result.diffTruncated
+      ? [
+          "",
+          "⚠️ The diff was truncated at 100 KB, so this review saw only part of the change. Findings that claim work is missing may reflect the truncation rather than the PR.",
+        ]
+      : []),
     "",
     sanitizeInline(block.verdictReason),
   ];
