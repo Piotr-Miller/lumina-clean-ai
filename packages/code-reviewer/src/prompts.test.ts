@@ -24,6 +24,29 @@ describe("buildInstructions", () => {
     expect(security).toContain("absolute 1-based line numbers");
   });
 
+  // The four-value severity enum had no rubric anywhere in the prompt until
+  // 2026-08-19, and the finder collapsed its whole output to one constant in 6
+  // of 20 measured draws. The rubric is lens-independent because the collapse
+  // is: it showed up on the security fixture AND on an ordinary-code diff.
+  it("defines every severity level, for every lens", () => {
+    for (const lens of lensSchema.options) {
+      const instructions = buildInstructions(lens);
+      expect(instructions).toContain("Grade severity by consequence");
+      for (const level of ["critical", "major", "minor", "nit"]) {
+        expect(instructions).toContain("`" + level + "`");
+      }
+    }
+  });
+
+  // Half the rubric's job is downward pressure. Measured: the monotone constant
+  // was `minor` 4x and `critical` 2x on the same fixture, so a rubric that only
+  // escalated authorization findings would convert one collapse into the other.
+  it("pushes severity down as well as up", () => {
+    const instructions = buildInstructions("general");
+    expect(instructions).toContain("Most findings are not critical");
+    expect(instructions).toContain("same severity");
+  });
+
   it("omits the getFileContext sentence when the reviewer has no context tool", () => {
     const withoutTool = buildInstructions("general", { fileContextTool: false });
     expect(withoutTool).not.toContain("getFileContext");

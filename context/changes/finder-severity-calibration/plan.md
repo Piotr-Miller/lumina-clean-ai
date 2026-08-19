@@ -172,15 +172,15 @@ Identical invocation to Phase 1, output to `results/rubric-n20.json`. Then the c
 
 #### Automated Verification:
 
-- [ ] `cd packages/code-reviewer && npm run typecheck && npm test && npm run lint`
-- [ ] Rubric run completes; snapshot committed
-- [ ] Counter-check run completes; snapshot committed
+- [x] `cd packages/code-reviewer && npm run typecheck && npm test && npm run lint`
+- [x] Rubric run completes; snapshot committed
+- [x] Counter-check run completes; snapshot committed
 
 #### Manual Verification:
 
-- [ ] Result read against the **pre-registered** table, not against a bar adjusted after seeing it
-- [ ] Monotony rate compared before/after — did the distribution differentiate, or did the constant just
-      move up?
+- [x] Result read against the **pre-registered** table, not against a bar adjusted after seeing it
+- [x] Monotony rate compared before/after — did the distribution differentiate, or did the constant just
+      move up? **Differentiated: 6/20 → 0/20 monotone, all four levels used**
 - [ ] Decision recorded in `decision.md`: PASS (stop) or SHORT (escalate to Phase 3), with the numbers
 
 ## Phase 3: Structural — only if Phase 2 falls short
@@ -253,16 +253,16 @@ matter how the prompt asks — so if it is wanted in practice, it must be `requi
 
 #### Automated
 
-- [ ] 2.1 Add the severity rubric to `buildInstructions`
-- [ ] 2.2 Pin the rubric in `prompts.test.ts` across all lenses
-- [ ] 2.3 Package gate green (typecheck, test, lint)
-- [ ] 2.4 Rubric n=20 run; snapshot committed
-- [ ] 2.5 Counter-check run; snapshot committed
+- [x] 2.1 Add the severity rubric to `buildInstructions`
+- [x] 2.2 Pin the rubric in `prompts.test.ts` across all lenses
+- [x] 2.3 Package gate green (typecheck, test, lint) — 524 tests
+- [x] 2.4 Rubric n=20 run; snapshot committed — 18/20
+- [x] 2.5 Counter-check run; snapshot committed — both 6/6 clean
 
 #### Manual
 
-- [ ] 2.6 Read against the pre-registered table
-- [ ] 2.7 Monotony before/after compared — differentiated, or constant merely moved?
+- [x] 2.6 Read against the pre-registered table — 18/20 lands in the 17–19 SHORT row
+- [x] 2.7 Monotony before/after compared — differentiated, or constant merely moved? **6/20 → 0/20, genuinely differentiated**
 - [ ] 2.8 `decision.md` written: PASS (stop) or SHORT (escalate)
 
 ### Phase 3: Structural — only if Phase 2 falls short

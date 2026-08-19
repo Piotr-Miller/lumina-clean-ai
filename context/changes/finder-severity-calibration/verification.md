@@ -150,3 +150,57 @@ only pushes authorization findings up would convert one collapse into the other,
 is what will catch it.
 
 **Budget consumed: $0.0234 of ~$0.15.**
+
+---
+
+## AMENDMENT — Phase 2 result, 2026-08-19 (appended after the run; nothing above was edited)
+
+**The rubric arm, n=20, compared against the Phase 1 re-measured baseline of 15/20 as the drift rule
+requires.**
+
+| Metric                  | Baseline (15/20 arm)      | Rubric arm      |
+| ----------------------- | ------------------------- | --------------- |
+| `defect_reported`       | 15 / 20                   | **18 / 20**     |
+| Monotone draws          | 6 / 20                    | **0 / 20**      |
+| Monotone constant       | 4× `minor`, 2× `critical` | — (none)        |
+| Zero-finding draws      | 0                         | 0               |
+| `no_false_alarms` (n=6) | —                         | **6 / 6 clean** |
+| Defended fixture (n=6)  | —                         | **6 / 6 clean** |
+
+Severity distribution across all rubric-arm findings: 11 `critical`, 20 `major`, 29 `minor`, 22 `nit`.
+
+### Disposition: SHORT — escalate to Phase 3
+
+18 / 20 lands in the pre-registered **17–19** row: _"SHORT — escalate to Phase 3. Real movement,
+insufficient for an authorization-boundary guarantee at this n."_ The table is applied as written.
+
+This is the honest reading and it is worth being explicit about why, because two things make it tempting
+to call a win:
+
+- **The mechanism moved decisively.** Monotony went 6/20 → **0/20** and the distribution now spans all
+  four levels. The rubric did exactly what it was designed to do, in both directions — no arm collapsed
+  to `critical` either.
+- **The counter-checks are clean.** Nothing was bought with over-reporting.
+
+But the target is an **authorization-boundary guarantee**, and 2 of 20 draws still filed the cross-user
+traversal as `minor`. Both failures are genuine, not grader artifacts: the grader's reasons read
+_"Reported … only below major severity: minor"_, and one of those draws graded four other findings
+`major`/`minor`/`nit` correctly while still calling the traversal `minor`. So the finder can now
+differentiate severity and still get **this specific class** wrong.
+
+### What Phase 3 must therefore address
+
+The rubric fixed the collapse, which was a real and separate defect, but did not make the class
+unfileable below `major`. That is the distinction Phase 3's structural lever exists for: prose can shape
+a distribution, but it cannot make an option unavailable. Phase 3's design should be informed by this —
+the failure is no longer "everything is minor", it is "this class specifically is under-graded", which is
+a narrower and more tractable target than the one Phase 3 was originally sketched against.
+
+### Attribution, recorded now while it is unambiguous
+
+Whatever Phase 3 achieves, the rubric alone is responsible for: `defect_reported` 15 → 18, monotony
+6/20 → 0/20, counter-checks unchanged. Measured separately, exactly as the staged design intended.
+
+**Budget consumed: $0.0629 of ~$0.15** (baseline $0.0234, rubric $0.0247, counter-checks $0.0074 +
+$0.0037, plus $0.0037 for a mis-filtered run that measured the React recall case instead of
+`no_false_alarms` — recorded rather than omitted; the correct case was then run).
