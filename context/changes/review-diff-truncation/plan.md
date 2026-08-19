@@ -110,15 +110,18 @@ Three existing properties carry over and must be preserved:
 
 #### Automated Verification:
 
-- [ ] Re-measuring `95da1e5` with the new exclusion added drops the diff from 841,417 to roughly
-      130,000 bytes (same `git show ... | wc -c` recipe used to produce the 841,417 figure).
-- [ ] The workflow still parses: `gh workflow view "AI Code Review"`
-- [ ] `npm run lint` passes (the workflow is not linted, but the repo gate must stay green)
+- [x] Re-measuring `95da1e5` with the new exclusion added drops the diff from 841,417 to roughly
+      130,000 bytes (same `git show ... | wc -c` recipe used to produce the 841,417 figure). **Measured: 120,914** — and the window now reaches `packages/code-reviewer/evals/`, the files the failing review had called missing.
+- [x] The workflow still parses: `gh workflow view "AI Code Review"`
+- [x] `npm run lint` passes (the workflow is not linted, but the repo gate must stay green). Package lint
+      clean. Root lint reports one **pre-existing, unrelated** error in `supabase/.temp/start-secrets/…`
+      — untracked local `supabase start` output, gitignored at `supabase/.gitignore:3`, so CI's clean
+      checkout never sees it. The 55 warnings are pre-existing `no-console`.
 
 #### Manual Verification:
 
 - [ ] On this change's own PR, confirm the sticky comment does **not** carry the "diff truncated" note.
-- [ ] Re-read the exclusion comment as a stranger: does it say _why_ each glob is excluded, not just
+- [x] Re-read the exclusion comment as a stranger: does it say _why_ each glob is excluded, not just
       that it is?
 
 ## Phase 2: Tell the implementation review its diff was cut
@@ -178,17 +181,17 @@ no signature change needed. Keep the existing footnote at line 228 as well; they
 
 #### Automated Verification:
 
-- [ ] `cd packages/code-reviewer && npm run typecheck`
-- [ ] `cd packages/code-reviewer && npm test` — all existing tests pass, new ones included
-- [ ] `npm run lint`
-- [ ] No existing test asserts prompt equality in a way the new note breaks (grep `planTruncated` across
+- [x] `cd packages/code-reviewer && npm run typecheck`
+- [x] `cd packages/code-reviewer && npm test` — all existing tests pass, new ones included
+- [x] `npm run lint`
+- [x] No existing test asserts prompt equality in a way the new note breaks (grep `planTruncated` across
       the test files before running)
 
 #### Manual Verification:
 
-- [ ] Read `buildImplReviewPrompt` output with both flags set — the two NOTEs must not contradict or
+- [x] Read `buildImplReviewPrompt` output with both flags set — the two NOTEs must not contradict or
       duplicate each other.
-- [ ] Confirm the new directive does not weaken genuine MISSING detection: with `diffTruncated` unset,
+- [x] Confirm the new directive does not weaken genuine MISSING detection: with `diffTruncated` unset,
       the prompt is byte-identical to today's.
 
 ## References
@@ -210,26 +213,26 @@ no signature change needed. Keep the existing footnote at line 228 as well; they
 
 #### Automated
 
-- [ ] 1.1 Add the results glob to the EXCLUDES array and extend the rationale comment
-- [ ] 1.2 Verify the measured drop on 95da1e5 (841,417 → ~130,000 bytes)
-- [ ] 1.3 Workflow parses; `npm run lint` green
+- [x] 1.1 Add the results glob to the EXCLUDES array and extend the rationale comment — 9703f9e
+- [x] 1.2 Verify the measured drop on 95da1e5 (841,417 → ~130,000 bytes) — 9703f9e
+- [x] 1.3 Workflow parses; `npm run lint` green — 9703f9e
 
 #### Manual
 
 - [ ] 1.4 This change's own PR shows no "diff truncated" note
-- [ ] 1.5 Exclusion comment states why, not just what
+- [x] 1.5 Exclusion comment states why, not just what — 9703f9e
 
 ### Phase 2: Tell the implementation review its diff was cut
 
 #### Automated
 
-- [ ] 2.1 Add `diffTruncated` to ImplReviewPromptInput and emit the directive
-- [ ] 2.2 Thread the flag through pipeline.ts:541
-- [ ] 2.3 Render the caveat at the impl-review verdict
-- [ ] 2.4 Tests: prompts, pipeline (flags independent), render
-- [ ] 2.5 typecheck, test, lint all green
+- [x] 2.1 Add `diffTruncated` to ImplReviewPromptInput and emit the directive — 9703f9e
+- [x] 2.2 Thread the flag through pipeline.ts:541 — 9703f9e
+- [x] 2.3 Render the caveat at the impl-review verdict — 9703f9e
+- [x] 2.4 Tests: prompts, pipeline (flags independent), render — 9703f9e
+- [x] 2.5 typecheck, test, lint all green — 9703f9e
 
 #### Manual
 
-- [ ] 2.6 Both NOTEs read coherently when plan and diff are truncated together
-- [ ] 2.7 Prompt is unchanged when diffTruncated is unset
+- [x] 2.6 Both NOTEs read coherently when plan and diff are truncated together — 9703f9e
+- [x] 2.7 Prompt is unchanged when diffTruncated is unset — 9703f9e
