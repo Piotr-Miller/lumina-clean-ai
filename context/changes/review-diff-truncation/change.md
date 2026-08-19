@@ -1,7 +1,7 @@
 ---
 change_id: review-diff-truncation
 title: Diff truncation makes the implementation review report present work as missing
-status: new
+status: planned
 created: 2026-08-19
 updated: 2026-08-19
 archived_at: null

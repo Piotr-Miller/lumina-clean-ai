@@ -161,18 +161,26 @@ jobs:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          # Two exclusions. Committed review documents get echoed back by the
+          # Three exclusions. Committed review documents get echoed back by the
           # finder as if they were current findings — a live bug that gets
-          # worse once a pass is explicitly hunting plan-shaped prose. And the
+          # worse once a pass is explicitly hunting plan-shaped prose. The
           # plan itself arrives separately as fenced untrusted data, so
           # reviewing it as changed code double-counts it and invites
-          # documentation findings about the plan's own wording.
+          # documentation findings about the plan's own wording. And generated
+          # eval snapshots are machine-written evidence nobody reads line by
+          # line, but they are TEXT, so they spend the 100 KB diff budget:
+          # results/baseline-n20.json was 711,641 bytes, 85% of PR #143's
+          # post-exclusion diff. Because git diff emits paths in sort order,
+          # that window closed before reaching any source file and the
+          # implementation review reported present files as MISSING at
+          # CRITICAL. Committed images cost nothing here — .gitattributes
+          # marks them binary, so they diff as one line regardless of size.
           # The getFileContext allowlist derives from this diff, so the
           # exclusions correctly narrow the tool's reach too.
           # Array, not `${PLAN_PATH:+…}`: an unquoted expansion word-splits a
           # path containing a space into a broken pathspec and fails the step
           # red. The PR controls its own filenames, so that is reachable.
-          EXCLUDES=(':(exclude,glob)**/reviews/*.md')
+          EXCLUDES=(':(exclude,glob)**/reviews/*.md' ':(exclude,glob)**/results/*.json')
           [ -n "$PLAN_PATH" ] && EXCLUDES+=(":(exclude)${PLAN_PATH}")
           git diff "origin/${BASE_REF}...${HEAD_SHA}" -- . "${EXCLUDES[@]}" > "$RUNNER_TEMP/pr.diff"
           wc -c "$RUNNER_TEMP/pr.diff"

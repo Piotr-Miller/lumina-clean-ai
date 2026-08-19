@@ -807,14 +807,19 @@ describe("runReviewPipeline implementation-review pass", () => {
   });
 
   it("hands the pass the capped diff and the plan-truncation flag", async () => {
-    const seen: { diff: string; planPath?: string; planTruncated?: boolean }[] = [];
+    const seen: { diff: string; planPath?: string; planTruncated?: boolean; diffTruncated?: boolean }[] = [];
     await runReviewPipeline({
       diff: SMALL_DIFF,
       plan: { text: "p".repeat(PLAN_CAP_CHARS + 1), path: "plan.md" },
       deps: {
         ...twoPasses,
         implReviewer: (input) => {
-          seen.push({ diff: input.diff, planPath: input.planPath, planTruncated: input.planTruncated });
+          seen.push({
+            diff: input.diff,
+            planPath: input.planPath,
+            planTruncated: input.planTruncated,
+            diffTruncated: input.diffTruncated,
+          });
           return Promise.resolve(implReviewResult());
         },
       },
@@ -822,6 +827,28 @@ describe("runReviewPipeline implementation-review pass", () => {
     expect(seen.at(0)?.planTruncated).toBe(true);
     expect(seen.at(0)?.planPath).toBe("plan.md");
     expect(seen.at(0)?.diff).toBe(SMALL_DIFF);
+    // A truncated plan must not imply a truncated diff — this one fits.
+    expect(seen.at(0)?.diffTruncated).toBeUndefined();
+  });
+
+  // The two flags are independent, and only this one governs whether MISSING
+  // findings can be trusted. The pass has always received the capped diff
+  // (asserted above); until it was told, it read our cap as deleted work.
+  it("tells the pass when the diff was cut, independently of the plan", async () => {
+    const seen: { planTruncated?: boolean; diffTruncated?: boolean }[] = [];
+    await runReviewPipeline({
+      diff: "+".repeat(DIFF_CAP_BYTES + 1),
+      plan: { text: "a short plan", path: "plan.md" },
+      deps: {
+        ...twoPasses,
+        implReviewer: (input) => {
+          seen.push({ planTruncated: input.planTruncated, diffTruncated: input.diffTruncated });
+          return Promise.resolve(implReviewResult());
+        },
+      },
+    });
+    expect(seen.at(0)?.diffTruncated).toBe(true);
+    expect(seen.at(0)?.planTruncated).toBeUndefined();
   });
 
   // The pass runs AFTER the judge, so a throw here would discard a complete,
