@@ -18,6 +18,49 @@ import { createTestUser, deleteTestUser, type TestUser } from "./helpers/test-us
 const PHOTOS_BUCKET = "photos";
 
 /**
+ * The ONE transient failure this suite tolerates, matched narrowly on purpose.
+ *
+ * Against the ephemeral local stack, an admin insert occasionally comes back as
+ * a Kong/PostgREST 502 — `An invalid response was received from the upstream
+ * server` — which false-fails the whole suite from its own DATA SETUP rather
+ * than from anything the app did (issue #19, first seen run 27338381004 on a
+ * docs-only PR; 112/113 passed and it did not recur on re-run).
+ *
+ * Matched on the gateway's exact wording rather than "any error", because a
+ * retry that swallows real errors is how a genuine regression gets masked — a
+ * unique-violation or an RLS denial must still fail instantly and loudly. If a
+ * new transient shape appears, it fails loudly too, and we learn its signature
+ * instead of having it silently absorbed.
+ */
+const GATEWAY_502 = /invalid response was received from the upstream server/i;
+
+const isTransientGatewayError = (error: { message?: string } | null): boolean =>
+  error !== null && typeof error.message === "string" && GATEWAY_502.test(error.message);
+
+/**
+ * Run a SETUP operation, retrying only the gateway flake above.
+ *
+ * Scoped to setup deliberately: assertions about application behaviour stay
+ * strict and single-shot. Three attempts with a short linear backoff — the
+ * observed failure is a momentary gateway hiccup, not a cold start, so a long
+ * backoff would only slow the suite.
+ */
+async function withGatewayRetry<T extends { error: { message?: string } | null }>(
+  // PromiseLike, not Promise: supabase-js returns a PostgrestFilterBuilder,
+  // which is a thenable rather than a real Promise, so requiring Promise here
+  // rejects every call site.
+  op: () => PromiseLike<T>,
+  attempts = 3,
+): Promise<T> {
+  let result = await op();
+  for (let attempt = 1; attempt < attempts && isTransientGatewayError(result.error); attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
+    result = await op();
+  }
+  return result;
+}
+
+/**
  * A minimal but real JPG payload (SOI + APP0 + EOI). Enough bytes that
  * Storage accepts the upload as a real object; not a parseable image.
  */
@@ -72,11 +115,13 @@ describe("public.jobs RLS + photo-job service", () => {
     const b = await makeUser("rls-b");
 
     // Admin inserts a row owned by user A.
-    const { error: insertError } = await supabaseAdmin.from("jobs").insert({
-      user_id: a.id,
-      status: "queued",
-      source_path: `${a.id}/fake-job/source.jpg`,
-    });
+    const { error: insertError } = await withGatewayRetry(() =>
+      supabaseAdmin.from("jobs").insert({
+        user_id: a.id,
+        status: "queued",
+        source_path: `${a.id}/fake-job/source.jpg`,
+      }),
+    );
     expect(insertError).toBeNull();
 
     // User B selects: should see zero rows (RLS scopes by auth.uid()).
@@ -424,7 +469,7 @@ describe("countCloudJobsToday (S-05 global daily-cap count)", () => {
       replicate_prediction_id: replicatePredictionId,
     };
     if (createdAtIso) row.created_at = createdAtIso;
-    const { error } = await supabaseAdmin.from("jobs").insert(row);
+    const { error } = await withGatewayRetry(() => supabaseAdmin.from("jobs").insert(row));
     expect(error).toBeNull();
   }
 
@@ -618,12 +663,14 @@ describe("POST /api/enhance/cloud/timeout — cross-user IDOR (route boundary)",
 
   async function insertProcessingJob(ownerId: string): Promise<string> {
     const jobId = crypto.randomUUID();
-    const { error } = await supabaseAdmin.from("jobs").insert({
-      id: jobId,
-      user_id: ownerId,
-      status: "processing",
-      source_path: `${ownerId}/${jobId}/source.jpg`,
-    });
+    const { error } = await withGatewayRetry(() =>
+      supabaseAdmin.from("jobs").insert({
+        id: jobId,
+        user_id: ownerId,
+        status: "processing",
+        source_path: `${ownerId}/${jobId}/source.jpg`,
+      }),
+    );
     expect(error).toBeNull();
     return jobId;
   }
@@ -716,12 +763,14 @@ describe("POST /api/enhance/cloud/cancel — cross-user IDOR + flip (route bound
 
   async function insertProcessingJob(ownerId: string): Promise<string> {
     const jobId = crypto.randomUUID();
-    const { error } = await supabaseAdmin.from("jobs").insert({
-      id: jobId,
-      user_id: ownerId,
-      status: "processing",
-      source_path: `${ownerId}/${jobId}/source.jpg`,
-    });
+    const { error } = await withGatewayRetry(() =>
+      supabaseAdmin.from("jobs").insert({
+        id: jobId,
+        user_id: ownerId,
+        status: "processing",
+        source_path: `${ownerId}/${jobId}/source.jpg`,
+      }),
+    );
     expect(error).toBeNull();
     return jobId;
   }

@@ -1,9 +1,9 @@
 ---
 change_id: jobs-rls-seed-flake
 title: Harden jobs.rls.test.ts seedJob against transient gateway 502
-status: new
+status: implemented
 created: 2026-06-11
-updated: 2026-06-11
+updated: 2026-08-19
 archived_at: null
 issue: 19
 ---
@@ -32,3 +32,41 @@ behavior stay strict.
 
 This is test code (Lesson 2 territory), deliberately deferred from the Lesson 3
 hooks work where the flake surfaced. Non-roadmap maintenance chore.
+
+---
+
+## Implemented 2026-08-19 — and the triage answer changed since this was drafted
+
+Re-opened to decide fix-or-close on a 2.5-month-old draft. **Fix**, and the reason is new: as of today
+`integration` is a **required check** under branch protection, so a false failure no longer merely annoys
+— it **blocks the merge**. This session watched that exact cost play out twice with the `e2e` flakes.
+
+### What shipped
+
+`withGatewayRetry`, applied to the **four** admin setup inserts (the draft named `seedJob`; the same
+exposure exists in the RLS test's inline insert and in `insertProcessingJob`, which is duplicated across
+two describe blocks).
+
+**Matched narrowly on purpose.** It retries only the gateway's exact wording — `invalid response was
+received from the upstream server` — and nothing else. A retry that swallows any error is how a real
+regression gets masked: a unique-violation or an RLS denial must still fail instantly. If a new transient
+shape appears it fails loudly, and we learn its signature rather than having it absorbed silently. This
+is the same discipline `e2e-webserver-boot-flake` applies to blanket CI retries.
+
+Three attempts, 100 ms linear backoff — the observed failure is a momentary gateway hiccup, not a cold
+start, so a long backoff would only slow the suite.
+
+**Scoped to setup.** Assertions about application behaviour stay strict and single-shot.
+
+### One implementation note worth keeping
+
+The helper takes `() => PromiseLike<T>`, not `() => Promise<T>`. supabase-js returns a
+`PostgrestFilterBuilder`, which is a **thenable rather than a real Promise**, so a `Promise` signature
+rejects every call site with a confusing "missing catch, finally" error.
+
+### Not verified, honestly
+
+The flake has been observed **once**, on 2026-06-11, and has not recurred since. So this is hardening
+against a rare event, and **there is no way to confirm the retry works short of the 502 recurring** —
+the helper is exercised by every run, but its retry branch is not. That is acceptable for test-setup
+hardening; it would not be for application code.
