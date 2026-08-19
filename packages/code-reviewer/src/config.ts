@@ -28,6 +28,34 @@ export const DEFAULT_JUDGE_MODEL = "anthropic/claude-sonnet-5";
 // here: this pass is one tool-less call, not a tool loop over every PR.
 export const DEFAULT_IMPL_REVIEW_MODEL = "anthropic/claude-sonnet-5";
 
+/**
+ * Output-token ceiling for every model call in the pipeline.
+ *
+ * WHY IT EXISTS AT ALL: with no cap the provider defaults to the model's
+ * maximum — 65,536 for sonnet-5 — and OpenRouter reserves credit against that
+ * REQUESTED figure, not against what the call actually uses. On 2026-08-19 the
+ * whole review died with "You requested up to 65536 tokens, but can only afford
+ * 62849" on a healthy account, because the reservation had grown to roughly the
+ * entire remaining balance. Nothing was wrong with the code or the key; the ask
+ * was simply 12x larger than any real response.
+ *
+ * WHY 16,384: measured output across this pipeline's live runs is finder 74-661,
+ * judge 1,436-1,560, implementation review 5,297. This is ~3x the largest ever
+ * observed, so it bounds a runaway without truncating real work.
+ *
+ * Billing is usage-based, so lowering the ceiling costs nothing in normal
+ * operation — it only shrinks the reservation.
+ *
+ * SCOPE, easy to misread: this is per MODEL CALL, not per run. The finder is a
+ * tool loop, so a multi-step finder run may emit more than this in total; each
+ * individual generation is what is bounded.
+ *
+ * Hitting it must stay LOUD. A truncated structured response fails the strict
+ * parse and surfaces as an error (with the finder's envelope repair reporting
+ * via onOutputRepair) — never a silently shortened review.
+ */
+export const MAX_OUTPUT_TOKENS = 16_384;
+
 export interface ModelOverrides {
   reviewModel?: string;
   judgeModel?: string;
@@ -51,10 +79,7 @@ export function resolveModels(overrides: ModelOverrides = {}): ResolvedModels {
   // of sending "" to the provider (impl-review-full F3).
   /* eslint-disable @typescript-eslint/prefer-nullish-coalescing -- empty string IS the missing case here */
   const reviewModel =
-    overrides.reviewModel ||
-    process.env.OPENROUTER_REVIEW_MODEL ||
-    process.env.OPENROUTER_MODEL ||
-    DEFAULT_MODEL;
+    overrides.reviewModel || process.env.OPENROUTER_REVIEW_MODEL || process.env.OPENROUTER_MODEL || DEFAULT_MODEL;
   const judgeModel = overrides.judgeModel || process.env.OPENROUTER_JUDGE_MODEL || DEFAULT_JUDGE_MODEL;
   const implReviewModel =
     overrides.implReviewModel || process.env.OPENROUTER_IMPL_REVIEW_MODEL || DEFAULT_IMPL_REVIEW_MODEL;

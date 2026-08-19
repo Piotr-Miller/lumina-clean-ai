@@ -1,7 +1,7 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { Output, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 
-import { resolveConfig, resolveModels } from "./config.js";
+import { MAX_OUTPUT_TOKENS, resolveConfig, resolveModels } from "./config.js";
 import { buildImplReviewInstructions, buildImplReviewPrompt, type ImplReviewPromptInput } from "./prompts.js";
 import type { SourceProvider } from "./reviewer.js";
 import {
@@ -64,13 +64,15 @@ export interface ImplReviewCallOptions {
 const implSeverityRank = { CRITICAL: 3, WARNING: 2, OBSERVATION: 1 } as const;
 
 export function identifyImplFindings(findings: ImplReviewOutput["findings"]): IdentifiedImplFinding[] {
-  return [...findings]
-    .sort((a, b) => implSeverityRank[b.severity] - implSeverityRank[a.severity])
-    .slice(0, MAX_IMPL_FINDINGS)
-    // The single normalization point: wire shape in, discriminated union out.
-    // Everything downstream — render.ts's exhaustive locus switch included —
-    // sees only the union, so the trusted contract starts exactly here.
-    .map((finding, index) => ({ ...normalizeImplFinding(finding), id: `P${String(index + 1)}` }));
+  return (
+    [...findings]
+      .sort((a, b) => implSeverityRank[b.severity] - implSeverityRank[a.severity])
+      .slice(0, MAX_IMPL_FINDINGS)
+      // The single normalization point: wire shape in, discriminated union out.
+      // Everything downstream — render.ts's exhaustive locus switch included —
+      // sees only the union, so the trusted contract starts exactly here.
+      .map((finding, index) => ({ ...normalizeImplFinding(finding), id: `P${String(index + 1)}` }))
+  );
 }
 
 /**
@@ -90,6 +92,9 @@ export function createImplReviewer(options: ImplReviewerOptions = {}) {
     // phase's cost criterion unverifiable (plan-review F3). Free: accounting
     // adds response fields, not tokens.
     model: openrouter(implReviewModel, { usage: { include: true } }),
+    // See MAX_OUTPUT_TOKENS. This pass has the largest measured output of the
+    // three (5,297), and 16,384 is still ~3x that.
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     instructions: buildImplReviewInstructions(),
     // Plain Output.object, not tolerantReviewOutput: envelope repair exists for
     // glm-4.6's drift on the finder, and the judge runs the same sonnet model

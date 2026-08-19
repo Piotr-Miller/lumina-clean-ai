@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MAX_OUTPUT_TOKENS } from "./config.js";
 
 import { DEFAULT_MODEL } from "./config.js";
 import {
@@ -57,12 +58,9 @@ describe("createReviewer", () => {
     expect(a.agent).not.toBe(b.agent);
   });
 
-  it.each([0, -1, 2.5, Number.NaN, Number.POSITIVE_INFINITY])(
-    "rejects maxSteps=%s (cost guard)",
-    (maxSteps) => {
-      expect(() => createReviewer({ apiKey: "test-key", maxSteps })).toThrow(/positive integer/);
-    },
-  );
+  it.each([0, -1, 2.5, Number.NaN, Number.POSITIVE_INFINITY])("rejects maxSteps=%s (cost guard)", (maxSteps) => {
+    expect(() => createReviewer({ apiKey: "test-key", maxSteps })).toThrow(/positive integer/);
+  });
 
   it("forwards onStepEnd to each agent generate call (telemetry pass-through)", async () => {
     const onStepEnd = vi.fn();
@@ -96,9 +94,7 @@ describe("createReviewer", () => {
 
 describe("fetchBoundedContext (context-tool guardrails)", () => {
   it("returns the fixed fallback when no source is injected", async () => {
-    await expect(fetchBoundedContext(undefined, { path: "a.ts" })).resolves.toBe(
-      "No additional context available.",
-    );
+    await expect(fetchBoundedContext(undefined, { path: "a.ts" })).resolves.toBe("No additional context available.");
   });
 
   it("clamps oversized ranges to at most MAX_CONTEXT_LINES lines", async () => {
@@ -131,5 +127,16 @@ describe("fetchBoundedContext (context-tool guardrails)", () => {
 
   it("returns small responses untouched", async () => {
     await expect(fetchBoundedContext(() => "small", { path: "a.ts" })).resolves.toBe("small");
+  });
+
+  // Uncapped, the provider requests the model maximum (65,536) and OpenRouter
+  // reserves credit against that REQUESTED figure, not actual use — which killed
+  // a whole review on a funded account ("can only afford 62849"). Pinned per
+  // factory because the cap must reach every call, not just the one we checked.
+  it("caps output tokens so the credit reservation matches real usage", () => {
+    const agent = createReviewer({ apiKey: "k" }).agent as unknown as {
+      settings?: { maxOutputTokens?: number };
+    };
+    expect(agent.settings?.maxOutputTokens).toBe(MAX_OUTPUT_TOKENS);
   });
 });

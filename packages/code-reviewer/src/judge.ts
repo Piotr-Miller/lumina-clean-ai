@@ -1,7 +1,7 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 
-import { resolveConfig, resolveModels } from "./config.js";
+import { MAX_OUTPUT_TOKENS, resolveConfig, resolveModels } from "./config.js";
 import { buildJudgeInstructions, buildJudgePrompt, type JudgePromptInput } from "./prompts.js";
 import { tolerantJudgeOutput } from "./output-repair.js";
 import { validateJudgeReferences } from "./scorecard.js";
@@ -52,6 +52,9 @@ export function createJudge(options: JudgeOptions = {}) {
     // its cost was permanently undefined — the gap that made criterion 4.8
     // uncomputable. Free: accounting adds response fields, not tokens.
     model: openrouter(judgeModel, { usage: { include: true } }),
+    // See MAX_OUTPUT_TOKENS: uncapped, the provider asks for the model maximum
+    // and OpenRouter reserves credit against that, not against actual use.
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     instructions: buildJudgeInstructions(),
     // Repair added after four consecutive AI_NoObjectGeneratedError failures
     // killed PR #127's review (runs 31707888975 + re-run). The original
