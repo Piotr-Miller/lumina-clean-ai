@@ -46,8 +46,8 @@ Three readings, all load-bearing for the redesign:
 - **`none` alongside `critical` 6 times** — self-contradictory, so the model was not reading the field as
   a consequence at all.
 
-Full workings: `context/archive/…-finder-severity-calibration/decision.md` and its `verification.md`
-Phase 3 amendment (paths valid once archived; currently under `context/changes/`).
+Full workings: `context/archive/2026-08-15-finder-severity-calibration/decision.md` and its `verification.md`
+Phase 3 amendment (archived 2026-08-19).
 
 ### Candidate approaches, none yet chosen
 
