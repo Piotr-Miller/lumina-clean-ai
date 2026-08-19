@@ -3,7 +3,7 @@ change_id: e2e-webserver-boot-flake
 title: Playwright webServer boot fails intermittently in CI with a blank error
 status: new
 created: 2026-08-15
-updated: 2026-08-15
+updated: 2026-08-19
 archived_at: null
 ---
 
@@ -58,3 +58,45 @@ strictly worse — the same trap as the silent-degradation rule in `lessons.md`.
 - Do not switch `webServer` to `astro dev` to make boot faster. That regresses into the dev-only React
   duplication issue the current recipe exists to avoid.
 - Do not add a blanket retry as the first move. See above.
+
+---
+
+## A SECOND, DISTINCT e2e failure signature — observed 2026-08-19 (PR #151)
+
+Recorded here rather than in a new change because the surface is the same job, but **this is not the
+blank-error `webServer` boot flake above** and must not be conflated with it.
+
+**Signature:** the job hits GitHub's 20-minute execution limit during
+`npx playwright install chromium --with-deps`.
+
+```
+X Run npx playwright install chromium --with-deps
+- Run npm run test:e2e            (never reached)
+X The job has exceeded the maximum execution time of 20m0s
+```
+
+Run: [`32293188132`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32293188132), job
+`96198469588`, 20m15s. The PR was a **one-line `AGENTS.md` edit**, so the change could not possibly
+affect the browser gate.
+
+**What makes it different from the entry above:**
+
+|             | Boot flake                      | This                                    |
+| ----------- | ------------------------------- | --------------------------------------- |
+| Where       | `webServer` boot, after install | `playwright install`, before the server |
+| Error text  | blank — `[WebServer] ✘ [ERROR]` | explicit job-timeout annotation         |
+| Diagnosable | no                              | **yes**                                 |
+
+**Notable:** `Cache Playwright browser` reported ✓ immediately before, so a cache hit did **not** prevent
+the overrun. The likely cost is `--with-deps` (apt package installation), which the browser cache does
+not cover. That is a hypothesis, not a measurement — nothing has been instrumented.
+
+**Why the re-run here was legitimate**, given this change's own "re-run and see is how a flake becomes
+permanent" rule: the failure carries an explicit, readable signature and a step name. The rule exists
+because a _blank_ error makes every hypothesis unfalsifiable; this one names its step. The run URL is
+recorded above so the evidence survives log expiry — which is exactly what the entry above says was lost
+twice.
+
+**Candidate fix, for whenever this change is planned:** cache the apt layer too, or drop `--with-deps` in
+favour of a pinned dependency install, or raise the job timeout. Do not raise the timeout alone — that
+hides the trend rather than fixing it, the same trap as adding a blanket retry.
