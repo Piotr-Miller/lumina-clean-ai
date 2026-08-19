@@ -22,6 +22,9 @@ real CI output rather than a fixture.
 | ----------------------------------------------------------------------------------------- | --------------- | ------ | ------ | -------- |
 | [`31841839498`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31841839498) | NEEDS_ATTENTION | 0      | 3      | 1        |
 | [`31844849055`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/31844849055) | REJECTED        | 0      | 1      | 4        |
+| [`32255940666`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32255940666) | APPROVED        | 0      | 1      | 0        |
+| [`32258322400`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32258322400) | APPROVED        | —      | —      | —        |
+| [`32260116416`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32260116416) | APPROVED        | —      | —      | —        |
 
 The finder on the same runs: **7 of 7** anchored to file **and** line.
 
@@ -47,6 +50,17 @@ across a handful more real runs, the required-union fix solved declaration but n
 next lever is a _conditional_ requirement — a finding about changed code must carry a line — rather
 than a wider union.
 
+**Appended 2026-08-19 (PR #146).** Three more real runs, all `APPROVED`, added to the table above. Two
+produced no findings at all, so they say nothing about anchoring; the third produced one `file`-locus
+OBSERVATION about `change.md`'s status flip, which is honestly file-level. **Running total: 0 `code`,
+5 `file`, 5 `absent` across 10 findings and five runs.**
+
+All three were clean PRs, so the sample still contains no finding that _should_ have carried a line. That
+is the limitation, not a result: `code` cannot be observed at zero opportunity, and three `APPROVED` runs
+are not evidence against line anchoring. The status is unchanged and the re-check is unchanged — a run on
+a PR with a genuine code-level deviation. Worth noting only that two of the five runs have now added no
+information, so "a handful more real runs" will take longer to accumulate than the phrase suggests.
+
 ---
 
 ## Judge envelope repair — WIRED AND OBSERVABLE, NEVER FIRED (2026-08-15)
@@ -70,3 +84,58 @@ instrumented end to end, and a repaired run is distinguishable from a clean one 
 since the timeout was raised. The detector exists: search a run's log for `judge output repaired`. Worth
 re-checking only if judge failures recur; do not synthesize drift to exercise it, since the unit tests
 already cover the logic and a synthetic trigger would prove nothing about production.
+
+---
+
+## Finder output is unstable on identical input, and collapses to one severity — MEASURED (2026-08-19)
+
+**What was observed.** PR #146 reviewed the same change three times. Two of those runs sent the finder a
+**byte-identical prompt** — `inputTokens: 4833` and `diffStats` (8 files, +119/−7) match exactly, because
+the intervening commit touched only `plan.md`, which the workflow strips from the reviewed diff.
+
+| Run                                                                                       | Finder input tok | Output tok | Findings | Severities           |
+| ----------------------------------------------------------------------------------------- | ---------------- | ---------- | -------- | -------------------- |
+| [`32255940666`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32255940666) | 4,833            | 1,002      | **8**    | all `critical`       |
+| [`32258322400`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32258322400) | 4,833            | 74         | **0**    | —                    |
+| [`32260116416`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32260116416) | 4,911            | —          | 10       | `critical` + `minor` |
+
+The first two are a controlled pair: same input, **8 findings versus 0**. All three runs passed and the
+verdicts agreed, so nothing was mis-gated — but "re-run it and the finding set changes completely" is a
+property worth writing down. The third run's input differs (the archive rename changed path names), so it
+is not part of the pair.
+
+Of the two, **run B is the better review.** The PR was clean; run A's eight `critical` findings were
+descriptions of the fix whose own `fix` fields endorsed it ("The exclusion is essential", "Critical test
+that prevents regression"). That is narration graded critical, not review. The variance is between "wrong
+verbosely" and "right", not between two flavours of wrong.
+
+**The collapse is measurable, and it was already in a committed snapshot.** Re-reading
+`context/archive/2026-08-13-finder-security-vocabulary-bias/results/baseline-n20.json` — 40 draws, 20 per
+fixture, no new spend:
+
+| Fixture    | Draws | Zero-finding draws | Severity-monotone draws | Monotone constant    |
+| ---------- | ----- | ------------------ | ----------------------- | -------------------- |
+| Vulnerable | 20    | **0**              | 8                       | 7× `minor`, 1× `nit` |
+| Defended   | 20    | 7                  | 11                      | 9× `minor`, 2× `nit` |
+
+"Monotone" = more than one finding, all carrying the same severity. In **16 of those 19** collapses the
+constant is `minor`; run A above shows the constant can also be `critical`.
+
+**Two consequences, both load-bearing for `finder-severity-calibration`.**
+
+1. **There is no silence problem on the vulnerable fixture.** All ten `defect_reported = 0` draws emitted
+   findings (1–8 each). The 10/20 baseline is **purely a severity failure**, never the finder declining to
+   report. This was worth checking because the two failures have different fixes, and the
+   `requireDefectReported` grader scores them identically — but the data settles it, so the 20/20 target
+   stands as scoped.
+2. **The defect is the collapse, not one finding's severity.** The traversal being graded `minor` is a
+   symptom of the whole set collapsing to a single constant. An intervention aimed at "raise traversal
+   severity" would treat the symptom; monotony rate is the thing to move, and it is computable from any
+   eval snapshot for free.
+
+The 7-of-20 zero-finding rate on the **defended** fixture is correct behaviour — there is nothing to find
+there — and it is the same phenomenon as run B, which is why run B is not evidence of a fault.
+
+**Status: recorded, feeds `finder-severity-calibration`.** Do not spend on a `--repeat` run to size this;
+the 40 committed draws already do it. Re-measure only after an intervention, against the same snapshot
+shape, so before/after are comparable.
