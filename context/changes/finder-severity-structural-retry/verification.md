@@ -237,3 +237,55 @@ with that caution. Whatever failures remain after Arm A, rows 12's scoping ratio
 rebut-but-still-minor pattern of rows 9/19 are the mechanisms Arm B's design amendment must cite.
 
 **Budget consumed: $0.0203 of ~$0.15.**
+
+---
+
+## AMENDMENT — Phase 2 result, 2026-08-20 (appended after the run; nothing above was edited)
+
+**Arm A (the sentence alone, committed as `aaa86f5` before the run), read against B = 15/20.**
+
+| Metric                        | Baseline (Phase 1) | Arm A           |
+| ----------------------------- | ------------------ | --------------- |
+| `defect_reported`             | 15 / 20            | **19 / 20**     |
+| Monotone draws                | 0 / 20             | **0 / 20**      |
+| `no_false_alarms` (n=6)       | —                  | **6 / 6 clean** |
+| `no_fabricated_absence` (n=6) | —                  | **6 / 6 clean** |
+
+Severity distribution across all Arm A findings: 7 `critical`, 17 `major`, 34 `minor`, 22 `nit` — all
+four levels in use. Snapshots (each verified: expected rows × 1 provider × 1 case, schema clean before
+any number was read): `results/arm-a-n20.json`, `results/arm-a-clean-n6.json`,
+`results/arm-a-defended-n6.json`.
+
+### Disposition: SHORT-BUT-REAL — ship the sentence, escalate to Arm B with C = 19/20
+
+19/20 is exactly B+4, the bottom of the pre-registered SHORT-BUT-REAL row. Not inflated: monotone
+draws 0 (gate was >2), both counter-checks clean — the pre-declared failure mode (the sentence
+teaching the finder to distrust the defended fixture's defence comments) did not materialise. The
+table is applied as written: the sentence stays shipped, and Arm B runs with comparator **C = 19/20**
+(concrete rows: PASS = 20/20; SHORT-BUT-REAL is empty since C ≥ 16; NO-SIGNAL = 16–19/20; REGRESSION
+= ≤ 15/20).
+
+### Attribution, read with the pre-registered caution
+
+The number moved 15 → 19, the minimum gap the pre-registration accepts as signal at n=20 — and the
+same rubric-only prompt measured 18/20 yesterday, so sampling variance plausibly owns part of the
+movement. Phase 1's strict echo count was 0/5, so the mechanism claim was already weakened before the
+arm ran. Stated plainly: the sentence ships because its row says ship, not because this experiment
+proved the rationalisation mechanism — it cannot, with the counts it has.
+
+### The residual failure, and what Arm B must cite
+
+The one failing draw (row 1) is the sharpest version yet of the **rebut-but-still-minor** pattern:
+its traversal finding references the legacy comment and argues against it ("doesn't validate the
+rawKey format … despite the comment about legacy clients"), names the traversal outright, files it
+`minor` — and its suggestion offers _"or document why raw keys are safe for downloads but not
+deletes"_ as an acceptable alternative to fixing it. A second finding in the same draw files the
+missing legacy documentation as a `nit`. Strict echo count: 0/1 (the comment is rebutted, not cited
+as mitigation), but the draw half-accepts the rationalisation at the suggestion layer. Together with
+Phase 1's rows 9/12/19, the recorded mechanism for Arm B's design amendment is now: **the finder can
+name the traversal, dismiss the excuse in prose, and still under-file it** — the failure lives in the
+severity selection itself, not in whether the excuse is believed. That is the strongest evidence yet
+that the remaining lever is structural, exactly the distinction the predecessor's decision.md drew
+(prose shapes distributions; it does not remove options).
+
+**Budget consumed: $0.0547 of ~$0.15** (Phase 1 $0.0203; Arm A $0.0237 + counters $0.0041 + $0.0066).
