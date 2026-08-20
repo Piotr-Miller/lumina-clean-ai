@@ -30,6 +30,7 @@ const CANONICAL_FINDING = {
   file: "src/a.ts",
   startLine: 3,
   severity: "major",
+  crossUserAccess: false,
   category: "correctness",
   description: "off-by-one",
   suggestion: "use <=",

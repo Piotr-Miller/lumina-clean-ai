@@ -52,6 +52,7 @@ const findings: IdentifiedFinding[] = [
     file: "src/a.ts",
     startLine: 5,
     severity: "major",
+    crossUserAccess: false,
     category: "security",
     description: "d",
     suggestion: "s",

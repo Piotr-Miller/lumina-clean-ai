@@ -23,6 +23,7 @@ const identified = (id: string, overrides: Partial<IdentifiedFinding> = {}): Ide
   file: "src/a.ts",
   startLine: 5,
   severity: "minor",
+  crossUserAccess: false,
   category: "correctness",
   description: `desc ${id}`,
   suggestion: `fix ${id}`,

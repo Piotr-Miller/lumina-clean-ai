@@ -60,6 +60,12 @@ function repairFinding(value: unknown): unknown {
   if (typeof repaired.category === "string") {
     repaired.category = repaired.category.toLowerCase();
   }
+  // The recorded live drift shape predates crossUserAccess. Default to the
+  // bottom-rank value: a repaired-in value must never manufacture severity
+  // (pre-registered pattern, finder-severity-structural-retry Arm B).
+  if (typeof repaired.crossUserAccess !== "boolean") {
+    repaired.crossUserAccess = false;
+  }
   return repaired;
 }
 

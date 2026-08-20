@@ -104,6 +104,7 @@ const identified = (id: string): IdentifiedFinding => ({
   file: "src/a.ts",
   startLine: 5,
   severity: "major",
+  crossUserAccess: false,
   category: "security",
   description: `desc ${id}`,
   suggestion: `fix ${id}`,
