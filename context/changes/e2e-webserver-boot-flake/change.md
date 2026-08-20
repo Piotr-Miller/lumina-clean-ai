@@ -1,9 +1,9 @@
 ---
 change_id: e2e-webserver-boot-flake
 title: Playwright webServer boot fails intermittently in CI with a blank error
-status: new
+status: implementing
 created: 2026-08-15
-updated: 2026-08-19
+updated: 2026-08-20
 archived_at: null
 ---
 
@@ -167,3 +167,49 @@ Two observations recorded as leads, neither acted on:
   signature, or unblocking a docs PR) and each was recorded with its run URL — that is the discipline,
   not the retry.
 - Do not raise `timeout-minutes` to make the tail fit.
+
+---
+
+## RESOLUTION RECORD, 2026-08-20 — two signatures closed, one live (full workings: `frame.md`)
+
+### Signature 1 (blank webServer error) — RESOLVED: wrangler ProxyWorker regression
+
+The fourth occurrence (run
+[`32298488149`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32298488149), attempt 1,
+job `96215353966`, 2026-08-19 20:30Z — the master push whose silently skipped deploy motivated #157)
+carried the collected wrangler log this change's first deliverable asked for, and the log names the
+cause outright: an empty `✘ [ERROR]` emitted from wrangler's proxy layer (`castErrorCause →
+ProxyController2.emitErrorEvent → onProxyWorkerMessage → PROXY_CONTROLLER`), on wrangler **4.118.0**
+resolved through the caret spec `^4.98.0`. Wrangler came up, 3 specs passed, then the ProxyWorker
+died mid-run and the remaining specs got `net::ERR_CONNECTION_REFUSED` — matching the
+"crash after start" narrowing recorded above.
+
+- **Fix**: #153 (`8756aa9`) pinned `wrangler` to exactly `4.113.0`, merged **25 minutes after** this
+  occurrence — the evidence-capture (#152) → diagnosis → pin loop closed the same evening. 11/12 CI
+  runs green since; the single failure was signature 3, not this.
+- **Upstream**: [`cloudflare/workers-sdk#14926`](https://github.com/cloudflare/workers-sdk/issues/14926)
+  names this exact stack — wrangler exits instead of recovering when miniflare (≥ 4.20260722.0)
+  auto-restarts workerd. **OPEN as of 2026-08-20**, with a 4.124.0 reproduction reported the same
+  day. The unpin criterion lives in `context/foundation/lessons.md` (confirmed upstream fix +
+  ≥ 20-green-run scratch-branch probe).
+- **Lead closed**: `Default inspector port 9229 not available, using 9230` appears in **passing**
+  runs and attempts too — background noise from the backgrounded Deno serve, not a discriminator.
+- The three original hypotheses (port-4321 bind race, exit before the readiness probe, build OOM)
+  are all disconfirmed: the crash is inside wrangler's proxy layer, after a successful boot.
+
+### Signature 2 (install timeout) — fix CONFIRMED
+
+`--with-deps` dropped in #152; no recurrence since.
+
+### Signature 3 (NEW, 2026-08-20) — the only LIVE flake: seed sign-in POST non-ok
+
+Run [`32341863646`](https://github.com/Piotr-Miller/lumina-clean-ai/actions/runs/32341863646)
+(master, 06:58Z, head `f51975d`): `tests/e2e/seed.spec.ts:138` `expect(signIn.ok()).toBe(true)`
+failed on the attempt AND its retry; the 5 other specs passed; the green-looking gate silently
+withheld the #156 deploy (the #157 alarm merged an hour later). Three facts make it undiagnosable
+from what was captured: the route under test cannot itself return non-2xx (every path in
+`src/pages/api/auth/signin.ts` redirects → 200), the server logged **zero** output during the whole
+test window, and the assertion discards status and body. That is the same unfalsifiability trap
+signature 1 sat in before #152 — so `plan.md` Phase 2 installs the capture (enriched assert
+messages, first-attempt trace retention, flaky-evidence artifact), and **no fix is attempted** until
+the next occurrence names its layer.
