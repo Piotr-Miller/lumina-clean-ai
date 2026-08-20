@@ -1,9 +1,9 @@
 ---
 change_id: finder-severity-structural-retry
 title: Redesign the structural severity constraint, with vocabulary the model actually selects
-status: new
+status: in-progress
 created: 2026-08-19
-updated: 2026-08-19
+updated: 2026-08-20
 archived_at: null
 ---
 
