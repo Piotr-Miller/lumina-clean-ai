@@ -435,3 +435,54 @@ jobs:
       - run: npx supabase functions deploy enhance --use-api --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  # WHY THIS JOB EXISTS: `deploy` above is gated `needs: [ci, integration, e2e]`,
+  # so any red gate on a master push silently SKIPS it. The run is already red —
+  # that part is visible — but nothing anywhere says the thing that actually
+  # matters: **production is now behind master**, and stays behind until someone
+  # notices and re-runs.
+  #
+  # That is not hypothetical. On 2026-08-19 (run 32298488149) a flaky `e2e`
+  # skipped the deploy after a merge, and a whole session's merged work sat
+  # undeployed until it was spotted by chance. `deploy: skipping` in the checks
+  # list is indistinguishable from the PR-run case, where skipping is correct and
+  # expected — which is exactly why nobody looks twice at it.
+  #
+  # Deliberately an ALARM, not a gate change: it does not deploy, does not
+  # override the gate, and does not make a red gate green. `e2e` catching a
+  # genuinely broken north-star flow SHOULD stop a deploy; the defect was the
+  # silence, not the gate. See change `deploy-gate-visibility`.
+  deploy-skipped-alarm:
+    needs: [ci, integration, e2e]
+    # always() so this runs even though its dependencies failed — without it the
+    # job would be skipped for the same reason `deploy` was, which is the bug.
+    # Scoped to master pushes only: on PRs `deploy` is skipped by design and an
+    # alarm there would be pure noise, training people to ignore it.
+    if: >-
+      ${{ always()
+      && github.ref == 'refs/heads/master'
+      && github.event_name == 'push'
+      && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Announce that production is now behind master
+        run: |
+          {
+            echo "## ⚠️ Deploy was skipped — production is behind master"
+            echo
+            echo "A required gate failed on a master push, so the \`deploy\` job did not run."
+            echo "**The Worker and the \`enhance\` Edge Function are still serving the previous commit.**"
+            echo
+            echo "| gate | result |"
+            echo "| --- | --- |"
+            echo "| ci | ${{ needs.ci.result }} |"
+            echo "| integration | ${{ needs.integration.result }} |"
+            echo "| e2e | ${{ needs.e2e.result }} |"
+            echo
+            echo "Commit \`${GITHUB_SHA}\` is on master but NOT deployed."
+            echo
+            echo "**If the failure was a flake**, re-run the failed jobs — the deploy runs automatically once they pass."
+            echo "**If it was real**, production is correctly protected; fix forward and merge again."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=Deploy skipped — production is behind master::Commit ${GITHUB_SHA} merged but was NOT deployed (a required gate failed). Re-run the failed job if it was a flake; the deploy runs automatically once the gates pass."
+          exit 1
