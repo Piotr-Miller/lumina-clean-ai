@@ -81,13 +81,14 @@ Full server-side rendering (`output: "server"` in astro.config.mjs). All pages a
 
 ### CI
 
-GitHub Actions workflow (`.github/workflows/ci.yml`) — five jobs:
+GitHub Actions workflow (`.github/workflows/ci.yml`) — six jobs:
 
 - `ci` (push + PR) — lint, unit tests (`npm run test:unit`), `deno check` on the Edge Function, SSR build. Requires `SUPABASE_URL`/`SUPABASE_KEY` repo secrets for the build step.
 - `code-reviewer` (push + PR) — the `packages/code-reviewer` gate (own lockfile: `npm ci` + lint + typecheck + hermetic unit tests). The package is excluded from the root tsc/eslint graphs, so this job is its only CI coverage. No secrets (fork-PR-safe); not in `deploy.needs`.
 - `integration` (push + PR) — full Vitest suite incl. `tests/jobs.rls.test.ts` against an ephemeral local Supabase (Docker). Uses no GitHub secrets (local keys are generated), so it also runs on fork PRs. Supabase Docker images are cached across runs (`actions/cache`) and `supabase start`/`db reset` retry once — anonymous pulls from `public.ecr.aws` get rate-limited on shared runners (see lessons.md).
 - `e2e` (push + PR) — Playwright browser gate (`npm run test:e2e`) on the north-star flow (risks #1+#6) and the stall→terminal spec. Boots the same ephemeral local Supabase (image cache + retry hardening shared with `integration`), backgrounds `supabase functions serve enhance` with a **generated** signing secret + the `E2E_ALLOWED_OUTPUT_ORIGIN` stub seam, and runs chromium (cached). The Cloud-AI pipeline is **stubbed** — a self-signed Replicate `/callback`, no token, no cold boot. No GitHub secrets (fork-PR-safe). The live cold-boot path is a manual smoke (`context/foundation/cloud-live-smoke.md`), never a PR gate.
 - `deploy` (push to master only, gated by `needs: [ci, integration, e2e]`) — Worker via `wrangler-action` + `enhance` Edge Function via the pinned supabase CLI.
+- `deploy-skipped-alarm` (master push only, `always()`) — fires when a gate fails and `deploy` is therefore SKIPPED, emitting a `::error::` plus a job summary that names the consequence: **the commit is on master but production still serves the previous one**. Added after run 32298488149, where a flaky `e2e` silently withheld a deploy and a session's merged work sat undeployed until spotted by chance — `deploy: skipping` is indistinguishable from the PR case where skipping is correct. It is an ALARM, not a gate change: it never deploys and never overrides `deploy.needs`. Not a required check.
 
 All jobs run under a workflow-level `concurrency` block (`group` = workflow + ref, `cancel-in-progress` for any ref ≠ `refs/heads/master`): a new push to a PR branch cancels its in-flight runs to save Actions minutes, while runs on `master` are never cancelled (PR #72).
 

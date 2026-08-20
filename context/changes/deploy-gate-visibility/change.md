@@ -1,9 +1,9 @@
 ---
 change_id: deploy-gate-visibility
 title: A flaky e2e run silently withholds the production deploy
-status: new
+status: implemented
 created: 2026-08-19
-updated: 2026-08-19
+updated: 2026-08-20
 archived_at: null
 ---
 
@@ -55,3 +55,51 @@ skipping` in the checks list is indistinguishable from the PR-run case where ski
   into "broken flow silently deployed", which is worse.
 - **Do not fix this by making the flake rarer.** That is `e2e-webserver-boot-flake`'s job, and a rarer
   flake still hides deploys when it fires.
+
+---
+
+## Implemented 2026-08-20 — an alarm, deliberately not a gate change
+
+### What shipped
+
+A `deploy-skipped-alarm` job in `ci.yml`, gated `needs: [ci, integration, e2e]` with `always()` so it
+runs **because** its dependencies failed — without that it would be skipped for the very reason `deploy`
+was, which is the bug.
+
+It fires only on a **master push** where a gate reported `failure` or `cancelled`, and it emits:
+
+- a `::error::` annotation whose title is the consequence, not the cause — _"Deploy skipped — production
+  is behind master"_;
+- a job-summary table naming which gate failed and stating the commit is on master but **not deployed**;
+- both branches of what to do next: re-run if it was a flake, fix forward if it was real.
+
+The job name itself does work here. In the failed-jobs list, `deploy-skipped-alarm` says what happened
+without anyone opening the run.
+
+### Which candidate was chosen, and why not the others
+
+Of the three directions this change registered:
+
+- **Loud annotation on a master-push skip** — chosen. Smallest surface, fixes the actual defect (the
+  silence), changes no policy.
+- **Deployed-vs-HEAD drift check** — not done. It solves a superset (it would also catch a deploy that
+  failed for other reasons) but needs a scheduled workflow and a way to read the deployed Worker's
+  version. Worth its own change if the alarm proves insufficient.
+- **Removing `e2e` from `deploy.needs`** — explicitly rejected, as this change already warned. It would
+  convert "deploy silently skipped" into "broken flow silently deployed", which is worse.
+
+### Scope note
+
+The alarm covers the **skip**, not a `deploy` job that runs and fails. That case is already visible — the
+`deploy` job itself goes red with its own name attached. The invisible case was always the skip, because
+`deploy: skipping` looks identical to the PR-run case where skipping is correct.
+
+### What is NOT verified
+
+**The alarm has never fired.** Verifying it end to end requires a red gate on a **master push**, which
+cannot be manufactured without deliberately breaking master. What is verified: the workflow parses
+(`yaml.safe_load`, 6 jobs), and the condition is standard `always()` + `contains(needs.*.result, …)`.
+
+The honest test is the next time a gate genuinely fails on master — which, given `e2e-webserver-boot-flake`
+is still open, is likely rather than hypothetical. If it does not fire then, the `if` expression is the
+first suspect.
