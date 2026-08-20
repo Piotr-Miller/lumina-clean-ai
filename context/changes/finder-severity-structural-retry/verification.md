@@ -342,3 +342,59 @@ counter-check doing its job.
 
 Estimated spend for the full Arm B path: one smoke ≈ $0.008, arm ≈ $0.026, counters ≈ $0.011 —
 within the remaining ~$0.095.
+
+---
+
+## AMENDMENT — Phase 3 result, 2026-08-20 (appended after the runs; nothing above was edited)
+
+### Smoke: gate passed at the threshold — 5/6 selected ($0.0067, `results/arm-b-smoke-n6.json`)
+
+The vocabulary works: five of six draws answered `crossUserAccess: true` on a traversal-matching
+finding, and the single "over-selection" was a semantically defensible `true` on an IDOR claim about
+the delete path — nothing like the predecessor's 23× `data-loss` label-grabbing. The miss (smoke
+row 2) previewed the arm's failure mode exactly: that draw framed the read-path defect as
+"inconsistent key handling", answered `false`, and filed `minor` — internally coherent, and wrong.
+The observation-only lever was committed as `8e41c05` before the smoke; the floor as `6537680` after
+the gate passed and before the arm.
+
+### Arm B, n=20, against C = 19/20
+
+| Metric                        | Arm A (C) | Arm B       |
+| ----------------------------- | --------- | ----------- |
+| `defect_reported`             | 19 / 20   | **18 / 20** |
+| Monotone draws                | 0 / 20    | 2 / 20      |
+| `no_false_alarms` (n=6)       | 6 / 6     | **6 / 6**   |
+| `no_fabricated_absence` (n=6) | 6 / 6     | **6 / 6**   |
+
+Distribution: 17 `critical`, 12 `major`, 18 `minor`, 14 `nit`. Not inflated: monotone 2 ≤ the
+max(2, B_mono) gate, and only one monotone constant was `critical` (rule required more than one).
+Snapshots verified before reading (rows × provider × case, schema 20/20 and 6/6):
+`results/arm-b-n20.json`, `results/arm-b-clean-n6.json`, `results/arm-b-defended-n6.json`.
+
+### Disposition: NO-SIGNAL — reverted, per the pre-registered row
+
+18/20 lands in Arm B's NO-SIGNAL band (16–19). Unmeasurable is not shippable: **the lever is
+reverted in full** (`5b583ee`, reverting `6537680` + `8e41c05`; Arm A's sentence stands untouched),
+the snapshots stay as evidence, and the change closes with the structural question answered as
+**no-effect at this n**. Reopening it requires live evidence and a new change.
+
+### The mechanism, which is the actual finding of this phase
+
+The predecessor's structural failure was vocabulary the model never selected. This one is sharper
+and closes the more interesting question: **the vocabulary was selected correctly and the floor
+still added nothing, because the boolean is answered coherently with the model's framing rather
+than independently of it.** Every `true` answer in the arm sat on a finding already graded
+`critical` (17) or `major` (7) — where the model frames the defect as cross-user, the rubric has
+already priced it, and the floor is redundant. Both failing draws answered `false`: row 0 framed the
+traversal as "inconsistent key handling" (`false` + `minor` — the smoke's row-2 pattern verbatim),
+and row 16 never reported the defect at all (a detection miss no severity mechanism can touch).
+Unlike the predecessor's enum there were zero incoherent answers — no `false` + `critical`
+contradiction anywhere in 20 draws. The field is read, understood, and answered consistently — with
+the same upstream framing decision that sets severity. When the framing is right the floor has
+nothing to do; when the framing is wrong the floor has nothing to fire on. A structural severity
+constraint downstream of the model's own classification cannot rescue a misclassification, no matter
+how good its vocabulary is. That is the durable lesson, and it is stronger than "the enum was badly
+named": it bounds what ANY same-response structural lever can achieve on this defect class.
+
+**Budget consumed: $0.0990 of ~$0.15** (Phases 1–2 $0.0547; smoke $0.0067, arm $0.0212, counters
+$0.0049 + $0.0116). No further spend on this change.
