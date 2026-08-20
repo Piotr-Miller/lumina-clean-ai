@@ -289,3 +289,56 @@ that the remaining lever is structural, exactly the distinction the predecessor'
 (prose shapes distributions; it does not remove options).
 
 **Budget consumed: $0.0547 of ~$0.15** (Phase 1 $0.0203; Arm A $0.0237 + counters $0.0041 + $0.0066).
+
+---
+
+## AMENDMENT — Arm B design, 2026-08-20 (committed BEFORE any Arm B measurement, as required)
+
+### The candidate chosen: the yes/no question, not the plain-language enum
+
+The recorded mechanism this design must cite is now consistent across six failing draws in two
+phases: **the finder names the traversal, often rebuts the excuse in prose, and still files it
+`minor`** (Phase 1 rows 8/9/12/13/19; Phase 2 row 1, which dismissed the legacy comment explicitly
+and then offered "document why raw keys are safe" as a fix). In every one of those draws the model's
+own prose makes the binary judgement correctly — "'../otheruser/file'", "access objects outside
+their intended prefix", "cross-user read". The judgement exists; the severity selection ignores it.
+A yes/no field asks for exactly the judgement the model demonstrably already makes.
+
+The plain-language enum is rejected because the predecessor's evidence indicts the **taxonomy**, not
+one label's spelling: `data-loss` was over-selected 23× (nearest severe-sounding label) and `none`
+appeared alongside `critical` 6× (the field was not read as a consequence at all). Renaming
+`boundary-crossing` fixes only the third failure mode and leaves the classification burden intact.
+The boolean eliminates the taxonomy.
+
+### The lever, fully specified
+
+One lever, several inseparable parts:
+
+- **Schema** (`src/schemas.ts`): `crossUserAccess: z.boolean()` — **required** — on `findingSchema`,
+  described in plain language: _"true when this issue lets one user read, modify, or delete another
+  user's data or objects; false for everything else."_ Required is load-bearing: an optional field
+  the model omits is the predecessor's inert floor again.
+- **Prompt** (`src/prompts.ts`, `buildInstructions`): one sentence directing the field to be answered
+  as the yes/no question it is, not as a severity judgement.
+- **Repair layer** (`src/output-repair.ts`, `repairFinding`): an absent `crossUserAccess` defaults to
+  `false` — the pre-registered bottom-rank pattern; a repaired-in value can never manufacture
+  severity. (The recorded live drift shape predates the field, so without this the envelope repair
+  breaks — the exact failure the predecessor hit.)
+- **Eval schema** (`evals/review-result.schema.json`): the field is added as required, so
+  `schema_validity` keeps meaning what it says.
+- **Floor** (`src/findings.ts` + `src/reviewer.ts`, **n=20 arm only, absent from the smoke**):
+  `applySeverityFloor` — a finding with `crossUserAccess === true` and severity `minor`/`nit` is
+  raised to `major`. It never lowers, never touches `false`, and is applied where `normalizeFindings`
+  already runs (`reviewer.ts:182`).
+
+### Smoke read, fixed before it runs
+
+n = 6, observation-only (everything above except the floor). A draw counts as **selected** when at
+least one finding matching Metric 1's traversal patterns carries `crossUserAccess: true`. Gate:
+**≥ 5 of 6** selected. Over-selection — `true` on non-traversal findings — is recorded but not gated
+here; the n=20 arm's counter-checks are the gate for that failure mode, and deliberately so: a `true`
+on the clean fixture would floor a nit to `major` and fail `no_false_alarms`, which is exactly the
+counter-check doing its job.
+
+Estimated spend for the full Arm B path: one smoke ≈ $0.008, arm ≈ $0.026, counters ≈ $0.011 —
+within the remaining ~$0.095.
