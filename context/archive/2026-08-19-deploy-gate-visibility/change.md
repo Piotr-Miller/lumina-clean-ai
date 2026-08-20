@@ -1,10 +1,10 @@
 ---
 change_id: deploy-gate-visibility
 title: A flaky e2e run silently withholds the production deploy
-status: implemented
+status: archived
 created: 2026-08-19
 updated: 2026-08-20
-archived_at: null
+archived_at: 2026-08-20T09:51:34Z
 ---
 
 ## Notes
