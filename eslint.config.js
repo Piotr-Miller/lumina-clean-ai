@@ -98,6 +98,11 @@ export default tseslint.config(
   // Linting them with the typed projectService would error; they have their own
   // runtime. Excluded from tsconfig too (see tsconfig.json "exclude").
   { ignores: ["supabase/functions/**"] },
+  // Generated local-stack state (`supabase start` materializes edge-runtime
+  // sources under .temp). Ignored by supabase/.gitignore — a NESTED gitignore
+  // that includeIgnoreFile(root .gitignore) above never reads — so ESLint
+  // scans it and the typed projectService errors on the unresolvable file.
+  { ignores: ["supabase/.temp/**"] },
   // The code-reviewer package has its own tsconfig/module graph — the typed
   // projectService can't place its files in the root project. Compensating
   // gates (same pattern as `deno check` for the Edge Function): package-local
