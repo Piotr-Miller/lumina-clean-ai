@@ -264,12 +264,12 @@ for manual confirmation before closing the change.
 
 #### Automated
 
-- [x] 1.1 prettier --check clean on change.md + lessons.md
+- [x] 1.1 prettier --check clean on change.md + lessons.md — 8bfbe66
 
 #### Manual
 
-- [x] 1.2 change.md reads as accurate history against frame.md
-- [x] 1.3 Search for the wrangler lesson lands on the new entry
+- [x] 1.2 change.md reads as accurate history against frame.md — 8bfbe66
+- [x] 1.3 Search for the wrangler lesson lands on the new entry — 8bfbe66
 
 ### Phase 2: Make the next occurrence readable
 
