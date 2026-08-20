@@ -44,17 +44,6 @@ export const findingSchema = z.object({
   ),
   endLine: lineNumber("Absolute 1-based line where the issue ends, if it spans a range"),
   severity: severitySchema.describe("How bad the issue is if left unfixed"),
-  // A yes/no question, not a taxonomy: the predecessor's five-way consequence
-  // enum was never selected for the one defect it existed for (0/20 draws),
-  // while the model made this binary judgement correctly in prose in every
-  // failing draw. REQUIRED — an optional field the model omits is an inert
-  // severity floor. Design pre-registered in
-  // context/changes/finder-severity-structural-retry/verification.md (Arm B).
-  crossUserAccess: z
-    .boolean()
-    .describe(
-      "true when this issue lets one user read, modify, or delete another user's data or objects; false for everything else",
-    ),
   category: categorySchema.describe("Which review dimension the issue belongs to"),
   description: z.string().describe("What is wrong and why it matters"),
   suggestion: z.string().describe("Concrete fix or improvement"),

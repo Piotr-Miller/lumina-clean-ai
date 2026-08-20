@@ -3,7 +3,7 @@ import { isStepCount, tool, ToolLoopAgent, type StepResult, type ToolSet } from 
 import { z } from "zod";
 
 import { MAX_OUTPUT_TOKENS, resolveConfig } from "./config.js";
-import { applySeverityFloor, normalizeFindings } from "./findings.js";
+import { normalizeFindings } from "./findings.js";
 import { buildInstructions, buildPrompt } from "./prompts.js";
 import { tolerantReviewOutput } from "./output-repair.js";
 import { type Lens, type ReviewResult, type ReviewUnit } from "./schemas.js";
@@ -179,7 +179,7 @@ export function createReviewer(options: ReviewerOptions = {}) {
       timeout: callOptions.timeoutMs,
       onStepEnd: options.onStepEnd,
     });
-    return { ...result.output, findings: applySeverityFloor(normalizeFindings(unit, result.output.findings)) };
+    return { ...result.output, findings: normalizeFindings(unit, result.output.findings) };
   }
 
   return { review, agent, lens, model };

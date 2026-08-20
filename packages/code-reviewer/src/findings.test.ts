@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { applySeverityFloor, findingKey, mergeFindings, normalizeFindings } from "./findings.js";
+import { findingKey, mergeFindings, normalizeFindings } from "./findings.js";
 import type { Finding, ReviewUnit } from "./schemas.js";
 
 const finding = (overrides: Partial<Finding>): Finding => ({
   file: "src/a.ts",
   severity: "minor",
-  crossUserAccess: false,
   category: "correctness",
   description: "d",
   suggestion: "s",
@@ -105,25 +104,5 @@ describe("normalizeFindings", () => {
   it("keeps a coherent range", () => {
     const [f] = normalizeFindings(diffUnit, [finding({ startLine: 3, endLine: 9 })]);
     expect(f.endLine).toBe(9);
-  });
-});
-
-describe("applySeverityFloor", () => {
-  it.each([["minor"], ["nit"]] as const)("raises a true-answered %s to major", (severity) => {
-    const [f] = applySeverityFloor([finding({ severity, crossUserAccess: true })]);
-    expect(f.severity).toBe("major");
-  });
-
-  it.each([["critical"], ["major"]] as const)("never lowers a true-answered %s", (severity) => {
-    const [f] = applySeverityFloor([finding({ severity, crossUserAccess: true })]);
-    expect(f.severity).toBe(severity);
-  });
-
-  it("leaves a false answer untouched at any severity, so the repaired-in default cannot escalate", () => {
-    const findings = applySeverityFloor([
-      finding({ severity: "nit", crossUserAccess: false }),
-      finding({ severity: "minor", crossUserAccess: false }),
-    ]);
-    expect(findings.map((f) => f.severity)).toEqual(["nit", "minor"]);
   });
 });

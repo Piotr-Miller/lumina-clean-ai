@@ -67,10 +67,6 @@ export function buildInstructions(lens: Lens, options: InstructionOptions = {}):
     // context/changes/finder-severity-structural-retry/verification.md: any
     // change to it needs a dated amendment there BEFORE a measured run.
     "A comment asserting behaviour is intentional, legacy, or accepted is an explanation of how the defect arrived, never evidence it is harmless.",
-    // Arm B of the same pre-registration: the field asks for a judgement the
-    // model already makes correctly in prose — keep it a yes/no answer, never
-    // a severity synonym.
-    "For each finding, answer `crossUserAccess` as a plain yes/no question: could one user read, modify, or delete another user's data or objects through this issue? It is a statement of fact about reach, not a severity judgement.",
     // Trusted context lives here in the system instructions — never inside
     // the <review-unit> fence with untrusted data (impl-review-phase-1 F4).
     ...(options.projectContext

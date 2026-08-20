@@ -14,7 +14,7 @@ export type { ConfigOverrides, ModelOverrides, ResolvedConfig, ResolvedModels } 
 // applies both on the way out, so an embedder never needs them (phase-2 F5).
 export { createImplReviewer } from "./impl-reviewer.js";
 export type { ImplReviewCallOptions, ImplReviewer, ImplReviewerOptions } from "./impl-reviewer.js";
-export { applySeverityFloor, findingKey, mergeFindings, normalizeFindings, severityRank } from "./findings.js";
+export { findingKey, mergeFindings, normalizeFindings, severityRank } from "./findings.js";
 export { createJudge } from "./judge.js";
 export type { Judge, JudgeCallOptions, JudgeOptions } from "./judge.js";
 export {

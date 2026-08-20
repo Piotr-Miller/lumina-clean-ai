@@ -7,7 +7,6 @@ import { scoresWireSchema, type Finding, type JudgeOutput, type Scores } from ".
 const finding = (overrides: Partial<Finding>): Finding => ({
   file: "src/a.ts",
   severity: "minor",
-  crossUserAccess: false,
   category: "correctness",
   description: "d",
   suggestion: "s",

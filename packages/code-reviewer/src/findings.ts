@@ -36,20 +36,6 @@ export function normalizeFindings(unit: ReviewUnit, findings: Finding[]): Findin
 }
 
 /**
- * The pre-registered severity floor (finder-severity-structural-retry, Arm B):
- * a finding whose `crossUserAccess` answer is true cannot be filed below
- * `major`. Raises only, never lowers, never touches a `false` answer — a
- * repaired-in default of `false` therefore cannot manufacture severity.
- */
-export function applySeverityFloor(findings: Finding[]): Finding[] {
-  return findings.map((finding) =>
-    finding.crossUserAccess && severityRank[finding.severity] < severityRank.major
-      ? { ...finding, severity: "major" }
-      : finding,
-  );
-}
-
-/**
  * Concatenate finding lists, dedup by key+category (keeping the higher
  * severity; first wins on ties), and return a deterministically ordered list
  * (file, then startLine, then category).

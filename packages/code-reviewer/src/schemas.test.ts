@@ -16,7 +16,6 @@ import {
 const fileLevelFinding = {
   file: "src/a.ts",
   severity: "major",
-  crossUserAccess: false,
   category: "security",
   description: "d",
   suggestion: "s",
