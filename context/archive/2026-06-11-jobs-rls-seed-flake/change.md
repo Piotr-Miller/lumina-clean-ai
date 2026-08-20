@@ -1,10 +1,10 @@
 ---
 change_id: jobs-rls-seed-flake
 title: Harden jobs.rls.test.ts seedJob against transient gateway 502
-status: implemented
+status: archived
 created: 2026-06-11
-updated: 2026-08-19
-archived_at: null
+updated: 2026-08-20
+archived_at: 2026-08-20T06:44:52Z
 issue: 19
 ---
 
