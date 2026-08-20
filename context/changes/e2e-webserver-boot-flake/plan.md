@@ -275,11 +275,11 @@ for manual confirmation before closing the change.
 
 #### Automated
 
-- [ ] 2.1 Typecheck passes
-- [ ] 2.2 Lint passes
-- [ ] 2.3 Failure-path unit test green (npm run test:unit)
+- [x] 2.1 Typecheck passes
+- [x] 2.2 Lint passes
+- [x] 2.3 Failure-path unit test green (npm run test:unit)
 - [ ] 2.4 PR's e2e CI job green with the helper at all six call sites
 
 #### Manual
 
-- [ ] 2.5 Code-review check: body read + message built only after ok() is false
+- [x] 2.5 Code-review check: body read + message built only after ok() is false

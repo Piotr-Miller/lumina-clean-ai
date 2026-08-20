@@ -26,6 +26,7 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { adminClient as sharedAdminClient, supabaseEnv } from "./helpers/env";
+import { expectOkResponse } from "./helpers/expect-response";
 import { serveFixture, type FixtureServer } from "./helpers/fixture-server";
 import { ensureRealtimeReady } from "./helpers/realtime-ready";
 import { callbackBody, flipToProcessing, resolveSigningSecret, signCallback } from "./helpers/replicate-stub";
@@ -107,7 +108,7 @@ test.describe("Phase 4: flag ON → the real chroma post-pass runs and serves a 
     );
     await page.getByRole("button", { name: "Process with Cloud AI" }).click();
     const createJob = await createJobResponse;
-    expect(createJob.ok()).toBe(true);
+    await expectOkResponse(createJob, "create-job");
     jobId = ((await createJob.json()) as { jobId: string }).jobId;
 
     await expect(page.getByText("Enhancing in the cloud…")).toBeVisible();

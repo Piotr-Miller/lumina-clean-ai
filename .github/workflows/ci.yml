@@ -354,6 +354,21 @@ jobs:
           path: |
             playwright-report/
             wrangler-logs/
+            test-results/
+          retention-days: 7
+      # Flaky-green evidence (change `e2e-webserver-boot-flake`, sig 3): with
+      # `retries: 1` a fail→retry-pass run is GREEN, so the `if: failure()` step
+      # above uploads nothing — yet `trace: retain-on-failure` has kept the
+      # FIRST attempt's trace in test-results/, which is exactly the evidence a
+      # healed flake otherwise destroys. On a clean green run test-results/
+      # holds no retained files, so `if-no-files-found: ignore` uploads nothing.
+      - name: Upload flaky-run evidence
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-flaky-evidence
+          path: test-results/
+          if-no-files-found: ignore
           retention-days: 7
 
   code-reviewer:

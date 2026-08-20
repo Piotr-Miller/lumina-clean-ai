@@ -28,6 +28,7 @@
  */
 import { test, expect } from "@playwright/test";
 import { adminClient as sharedAdminClient } from "./helpers/env";
+import { expectOkResponse } from "./helpers/expect-response";
 
 // playwright.config.ts owns baseURL and pre-authenticates the chromium project
 // via the `setup` project (storageState). This spec asserts the ANON half of
@@ -135,7 +136,7 @@ test.describe("Risk #2: anon request must not reach Cloud AI processing", () => 
     // on /auth/signin?error=… — so assert the landing path, not just ok(), or a
     // broken sign-in would slip through here and only surface later, with a
     // murkier message, at the "Process with Cloud AI" assertion.
-    expect(signIn.ok()).toBe(true);
+    await expectOkResponse(signIn, "signin");
     expect(new URL(signIn.url()).pathname).toBe("/");
 
     // Fresh render with the session cookie; photo state is client-side, so

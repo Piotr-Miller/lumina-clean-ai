@@ -10,6 +10,7 @@
  */
 import { test as setup, expect } from "@playwright/test";
 import { adminClient } from "./helpers/env";
+import { expectOkResponse } from "./helpers/expect-response";
 
 const AUTH_FILE = "playwright/.auth/user.json";
 // Deterministic, dedicated to E2E — never a real account.
@@ -39,7 +40,7 @@ setup("authenticate: admin-create user + form sign-in, save storage state", asyn
     // the API request context doesn't — supply it explicitly.
     headers: { Origin: baseURL ?? "http://localhost:4321" },
   });
-  expect(signIn.ok()).toBe(true);
+  await expectOkResponse(signIn, "signin");
   expect(new URL(signIn.url()).pathname).toBe("/");
 
   await request.storageState({ path: AUTH_FILE });
