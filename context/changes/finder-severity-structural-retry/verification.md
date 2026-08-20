@@ -195,3 +195,45 @@ retry, one smoke) is ≈ $0.11.
 - Not that the fixture reproduces every real-world instance. It reproduces one indisputable case,
   and the predecessor's finding that a fixture can fail to reproduce a live defect applies here —
   Phase 1's edge case is that finding, given a disposition in advance.
+
+---
+
+## AMENDMENT — Phase 1 result, 2026-08-20 (appended after the run; nothing above was edited)
+
+**B = 15 / 20** (`defect_reported`), **B_mono = 0 / 20**. Cost: $0.0203 (37,989 tokens). Snapshot:
+`results/baseline-rerun-n20.json`, verified before reading any number: 20 rows × 1 provider
+(`baseline-glm-4.6`) × 1 case (the vulnerable-hardening description), `schema_validity` 20/20. Two
+aborted invocations preceded the real run (a `cd` failure and a wrong flag name — promptfoo's
+description filter is `--filter-pattern`, not `--filter-description`); neither reached a model or
+spent anything.
+
+**Dispositions the rules above assign:**
+
+- **The park rule does not fire** (B < 20): the residual class reproduces — all 5 failures are the
+  traversal filed `minor`, with uniform grader reasons ("only below major severity: minor"), and one
+  draw filed it `minor` twice across two findings.
+- **The drift note does not fire** (B is not below 15). Against the archived rubric-arm reference of
+  18/20 the gap is exactly 3 — inside the chance band. **The comparator for Arm A is 15 / 20**, as
+  the unconditional rule requires. Concrete Phase 2 rows: PASS = 20/20; SHORT-BUT-REAL = 19/20;
+  NO-SIGNAL = 12–18/20; REGRESSION = ≤ 11/20.
+- **The inflation gate for arms resolves to:** monotone draws > max(2, 0) = more than 2.
+
+**Rationalisation echo: 0 / 5 strict — the pre-registered "weakens but does not block" contingency
+fires.** Read per failing draw (rows are snapshot indices):
+
+| Row | Severity filed | Echo read                                                                                                            |
+| --- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 8   | minor          | no-echo — no reference to the legacy comment                                                                         |
+| 9   | minor          | **references the comment, argues against it** ("Even for legacy clients, parse and validate…"), files `minor` anyway |
+| 12  | minor          | no-echo — rationalises via a _different_ channel: "While userId scoping provides protection"                         |
+| 13  | minor (×2)     | no-echo — no reference to the legacy comment                                                                         |
+| 19  | minor          | **references the comment as mechanism, not mitigation** ("allowing legacy clients to bypass validation")             |
+
+No failing draw cites the comment **as mitigating context**, which is the strict pre-registered
+definition. Two of five reference it while rebutting it in prose — and still file `minor` — and one
+mitigates via userId scoping instead. Recorded plainly: Arm A's mechanism claim rests on the archived
+Phase 2 observation, not on this baseline, and if Arm A moves the number the attribution will be read
+with that caution. Whatever failures remain after Arm A, rows 12's scoping rationalisation and the
+rebut-but-still-minor pattern of rows 9/19 are the mechanisms Arm B's design amendment must cite.
+
+**Budget consumed: $0.0203 of ~$0.15.**
