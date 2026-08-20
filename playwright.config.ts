@@ -15,9 +15,22 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  // Explicit reporter so `playwright-report/` actually exists: the CI failure
+  // artifact has listed that path since it was written, but with no `reporter`
+  // key nothing ever produced it (change `e2e-webserver-boot-flake`, sig 3).
+  // The console halves are Playwright's own defaults made explicit — `dot` on
+  // CI, `list` locally — so console output is unchanged; the html reporter
+  // rides along, never auto-opening.
+  reporter: [[process.env.CI ? "dot" : "list"], ["html", { open: "never" }]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:4321",
-    trace: "on-first-retry",
+    // NOT `on-first-retry`: with `retries: 1` that records only the RETRY, so
+    // the first failing attempt — the one that carries the flake's evidence —
+    // has no trace, and a fail→pass run uploads nothing at all (sig 3 lost its
+    // trace exactly this way). `retain-on-failure` records every attempt and
+    // keeps only failed ones: a flaky first attempt's trace survives its
+    // passing retry, at zero artifact cost on clean green runs.
+    trace: "retain-on-failure",
   },
   // Serve a PRODUCTION BUILD via workerd (`wrangler dev`), NOT `astro dev`.
   // `astro dev`'s Vite SSR dep-optimizer intermittently re-optimizes mid-request

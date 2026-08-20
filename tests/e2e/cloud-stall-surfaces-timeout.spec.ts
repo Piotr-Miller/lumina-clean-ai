@@ -33,6 +33,7 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { adminClient as sharedAdminClient } from "./helpers/env";
+import { expectOkResponse } from "./helpers/expect-response";
 
 // The wait crosses Playwright's default 30 s test timeout by design: the
 // watchdog budget itself is 30 s (plus re-read + render). 75 s leaves outer
@@ -125,7 +126,7 @@ test.describe("Risk #1 (stall half): a stuck cloud job surfaces a terminal failu
     );
     await page.getByRole("button", { name: "Process with Cloud AI" }).click();
     const createJob = await createJobResponse;
-    expect(createJob.ok()).toBe(true);
+    await expectOkResponse(createJob, "create-job");
     jobId = ((await createJob.json()) as { jobId: string }).jobId;
 
     // The waiting branch proves the submit fully settled (the source PUT

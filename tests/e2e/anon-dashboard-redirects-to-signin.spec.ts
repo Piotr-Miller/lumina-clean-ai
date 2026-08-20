@@ -21,6 +21,7 @@
  */
 import { test, expect } from "@playwright/test";
 import { adminClient as sharedAdminClient } from "./helpers/env";
+import { expectOkResponse } from "./helpers/expect-response";
 
 // playwright.config.ts owns baseURL and pre-authenticates the chromium project
 // via the `setup` project (storageState). This spec asserts the anonymous
@@ -97,7 +98,7 @@ test.describe("Risk #2 perimeter: middleware-protected routes never render for a
     });
     // Success follows the 302 chain to "/"; a failed sign-in also ends 200 but
     // on /auth/signin?error=… — so assert the landing path, not just ok().
-    expect(signIn.ok()).toBe(true);
+    await expectOkResponse(signIn, "signin");
     expect(new URL(signIn.url()).pathname).toBe("/");
 
     // The same visitor, now signed in, requests /dashboard and reaches it:
