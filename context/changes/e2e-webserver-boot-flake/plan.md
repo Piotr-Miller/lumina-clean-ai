@@ -278,7 +278,7 @@ for manual confirmation before closing the change.
 - [x] 2.1 Typecheck passes — 851aed9
 - [x] 2.2 Lint passes — 851aed9
 - [x] 2.3 Failure-path unit test green (npm run test:unit) — 851aed9
-- [ ] 2.4 PR's e2e CI job green with the helper at all six call sites
+- [x] 2.4 PR's e2e CI job green with the helper at all six call sites — 851aed9
 
 #### Manual
 
