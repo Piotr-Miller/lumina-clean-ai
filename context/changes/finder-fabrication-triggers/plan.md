@@ -510,7 +510,7 @@ None — no production code changes. The stale probe keeps working; only its hea
 
 #### Automated
 
-- [ ] 5.1 Prettier clean on decision.md + fixture-spec.md
+- [x] 5.1 Prettier clean on decision.md + fixture-spec.md
 
 #### Manual
 
