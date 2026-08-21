@@ -180,3 +180,39 @@ require_parameters: true, quantizations: ["fp4"] }` — schema enforcement is
 | rloc | 215,560  | 100,626   | base window + 596-byte injected block      |
 
 Instrument variant (base only): rawBytes 266,444 → sentBytes 100,030.
+
+## Phase 3 results — baselines (2026-08-21; numbers + gate read-offs only)
+
+- **CI baseline** (n=20 gradeable = calibration 1 + batch 19; files
+  `ci-base-n1-20260821T133414Z`, `ci-base-n19-20260821T134341Z`):
+  fabrication runs (M2+M3) **17/20**; M1 runs 5; findings 166 — M1 10, M2 6,
+  M3 48, none 102. **B = 17.**
+- **Instrument baseline** (n=20 gradeable = batch 19 of 20 + top-up 1; files
+  `instrument-base-n20-20260821T140824Z` — one attempt errored, drawn from
+  reserve — and `instrument-base-n1-20260821T150514Z`): fabrication runs
+  **8/20**; M1 runs 1; findings 121 — M1 1, M2 7, M3 12, none 101.
+- **G1 INVALID-PREMISE**: 17/20 and 8/20 — neither variant is 0/20 → G1 does
+  not fire.
+- **G2 INSUFFICIENT-CI-SIGNAL**: CI baseline 17/20 ≥ 5/20 → G2 does not
+  fire.
+- Gate verdicts are provisional until the Phase 3 hand-read completes below
+  the 15% misgrade bar (hand-read queue: `reviews/hand-read-phase-3.md`;
+  tally to be appended here).
+- **Escalation reference for Phase 4**: B = 17 scaled to n=8 = 6.8; |count −
+  6.8| ≥ 2 ⇔ count ≤ 4 (the high side, ≥ 8.8, is unreachable at n=8) — so a
+  screen escalates iff its fabrication-run count ≤ 4.
+- **Ledger**: 46/140 attempts spent (40 gradeable + 6 errors from reserve;
+  reserve 14/20 left). Session spend ≈ finder $0.288 + grader $3.385 ≈
+  **$3.67** against the $32.83 ceiling (recorded floor — see incident below).
+- **Grading-integrity incident (recorded)**: the first grading task was
+  stopped mid-CI-grading, but part of its process tree survived the stop and
+  kept grading concurrently with the resumed session; both wrote the same
+  checkpoint files (atomic writes, last-writer-wins), so a subset of grader
+  calls was paid twice — true grader spend exceeds the recorded `graderUsage`
+  by roughly $1–2. Every verdict in the surviving files is a genuine grader
+  output under the frozen rubric. One double-graded finding received
+  differing verdicts across the two sessions (instrument run 5, finding 1:
+  `none` vs `M2`; the last write, `M2`, stands) — a measured instance of
+  grader nondeterminism, flagged for the hand-read; it does not change any
+  fabrication-run count. Finder attempts and denominators are unaffected.
+  Surviving processes were terminated once discovered.

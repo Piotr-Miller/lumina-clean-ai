@@ -486,8 +486,8 @@ None — no production code changes. The stale probe keeps working; only its hea
 
 #### Automated
 
-- [ ] 3.1 Calibration (1+19) + 20 instrument runs + manifests + graded files committed, cost fields non-null
-- [ ] 3.2 Prettier clean on appended verification.md
+- [x] 3.1 Calibration (1+19) + 20 instrument runs + manifests + graded files committed, cost fields non-null
+- [x] 3.2 Prettier clean on appended verification.md
 
 #### Manual
 

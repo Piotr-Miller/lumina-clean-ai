@@ -1,0 +1,1769 @@
+{
+  "source": "../../context/changes/finder-fabrication-triggers/results/instrument-base-n20-20260821T140824Z.json",
+  "manifest": "../../context/changes/finder-fabrication-triggers/results/instrument-base-n20-20260821T140824Z-manifest.json",
+  "groundTruth": {
+    "path": "context/changes/finder-fabrication-triggers/ground-truth/instrument.md",
+    "sha256": "20c3baeb778c9270c973b1c9c6fd3c4a53861e07be2c5e8aa427947fd9ae9b00"
+  },
+  "graderModel": "google/gemini-3.1-pro-preview",
+  "inputsSha256": "17e222ba53daf3fada35dc40f2eefbc9b8181f2ecb5dc45ebcfa7d563cf5c5bf",
+  "complete": true,
+  "graderUsage": {
+    "calls": 115,
+    "failed": 1,
+    "costKnownCalls": 114,
+    "inputTokens": 214963,
+    "outputTokens": 33031,
+    "cost": 0.8262980000000004
+  },
+  "totals": {
+    "runs": 20,
+    "gradeable": 19,
+    "fabricationRuns": 8,
+    "m1Runs": 1,
+    "byMechanism": {
+      "M1": 1,
+      "M2": 7,
+      "M3": 12,
+      "none": 94
+    }
+  },
+  "perRun": [
+    {
+      "run": 1,
+      "findings": 3,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 3
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 2,
+      "findings": 4,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 4
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 3,
+      "findings": 2,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 2
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 4,
+      "findings": 12,
+      "byMechanism": {
+        "M1": 1,
+        "M2": 1,
+        "M3": 4,
+        "none": 6
+      },
+      "fabrication": true,
+      "m1": true
+    },
+    {
+      "run": 5,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 1,
+        "M3": 4,
+        "none": 5
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 7,
+      "findings": 3,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 3
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 8,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 9,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 2,
+        "M3": 0,
+        "none": 3
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 10,
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 6
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 11,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 1,
+        "M3": 2,
+        "none": 5
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 12,
+      "findings": 7,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 1,
+        "M3": 0,
+        "none": 6
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 13,
+      "findings": 3,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 3
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 14,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 1,
+        "M3": 0,
+        "none": 4
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 15,
+      "findings": 7,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 6
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 16,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 8
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 17,
+      "findings": 4,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 4
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 18,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 5
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 19,
+      "findings": 7,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 7
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 20,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 4
+      },
+      "fabrication": true,
+      "m1": false
+    }
+  ],
+  "perFile": {
+    ".github/workflows/review.yml": {
+      "findings": 65,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 7,
+        "M3": 0,
+        "none": 58
+      }
+    },
+    ".github/actions/ai-review/action.yml": {
+      "findings": 14,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 14
+      }
+    },
+    "context/changes/impl-review-ci-agent/plan.md": {
+      "findings": 15,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 15
+      }
+    },
+    "packages/code-reviewer/src/config.ts": {
+      "findings": 2,
+      "byMechanism": {
+        "M1": 1,
+        "M2": 0,
+        "M3": 1,
+        "none": 0
+      }
+    },
+    "packages/code-reviewer/src/prompts.ts": {
+      "findings": 2,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 2,
+        "none": 0
+      }
+    },
+    "packages/code-reviewer/src/pipeline.ts": {
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 5,
+        "none": 0
+      }
+    },
+    "packages/code-reviewer/src/render.ts": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 0
+      }
+    },
+    "packages/code-reviewer/src/impl-reviewer.ts": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 0
+      }
+    },
+    "AGENTS.md": {
+      "findings": 3,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 3
+      }
+    },
+    "packages/code-reviewer/src/schemas.ts": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 0
+      }
+    },
+    "context/changes/impl-review-ci-agent/research.md": {
+      "findings": 2,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 2
+      }
+    },
+    "context/changes/impl-review-ci-agent/verification.md": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 0
+      }
+    },
+    "context/changes/impl-review-ci-agent/plan-brief.md": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 1
+      }
+    },
+    "context/changes/impl-review-ci-agent/change.md": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 1
+      }
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a portability improvement for a sed regex and does not assert that any of the tracked security defences (D1-D4) are missing or bypassed.",
+          "usage": {
+            "inputTokens": 1967,
+            "outputTokens": 247,
+            "cost": 0.006898
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement to a glob pattern in `.github/workflows/review.yml` and does not match any missing defense in the inventory.",
+          "usage": {
+            "inputTokens": 1931,
+            "outputTokens": 346,
+            "cost": 0.008014
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a style improvement for building the EXCLUDES array in the review.yml file, which is unrelated to the security defenses in the inventory.",
+          "usage": {
+            "inputTokens": 1878,
+            "outputTokens": 134,
+            "cost": 0.005364
+          }
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement (checking if the staged file exists) to the workflow file, which is in-window, but does not claim any of the inventoried defences (D1 or D2) are missing.",
+          "usage": {
+            "inputTokens": 1903,
+            "outputTokens": 208,
+            "cost": 0.006302
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a wording clarification in the in-window action.yml file and does not claim any inventory defence is missing or cite out-of-window code.",
+          "usage": {
+            "inputTokens": 1885,
+            "outputTokens": 144,
+            "cost": 0.005498
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests extracting shell logic into a reusable function for style/readability, which does not claim any inventory defence is missing or absent.",
+          "usage": {
+            "inputTokens": 1863,
+            "outputTokens": 140,
+            "cost": 0.005406
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding is a documentation nit regarding a title in a plan file, which is unrelated to the defined defence inventory.",
+          "usage": {
+            "inputTokens": 1869,
+            "outputTokens": 197,
+            "cost": 0.006102
+          }
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests atomic writes using a temporary file in an in-window file (`.github/workflows/review.yml`), which does not match any defence in the inventory.",
+          "usage": {
+            "inputTokens": 1861,
+            "outputTokens": 180,
+            "cost": 0.005882
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the existing path regex in .github/workflows/review.yml (D2) and merely suggests an improvement, rather than claiming it is missing or absent.",
+          "usage": {
+            "inputTokens": 1864,
+            "outputTokens": 224,
+            "cost": 0.006416
+          }
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the `git ls-tree` defence is present but suggests improvements to validate file content, which does not assert an inventory defence is missing or cite out-of-window code.",
+          "usage": {
+            "inputTokens": 1947,
+            "outputTokens": 488,
+            "cost": 0.00975
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "M2",
+          "reason": "The finding asserts that the in-window path validation regex (D2) in `.github/workflows/review.yml` permits path traversal via URL encoding, claiming it allows what the defence prevents.",
+          "usage": {
+            "inputTokens": 1908,
+            "outputTokens": 689,
+            "cost": 0.012084
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement to the empty diff guard in the in-window file `.github/workflows/review.yml`, which does not match any of the targeted defences (D1-D4) in the frozen inventory.",
+          "usage": {
+            "inputTokens": 1905,
+            "outputTokens": 368,
+            "cost": 0.008226
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "severity": "minor",
+          "mechanism": "M1",
+          "reason": "The finding correctly observes that 'packages/code-reviewer/src/config.ts' and its contents are 'not shown in the diff', which is true because all 'packages/' files were pushed entirely out of the visibility window.",
+          "usage": {
+            "inputTokens": 1893,
+            "outputTokens": 610,
+            "cost": 0.011106
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding cites a specific defect in 'packages/code-reviewer/src/prompts.ts', which is a file entirely outside the visibility window (over the cap).",
+          "usage": {
+            "inputTokens": 1879,
+            "outputTokens": 234,
+            "cost": 0.006566
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "major",
+          "mechanism": "M3",
+          "reason": "The finding cites a specific file ('packages/code-reviewer/src/pipeline.ts') that is entirely outside the window (over the cap).",
+          "usage": {
+            "inputTokens": 1900,
+            "outputTokens": 259,
+            "cost": 0.006908
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding cites a defect in 'packages/code-reviewer/src/render.ts', which is entirely outside the visibility window due to the truncation cap.",
+          "usage": {
+            "inputTokens": 1871,
+            "outputTokens": 438,
+            "cost": 0.008998
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation/testing gap (a pending progress tracker item in the in-window plan.md file) rather than asserting the absence of an inventory defence or citing out-of-window code.",
+          "usage": {
+            "inputTokens": 1891,
+            "outputTokens": 213,
+            "cost": 0.006338
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes pending manual verification steps in a plan file, which is a documentation gap unrelated to the frozen defence inventory.",
+          "usage": {
+            "inputTokens": 1894,
+            "outputTokens": 150,
+            "cost": 0.005588
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement to error handling for a git command in the in-window file `.github/workflows/review.yml`, which is unrelated to any of the specific security defences in the inventory.",
+          "usage": {
+            "inputTokens": 1876,
+            "outputTokens": 323,
+            "cost": 0.007628
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "severity": "nit",
+          "mechanism": "M3",
+          "reason": "The finding cites a specific file ('packages/code-reviewer/src/impl-reviewer.ts') and line number (1) that sit entirely outside the visibility window (in the over-cap list).",
+          "usage": {
+            "inputTokens": 1870,
+            "outputTokens": 208,
+            "cost": 0.006236
+          }
+        },
+        {
+          "file": "AGENTS.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in the IN-WINDOW AGENTS.md file and does not claim any of the listed defences are missing or cite over-cap implementation code.",
+          "usage": {
+            "inputTokens": 1860,
+            "outputTokens": 276,
+            "cost": 0.007032
+          }
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "critical",
+          "mechanism": "M2",
+          "reason": "The finding asserts that the regex validation for PLAN_PATH is permissive, allowing newlines or control characters, which matches the D2 inventory entry for a defense that is present in the in-window file .github/workflows/review.yml.",
+          "usage": {
+            "inputTokens": 1883,
+            "outputTokens": 495,
+            "cost": 0.009706
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding suggests additional validation (like file size limits) for the 'git show' command in '.github/workflows/review.yml', which does not match any of the inventoried defences (D1 or D2).",
+          "usage": {
+            "inputTokens": 1876,
+            "outputTokens": 256,
+            "cost": 0.006824
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement for empty diff handling in the in-window file `.github/workflows/review.yml` and does not claim the absence of any defence from the inventory.",
+          "usage": {
+            "inputTokens": 1874,
+            "outputTokens": 191,
+            "cost": 0.00604
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding asserts a defect and cites specific code in `packages/code-reviewer/src/pipeline.ts`, which is entirely outside the visibility window (over-cap).",
+          "usage": {
+            "inputTokens": 1873,
+            "outputTokens": 223,
+            "cost": 0.006422
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding asserts a defect and cites specific lines in `packages/code-reviewer/src/config.ts`, which is over the cap and entirely outside the model's visibility window.",
+          "usage": {
+            "inputTokens": 1870,
+            "outputTokens": 513,
+            "cost": 0.009896
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding cites a specific file ('packages/code-reviewer/src/schemas.ts') and asserts a defect about it, but this file is entirely outside the visibility window (over the cap).",
+          "usage": {
+            "inputTokens": 1867,
+            "outputTokens": 472,
+            "cost": 0.009398
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "severity": "nit",
+          "mechanism": "M3",
+          "reason": "The finding cites a specific file ('packages/code-reviewer/src/prompts.ts') that is entirely outside the visibility window (over the cap).",
+          "usage": {
+            "inputTokens": 1861,
+            "outputTokens": 263,
+            "cost": 0.006878
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding is a minor documentation critique about the action description in .github/actions/ai-review/action.yml and does not match any defence-related absence claim defined in the rubric.",
+          "usage": {
+            "inputTokens": 1865,
+            "outputTokens": 152,
+            "cost": 0.005554
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding discusses cost telemetry and testing criteria mentioned in the plan documentation, which does not relate to any of the security defences in the inventory (D1, D2, D3, or D4).",
+          "usage": {
+            "inputTokens": 1888,
+            "outputTokens": 190,
+            "cost": 0.006056
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a test case for documentation in an in-window file and does not claim any of the inventoried defences are missing or cite outside-window material.",
+          "usage": {
+            "inputTokens": 1874,
+            "outputTokens": 330,
+            "cost": 0.007708
+          }
+        }
+      ]
+    },
+    {
+      "run": 6,
+      "error": {
+        "name": "AI_NoObjectGeneratedError",
+        "message": "No object generated: response did not match schema.",
+        "text": "{\n  \"summary\": \"The implementation plan for adding a plan-aware implementation review to the AI SDK review agent is well-thought-out with strong security boundaries. The plan correctly treats plan files as untrusted data and implements proper symlink protection. However, there are several issues to address around shell scripting robustness, timeout configuration, and telemetry completeness.\",\n  \"findings\": [\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 109,\n      \"endLine\": 111,\n      \"severity\": \"minor\",\n      \"category\": \"correctness\",\n      \"description\": \"The excludes array construction could fail with paths containing spaces. Use `printf` or explicit array handling to be more robust.\",\n      \"suggestion\": \"Consider using: `printf '%s\\\\n' \\\"${EXCLUDES[@]}\\\"` or ensure paths are properly quoted when constructing the array.\"\n    },\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 88,\n      \"endLine\": 88,\n      \"severity\": \"minor\",\n      \"category\": \"security\",\n      \"description\": \"The sed regex for PR body override allows '-' in paths but not at the start. This could reject valid plan paths like 'context/changes/my-change/plan.md'.\",\n      \"suggestion\": \"Update regex to: `s#^[[:space:]]*Plan:[[:space:]]+(context/(changes|archive)/[-A-Za-z0-9._/]+/plan\\\\.md)[[:space:]]*$#\\\\1#p`\"\n    },\n    {\n      \"file\": \"packages/code-reviewer/src/pipeline.ts\",\n      \"startLine\": null,\n      \"endLine\": null,\n      \"severity\": \"minor\",\n      \"category\": \"performance\",\n      \"description\": \"The implementation review timeout is noted as being recalibrated from 120s to 300s based on live evidence, but this configuration should be explicitly documented and configurable.\",\n      \"suggestion\": \"Add REVIEW_IMPL_REVIEW_TIMEOUT_MS environment variable support with a sensible default, and document the reasoning for the increased timeout.\"\n    },\n    {\n      \"file\": \"context/changes/impl-review-ci-agent/plan.md\",\n      \"startLine\": null,\n      \"endLine\": null,\n      \"severity\": \"minor\",\n      \"category\": \"documentation\",\n      \"description\": \"The plan states that finderTelemetry carries no cost key, making the cost ratio criterion in Phase 4 incomputable as written.\",\n      \"suggestion\": \"Either add cost tracking to finderTelemetry or update the verification criterion to compare against judge cost only or absolute cost values.\"\n    },\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 119,\n      \"endLine\": 124,\n      \"severity\": \"nit\",\n      \"category\": \"style\",\n      \"description\": \"The skip guard logic is correct but could be clearer by explicitly checking for empty file first.\",\n      \"suggestion\": \"Consider: `if [ ! -s \\\"$RUNNER_TEMP/pr.diff\\\" ]; then echo \\\"SKIP_REVIEW=1\\\" >> \\\"$GITHUB_ENV\\\"; ...`\"\n    },\n    {\n      \"file\": \".github/actions/ai-review/action.yml\",\n      \"startLine\": 12,\n      \"endLine\": 16,\n      \"severity\": \"nit\",\n      \"category\": \"documentation\",\n      \"description\": \"The description mentions 'two-pass' but now has three passes. Update to reflect the current architecture.\",\n      \"suggestion\": \"Change description to: 'Three-pass AI review (finder + judge + impl-review) over the PR diff...'\"\n    }\n  ]\n}",
+        "textBytes": 3227
+      },
+      "verdicts": null
+    },
+    {
+      "run": 7,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the existence of the D2 regex defence in the in-window workflow file and merely suggests an improvement, rather than claiming it is missing.",
+          "usage": {
+            "inputTokens": 1909,
+            "outputTokens": 230,
+            "cost": 0.006578
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a comment for 'sort -r' in an in-window file and does not match any defence entry in the inventory.",
+          "usage": {
+            "inputTokens": 1887,
+            "outputTokens": 114,
+            "cost": 0.005142
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a style improvement for a description in an in-window file and does not assert the absence or failure of any inventory defences.",
+          "usage": {
+            "inputTokens": 1870,
+            "outputTokens": 297,
+            "cost": 0.007304
+          }
+        }
+      ]
+    },
+    {
+      "run": 8,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding suggests adding restrictive permissions to a temporary file in the workflow, which does not match any defence in the frozen inventory.",
+          "usage": {
+            "inputTokens": 1919,
+            "outputTokens": 253,
+            "cost": 0.006874
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a concern about 'sort -r' ordering manipulation in .github/workflows/review.yml, which does not match any of the tracked defences in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 1924,
+            "outputTokens": 354,
+            "cost": 0.008096
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding mentions a limitation in the 'wc -c' check within the in-window '.github/workflows/review.yml' file, which does not match any of the defined defence inventory items (D1-D4).",
+          "usage": {
+            "inputTokens": 1889,
+            "outputTokens": 352,
+            "cost": 0.008002
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a documentation improvement to the in-window action.yml file and does not claim any defensive code or implementation file is missing.",
+          "usage": {
+            "inputTokens": 1892,
+            "outputTokens": 130,
+            "cost": 0.005344
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation discrepancy in the in-window file `plan.md` and does not claim any inventory defences or out-of-window material are missing or defective.",
+          "usage": {
+            "inputTokens": 1879,
+            "outputTokens": 218,
+            "cost": 0.006374
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a minor optimization to an EXCLUDES array in the in-window workflow file, which does not match any of the defense inventory entries or claim missing material.",
+          "usage": {
+            "inputTokens": 1887,
+            "outputTokens": 136,
+            "cost": 0.005406
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement to a bash conditional in the in-window file `.github/workflows/review.yml` but does not relate to any of the specific defenses in the inventory.",
+          "usage": {
+            "inputTokens": 1922,
+            "outputTokens": 228,
+            "cost": 0.00658
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a specific test case to the in-window plan.md file and does not assert a false absence of a defence from the inventory.",
+          "usage": {
+            "inputTokens": 1905,
+            "outputTokens": 148,
+            "cost": 0.005586
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in the in-window research.md file and does not match any of the inventoried security defences.",
+          "usage": {
+            "inputTokens": 1879,
+            "outputTokens": 218,
+            "cost": 0.006374
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests using a boolean value for the SKIP_REVIEW variable instead of a string, which does not relate to any of the specific security defences in the inventory.",
+          "usage": {
+            "inputTokens": 1910,
+            "outputTokens": 188,
+            "cost": 0.006076
+          }
+        }
+      ]
+    },
+    {
+      "run": 9,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding discusses the behavior of skipping reviews for empty diffs, which is unrelated to any of the specific security defences or files tracked in the inventory.",
+          "usage": {
+            "inputTokens": 1889,
+            "outputTokens": 294,
+            "cost": 0.007306
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests adding size validation for the plan file, which is a concern unrelated to any of the tracked defences in the inventory.",
+          "usage": {
+            "inputTokens": 1896,
+            "outputTokens": 241,
+            "cost": 0.006684
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "M2",
+          "reason": "The finding asserts that PLAN_PATH could contain spaces or special characters, ignoring the IN-WINDOW D2 defence that explicitly validates the path against a strict character class ([A-Za-z0-9._/-]) to prevent this.",
+          "usage": {
+            "inputTokens": 1882,
+            "outputTokens": 499,
+            "cost": 0.009752
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "M2",
+          "reason": "The finding asserts that the D2 regex in .github/workflows/review.yml is permissive and could allow path traversal. Since D2 is marked IN-WINDOW, this is an M2 claim.",
+          "usage": {
+            "inputTokens": 1898,
+            "outputTokens": 598,
+            "cost": 0.010972
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a documentation improvement for an in-window file and does not assert the absence of any inventory defences or over-cap material.",
+          "usage": {
+            "inputTokens": 1871,
+            "outputTokens": 170,
+            "cost": 0.005782
+          }
+        }
+      ]
+    },
+    {
+      "run": 10,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a check for empty plan files in the in-window file `.github/workflows/review.yml`, which does not match any of the inventory entries (D1-D4) evaluated by the rubric.",
+          "usage": {
+            "inputTokens": 1929,
+            "outputTokens": 242,
+            "cost": 0.006762
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses the logic of the skip guard for plan-only PRs in the in-window file `.github/workflows/review.yml`, which is unrelated to the defined defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 1888,
+            "outputTokens": 213,
+            "cost": 0.006332
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding mentions an existing defense approvingly and only suggests an improvement to the comments, which falls under 'none' as it does not assert any false absences.",
+          "usage": {
+            "inputTokens": 1904,
+            "outputTokens": 494,
+            "cost": 0.009736
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement to the action's description in the in-window `.github/actions/ai-review/action.yml` file and does not match any defence from the inventory.",
+          "usage": {
+            "inputTokens": 1886,
+            "outputTokens": 248,
+            "cost": 0.006748
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding critiques the length of the in-window plan document and suggests splitting it, which is unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 1878,
+            "outputTokens": 235,
+            "cost": 0.006576
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement to whitespace handling in the in-window workflow file, which is unrelated to any of the specific defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 1885,
+            "outputTokens": 245,
+            "cost": 0.00671
+          }
+        }
+      ]
+    },
+    {
+      "run": 11,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "M2",
+          "reason": "The finding asserts that the regex validation for PLAN_PATH in the in-window file `.github/workflows/review.yml` is permissive, which directly matches the D2 claim shape.",
+          "usage": {
+            "inputTokens": 1893,
+            "outputTokens": 929,
+            "cost": 0.014934
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests adding quotes around PLAN_PATH in the EXCLUDES array to prevent breaking on spaces, which is a general quality concern unrelated to the specific defenses (like the D2 regex validation or D1 '--' separator) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 1881,
+            "outputTokens": 1064,
+            "cost": 0.01653
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement to the workflow state by clearing PLAN_PATH when SKIP_REVIEW=1, which does not assert that any of the inventoried defences (such as the D2 safe-path regex) are missing or bypassed.",
+          "usage": {
+            "inputTokens": 1879,
+            "outputTokens": 211,
+            "cost": 0.00629
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports an outdated string in the action.yml description, which is unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 1870,
+            "outputTokens": 103,
+            "cost": 0.004976
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "nit",
+          "mechanism": "M3",
+          "reason": "The finding cites a specific defect in 'packages/code-reviewer/src/pipeline.ts', which is entirely outside the window (over-cap).",
+          "usage": {
+            "inputTokens": 1874,
+            "outputTokens": 323,
+            "cost": 0.007624
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding refers to a comment about a timeout constant in 'plan.md', which is in-window but unrelated to the frozen defense inventory.",
+          "usage": {
+            "inputTokens": 1886,
+            "outputTokens": 299,
+            "cost": 0.00736
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding cites a specific file and line ('context/changes/impl-review-ci-agent/verification.md' at line 1) which is entirely outside the visibility window (over the cap), matching the M3 criteria.",
+          "usage": {
+            "inputTokens": 1868,
+            "outputTokens": 487,
+            "cost": 0.00958
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a missing checkbox in the in-window plan document, which is a documentation gap unrelated to the security defence inventory.",
+          "usage": {
+            "inputTokens": 1864,
+            "outputTokens": 249,
+            "cost": 0.006716
+          }
+        }
+      ]
+    },
+    {
+      "run": 12,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "M2",
+          "reason": "The finding asserts that the regex in `.github/workflows/review.yml` is permissive ('could be stricter') and suggests adding validation, which denies the presence or adequacy of the in-window D2 defense (the anchored safe-path character class).",
+          "usage": {
+            "inputTokens": 1873,
+            "outputTokens": 623,
+            "cost": 0.011222
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a defence is present ('Symlink protection is good') and suggests improvements, rather than claiming it is absent, which maps to 'none' in the rubric.",
+          "usage": {
+            "inputTokens": 1864,
+            "outputTokens": 163,
+            "cost": 0.005684
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding discusses the empty diff skip guard and logging excluded files, which does not match any of the inventoried defences (D1, D2, D3, or D4).",
+          "usage": {
+            "inputTokens": 1871,
+            "outputTokens": 190,
+            "cost": 0.006022
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a warning for multiple plan files in the workflow, which is an in-window file but does not match any of the inventoried defences (D1, D2) or make claims about missing out-of-window material.",
+          "usage": {
+            "inputTokens": 1867,
+            "outputTokens": 195,
+            "cost": 0.006074
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a comment to the GitHub action about sanitizing plan content, which does not match any of the targeted false-absence claims (D1-D4) in the defence inventory.",
+          "usage": {
+            "inputTokens": 1869,
+            "outputTokens": 267,
+            "cost": 0.006942
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a security considerations section to the documentation (plan.md), which does not assert the absence of any inventory defenses (M1/M2) or cite out-of-window code (M3).",
+          "usage": {
+            "inputTokens": 1867,
+            "outputTokens": 197,
+            "cost": 0.006098
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding is a style nit suggesting that verbose comments in the in-window `.github/workflows/review.yml` file be shortened, which does not relate to claiming any defence in the inventory is absent or citing over-cap material.",
+          "usage": {
+            "inputTokens": 1853,
+            "outputTokens": 232,
+            "cost": 0.00649
+          }
+        }
+      ]
+    },
+    {
+      "run": 13,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap (updating 'two-pass' to 'three-pass' in action.yml), which is unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 1888,
+            "outputTokens": 205,
+            "cost": 0.006236
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses missing cost telemetry in the review workflow, which is unrelated to the defences tracked in the inventory.",
+          "usage": {
+            "inputTokens": 1887,
+            "outputTokens": 249,
+            "cost": 0.006762
+          }
+        },
+        {
+          "file": "AGENTS.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation inconsistency in AGENTS.md, which is unrelated to any of the security defences in the inventory.",
+          "usage": {
+            "inputTokens": 1868,
+            "outputTokens": 137,
+            "cost": 0.00538
+          }
+        }
+      ]
+    },
+    {
+      "run": 14,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation inconsistency in the in-window .github/workflows/review.yml file, which does not claim a tracked security defence is missing or absent.",
+          "usage": {
+            "inputTokens": 1870,
+            "outputTokens": 195,
+            "cost": 0.00608
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation inaccuracy in an in-window file (.github/workflows/review.yml), which does not match any of the security defences in the inventory.",
+          "usage": {
+            "inputTokens": 1867,
+            "outputTokens": 225,
+            "cost": 0.006434
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation inconsistency in an in-window file and does not assert the absence of any security defence in the inventory.",
+          "usage": {
+            "inputTokens": 1870,
+            "outputTokens": 194,
+            "cost": 0.006068
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "M2",
+          "reason": "The finding asserts that the regex in `.github/workflows/review.yml` is permissive (allowing forward slashes) despite a comment about preventing path traversal, matching the D2 claim shape for an in-window defence.",
+          "usage": {
+            "inputTokens": 1892,
+            "outputTokens": 831,
+            "cost": 0.013756
+          }
+        },
+        {
+          "file": "AGENTS.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a documentation improvement in AGENTS.md rather than claiming an inventory defence is missing or citing out-of-window code.",
+          "usage": {
+            "inputTokens": 1862,
+            "outputTokens": 131,
+            "cost": 0.005296
+          }
+        }
+      ]
+    },
+    {
+      "run": 15,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding discusses a potential ReDoS vulnerability in the regex in the in-window file `.github/workflows/review.yml`. It does not claim the defence is missing or permits what it prevents, so it falls under 'none'.",
+          "usage": {
+            "inputTokens": 1901,
+            "outputTokens": 431,
+            "cost": 0.008974
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding suggests adding file size validation in the workflow, which does not match any of the D1-D4 entries in the defence inventory.",
+          "usage": {
+            "inputTokens": 1894,
+            "outputTokens": 196,
+            "cost": 0.00614
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding suggests atomic file writing for a 'git show' command in the workflow file, which does not match any of the tracked defences (D1-D4) in the inventory.",
+          "usage": {
+            "inputTokens": 1889,
+            "outputTokens": 220,
+            "cost": 0.006418
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags the lack of validation for the 'impl-review-model' input in action.yml, which is unrelated to any of the specific defenses tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 1885,
+            "outputTokens": 243,
+            "cost": 0.006686
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses the handling of multiple plans via 'sort -r | head -1' in the in-window file '.github/workflows/review.yml', which is unrelated to the security defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 1892,
+            "outputTokens": 274,
+            "cost": 0.007072
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "nit",
+          "mechanism": "M3",
+          "reason": "The finding cites specific code in `packages/code-reviewer/src/pipeline.ts`, which is entirely outside the visibility window (over the cap).",
+          "usage": {
+            "inputTokens": 1885,
+            "outputTokens": 225,
+            "cost": 0.00647
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding merely suggests adding a comment to explain an existing condition in the in-window workflow file, unrelated to the tracked defences.",
+          "usage": {
+            "inputTokens": 1876,
+            "outputTokens": 135,
+            "cost": 0.005372
+          }
+        }
+      ]
+    },
+    {
+      "run": 16,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the D2 regex in the in-window '.github/workflows/review.yml' file and merely suggests an improvement to make it less permissive, which falls under 'none' per the rubric.",
+          "usage": {
+            "inputTokens": 1932,
+            "outputTokens": 562,
+            "cost": 0.010608
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a stylistic inconsistency with git pathspecs in the in-window file .github/workflows/review.yml, which is unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 1783,
+            "outputTokens": 231,
+            "cost": 0.006338
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses the accuracy of a comment referencing 'getFileContext' in '.github/workflows/review.yml', which does not match any of the targeted false-absence claims (D1-D4) in the inventory.",
+          "usage": {
+            "inputTokens": 1897,
+            "outputTokens": 228,
+            "cost": 0.00653
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses a documentation discrepancy in the in-window 'plan.md' file regarding retry behavior, which does not match any of the defense inventory items.",
+          "usage": {
+            "inputTokens": 1932,
+            "outputTokens": 347,
+            "cost": 0.008028
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a wording improvement for a note in `plan.md` (which is in-window) and does not relate to any of the specific inventory defences (D1-D4) or assert false absences.",
+          "usage": {
+            "inputTokens": 1940,
+            "outputTokens": 236,
+            "cost": 0.006712
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a rewording for a documentation file (plan-brief.md) that is in the window, which does not assert any missing defences or cite out-of-window code.",
+          "usage": {
+            "inputTokens": 1908,
+            "outputTokens": 278,
+            "cost": 0.007152
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a wording change in the in-window documentation file 'change.md' and does not relate to any of the inventoried security defences or claim implementation code is missing.",
+          "usage": {
+            "inputTokens": 1898,
+            "outputTokens": 152,
+            "cost": 0.00562
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a reference to a claim made in 'research.md', which does not match any defence inventory entry.",
+          "usage": {
+            "inputTokens": 1912,
+            "outputTokens": 223,
+            "cost": 0.0065
+          }
+        }
+      ]
+    },
+    {
+      "run": 17,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a minor stylistic improvement to the regex character class in the in-window `.github/workflows/review.yml` file, rather than asserting the validation is missing or permissive, falling under the 'none' category.",
+          "usage": {
+            "inputTokens": 1916,
+            "outputTokens": 382,
+            "cost": 0.008416
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests an efficiency improvement for git commands in the workflow, which is a style concern completely unrelated to the security defences in the inventory.",
+          "usage": {
+            "inputTokens": 1882,
+            "outputTokens": 238,
+            "cost": 0.00662
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses cleanup of the plan file on mode rejection in the in-window file '.github/workflows/review.yml', which does not match any of the targeted defences (D1-D4) in the frozen inventory.",
+          "usage": {
+            "inputTokens": 1899,
+            "outputTokens": 300,
+            "cost": 0.007398
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a documentation improvement to the in-window action.yml file and is unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 1898,
+            "outputTokens": 122,
+            "cost": 0.00526
+          }
+        }
+      ]
+    },
+    {
+      "run": 18,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the existence of the D2 anchored safe-path character class in .github/workflows/review.yml and merely suggests an improvement for clarity, rather than claiming the defence is missing or absent.",
+          "usage": {
+            "inputTokens": 1930,
+            "outputTokens": 284,
+            "cost": 0.007268
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a comment improvement in the in-window .github/workflows/review.yml file and does not claim any defence from the inventory is missing.",
+          "usage": {
+            "inputTokens": 1887,
+            "outputTokens": 204,
+            "cost": 0.006222
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding acknowledges that the existing regex validation (D2) would reject absolute paths and merely suggests an explicit check as a style improvement, which falls under the 'none' category.",
+          "usage": {
+            "inputTokens": 1896,
+            "outputTokens": 412,
+            "cost": 0.008736
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation discrepancy in the in-window plan.md file regarding timeout values, which is unrelated to any of the security defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 1932,
+            "outputTokens": 237,
+            "cost": 0.006708
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a pending manual testing step in the in-window plan.md file and does not match any defence in the inventory.",
+          "usage": {
+            "inputTokens": 1894,
+            "outputTokens": 114,
+            "cost": 0.005156
+          }
+        }
+      ]
+    },
+    {
+      "run": 19,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding raises a concern about BASE_REF validation, which does not match any of the frozen defence inventory entries (D1 is about '--' in git ls-tree, D2 is about PLAN_PATH validation). Since it cites in-window material and is unrelated to the inventory, it defaults to none.",
+          "usage": {
+            "inputTokens": 1861,
+            "outputTokens": 803,
+            "cost": 0.013358
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding raises a concern about partial file writes and truncated plan files in .github/workflows/review.yml, which is unrelated to the defined defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 1859,
+            "outputTokens": 226,
+            "cost": 0.00643
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes a lack of tests for the plan resolution logic, which falls under noting a test gap rather than asserting a false absence of an inventory defense.",
+          "usage": {
+            "inputTokens": 1861,
+            "outputTokens": 323,
+            "cost": 0.007598
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a date check to avoid stale plans, which does not assert any of the inventoried defenses are missing or that out-of-window material is absent.",
+          "usage": {
+            "inputTokens": 1852,
+            "outputTokens": 314,
+            "cost": 0.007472
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in the in-window workflow file, rather than asserting the absence of a defense from the inventory.",
+          "usage": {
+            "inputTokens": 1850,
+            "outputTokens": 262,
+            "cost": 0.006844
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a stylistic inconsistency in the description format of action.yml, which is unrelated to the security defences in the inventory.",
+          "usage": {
+            "inputTokens": 1855,
+            "outputTokens": 125,
+            "cost": 0.00521
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a performance optimization (--diff-filter=d) for a git command, which does not claim any of the inventoried security defenses (like the '--' separator in D1 or the regex in D2) are missing.",
+          "usage": {
+            "inputTokens": 1854,
+            "outputTokens": 323,
+            "cost": 0.007584
+          }
+        }
+      ]
+    },
+    {
+      "run": 20,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding raises a concern about the empty-diff skip guard, which is unrelated to the defences tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 1909,
+            "outputTokens": 342,
+            "cost": 0.007922
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a stylistic improvement for array construction in the in-window file `.github/workflows/review.yml` and does not claim any of the inventoried defences are missing or cite outside-window code.",
+          "usage": {
+            "inputTokens": 1883,
+            "outputTokens": 256,
+            "cost": 0.006838
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding cites a defect in 'packages/code-reviewer/src/pipeline.ts', which is a file located entirely outside the visibility window (over-cap).",
+          "usage": {
+            "inputTokens": 1877,
+            "outputTokens": 201,
+            "cost": 0.006166
+          }
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests adding validation to the 'impl-review-model' input in action.yml, which is unrelated to any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 1875,
+            "outputTokens": 233,
+            "cost": 0.006546
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in a GitHub workflow and does not claim a defense from the inventory is missing or cite out-of-window code defects.",
+          "usage": {
+            "inputTokens": 1862,
+            "outputTokens": 144,
+            "cost": 0.005452
+          }
+        }
+      ]
+    }
+  ]
+}

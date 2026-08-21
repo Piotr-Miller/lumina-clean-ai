@@ -1,0 +1,1754 @@
+{
+  "variant": "instrument",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260821T140824Z",
+  "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "17e222ba53daf3fada35dc40f2eefbc9b8181f2ecb5dc45ebcfa7d563cf5c5bf",
+  "plannedAttempts": 20,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-21T14:08:24.688Z",
+      "durationMs": 91094,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1661,
+        "totalTokens": 26984,
+        "cost": 0.01032364
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 96,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The sed regex for PR body override uses `-E` flag but the pattern contains `[[:space:]]` character class. While this works with GNU sed, it's non-standard. Consider using `\\s` in a `-r` regex or POSIX `[:space:]` without `-E` for broader compatibility.",
+          "suggestion": "Use `sed -nE 's#^[[:space:]]*Plan:[[:space:]]+(context/(changes|archive)/[A-Za-z0-9._/-]+/plan\\.md)[[:space:]]*$#\\1#p'` or switch to `-r` with `\\s` for portability"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 75,
+          "endLine": 76,
+          "severity": "nit",
+          "category": "style",
+          "description": "The glob patterns use `**/context/changes/**/plan.md` which could match `context/changes/foo/bar/plan.md` but the intent seems to be `context/changes/*/plan.md`. The current pattern might match deeper nested plans unintentionally.",
+          "suggestion": "Consider using `:(glob)**/context/changes/*/plan.md` and `:(glob)**/context/archive/*/plan.md` if you only want direct children, or document that deeper nesting is intentional"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 111,
+          "endLine": 112,
+          "severity": "nit",
+          "category": "style",
+          "description": "The `EXCLUDES` array is built with a conditional that could be simplified using array expansion syntax.",
+          "suggestion": "Use `EXCLUDES=(':(exclude,glob)**/reviews/*.md' ${PLAN_PATH:+':(exclude)'"
+        }
+      ],
+      "summary": {
+        "n": 3,
+        "bySeverity": {
+          "minor": 1,
+          "nit": 2
+        },
+        "byCategory": {
+          "correctness": 1,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 2,
+      "startedAt": "2026-08-21T14:09:55.795Z",
+      "durationMs": 63119,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1091,
+        "totalTokens": 26414,
+        "cost": 0.00395014
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 148,
+          "endLine": 148,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Plan staging condition only checks PLAN_PATH is non-empty but doesn't verify the staged file exists",
+          "suggestion": "Add an additional check to ensure the staged plan file exists before proceeding, e.g., `if [[ -n \"$PLAN_PATH\" && -f \"$RUNNER_TEMP/plan.md\" ]]; then`"
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 12,
+          "endLine": 16,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Description mentions 'third pass' which could be misleading since it's advisory only",
+          "suggestion": "Clarify that it's an 'advisory third pass' or 'optional plan-aware review pass' to avoid confusion about its impact on the review outcome"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 73,
+          "endLine": 84,
+          "severity": "nit",
+          "category": "style",
+          "description": "Complex shell logic for plan resolution could be extracted to a reusable function",
+          "suggestion": "Consider extracting the plan resolution logic into a shell function for better readability and reusability"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Plan title contains hyphens that might be interpreted as command-line flags in some contexts",
+          "suggestion": "Consider using quotes or alternative naming to avoid potential parsing issues in tooling"
+        }
+      ],
+      "summary": {
+        "n": 4,
+        "bySeverity": {
+          "minor": 2,
+          "nit": 2
+        },
+        "byCategory": {
+          "correctness": 1,
+          "documentation": 2,
+          "style": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 3,
+      "startedAt": "2026-08-21T14:10:58.926Z",
+      "durationMs": 74946,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1355,
+        "totalTokens": 26678,
+        "cost": 0.00441214
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 108,
+          "endLine": 120,
+          "severity": "minor",
+          "category": "security",
+          "description": "Plan staging doesn't handle partial write scenario atomically",
+          "suggestion": "Use a temporary file and atomic rename to ensure partial writes can't be read"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 75,
+          "endLine": 84,
+          "severity": "nit",
+          "category": "style",
+          "description": "Path traversal check could be more comprehensive",
+          "suggestion": "Consider checking for absolute paths (starting with /) in addition to .. segments, though the sed regex already mitigates this"
+        }
+      ],
+      "summary": {
+        "n": 2,
+        "bySeverity": {
+          "minor": 1,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 1,
+          "style": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 4,
+      "startedAt": "2026-08-21T14:12:13.882Z",
+      "durationMs": 57935,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1435,
+        "totalTokens": 26758,
+        "cost": 0.01340014
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 69,
+          "endLine": 85,
+          "severity": "critical",
+          "category": "security",
+          "description": "The symlink protection is incomplete. While `git ls-tree` checks for symlinks, the subsequent `git show` command could still be exploited if an attacker creates a plan file containing valid Git object references that point to sensitive data (e.g., `plan.md` containing the text `HEAD:.github/workflows/review.yml`). The content should be sanitized or validated to ensure it's actually markdown.",
+          "suggestion": "Add basic validation that the staged plan file starts with a markdown header (`#`) and doesn't contain suspicious patterns before passing it to the model."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 47,
+          "endLine": 77,
+          "severity": "major",
+          "category": "security",
+          "description": "The PR body override regex uses `[A-Za-z0-9._/-]` which allows `../` sequences if they're encoded as `..%2F` or similar. While the `..` check helps, it's not comprehensive against all traversal encodings.",
+          "suggestion": "Use a more restrictive character class or decode the path before validation to catch encoded traversal attempts."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 100,
+          "endLine": 110,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The empty diff guard sets SKIP_REVIEW but doesn't handle the case where the diff contains only whitespace changes or comments that were filtered out. This could incorrectly skip reviews for PRs that do make meaningful changes.",
+          "suggestion": "Add a minimum size threshold (e.g., 100 bytes) after exclusions to ensure trivial diffs aren't skipped."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The DEFAULT_IMPL_REVIEW_MODEL constant is referenced in the plan but not shown in the diff. Ensure it's properly defined and not accidentally using the judge model.",
+          "suggestion": "Verify DEFAULT_IMPL_REVIEW_MODEL is defined as a separate constant from DEFAULT_JUDGE_MODEL."
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "security",
+          "description": "The plan fencing mechanism needs to handle the case where the plan itself contains the exact fence delimiter sequence being used, which could break prompt parsing.",
+          "suggestion": "Implement fence escaping or use a unique fence pattern that includes a random token per invocation."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The plan cap of 40,000 characters may silently truncate large plans. The planTruncated flag is mentioned but the handling of truncated plans needs verification - does the model get told the plan is incomplete?",
+          "suggestion": "Ensure the prompt explicitly mentions when the plan was truncated so the model knows it's working with incomplete information."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The rendering of the plan path in the comment needs to handle very long paths that could break the table formatting.",
+          "suggestion": "Add a MAX_PATH_CHARS limit and truncate with ellipsis for display."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 548,
+          "endLine": 554,
+          "severity": "major",
+          "category": "testing",
+          "description": "The plan-only PR skip guard (1.11) is marked as pending in the progress tracking. This is a critical security/safety feature that must be verified before merge.",
+          "suggestion": "Complete the manual verification for plan-only PR skipping before merging."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 548,
+          "endLine": 554,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Several manual verification steps are marked as pending (3.14, 4.1-4.2, 4.8-4.9). These should be completed or documented as waived.",
+          "suggestion": "Complete remaining manual verifications or add explicit waivers with rationale."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 69,
+          "endLine": 85,
+          "severity": "nit",
+          "category": "style",
+          "description": "The error handling for git show failure could be more robust - it removes the file but doesn't verify the removal succeeded.",
+          "suggestion": "Add explicit verification that rm -f succeeded or use a temporary file that's automatically cleaned up."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "style",
+          "description": "The new file should follow the existing pattern of documenting the agent's purpose and invariants at the top.",
+          "suggestion": "Add a header comment explaining the agent's role and security boundaries."
+        },
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 104,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The documentation could be clearer about what happens when the plan file exceeds the 40KB cap.",
+          "suggestion": "Add a note about plan truncation behavior in the documentation."
+        }
+      ],
+      "summary": {
+        "n": 12,
+        "bySeverity": {
+          "critical": 1,
+          "major": 4,
+          "minor": 5,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 4,
+          "testing": 2,
+          "style": 2,
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 5,
+      "startedAt": "2026-08-21T14:13:11.829Z",
+      "durationMs": 106170,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1340,
+        "totalTokens": 26663,
+        "cost": 0.00438589
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 74,
+          "endLine": 85,
+          "severity": "critical",
+          "category": "security",
+          "description": "Command injection vulnerability in PR body override processing",
+          "suggestion": "The sed command processes untrusted PR body content without proper sanitization. While the regex is anchored, an attacker could inject newlines or other control characters. Use a more robust approach like temporary files with controlled permissions."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 99,
+          "endLine": 115,
+          "severity": "major",
+          "category": "security",
+          "description": "Insufficient validation of git object content",
+          "suggestion": "The git show command should include additional validation (e.g., file size limits, content type checks) before staging the plan file to prevent potential resource exhaustion or content-based attacks."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 127,
+          "endLine": 139,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Empty diff handling could mask important edge cases",
+          "suggestion": "The skip guard for empty diffs should log more details about what was excluded and why, to help debug cases where legitimate code changes are accidentally filtered out."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "performance",
+          "description": "Hardcoded timeout value should be configurable",
+          "suggestion": "The 300_000ms timeout for impl review should be configurable via environment variable or input parameter, similar to other timeouts in the system."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Missing validation for model configuration",
+          "suggestion": "Add validation to ensure OPENROUTER_IMPL_REVIEW_MODEL is a valid model identifier when provided, with a clear error message if invalid."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Schema validation could be more restrictive",
+          "suggestion": "Add additional validation constraints to the implReviewOutputSchema, such as maximum string lengths for title and detail fields to prevent oversized responses."
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent terminology in prompts",
+          "suggestion": "Standardize terminology between 'plan adherence' and 'plan compliance' throughout the implementation review prompts for clarity."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 12,
+          "endLine": 16,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Description could be more concise",
+          "suggestion": "The action description is quite long. Consider splitting into a brief description and detailed comments, or moving some details to README."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 190,
+          "endLine": 195,
+          "severity": "major",
+          "category": "testing",
+          "description": "Cost telemetry criterion is not properly implemented",
+          "suggestion": "The plan notes that finderTelemetry lacks cost data, making the cost ratio criterion in verification.md uncomputable as written. Either add cost tracking to finder/judge or restate the criterion."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 415,
+          "endLine": 420,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Exclusion semantics contradiction not fully resolved",
+          "suggestion": "While the plan documents the exclusion semantics decision, consider adding a test case that explicitly verifies the chosen interpretation to prevent future confusion."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "critical": 1,
+          "major": 3,
+          "minor": 4,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 3,
+          "performance": 1,
+          "style": 1,
+          "documentation": 2,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 6,
+      "startedAt": "2026-08-21T14:14:58.005Z",
+      "durationMs": 126612,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1326,
+        "totalTokens": 26649,
+        "cost": 0.00436139
+      },
+      "findings": null,
+      "summary": null,
+      "error": {
+        "name": "AI_NoObjectGeneratedError",
+        "message": "No object generated: response did not match schema.",
+        "text": "{\n  \"summary\": \"The implementation plan for adding a plan-aware implementation review to the AI SDK review agent is well-thought-out with strong security boundaries. The plan correctly treats plan files as untrusted data and implements proper symlink protection. However, there are several issues to address around shell scripting robustness, timeout configuration, and telemetry completeness.\",\n  \"findings\": [\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 109,\n      \"endLine\": 111,\n      \"severity\": \"minor\",\n      \"category\": \"correctness\",\n      \"description\": \"The excludes array construction could fail with paths containing spaces. Use `printf` or explicit array handling to be more robust.\",\n      \"suggestion\": \"Consider using: `printf '%s\\\\n' \\\"${EXCLUDES[@]}\\\"` or ensure paths are properly quoted when constructing the array.\"\n    },\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 88,\n      \"endLine\": 88,\n      \"severity\": \"minor\",\n      \"category\": \"security\",\n      \"description\": \"The sed regex for PR body override allows '-' in paths but not at the start. This could reject valid plan paths like 'context/changes/my-change/plan.md'.\",\n      \"suggestion\": \"Update regex to: `s#^[[:space:]]*Plan:[[:space:]]+(context/(changes|archive)/[-A-Za-z0-9._/]+/plan\\\\.md)[[:space:]]*$#\\\\1#p`\"\n    },\n    {\n      \"file\": \"packages/code-reviewer/src/pipeline.ts\",\n      \"startLine\": null,\n      \"endLine\": null,\n      \"severity\": \"minor\",\n      \"category\": \"performance\",\n      \"description\": \"The implementation review timeout is noted as being recalibrated from 120s to 300s based on live evidence, but this configuration should be explicitly documented and configurable.\",\n      \"suggestion\": \"Add REVIEW_IMPL_REVIEW_TIMEOUT_MS environment variable support with a sensible default, and document the reasoning for the increased timeout.\"\n    },\n    {\n      \"file\": \"context/changes/impl-review-ci-agent/plan.md\",\n      \"startLine\": null,\n      \"endLine\": null,\n      \"severity\": \"minor\",\n      \"category\": \"documentation\",\n      \"description\": \"The plan states that finderTelemetry carries no cost key, making the cost ratio criterion in Phase 4 incomputable as written.\",\n      \"suggestion\": \"Either add cost tracking to finderTelemetry or update the verification criterion to compare against judge cost only or absolute cost values.\"\n    },\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 119,\n      \"endLine\": 124,\n      \"severity\": \"nit\",\n      \"category\": \"style\",\n      \"description\": \"The skip guard logic is correct but could be clearer by explicitly checking for empty file first.\",\n      \"suggestion\": \"Consider: `if [ ! -s \\\"$RUNNER_TEMP/pr.diff\\\" ]; then echo \\\"SKIP_REVIEW=1\\\" >> \\\"$GITHUB_ENV\\\"; ...`\"\n    },\n    {\n      \"file\": \".github/actions/ai-review/action.yml\",\n      \"startLine\": 12,\n      \"endLine\": 16,\n      \"severity\": \"nit\",\n      \"category\": \"documentation\",\n      \"description\": \"The description mentions 'two-pass' but now has three passes. Update to reflect the current architecture.\",\n      \"suggestion\": \"Change description to: 'Three-pass AI review (finder + judge + impl-review) over the PR diff...'\"\n    }\n  ]\n}",
+        "textBytes": 3227
+      }
+    },
+    {
+      "run": 7,
+      "startedAt": "2026-08-21T14:17:04.621Z",
+      "durationMs": 86513,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1986,
+        "totalTokens": 27309,
+        "cost": 0.00551639
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 70,
+          "endLine": 84,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The regex for extracting the plan path from the PR body allows dots and hyphens anywhere in path segments. While it prevents '..' traversal, consider if additional restrictions (e.g., no leading dots) are needed for robustness.",
+          "suggestion": "Add a comment explaining the current restrictions are sufficient due to the anchoring to 'context/' and the explicit '..' check, or tighten the regex if necessary."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 58,
+          "endLine": 62,
+          "severity": "minor",
+          "category": "style",
+          "description": "The use of `sort -r` to prioritize `context/changes` over `context/archive` relies on lexical order ('ch' > 'ar'). This is clever but subtle.",
+          "suggestion": "Add a comment explaining why `sort -r` works here to aid future maintainers."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 12,
+          "endLine": 14,
+          "severity": "nit",
+          "category": "style",
+          "description": "The description is updated to mention the third pass, making it slightly long.",
+          "suggestion": "Consider splitting the description into a summary and a detailed note, or keep as-is for clarity."
+        }
+      ],
+      "summary": {
+        "n": 3,
+        "bySeverity": {
+          "minor": 2,
+          "nit": 1
+        },
+        "byCategory": {
+          "correctness": 1,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 8,
+      "startedAt": "2026-08-21T14:18:31.151Z",
+      "durationMs": 95667,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1826,
+        "totalTokens": 27149,
+        "cost": 0.00523639
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 71,
+          "endLine": 73,
+          "severity": "major",
+          "category": "security",
+          "description": "The staged plan file at `$RUNNER_TEMP/plan.md` is created with default permissions. Since the plan may contain sensitive context about the implementation strategy, it should be created with restrictive permissions (e.g., chmod 600) to prevent other processes on the runner from reading it.",
+          "suggestion": "Add `chmod 600 \"$RUNNER_TEMP/plan.md\"` after successfully staging the plan file."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 59,
+          "endLine": 60,
+          "severity": "minor",
+          "category": "security",
+          "description": "The plan resolution uses `sort -r` to determine precedence between `context/changes` and `context/archive`. While documented as intentional, an attacker could craft a plan path that sorts before legitimate plans using this lexicographic ordering (e.g., `context/changes/0-plan/plan.md`).",
+          "suggestion": "Consider adding an explicit check that rejects plan paths starting with numeric prefixes or other sorting-manipulation patterns, or document this as accepted behavior."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 74,
+          "endLine": 74,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The `wc -c` command on the staged plan provides byte count but no other validation. A plan containing only null bytes or binary content would pass this check.",
+          "suggestion": "Add a basic content validation (e.g., check for minimum Markdown structure or text content) after staging the plan."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 12,
+          "endLine": 14,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The description mentions 'plan-aware implementation review' but doesn't clearly state that this pass is advisory and doesn't affect the exit code.",
+          "suggestion": "Update the description to explicitly mention the advisory nature: 'Two-pass AI review... plus an advisory plan-aware implementation review...'"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 194,
+          "endLine": 194,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The plan references 'Phase 4's cost criterion' but the cost telemetry is actually implemented in Phase 3.",
+          "suggestion": "Correct the reference to 'Phase 3's cost telemetry implementation'."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "minor",
+          "category": "performance",
+          "description": "The `EXCLUDES` array is constructed conditionally but always declared as an array. This is fine but could be slightly optimized by only creating the array when needed.",
+          "suggestion": "Minor optimization: `EXCLUDES=()` is not needed when the plan is absent, though the current approach is clearer."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 107,
+          "endLine": 107,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The skip guard checks for empty file with `[ ! -s \"$RUNNER_TEMP/pr.diff\" ]` but doesn't verify the file actually exists (though it should from the previous step).",
+          "suggestion": "Add an explicit existence check: `if [ ! -s \"$RUNNER_TEMP/pr.diff\" ] && [ -f \"$RUNNER_TEMP/pr.diff\" ]; then`"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 348,
+          "endLine": 349,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The manual verification includes testing symlink rejection but no test for a plan that's a regular file containing a symlink path as content (not an actual symlink).",
+          "suggestion": "Add a test case for a plan file that contains text like 'symlink: /etc/passwd' to ensure content validation catches suspicious patterns."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 85,
+          "endLine": 86,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The research document mentions 'GitInject' but doesn't provide a full citation or link to the arXiv paper.",
+          "suggestion": "Add the full arXiv URL or DOI for the GitInject paper for better referenceability."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 107,
+          "endLine": 109,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The skip message is piped to `tee -a \"$GITHUB_STEP_SUMMARY\"` but the SKIP_REVIEW variable is set to '1' (string) rather than a boolean true value.",
+          "suggestion": "While this works with the `if: env.SKIP_REVIEW != '1'` check, consider using 'true' for consistency: `SKIP_REVIEW=true`."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "major": 1,
+          "minor": 6,
+          "nit": 3
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 3,
+          "documentation": 3,
+          "performance": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 9,
+      "startedAt": "2026-08-21T14:20:06.826Z",
+      "durationMs": 85500,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1677,
+        "totalTokens": 27000,
+        "cost": 0.00497564
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 119,
+          "endLine": 128,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Empty diff skip changes behavior significantly",
+          "suggestion": "PRs containing only plans and/or review documents will now skip the entire review instead of being reviewed. This may surprise users who expect these PRs to still generate review comments. Consider adding a deprecation notice or making this behavior configurable."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 66,
+          "endLine": 84,
+          "severity": "minor",
+          "category": "security",
+          "description": "Plan staging lacks size validation",
+          "suggestion": "Add a size check before staging the plan to prevent potential DoS if a malicious PR includes an extremely large plan file. Consider adding something like: `MAX_PLAN_SIZE=1048576 # 1MB limit` and checking the size before `git show`."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 115,
+          "endLine": 117,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Path exclusion might not handle all special characters",
+          "suggestion": "The path exclusion `:(exclude)${PLAN_PATH}` could fail if PLAN_PATH contains spaces or special characters that need escaping. Consider quoting it properly or using a more robust exclusion method."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 86,
+          "endLine": 104,
+          "severity": "minor",
+          "category": "security",
+          "description": "PR body parsing regex could be more restrictive",
+          "suggestion": "The character class `[A-Za-z0-9._/-]` allows dots and dashes but also allows multiple consecutive dots which could be used for path traversal attempts like `.... Consider tightening to `[A-Za-z0-9._-]` with additional validation."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 29,
+          "endLine": 33,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Input description could be more explicit about behavior",
+          "suggestion": "Add to the description: 'When empty, no implementation review will be performed and the review will behave as before this feature was added.'"
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "major": 1,
+          "minor": 3,
+          "nit": 1
+        },
+        "byCategory": {
+          "correctness": 2,
+          "security": 2,
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 10,
+      "startedAt": "2026-08-21T14:21:32.338Z",
+      "durationMs": 57056,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1519,
+        "totalTokens": 26842,
+        "cost": 0.00469914
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 50,
+          "endLine": 146,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The plan resolution logic is complex and has a potential issue with empty plan handling. When `PLAN_PATH` is set but the file is empty, it will still be treated as a valid plan. This could lead to unexpected behavior in the implementation review.",
+          "suggestion": "Add a check for empty plan files after staging: `if [ ! -s \"$RUNNER_TEMP/plan.md\" ]; then echo \"PLAN_PATH=\" >> \"$GITHUB_ENV\"; fi`"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 118,
+          "endLine": 125,
+          "severity": "minor",
+          "category": "performance",
+          "description": "The skip guard for plan-only PRs means these PRs won't receive any code review at all, even if they contain code changes outside the plan file.",
+          "suggestion": "Consider running the regular code review even for plan-only PRs, just skipping the implementation review pass."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 110,
+          "severity": "minor",
+          "category": "security",
+          "description": "The symlink protection is good but the mode check could be more explicit about what modes are acceptable.",
+          "suggestion": "Add a comment explaining why only 100644 and 100755 are accepted, and why 120000 (symlink) and 160000 (submodule) are rejected."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 9,
+          "endLine": 13,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The description update doesn't clearly indicate that this is a third pass that only runs when a plan is present.",
+          "suggestion": "Update description to be more explicit: 'Three-pass AI review (finder + judge + optional impl-review) over the PR diff...'"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 1,
+          "endLine": 554,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The plan document is very long (554 lines) which may make it difficult to maintain and understand.",
+          "suggestion": "Consider splitting this into multiple focused documents or adding a concise executive summary at the top."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 65,
+          "endLine": 83,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The PR body override regex uses `tr -d '\\r'` but doesn't handle other potential whitespace issues like trailing spaces or tabs.",
+          "suggestion": "Consider using `sed 's/[[:space:]]*$//'` to more robustly clean up the line before processing."
+        }
+      ],
+      "summary": {
+        "n": 6,
+        "bySeverity": {
+          "major": 1,
+          "minor": 4,
+          "nit": 1
+        },
+        "byCategory": {
+          "correctness": 2,
+          "performance": 1,
+          "security": 1,
+          "documentation": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 11,
+      "startedAt": "2026-08-21T14:22:29.405Z",
+      "durationMs": 131496,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1446,
+        "totalTokens": 26769,
+        "cost": 0.00457139
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 75,
+          "endLine": 78,
+          "severity": "major",
+          "category": "security",
+          "description": "Plan override regex allows relative paths with '.' segments",
+          "suggestion": "The regex `[A-Za-z0-9._/-]+` allows '.' which combined with the later `..` check could still allow paths like `a./b/plan.md`. Consider restricting '.' more strictly or using a whitelist approach."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 111,
+          "endLine": 113,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "EXCLUDES array could break on spaces in PLAN_PATH",
+          "suggestion": "While the array expansion is correct, consider quoting the pathspec or using printf to ensure safety: `EXCLUDES+=(':(exclude)\"$PLAN_PATH\"')`"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 115,
+          "endLine": 123,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "SKIP_REVIEW doesn't clear PLAN_PATH",
+          "suggestion": "When setting SKIP_REVIEW=1, also clear PLAN_PATH to maintain consistent state: `echo \"PLAN_PATH=\" >> \"$GITHUB_ENV\"`"
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 13,
+          "endLine": 13,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Outdated description still says 'Two-pass AI review'",
+          "suggestion": "Update description to mention the third pass: 'Three-pass AI review (finder + judge + implementation review)'"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Plan cap comment mentions 40KB but code uses 40,000",
+          "suggestion": "Make the comment match the code: '40,000 characters (≈40KB)'"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 418,
+          "endLine": 418,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "DEFAULT_IMPL_REVIEW_TIMEOUT_MS increased to 300s without updating the comment",
+          "suggestion": "Update the comment to reflect the new 300s (5 minute) timeout based on live evidence"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Cost ratio criterion blocked due to missing finder telemetry",
+          "suggestion": "Either add cost telemetry to finder/judge or restate the criterion to use absolute cost instead of ratio"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 549,
+          "endLine": 549,
+          "severity": "nit",
+          "category": "testing",
+          "description": "Manual test 1.11 not yet checked off",
+          "suggestion": "Verify the plan-only PR skip behavior before merging"
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "major": 1,
+          "minor": 5,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 1,
+          "correctness": 3,
+          "documentation": 2,
+          "testing": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 12,
+      "startedAt": "2026-08-21T14:24:40.905Z",
+      "durationMs": 83831,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1222,
+        "totalTokens": 26545,
+        "cost": 0.00417939
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 80,
+          "endLine": 95,
+          "severity": "major",
+          "category": "security",
+          "description": "PR body override extraction regex could be stricter to prevent injection",
+          "suggestion": "The sed regex for extracting Plan: override should anchor more strictly to prevent path traversal. Consider adding validation to ensure the resolved path is within expected directories."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 105,
+          "endLine": 115,
+          "severity": "minor",
+          "category": "security",
+          "description": "Symlink protection is good but could be more comprehensive",
+          "suggestion": "Consider also checking for hard links and ensuring the staged file size is reasonable to prevent potential resource exhaustion."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 125,
+          "endLine": 135,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Empty diff skip guard might skip reviews incorrectly",
+          "suggestion": "Add a check to ensure the exclusions didn't remove all files when there were actual changes. Consider logging what files were excluded for debugging."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 75,
+          "endLine": 95,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Plan resolution could have edge cases with multiple plans",
+          "suggestion": "Add a warning if multiple plan files are found in the diff, as this could indicate confusion about which plan should be used."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 85,
+          "endLine": 95,
+          "severity": "minor",
+          "category": "security",
+          "description": "Plan content passed as untrusted data needs sanitization",
+          "suggestion": "Consider adding a comment noting that plan content should be treated as untrusted and potentially sanitized before passing to the model."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 1,
+          "endLine": 10,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Plan files should include a security considerations section",
+          "suggestion": "Add a section to the plan template about security considerations when writing plans that will be processed by CI."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 140,
+          "endLine": 150,
+          "severity": "nit",
+          "category": "style",
+          "description": "Verbose comments could be more concise",
+          "suggestion": "Some comments are quite verbose and could be shortened while maintaining clarity."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "major": 2,
+          "minor": 4,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 2,
+          "documentation": 1,
+          "style": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 13,
+      "startedAt": "2026-08-21T14:26:04.743Z",
+      "durationMs": 72488,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1018,
+        "totalTokens": 26341,
+        "cost": 0.00382239
+      },
+      "findings": [
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 11,
+          "endLine": 11,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Description still references 'two-pass' review despite adding a third pass. Update to reflect three-pass architecture for accuracy.",
+          "suggestion": "Change 'two-pass AI review (finder + judge)' to 'three-pass AI review (finder + judge + implementation review)'"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 200,
+          "endLine": 200,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Cost telemetry for finder pass is not instrumented (no `cost` key in `finderTelemetry`), blocking verification of cost ratio criterion in Phase 4.",
+          "suggestion": "Add cost tracking to finder telemetry similar to impl-review pass, or adjust verification criterion to handle missing cost data."
+        },
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 94,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Refers to 'two-pass AI review' after adding third pass. Inconsistent with updated action description.",
+          "suggestion": "Update to 'three-pass AI review' to match action.yml and actual behavior."
+        }
+      ],
+      "summary": {
+        "n": 3,
+        "bySeverity": {
+          "nit": 2,
+          "minor": 1
+        },
+        "byCategory": {
+          "documentation": 2,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 14,
+      "startedAt": "2026-08-21T14:27:17.240Z",
+      "durationMs": 66871,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1346,
+        "totalTokens": 26669,
+        "cost": 0.00439639
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 53,
+          "endLine": 53,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Comment says 'Runs BEFORE the diff step' but this step is actually placed after the diff computation step in the workflow",
+          "suggestion": "Update the comment to accurately reflect the step's position in the workflow"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Comment mentions 'Two exclusions' but only one exclusion is explicitly defined in the array (the plan exclusion is added conditionally)",
+          "suggestion": "Update comment to say 'One exclusion with optional plan exclusion'"
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 9,
+          "endLine": 13,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Description is inconsistent: mentions 'A THIRD pass' but then says 'Two-pass AI review'",
+          "suggestion": "Update to 'Three-pass AI review' to accurately reflect the new implementation"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 64,
+          "endLine": 64,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The override regex uses `[A-Za-z0-9._/-]` which allows forward slashes but the comment says it excludes them to prevent path traversal",
+          "suggestion": "Either update the comment to clarify that forward slashes are allowed for valid paths, or adjust the regex if they should be excluded"
+        },
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 113,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The documentation could be more explicit about the security implications of reading plans from PR heads",
+          "suggestion": "Add a note emphasizing that plans are untrusted data despite looking like repository files"
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "minor": 5
+        },
+        "byCategory": {
+          "documentation": 4,
+          "correctness": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 15,
+      "startedAt": "2026-08-21T14:28:24.125Z",
+      "durationMs": 80360,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1516,
+        "totalTokens": 26839,
+        "cost": 0.00469389
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 71,
+          "endLine": 73,
+          "severity": "major",
+          "category": "security",
+          "description": "The regex for extracting plan path from PR body could be vulnerable to ReDoS with crafted input. The character class `[A-Za-z0-9._/-]` combined with the quantifier could lead to catastrophic backtracking.",
+          "suggestion": "Simplify the regex or use a more restrictive pattern that avoids nested quantifiers. Consider using a whitelist approach with explicit character validation."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 88,
+          "endLine": 108,
+          "severity": "major",
+          "category": "security",
+          "description": "The plan file staging doesn't validate file size before reading. A malicious PR could include a very large plan file that exhausts runner resources.",
+          "suggestion": "Add a size check using `git cat-file -s` before staging the plan, and reject files over a reasonable limit (e.g., 1MB)."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 94,
+          "endLine": 99,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The `git show` command failure handling is incomplete. If git show fails partway through writing the file, it could leave a partial file that might be processed.",
+          "suggestion": "Use atomic file writing (write to temp file then mv) or add a size/consistency check after git show completes."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 29,
+          "endLine": 33,
+          "severity": "minor",
+          "category": "security",
+          "description": "New input `impl-review-model` is passed through as environment variable without validation. An empty or malformed value could cause issues downstream.",
+          "suggestion": "Add basic validation to ensure the model name follows expected patterns (e.g., matches known model identifiers)."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 59,
+          "endLine": 86,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The plan resolution logic doesn't handle the case where multiple plans exist in the same PR. The sort -r | head -1 approach is deterministic but may not select the intended plan.",
+          "suggestion": "Add logging when multiple plans are detected to make the selection transparent, or consider failing explicitly when multiple plans exist."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "style",
+          "description": "The plan cap constant `PLAN_CAP_CHARS = 40_000` should be documented with rationale for why 40KB was chosen.",
+          "suggestion": "Add a comment explaining the 40KB limit based on observed plan sizes in the repository."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 135,
+          "endLine": 144,
+          "severity": "nit",
+          "category": "style",
+          "description": "The empty diff check uses `[ ! -s \"$RUNNER_TEMP/pr.diff\" ]` which could be clearer.",
+          "suggestion": "Add a comment explaining why an empty diff after exclusions means skipping the review."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "major": 3,
+          "minor": 2,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 2,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 16,
+      "startedAt": "2026-08-21T14:29:44.493Z",
+      "durationMs": 50371,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1221,
+        "totalTokens": 26544,
+        "cost": 0.00417764
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 76,
+          "endLine": 78,
+          "severity": "nit",
+          "category": "style",
+          "description": "The override regex uses `[A-Za-z0-9._/-]` which allows dots and hyphens anywhere in the path. While not a security issue (the path is used with git show), it's slightly permissive for a 'safe path set' - consider restricting dots/hyphens to not be at the start or end of path segments if this pattern is reused elsewhere.",
+          "suggestion": "Keep as-is for now since git show provides the safety boundary. Document why this pattern is intentionally permissive."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 107,
+          "endLine": 110,
+          "severity": "nit",
+          "category": "style",
+          "description": "The `EXCLUDES` array uses `:(exclude,glob)` for reviews but `:(exclude)` for the plan path. While both work, the inconsistency is unnecessary - git pathspecs accept `:(exclude,glob)` for single paths too.",
+          "suggestion": "Use `:(exclude,glob)` for both to maintain consistency, e.g., `\"${PLAN_PATH:+:(exclude,glob)${PLAN_PATH}}\"`."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 111,
+          "endLine": 111,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The comment references `getFileContext` allowlist, but recent changes suggest this tool's behavior may have evolved. If the allowlist still derives strictly from the diff, this comment is accurate; otherwise it could mislead future maintainers.",
+          "suggestion": "Verify the current implementation of `getFileContext` and update the comment if needed."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 318,
+          "endLine": 318,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The plan states 'The judge already proves the shape' and references `createJudge` using `maxRetries: 0`. However, the pipeline wraps all passes with `withOneRetry`, meaning the judge effectively gets one retry. This discrepancy could confuse readers about the actual retry behavior.",
+          "suggestion": "Clarify that while the agent itself uses `maxRetries: 0`, the pipeline provides a single retry wrapper, making the effective retry count 1."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 524,
+          "endLine": 524,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The timeout calibration note mentions 'finder's budget' as the reference class, but the finder uses a 5-step loop budget while this is a single-call timeout. The comparison may not be direct - the finder's total time could exceed a single call's timeout.",
+          "suggestion": "Rephrase to clarify that the finder's total runtime (up to 5 generations) was observed to stay within 120s, making it a practical reference despite the different budgeting model."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 58,
+          "endLine": 58,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The brief mentions 'plan-only PRs lose their code review entirely' but this is actually a feature, not a regression. Wording could be clearer that this is intentional behavior to avoid reviewing non-code changes.",
+          "suggestion": "Rephrase as 'Plan-only PRs skip all review (both code and implementation) as an intentional narrowing'."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "startLine": 67,
+          "endLine": 67,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The decision table lists 'SourceProvider seam left unwired' but the plan later shows this seam is accepted but ignored. 'Unwired' could imply it's not plumbed at all, which isn't quite accurate.",
+          "suggestion": "Change to 'SourceProvider parameter accepted but ignored' for precision."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 295,
+          "endLine": 295,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The research mentions 'this repo has direct evidence of a model fetching the right file and still missing the point' but doesn't cite which evaluation or PR showed this. Future readers would benefit from the reference.",
+          "suggestion": "Add a brief parenthetical reference to the specific evaluation (e.g., 'finder-tool-loop-evals') if space permits."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "nit": 5,
+          "minor": 3
+        },
+        "byCategory": {
+          "style": 2,
+          "correctness": 3,
+          "documentation": 3
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 17,
+      "startedAt": "2026-08-21T14:30:34.868Z",
+      "durationMs": 214153,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 3917,
+        "totalTokens": 29240,
+        "cost": 0.00889564
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 77,
+          "endLine": 79,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The sed regex for extracting Plan: override uses `\\.` for the literal dot, which is correct but unnecessary in a character class where `.` already matches a literal dot. While this works, it's slightly inconsistent with the rest of the pattern.",
+          "suggestion": "Consider using `[A-Za-z0-9._/-]` without escaping the dot for consistency, since `.` is not special inside a character class."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 53,
+          "endLine": 90,
+          "severity": "nit",
+          "category": "style",
+          "description": "The plan resolution step uses three separate git commands when this could be combined into fewer operations for efficiency.",
+          "suggestion": "Consider combining the git diff and sort into a single pipeline, though the current approach is more readable and the performance impact is negligible for the expected file counts."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 100,
+          "endLine": 115,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The staging step removes the plan file on read failure but doesn't explicitly remove it on mode rejection, potentially leaving a stale plan file from a previous run.",
+          "suggestion": "Add `rm -f \"$RUNNER_TEMP/plan.md\"` in the `*` case to ensure cleanup even when the mode is rejected."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 12,
+          "endLine": 15,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The action description could be more explicit about when the third pass runs.",
+          "suggestion": "Update the description to: 'Two-pass AI review (finder + judge) over the PR diff, plus an optional plan-aware implementation review when a plan file is provided; posts a sticky scorecard comment and flips ai-cr:* labels.'"
+        }
+      ],
+      "summary": {
+        "n": 4,
+        "bySeverity": {
+          "minor": 2,
+          "nit": 2
+        },
+        "byCategory": {
+          "correctness": 2,
+          "style": 1,
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 18,
+      "startedAt": "2026-08-21T14:34:09.033Z",
+      "durationMs": 122250,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1862,
+        "totalTokens": 27185,
+        "cost": 0.00529939
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 103,
+          "endLine": 104,
+          "severity": "minor",
+          "category": "security",
+          "description": "The sed regex character class `[A-Za-z0-9._/-]` places hyphen at the end where it's unambiguous, but for clarity and maintainability, it should be escaped or moved to avoid any potential interpretation as a range operator.",
+          "suggestion": "Change to `[A-Za-z0-9._/-]` → `[A-Za-z0-9._\\-/]` or `[A-Za-z0-9./_-]`"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 140,
+          "endLine": 141,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The EXCLUDES array correctly uses quoted expansion to handle paths with spaces, but the comment about word-splitting could be clearer about why the array approach is necessary.",
+          "suggestion": "Add a more explicit comment: '# Array required: unquoted expansion would word-split paths containing spaces'"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 114,
+          "endLine": 118,
+          "severity": "nit",
+          "category": "style",
+          "description": "The traversal check only looks for `..` segments but doesn't explicitly check for absolute paths (though the regex would reject them).",
+          "suggestion": "Add an explicit check for absolute paths: `case \"$OVERRIDE\" in /*|*..*) echo \"override candidate rejected (invalid path)\" ;;`"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 317,
+          "endLine": 317,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The plan mentions `DEFAULT_IMPL_REVIEW_TIMEOUT_MS = 120_000` but then notes it was recalibrated to `300_000` based on live evidence. This could confuse future readers.",
+          "suggestion": "Update the constant definition to show the final value: `DEFAULT_IMPL_REVIEW_TIMEOUT_MS = 300_000` with a comment about the recalibration"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 549,
+          "endLine": 549,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Manual testing step 1.11 for plan-only PRs is marked as pending, but this is a critical edge case that could cause regressions.",
+          "suggestion": "Ensure this test is completed before merging, as plan-only PRs skipping review is a significant behavior change"
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "minor": 4,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 1,
+          "correctness": 1,
+          "style": 1,
+          "documentation": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 19,
+      "startedAt": "2026-08-21T14:36:11.292Z",
+      "durationMs": 86029,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 2153,
+        "totalTokens": 27476,
+        "cost": 0.00580864
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 67,
+          "endLine": 70,
+          "severity": "critical",
+          "category": "security",
+          "description": "Git ref injection vulnerability - BASE_REF from PR event used without validation",
+          "suggestion": "Validate BASE_REF against expected branch name pattern before using in git commands"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 108,
+          "severity": "major",
+          "category": "security",
+          "description": "Partial file write risk - git show failure could leave truncated plan file",
+          "suggestion": "Write to temp file first, then atomic move after successful read"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 67,
+          "endLine": 84,
+          "severity": "major",
+          "category": "testing",
+          "description": "Security-sensitive plan resolution logic has no tests",
+          "suggestion": "Add unit tests for plan resolution edge cases (malicious refs, symlink plans, etc.)"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 67,
+          "endLine": 84,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Plan resolution may find stale plans in archive",
+          "suggestion": "Add date check to ignore plans older than merge base"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 67,
+          "endLine": 84,
+          "severity": "major",
+          "category": "documentation",
+          "description": "Security decisions lack inline documentation",
+          "suggestion": "Add comments explaining threat model and why Git object staging is required"
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 25,
+          "endLine": 33,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent input description format",
+          "suggestion": "Standardize 'maps to ENV_VAR' pattern across all inputs"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 67,
+          "endLine": 70,
+          "severity": "minor",
+          "category": "performance",
+          "description": "Git command could be optimized",
+          "suggestion": "Use --diff-filter=d to only consider added files when looking for plans"
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "critical": 1,
+          "major": 3,
+          "minor": 2,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 2,
+          "testing": 1,
+          "correctness": 1,
+          "documentation": 1,
+          "style": 1,
+          "performance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 20,
+      "startedAt": "2026-08-21T14:37:37.330Z",
+      "durationMs": 52403,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1310,
+        "totalTokens": 26633,
+        "cost": 0.00433339
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 90,
+          "severity": "major",
+          "category": "security",
+          "description": "Empty-diff skip guard allows PRs with only plans/review documents to bypass review entirely. While documented as intentional, this creates a potential bypass vector where malicious actors could include minimal code changes alongside plans to evade scrutiny.",
+          "suggestion": "Add a minimum size threshold (e.g., 100 bytes) to prevent completely empty diffs from skipping review, or log such skips prominently for audit."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 65,
+          "endLine": 66,
+          "severity": "minor",
+          "category": "style",
+          "description": "Array construction for EXCLUDES uses conditional addition which is correct but verbose.",
+          "suggestion": "Consider using: `EXCLUDES=(':(exclude,glob)**/reviews/*.md' ${PLAN_PATH:+\":(exclude)${PLAN_PATH}\"})` for conciseness."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "PLAN_CAP_CHARS constant (40,000) lacks justification comment.",
+          "suggestion": "Add comment explaining this is based on measured plan sizes (20-31KB) with headroom, referencing the research findings."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 32,
+          "endLine": 36,
+          "severity": "nit",
+          "category": "style",
+          "description": "New impl-review-model input could benefit from validation pattern matching other inputs.",
+          "suggestion": "Add a validation regex similar to other model inputs if appropriate, or add a comment explaining why validation isn't needed."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 118,
+          "endLine": 119,
+          "severity": "nit",
+          "category": "style",
+          "description": "Repetitive conditional pattern for plan-file could be extracted.",
+          "suggestion": "Consider creating a reusable workflow step or composite action for plan staging to reduce duplication."
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "major": 1,
+          "minor": 2,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 1,
+          "style": 3,
+          "documentation": 1
+        }
+      },
+      "error": null
+    }
+  ]
+}
