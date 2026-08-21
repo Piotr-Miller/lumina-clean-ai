@@ -461,26 +461,26 @@ None — no production code changes. The stale probe keeps working; only its hea
 
 #### Automated
 
-- [x] 1.1 Package lint + typecheck + tests pass (incl. capDiff parity + grader hermetic tests)
-- [x] 1.2 Dry-run byte anchors reproduce 215,560 (ci) and 266,444 (instrument)
-- [x] 1.3 CI base manifest names impl-reviewer.test.ts as cut file, impl-reviewer.ts over-cap
-- [x] 1.4 Grader schema dump free of oneOf/anyOf/$ref
+- [x] 1.1 Package lint + typecheck + tests pass (incl. capDiff parity + grader hermetic tests) — 4e42d6b
+- [x] 1.2 Dry-run byte anchors reproduce 215,560 (ci) and 266,444 (instrument) — 4e42d6b
+- [x] 1.3 CI base manifest names impl-reviewer.test.ts as cut file, impl-reviewer.ts over-cap — 4e42d6b
+- [x] 1.4 Grader schema dump free of oneOf/anyOf/$ref — 4e42d6b
 
 #### Manual
 
-- [x] 1.5 Ground-truth inventories reviewed against research.md §2
+- [x] 1.5 Ground-truth inventories reviewed against research.md §2 — 4e42d6b (impl-review F6 correction included)
 
 ### Phase 2: Pre-registration
 
 #### Automated
 
-- [ ] 2.1 Prettier clean on verification.md + ground-truth files
-- [ ] 2.2 All four rung --dry manifests generated and summarized in ground-truth files
+- [x] 2.1 Prettier clean on verification.md + ground-truth files
+- [x] 2.2 All four rung --dry manifests generated and summarized in ground-truth files
 
 #### Manual
 
-- [ ] 2.3 Rubric wording (base + every rung) independently reviewed and frozen before any spend
-- [ ] 2.4 Pre-registration commit lands before any Phase 3 run
+- [x] 2.3 Rubric wording (base + every rung) independently reviewed and frozen before any spend
+- [x] 2.4 Pre-registration commit lands before any Phase 3 run (this commit)
 
 ### Phase 3: Baselines (paid)
 

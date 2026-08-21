@@ -1,0 +1,9 @@
+packages/code-reviewer/src/cli.ts:98-102 (unchanged by this diff — the
+definition of logSafePath, whose call and explanatory comment appear in the
+diff's cli.ts hunks):
+
+// The path is model-chosen and untrusted: control characters (newlines, ANSI
+// escapes) would let an injection-steered model forge or restyle telemetry
+// lines in the Actions log (impl-review-full F4). Matched via the Cc Unicode
+// property (C0 + DEL + C1) so no control literal appears in the source.
+const logSafePath = (path: string): string => path.replace(/\p{Cc}/gu, "?");
