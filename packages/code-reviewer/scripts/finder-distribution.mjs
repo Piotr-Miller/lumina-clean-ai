@@ -1,3 +1,18 @@
+// ⚠️ DEPRECATED for any new measurement — use fabrication-probe.mjs instead.
+//
+// Kept only as the documentation trail of the archived change
+// `finder-security-vocabulary-bias` (its numbers were produced by THIS recipe).
+// Four divergences from what CI's finder actually sees, found by
+// `finder-fabrication-triggers` research (research.md §5):
+//   1. two-dot `<sha>^1 <sha>` vs CI's three-dot `origin/master...HEAD`
+//   2. missing CI's `**/results/*.json` exclusion (added in #146, after this
+//      script's only commit)
+//   3. missing CI's plan-path exclusion — on #127 this alone moves the 100 KB
+//      cut by ~38 KB and removes ALL source files from the finder's view
+//   4. re-implemented capDiff copy (capDiff is exported now — import it)
+// It also captures no finding text, computes no cost, and resolves the model
+// from the legacy OPENROUTER_MODEL env var that CI does not set.
+//
 // Research instrument for `finder-security-vocabulary-bias`.
 //
 // Question: does the finder's collapse to a uniform critical/security finding set
