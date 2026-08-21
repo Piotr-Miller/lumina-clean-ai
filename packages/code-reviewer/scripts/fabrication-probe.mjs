@@ -48,6 +48,23 @@ const FINDER_TIMEOUT_MS = 300_000;
 // ceiling in one interrupted invocation (review F3).
 export const MAX_ARM_ATTEMPTS = 20;
 
+// Amendment A1 (2026-08-21, before any gradeable observation): unpinned
+// OpenRouter routing spread glm-4.6 across five upstreams and produced 4/4
+// calibration failures with three DISTINCT malformed envelopes. The finder
+// is pinned to Venice's fp4 endpoint — the only healthy glm-4.6 endpoint
+// advertising `structured_outputs` (server-enforced strict JSON Schema);
+// schema enforcement is required for the instrument to produce a measurable
+// outcome. Fallbacks off, require_parameters on; every run records the
+// serving provider. Campaign claims are scoped to glm-4.6 served by Venice
+// fp4 and must not be generalized to bf16 or unpinned routing. See
+// verification.md "Amendment A1".
+export const PINNED_PROVIDER = {
+  order: ["venice"],
+  allow_fallbacks: false,
+  require_parameters: true,
+  quantizations: ["fp4"],
+};
+
 const CI_BASE = "e8ebb66";
 const CI_HEAD = "9c49a0c";
 const INSTRUMENT_SHA = "7c9c12f";
@@ -323,6 +340,7 @@ async function main() {
       if (next === undefined) return;
       usage[key] = (usage[key] ?? 0) + next;
     };
+    let servedBy = null;
     const onStepEnd = (step) => {
       usage.steps += 1;
       accumulate("inputTokens", step.usage?.inputTokens);
@@ -331,6 +349,9 @@ async function main() {
       const cost = asStepCost(step.providerMetadata);
       if (cost === undefined) usage.costUnknownSteps = (usage.costUnknownSteps ?? 0) + 1;
       else usage.cost = (usage.cost ?? 0) + cost;
+      // Amendment A1: record which upstream actually served the call.
+      const provider = step.providerMetadata?.openrouter?.provider;
+      if (typeof provider === "string" && provider !== "") servedBy = provider;
     };
     const startedAt = new Date().toISOString();
     const t0 = performance.now();
@@ -347,6 +368,7 @@ async function main() {
         inputSha256: manifest.inputSha256,
         sentBytes: manifest.sentBytes,
       },
+      provider: null,
       usage,
       findings: null,
       summary: null,
@@ -356,6 +378,7 @@ async function main() {
       const { review } = createReviewer({
         model: FINDER_MODEL,
         projectContext: projectContext || undefined,
+        providerRouting: PINNED_PROVIDER,
         onStepEnd,
       });
       const result = await review({ kind: "diff", diff: sent }, { timeoutMs: FINDER_TIMEOUT_MS });
@@ -373,12 +396,15 @@ async function main() {
       };
     }
     record.durationMs = Math.round(performance.now() - t0);
+    record.provider = servedBy;
     runs.push(record);
     checkpoint(false);
     const tag = record.error ? `FAILED ${record.error.name}` : `n=${String(record.summary.n)}`;
     const costTag = usage.cost === undefined ? "unknown" : `$${usage.cost.toFixed(6)}`;
     const tokensTag = usage.totalTokens === undefined ? "unknown" : String(usage.totalTokens);
-    console.log(`run ${String(i)}/${String(n)}: ${tag}  cost=${costTag} tokens=${tokensTag} ${String(record.durationMs)}ms`);
+    console.log(
+      `run ${String(i)}/${String(n)}: ${tag}  provider=${servedBy ?? "unknown"} cost=${costTag} tokens=${tokensTag} ${String(record.durationMs)}ms`,
+    );
   }
 
   checkpoint(true);

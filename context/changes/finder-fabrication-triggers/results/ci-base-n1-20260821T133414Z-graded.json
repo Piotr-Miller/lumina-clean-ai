@@ -1,0 +1,188 @@
+{
+  "source": "../../context/changes/finder-fabrication-triggers/results/ci-base-n1-20260821T133414Z.json",
+  "manifest": "../../context/changes/finder-fabrication-triggers/results/ci-base-n1-20260821T133414Z-manifest.json",
+  "groundTruth": {
+    "path": "context/changes/finder-fabrication-triggers/ground-truth/ci.md",
+    "sha256": "12fceadb423bb6130f1512773f360f3610515fbe6178d783cd46b7c34695e820"
+  },
+  "graderModel": "google/gemini-3.1-pro-preview",
+  "inputsSha256": "719e2db40c7b1701e62f16ed5e5cf48cb76545efcc696ada689dcf6fd7267609",
+  "complete": true,
+  "graderUsage": {
+    "calls": 9,
+    "failed": 1,
+    "costKnownCalls": 8,
+    "inputTokens": 26182,
+    "outputTokens": 9799,
+    "cost": 0.169952
+  },
+  "totals": {
+    "runs": 1,
+    "gradeable": 1,
+    "fabricationRuns": 1,
+    "m1Runs": 0,
+    "byMechanism": {
+      "M1": 0,
+      "M2": 0,
+      "M3": 3,
+      "none": 5
+    }
+  },
+  "perRun": [
+    {
+      "run": 1,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 3,
+        "none": 5
+      },
+      "fabrication": true,
+      "m1": false
+    }
+  ],
+  "perFile": {
+    ".github/workflows/review.yml": {
+      "findings": 3,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 3
+      }
+    },
+    "packages/code-reviewer/src/cli.ts": {
+      "findings": 2,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 1
+      }
+    },
+    "packages/code-reviewer/src/impl-reviewer.ts": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 0
+      }
+    },
+    "packages/code-reviewer/src/pipeline.ts": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 0
+      }
+    },
+    "packages/code-reviewer/src/config.ts": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 1
+      }
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding correctly identifies the existing regex and the subsequent check for '..', and merely suggests an improvement to tighten the regex, which falls under 'suggests improvements to an existing defence'.",
+          "usage": {
+            "inputTokens": 3316,
+            "outputTokens": 820,
+            "cost": 0.016472
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out a lack of error handling for 'git show' in the workflow file, which does not match any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 3296,
+            "outputTokens": 274,
+            "cost": 0.00988
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding mentions exit code handling and the SKIP_REVIEW variable in the workflow, which is unrelated to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 3279,
+            "outputTokens": 265,
+            "cost": 0.009738
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding flags a defect with the D3 defence by noting that 'logSafePath' is referenced but not defined in the visible code. The function's call is in-window but its definition is off-diff, making this a locality gap issue.",
+          "usage": {
+            "inputTokens": 3268,
+            "outputTokens": 530,
+            "cost": 0.012896
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding raises a consistency and style concern regarding how PLAN_PATH is treated compared to other inputs, rather than falsely claiming the sanitization defense is missing.",
+          "usage": {
+            "inputTokens": 3265,
+            "outputTokens": 444,
+            "cost": 0.011858
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding cites a specific file and line (`packages/code-reviewer/src/impl-reviewer.ts`, line 1) that is completely outside the window (over-cap in the base rung).",
+          "usage": {
+            "inputTokens": 3256,
+            "outputTokens": 1285,
+            "cost": 0.021932
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding cites specific code (`packages/code-reviewer/src/pipeline.ts` at line 1) that is entirely outside the window (in the over-cap list), directly matching the M3 criteria for citing off-window files.",
+          "usage": {
+            "inputTokens": 3249,
+            "outputTokens": 6020,
+            "cost": 0.078738
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a style concern about comment length in `config.ts`, which is unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 3253,
+            "outputTokens": 161,
+            "cost": 0.008438
+          }
+        }
+      ]
+    }
+  ]
+}

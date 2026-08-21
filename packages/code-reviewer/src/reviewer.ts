@@ -1,4 +1,4 @@
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createOpenRouter, type OpenRouterChatSettings } from "@openrouter/ai-sdk-provider";
 import { isStepCount, tool, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 import { z } from "zod";
 
@@ -64,6 +64,13 @@ export interface ReviewerOptions {
    * ground only — e.g. the base branch, not the PR head.
    */
   projectContext?: string;
+  /**
+   * OpenRouter provider routing (order / fallbacks / require_parameters /
+   * quantizations) for the review calls. Campaign tooling pins a single
+   * upstream here to make provider-scoped claims (fabrication campaign
+   * amendment A1); production leaves it unset — default routing.
+   */
+  providerRouting?: OpenRouterChatSettings["provider"];
 }
 
 export interface ReviewCallOptions {
@@ -138,7 +145,10 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // describeFinderStep's `cost` is permanently undefined and every eval row
     // reports 0, which is exactly the blind spot #119 shipped with. Free:
     // accounting adds response fields, not tokens.
-    model: openrouter(model, { usage: { include: true } }),
+    model: openrouter(model, {
+      usage: { include: true },
+      ...(options.providerRouting ? { provider: options.providerRouting } : {}),
+    }),
     // See MAX_OUTPUT_TOKENS. NOTE this bounds each generation in the tool
     // loop, not the run total — a multi-step finder run can emit more
     // overall, which is fine: the reservation is per call.

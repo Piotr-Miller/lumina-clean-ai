@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import {
   aggregateGrades,
+  allVerdictsSettled,
   assertFlatVerdictSchema,
   assertRunIdentity,
   buildGradePrompt,
@@ -247,6 +248,17 @@ describe("aggregateGrades", () => {
       { run: 2, error: null, verdicts: [v("none")] },
     ]);
     expect(totals).toMatchObject({ runs: 2, gradeable: 1, fabricationRuns: 0 });
+  });
+});
+
+describe("allVerdictsSettled", () => {
+  const settled = { file: "f", severity: "minor", mechanism: "none", reason: "r" };
+  const errored = { file: "f", severity: "minor", error: { name: "TimeoutError" } };
+
+  it("treats finder-errored runs as terminal but errored verdicts as unsettled", () => {
+    expect(allVerdictsSettled([{ run: 1, error: { name: "NoFindings" }, verdicts: null }])).toBe(true);
+    expect(allVerdictsSettled([{ run: 1, error: null, verdicts: [settled] }])).toBe(true);
+    expect(allVerdictsSettled([{ run: 1, error: null, verdicts: [settled, errored] }])).toBe(false);
   });
 });
 

@@ -1,0 +1,124 @@
+{
+  "variant": "ci",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260821T133414Z",
+  "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "719e2db40c7b1701e62f16ed5e5cf48cb76545efcc696ada689dcf6fd7267609",
+  "plannedAttempts": 1,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-21T13:34:14.056Z",
+      "durationMs": 34294,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25025,
+        "outputTokens": 972,
+        "totalTokens": 25997,
+        "cost": 0.01246175
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 67,
+          "endLine": 67,
+          "severity": "critical",
+          "category": "security",
+          "description": "The regex for extracting Plan: override allows path traversal via '..' segments. While there's a later check for '..' in the case statement, the regex itself should be tightened to prevent traversal at the source.",
+          "suggestion": "Update the regex to explicitly disallow '..' sequences: 's#^[[:space:]]*Plan:[[:space:]]+(context/(changes|archive)/[A-Za-z0-9._/-]+/plan\\.md)[[:space:]]*$#\\1#p'"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 95,
+          "severity": "major",
+          "category": "security",
+          "description": "The script uses bare 'git show' without error handling in a context where 'set -e' is active. A git show failure (corrupt object, disk full) would fail the entire step, contradicting the contract that read failures degrade to 'no plan'.",
+          "suggestion": "Wrap git show in an if statement or use 'git show ... || echo \"plan read failed\"' to ensure failures are handled gracefully"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 113,
+          "endLine": 113,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The exit code handling for the empty-diff case sets SKIP_REVIEW=1 but doesn't explicitly exit, which could lead to unexpected behavior if subsequent steps don't properly check this variable.",
+          "suggestion": "Add an explicit 'exit 0' after setting SKIP_REVIEW=1 to make the skip behavior unambiguous"
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 233,
+          "endLine": 233,
+          "severity": "minor",
+          "category": "security",
+          "description": "The logSafePath function is referenced but not defined in the visible code. This could lead to runtime errors if PLAN_PATH contains control characters.",
+          "suggestion": "Ensure logSafePath is properly imported or defined, or replace with a simpler sanitization approach"
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 208,
+          "endLine": 208,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment mentions 'PLAN_PATH is display metadata and equally untrusted' but the code treats it differently from other untrusted inputs.",
+          "suggestion": "Consider consistent handling of all untrusted inputs or clarify why PLAN_PATH is treated differently"
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The implementation reviewer lacks inline documentation explaining its purpose and how it differs from the regular reviewer.",
+          "suggestion": "Add a header comment explaining that this pass judges the diff against a plan and is advisory-only"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The new implementation review pass lacks dedicated unit tests covering the interaction between plan and diff inputs.",
+          "suggestion": "Add tests verifying that the implementation reviewer correctly handles various plan/diff combinations"
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 30,
+          "endLine": 30,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment explaining why sonnet-5 is the default is quite long and could be more concise.",
+          "suggestion": "Consider moving the detailed rationale to documentation and keeping a brief comment in code"
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "critical": 1,
+          "major": 1,
+          "minor": 4,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 1,
+          "style": 2,
+          "documentation": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    }
+  ]
+}

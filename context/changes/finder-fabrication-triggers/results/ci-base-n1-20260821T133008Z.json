@@ -1,0 +1,35 @@
+{
+  "variant": "ci",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260821T133008Z",
+  "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "719e2db40c7b1701e62f16ed5e5cf48cb76545efcc696ada689dcf6fd7267609",
+  "plannedAttempts": 1,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-21T13:30:08.621Z",
+      "durationMs": 345,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030
+      },
+      "provider": null,
+      "usage": {
+        "steps": 0
+      },
+      "findings": null,
+      "summary": null,
+      "error": {
+        "name": "AI_APICallError",
+        "message": "No endpoints found that can handle the requested parameters. To learn more about provider routing, visit: https://openrouter.ai/docs/guides/routing/provider-selection"
+      }
+    }
+  ]
+}

@@ -176,6 +176,16 @@ export function reusableVerdict(checkpointRun, findingIndex, finding) {
 }
 
 /**
+ * A graded file is COMPLETE only when every verdict is settled:
+ * finder-errored runs are terminal, but a run holding an errored VERDICT can
+ * still be resumed — stamping the file complete would strand it ungradeable
+ * forever behind the no-re-grade gate.
+ */
+export function allVerdictsSettled(runs) {
+  return runs.every((run) => run.error !== null || run.verdicts.every((v) => v.mechanism !== undefined));
+}
+
+/**
  * Aggregates graded runs into the campaign's counters. A run is gradeable iff
  * it produced findings and every finding got a verdict; a run with zero
  * findings is gradeable and clean by construction. Runs still flagged
@@ -407,7 +417,9 @@ async function main() {
     console.log(`run ${String(run.run)}: ${String(verdicts.length)} findings graded, ${String(flagged)} flagged`);
   }
 
-  const totals = checkpoint(true);
+  const settled = allVerdictsSettled(gradedRuns);
+  const totals = checkpoint(settled);
+  if (!settled) console.log("\nNOT COMPLETE: errored verdicts remain — re-run to resume and re-attempt only those.");
   console.log(`\n${JSON.stringify(totals)}`);
   const unknownCostCalls = graderUsage.calls - graderUsage.costKnownCalls;
   console.log(

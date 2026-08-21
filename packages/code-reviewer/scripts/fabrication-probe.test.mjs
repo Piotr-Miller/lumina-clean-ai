@@ -3,7 +3,18 @@
 // a single paid call can start. No network, no API key.
 import { describe, expect, it } from "vitest";
 
-import { MAX_ARM_ATTEMPTS, parseArgs } from "./fabrication-probe.mjs";
+import { MAX_ARM_ATTEMPTS, parseArgs, PINNED_PROVIDER } from "./fabrication-probe.mjs";
+
+describe("PINNED_PROVIDER (amendment A1)", () => {
+  it("pins the single schema-enforcing upstream with fallbacks off and parameter support required", () => {
+    expect(PINNED_PROVIDER).toEqual({
+      order: ["venice"],
+      allow_fallbacks: false,
+      require_parameters: true,
+      quantizations: ["fp4"],
+    });
+  });
+});
 
 describe("parseArgs", () => {
   it("accepts the largest pre-registered arm size", () => {

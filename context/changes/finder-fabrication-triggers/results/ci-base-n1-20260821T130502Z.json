@@ -1,0 +1,40 @@
+{
+  "variant": "ci",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260821T130502Z",
+  "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "719e2db40c7b1701e62f16ed5e5cf48cb76545efcc696ada689dcf6fd7267609",
+  "plannedAttempts": 1,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-21T13:05:02.394Z",
+      "durationMs": 58382,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030
+      },
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25027,
+        "outputTokens": 2360,
+        "totalTokens": 27387,
+        "cost": 0.0079778
+      },
+      "findings": null,
+      "summary": null,
+      "error": {
+        "name": "AI_NoObjectGeneratedError",
+        "message": "No object generated: response did not match schema.",
+        "text": "{\n  \"critical\": [\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 75,\n      \"endLine\": 102,\n      \"issue\": \"The plan staging step uses `git show` to read the plan blob without adequate validation against path traversal. While the mode check rejects symlinks, an attacker could craft a path like `context/changes/../../../etc/passwd` that resolves outside the repo. The `ls-tree` mode check happens after path resolution, potentially allowing traversal to arbitrary files. This could leak sensitive files into the review prompt.\",\n      \"justification\": \"Path traversal allows reading files outside the intended scope, potentially exposing secrets or system files. The current check order is unsafe.\"\n    },\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 50,\n      \"endLine\": 69,\n      \"issue\": \"The PR body override regex for plan path allows insufficient validation. While it anchors to `context/` and `plan.md`, it permits `../` sequences within the path segments, enabling path traversal attacks. An attacker could use `Plan: context/changes/../../../etc/passwd/plan.md` to bypass the intended directory structure.\",\n      \"justification\": \"Path traversal in the PR body override could redirect plan resolution to arbitrary files, compromising the trust boundary.\"\n    }\n  ],\n  \"major\": [\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 106,\n      \"endLine\": 119,\n      \"issue\": \"The diff exclusion logic uses an array that could be word-split if PLAN_PATH contains spaces. While the code correctly uses an array to avoid word-splitting, it doesn't handle spaces in other excluded patterns. This could cause the diff command to fail or exclude unintended paths.\",\n      \"justification\": \"Incorrect path exclusion could either leak sensitive files in the diff or cause the review step to fail unexpectedly.\"\n    },\n    {\n      \"file\": \"packages/code-reviewer/src/cli.ts\",\n      \"startLine\": 217,\n      \"endLine\": 228,\n      \"issue\": \"The plan text length logging uses `String(planText.length)` which could be manipulated by an attacker through control characters or zero-width characters in the plan file. While not directly exploitable, this could obscure the true size of the plan in logs.\",\n      \"justification\": \"Obfuscation of plan size in telemetry could hinder detection of unusually large plans that might cause context overflow or increased costs.\"\n    }\n  ],\n  \"minor\": [\n    {\n      \"file\": \"packages/code-reviewer/src/config.ts\",\n      \"startLine\": 25,\n      \"endLine\": 25,\n      \"issue\": \"The DEFAULT_IMPL_REVIEW_MODEL constant is duplicated from DEFAULT_JUDGE_MODEL. While intentionally separate for tunability, this creates maintenance overhead and risk of divergence. Consider using a shared constant with documentation.\",\n      \"justification\": \"Code duplication increases maintenance burden and risk of configuration drift.\"\n    },\n    {\n      \"file\": \".github/workflows/review.yml\",\n      \"startLine\": 95,\n      \"endLine\": 95,\n      \"issue\": \"The error message for symlink rejection includes the raw mode value, which could leak information about the repository structure. While not sensitive, this is unnecessary disclosure.\",\n      \"justification\": \"Information disclosure in error messages should be minimized to avoid revealing system details.\"\n    }\n  ],\n  \"nit\": [\n    {\n      \"file\": \".github/actions/ai-review/action.yml\",\n      \"startLine\": 12,\n      \"endLine\": 16,\n      \"issue\": \"The description line is very long (137 chars). Consider breaking it into multiple lines for better readability.\",\n      \"justification\": \"Long lines reduce readability in YAML files.\"\n    },\n    {\n      \"file\": \"packages/code-reviewer/src/cli.ts\",\n      \"startLine\": 65,\n      \"endLine\": 65,\n      \"issue\": \"Usage string doesn't alphabetize the new --plan-file flag with other options. Consistent ordering improves usability.\",\n      \"justification\": \"Inconsistent flag ordering in help text creates minor UX friction.\"\n    }\n  ],\n  \"testing\": [\n    {\n      \"file\": \"packages/code-reviewer/src/cli.test.ts\",\n      \"startLine\": 104,\n      \"endLine\": 112,\n      \"issue\": \"The test for valueless --plan-file only checks the error message but doesn't verify that the process exits with code 1. While the expect statement checks the return value, the test name should reflect this behavior more explicitly.\",\n      \"justification\": \"Test naming should clearly indicate all verified behaviors to serve as documentation.\"\n    },\n    {\n      \"file\": \"packages/code-reviewer/src/cli.test.ts\",\n      \"startLine\": 427,\n      \"endLine\": 531,\n      \"issue\": \"The impl review telemetry tests don't cover the case where telemetry exists but has undefined values for tokens or cost. This could happen if the provider partially reports metrics.\",\n      \"justification\": \"Missing test coverage for edge cases in telemetry formatting could lead to runtime errors or misleading output.\"\n    }\n  ],\n  \"documentation\": [\n    {\n      \"file\": \"AGENTS.md\",\n      \"startLine\": 94,\n      \"endLine\": 102,\n      \"issue\": \"The documentation doesn't clearly explain why the implementation review is advisory and doesn't affect labels. This design decision should be explicitly documented to prevent future confusion about the pass's impact.\",\n      \"justification\": \"Key design decisions should be documented to prevent misunderstanding of system behavior.\"\n    },\n    {\n      \"file\": \"context/changes/impl-review-ci-agent/plan-brief.md\",\n      \"startLine\": 50,\n      \"endLine\": 50,\n      \"issue\": \"The plan brief references a verification.md file but doesn't explain its purpose or location relative to the plan. This makes it harder for reviewers to understand the verification approach.\",\n      \"justification\": \"Cross-references in documentation should include brief context about the referenced content.\"\n    }\n  ]\n}",
+        "textBytes": 5873
+      }
+    }
+  ]
+}

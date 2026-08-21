@@ -75,6 +75,12 @@ adds exactly 12 attempts to reach cumulative n=20.
 - **Calibration**: the FIRST CI-baseline observation is 1 + 19 (not 1 + 20),
   graded immediately; it fixes the explicit finder-plus-grader dollar ceiling
   = 120 × measured per-attempt cost × 1.5, before any further calls.
+- **Calibration record (2026-08-21, `ci-base-n1-20260821T133414Z`, Venice
+  fp4)**: finder $0.012462 + grader ≥$0.169952 (9 calls — 8 findings + 1
+  resume re-attempt; one call's cost unreported) = per-attempt **≥$0.182414**.
+  **Dollar ceiling = 120 × $0.182414 × 1.5 = $32.83.** Grader spend dominates
+  (~$0.02 per verdict at ~8 findings/run). Observation: 8 findings, 3 flagged
+  — all M3, 0 M1, 0 M2; fabricationRuns 1/1.
 - **Cross-invocation attempt ledger** (impl-review F3 closure): the
   authoritative spent-attempt count is the sum of `runs[]` lengths across
   every committed results file `results/<variant>-<rung>-n*-*.json`
@@ -119,6 +125,49 @@ The injected R-loc block additionally appears in every rloc manifest as
 `rlocContext.sha256` =
 `a92bc759919994eed117f76754a608af6eb006f6031940950217fdd2a026885c` (the
 wrapped `<off-diff-context>` form, 596 bytes at sent offset 100,030).
+
+## Amendment A1 — provider pinning (2026-08-21, before any gradeable observation)
+
+- **Trigger**: calibration attempts 1–4 ALL failed — 3× `AI_NoObjectGeneratedError`
+  with three DISTINCT malformed envelopes (severity-keyed object, bare array
+  with `issue`/`detail` fields, severity-keyed object again) and 1× 300 s
+  `TimeoutError`. Raw failure texts preserved in
+  `results/ci-base-n1-20260821T{125600,125747,125920,130502}Z.json`.
+  Unpinned OpenRouter routing spreads `z-ai/glm-4.6` across five upstreams
+  (Venice, DeepInfra, Novita, AtlasCloud, Z.AI) with visibly different
+  behavior and 3× per-attempt cost variance; provider provenance was not
+  captured, so routing is the leading hypothesis, not a proven cause.
+- **Endpoint facts** (OpenRouter endpoints API, 2026-08-21): only Venice
+  (fp4) and AtlasCloud (fp8, deranked status −2) advertise
+  `structured_outputs` (server-enforced strict JSON Schema). Novita (bf16)
+  and DeepInfra advertise `response_format` only; Z.AI advertises neither.
+  Providers silently ignore unsupported parameters, so unpinned routing sent
+  strict-schema requests to endpoints that never enforced them — consistent
+  with the malformed-envelope failures. A first pin attempt at Novita bf16
+  with `require_parameters: true` was rejected in 345 ms at $0 ("No endpoints
+  found that can handle the requested parameters",
+  `results/ci-base-n1-20260821T133008Z.json`) — Novita cannot serve enforced
+  json-schema at all.
+- **Change (additive, instrument-side only)**: finder requests now pin
+  `provider: { order: ["venice"], allow_fallbacks: false,
+require_parameters: true, quantizations: ["fp4"] }` — schema enforcement is
+  required for the instrument to produce a measurable outcome; quantization
+  limits external validity only, and every baseline and rung uses the same
+  endpoint so the within-provider ablation comparison is unaffected. Every
+  probe run records the serving provider
+  (`providerMetadata.openrouter.provider` → `runs[].provider`). Model,
+  prompts, inputs, rubric, gates, and grading are UNCHANGED.
+- **Ledger**: all failed attempts REMAIN counted — 5/140 spent (4 model
+  failures + the $0 Novita routing rejection), error reserve 15/20.
+- **Scope**: campaign results are scoped to `z-ai/glm-4.6` served by Venice
+  fp4 with strict structured outputs. They must not be generalized to bf16 or
+  unpinned OpenRouter routing.
+- **Decision rule**: ONE controlled calibration retry under the Venice pin;
+  if it also fails, take the pre-registered stop (instrument failure) — no
+  further paid attempts.
+- **Validity**: zero gradeable observations existed when this amendment was
+  written, so it cannot be results-driven; every arm (baselines and all
+  rungs) runs under the same pin, so internal comparisons are unaffected.
 
 ## Rung dry-manifest anchors (frozen)
 
