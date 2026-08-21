@@ -31,17 +31,19 @@ predates its number.
 1. **M1 is the cap's product, not the model's.** Lifting the 100 KB cap removed every
    cap-manufactured absence claim (0 M1 findings in 20 runs → ELIMINATED). The falsifier was
    pre-registered as cap-specific and it held exactly.
-2. **Fabrication needs in-window code; prose alone produces nearly nothing.** R3 (prose only):
-   1/20 fabrication runs, M2 = 0 — and the pre-registered expectation that invisible-code claims
-   would persist as M3 **failed** (1 M3 finding in 20 runs). R2 (code without prose) stayed at
-   baseline rate. Together the rungs point at _in-window code referencing invisible material_ as
-   the live ingredient, inverting H\*'s emphasis on the security prose.
-3. **The locality gap is not a missing-information problem.** Injecting the off-diff
-   `logSafePath` definition verbatim into the input (R-loc) left the fabrication rate UNCHANGED
-   at screen size — the model does not use provided context to withhold an M3-shaped claim.
+2. **Removing in-window code sharply reduced fabrication; prose alone produced almost none.**
+   R3 (prose only): 1/20 fabrication runs — not zero, so code is not established as strictly
+   necessary — with M2 = 0, and the pre-registered expectation that invisible-code claims would
+   persist as M3 **failed** (1 M3 finding in 20 runs). R2 (code without prose) stayed at
+   baseline rate. Together the rungs point at _in-window code referencing invisible material_
+   as the dominant contributor, inverting H\*'s emphasis on the security prose.
+3. **Injecting the named off-diff definition did not suppress M3.** R-loc appended the ground
+   truth's one named definition (`logSafePath`, 596 bytes) verbatim to the input and the
+   fabrication rate stayed UNCHANGED at screen size. That is evidence about this single
+   injection only — not a general claim about what added context can or cannot do.
 4. **The variant pair agrees.** CI (source in window, 14 source files over-cap): 17/20.
-   Instrument (zero source in window): 8/20. Source visibility correlates with fabrication,
-   consistent with finding 2.
+   Instrument (zero `packages/` source files in-window — the workflow YAML was still visible):
+   8/20. Source visibility correlates with fabrication, consistent with finding 2.
 
 ## Why H\* still reads INCONCLUSIVE
 
@@ -83,6 +85,7 @@ _which_ files the finder reports as missing.
   scope is strict, and the unpinned-routing failures (4/4 before the pin) show serving-side
   behavior is a first-order variable.
 - Not that the grader is ground truth: one double-graded finding received conflicting verdicts
-  across concurrent sessions (recorded incident), and 3 of 137 flags were hand-identified
-  misgrades. The rates carry hand-read-validated grading, nothing stronger.
+  across concurrent sessions (recorded incident), and 3 of 117 flagged findings (3 of 137
+  hand-read entries, including the 20 clean controls) were hand-identified misgrades. The
+  rates carry hand-read-validated grading, nothing stronger.
 - Not an explanation of the CI/instrument asymmetry (17/20 vs 8/20) — recorded, unexplained.

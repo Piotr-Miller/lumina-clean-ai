@@ -13,7 +13,10 @@
 R1 proved M1 is entirely the cap's product (0 M1 findings in 20 uncapped runs vs 10 findings /
 5 runs at capped baseline). A fixture reproduces M1 by construction, not by provoking the model:
 
-- Total diff **> 110 KB** so at least one whole file falls past `DIFF_CAP_BYTES = 100_000`.
+- The planted implementation file must **begin beyond byte 100,000** of the raw diff — total
+  size above `DIFF_CAP_BYTES` alone does not guarantee a whole over-cap file, because byte
+  ordering decides where the cut lands. Verify placement through the `--dry` manifest: its
+  `overCap` list must name the implementation before any paid run.
 - An **in-window test file that imports the over-cap implementation** — the CI variant's
   `impl-reviewer.test.ts` (in-window, cut) → `impl-reviewer.ts` (byte 110,771) pairing is the
   proven shape. The model then truthfully reports the implementation "not provided in the diff".
@@ -27,9 +30,9 @@ M3 produced 48 of CI's 64 flagged findings. The proven shape:
   defends against, while the helper's **definition is off-diff** (unchanged code, appears
   nowhere in the diff at any cap). The campaign's exemplar: `logSafePath` call + comment in
   `cli.ts` hunks, definition off-diff (exactly 2 occurrences in 215 KB).
-- Do NOT add the definition as context expecting suppression — R-loc showed injection leaves
-  the rate UNCHANGED. The mechanism is claim-generation against non-local material, not a
-  retrievable-information gap.
+- Do NOT rely on adding the definition as context to suppress the claims — R-loc's screen
+  showed injecting this one definition left the rate UNCHANGED. That is one tested injection,
+  not a general result about what context can do.
 
 ### Composition and window layout (mirror the CI variant — the reproducing shape)
 
