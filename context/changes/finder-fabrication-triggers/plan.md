@@ -491,8 +491,8 @@ None — no production code changes. The stale probe keeps working; only its hea
 
 #### Manual
 
-- [ ] 3.3 Hand-read protocol completed, misgrade rate below 15%
-- [ ] 3.4 G1 and G2 verdicts recorded (proceed vs INVALID-PREMISE / INSUFFICIENT-CI-SIGNAL)
+- [x] 3.3 Hand-read protocol completed, misgrade rate below 15%
+- [x] 3.4 G1 and G2 verdicts recorded (proceed vs INVALID-PREMISE / INSUFFICIENT-CI-SIGNAL)
 
 ### Phase 4: Ablation rungs (paid, conditional on G1 + G2)
 

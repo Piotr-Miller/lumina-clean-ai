@@ -216,3 +216,27 @@ Instrument variant (base only): rawBytes 266,444 → sentBytes 100,030.
   grader nondeterminism, flagged for the hand-read; it does not change any
   fabrication-run count. Finder attempts and denominators are unaffected.
   Surviving processes were terminated once discovered.
+
+## Phase 3 hand-read — baselines (2026-08-21)
+
+- Queue completed: all **84 rubric-flagged findings + 10 deterministic clean
+  controls = 94 findings** were adjudicated in
+  `reviews/hand-read-phase-3.md`.
+- Tally: **93 agree, 1 misgrade**. The sole misgrade is H-28: the recorded
+  `M1` should be `M3` because the finding asserts a documentation defect in,
+  and cites, a specific file wholly outside the CI window rather than reporting
+  that the file or documentation was merely not provided by the capped input.
+- Misgrade rate: **1/94 = 1.06%**, below the pre-registered 15% invalidity bar.
+  **Grading is valid; the campaign does not stop.**
+- Instrument run 5 finding 1: the surviving `M2` verdict is correct. The
+  in-window safe-path class excludes newlines and control characters, so the
+  finding claims the code permits what D2 prevents. The earlier discarded
+  `none` verdict was incorrect and does not enter the 94-entry denominator.
+- The provisional condition on the Phase 3 G1/G2 read-offs is therefore
+  cleared; their recorded counts are unchanged. H-28 sits in CI run 7, which
+  carries three other M3 verdicts — the M1→M3 correction cannot move B off
+  17 or either gate. Under the correction the secondary split would read CI
+  M1 9 / M3 49 and m1Runs 4; the grader-recorded numbers stand for all
+  read-offs (the hand-read validates grading, it does not regrade), with
+  this delta on record for Phase 5's R1 interpretation.
+- **G1 and G2 verdicts FINAL: neither fires — proceed to Phase 4.**
