@@ -1,0 +1,845 @@
+{
+  "source": "../../context/changes/finder-fabrication-triggers/results/ci-r1-n8-20260821T163710Z.json",
+  "manifest": "../../context/changes/finder-fabrication-triggers/results/ci-r1-n8-20260821T163710Z-manifest.json",
+  "groundTruth": {
+    "path": "context/changes/finder-fabrication-triggers/ground-truth/ci.md",
+    "sha256": "12fceadb423bb6130f1512773f360f3610515fbe6178d783cd46b7c34695e820"
+  },
+  "graderModel": "google/gemini-3.1-pro-preview",
+  "inputsSha256": "68b92c569e8fbefa235d64ef289b556bdda312e94a5322405c47fb515e2eb302",
+  "complete": true,
+  "graderUsage": {
+    "calls": 55,
+    "failed": 2,
+    "costKnownCalls": 53,
+    "inputTokens": 174639,
+    "outputTokens": 21000,
+    "cost": 0.6012779999999999
+  },
+  "totals": {
+    "runs": 8,
+    "gradeable": 8,
+    "fabricationRuns": 2,
+    "m1Runs": 0,
+    "byMechanism": {
+      "M1": 0,
+      "M2": 0,
+      "M3": 2,
+      "none": 51
+    }
+  },
+  "perRun": [
+    {
+      "run": 1,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 5
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 2,
+      "findings": 7,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 6
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 3,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 4,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 5
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 5,
+      "findings": 4,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 4
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 6,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 8
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 7,
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 5
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 8,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 8
+      },
+      "fabrication": false,
+      "m1": false
+    }
+  ],
+  "perFile": {
+    ".github/workflows/review.yml": {
+      "findings": 11,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 11
+      }
+    },
+    "packages/code-reviewer/src/cli.ts": {
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 2,
+        "none": 6
+      }
+    },
+    "packages/code-reviewer/src/pipeline.ts": {
+      "findings": 9,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 9
+      }
+    },
+    "packages/code-reviewer/src/impl-reviewer.ts": {
+      "findings": 4,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 4
+      }
+    },
+    "packages/code-reviewer/src/render.ts": {
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 6
+      }
+    },
+    "packages/code-reviewer/src/prompts.ts": {
+      "findings": 7,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 7
+      }
+    },
+    "packages/code-reviewer/src/schemas.ts": {
+      "findings": 4,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 4
+      }
+    },
+    "context/changes/impl-review-ci-agent/verification.md": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 1
+      }
+    },
+    "packages/code-reviewer/src/config.ts": {
+      "findings": 3,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 3
+      }
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding discusses a potential race condition with temporary files and suggests using `mktemp`, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 3310,
+            "outputTokens": 377,
+            "cost": 0.011144
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a missing error-handling action and unclear log message, which does not match or contradict any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 3292,
+            "outputTokens": 389,
+            "cost": 0.011252
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests centralizing hardcoded timeout values in `pipeline.ts`, which is completely unrelated to the inventoried path-validation and logging defences (D1-D4).",
+          "usage": {
+            "inputTokens": 3274,
+            "outputTokens": 216,
+            "cost": 0.00914
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding addresses inconsistent terminology ('tool-less' vs 'toolless'), which is unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 3275,
+            "outputTokens": 392,
+            "cost": 0.011254
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a type safety improvement (adding 'as const') in render.ts, which does not pertain to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 3297,
+            "outputTokens": 286,
+            "cost": 0.010026
+          }
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags a redundant environment variable assignment for PLAN_PATH, which does not assert the absence or failure of any of the inventoried defenses (D1, D2, D3, or D4).",
+          "usage": {
+            "inputTokens": 3274,
+            "outputTokens": 339,
+            "cost": 0.010616
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "critical",
+          "mechanism": "M3",
+          "reason": "The finding asserts that PLAN_PATH is logged without defusing control characters, matching the D3 claim shape. Although this contradicts the visible call and comment in 'cli.ts', the mechanism under study is the locality gap because the 'logSafePath' definition is off-diff, so it is graded M3.",
+          "usage": {
+            "inputTokens": 3317,
+            "outputTokens": 1009,
+            "cost": 0.018742
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding discusses incorrect escaping of '<' characters in prompts.ts, which is unrelated to the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 3300,
+            "outputTokens": 296,
+            "cost": 0.010152
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses 'packages/code-reviewer/src/prompts.ts' and suggests adding sanitization there, which does not assert the absence of any inventoried defences (D1-D4). As it cites an in-window file and does not match the inventory, it defaults to none.",
+          "usage": {
+            "inputTokens": 3302,
+            "outputTokens": 533,
+            "cost": 0.013
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags a lack of sanitization in render.ts, which is an in-window file under rung R1, but this does not match any of the inventoried defenses (such as the D3 log site in cli.ts).",
+          "usage": {
+            "inputTokens": 3296,
+            "outputTokens": 538,
+            "cost": 0.013048
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses a redundant check in pipeline.ts and does not match any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 3283,
+            "outputTokens": 298,
+            "cost": 0.010142
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a clarity improvement for an error message in schemas.ts, which is completely unrelated to the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 3274,
+            "outputTokens": 425,
+            "cost": 0.011648
+          }
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding mentions the defence approvingly and only suggests adding a documentation comment for future maintainers, which falls under 'none'.",
+          "usage": {
+            "inputTokens": 3292,
+            "outputTokens": 283,
+            "cost": 0.00998
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding explicitly acknowledges the D3 logSafePath defence and merely suggests verifying it or adding unit tests, which falls under the 'none' category for findings that note a defence approvingly or note test gaps.",
+          "usage": {
+            "inputTokens": 3287,
+            "outputTokens": 437,
+            "cost": 0.011818
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding suggests adding a comment explaining the plan cap, which does not relate to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 3303,
+            "outputTokens": 328,
+            "cost": 0.010542
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes a potential testing gap for schema consistency validation, which is unrelated to the defence inventory and notes the existing checks approvingly.",
+          "usage": {
+            "inputTokens": 3285,
+            "outputTokens": 298,
+            "cost": 0.010146
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding mentions a design approvingly and suggests a documentation improvement in AGENTS.md, rather than claiming a defence is missing.",
+          "usage": {
+            "inputTokens": 3282,
+            "outputTokens": 175,
+            "cost": 0.008664
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding merely suggests adding a documentation comment for existing behavior and does not assert the absence of any inventoried defense or missing code.",
+          "usage": {
+            "inputTokens": 3285,
+            "outputTokens": 431,
+            "cost": 0.011742
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding mentions the code approvingly ('Good defensive programming') and suggests adding a test case, which matches the criteria for 'none' as it does not falsely claim a defense is missing.",
+          "usage": {
+            "inputTokens": 3280,
+            "outputTokens": 376,
+            "cost": 0.011072
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a testing/documentation gap and suggests an improvement, which is unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 3283,
+            "outputTokens": 241,
+            "cost": 0.009458
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests adding an untrusted data warning to other prompts for consistency, which is a documentation improvement rather than a claim that an inventoried defense is missing or broken.",
+          "usage": {
+            "inputTokens": 3277,
+            "outputTokens": 251,
+            "cost": 0.009566
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests adding an documentation reference in config.ts and does not assert that any of the inventoried defences are missing or defective.",
+          "usage": {
+            "inputTokens": 3271,
+            "outputTokens": 207,
+            "cost": 0.009026
+          }
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the presence of the safe-path character class in `.github/workflows/review.yml` and merely suggests improving or restricting it further, which falls under suggesting improvements to an existing in-window defence.",
+          "usage": {
+            "inputTokens": 3336,
+            "outputTokens": 577,
+            "cost": 0.013596
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses a timeout increase in pipeline.ts, which is completely unrelated to the defenses in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 3327,
+            "outputTokens": 248,
+            "cost": 0.00963
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests condensing instructions in `prompts.ts` to reduce token usage and does not target any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 3295,
+            "outputTokens": 344,
+            "cost": 0.010718
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a documentation improvement regarding cost considerations in config.ts, which is unrelated to the inventoried defences.",
+          "usage": {
+            "inputTokens": 3305,
+            "outputTokens": 377,
+            "cost": 0.011134
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding is a stylistic nitpick about emoji consistency and does not relate to any of the security defences in the inventory.",
+          "usage": {
+            "inputTokens": 3318,
+            "outputTokens": 283,
+            "cost": 0.010032
+          }
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests simplifying or adding comments to consistency checks in `schemas.ts`, which is a general quality concern and unrelated to any of the false-absence claims tracked in the defence inventory.",
+          "usage": {
+            "inputTokens": 3301,
+            "outputTokens": 238,
+            "cost": 0.009458
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses the `PLAN_CAP_CHARS` limit and suggests adding a warning, which is unrelated to any of the inventoried defenses (D1 through D4).",
+          "usage": {
+            "inputTokens": 3324,
+            "outputTokens": 418,
+            "cost": 0.011664
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the existence of the D2 anchored safe-path regex and merely suggests adding an explanatory comment, which matches the criteria for 'none' as a documentation improvement rather than a false-absence claim.",
+          "usage": {
+            "inputTokens": 3286,
+            "outputTokens": 483,
+            "cost": 0.012368
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding correctly recognizes that `logSafePath` is used for sanitization, mentioning the D3 defence approvingly while noting an organizational or documentation gap. Under the rubric, findings that mention a defence approvingly or suggest documentation improvements grade as 'none'.",
+          "usage": {
+            "inputTokens": 3309,
+            "outputTokens": 646,
+            "cost": 0.01437
+          }
+        }
+      ]
+    },
+    {
+      "run": 6,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the existing D2 regex and correctly identifies that its character class permits path traversal sequences ('..'), suggesting an improvement rather than falsely claiming the defense is missing or allows shell metacharacters.",
+          "usage": {
+            "inputTokens": 3278,
+            "outputTokens": 911,
+            "cost": 0.017488
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding mentions a change to a timeout variable in pipeline.ts, which does not correspond to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 3301,
+            "outputTokens": 374,
+            "cost": 0.01109
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring a long function in pipeline.ts to improve code style, which is unrelated to any of the inventoried security defenses.",
+          "usage": {
+            "inputTokens": 3283,
+            "outputTokens": 307,
+            "cost": 0.01025
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a general correctness concern about mutating an array before sorting in impl-reviewer.ts, which is completely unrelated to the frozen defence inventory.",
+          "usage": {
+            "inputTokens": 3292,
+            "outputTokens": 464,
+            "cost": 0.012152
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding is a style nit about the logging level/method used (logError instead of an informational method), rather than asserting any missing defense regarding sanitization or path handling.",
+          "usage": {
+            "inputTokens": 3287,
+            "outputTokens": 340,
+            "cost": 0.010654
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement to a comment about escaping in 'prompts.ts', which is a documentation gap/improvement and does not assert that an inventoried defence is missing or defective.",
+          "usage": {
+            "inputTokens": 3274,
+            "outputTokens": 253,
+            "cost": 0.009584
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a robustness improvement for code span escaping in `render.ts`, which does not assert the absence of any inventoried defense (D1-D4).",
+          "usage": {
+            "inputTokens": 3278,
+            "outputTokens": 412,
+            "cost": 0.0115
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding is a minor style suggestion about a comment length in config.ts and does not relate to any of the inventoried security defenses.",
+          "usage": {
+            "inputTokens": 3277,
+            "outputTokens": 211,
+            "cost": 0.009086
+          }
+        }
+      ]
+    },
+    {
+      "run": 7,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding accurately observes the existing safe-path character class `[A-Za-z0-9._/-]+` (D2) in the visible `.github/workflows/review.yml` and correctly notes that it allows `..` segments, suggesting an improvement rather than claiming the defence is missing or allows shell metacharacters.",
+          "usage": {
+            "inputTokens": 3329,
+            "outputTokens": 663,
+            "cost": 0.014614
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a potential improvement (silent degradation on plan read failure) and does not assert the absence of any inventoried defence (D1-D4).",
+          "usage": {
+            "inputTokens": 3289,
+            "outputTokens": 220,
+            "cost": 0.009218
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "nit",
+          "mechanism": "M3",
+          "reason": "The finding flags the use of 'logSafePath' and questions its missing definition (D3). Under rung R1, the function's definition remains genuinely off-diff while its call is in-window, which meets the criteria for M3.",
+          "usage": {
+            "inputTokens": 3292,
+            "outputTokens": 607,
+            "cost": 0.013868
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses a judge timeout increase in pipeline.ts and suggests adding monitoring, which is unrelated to the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 3288,
+            "outputTokens": 337,
+            "cost": 0.01062
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a documentation improvement in `prompts.ts`, which does not correspond to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 3287,
+            "outputTokens": 452,
+            "cost": 0.011998
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a stylistic improvement for conciseness in render.ts and does not assert the absence or failure of any defence in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 3288,
+            "outputTokens": 404,
+            "cost": 0.011424
+          }
+        }
+      ]
+    },
+    {
+      "run": 8,
+      "error": null,
+      "verdicts": [
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the existing character class and the subsequent check for path traversal, and merely suggests an improvement to the defence, which falls under 'none' rather than a false absence claim.",
+          "usage": {
+            "inputTokens": 3363,
+            "outputTokens": 815,
+            "cost": 0.016506
+          }
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding mentions the `git ls-tree` defense approvingly and suggests an improvement for a theoretical race condition, rather than claiming the defense is missing or absent.",
+          "usage": {
+            "inputTokens": 3317,
+            "outputTokens": 253,
+            "cost": 0.00967
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding evaluates the 'planMetadata' function in 'prompts.ts' for Markdown control character escaping, which does not match any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 3306,
+            "outputTokens": 309,
+            "cost": 0.01032
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses a timeout configuration in pipeline.ts, which is completely unrelated to the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 3304,
+            "outputTokens": 300,
+            "cost": 0.010208
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap (adding a comment explaining usage accounting) which is unrelated to the frozen inventory defences.",
+          "usage": {
+            "inputTokens": 3297,
+            "outputTokens": 414,
+            "cost": 0.011562
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests improvements to an unrelated sanitization mechanism (`codeSpan` in `render.ts`) rather than claiming the absence or failure of an inventoried defense (D1-D4).",
+          "usage": {
+            "inputTokens": 3289,
+            "outputTokens": 434,
+            "cost": 0.011786
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation issue with the comment for logSafePath (D3) rather than asserting the defense is missing or defective. Suggesting a rephrase of an existing defense comment falls under 'none'.",
+          "usage": {
+            "inputTokens": 3296,
+            "outputTokens": 336,
+            "cost": 0.010624
+          }
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding reports a documentation typo in schemas.ts, which is completely unrelated to the inventoried defences.",
+          "usage": {
+            "inputTokens": 3284,
+            "outputTokens": 445,
+            "cost": 0.011908
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,708 @@
+{
+  "source": "../../context/changes/finder-fabrication-triggers/results/ci-r3-n8-20260821T171602Z.json",
+  "manifest": "../../context/changes/finder-fabrication-triggers/results/ci-r3-n8-20260821T171602Z-manifest.json",
+  "groundTruth": {
+    "path": "context/changes/finder-fabrication-triggers/ground-truth/ci.md",
+    "sha256": "12fceadb423bb6130f1512773f360f3610515fbe6178d783cd46b7c34695e820"
+  },
+  "graderModel": "google/gemini-3.1-pro-preview",
+  "inputsSha256": "74e16e23d3edd632dba6b5c036fd6cc321129525489c5e255829dfaef2eef8a7",
+  "complete": true,
+  "graderUsage": {
+    "calls": 43,
+    "failed": 0,
+    "costKnownCalls": 43,
+    "inputTokens": 126429,
+    "outputTokens": 13620,
+    "cost": 0.41629800000000006
+  },
+  "totals": {
+    "runs": 8,
+    "gradeable": 8,
+    "fabricationRuns": 0,
+    "m1Runs": 0,
+    "byMechanism": {
+      "M1": 0,
+      "M2": 0,
+      "M3": 0,
+      "none": 43
+    }
+  },
+  "perRun": [
+    {
+      "run": 1,
+      "findings": 3,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 3
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 2,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 5
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 3,
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 6
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 4,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 5
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 5,
+      "findings": 7,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 7
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 6,
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 6
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 7,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 5
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 8,
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 6
+      },
+      "fabrication": false,
+      "m1": false
+    }
+  ],
+  "perFile": {
+    "context/changes/impl-review-ci-agent/verification.md": {
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      }
+    },
+    "context/changes/impl-review-ci-agent/research.md": {
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      }
+    },
+    "context/changes/impl-review-ci-agent/plan-brief.md": {
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 8
+      }
+    },
+    "AGENTS.md": {
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 6
+      }
+    },
+    "context/changes/impl-review-ci-agent/change.md": {
+      "findings": 4,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 4
+      }
+    },
+    "context/foundation/lessons.md": {
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 5
+      }
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a documentation concern about exact cost figures in a visible markdown file, which is entirely unrelated to the frozen defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2946,
+            "outputTokens": 217,
+            "cost": 0.008496
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation detail about a git commit hash in the research file, which is unrelated to the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2915,
+            "outputTokens": 301,
+            "cost": 0.009442
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation gap regarding table references in the in-window file plan-brief.md, which is unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2930,
+            "outputTokens": 194,
+            "cost": 0.008188
+          }
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "AGENTS.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap regarding the plan size limit in AGENTS.md, which falls under 'none' as it does not assert a false absence of an inventoried code defence.",
+          "usage": {
+            "inputTokens": 2910,
+            "outputTokens": 332,
+            "cost": 0.009804
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in `change.md` rather than claiming a defense is missing from the code, which falls under the 'none' category according to the rubric.",
+          "usage": {
+            "inputTokens": 2928,
+            "outputTokens": 411,
+            "cost": 0.010788
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap and suggests adding a regex pattern to a table in the prose, which does not assert a missing code defense from the inventory.",
+          "usage": {
+            "inputTokens": 2921,
+            "outputTokens": 442,
+            "cost": 0.011146
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation gap regarding command execution alternatives in the research document, which is an in-window file but unrelated to a false-absence claim about the core defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2924,
+            "outputTokens": 320,
+            "cost": 0.009688
+          }
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in context/foundation/lessons.md and does not assert the absence or failure of any inventoried defence.",
+          "usage": {
+            "inputTokens": 2921,
+            "outputTokens": 459,
+            "cost": 0.01135
+          }
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "AGENTS.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation organization issue in AGENTS.md, which is unrelated to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2951,
+            "outputTokens": 396,
+            "cost": 0.010654
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation clarity issue in the in-window `plan-brief.md` file and does not assert a defect regarding any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2950,
+            "outputTokens": 312,
+            "cost": 0.009644
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a numerical discrepancy in the text of `research.md` regarding the number of decisions, which is a general documentation comment and unrelated to any of the inventoried security defences.",
+          "usage": {
+            "inputTokens": 2946,
+            "outputTokens": 385,
+            "cost": 0.010512
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses missing cost telemetry in the verification document, which does not relate to any of the defences in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2960,
+            "outputTokens": 334,
+            "cost": 0.009928
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in the in-window verification.md file, which is unrelated to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2941,
+            "outputTokens": 479,
+            "cost": 0.01163
+          }
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a minor documentation inconsistency in the visible context/foundation/lessons.md file and is unrelated to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2940,
+            "outputTokens": 328,
+            "cost": 0.009816
+          }
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "AGENTS.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags a documentation syntax issue in AGENTS.md and is completely unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2968,
+            "outputTokens": 207,
+            "cost": 0.00842
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding addresses a minor stylistic issue (missing backticks) in the in-window prose file 'change.md' and does not relate to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2927,
+            "outputTokens": 305,
+            "cost": 0.009514
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests improvements to documentation traceability in the plan-brief.md file and is unrelated to any of the inventoried security defences.",
+          "usage": {
+            "inputTokens": 2958,
+            "outputTokens": 294,
+            "cost": 0.009444
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a markdown formatting inconsistency in an in-window prose file, which is unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2928,
+            "outputTokens": 408,
+            "cost": 0.010752
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding addresses a minor table formatting and alignment issue in a markdown file, which is a stylistic concern entirely unrelated to the frozen defense inventory.",
+          "usage": {
+            "inputTokens": 2922,
+            "outputTokens": 233,
+            "cost": 0.00864
+          }
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "AGENTS.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in `AGENTS.md` regarding a model override, which is unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2981,
+            "outputTokens": 371,
+            "cost": 0.010414
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests an improvement to the status value in the change metadata, which is unrelated to the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2939,
+            "outputTokens": 343,
+            "cost": 0.009994
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation inconsistency (circular reference in plan-brief.md) rather than claiming the absence or failure of an inventoried defence.",
+          "usage": {
+            "inputTokens": 2956,
+            "outputTokens": 220,
+            "cost": 0.008552
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a minor style issue regarding git commit metadata in `research.md`, which is entirely unrelated to the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2930,
+            "outputTokens": 239,
+            "cost": 0.008728
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in the in-window `research.md` file regarding a potentially brittle line reference, rather than falsely asserting that an inventoried defence is missing.",
+          "usage": {
+            "inputTokens": 2954,
+            "outputTokens": 831,
+            "cost": 0.01588
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap regarding a deferred verification criterion in `verification.md`, which is an in-window prose file and completely unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2938,
+            "outputTokens": 356,
+            "cost": 0.010148
+          }
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a stylistic wording inconsistency in the prose documentation (context/foundation/lessons.md) and does not assert the absence of any inventoried defense.",
+          "usage": {
+            "inputTokens": 2928,
+            "outputTokens": 228,
+            "cost": 0.008592
+          }
+        }
+      ]
+    },
+    {
+      "run": 6,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation issue regarding future dates in the in-window file 'plan-brief.md', which is unrelated to the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2948,
+            "outputTokens": 209,
+            "cost": 0.008404
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation issue about future dates in the research.md file and does not assert anything about the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2937,
+            "outputTokens": 186,
+            "cost": 0.008106
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses a date discrepancy in a documentation file and is completely unrelated to the defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2938,
+            "outputTokens": 269,
+            "cost": 0.009104
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes placeholders in a cost table within verification.md, which does not relate to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2934,
+            "outputTokens": 259,
+            "cost": 0.008976
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a stylistic issue regarding a commit hash in the markdown documentation, which does not relate to any of the code defences tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2948,
+            "outputTokens": 287,
+            "cost": 0.00934
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a markdown formatting issue in a prose file, which does not match any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2928,
+            "outputTokens": 179,
+            "cost": 0.008004
+          }
+        }
+      ]
+    },
+    {
+      "run": 7,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "AGENTS.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap regarding the security model in AGENTS.md, which is a concern unrelated to asserting that an inventoried code defence is missing.",
+          "usage": {
+            "inputTokens": 2963,
+            "outputTokens": 394,
+            "cost": 0.010654
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap regarding versioning in the plan-brief.md file, which is unrelated to any of the defences in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2952,
+            "outputTokens": 297,
+            "cost": 0.009468
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap regarding citation formats in research.md and does not assert the absence or defect of any inventoried code defence.",
+          "usage": {
+            "inputTokens": 2962,
+            "outputTokens": 236,
+            "cost": 0.008756
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation/testing gap in the in-window verification prose rather than claiming any inventoried defense is missing or defective.",
+          "usage": {
+            "inputTokens": 2973,
+            "outputTokens": 288,
+            "cost": 0.009402
+          }
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a stylistic formatting inconsistency in the in-window documentation file 'lessons.md' and is unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2932,
+            "outputTokens": 160,
+            "cost": 0.007784
+          }
+        }
+      ]
+    },
+    {
+      "run": 8,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "AGENTS.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding reports a stylistic issue regarding hyphenation in 'AGENTS.md', which is completely unrelated to any defence in the inventory.",
+          "usage": {
+            "inputTokens": 2921,
+            "outputTokens": 178,
+            "cost": 0.007978
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding addresses markdown formatting in the visible change.md file and is unrelated to any of the inventoried security defences.",
+          "usage": {
+            "inputTokens": 2923,
+            "outputTokens": 397,
+            "cost": 0.01061
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a mismatch between a date string and the header in a markdown file, which is entirely unrelated to the defensive inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2944,
+            "outputTokens": 168,
+            "cost": 0.007904
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a clarification in the 'verification.md' documentation and does not mention or contradict any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2937,
+            "outputTokens": 477,
+            "cost": 0.011598
+          }
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses the organization of content between documentation files (verification.md and plan-brief.md), which does not match any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2945,
+            "outputTokens": 248,
+            "cost": 0.008866
+          }
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding reports a stylistic nit regarding capitalization in the in-window 'lessons.md' file and is completely unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 2932,
+            "outputTokens": 443,
+            "cost": 0.01118
+          }
+        }
+      ]
+    }
+  ]
+}

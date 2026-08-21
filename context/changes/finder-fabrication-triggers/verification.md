@@ -240,3 +240,28 @@ Instrument variant (base only): rawBytes 266,444 → sentBytes 100,030.
   read-offs (the hand-read validates grading, it does not regrade), with
   this delta on record for Phase 5's R1 interpretation.
 - **G1 and G2 verdicts FINAL: neither fires — proceed to Phase 4.**
+
+## Phase 4 screens — rung ablations at n=8 (2026-08-21; numbers + escalation arithmetic only)
+
+All four screens on the CI variant under the Venice fp4 pin; 8/8 gradeable
+each (32 attempts, 0 finder errors). Files `ci-{r1,r2,r3,rloc}-n8-20260821T*`.
+
+| Rung  | fabricationRuns | M1  | M2  | M3  | none |
+| ----- | --------------- | --- | --- | --- | ---- |
+| R1    | 2/8             | 0   | 0   | 2   | 51   |
+| R2    | 5/8             | 0   | 1   | 4   | 55   |
+| R3    | 0/8             | 0   | 0   | 0   | 43   |
+| R-loc | 5/8             | 4   | 2   | 11  | 39   |
+
+- **Escalation arithmetic** (frozen rule: scaled baseline = B × 8/20 = 17 ×
+  0.4 = 6.8; escalate iff |count − 6.8| ≥ 2):
+  - R1: |2 − 6.8| = 4.8 ≥ 2 → **ESCALATES** (+12 to cumulative n=20)
+  - R2: |5 − 6.8| = 1.8 < 2 → no escalation
+  - R3: |0 − 6.8| = 6.8 ≥ 2 → **ESCALATES** (+12 to cumulative n=20)
+  - R-loc: |5 − 6.8| = 1.8 < 2 → no escalation
+- Non-escalating rungs (R2, R-loc) sit within ±2 scaled runs of baseline —
+  read UNCHANGED on the fabrication rate at screen size; their final table
+  read-offs on predicted components happen in Phase 5 alongside the
+  escalated rungs' n=20 counts.
+- **Ledger**: 78/140 spent; escalations would add 24 → 102/140. Reserve
+  still 14/20.
