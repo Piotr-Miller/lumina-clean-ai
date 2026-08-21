@@ -289,3 +289,26 @@ each (32 attempts, 0 finder errors). Files `ci-{r1,r2,r3,rloc}-n8-20260821T*`.
 - Read-offs are provisional until the Phase 4 hand-read completes below the
   15% bar (queue: `reviews/hand-read-phase-4.md`; tally to be appended).
 - **Ledger**: 102/140 spent (96 gradeable + 6 errors); reserve 14/20.
+
+## Phase 4 hand-read — rung ablations (2026-08-21)
+
+- Queue completed: all **33 rubric-flagged findings + 10 deterministic clean
+  controls = 43 findings** were adjudicated in
+  `reviews/hand-read-phase-4.md`.
+- Tally: **41 agree, 2 misgrades**. H-12 should be `none`, not M3, because
+  it concerns the in-window `planInput` assignment rather than D3's log site
+  and matches no other inventoried defence. H-15 should be M2, not M3,
+  because it concerns the workflow log protected by the in-window D2
+  safe-path class, not the off-diff CLI helper.
+- Misgrade rate: **2/43 = 4.65%**, below the pre-registered 15% invalidity
+  bar. **Grading is valid; the campaign does not stop.**
+- Under the frozen validation-only protocol established in Phase 3, the
+  grader-recorded counts remain the numeric read-off inputs. H-15 changes
+  only the M2/M3 split. H-12 is outcome-sensitive: it is R2 run 2's sole
+  flagged finding, so a corrected recount would read 4/8 and satisfy the
+  screen's escalation trigger. The protocol does not substitute hand labels
+  below the invalidity bar, so no retroactive R2 escalation is introduced;
+  this sensitivity must be carried into Phase 5 interpretation.
+- **Phase 4 verdicts FINAL**: R1 on M1 **ELIMINATED**; R2 on M2+M3
+  **UNCHANGED**; R3 on M2 **ELIMINATED**; R-loc on M3 **UNCHANGED**.
+  Therefore **H\* = INCONCLUSIVE** under the frozen combining rule.

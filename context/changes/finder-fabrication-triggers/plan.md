@@ -498,13 +498,13 @@ None — no production code changes. The stale probe keeps working; only its hea
 
 #### Automated
 
-- [ ] 4.1 Rung results + manifests + graded files committed; attempt ceiling ≤ 140 with exact denominators
-- [ ] 4.2 Prettier clean on appended files
+- [x] 4.1 Rung results + manifests + graded files committed; attempt ceiling ≤ 140 with exact denominators — 24768b7 (ledger 102/140)
+- [x] 4.2 Prettier clean on appended files — 24768b7
 
 #### Manual
 
-- [ ] 4.3 Hand-read protocol per rung completed
-- [ ] 4.4 Rung verdicts read off the numeric table; escalations justified by recorded arithmetic
+- [x] 4.3 Hand-read protocol per rung completed
+- [x] 4.4 Rung verdicts read off the numeric table; escalations justified by recorded arithmetic
 
 ### Phase 5: Synthesis — decision doc + fixture spec
 
