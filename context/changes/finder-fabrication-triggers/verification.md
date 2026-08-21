@@ -265,3 +265,27 @@ each (32 attempts, 0 finder errors). Files `ci-{r1,r2,r3,rloc}-n8-20260821T*`.
   escalated rungs' n=20 counts.
 - **Ledger**: 78/140 spent; escalations would add 24 → 102/140. Reserve
   still 14/20.
+
+## Phase 4 escalations + table read-offs (2026-08-21; numbers + rule applications only)
+
+- **R1 +12** (`ci-r1-n12-20260821T174641Z`): 12/12 gradeable; fabrication
+  7/12 — M1 0, M2 4, M3 4, none 66. **Cumulative n=20: fabrication 9/20; M1
+  findings 0; m1Runs 0/20.**
+- **R3 +12** (`ci-r3-n12-20260821T181157Z`): 12/12 gradeable; fabrication
+  1/12 — M1 0, M2 0, M3 1, none 58. **Cumulative n=20: fabrication 1/20; M2
+  findings 0.**
+- **Table read-offs** (B = 17; ELIMINATED = 0 on predicted component):
+  - R1 on M1: count 0 at n=20 → **ELIMINATED**.
+  - R3 on M2: count 0 at n=20 → **ELIMINATED**. (Secondary, recorded: the
+    pre-registered expectation "invisible-code claims persisting as M3" did
+    NOT hold — M3 appeared in 1/20 runs.)
+  - R2 on M2+M3: no escalation (5/8, |5 − 6.8| < 2) → **UNCHANGED**.
+  - R-loc on M3: no escalation (5/8, |5 − 6.8| < 2) → **UNCHANGED**.
+- **H\* read-off (frozen combining rule)**: SUPPORTED requires R2 ∈ {DROP,
+  ELIMINATED} — R2 is UNCHANGED, so SUPPORTED cannot obtain. FALSIFIED
+  requires all four UNCHANGED — R1 and R3 are ELIMINATED, so FALSIFIED
+  cannot obtain. **H\* = INCONCLUSIVE.** Interpretation is deferred to
+  `decision.md` (Phase 5).
+- Read-offs are provisional until the Phase 4 hand-read completes below the
+  15% bar (queue: `reviews/hand-read-phase-4.md`; tally to be appended).
+- **Ledger**: 102/140 spent (96 gradeable + 6 errors); reserve 14/20.

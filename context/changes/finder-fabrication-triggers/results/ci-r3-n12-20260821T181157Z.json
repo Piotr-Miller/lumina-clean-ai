@@ -1,0 +1,957 @@
+{
+  "variant": "ci",
+  "rung": "r3",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260821T181157Z",
+  "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "74e16e23d3edd632dba6b5c036fd6cc321129525489c5e255829dfaef2eef8a7",
+  "plannedAttempts": 12,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-21T18:11:57.913Z",
+      "durationMs": 53211,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 730,
+        "totalTokens": 16454,
+        "cost": 0.00803882
+      },
+      "findings": [
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 70,
+          "endLine": 70,
+          "severity": "critical",
+          "category": "security",
+          "description": "The 'Command execution' decision claims 'dropped; grade declared-vs-observable', but the research document shows the criteria layer still contains sections that mandate running plan-derived commands. This contradiction creates a security risk where implementers might believe RCE is blocked when it's not.",
+          "suggestion": "Align the plan-brief with research findings: either explicitly remove command execution sections from criteria or acknowledge they remain and must be sanitized."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 30,
+          "endLine": 30,
+          "severity": "critical",
+          "category": "security",
+          "description": "Research finding claims 'Two sections do not port' regarding command execution, but finding #1 states criteria layer 'ports as-is'. This internal contradiction could lead to insecure implementation if readers rely on the wrong statement.",
+          "suggestion": "Reconcile the contradiction: either criteria are fully portable (and RCE risk accepted) or the non-portable sections are explicitly called out in finding #1."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 147,
+          "endLine": 147,
+          "severity": "major",
+          "category": "security",
+          "description": "Cost telemetry criterion 4.8 cannot be computed as written because finderTelemetry lacks cost data and judge has no telemetry block. This renders the cost ratio verification impossible, potentially hiding unexpected cost explosions.",
+          "suggestion": "Either implement missing cost telemetry in finder/judge or rewrite criterion 4.8 to measure what's actually available (tokens only)."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 133,
+          "endLine": 133,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Probe execution deviated from pre-registered design by running locally instead of as scratch PR due to branch constraints. The deviation is documented but undermines the 'live probe' claim.",
+          "suggestion": "Note this limitation explicitly in the success criteria or adjust the test infrastructure to enable true PR-based probes."
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "startLine": 165,
+          "endLine": 165,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The lesson title 'An offline eval proves capability exists, not that it will be used' is phrased as a conclusion rather than a principle.",
+          "suggestion": "Rephrase as 'Treat offline evals as necessary but not sufficient' to match the rule content."
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "critical": 2,
+          "major": 1,
+          "minor": 1,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 3,
+          "testing": 1,
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 2,
+      "startedAt": "2026-08-21T18:12:51.132Z",
+      "durationMs": 44733,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 665,
+        "totalTokens": 16389,
+        "cost": 0.00243707
+      },
+      "findings": [
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 104,
+          "endLine": 104,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Success criteria summary claims 'A PR that quietly drops a planned change gets told so' but the implementation design later excludes plan-only PRs entirely from review. This creates a contradiction: a PR that drops all implementation (leaving only a plan) would be skipped and never receive the intended notification.",
+          "suggestion": "Clarify that plan-only PRs are skipped and will not receive implementation review feedback, or adjust the design to handle this case."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 87,
+          "endLine": 87,
+          "severity": "major",
+          "category": "security",
+          "description": "The research identifies that porting the criteria layer's automated verification commands verbatim would enable remote code execution in a job holding OPENROUTER_API_KEY. While the plan notes this as a finding, the implementation design should explicitly document how these sections are replaced or mitigated to prevent accidental reintroduction.",
+          "suggestion": "Document the specific replacements for the command-execution sections in the implementation design, and add a security comment in the code where these sections would have been ported."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 173,
+          "endLine": 173,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The cost ratio criterion (4.8) could not be computed because finderTelemetry lacks a cost field and the judge has no telemetry block. The verification correctly identifies this gap, but it should be tracked as a known limitation rather than a deferred criterion.",
+          "suggestion": "Add a known limitations section to the verification doc listing the telemetry gap, or add a tracking issue for implementing the missing telemetry."
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "startLine": 162,
+          "endLine": 162,
+          "severity": "nit",
+          "category": "style",
+          "description": "The lesson reference to 'promptfoo finder matrix' is an implementation detail that may not age well. The lesson should state the principle without tying it to a specific tool.",
+          "suggestion": "Replace 'promptfoo finder matrix' with 'offline evaluation matrix' or similar tool-agnostic phrasing."
+        }
+      ],
+      "summary": {
+        "n": 4,
+        "bySeverity": {
+          "minor": 2,
+          "major": 1,
+          "nit": 1
+        },
+        "byCategory": {
+          "documentation": 1,
+          "security": 1,
+          "testing": 1,
+          "style": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 3,
+      "startedAt": "2026-08-21T18:13:35.871Z",
+      "durationMs": 95083,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 1516,
+        "totalTokens": 17240,
+        "cost": 0.00392632
+      },
+      "findings": [
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 1,
+          "endLine": 3,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Execution status (EXECUTED 2026-08-13) is embedded in the documentation file. This type of runtime status should be tracked externally (e.g., in issue tracking or run logs) rather than committed to version control, as it creates noise in the diff history.",
+          "suggestion": "Move execution status and outcomes to a separate tracking system or run logs, keeping only the pre-registered design in the committed file."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 1,
+          "endLine": 12,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Frontmatter contains specific git commit, branch, and repository URLs that may not need permanent storage in the documentation. These references can become stale and add maintenance overhead.",
+          "suggestion": "Consider keeping only the date and researcher in frontmatter, moving specific git references to the body where they can be more easily updated or removed when no longer relevant."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 258,
+          "endLine": 268,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "External research citations include specific arXiv IDs and dates that may not need to be permanently embedded. While the insights are valuable, the specific references could be maintained in a separate bibliography or research log.",
+          "suggestion": "Extract external references to a separate research bibliography file, keeping only the key insights and how they apply to this repository in the main research document."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 42,
+          "endLine": 45,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Table references specific model names (sonnet-5, glm-4.6) and cost ratios that may quickly become outdated as models evolve.",
+          "suggestion": "Consider referencing model capabilities generically (e.g., 'high-capability model' vs 'cost-optimized model') or adding a note that these references are current as of the plan date and may need updating."
+        }
+      ],
+      "summary": {
+        "n": 4,
+        "bySeverity": {
+          "minor": 3,
+          "nit": 1
+        },
+        "byCategory": {
+          "documentation": 4
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 4,
+      "startedAt": "2026-08-21T18:15:10.961Z",
+      "durationMs": 32000,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 332,
+        "totalTokens": 16056,
+        "cost": 0.00185432
+      },
+      "findings": [
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 106,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The new documentation section could benefit from explicitly mentioning that the implementation review pass is skipped for plan-only PRs, as this is an important behavioral boundary that readers might otherwise need to infer from the linked change documents.",
+          "suggestion": "Add a sentence like 'Plan-only PRs are skipped entirely for this pass to avoid reporting everything as MISSING.'"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 158,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The probe execution note reveals a structural gap: criterion 4.8 cannot be computed due to missing telemetry data. While this is documented as a finding, it represents an incomplete verification of the cost ratio claim.",
+          "suggestion": "Either add finder cost telemetry and judge telemetry to enable the ratio calculation, or restate criterion 4.8 in terms of the available metrics."
+        }
+      ],
+      "summary": {
+        "n": 2,
+        "bySeverity": {
+          "nit": 1,
+          "minor": 1
+        },
+        "byCategory": {
+          "documentation": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 5,
+      "startedAt": "2026-08-21T18:15:42.967Z",
+      "durationMs": 88347,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 1229,
+        "totalTokens": 16953,
+        "cost": 0.00891207
+      },
+      "findings": [
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 1,
+          "endLine": 104,
+          "severity": "major",
+          "category": "documentation",
+          "description": "Plan brief claims to reference research and plan review files that don't exist in this PR. The brief states 'Plan review: context/changes/impl-review-ci-agent/reviews/plan-review.md (all five findings applied)' but that file is not present in the diff. This creates broken documentation links and misleads reviewers about the validation status.",
+          "suggestion": "Either include the referenced plan-review.md file or update the brief to remove the claim about findings being applied."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 1,
+          "endLine": 320,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Research document contains a hardcoded Git commit hash and branch reference that will become stale. The header 'git_commit: be6cd6ab6efb3dc67668b45a3aef2c06415d5a67' and 'branch: docs/impl-review-ci-agent-scoping' reference ephemeral state that won't be useful after merge.",
+          "suggestion": "Remove the specific commit hash and branch from the metadata header, or replace with a placeholder indicating this was research for the change."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 13,
+          "endLine": 13,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Researcher name 'Piotr Miller' appears in metadata but this appears to be a placeholder or example name that should be replaced with the actual researcher's identifier.",
+          "suggestion": "Update the researcher field to use the actual researcher's identifier or remove if not applicable."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 1,
+          "endLine": 173,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Verification document contains future dates ('STATUS: EXECUTED 2026-08-13') that create confusion about the document's current state. The document appears to be written as if the verification has already happened, which is misleading for reviewers.",
+          "suggestion": "Rewrite the verification document to reflect its current state as a plan for verification, not as a completed verification report."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 60,
+          "endLine": 60,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Verification document references a not-yet-existing directory structure 'context/changes/probe-impl-review/' for probe files. These paths are used as examples but don't exist, which could confuse readers trying to follow the probe setup.",
+          "suggestion": "Either create example probe files in the referenced paths or rewrite the examples to use clearly marked placeholder paths."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "startLine": 1,
+          "endLine": 90,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Change metadata includes 'status: impl_reviewed' which appears premature since this is the PR proposing the implementation review feature. The status should reflect the current state of this change.",
+          "suggestion": "Update status to reflect the current state (e.g., 'proposed' or 'in_progress') rather than claiming it's already been implementation reviewed."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "startLine": 1,
+          "endLine": 90,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Change metadata includes future dates 'updated: 2026-08-12' and 'created: 2026-08-11' which are inconsistent with the current review timeline and could confuse version tracking.",
+          "suggestion": "Update dates to reflect the actual creation and modification dates, or remove them if they're placeholders."
+        },
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 106,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The new documentation section in AGENTS.md about the implementation review pass contains a model override reference 'vars.OPENROUTER_IMPL_REVIEW_MODEL' without documenting the default value or where this variable should be defined.",
+          "suggestion": "Add a note about where this variable is configured and what the default value is, or reference the configuration documentation."
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "startLine": 158,
+          "endLine": 165,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The new lesson about offline evals mentions 'packages/code-reviewer/evals/' directory but doesn't explain what this directory contains or how to use it for gating model adoption.",
+          "suggestion": "Add a brief description of what the evals directory contains and how it should be used in the gating process."
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "major": 1,
+          "minor": 8
+        },
+        "byCategory": {
+          "documentation": 9
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 6,
+      "startedAt": "2026-08-21T18:17:11.321Z",
+      "durationMs": 51893,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 749,
+        "totalTokens": 16473,
+        "cost": 0.00258407
+      },
+      "findings": [
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 95,
+          "endLine": 104,
+          "severity": "major",
+          "category": "security",
+          "description": "The research identifies that porting the criteria layer verbatim would result in remote code execution. The plan's automated verification commands would run in a CI job holding OPENROUTER_API_KEY and pull-requests: write token. This is a critical security vulnerability that must be addressed by not executing plan-derived commands.",
+          "suggestion": "Ensure any implementation drops the command execution sections from the criteria layer or replaces them with a safe alternative (e.g., fixed allowlist of commands)."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 218,
+          "endLine": 228,
+          "severity": "major",
+          "category": "security",
+          "description": "The research identifies that adding postPrComment as a model tool would complete the 'lethal trifecta' (exposure to untrusted content + access to secrets + ability to change state), violating the Agents Rule of Two. This would create a prompt injection vulnerability.",
+          "suggestion": "Keep comment publishing deterministic and out of the model's hands. Do not implement postPrComment as a model-invoked tool."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 139,
+          "endLine": 144,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The verification document notes that the cost telemetry for the finder and judge is incomplete - finderTelemetry lacks a 'cost' key and the judge has no telemetry block at all. This prevents measuring the cost ratio criterion 4.8.",
+          "suggestion": "Add missing cost telemetry to finderTelemetry and add a telemetry block for the judge before implementing the feature, or restate criterion 4.8 in terms of what is actually measurable."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 49,
+          "endLine": 49,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The plan-brief uses a relative path reference to the full plan without proper markdown link formatting.",
+          "suggestion": "Convert to proper markdown link: `> Full plan: [context/changes/impl-review-ci-agent/plan.md](context/changes/impl-review-ci-agent/plan.md)`"
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 50,
+          "endLine": 51,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Inconsistent use of markdown link formatting for references to research and plan review documents.",
+          "suggestion": "Convert all references to proper markdown links for consistency."
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "major": 2,
+          "minor": 1,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 2,
+          "testing": 1,
+          "documentation": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 7,
+      "startedAt": "2026-08-21T18:18:03.219Z",
+      "durationMs": 65767,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 740,
+        "totalTokens": 16464,
+        "cost": 0.00256832
+      },
+      "findings": [
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 107,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The description of the plan-aware implementation review could be clearer about the conditional nature of the third pass and its isolation from existing labels/exit codes. The current wording mixes implementation details with user-facing behavior.",
+          "suggestion": "Consider restructuring to clearly separate: (1) what triggers the pass, (2) what it outputs, and (3) what it doesn't affect. The 'Never affects ai-cr:* labels or the exit code' point is important but buried."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "startLine": 77,
+          "endLine": 90,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The research summary conflates tool adoption evidence with model capability. The conclusion that glm-4.6 made '0 tool calls on 0/6 fixture rows AND 0 live' is accurate, but the leap to 'readPlan cannot be a model-invoked tool' overstates the case - the issue is tool adoption, not capability.",
+          "suggestion": "Rephrase to distinguish between 'model did not call tools in observed runs' from 'model cannot use tools effectively'. The former is an adoption pattern, the latter is capability."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 14,
+          "endLine": 14,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The plan-brief references a full plan at `context/changes/impl-review-ci-agent/plan.md` but no such file exists in the diff. This creates a broken reference.",
+          "suggestion": "Either include the plan.md file in the diff or remove the reference to avoid dangling documentation links."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The frontmatter includes 'last_updated_by: Piotr Miller' but the researcher is also Piotr Miller. This is redundant and could confuse future readers about authorship vs maintainer.",
+          "suggestion": "Remove 'last_updated_by' when it's the same as the researcher, or clarify the distinction (e.g., researcher vs document maintainer)."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 159,
+          "endLine": 173,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The cost ratio calculation cannot be performed as written because the finder telemetry lacks a cost field and the judge has no telemetry block. This is a documentation-to-implementation mismatch.",
+          "suggestion": "Update the verification criteria to only measure what's actually available (tokens) or add a prerequisite to instrument the missing cost fields before this verification can run."
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "nit": 2,
+          "minor": 3
+        },
+        "byCategory": {
+          "documentation": 5
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 8,
+      "startedAt": "2026-08-21T18:19:08.996Z",
+      "durationMs": 41424,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 607,
+        "totalTokens": 16331,
+        "cost": 0.00233557
+      },
+      "findings": [
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 104,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The new third pass description lacks the critical security context about treating plans as untrusted data and the deterministic resolution strategy, which is documented elsewhere but should be at least hinted here for completeness.",
+          "suggestion": "Add a brief note about the trust boundary and deterministic resolution in the third pass description."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "startLine": 78,
+          "endLine": 82,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The decision matrix table lacks a 'Source' column for the 'Command execution' row, breaking the table's own formatting convention.",
+          "suggestion": "Add the source reference for the command execution decision to maintain table consistency."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 42,
+          "endLine": 42,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent markdown list formatting - uses hyphen for list items while the rest of the document uses asterisks.",
+          "suggestion": "Change hyphen to asterisk to match the document's list formatting convention."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 88,
+          "endLine": 94,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The probe design includes a 'benign extra' case (5) that could pass if flagged as WARNING, but the PASS criteria only mentions 'unflagged, or flagged at WARNING/OBSERVATION' - the OBSERVATION severity level is not mentioned in the criteria.",
+          "suggestion": "Either include OBSERVATION explicitly in the PASS criteria or remove it as an option to avoid ambiguity."
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "startLine": 162,
+          "endLine": 162,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent list item formatting - uses hyphen while previous lesson uses dash.",
+          "suggestion": "Use consistent dash formatting for all list items in the lesson."
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "minor": 3,
+          "nit": 2
+        },
+        "byCategory": {
+          "documentation": 2,
+          "style": 2,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 9,
+      "startedAt": "2026-08-21T18:19:50.423Z",
+      "durationMs": 16438,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 154,
+        "totalTokens": 15878,
+        "cost": 0.00154282
+      },
+      "findings": [
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 33,
+          "endLine": 33,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Typo: 'falsfy' should be 'falsify'",
+          "suggestion": "Change 'falsfy' to 'falsify'"
+        }
+      ],
+      "summary": {
+        "n": 1,
+        "bySeverity": {
+          "nit": 1
+        },
+        "byCategory": {
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 10,
+      "startedAt": "2026-08-21T18:20:06.865Z",
+      "durationMs": 52847,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 846,
+        "totalTokens": 16570,
+        "cost": 0.00275382
+      },
+      "findings": [
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 106,
+          "severity": "major",
+          "category": "security",
+          "description": "The plan-aware implementation review documentation correctly identifies that plan files are untrusted data, but the description of the trust boundary could be clearer about the specific risks of treating plan content as instructions. The current explanation might lead implementers to underestimate the prompt injection risk.",
+          "suggestion": "Add an explicit warning about prompt injection risks when processing plan content, and emphasize that plan content must never be interpolated into prompts as instructions."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "startLine": 1,
+          "endLine": 90,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The change document mixes implementation details with architectural decisions, making it difficult to distinguish between what's decided and what's proposed. Decision #5 about tool determinism is particularly verbose and could obscure the key takeaway.",
+          "suggestion": "Extract the detailed tool evaluation results into a separate appendix or reference document, keeping the main decisions concise."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 1,
+          "endLine": 104,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The plan brief contains a detailed decisions table that mixes implementation choices with architectural constraints. Some decisions (like 'Plan tooling') reference research findings that aren't immediately visible to readers of this document.",
+          "suggestion": "Add brief inline citations or references to the research document for decisions that depend on external findings."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 1,
+          "endLine": 320,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The research document contains valuable security analysis but is very lengthy and includes code references that may become outdated. The 'Agents Rule of Two' explanation is critical but buried in finding #3.",
+          "suggestion": "Extract the 'Agents Rule of Two' explanation into a highlighted security principle box at the top of the document for visibility."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 1,
+          "endLine": 173,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The verification document correctly emphasizes pre-registration of test criteria, but the outcome section reveals that criterion 4.2 (run completion) was deferred due to structural issues. This should be documented as a known limitation rather than a deferred test.",
+          "suggestion": "Add a 'Known Limitations' section to document that end-to-end testing of the workflow integration is blocked by the branch target restriction."
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "startLine": 158,
+          "endLine": 165,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The new lesson about offline vs live evaluation is valuable but the example references specific model evaluations that may not be meaningful to future readers without context of the finder-tool-loop-evals change.",
+          "suggestion": "Generalize the example to focus on the principle rather than specific model names, or add a brief reference to the relevant archived change for context."
+        }
+      ],
+      "summary": {
+        "n": 6,
+        "bySeverity": {
+          "major": 1,
+          "minor": 5
+        },
+        "byCategory": {
+          "security": 1,
+          "documentation": 4,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 11,
+      "startedAt": "2026-08-21T18:20:59.722Z",
+      "durationMs": 52508,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 787,
+        "totalTokens": 16511,
+        "cost": 0.00265057
+      },
+      "findings": [
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 106,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The documentation contradicts itself about plan resolution. It claims plan resolution is 'deterministic, never a model tool call' but then describes a 'candidate staged from the Git object after a blob-mode check' without clarifying that this staging happens in workflow shell, not via model tools. This ambiguity could mislead implementers.",
+          "suggestion": "Clarify that the deterministic resolution is performed by workflow steps before invoking the model, keeping the model entirely out of plan resolution."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/change.md",
+          "startLine": 42,
+          "endLine": 42,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Polish translation 'ścieżka 2' appears in English documentation. While the meaning is clear from context, this mixes languages unnecessarily.",
+          "suggestion": "Replace with English equivalent 'path 2' or remove the quotation entirely."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 28,
+          "endLine": 28,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The brief incorrectly states that today's review 'has no idea what the PR was supposed to do', but the existing system already processes PR_TITLE and PR_BODY as context to the reviewer (cli.ts:177-178). This overstates the current limitation.",
+          "suggestion": "Qualify the statement: 'has no structured idea of what the PR was supposed to do beyond the title/body'."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 183,
+          "endLine": 183,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The research cites 'Microsoft Defender, 2026-06-05' but the actual publication is 'Microsoft Defender for Cloud' research team. The attribution is imprecise.",
+          "suggestion": "Use the full attribution: 'Microsoft Defender for Cloud Research Team'."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 159,
+          "endLine": 159,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The verification document claims criterion 4.8 is blocked due to missing cost telemetry, but this appears to be a discovery during verification rather than a pre-registered blocking issue. The framing suggests it was known beforehand.",
+          "suggestion": "Clarify that this was discovered during execution and reclassify as a finding rather than a blocked criterion."
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "startLine": 164,
+          "endLine": 164,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The new lesson entry uses 'fixture behaviour' (British spelling) while the rest of the document uses American spelling (e.g., 'behavior' elsewhere).",
+          "suggestion": "Standardize to American spelling: 'fixture behavior'."
+        }
+      ],
+      "summary": {
+        "n": 6,
+        "bySeverity": {
+          "minor": 4,
+          "nit": 2
+        },
+        "byCategory": {
+          "documentation": 6
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 12,
+      "startedAt": "2026-08-21T18:21:52.233Z",
+      "durationMs": 53993,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r3",
+        "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+        "sentBytes": 63978
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 15724,
+        "outputTokens": 878,
+        "totalTokens": 16602,
+        "cost": 0.00280982
+      },
+      "findings": [
+        {
+          "file": "AGENTS.md",
+          "startLine": 94,
+          "endLine": 106,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The documentation of the new third pass should explicitly state that the `OPENROUTER_API_KEY` secret is also used for this pass, as it invokes the OpenRouter API. While implied, mentioning it improves clarity for maintainers.",
+          "suggestion": "Add 'Secret-bearing (OPENROUTER_API_KEY), therefore same-repo, non-draft, human-authored PRs only' to the third pass description, matching the existing pass."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 67,
+          "endLine": 67,
+          "severity": "nit",
+          "category": "style",
+          "description": "Table formatting inconsistency: the 'Why (1 sentence)' column contains multi-sentence explanations for several rows (e.g., rows 1, 2, 7, 9).",
+          "suggestion": "Either update column headers to reflect multi-sentence content or truncate explanations to one sentence each."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 104,
+          "endLine": 104,
+          "severity": "nit",
+          "category": "style",
+          "description": "Markdown list uses inconsistent bullet style: hyphens for most items but an em-dash for the last item.",
+          "suggestion": "Standardize to hyphens throughout the list."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 44,
+          "endLine": 44,
+          "severity": "nit",
+          "category": "style",
+          "description": "Unbalanced parentheses in '§3.4 and § \"Verify the success criteria\"'.",
+          "suggestion": "Add closing parenthesis or rephrase to avoid parenthetical."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 320,
+          "endLine": 320,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The research document references 'Spec Kit CI Guard' as using 'spec.md / plan.md / tasks.md' vocabulary, but the plan-brief indicates this repo uses only 'plan.md'. Clarify the mapping discrepancy.",
+          "suggestion": "Add a note explaining how this repo's plan-only approach maps to Spec Kit's multi-file vocabulary, or adjust the comparison."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 173,
+          "endLine": 173,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The cost ratio criterion (4.8) was pre-registered but discovered to be unmeasurable due to missing telemetry blocks. This gap should be tracked as a known limitation.",
+          "suggestion": "Add a 'Known Limitations' subsection noting that cost ratio reporting is blocked until finder/judge telemetry is implemented."
+        },
+        {
+          "file": "context/foundation/lessons.md",
+          "startLine": 165,
+          "endLine": 165,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent bullet style: uses hyphens for the first three bullet points but an em-dash for the last one.",
+          "suggestion": "Standardize to hyphens for all bullet points in the lesson."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "minor": 3,
+          "nit": 4
+        },
+        "byCategory": {
+          "documentation": 2,
+          "style": 4,
+          "testing": 1
+        }
+      },
+      "error": null
+    }
+  ]
+}
