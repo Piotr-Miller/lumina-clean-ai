@@ -412,13 +412,13 @@ constants change, but the archive itself is untouched.
 
 #### Automated
 
-- [x] 1.1 Package lint + typecheck + tests pass (note rendering, injection fencing, invariance, parity, probe-unit assembly)
-- [x] 1.2 Dry anchors reproduce rawBytes 215,560 / sentBytes 100,030 / archived inputSha256
-- [x] 1.3 Untruncated-path invariance test passes
+- [x] 1.1 Package lint + typecheck + tests pass (note rendering, injection fencing, invariance, parity, probe-unit assembly) — 074962f
+- [x] 1.2 Dry anchors reproduce rawBytes 215,560 / sentBytes 100,030 / archived inputSha256 — 074962f
+- [x] 1.3 Untruncated-path invariance test passes — 074962f
 
 #### Manual
 
-- [x] 1.4 Rendered note text reviewed for tone/clarity
+- [x] 1.4 Rendered note text reviewed for tone/clarity — 074962f
 
 ### Phase 2: Pre-registration
 
