@@ -514,5 +514,5 @@ None — no production code changes. The stale probe keeps working; only its hea
 
 #### Manual
 
-- [ ] 5.2 Decision claims traceable to gate read-offs
-- [ ] 5.3 Handoff names the R5 follow-up change
+- [x] 5.2 Decision claims traceable to gate read-offs — passed after 5 corrections (3e3cb7b)
+- [x] 5.3 Handoff names the R5 follow-up change — decision.md Disposition #2
