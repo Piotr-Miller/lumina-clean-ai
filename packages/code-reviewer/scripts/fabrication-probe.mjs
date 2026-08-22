@@ -37,7 +37,8 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { asStepCost, capDiff, DIFF_CAP_BYTES } from "../src/pipeline.js";
+import { asStepCost, capDiff, computeFileSegments, computeManifest, DIFF_CAP_BYTES } from "../src/pipeline.js";
+import { buildInstructions, buildPrompt } from "../src/prompts.js";
 import { createReviewer } from "../src/reviewer.js";
 
 export const FINDER_MODEL = "z-ai/glm-4.6";
@@ -71,12 +72,13 @@ const INSTRUMENT_SHA = "7c9c12f";
 const PLAN_EXCLUDE = "context/changes/impl-review-ci-agent/plan.md";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-const changeDir = `${repoRoot}context/changes/finder-fabrication-triggers`;
+// Re-pointed from the archived finder-fabrication-triggers campaign (its
+// folder is read-only under context/archive/) to the R5 measurement change.
+const changeDir = `${repoRoot}context/changes/r5-finder-truncation-note`;
 const resultsDir = `${changeDir}/results`;
 const RLOC_CONTEXT_PATH = `${changeDir}/ground-truth/rloc-context.txt`;
 
-const git = (...args) =>
-  execFileSync("git", args, { cwd: repoRoot, encoding: "utf8", maxBuffer: 60 * 1024 * 1024 });
+const git = (...args) => execFileSync("git", args, { cwd: repoRoot, encoding: "utf8", maxBuffer: 60 * 1024 * 1024 });
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -128,77 +130,41 @@ function recipeArgs(variant, rung) {
   if (variant === "instrument") {
     return ["diff", `${INSTRUMENT_SHA}^1`, INSTRUMENT_SHA, "--", ".", ":(exclude,glob)**/reviews/*.md"];
   }
-  const base = ["diff", `${CI_BASE}...${CI_HEAD}`, "--", ".", ":(exclude,glob)**/reviews/*.md", `:(exclude)${PLAN_EXCLUDE}`];
+  const base = [
+    "diff",
+    `${CI_BASE}...${CI_HEAD}`,
+    "--",
+    ".",
+    ":(exclude,glob)**/reviews/*.md",
+    `:(exclude)${PLAN_EXCLUDE}`,
+  ];
   if (rung === "r2") base.push(":(exclude)context/**");
   if (rung === "r3") base.push(":(exclude)packages/**", ":(exclude).github/**");
   return base;
 }
 
-/**
- * Splits unified-diff text into per-file segments with UTF-8 byte offsets.
- * Pure string work — exported for the manifest sanity checks.
- */
-export function computeFileSegments(diffText) {
-  const encoder = new TextEncoder();
-  const segments = [];
-  let current = null;
-  // Iterate over `diff --git ` headers by LINE START so in-hunk content
-  // (e.g. a quoted diff inside prose) can't open a phantom segment.
-  let byteOffset = 0;
-  for (const line of diffText.split("\n")) {
-    if (line.startsWith("diff --git ")) {
-      if (current) {
-        current.endByte = byteOffset;
-        segments.push(current);
-      }
-      const bPath = / b\/(.+)$/.exec(line)?.[1] ?? line.slice("diff --git ".length);
-      current = { path: bPath, startByte: byteOffset, endByte: -1 };
-    }
-    byteOffset += encoder.encode(line).length + 1; // +1 for the split-off "\n"
-  }
-  if (current) {
-    // Last segment ends at the true byte length (no trailing phantom newline).
-    current.endByte = encoder.encode(diffText).length;
-    segments.push(current);
-  }
-  return segments;
-}
+// computeFileSegments / computeManifest formerly lived here; they are now
+// imported from ../src/pipeline.js (change r5-finder-truncation-note) so
+// production's truncation note and this instrument share one implementation.
 
 /**
- * Window manifest: which files are (partially) inside the first `capBytes`
- * bytes, where the cut lands, and what falls outside. `capBytes: null` means
- * the cap is lifted (rung r1) — everything is in-window.
+ * The exact ReviewUnit the paid finder call receives (r5 plan-review F6):
+ * extracted and hermetically tested so provenance can DERIVE noteActive from
+ * the unit instead of asserting it. Truncation facts come from the probe's
+ * own manifest — the same computeManifest production's truncationReport uses.
  */
-export function computeManifest(diffText, capBytes) {
-  const segments = computeFileSegments(diffText);
-  const totalBytes = new TextEncoder().encode(diffText).length;
-  if (capBytes === null || totalBytes <= capBytes) {
-    return {
-      totalBytes,
-      capBytes,
-      truncated: false,
-      window: segments.map((s) => ({ ...s, complete: true })),
-      cutFile: null,
-      cutOffsetInFile: null,
-      overCap: [],
-    };
-  }
-  const window = [];
-  const overCap = [];
-  let cutFile = null;
-  let cutOffsetInFile = null;
-  for (const s of segments) {
-    if (s.endByte <= capBytes) {
-      window.push({ ...s, complete: true });
-    } else if (s.startByte < capBytes) {
-      window.push({ ...s, complete: false });
-      cutFile = s.path;
-      cutOffsetInFile = capBytes - s.startByte;
-    } else {
-      overCap.push(s.path);
-    }
-  }
-  return { totalBytes, capBytes, truncated: true, window, cutFile, cutOffsetInFile, overCap };
+export function buildProbeReviewUnit(sent, manifest) {
+  return {
+    kind: "diff",
+    diff: sent,
+    ...(manifest.truncated
+      ? {
+          truncated: true,
+          ...(manifest.cutFile === null || manifest.cutFile === undefined ? {} : { cutFile: manifest.cutFile }),
+          overCapFiles: manifest.overCap,
+        }
+      : {}),
+  };
 }
 
 function buildInput(variant, rung) {
@@ -265,7 +231,11 @@ function buildInput(variant, rung) {
     rulesSha256: createHash("sha256").update(projectContext, "utf8").digest("hex"),
     // Binds EVERY model-visible input (diff window + rules) into one identity
     // the grader can cross-check (review F2).
-    inputsSha256: createHash("sha256").update(sent, "utf8").update("\0", "utf8").update(projectContext, "utf8").digest("hex"),
+    inputsSha256: createHash("sha256")
+      .update(sent, "utf8")
+      .update("\0", "utf8")
+      .update(projectContext, "utf8")
+      .digest("hex"),
     rlocContext,
     model: FINDER_MODEL,
     ...computeManifest(raw, capBytes),
@@ -290,7 +260,25 @@ const summarise = (findings) => {
 async function main() {
   const { variant, rung, n, dry } = parseArgs(process.argv.slice(2));
   const { sent, projectContext, manifest } = buildInput(variant, rung);
-  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+  // Provenance binds the intervention (r5 plan-review F6): the unit is the
+  // exact one the paid call receives, noteActive is DERIVED from it, and
+  // promptSha256 hashes the complete rendered model-visible prompt
+  // (instructions + user prompt) alongside the intentionally unchanged
+  // inputSha256.
+  const reviewUnit = buildProbeReviewUnit(sent, manifest);
+  const noteActive = reviewUnit.truncated === true;
+  const promptSha256 = createHash("sha256")
+    .update(
+      buildInstructions("general", { fileContextTool: false, projectContext: projectContext || undefined }) +
+        "\n\n" +
+        buildPrompt(reviewUnit),
+      "utf8",
+    )
+    .digest("hex");
+  const stamp = new Date()
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d+Z$/, "Z");
 
   mkdirSync(resultsDir, { recursive: true });
 
@@ -367,6 +355,8 @@ async function main() {
         rung,
         inputSha256: manifest.inputSha256,
         sentBytes: manifest.sentBytes,
+        noteActive,
+        promptSha256,
       },
       provider: null,
       usage,
@@ -381,7 +371,7 @@ async function main() {
         providerRouting: PINNED_PROVIDER,
         onStepEnd,
       });
-      const result = await review({ kind: "diff", diff: sent }, { timeoutMs: FINDER_TIMEOUT_MS });
+      const result = await review(reviewUnit, { timeoutMs: FINDER_TIMEOUT_MS });
       record.findings = result.findings;
       record.summary = summarise(result.findings);
     } catch (error) {

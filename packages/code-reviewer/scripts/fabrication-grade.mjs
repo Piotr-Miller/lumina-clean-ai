@@ -62,7 +62,10 @@ export function assertFlatVerdictSchema(schema = gradeVerdictSchema) {
 }
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-const groundTruthDir = `${repoRoot}context/changes/finder-fabrication-triggers/ground-truth`;
+// Re-pointed from the archived finder-fabrication-triggers campaign to the R5
+// measurement change; the ground truth there must stay byte-identical to the
+// archived frozen copy (sha256 pinned in the change's verification.md).
+const groundTruthDir = `${repoRoot}context/changes/r5-finder-truncation-note/ground-truth`;
 
 /** Write via a temp file + rename so a checkpoint is never half-written. */
 function writeFileAtomic(path, data) {
@@ -316,7 +319,7 @@ async function main() {
   const manifestPath = resultsPath.replace(/\.json$/, "-manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   assertRunIdentity({ results, manifest });
-  const groundTruthRelPath = `context/changes/finder-fabrication-triggers/ground-truth/${results.variant}.md`;
+  const groundTruthRelPath = `context/changes/r5-finder-truncation-note/ground-truth/${results.variant}.md`;
   const groundTruth = readFileSync(`${groundTruthDir}/${results.variant}.md`, "utf8");
   const groundTruthSha256 = createHash("sha256").update(groundTruth, "utf8").digest("hex");
   const manifestSummary = summarizeManifest(manifest);
@@ -339,7 +342,9 @@ async function main() {
       throw new Error(`${outPath} is already complete — delete it to re-grade (that re-spends)`);
     }
     if (priorCheckpoint.inputsSha256 !== results.inputsSha256) {
-      throw new Error(`checkpoint ${outPath} belongs to a different input (inputsSha256 mismatch) — refusing to resume`);
+      throw new Error(
+        `checkpoint ${outPath} belongs to a different input (inputsSha256 mismatch) — refusing to resume`,
+      );
     }
     console.log(
       `resuming from interrupted checkpoint (${String(priorCheckpoint.graderUsage?.calls ?? 0)} paid calls already made)`,

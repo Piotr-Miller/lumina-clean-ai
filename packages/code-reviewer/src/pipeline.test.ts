@@ -7,6 +7,8 @@ import {
   BODY_TRUNCATION_MARKER,
   capDiff,
   computeDiffStats,
+  computeFileSegments,
+  computeManifest,
   DEFAULT_FINDER_TIMEOUT_MS,
   DEFAULT_JUDGE_TIMEOUT_MS,
   describeFinderStep,
@@ -16,6 +18,7 @@ import {
   PLAN_CAP_CHARS,
   PLAN_TRUNCATION_MARKER,
   runReviewPipeline,
+  truncationReport,
   type FinderStepInfo,
 } from "./pipeline.js";
 import { type JudgePromptInput } from "./prompts.js";
@@ -888,7 +891,7 @@ describe("runReviewPipeline implementation-review pass", () => {
     expect(result.verdict).toBe("passed");
   });
 
-  it("reports a retried third pass through onRetry as \"impl-review\"", async () => {
+  it('reports a retried third pass through onRetry as "impl-review"', async () => {
     const events: string[] = [];
     let attempt = 0;
     const result = await runReviewPipeline({
@@ -1045,5 +1048,107 @@ describe("capDiff (exported)", () => {
     const result = capDiff(diff);
     expect(result.truncated).toBe(true);
     expect(result.diff).not.toContain("�");
+  });
+});
+
+// --- Window computation port + finder truncation wiring (r5-finder-truncation-note) ---
+
+describe("computeFileSegments / computeManifest (library port)", () => {
+  const twoFiles = ["diff --git a/src/a.ts b/src/a.ts", "+aaaa", "diff --git a/src/b.ts b/src/b.ts", "+bbb"].join("\n");
+
+  it("segments per file with contiguous UTF-8 byte offsets", () => {
+    const segments = computeFileSegments(twoFiles);
+    expect(segments.map((s) => s.path)).toEqual(["src/a.ts", "src/b.ts"]);
+    expect(segments[0].startByte).toBe(0);
+    expect(segments[0].endByte).toBe(segments[1].startByte);
+    expect(segments[1].endByte).toBe(new TextEncoder().encode(twoFiles).length);
+  });
+
+  it("ignores in-hunk lines that merely contain a diff header (phantom-segment guard)", () => {
+    const quoted = ["diff --git a/doc.md b/doc.md", "+quoted header below:", "+diff --git a/fake b/fake"].join("\n");
+    expect(computeFileSegments(quoted).map((s) => s.path)).toEqual(["doc.md"]);
+  });
+
+  it("reports git-quoted paths verbatim as parsed, never decoded", () => {
+    const line = 'diff --git "a/we ird.txt" "b/we ird.txt"';
+    expect(computeFileSegments(`${line}\n+x`)[0].path).toBe('"a/we ird.txt" "b/we ird.txt"');
+  });
+
+  it("keeps everything in-window when the cap is lifted (null)", () => {
+    const manifest = computeManifest(twoFiles, null);
+    expect(manifest.truncated).toBe(false);
+    expect(manifest.window.every((w) => w.complete)).toBe(true);
+    expect(manifest.overCap).toEqual([]);
+    expect(manifest.cutFile).toBeNull();
+  });
+
+  it("names the cut file, its cut offset, and the over-cap files", () => {
+    const segments = computeFileSegments(twoFiles);
+    const capBytes = segments[1].startByte - 2; // cut lands inside src/a.ts
+    const manifest = computeManifest(twoFiles, capBytes);
+    expect(manifest.truncated).toBe(true);
+    expect(manifest.cutFile).toBe("src/a.ts");
+    expect(manifest.cutOffsetInFile).toBe(capBytes);
+    expect(manifest.overCap).toEqual(["src/b.ts"]);
+  });
+});
+
+describe("truncationReport", () => {
+  it("reports an in-cap diff as untruncated with no cutFile key", () => {
+    const report = truncationReport(SMALL_DIFF);
+    expect(report).toEqual({ truncated: false, overCapFiles: [] });
+    expect("cutFile" in report).toBe(false);
+  });
+
+  it("omits cutFile when the cap lands exactly on a file boundary", () => {
+    const h1 = "diff --git a/a.txt b/a.txt\n";
+    const pad = `+${"x".repeat(DIFF_CAP_BYTES - h1.length - 2)}\n`;
+    const diff = `${h1}${pad}diff --git a/b.txt b/b.txt\n+y`;
+    expect(computeFileSegments(diff)[1].startByte).toBe(DIFF_CAP_BYTES);
+    const report = truncationReport(diff);
+    expect(report.truncated).toBe(true);
+    expect("cutFile" in report).toBe(false);
+    expect(report.overCapFiles).toEqual(["b.txt"]);
+  });
+
+  it("reports oversized headerless text as truncated with no files", () => {
+    const report = truncationReport("x".repeat(DIFF_CAP_BYTES + 10));
+    expect(report).toEqual({ truncated: true, overCapFiles: [] });
+    expect("cutFile" in report).toBe(false);
+  });
+});
+
+describe("finder truncation wiring", () => {
+  const captureFinder = (sink: { unit?: ReviewUnit }) => (unit: ReviewUnit) => {
+    sink.unit = unit;
+    return Promise.resolve({ summary: "s", findings: [] });
+  };
+
+  it("passes truncated/cutFile/overCapFiles into the finder unit for an oversized diff", async () => {
+    const big = [
+      "diff --git a/src/big.ts b/src/big.ts",
+      `+${"x".repeat(DIFF_CAP_BYTES)}`,
+      "diff --git a/src/beyond.ts b/src/beyond.ts",
+      "+y",
+    ].join("\n");
+    const sink: { unit?: ReviewUnit } = {};
+    await runReviewPipeline({
+      diff: big,
+      deps: { finder: captureFinder(sink), judge: () => Promise.resolve(judgeResult()) },
+    });
+    if (sink.unit?.kind !== "diff") throw new Error("finder unit missing");
+    expect(sink.unit.truncated).toBe(true);
+    expect(sink.unit.cutFile).toBe("src/big.ts");
+    expect(sink.unit.overCapFiles).toEqual(["src/beyond.ts"]);
+    expect(sink.unit.diff.endsWith(DIFF_TRUNCATION_MARKER)).toBe(true);
+  });
+
+  it("adds no truncation fields for an in-cap diff (unit unchanged byte-for-byte)", async () => {
+    const sink: { unit?: ReviewUnit } = {};
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: { finder: captureFinder(sink), judge: () => Promise.resolve(judgeResult()) },
+    });
+    expect(sink.unit).toEqual({ kind: "diff", diff: SMALL_DIFF });
   });
 });
