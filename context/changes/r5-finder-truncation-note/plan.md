@@ -424,12 +424,12 @@ constants change, but the archive itself is untouched.
 
 #### Automated
 
-- [ ] 2.1 Prettier clean on verification.md + ground-truth/ci.md
-- [ ] 2.2 Ground-truth sha256 equals frozen archived value
+- [x] 2.1 Prettier clean on verification.md + ground-truth/ci.md
+- [x] 2.2 Ground-truth sha256 equals frozen archived value
 
 #### Manual
 
-- [ ] 2.3 Bars independently read; pre-registration commit lands before any paid call
+- [x] 2.3 Bars independently read; pre-registration commit lands before any paid call
 
 ### Phase 3: Measurement (paid)
 
