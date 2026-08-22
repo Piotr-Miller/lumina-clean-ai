@@ -1,0 +1,40 @@
+{
+  "variant": "ci",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260821T125747Z",
+  "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "719e2db40c7b1701e62f16ed5e5cf48cb76545efcc696ada689dcf6fd7267609",
+  "plannedAttempts": 1,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-21T12:57:47.109Z",
+      "durationMs": 39565,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030
+      },
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25027,
+        "outputTokens": 1860,
+        "totalTokens": 26887,
+        "cost": 0.0068778
+      },
+      "findings": null,
+      "summary": null,
+      "error": {
+        "name": "AI_NoObjectGeneratedError",
+        "message": "No object generated: response did not match schema.",
+        "text": "[\n{\n  \"severity\": \"critical\",\n  \"file\": \".github/workflows/review.yml\",\n  \"startLine\": 102,\n  \"endLine\": 106,\n  \"issue\": \"Potential symlink exposure in plan staging\",\n  \"detail\": \"The plan staging step uses `git show` to read the blob, which correctly avoids symlink traversal. However, the earlier `ls-tree` mode check only rejects symlinks (120000) and submodules (160000), but does not handle other non-blob modes that could be problematic (e.g., 100664 for setuid files). While Git typically doesn't store such modes, explicit rejection of anything not 100644/100755 would be safer.\",\n  \"fix\": \"Update the mode check to explicitly accept only 100644 and 100755, rejecting all other modes including setuid/setgid variants.\"\n},\n{\n  \"severity\": \"major\",\n  \"file\": \".github/workflows/review.yml\",\n  \"startLine\": 58,\n  \"endLine\": 79,\n  \"issue\": \"PR body override regex vulnerable to path traversal\",\n  \"detail\": \"The regex for extracting `Plan:` override allows `../` sequences which could enable directory traversal attacks. While the later `*..*` check catches obvious cases, crafted paths like `context/changes/../../etc/passwd` would pass the regex but be caught only by the crude traversal check.\",\n  \"fix\": \"Update the regex to `s#^[[:space:]]*Plan:[[:space:]]+(context/(changes|archive)/[A-Za-z0-9._/-]+/plan\\\\.md)[[:space:]]*$#\\\\1#p` and remove the separate traversal check, as the regex now prevents it.\"\n},\n{\n  \"severity\": \"major\",\n  \"file\": \".github/workflows/review.yml\",\n  \"startLine\": 113,\n  \"endLine\": 115,\n  \"issue\": \"Race condition in plan file removal\",\n  \"detail\": \"If `git show` fails after creating the plan file, the file is removed but the script continues. A concurrent process could theoretically create a symlink at that path between removal and the next check, though the window is extremely narrow.\",\n  \"fix\": \"Use a temporary file with `mktemp` and atomic rename, or add a loop to retry the read with a fresh temp filename if the first attempt fails.\"\n},\n{\n  \"severity\": \"major\",\n  \"file\": \".github/workflows/review.yml\",\n  \"startLine\": 130,\n  \"endLine\": 138,\n  \"issue\": \"Diff exclusion array expansion vulnerable to spaces\",\n  \"detail\": \"The comment correctly identifies that unquoted expansion of `${PLAN_PATH:+…}` would word-split paths with spaces, but the current array approach still has an issue: if `PLAN_PATH` contains a glob character like `[`, it will be interpreted by git diff even inside the array.\",\n  \"fix\": \"Use `--exclude` with `git diff` (available in Git 2.34+) or explicitly disable glob expansion with `git diff --literal-pathspecs`.\"\n},\n{\n  \"severity\": \"minor\",\n  \"file\": \"packages/code-reviewer/src/cli.ts\",\n  \"startLine\": 217,\n  \"endLine\": 224,\n  \"issue\": \"Control character sanitization insufficient\",\n  \"detail\": \"`logSafePath` only replaces newlines with `?`. Other control characters like carriage return, tab, or backspace could still disrupt log formatting or be used for log injection.\",\n  \"fix\": \"Expand `logSafePath` to replace all ASCII control characters (0-31, 127) with `?` or a safe placeholder.\"\n},\n{\n  \"severity\": \"minor\",\n  \"file\": \"packages/code-reviewer/src/cli.ts\",\n  \"startLine\": 212,\n  \"endLine\": 214,\n  \"issue\": \"Plan truncation not logged\",\n  \"detail\": \"When a plan exceeds the size limit and is truncated, the fact is only recorded in `planTruncated` in the output JSON but not logged for visibility in CI logs.\",\n  \"fix\": \"Add a stderr warning when plan truncation occurs, similar to the existing plan-supplied message.\"\n},\n{\n  \"severity\": \"minor\",\n  \"file\": \".github/actions/ai-review/action.yml\",\n  \"startLine\": 89,\n  \"endLine\": 100,\n  \"issue\": \"Missing validation for impl-review-model input\",\n  \"detail\": \"The action accepts `impl-review-model` without validation, allowing empty or malformed model identifiers to reach the CLI where they cause runtime errors.\",\n  \"fix\": \"Add a validation step similar to the existing finder-max-steps check, rejecting empty or invalid model identifiers.\"\n},\n{\n  \"severity\": \"nit\",\n  \"file\": \"packages/code-reviewer/src/cli.ts\",\n  \"startLine\": 62,\n  \"endLine\": 65,\n  \"issue\": \"Usage string omits new --plan-file option\",\n  \"detail\": \"The error message for unknown arguments still shows the old usage pattern without the new `--plan-file` option.\",\n  \"fix\": \"Update the usage string to include `[--plan-file <path>]`.\"\n},\n{\n  \"severity\": \"nit\",\n  \"file\": \".github/workflows/review.yml\",\n  \"startLine\": 102,\n  \"endLine\": 102,\n  \"issue\": \"Inconsistent comment style\",\n  \"detail\": \"The comment uses `#` but other comments in the file use `#` consistently - this is actually fine, but some lines mix `#` and `#` spacing.\",\n  \"fix\": \"Standardize comment spacing to `# ` throughout the file.\"\n},\n{\n  \"severity\": \"nit\",\n  \"file\": \"packages/code-reviewer/src/config.ts\",\n  \"startLine\": 30,\n  \"endLine\": 30,\n  \"issue\": \"Redundant comment\",\n  \"detail\": \"The comment about sonnet-5 being the only model that worked duplicates information already documented in the plan files.\",\n  \"fix\": \"Shorten to reference the plan documentation instead of restating the rationale.\"\n}\n]",
+        "textBytes": 5079
+      }
+    }
+  ]
+}

@@ -1,0 +1,847 @@
+{
+  "variant": "ci",
+  "rung": "r2",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260821T165839Z",
+  "inputSha256": "84696acc25889619f9c26401328414f8564e3e11a8a7c7cbc74c73d14a3a8e9c",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "5c1685e51869881146168a81dd8de6791d843a155e96f3c34a83b15ec2dee5c7",
+  "plannedAttempts": 8,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-21T16:58:39.354Z",
+      "durationMs": 98389,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r2",
+        "inputSha256": "84696acc25889619f9c26401328414f8564e3e11a8a7c7cbc74c73d14a3a8e9c",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 27021,
+        "outputTokens": 1914,
+        "totalTokens": 28935,
+        "cost": 0.01301973
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 71,
+          "endLine": 97,
+          "severity": "major",
+          "category": "security",
+          "description": "The regex for extracting Plan: from PR body is properly anchored at both ends and restricts characters to safe path set. This prevents injection attacks that could select unintended files.",
+          "suggestion": "Good security improvement - the previous regex was vulnerable to accepting malformed Plan: lines"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 109,
+          "endLine": 133,
+          "severity": "critical",
+          "category": "security",
+          "description": "Excellent security design: plan is staged using 'git show' to read the Git object directly, avoiding symlink attacks. The blob mode check (100644|100755) prevents symlinks or submodules from being processed as plans.",
+          "suggestion": "This two-layer security approach (object read + mode check) effectively prevents the /proc/self/environ exfiltration vector"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 140,
+          "endLine": 159,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The diff now excludes review documents and the plan file itself to prevent double-counting. The array-based exclusion handles paths with spaces correctly.",
+          "suggestion": "Consider adding a comment explaining why these exclusions are necessary"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 137,
+          "endLine": 156,
+          "severity": "minor",
+          "category": "performance",
+          "description": "PLAN_CAP_CHARS is set to 80,000 based on live evidence (real plan was 47,217 chars). The cap prevents plans from dominating the context window.",
+          "suggestion": "The comment explaining the calibration from 40k to 80k based on real usage is valuable context"
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 22,
+          "endLine": 22,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "MAX_IMPL_FINDINGS is set to 10 and enforced in code, not trusted from the model. This prevents models from ignoring caps under load.",
+          "suggestion": "Good defensive programming - model-provided caps cannot be trusted"
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 85,
+          "endLine": 100,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The identifyImplFindings function sorts by severity before capping, ensuring CRITICAL findings are never dropped to make room for OBSERVATIONs.",
+          "suggestion": "The severity ranking ensures the most important findings are preserved"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 54,
+          "endLine": 71,
+          "severity": "minor",
+          "category": "performance",
+          "description": "DEFAULT_JUDGE_TIMEOUT_MS increased from 120s to 300s based on real-world measurements where the judge failed 1 in 4 times at 120s.",
+          "suggestion": "The data-driven timeout adjustment is justified and documented"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 72,
+          "endLine": 84,
+          "severity": "minor",
+          "category": "performance",
+          "description": "DEFAULT_IMPL_REVIEW_TIMEOUT_MS set to 300s based on live evidence where both attempts timed out at 120s. The pass processes large plans plus diff.",
+          "suggestion": "Good explanation of why this pass needs more time than the judge"
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 225,
+          "endLine": 225,
+          "severity": "nit",
+          "category": "style",
+          "description": "logSafePath is used to sanitize PLAN_PATH for logging but the function is not defined in this diff.",
+          "suggestion": "Ensure logSafePath is defined elsewhere or add it to this PR"
+        },
+        {
+          "file": "packages/code-reviewer/src/output-repair.ts",
+          "startLine": 107,
+          "endLine": 109,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The judge now has output repair enabled after four consecutive NoObjectGeneratedError failures killed PR #127's review.",
+          "suggestion": "Good defensive addition - the original 'never needed it' assumption was falsified"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 408,
+          "endLine": 408,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The implementation review pass runs AFTER the judge so failures don't discard the already-paid-for code review.",
+          "suggestion": "Good design choice - advisory pass failures shouldn't block the primary review"
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.test.ts",
+          "startLine": 427,
+          "endLine": 531,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Comprehensive tests added for implementation review telemetry, including edge cases like missing cost fields and failed passes.",
+          "suggestion": "Good test coverage for the new telemetry functionality"
+        }
+      ],
+      "summary": {
+        "n": 12,
+        "bySeverity": {
+          "major": 1,
+          "critical": 1,
+          "minor": 9,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 5,
+          "performance": 3,
+          "style": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 2,
+      "startedAt": "2026-08-21T17:00:17.762Z",
+      "durationMs": 104943,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r2",
+        "inputSha256": "84696acc25889619f9c26401328414f8564e3e11a8a7c7cbc74c73d14a3a8e9c",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 27021,
+        "outputTokens": 1913,
+        "totalTokens": 28934,
+        "cost": 0.00551398
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 94,
+          "endLine": 107,
+          "severity": "critical",
+          "category": "security",
+          "description": "Plan path override regex may allow unintended path selection",
+          "suggestion": "Strengthen regex to anchor 'Plan:' line at both ends and validate against a whitelist of allowed plan paths. Consider adding a check for path traversal attempts beyond '..' segments."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 124,
+          "endLine": 144,
+          "severity": "major",
+          "category": "security",
+          "description": "Plan staging uses 'git show' but mode check could miss edge cases",
+          "suggestion": "Explicitly reject symlinks (mode 120000) and other non-regular files. Add a check for file size to prevent extremely large plans from causing issues."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 225,
+          "endLine": 230,
+          "severity": "minor",
+          "category": "security",
+          "description": "PLAN_PATH is used directly in plan input without sanitization",
+          "suggestion": "Sanitize PLAN_PATH by removing control characters and limiting length before using it in the plan input object."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 140,
+          "endLine": 150,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Plan truncation may split UTF-8 sequences",
+          "suggestion": "Ensure truncation occurs at a UTF-8 character boundary to avoid invalid sequences. Consider using a library that handles Unicode grapheme clusters."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 75,
+          "endLine": 80,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Severity ranking is hardcoded and may not cover all future severity levels",
+          "suggestion": "Make severity ranking dynamic by deriving it from the schema or using a more flexible approach that doesn't require manual updates when severities change."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 200,
+          "endLine": 210,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "asStepCost may not handle all edge cases for cost extraction",
+          "suggestion": "Add type checking to ensure cost is a finite number before using it. Handle cases where cost might be a string or other types."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.test.ts",
+          "startLine": 230,
+          "endLine": 235,
+          "severity": "nit",
+          "category": "testing",
+          "description": "Test for control character defusing could be more comprehensive",
+          "suggestion": "Add more test cases for edge cases, such as very long paths, paths with multiple control characters, and paths with Unicode characters."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 30,
+          "endLine": 35,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment for DEFAULT_IMPL_REVIEW_MODEL is verbose and could be more concise",
+          "suggestion": "Shorten the comment and move detailed reasoning to documentation or a separate design doc."
+        },
+        {
+          "file": "packages/code-reviewer/src/output-repair.ts",
+          "startLine": 130,
+          "endLine": 140,
+          "severity": "nit",
+          "category": "correctness",
+          "description": "extractJsonObject may not handle nested objects with escaped braces correctly",
+          "suggestion": "Add a test case for nested objects with escaped braces to ensure the function handles them correctly."
+        },
+        {
+          "file": "packages/code-reviewer/src/judge.ts",
+          "startLine": 45,
+          "endLine": 50,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment about repair reasoning could be more specific",
+          "suggestion": "Update the comment to reference the specific issue or PR that necessitated the repair, for better traceability."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "critical": 1,
+          "major": 1,
+          "minor": 4,
+          "nit": 4
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 4,
+          "testing": 1,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 3,
+      "startedAt": "2026-08-21T17:02:02.720Z",
+      "durationMs": 53289,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r2",
+        "inputSha256": "84696acc25889619f9c26401328414f8564e3e11a8a7c7cbc74c73d14a3a8e9c",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 27021,
+        "outputTokens": 1242,
+        "totalTokens": 28263,
+        "cost": 0.00433973
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "major",
+          "category": "security",
+          "description": "The sed regex for extracting the plan override from the PR body uses `[A-Za-z0-9._/-]` which allows `.` and `..` components. Although a later case statement rejects paths containing `..`, the regex should not accept them at all to avoid ambiguity and potential surprises in edge cases.",
+          "suggestion": "Change the character class to `[A-Za-z0-9_/-]` (remove the dot) to prevent `.` and `..` path components entirely."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 104,
+          "endLine": 104,
+          "severity": "major",
+          "category": "security",
+          "description": "The `git show` command that stages the plan is not guarded by `set -o pipefail`. If `git show` fails, the error could be lost in the pipeline, potentially causing an empty or malformed plan file to be written without failing the step, contrary to the stated intent.",
+          "suggestion": "Add `set -o pipefail` at the top of the shell script block or rewrite the conditional to explicitly check the exit code of `git show` before writing the file."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 54,
+          "endLine": 54,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The comment `// Was 120_000 on the reasoning that a single structured call is quick` is outdated. The default judge timeout was already increased to 300_000 in a previous change, making the initial part of the comment misleading.",
+          "suggestion": "Update the comment to accurately reflect the current default and the rationale for the increase."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 416,
+          "endLine": 416,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The line `...(implReviewTele` is truncated in the diff, indicating an incomplete merge or copy-paste error. This will cause a syntax error in the generated code.",
+          "suggestion": "Complete the line to properly spread the `implReviewTelemetry` property, likely `...(implReviewTelemetry === undefined ? {} : { implReviewTelemetry })`."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 258,
+          "endLine": 258,
+          "severity": "minor",
+          "category": "style",
+          "description": "The assignment `let planInput: Pick<PipelineInput, \"plan\"> = {};` uses a `Pick` type for a variable that is immediately reassigned to a potentially different shape. This is unnecessarily verbose and confusing.",
+          "suggestion": "Declare the variable as `let plan: { text: string; path?: string } | undefined;` and handle the assignment more directly, improving readability."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 30,
+          "endLine": 30,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment `// sonnet-5 because plan-vs-diff conformance IS the cross-context reasoning task` contains an unnecessary emphasis (`IS`) in all caps.",
+          "suggestion": "Change `IS` to `is` for a more consistent tone."
+        },
+        {
+          "file": "packages/code-reviewer/src/judge.ts",
+          "startLine": 20,
+          "endLine": 20,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment `// Repair added after four consecutive AI_NoObjectGeneratedError failures` contains a redundant word 'consecutive'.",
+          "suggestion": "Remove 'consecutive' to simplify the comment."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 42,
+          "endLine": 42,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment `/** Cap on findings surfaced from one run — enforced in code, never trusted from the model. */` has a period inside the JSDoc block, which is unconventional.",
+          "suggestion": "Remove the period from the end of the JSDoc comment to follow common conventions."
+        },
+        {
+          "file": "packages/code-reviewer/src/output-repair.ts",
+          "startLine": 110,
+          "endLine": 110,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment `// --- Judge envelope repair ---` uses dashes that are inconsistent with the project's typical comment header style.",
+          "suggestion": "Replace the dashes with a single line of `//` characters or use a more standard header format like `// Judge envelope repair`."
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "major": 2,
+          "minor": 3,
+          "nit": 4
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 2,
+          "style": 5
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 4,
+      "startedAt": "2026-08-21T17:02:56.014Z",
+      "durationMs": 72167,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r2",
+        "inputSha256": "84696acc25889619f9c26401328414f8564e3e11a8a7c7cbc74c73d14a3a8e9c",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 27021,
+        "outputTokens": 979,
+        "totalTokens": 28000,
+        "cost": 0.00387948
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 95,
+          "severity": "critical",
+          "category": "security",
+          "description": "The symlink protection is incomplete: `git ls-tree` mode check rejects symlinks (120000) but the error message 'not a regular blob' could mislead future maintainers into thinking only regular files (100644) are safe. The check should explicitly reject both symlinks and submodules in the condition and comment for clarity.",
+          "suggestion": "Change the case pattern to `100644|100755)` and update the comment to explicitly state 'symlinks and submodules are rejected'."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The plan file is staged to `$RUNNER_TEMP/plan.md` but the action later references it via `${runner.temp}/plan.md`. While both resolve to the same directory, the inconsistency could cause confusion if the runner temp directory reference changes.",
+          "suggestion": "Use `$RUNNER_TEMP` consistently in both places."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 226,
+          "endLine": 226,
+          "severity": "minor",
+          "category": "security",
+          "description": "`logSafePath` is used to defuse control characters in `PLAN_PATH` but is not defined in the shown file. If it's missing, control characters could corrupt log output.",
+          "suggestion": "Ensure `logSafePath` is imported or defined; otherwise replace with a simple sanitization like `replace(/[\\0-\\x1F\\x7F]/g, '?')`."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 117,
+          "endLine": 117,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The `source` option is accepted but deliberately ignored. A future maintainer might accidentally wire it, converting this tool-less pass into a tool loop and breaking the cost ceiling.",
+          "suggestion": "Add a runtime check that throws if `source` is provided, or rename the option to `_source` to signal intent."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 413,
+          "endLine": 413,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The `planTruncated` field is omitted entirely when there is no plan. While this maintains backward compatibility, it creates two shapes for the same result type, which could confuse downstream consumers.",
+          "suggestion": "Consider always including `planTruncated: false` for consistency, or document the two shapes explicitly in the type."
+        },
+        {
+          "file": "packages/code-reviewer/src/output-repair.ts",
+          "startLine": 140,
+          "endLine": 140,
+          "severity": "nit",
+          "category": "style",
+          "description": "The `extractJsonObject` function uses a manual brace-counting loop. While correct, a more robust solution would use a proper JSON parser with a reviver to extract the first valid object.",
+          "suggestion": "Keep as-is for performance, but add a comment explaining why a simple regex isn't sufficient."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.test.ts",
+          "startLine": 433,
+          "endLine": 433,
+          "severity": "nit",
+          "category": "testing",
+          "description": "The test for control character defusing uses a newline character in the path, which might not fully represent the risk of other control characters (e.g., carriage returns, backspaces).",
+          "suggestion": "Add additional test cases for `\\r` and `\\x08` to ensure comprehensive sanitization."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "critical": 1,
+          "major": 1,
+          "minor": 3,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 3,
+          "style": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 5,
+      "startedAt": "2026-08-21T17:04:08.197Z",
+      "durationMs": 113522,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r2",
+        "inputSha256": "84696acc25889619f9c26401328414f8564e3e11a8a7c7cbc74c73d14a3a8e9c",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 27021,
+        "outputTokens": 2228,
+        "totalTokens": 29249,
+        "cost": 0.00606523
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 84,
+          "endLine": 84,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The sed command uses `-E` flag which is a GNU extension. This will fail on macOS/BSD sed (the default on macOS runners), causing plan resolution to break in local development or non-Linux CI environments.",
+          "suggestion": "Use a more portable approach or ensure GNU sed is explicitly used. Consider using a perl one-liner or node script for cross-platform compatibility."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 103,
+          "endLine": 103,
+          "severity": "major",
+          "category": "security",
+          "description": "The resolved plan path is echoed directly without sanitization (`echo \"resolved plan: ${PLAN:-<none>}\"`). While PLAN_PATH is later sanitized when passed to the CLI, this intermediate log could be exploited for log injection if the plan path contains control characters or ANSI escape sequences.",
+          "suggestion": "Apply the same control character defusing used elsewhere: `echo \"resolved plan: ${PLAN//[^[:print:]]/?}\"`"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 149,
+          "endLine": 149,
+          "severity": "minor",
+          "category": "security",
+          "description": "The plan truncation marker includes the exact character count (`[...plan truncated at 80,000 chars]`). This leaks the truncation threshold to attackers who could craft plans to test the boundary.",
+          "suggestion": "Use a generic marker without the specific count, like `[...plan truncated due to size limit]`"
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 44,
+          "endLine": 50,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The ImplReviewerOptions accepts a `source` parameter but deliberately ignores it. This could confuse users who might expect file context to work in the implementation review pass.",
+          "suggestion": "Either remove the option from the interface or add a JSDoc comment explaining why it's ignored (e.g., '@deprecated - file context is intentionally disabled for this pass')"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 312,
+          "endLine": 312,
+          "severity": "minor",
+          "category": "performance",
+          "description": "The plan is read entirely into memory before truncation (`capPlan(input.plan.text)`). For very large plans approaching memory limits, this could cause issues.",
+          "suggestion": "Consider streaming the plan content and truncating during read, or add a memory usage safeguard for extremely large plan files."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 31,
+          "endLine": 31,
+          "severity": "nit",
+          "category": "style",
+          "description": "The DEFAULT_IMPL_REVIEW_MODEL is set to the same model as DEFAULT_JUDGE_MODEL. While justified in comments, this coupling could make future tuning awkward.",
+          "suggestion": "Consider using a separate constant even if they point to the same model initially, to make future model selection independent."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 224,
+          "endLine": 224,
+          "severity": "nit",
+          "category": "style",
+          "description": "Empty plan files are logged as an error (`plan file is empty — treated as no plan`). This might be confusing since an empty plan is a valid 'no plan' state, not an error condition.",
+          "suggestion": "Change the log level to info or warning, or rephrase to clarify this is expected behavior."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 55,
+          "endLine": 103,
+          "severity": "nit",
+          "category": "style",
+          "description": "The plan resolution logic is quite complex with multiple fallback paths. While well-commented, the complexity increases the risk of edge case bugs.",
+          "suggestion": "Consider extracting this into a separate script or function with unit tests to improve maintainability."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "major": 2,
+          "minor": 3,
+          "nit": 3
+        },
+        "byCategory": {
+          "correctness": 2,
+          "security": 2,
+          "performance": 1,
+          "style": 3
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 6,
+      "startedAt": "2026-08-21T17:06:01.735Z",
+      "durationMs": 70979,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r2",
+        "inputSha256": "84696acc25889619f9c26401328414f8564e3e11a8a7c7cbc74c73d14a3a8e9c",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 27021,
+        "outputTokens": 1400,
+        "totalTokens": 28421,
+        "cost": 0.00461623
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 108,
+          "endLine": 112,
+          "severity": "major",
+          "category": "security",
+          "description": "Plan path regex could be bypassed with crafted paths",
+          "suggestion": "The regex for extracting Plan: override paths should be more restrictive to prevent path traversal. Current pattern allows '../' segments which could escape the intended directory structure."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 154,
+          "endLine": 154,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Error message for mode check could be clearer",
+          "suggestion": "The error message 'plan rejected (tree mode '${MODE:-none}' is not a regular blob)' should explicitly mention that symlinks are rejected for security reasons."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 95,
+          "endLine": 95,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Severity ranking order is unintuitive",
+          "suggestion": "The severity ranking object has CRITICAL: 3, WARNING: 2, OBSERVATION: 1. This works but is counterintuitive - typically higher numbers indicate higher severity. Consider reversing or adding a comment explaining the ordering."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 150,
+          "endLine": 152,
+          "severity": "minor",
+          "category": "performance",
+          "description": "Plan cap might be too low for real-world plans",
+          "suggestion": "PLAN_CAP_CHARS is set to 80,000 based on one observed plan. Consider adding a buffer (e.g., 100,000) to accommodate larger plans and avoid frequent truncations."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 225,
+          "endLine": 225,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment formatting inconsistency",
+          "suggestion": "The comment 'An empty staged plan file means \"no plan\"' has double quotes around no plan. Other similar comments use single quotes. Maintain consistency."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 30,
+          "endLine": 30,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Model selection rationale could be more explicit",
+          "suggestion": "The comment explaining why sonnet-5 was chosen should reference the specific evaluation results or metrics that led to this decision, making it easier to reassess if needed."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.test.ts",
+          "startLine": 1,
+          "endLine": 246,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Missing edge case tests for plan handling",
+          "suggestion": "Add tests for extremely large plans (near and over the cap), plans with special characters, and plans with invalid UTF-8 sequences to ensure robustness."
+        },
+        {
+          "file": "packages/code-reviewer/src/output-repair.ts",
+          "startLine": 130,
+          "endLine": 130,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "JSON extraction could fail on nested braces in strings",
+          "suggestion": "The extractJsonObject function handles escaped quotes but not escaped braces within strings. Add handling for '\\{' and '\\}' to prevent premature termination."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "major": 1,
+          "minor": 5,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 1,
+          "correctness": 3,
+          "performance": 1,
+          "style": 1,
+          "documentation": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 7,
+      "startedAt": "2026-08-21T17:07:12.729Z",
+      "durationMs": 84751,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r2",
+        "inputSha256": "84696acc25889619f9c26401328414f8564e3e11a8a7c7cbc74c73d14a3a8e9c",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 27021,
+        "outputTokens": 1200,
+        "totalTokens": 28221,
+        "cost": 0.00426623
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 120,
+          "endLine": 120,
+          "severity": "minor",
+          "category": "security",
+          "description": "PLAN_PATH is logged directly without sanitization",
+          "suggestion": "Replace `echo \"resolved plan: ${PLAN:-<none>}\"` with sanitized logging to prevent control characters from altering log output"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 62,
+          "endLine": 62,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Comment references 47,896 chars but code shows 47,217 chars",
+          "suggestion": "Update comment to match the actual observed plan size: '47,217 chars (run 31631971640)'"
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 233,
+          "endLine": 233,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Log message uses 'plan supplied:' prefix inconsistently with other telemetry lines",
+          "suggestion": "Consider using 'impl review: plan supplied:' for consistency with the 'impl review:' telemetry line format"
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 117,
+          "endLine": 117,
+          "severity": "nit",
+          "category": "style",
+          "description": "Trailing whitespace in comment",
+          "suggestion": "Remove trailing space after 'one call rather than one-to-N.'"
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 410,
+          "endLine": 410,
+          "severity": "nit",
+          "category": "style",
+          "description": "Truncated line in diff",
+          "suggestion": "Complete the line: `...(implReviewTelemetry === undefined ? {} : { implReviewTelemetry }) };`"
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "minor": 3,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 1,
+          "correctness": 2,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 8,
+      "startedAt": "2026-08-21T17:08:37.494Z",
+      "durationMs": 106052,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "r2",
+        "inputSha256": "84696acc25889619f9c26401328414f8564e3e11a8a7c7cbc74c73d14a3a8e9c",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 27021,
+        "outputTokens": 1104,
+        "totalTokens": 28125,
+        "cost": 0.00409823
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 78,
+          "endLine": 81,
+          "severity": "minor",
+          "category": "security",
+          "description": "Regex for extracting plan path from PR body could be vulnerable to injection",
+          "suggestion": "The regex pattern for extracting the plan path from PR body uses character class restrictions but could still be vulnerable to injection attacks. Consider additional validation or sanitization of the extracted path before using it."
+        }
+      ],
+      "summary": {
+        "n": 1,
+        "bySeverity": {
+          "minor": 1
+        },
+        "byCategory": {
+          "security": 1
+        }
+      },
+      "error": null
+    }
+  ]
+}

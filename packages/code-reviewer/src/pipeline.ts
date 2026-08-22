@@ -103,8 +103,13 @@ export function computeDiffStats(diff: string): DiffStats {
   return { files, additions, deletions };
 }
 
-/** Byte-accurate diff cap (UTF-8), with a visible marker and no split surrogates. */
-function capDiff(diff: string): { diff: string; truncated: boolean } {
+/**
+ * Byte-accurate diff cap (UTF-8), with a visible marker and no split surrogates.
+ * Exported (behavior unchanged) so campaign tooling imports the real function
+ * instead of maintaining a copy — the copy in finder-distribution.mjs is the
+ * cautionary tale (change `finder-fabrication-triggers`, review F5).
+ */
+export function capDiff(diff: string): { diff: string; truncated: boolean } {
   const bytes = new TextEncoder().encode(diff);
   if (bytes.length <= DIFF_CAP_BYTES) return { diff, truncated: false };
   const capped = new TextDecoder("utf-8", { fatal: false }).decode(bytes.slice(0, DIFF_CAP_BYTES)).replace(/�+$/u, "");

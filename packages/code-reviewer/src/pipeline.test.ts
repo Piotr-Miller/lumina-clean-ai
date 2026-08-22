@@ -5,6 +5,7 @@ import { DEFAULT_JUDGE_MODEL, DEFAULT_MODEL } from "./config.js";
 import {
   BODY_CAP_CHARS,
   BODY_TRUNCATION_MARKER,
+  capDiff,
   computeDiffStats,
   DEFAULT_FINDER_TIMEOUT_MS,
   DEFAULT_JUDGE_TIMEOUT_MS,
@@ -1017,5 +1018,32 @@ describe("runReviewPipeline implementation-review pass", () => {
     await expect(
       runReviewPipeline({ diff: SMALL_DIFF, timeouts: { implReviewTimeoutMs: 0 }, deps: twoPasses }),
     ).rejects.toThrow(/implReviewTimeoutMs must be a positive integer/);
+  });
+});
+
+// Export-only parity (change finder-fabrication-triggers, review F5): capDiff
+// became importable so campaign tooling stops maintaining byte-cap copies.
+// These pin the exported function's contract directly.
+describe("capDiff (exported)", () => {
+  it("returns diffs at or under the cap unchanged", () => {
+    const diff = "x".repeat(1_000);
+    expect(capDiff(diff)).toEqual({ diff, truncated: false });
+  });
+
+  it("caps over-limit diffs at DIFF_CAP_BYTES and appends the marker", () => {
+    const diff = "x".repeat(DIFF_CAP_BYTES + 500);
+    const result = capDiff(diff);
+    expect(result.truncated).toBe(true);
+    expect(result.diff.endsWith(DIFF_TRUNCATION_MARKER)).toBe(true);
+    const body = result.diff.slice(0, -DIFF_TRUNCATION_MARKER.length);
+    expect(new TextEncoder().encode(body).length).toBe(DIFF_CAP_BYTES);
+  });
+
+  it("never leaves a split multi-byte character at the cut", () => {
+    // 4-byte code points positioned so the byte cap lands mid-character.
+    const diff = "🙂".repeat(Math.ceil(DIFF_CAP_BYTES / 4) + 10);
+    const result = capDiff(diff);
+    expect(result.truncated).toBe(true);
+    expect(result.diff).not.toContain("�");
   });
 });

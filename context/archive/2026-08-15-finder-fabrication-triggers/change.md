@@ -1,10 +1,10 @@
 ---
 change_id: finder-fabrication-triggers
 title: Characterize which real-diff properties trigger finder fabrication, before building any fixture
-status: new
+status: archived
 created: 2026-08-15
-updated: 2026-08-15
-archived_at: null
+updated: 2026-08-22
+archived_at: 2026-08-22T11:10:15Z
 ---
 
 ## Notes

@@ -5,6 +5,8 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "evals/**/*.test.ts"],
+    // scripts/**/*.test.mjs: hermetic tests for campaign tooling (e.g. the
+    // fabrication grader) — pure-function coverage, no network, no API key.
+    include: ["src/**/*.test.ts", "evals/**/*.test.ts", "scripts/**/*.test.mjs"],
   },
 });

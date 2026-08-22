@@ -1,0 +1,184 @@
+{
+  "variant": "ci",
+  "rung": "r1",
+  "recipe": "diff e8ebb66...9c49a0c -- . :(exclude,glob)**/reviews/*.md :(exclude)context/changes/impl-review-ci-agent/plan.md",
+  "rawBytes": 215560,
+  "sentBytes": 215560,
+  "inputSha256": "75240b42d3885524caad4a6922985d5e30668e19e1274ff573e8a7b181bfe353",
+  "rulesRef": "e8ebb66",
+  "rulesChars": 2915,
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "68b92c569e8fbefa235d64ef289b556bdda312e94a5322405c47fb515e2eb302",
+  "rlocContext": null,
+  "model": "z-ai/glm-4.6",
+  "totalBytes": 215560,
+  "capBytes": null,
+  "truncated": false,
+  "window": [
+    {
+      "path": ".github/actions/ai-review/action.yml",
+      "startByte": 0,
+      "endByte": 3697,
+      "complete": true
+    },
+    {
+      "path": ".github/workflows/review.yml",
+      "startByte": 3697,
+      "endByte": 14198,
+      "complete": true
+    },
+    {
+      "path": "AGENTS.md",
+      "startByte": 14198,
+      "endByte": 17970,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/change.md",
+      "startByte": 17970,
+      "endByte": 24308,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/plan-brief.md",
+      "startByte": 24308,
+      "endByte": 37739,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/research.md",
+      "startByte": 37739,
+      "endByte": 58824,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/verification.md",
+      "startByte": 58824,
+      "endByte": 76270,
+      "complete": true
+    },
+    {
+      "path": "context/foundation/lessons.md",
+      "startByte": 76270,
+      "endByte": 78176,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/cli.test.ts",
+      "startByte": 78176,
+      "endByte": 87882,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/cli.ts",
+      "startByte": 87882,
+      "endByte": 94189,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/config.test.ts",
+      "startByte": 94189,
+      "endByte": 97456,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/config.ts",
+      "startByte": 97456,
+      "endByte": 99565,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/impl-reviewer.test.ts",
+      "startByte": 99565,
+      "endByte": 110771,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/impl-reviewer.ts",
+      "startByte": 110771,
+      "endByte": 116477,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/index.ts",
+      "startByte": 116477,
+      "endByte": 119433,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/judge.ts",
+      "startByte": 119433,
+      "endByte": 121583,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/output-repair.test.ts",
+      "startByte": 121583,
+      "endByte": 125713,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/output-repair.ts",
+      "startByte": 125713,
+      "endByte": 130631,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/pipeline.test.ts",
+      "startByte": 130631,
+      "endByte": 147113,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/pipeline.ts",
+      "startByte": 147113,
+      "endByte": 164284,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/prompts.test.ts",
+      "startByte": 164284,
+      "endByte": 172868,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/prompts.ts",
+      "startByte": 172868,
+      "endByte": 184355,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/provider-attempts.test.ts",
+      "startByte": 184355,
+      "endByte": 185943,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/render.test.ts",
+      "startByte": 185943,
+      "endByte": 192874,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/render.ts",
+      "startByte": 192874,
+      "endByte": 198663,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/schemas.test.ts",
+      "startByte": 198663,
+      "endByte": 206073,
+      "complete": true
+    },
+    {
+      "path": "packages/code-reviewer/src/schemas.ts",
+      "startByte": 206073,
+      "endByte": 215560,
+      "complete": true
+    }
+  ],
+  "cutFile": null,
+  "cutOffsetInFile": null,
+  "overCap": []
+}

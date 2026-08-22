@@ -1,0 +1,86 @@
+{
+  "variant": "instrument",
+  "rung": "base",
+  "recipe": "diff 7c9c12f^1 7c9c12f -- . :(exclude,glob)**/reviews/*.md",
+  "rawBytes": 266444,
+  "sentBytes": 100030,
+  "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+  "rulesRef": "7c9c12f^1",
+  "rulesChars": 2915,
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "17e222ba53daf3fada35dc40f2eefbc9b8181f2ecb5dc45ebcfa7d563cf5c5bf",
+  "rlocContext": null,
+  "model": "z-ai/glm-4.6",
+  "totalBytes": 266444,
+  "capBytes": 100000,
+  "truncated": true,
+  "window": [
+    {
+      "path": ".github/actions/ai-review/action.yml",
+      "startByte": 0,
+      "endByte": 3697,
+      "complete": true
+    },
+    {
+      "path": ".github/workflows/review.yml",
+      "startByte": 3697,
+      "endByte": 14198,
+      "complete": true
+    },
+    {
+      "path": "AGENTS.md",
+      "startByte": 14198,
+      "endByte": 17970,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/change.md",
+      "startByte": 17970,
+      "endByte": 24308,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/plan-brief.md",
+      "startByte": 24308,
+      "endByte": 37739,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/plan.md",
+      "startByte": 37739,
+      "endByte": 88623,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/research.md",
+      "startByte": 88623,
+      "endByte": 109708,
+      "complete": false
+    }
+  ],
+  "cutFile": "context/changes/impl-review-ci-agent/research.md",
+  "cutOffsetInFile": 11377,
+  "overCap": [
+    "context/changes/impl-review-ci-agent/verification.md",
+    "context/foundation/lessons.md",
+    "packages/code-reviewer/src/cli.test.ts",
+    "packages/code-reviewer/src/cli.ts",
+    "packages/code-reviewer/src/config.test.ts",
+    "packages/code-reviewer/src/config.ts",
+    "packages/code-reviewer/src/impl-reviewer.test.ts",
+    "packages/code-reviewer/src/impl-reviewer.ts",
+    "packages/code-reviewer/src/index.ts",
+    "packages/code-reviewer/src/judge.ts",
+    "packages/code-reviewer/src/output-repair.test.ts",
+    "packages/code-reviewer/src/output-repair.ts",
+    "packages/code-reviewer/src/pipeline.test.ts",
+    "packages/code-reviewer/src/pipeline.ts",
+    "packages/code-reviewer/src/prompts.test.ts",
+    "packages/code-reviewer/src/prompts.ts",
+    "packages/code-reviewer/src/provider-attempts.test.ts",
+    "packages/code-reviewer/src/render.test.ts",
+    "packages/code-reviewer/src/render.ts",
+    "packages/code-reviewer/src/schemas.test.ts",
+    "packages/code-reviewer/src/schemas.ts"
+  ]
+}

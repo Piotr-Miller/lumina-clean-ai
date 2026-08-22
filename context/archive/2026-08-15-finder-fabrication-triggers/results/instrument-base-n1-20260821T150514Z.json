@@ -1,0 +1,113 @@
+{
+  "variant": "instrument",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260821T150514Z",
+  "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "17e222ba53daf3fada35dc40f2eefbc9b8181f2ecb5dc45ebcfa7d563cf5c5bf",
+  "plannedAttempts": 1,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-21T15:05:14.813Z",
+      "durationMs": 65708,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "instrument",
+        "rung": "base",
+        "inputSha256": "7d08cf26825cd761bb26995c11e04ead84b879e72bf3d0745ac22af6ea7ef397",
+        "sentBytes": 100030
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25323,
+        "outputTokens": 1679,
+        "totalTokens": 27002,
+        "cost": 0.01382714
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 94,
+          "endLine": 118,
+          "severity": "critical",
+          "category": "security",
+          "description": "Plan staging from Git object with mode check is correctly implemented to prevent symlink attacks. The `git ls-tree` check ensures only regular blobs (100644/100755) are accepted, rejecting symlinks (120000) and submodules (160000). This prevents a malicious `plan.md -> /proc/self/environ` from exposing the OPENROUTER_API_KEY.",
+          "suggestion": "Consider adding a comment explaining why `git show` is used instead of reading from the filesystem, as this is a critical security control."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 69,
+          "endLine": 84,
+          "severity": "major",
+          "category": "security",
+          "description": "PR body override parsing is properly secured with anchored regex and path traversal protection. The explicit rejection of `..` segments and character class restriction prevents path traversal attacks through the Plan: override.",
+          "suggestion": "Document why `tr -d '\\r'` is needed (GitHub bodies are CRLF) in a comment for future maintainers."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 126,
+          "endLine": 132,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Diff exclusions for reviews and plan are correctly implemented using pathspec syntax. This prevents the model from reviewing its own output or the plan it's evaluating against, which would create circular reasoning.",
+          "suggestion": "Consider adding a test that verifies excluded files are not present in the generated diff."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 133,
+          "endLine": 140,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Empty diff skip guard is implemented but the condition `SKIP_REVIEW` could be more clearly named to indicate it's specifically for plan-only PRs after exclusions.",
+          "suggestion": "Rename to `SKIP_PLAN_ONLY_REVIEW` or add a comment clarifying this specific case."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 231,
+          "endLine": 233,
+          "severity": "major",
+          "category": "documentation",
+          "description": "The exclusion semantics contradiction from the reference criteria is documented, but the chosen interpretation (implementing exclusions is a violation) should be more prominently called out in the code itself.",
+          "suggestion": "Add a prominent comment in `prompts.ts` where this rule is defined, explaining the deliberate divergence from the reference."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan.md",
+          "startLine": 549,
+          "endLine": 553,
+          "severity": "minor",
+          "category": "performance",
+          "description": "The cost impact of the new claude-sonnet-5 call is noted but could be more prominently highlighted as it's the single most expensive call in the pipeline (up to ~140KB input).",
+          "suggestion": "Add a cost estimate comment in the workflow where the impl-review-model is configured."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 9,
+          "endLine": 13,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The description of the third pass could be clearer that it's advisory and doesn't affect the exit code or labels.",
+          "suggestion": "Update description to explicitly state 'advisory only - never affects ai-cr:* labels or exit code'."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "critical": 1,
+          "major": 3,
+          "minor": 3
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 2,
+          "documentation": 2,
+          "performance": 1
+        }
+      },
+      "error": null
+    }
+  ]
+}

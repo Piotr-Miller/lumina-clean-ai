@@ -1,0 +1,58 @@
+{
+  "variant": "ci",
+  "rung": "r3",
+  "recipe": "diff e8ebb66...9c49a0c -- . :(exclude,glob)**/reviews/*.md :(exclude)context/changes/impl-review-ci-agent/plan.md :(exclude)packages/** :(exclude).github/**",
+  "rawBytes": 63978,
+  "sentBytes": 63978,
+  "inputSha256": "5797b904634db5e78fbbfeaf1ce60928a05ae80086505d5ef3d6b4d9bb2473b2",
+  "rulesRef": "e8ebb66",
+  "rulesChars": 2915,
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "74e16e23d3edd632dba6b5c036fd6cc321129525489c5e255829dfaef2eef8a7",
+  "rlocContext": null,
+  "model": "z-ai/glm-4.6",
+  "totalBytes": 63978,
+  "capBytes": 100000,
+  "truncated": false,
+  "window": [
+    {
+      "path": "AGENTS.md",
+      "startByte": 0,
+      "endByte": 3772,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/change.md",
+      "startByte": 3772,
+      "endByte": 10110,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/plan-brief.md",
+      "startByte": 10110,
+      "endByte": 23541,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/research.md",
+      "startByte": 23541,
+      "endByte": 44626,
+      "complete": true
+    },
+    {
+      "path": "context/changes/impl-review-ci-agent/verification.md",
+      "startByte": 44626,
+      "endByte": 62072,
+      "complete": true
+    },
+    {
+      "path": "context/foundation/lessons.md",
+      "startByte": 62072,
+      "endByte": 63978,
+      "complete": true
+    }
+  ],
+  "cutFile": null,
+  "cutOffsetInFile": null,
+  "overCap": []
+}
