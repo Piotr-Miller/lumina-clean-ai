@@ -435,14 +435,14 @@ constants change, but the archive itself is untouched.
 
 #### Automated
 
-- [ ] 3.1 Results + manifests + graded files committed; 20 gradeable across files OR ceiling-triggered INCONCLUSIVE recorded with attempt/cost totals; ledger ≤ 28; promptSha256 constant
-- [ ] 3.2 Ground-truth sha256 verified pre-grade (live file) and post-grade (recorded value)
-- [ ] 3.3 Prettier clean on appended verification.md
+- [x] 3.1 Results + manifests + graded files committed; 20 gradeable across files OR ceiling-triggered INCONCLUSIVE recorded with attempt/cost totals; ledger ≤ 28; promptSha256 constant
+- [x] 3.2 Ground-truth sha256 verified pre-grade (live file) and post-grade (recorded value)
+- [x] 3.3 Prettier clean on appended verification.md
 
 #### Manual
 
-- [ ] 3.4 Hand-read completed with frozen M1-rewrite labels, misgrade rate < 15%
-- [ ] 3.5 Bar read-offs recorded (success bar, m1_to_m3_rewrites, both bands, falsifier)
+- [x] 3.4 Hand-read completed with frozen M1-rewrite labels, misgrade rate < 15%
+- [x] 3.5 Bar read-offs recorded (success bar, m1_to_m3_rewrites, both bands, falsifier)
 
 ### Phase 4: Close-out
 

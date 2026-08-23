@@ -249,3 +249,68 @@ m1Runs = 0 is impossible by construction and reads as an
 **aggregation-integrity error**: stop and audit the aggregation before any
 bar read-off. The success bar and all guards are unchanged; this amendment
 only removes the undefined middle.
+
+## Phase 3 results — note arm (2026-08-23; numbers + read-offs only)
+
+- **Invocation**: `fabrication-probe.mjs --variant ci --rung base --n 20`,
+  single batch, file `ci-base-n20-20260823T114407Z`. Pre-flight on record:
+  attempt ledger 0/28, dollar ledger 0.0000 USD charged, projected batch
+  3.6483 USD, live ground-truth sha256 verified. 20/20 attempts gradeable,
+  0 finder errors, provider Venice on every run, `noteActive: true` on
+  every run, `promptSha256` constant
+  `e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f`,
+  manifest `inputSha256` equal to the archived CI-base value. Finder cost
+  $0.108892.
+- **Grading**: 181 findings graded in 181 calls (0 failed), grader
+  `google/gemini-3.1-pro-preview`; live ground-truth sha256 verified
+  immediately before invocation and the graded file's recorded
+  `groundTruth.sha256` verified equal to the frozen value afterward.
+  Grader cost $2.721098.
+- **Aggregation arithmetic**: exactly one results file exists for this
+  change, so the deterministic aggregation (all files ordered by stamp,
+  per-mechanism sums over gradeable runs) reduces to that file's
+  grader-recorded totals over its 20 gradeable runs: fabrication runs
+  (M2+M3) **18/20**; m1Runs **5/20**; findings 181 — **M1 10, M2 9,
+  M3 54**, none 108; mean findings/run 181/20 = **9.05**.
+- **Bar read-offs** (numbers against frozen meanings; interpretation
+  deferred to Phase 4):
+  - Success bar (M1 findings = 0): **M1 findings = 10 → NOT MET**.
+  - Falsifier (A4 exhaustive table): **m1Runs = 5 ∈ [2, 8] → UNCHANGED /
+    falsified**.
+  - Down-side band 1: fabrication runs 18, |18 − 17| = 1 ≤ 3 → within
+    band.
+  - Down-side band 2: mean findings/run 9.05 ∈ [4.15, 12.45] → within
+    band.
+  - Up-side SECONDARY: total M3 = 54 ≤ 57 → no trip.
+  - Up-side PRIMARY (`m1_to_m3_rewrites`): pending the Phase 3 hand-read
+    (queue: `reviews/hand-read-phase-3.md` — 73 flagged + 10 A3
+    deterministic clean controls at positions 0, 10, 21, 32, 43, 54, 64,
+    75, 86, 97 of N=108).
+- Read-offs are provisional until the hand-read completes below the 15%
+  bar; the A4 falsifier read-off and the primary-guard label become FINAL
+  with the hand-read tally.
+- **Ledgers**: attempts 20/28 (error reserve 8/8 intact); dollar ledger
+  charged **2.8300 USD** ($0.108892 finder + $2.721098 grader, all costs
+  provider-reported — 0 unknown-cost attempts, 0 unknown-cost verdicts) of
+  the 5.50 ceiling.
+
+## Phase 3 hand-read — note arm (2026-08-23)
+
+- Queue completed: all **73 rubric-flagged findings + 10 deterministic
+  clean controls = 83 findings** adjudicated in
+  `reviews/hand-read-phase-3.md`.
+- Tally: **78 agree, 5 misgrades** (H-18, H-59, H-61, H-69, H-73).
+  Misgrade rate **5/83 = 6.02%**, below the pre-registered 15% invalidity
+  bar. **Grading is valid.**
+- Migration labels: all 54 flagged M3 verdicts labeled against the frozen
+  definition — **1 m1_to_m3 rewrite (H-69), 53 not rewrites.**
+  **`m1_to_m3_rewrites` = 1 → the PRIMARY up-side guard TRIPS** (frozen
+  meaning: decision-bearing in Phase 4, exactly like a failed success
+  bar).
+- **FINAL read-offs** (hand-read below the invalidity bar; the provisional
+  condition on the Phase 3 read-offs is cleared): success bar **NOT MET**
+  (M1 findings 10); falsifier **UNCHANGED / falsified** (m1Runs 5 ∈
+  [2, 8]); down-side bands both HELD (18/20; 9.05); up-side SECONDARY no
+  trip (M3 54 ≤ 57); up-side PRIMARY **TRIPPED** (1 hand-confirmed
+  rewrite). Interpretation and disposition belong to Phase 4's
+  decision.md — no renegotiation.
