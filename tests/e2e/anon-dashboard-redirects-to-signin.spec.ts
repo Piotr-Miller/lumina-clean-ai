@@ -22,6 +22,7 @@
 import { test, expect } from "@playwright/test";
 import { adminClient as sharedAdminClient } from "./helpers/env";
 import { expectOkResponse } from "./helpers/expect-response";
+import { retryOnceOnWorkerRestart } from "./helpers/worker-restart-retry";
 
 // playwright.config.ts owns baseURL and pre-authenticates the chromium project
 // via the `setup` project (storageState). This spec asserts the anonymous
@@ -90,12 +91,14 @@ test.describe("Risk #2 perimeter: middleware-protected routes never render for a
     expect(created.error).toBeNull();
     userId = created.data.user?.id ?? null;
 
-    const signIn = await page.request.post("/api/auth/signin", {
-      form: { email: EMAIL, password: PASSWORD },
-      // Astro's CSRF guard (security.checkOrigin) 403s origin-less form POSTs;
-      // a browser always sends Origin — the request context must add it.
-      headers: { Origin: baseURL ?? "http://localhost:4321" },
-    });
+    const signIn = await retryOnceOnWorkerRestart(() =>
+      page.request.post("/api/auth/signin", {
+        form: { email: EMAIL, password: PASSWORD },
+        // Astro's CSRF guard (security.checkOrigin) 403s origin-less form POSTs;
+        // a browser always sends Origin — the request context must add it.
+        headers: { Origin: baseURL ?? "http://localhost:4321" },
+      }),
+    );
     // Success follows the 302 chain to "/"; a failed sign-in also ends 200 but
     // on /auth/signin?error=… — so assert the landing path, not just ok().
     await expectOkResponse(signIn, "signin");

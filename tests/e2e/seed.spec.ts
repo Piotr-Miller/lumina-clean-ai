@@ -29,6 +29,7 @@
 import { test, expect } from "@playwright/test";
 import { adminClient as sharedAdminClient } from "./helpers/env";
 import { expectOkResponse } from "./helpers/expect-response";
+import { retryOnceOnWorkerRestart } from "./helpers/worker-restart-retry";
 
 // playwright.config.ts owns baseURL and pre-authenticates the chromium project
 // via the `setup` project (storageState). This spec asserts the ANON half of
@@ -106,9 +107,11 @@ test.describe("Risk #2: anon request must not reach Cloud AI processing", () => 
     // the UI toggle"). Same browser context = same (absent) auth cookies; the
     // body is the route's REAL contract (photo-job.schema.ts), so a regressed
     // gate would act on it. Must reject with the API error contract.
-    const probe = await page.request.post("/api/enhance/cloud/create-job", {
-      data: { fileExtension: "png", mimeType: "image/png" },
-    });
+    const probe = await retryOnceOnWorkerRestart(() =>
+      page.request.post("/api/enhance/cloud/create-job", {
+        data: { fileExtension: "png", mimeType: "image/png" },
+      }),
+    );
     expect(probe.status()).toBe(401);
     const probeBody = (await probe.json()) as { error?: { code?: string } };
     expect(probeBody.error?.code).toBe("unauthorized");
@@ -126,12 +129,14 @@ test.describe("Risk #2: anon request must not reach Cloud AI processing", () => 
     expect(created.error).toBeNull();
     userId = created.data.user?.id ?? null;
 
-    const signIn = await page.request.post("/api/auth/signin", {
-      form: { email: EMAIL, password: PASSWORD },
-      // Astro's CSRF guard (security.checkOrigin) 403s origin-less form POSTs;
-      // a browser always sends Origin — the request context must add it.
-      headers: { Origin: baseURL ?? "http://localhost:4321" },
-    });
+    const signIn = await retryOnceOnWorkerRestart(() =>
+      page.request.post("/api/auth/signin", {
+        form: { email: EMAIL, password: PASSWORD },
+        // Astro's CSRF guard (security.checkOrigin) 403s origin-less form POSTs;
+        // a browser always sends Origin — the request context must add it.
+        headers: { Origin: baseURL ?? "http://localhost:4321" },
+      }),
+    );
     // Success follows the 302 chain to "/"; a failed sign-in also ends 200 but
     // on /auth/signin?error=… — so assert the landing path, not just ok(), or a
     // broken sign-in would slip through here and only surface later, with a
