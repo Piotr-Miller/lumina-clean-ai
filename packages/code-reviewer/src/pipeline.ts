@@ -9,7 +9,7 @@ import {
   type ImplReviewerOptions,
 } from "./impl-reviewer.js";
 import { createJudge, type Judge, type JudgeCallOptions, type JudgeOptions } from "./judge.js";
-import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
+import { truncationMetadataPayload, type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
 import { withOneRetry } from "./retry.js";
 import {
   createReviewer,
@@ -114,6 +114,117 @@ export function capDiff(diff: string): { diff: string; truncated: boolean } {
   if (bytes.length <= DIFF_CAP_BYTES) return { diff, truncated: false };
   const capped = new TextDecoder("utf-8", { fatal: false }).decode(bytes.slice(0, DIFF_CAP_BYTES)).replace(/�+$/u, "");
   return { diff: capped + DIFF_TRUNCATION_MARKER, truncated: true };
+}
+
+/** Byte-offset segment of one file's hunks inside unified-diff text. */
+export interface FileSegment {
+  path: string;
+  startByte: number;
+  endByte: number;
+}
+
+/**
+ * Splits unified-diff text into per-file segments with UTF-8 byte offsets.
+ * Ported verbatim from the fabrication campaign's probe (change
+ * r5-finder-truncation-note) so production and the measurement instrument
+ * share ONE implementation — the probe imports this copy.
+ */
+export function computeFileSegments(diffText: string): FileSegment[] {
+  const encoder = new TextEncoder();
+  const segments: FileSegment[] = [];
+  let current: FileSegment | null = null;
+  // Iterate over `diff --git ` headers by LINE START so in-hunk content
+  // (e.g. a quoted diff inside prose) can't open a phantom segment.
+  let byteOffset = 0;
+  for (const line of diffText.split("\n")) {
+    if (line.startsWith("diff --git ")) {
+      if (current) {
+        current.endByte = byteOffset;
+        segments.push(current);
+      }
+      const bPath = / b\/(.+)$/.exec(line)?.[1] ?? line.slice("diff --git ".length);
+      current = { path: bPath, startByte: byteOffset, endByte: -1 };
+    }
+    byteOffset += encoder.encode(line).length + 1; // +1 for the split-off "\n"
+  }
+  if (current) {
+    // Last segment ends at the true byte length (no trailing phantom newline).
+    current.endByte = encoder.encode(diffText).length;
+    segments.push(current);
+  }
+  return segments;
+}
+
+/** In-window entry of a WindowManifest: a file segment plus completeness. */
+export type WindowEntry = FileSegment & { complete: boolean };
+
+export interface WindowManifest {
+  totalBytes: number;
+  capBytes: number | null;
+  truncated: boolean;
+  window: WindowEntry[];
+  cutFile: string | null;
+  cutOffsetInFile: number | null;
+  overCap: string[];
+}
+
+/**
+ * Window manifest: which files are (partially) inside the first `capBytes`
+ * bytes, where the cut lands, and what falls outside. `capBytes: null` means
+ * the cap is lifted — everything is in-window. Probe semantics, verbatim.
+ */
+export function computeManifest(diffText: string, capBytes: number | null): WindowManifest {
+  const segments = computeFileSegments(diffText);
+  const totalBytes = new TextEncoder().encode(diffText).length;
+  if (capBytes === null || totalBytes <= capBytes) {
+    return {
+      totalBytes,
+      capBytes,
+      truncated: false,
+      window: segments.map((s) => ({ ...s, complete: true })),
+      cutFile: null,
+      cutOffsetInFile: null,
+      overCap: [],
+    };
+  }
+  const window: WindowEntry[] = [];
+  const overCap: string[] = [];
+  let cutFile: string | null = null;
+  let cutOffsetInFile: number | null = null;
+  for (const s of segments) {
+    if (s.endByte <= capBytes) {
+      window.push({ ...s, complete: true });
+    } else if (s.startByte < capBytes) {
+      window.push({ ...s, complete: false });
+      cutFile = s.path;
+      cutOffsetInFile = capBytes - s.startByte;
+    } else {
+      overCap.push(s.path);
+    }
+  }
+  return { totalBytes, capBytes, truncated: true, window, cutFile, cutOffsetInFile, overCap };
+}
+
+/**
+ * Truncation facts for the finder's note (change r5-finder-truncation-note),
+ * computed on the RAW diff against the production cap. `cutFile` is OMITTED —
+ * never null — when the cut lands exactly between files or the text has no
+ * parseable headers, matching ReviewUnit's optional-not-nullable field.
+ * Git-quoted paths are reported verbatim as parsed, never decoded; the
+ * prompt layer JSON-encodes them, which makes the quoting safe.
+ */
+export function truncationReport(rawDiff: string): {
+  truncated: boolean;
+  cutFile?: string;
+  overCapFiles: string[];
+} {
+  const { truncated } = capDiff(rawDiff);
+  const manifest = computeManifest(rawDiff, DIFF_CAP_BYTES);
+  return {
+    truncated,
+    ...(manifest.cutFile === null ? {} : { cutFile: manifest.cutFile }),
+    overCapFiles: manifest.overCap,
+  };
 }
 
 function capBody(body: string | undefined): { body: string | undefined; truncated: boolean } {
@@ -340,6 +451,10 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   const models = resolveModels(input.overrides);
   const timeouts = resolveTimeouts(input.timeouts);
   const { diff, truncated: diffTruncated } = capDiff(input.diff);
+  // Truncation facts for the finder's note (change r5-finder-truncation-note):
+  // computed on the RAW diff, and only when the cap actually fired — keyed off
+  // capDiff's own decision, never re-detected from the capped text.
+  const truncation = diffTruncated ? truncationReport(input.diff) : undefined;
   const { body: prBody, truncated: bodyTruncated } = capBody(input.prBody);
   // Capped here rather than at the CLI boundary so every embedder (promptfoo,
   // a future orchestrator) gets the same bound without re-deriving it.
@@ -409,7 +524,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   });
 
   const reviewResult = await withOneRetry(
-    () => finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs }),
+    () => finder({ kind: "diff", diff, ...(truncation ?? {}) }, { timeoutMs: timeouts.finderTimeoutMs }),
     retryOptions("finder"),
   );
   // reviewer.review already normalized; mergeFindings adds the dedup +
@@ -442,6 +557,11 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     verdictReason: judgeResult.verdictReason,
     diffStats,
     diffTruncated,
+    // The exact fence payload the finder saw — truncation provenance for the
+    // passive live check (r5-finder-truncation-note decision.md Disposition
+    // #2, impl-review F1). Key absent when the cap did not fire, so an
+    // untruncated review.json keeps its pre-feature shape.
+    ...(truncation === undefined ? {} : { truncationMetadata: truncationMetadataPayload(truncation) }),
     bodyTruncated,
     // Key absent (not `false`) when the run had no plan, so a plan-less
     // review.json stays byte-identical to what shipped before this feature.

@@ -1,0 +1,2447 @@
+{
+  "variant": "ci",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260823T114407Z",
+  "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "719e2db40c7b1701e62f16ed5e5cf48cb76545efcc696ada689dcf6fd7267609",
+  "plannedAttempts": 20,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-23T11:44:07.309Z",
+      "durationMs": 65846,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1685,
+        "totalTokens": 26968,
+        "cost": 0.01382044
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 70,
+          "endLine": 73,
+          "severity": "critical",
+          "category": "security",
+          "description": "The plan resolution regex uses `[A-Za-z0-9._/-]` which allows `.` and `-` but not `+`. A plan path containing `+` would be rejected by the traversal check but might be a valid path in some contexts. Consider whether this character set is intentionally restrictive or if it should match a broader safe set.",
+          "suggestion": "If `+` is acceptable in plan paths, add it to the character class. Otherwise, document this restriction explicitly."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 94,
+          "endLine": 102,
+          "severity": "major",
+          "category": "security",
+          "description": "The symlink-safe staging correctly uses `git show` to read the blob, but the error handling could be improved. If `git show` partially writes before failing, a truncated plan could be read by the CLI. The `rm -f` after the `git show` call helps but doesn't protect against partial writes during the read.",
+          "suggestion": "Write to a temporary file first, then atomically move it to the final location only after successful read."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 108,
+          "endLine": 115,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The diff exclusion logic uses an array to build the pathspecs, which correctly handles spaces. However, if `PLAN_PATH` contains newline characters (unlikely but possible), the array expansion could break the pathspec.",
+          "suggestion": "Sanitize `PLAN_PATH` to replace newlines with spaces or reject such paths explicitly."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 218,
+          "endLine": 224,
+          "severity": "minor",
+          "category": "security",
+          "description": "The `logSafePath` function is referenced but not defined in the visible code. If this function doesn't properly escape control characters, it could allow log injection via `PLAN_PATH`.",
+          "suggestion": "Ensure `logSafePath` replaces control characters (especially newlines and carriage returns) with safe equivalents like `?`."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 268,
+          "endLine": 275,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The plan truncation logic is not visible in this diff. The plan file is read entirely without checking its size, which could lead to context overflow or excessive costs.",
+          "suggestion": "Implement plan size capping (e.g., 40KB as mentioned in plan-brief.md) before passing it to the pipeline."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 30,
+          "endLine": 40,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment explaining why `sonnet-5` is the default for implementation review is valuable but could be more concise. The `finder-tool-loop-evals` reference is already well-documented elsewhere.",
+          "suggestion": "Shorten to: 'sonnet-5 for cross-context reasoning; glm-4.6 failed tool-use evals. Chosen despite 57.6x cost as this is a single call, not a loop.'"
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The implementation reviewer lacks a clear JSDoc comment explaining its purpose, inputs, and how it differs from the finder/judge passes.",
+          "suggestion": "Add a JSDoc block summarizing the pass's role and its trust boundary handling."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 25,
+          "endLine": 25,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The plan text is passed directly without validation that it's actually a plan (vs arbitrary markdown). A malicious PR could inject confusing content.",
+          "suggestion": "Add a heuristic check for plan-like structure (e.g., presence of '## What' or '## Plan' sections) before processing."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The schema for `ImplReviewResult` allows `status: 'failed'` with an `error` string but doesn't constrain the error format. Inconsistent error messages could confuse downstream parsing.",
+          "suggestion": "Define an error schema or at least document the expected error format."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "style",
+          "description": "The rendering logic for the implementation review section is not visible, but based on the plan, it should ensure the new section doesn't make the comment exceed GitHub's 65K limit.",
+          "suggestion": "Add a safeguard in `renderStickyComment` to truncate or warn if the comment would exceed the limit."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The pipeline wiring for the third pass is not fully visible. Ensure that a failure in the implementation review cannot corrupt the results of the finder/judge passes.",
+          "suggestion": "Wrap the implementation review in a try/catch that preserves existing results on failure."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The plan brief claims the pass is 'tool-less' but the implementation reviewer actually uses tools (based on the test file). This discrepancy could confuse readers.",
+          "suggestion": "Update the plan brief to reflect the actual tool usage or clarify what 'tool-less' means in this context."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 160,
+          "endLine": 170,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The pre-registered probe was executed locally instead of against a real PR due to workflow branch restrictions. This means the end-to-end workflow wasn't tested.",
+          "suggestion": "Create a temporary branch off master for the probe or adjust the workflow to allow test branches."
+        }
+      ],
+      "summary": {
+        "n": 13,
+        "bySeverity": {
+          "critical": 1,
+          "major": 2,
+          "minor": 8,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 5,
+          "style": 2,
+          "documentation": 2,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 2,
+      "startedAt": "2026-08-23T11:45:13.172Z",
+      "durationMs": 28148,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 851,
+        "totalTokens": 26134,
+        "cost": 0.00351294
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 73,
+          "endLine": 73,
+          "severity": "critical",
+          "category": "security",
+          "description": "Command injection vulnerability in PLAN_PATH override parsing",
+          "suggestion": "Use a whitelist-based approach for plan paths instead of the current permissive regex. The path should be restricted to the expected pattern `context/(changes|archive)/[A-Za-z0-9._/-]+/plan.md` without allowing arbitrary characters like `*`, `?`, or `[`."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 234,
+          "endLine": 234,
+          "severity": "major",
+          "category": "correctness",
+          "description": "logSafePath function is not defined but used for escaping PLAN_PATH",
+          "suggestion": "Define the logSafePath function or replace with a proper escaping mechanism. The function should escape control characters to prevent log injection."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 207,
+          "endLine": 207,
+          "severity": "major",
+          "category": "correctness",
+          "description": "onJudgeOutputRepair callback is added to pipeline but PipelineInput type doesn't include it",
+          "suggestion": "Add onJudgeOutputRepair to the PipelineInput interface definition to match the implementation."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 225,
+          "endLine": 225,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "formatImplReviewLine uses tokenCount function which is not imported",
+          "suggestion": "Import tokenCount function or define it locally for formatting token counts."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 74,
+          "endLine": 74,
+          "severity": "minor",
+          "category": "security",
+          "description": "PLAN_PATH override regex allows '..' which could enable directory traversal",
+          "suggestion": "Modify the regex to explicitly reject '..' sequences: `^(?!.*\\.\\.)context/(changes|archive)/[A-Za-z0-9._/-]+/plan\\.md$`"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 139,
+          "endLine": 139,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "EXCLUDES array could fail if PLAN_PATH contains spaces",
+          "suggestion": "Quote the expansion: `EXCLUDES+=(\":(exclude)${PLAN_PATH}\")` to handle paths with spaces correctly."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 27,
+          "endLine": 27,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment references change 'finder-tool-loop-evals' without full context",
+          "suggestion": "Include the full change ID or a more descriptive reference for better documentation."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 70,
+          "endLine": 70,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment uses 'skill' terminology inconsistent with rest of codebase",
+          "suggestion": "Replace 'skill's original regex' with 'previous implementation' or similar for consistency."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "critical": 1,
+          "major": 2,
+          "minor": 3,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 4,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 3,
+      "startedAt": "2026-08-23T11:45:41.325Z",
+      "durationMs": 38379,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 863,
+        "totalTokens": 26146,
+        "cost": 0.00353394
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 89,
+          "severity": "major",
+          "category": "security",
+          "description": "The plan resolution regex allows traversal via '..' segments but only checks after extraction. An attacker could craft 'Plan: context/changes/../../../etc/passwd' which would pass the initial regex but be rejected later. The rejection should happen during extraction, not after.",
+          "suggestion": "Move the traversal check into the sed regex itself to reject paths containing '..' at extraction time."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 106,
+          "severity": "major",
+          "category": "security",
+          "description": "The symlink protection is incomplete. While it checks the blob mode, it doesn't validate that the resolved path stays within expected bounds. A malicious plan could still reference sensitive files through other means.",
+          "suggestion": "Add an additional check to ensure the staged plan path is within expected context directories (context/changes/* or context/archive/*)."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 225,
+          "endLine": 227,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The logSafePath function is used to escape PLAN_PATH but the function itself is not shown in this diff. Assuming it exists, its implementation should be verified to properly handle all control characters.",
+          "suggestion": "Ensure logSafePath properly escapes all control characters, not just newlines, to prevent log injection."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 258,
+          "endLine": 260,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The onJudgeOutputRepair callback is added but the function signature doesn't match what's expected by the pipeline (based on onOutputRepair's signature).",
+          "suggestion": "Verify the onJudgeOutputRepair callback signature matches the pipeline's expected interface."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 30,
+          "endLine": 36,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment explaining the model choice is verbose and contains implementation details that could become outdated.",
+          "suggestion": "Shorten the comment to focus on the 'why' (cross-context reasoning) rather than the 'what' (specific model evaluation results)."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The impl-reviewer.test.ts file is truncated in the diff, making it impossible to verify the test coverage for the new implementation review functionality.",
+          "suggestion": "Ensure the test file provides adequate coverage for the new implementation review logic, especially edge cases around plan parsing and verdict generation."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The schema definitions for ImplGrades and ImplReviewResult are not visible in the diff but are referenced throughout the code.",
+          "suggestion": "Add JSDoc comments to the schema interfaces explaining the purpose of each field and their valid values."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "major": 2,
+          "minor": 4,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 2,
+          "style": 1,
+          "testing": 1,
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 4,
+      "startedAt": "2026-08-23T11:46:19.708Z",
+      "durationMs": 60267,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1246,
+        "totalTokens": 26529,
+        "cost": 0.01305219
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 108,
+          "endLine": 108,
+          "severity": "critical",
+          "category": "security",
+          "description": "The sed command for extracting the plan path from the PR body uses `[[:space:]]*` which matches spaces and tabs but not other whitespace like CRLF's carriage return. While `tr -d '\\r'` is used, the combination could be fragile. More critically, the regex allows any character in the path except whitespace via `[A-Za-z0-9._/-]+`, which could allow path traversal if not carefully handled elsewhere.",
+          "suggestion": "Use a more restrictive character class and explicit path validation. Consider adding a check for `..` segments after extraction."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 130,
+          "endLine": 130,
+          "severity": "critical",
+          "category": "security",
+          "description": "The `git ls-tree` output is piped to `awk '{print $1}'` without checking if the command succeeded. If `git ls-tree` fails, `MODE` could be empty and the case statement would incorrectly treat it as a regular file.",
+          "suggestion": "Check the exit code of `git ls-tree` before processing its output."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 224,
+          "endLine": 224,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The `logSafePath` function is used to escape control characters in `PLAN_PATH` for logging, but the function is not defined in the provided code. This would cause a runtime error.",
+          "suggestion": "Define the `logSafePath` function or replace with a proper escaping mechanism."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 217,
+          "endLine": 224,
+          "severity": "major",
+          "category": "correctness",
+          "description": "When `PLAN_PATH` is not set but `planFile` is provided, the code logs the path as '(path not given)'. This could be confusing in logs when debugging why a plan wasn't found.",
+          "suggestion": "Always log the actual plan file path when available, even if `PLAN_PATH` is not set."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "style",
+          "description": "The new impl-reviewer file is not shown in the diff, but based on the test file expectations, it should exist. Ensure it follows the same import patterns as other modules.",
+          "suggestion": "Verify the impl-reviewer.ts file exists and follows project conventions."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 27,
+          "endLine": 27,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The comment references `change finder-tool-loop-evals` but doesn't specify which change or commit this refers to, making it hard for future maintainers to track down the context.",
+          "suggestion": "Include a more specific reference (change ID or commit hash) for traceability."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The schemas file is truncated but based on test expectations, it should include new types like `ImplGrades`, `ImplReviewBlock`, and `ImplReviewTelemetry`. Ensure these are properly exported and typed.",
+          "suggestion": "Verify all new schema types are properly defined and exported."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The render.ts file would need updates to handle the new impl review section in the comment output. The diff doesn't show these changes.",
+          "suggestion": "Ensure the render.ts file properly handles the impl review section with appropriate formatting and collapse details."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 147,
+          "endLine": 147,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment `Array, not ${PLAN_PATH:+...}` uses shell parameter expansion syntax in a comment, which could be confusing.",
+          "suggestion": "Rewrite the comment to be clearer about why an array is used over parameter expansion."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.test.ts",
+          "startLine": 428,
+          "endLine": 428,
+          "severity": "nit",
+          "category": "style",
+          "description": "The test uses `String(planText.length)` instead of template literal or simply `planText.length.toString()`.",
+          "suggestion": "Use template literal `` `${planText.length}` `` for consistency with modern JavaScript style."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "critical": 2,
+          "major": 2,
+          "minor": 4,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 2,
+          "style": 3,
+          "documentation": 2,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 5,
+      "startedAt": "2026-08-23T11:47:19.984Z",
+      "durationMs": 38286,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 914,
+        "totalTokens": 26197,
+        "cost": 0.01247119
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 78,
+          "endLine": 104,
+          "severity": "critical",
+          "category": "security",
+          "description": "The plan staging step correctly uses `git show` to read the blob directly rather than following symlinks, preventing potential symlink attacks that could expose secrets. However, the error handling could be improved - if `git show` partially writes before failing, the incomplete file could still be read by the CLI.",
+          "suggestion": "Add `rm -f \"$RUNNER_TEMP/plan.md\"` before the `git show` command to ensure any partial file from a previous attempt is removed."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 50,
+          "endLine": 95,
+          "severity": "major",
+          "category": "security",
+          "description": "The PR body override regex for plan resolution is properly anchored and sanitized, but the character class `[A-Za-z0-9._/-]` allows forward slashes which could enable path traversal attacks if not properly handled downstream.",
+          "suggestion": "Consider adding additional validation or normalization of the PLAN_PATH value after extraction to prevent any potential traversal issues."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 218,
+          "endLine": 230,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The plan file validation only checks for empty strings after trimming. A plan containing only whitespace would be treated as valid content when it should likely be considered empty.",
+          "suggestion": "Change the condition to `if (planText.trim() === \"\")` to correctly handle whitespace-only plans."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 30,
+          "endLine": 30,
+          "severity": "minor",
+          "category": "performance",
+          "description": "The default implementation review model is set to `anthropic/claude-sonnet-5` which is noted to be 57.6x more expensive than the finder model. This could significantly increase review costs for PRs with plans.",
+          "suggestion": "Consider adding a cost estimate warning in the logs when the implementation review runs, or provide a cheaper alternative model option."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The implementation reviewer criteria are vendored into the codebase but there's no clear documentation about how they differ from the original skill's criteria or when they were last synchronized.",
+          "suggestion": "Add a comment at the top of the criteria section noting the source and last sync date with the original skill."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 256,
+          "endLine": 256,
+          "severity": "nit",
+          "category": "style",
+          "description": "The logSafePath function is used to sanitize PLAN_PATH but the function itself is not shown in this diff.",
+          "suggestion": "Ensure logSafePath properly handles all control characters and not just newlines."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 12,
+          "endLine": 16,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The action description mentions the third pass is advisory but doesn't clearly state that it doesn't affect the exit code.",
+          "suggestion": "Update the description to explicitly mention that the implementation review failure doesn't change the workflow exit code."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "critical": 1,
+          "major": 2,
+          "minor": 2,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 1,
+          "performance": 1,
+          "documentation": 2,
+          "style": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 6,
+      "startedAt": "2026-08-23T11:47:58.283Z",
+      "durationMs": 61468,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1425,
+        "totalTokens": 26708,
+        "cost": 0.00451744
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 69,
+          "endLine": 72,
+          "severity": "critical",
+          "category": "security",
+          "description": "Base branch rules are staged with `git show` but the error path only removes the file; a partial write could leave a truncated rules file that the CLI would still load as trusted context. The same pattern exists for the plan staging step.",
+          "suggestion": "Use atomic write (write to temp file then rename) or verify file content after staging before proceeding."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "critical",
+          "category": "security",
+          "description": "The override regex anchors to `context/(changes|archive)/` but still allows any characters in the path segments, including `..` which could enable directory traversal if the PR body contains `Plan: context/changes/../../etc/passwd/plan.md`.",
+          "suggestion": "Restrict the character class to `[A-Za-z0-9._/-]` as done in the plan staging step, or validate the resolved path is within `context/`."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 104,
+          "endLine": 108,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The `git show` command could fail midway (e.g., disk full, network error for a large blob), leaving a partial plan file that would be treated as valid. The script treats any non-zero exit as 'no plan', but a partial file might still exist.",
+          "suggestion": "Write to a temp file first, then atomically move to the final location only on success, or verify the file size/hash matches the blob."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 123,
+          "endLine": 130,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The diff exclusion array uses word splitting for `${PLAN_PATH:+...}` which would break if the plan path contains spaces. The comment notes this, but the fix uses an array only when `$PLAN_PATH` is set, leaving the word-splitting path when it's not.",
+          "suggestion": "Always initialize `EXCLUDES` as an array and conditionally append, or use `printf '%s\\n'` to safely handle spaces."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 226,
+          "endLine": 226,
+          "severity": "minor",
+          "category": "security",
+          "description": "`logSafePath` is used to escape control characters in `PLAN_PATH` for logging, but the function is not defined in the shown code, risking runtime errors or unescaped output.",
+          "suggestion": "Ensure `logSafePath` is imported/defined before use, or replace with a simple regex like `.replace(/[\\x00-\\x1F\\x7F]/g, '?')`."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 258,
+          "endLine": 258,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The implementation review timeout is parsed with `parseTimeoutEnv` but not validated for negative values, unlike the finder and judge timeouts which reject negative values in tests.",
+          "suggestion": "Add validation to reject negative `REVIEW_IMPL_REVIEW_TIMEOUT_MS` values, matching the other timeouts."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 22,
+          "endLine": 22,
+          "severity": "minor",
+          "category": "performance",
+          "description": "The default implementation review model is hardcoded to `anthropic/claude-sonnet-5` without a fallback chain, potentially causing failures if the model is unavailable.",
+          "suggestion": "Consider a fallback chain (e.g., try sonnet-5, then haiku-4.5) or document that the pass will fail if the model is unavailable."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The implementation reviewer lacks unit tests for edge cases like empty plans, malformed plans, or provider failures, increasing risk of runtime errors.",
+          "suggestion": "Add tests covering empty plans, invalid plan content, provider errors, and timeout scenarios."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The sticky comment rendering for the implementation review section lacks documentation about the three possible states (no plan, reviewed, failed) and their visual indicators.",
+          "suggestion": "Document the rendering behavior in `render.ts` or in a comment, including how failures are shown."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "style",
+          "description": "The `ImplGrades` type uses string literals for grade values but does not enforce them at runtime, risking typos in grades.",
+          "suggestion": "Use an enum or a branded type for grades to ensure only valid values are used."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 14,
+          "endLine": 14,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The action description mentions 'Two-pass AI review' but now includes a third pass, which is misleading.",
+          "suggestion": "Update the description to 'Multi-pass AI review' or 'Three-pass AI review when a plan is present'."
+        }
+      ],
+      "summary": {
+        "n": 11,
+        "bySeverity": {
+          "critical": 2,
+          "major": 2,
+          "minor": 5,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 3,
+          "performance": 1,
+          "testing": 1,
+          "documentation": 2,
+          "style": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 7,
+      "startedAt": "2026-08-23T11:48:59.764Z",
+      "durationMs": 35763,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 898,
+        "totalTokens": 26181,
+        "cost": 0.00359519
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 65,
+          "endLine": 145,
+          "severity": "major",
+          "category": "security",
+          "description": "Plan resolution regex allows traversal segments via '..' but only filters them after extraction. The sed regex `context/(changes|archive)/[A-Za-z0-9._/-]+` permits '..' in the path component, which could be used to read files outside the intended directories. While the subsequent case statement filters `*..*`, this is a defense-in-depth issue - the regex should not permit traversal in the first place.",
+          "suggestion": "Update the sed regex to `context/(changes|archive)/[A-Za-z0-9._/-]+/plan\\.md` and ensure the character class excludes '..' explicitly: `[A-Za-z0-9._/-]` → `[A-Za-z0-9._\\-]` (note the escaped hyphen)."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 150,
+          "endLine": 175,
+          "severity": "critical",
+          "category": "security",
+          "description": "The git ls-tree mode check for staging the plan doesn't validate that the object is a regular blob before attempting to read it. If MODE is something unexpected (e.g., '160000' for a submodule), the git show command could fail or produce unexpected output, but the error handling only removes the file on failure.",
+          "suggestion": "Add an explicit check for '100644' or '100755' before attempting to read. If the mode is not one of these, treat it as 'no plan' without attempting git show."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 217,
+          "endLine": 230,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The plan input handling doesn't validate that planText is a string after reading. If io.readFile returns undefined or null, planText.trim() would throw.",
+          "suggestion": "Add a null check: `if (planText == null || planText.trim() === '')`"
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 27,
+          "endLine": 27,
+          "severity": "nit",
+          "category": "style",
+          "description": "The DEFAULT_IMPL_REVIEW_MODEL constant uses the same model as DEFAULT_JUDGE_MODEL. While documented as intentional, having separate constants for the same value could cause confusion during maintenance.",
+          "suggestion": "Consider adding a comment in config.ts explicitly noting that these are intentionally the same model but separate constants for independent tuning."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The new impl-reviewer module lacks a module-level JSDoc comment explaining its purpose and how it fits into the overall review pipeline.",
+          "suggestion": "Add a JSDoc block at the top of impl-reviewer.ts explaining that this implements the plan-aware implementation review pass."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The pipeline changes for the implementation review pass don't appear to have corresponding tests in the provided diff (pipeline.test.ts is truncated).",
+          "suggestion": "Ensure pipeline.test.ts includes tests for the new implementation review branch, particularly the failure isolation behavior."
+        }
+      ],
+      "summary": {
+        "n": 6,
+        "bySeverity": {
+          "major": 1,
+          "critical": 1,
+          "minor": 3,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 1,
+          "style": 1,
+          "documentation": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 8,
+      "startedAt": "2026-08-23T11:49:35.542Z",
+      "durationMs": 50530,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1016,
+        "totalTokens": 26299,
+        "cost": 0.00380169
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 108,
+          "severity": "critical",
+          "category": "security",
+          "description": "Plan resolution regex allows path traversal via `..` segments, though rejected later. An attacker could inject `../context/changes/evil/plan.md` which would be caught by the `*..*` guard, but a more restrictive regex anchored at start would be safer.",
+          "suggestion": "Use `^\\s*Plan:\\s+(context/(changes|archive)/[A-Za-z0-9._/-]+/plan\\.md)\\s*$` to prevent any traversal segments."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 116,
+          "endLine": 139,
+          "severity": "critical",
+          "category": "security",
+          "description": "Plan staging uses `git show` to read the blob, which correctly follows symlinks by reading their target content. However, the preceding `git ls-tree` mode check rejects symlinks (mode 120000), preventing symlink following. This defense-in-depth is correct.",
+          "suggestion": "No action needed; the two-layer check is appropriate."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 141,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Empty diff guard skips the entire review when only plan/review documents are present. This may be surprising for users expecting a plan-only review.",
+          "suggestion": "Consider running only the implementation review when code diff is empty but a plan exists, if that use case is valued."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 210,
+          "endLine": 226,
+          "severity": "minor",
+          "category": "security",
+          "description": "PLAN_PATH is logged directly after minimal sanitization (`logSafePath`). Control characters are replaced with '?', but Unicode bidirectional overrides could still be used to obscure the path in logs.",
+          "suggestion": "Consider stricter sanitization, e.g., replacing any character outside `[A-Za-z0-9._/-]` with '?'."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 25,
+          "endLine": 32,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment explains the model choice but references a change (`finder-tool-loop-evals`) not visible in this diff.",
+          "suggestion": "Make the reference more self-contained or move to external docs."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.test.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "New test file for implementation reviewer is truncated; cannot verify test coverage.",
+          "suggestion": "Ensure tests are included in future diffs to verify the implementation review behavior."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Schema changes for ImplGrades and ImplReviewStatus are not visible in this diff.",
+          "suggestion": "Include schema definitions in review to ensure type safety."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Pipeline changes to wire the implementation review are not visible; cannot verify isolation and error handling.",
+          "suggestion": "Include pipeline changes to verify the third pass is properly isolated."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 158,
+          "endLine": 173,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The cost ratio criterion (4.8) cannot be computed because finder and judge telemetry lack cost fields.",
+          "suggestion": "Add cost telemetry to finder and judge passes or restate criterion in terms of available data."
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "critical": 2,
+          "minor": 6,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 1,
+          "style": 1,
+          "testing": 2,
+          "documentation": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 9,
+      "startedAt": "2026-08-23T11:50:26.089Z",
+      "durationMs": 44033,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1043,
+        "totalTokens": 26326,
+        "cost": 0.00384894
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 52,
+          "endLine": 146,
+          "severity": "major",
+          "category": "security",
+          "description": "Plan resolution uses untrusted PR body content without sufficient sanitization. The regex for extracting Plan: override allows any characters in the path except whitespace, which could include control characters or misleading Unicode that could confuse log output.",
+          "suggestion": "Restrict the character class more strictly to alphanumerics, dots, hyphens, underscores, and forward slashes only. Add explicit validation that the resolved path ends with 'plan.md'."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 119,
+          "endLine": 135,
+          "severity": "major",
+          "category": "security",
+          "description": "The git show command for staging the plan could output binary content if the plan blob is not actually a markdown file, which might cause issues with downstream processing.",
+          "suggestion": "Add a content-type check or size limit after git show to ensure the staged plan is reasonable text content before passing it to the reviewer."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 148,
+          "endLine": 161,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The diff exclusion logic uses an array that might be empty, but the git diff command always expects at least one path argument after '--'.",
+          "suggestion": "Ensure there's always at least one path argument (e.g., '.' ) when constructing the git diff command with exclusions."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 226,
+          "endLine": 230,
+          "severity": "minor",
+          "category": "security",
+          "description": "logSafePath function is referenced but not defined in the shown code, which could lead to runtime errors when sanitizing PLAN_PATH.",
+          "suggestion": "Ensure logSafePath is properly imported or defined, or replace with a simple sanitization function inline."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 217,
+          "endLine": 232,
+          "severity": "nit",
+          "category": "style",
+          "description": "The plan handling logic has nested conditionals that could be flattened for better readability.",
+          "suggestion": "Consider early returns or restructuring to reduce nesting depth."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 28,
+          "endLine": 36,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The comment explaining DEFAULT_IMPL_REVIEW_MODEL choice references specific change 'finder-tool-loop-evals' that readers may not have access to.",
+          "suggestion": "Add a brief summary of why that change is relevant to the model choice decision."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 345,
+          "endLine": 345,
+          "severity": "nit",
+          "category": "style",
+          "description": "The ImplGrades type has inconsistent spacing around the pipe in the union type.",
+          "suggestion": "Use consistent spacing: 'PASS' | 'FAIL' | 'WARNING' | 'MISSING'"
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The impl-reviewer module lacks a top-level comment explaining its purpose and how it differs from the regular reviewer.",
+          "suggestion": "Add a module header comment explaining this is the plan-aware implementation review pass."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 12,
+          "endLine": 15,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The description field update is accurate but could be more concise.",
+          "suggestion": "Consider: 'Two-pass AI review over PR diff with optional plan-aware implementation review; posts sticky comment and flips ai-cr:* labels.'"
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "major": 2,
+          "minor": 4,
+          "nit": 3
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 1,
+          "style": 2,
+          "documentation": 3
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 10,
+      "startedAt": "2026-08-23T11:51:10.125Z",
+      "durationMs": 44907,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1302,
+        "totalTokens": 26585,
+        "cost": 0.00430219
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 98,
+          "severity": "critical",
+          "category": "security",
+          "description": "Potential symlink attack via staged plan file. The workflow stages the plan from Git object after a blob-mode check, but the `git show` output could still be intercepted if an attacker creates a symlink at `$RUNNER_TEMP/plan.md` before the write. Use `mktemp` to create a secure temporary file instead.",
+          "suggestion": "Replace `git show \"${HEAD_SHA}:${PLAN_PATH}\" > \"$RUNNER_TEMP/plan.md\"` with `PLAN_FILE=$(mktemp) && git show \"${HEAD_SHA}:${PLAN_PATH}\" > \"$PLAN_FILE\" && echo \"PLAN_FILE=$PLAN_FILE\" >> \"$GITHUB_ENV\"`"
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The sed command for extracting Plan: override allows spaces in path components but not in the filename itself. A path like `context/changes/with space/plan.md` would be rejected by the `*..*` traversal check even though it's valid.",
+          "suggestion": "Change the traversal check to reject only `..` segments: `case \"$OVERRIDE\" in */../*|*..*) echo \"override candidate rejected (traversal segment)\" ;;`"
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 226,
+          "endLine": 226,
+          "severity": "minor",
+          "category": "security",
+          "description": "Control character defusing in PLAN_PATH logging uses a simple replace, which may not catch all control characters. C1 control codes (0x80-0x9F) would pass through.",
+          "suggestion": "Use a more comprehensive sanitization: `path.replace(/[\\x00-\\x1F\\x7F-\\x9F]/g, '?')`"
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 28,
+          "endLine": 28,
+          "severity": "minor",
+          "category": "performance",
+          "description": "DEFAULT_IMPL_REVIEW_MODEL uses sonnet-5 which was measured at 57.6x the cost of glm-4.6 for the finder. While justified for cross-context reasoning, the cost impact should be more prominently documented.",
+          "suggestion": "Add a comment above the constant with the cost ratio justification and estimated per-review cost based on typical plan+diff sizes."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 120,
+          "endLine": 120,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The plan truncation warning uses the original length before unescaping, which may misreport the size if the plan contains escaped characters.",
+          "suggestion": "Calculate length after unescaping: `const originalLength = plan.unescaped.length;`"
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 150,
+          "endLine": 150,
+          "severity": "nit",
+          "category": "style",
+          "description": "The implementation review section header 'Implementation Review' could be more descriptive since it's advisory.",
+          "suggestion": "Change to 'Implementation Review (Advisory)' to make the nature clearer."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 95,
+          "endLine": 95,
+          "severity": "nit",
+          "category": "style",
+          "description": "ImplGrades type uses literal union for PASS/FAIL/MISSING but could be more explicit with an enum.",
+          "suggestion": "Consider defining `enum GradeStatus { PASS = 'PASS', FAIL = 'FAIL', MISSING = 'MISSING' }` for stronger typing."
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "startLine": 400,
+          "endLine": 400,
+          "severity": "nit",
+          "category": "style",
+          "description": "The vendored criteria section about command execution has a TODO comment that should be resolved before merge.",
+          "suggestion": "Either implement the TODO or remove it with a comment explaining why it's deferred."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The implementation reviewer lacks integration tests that verify the end-to-end flow with a real provider, relying only on unit tests with mocked models.",
+          "suggestion": "Add an integration test that calls the real OpenRouter API with a test plan and diff to ensure the structured output parsing works in practice."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 12,
+          "endLine": 12,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The action description mentions 'Two-pass AI review' but now has three passes when a plan is present.",
+          "suggestion": "Update to: 'Two-pass AI review (finder + judge) over the PR diff, plus an advisory implementation review when a plan resolves'"
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "critical": 1,
+          "major": 1,
+          "minor": 5,
+          "nit": 3
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 2,
+          "performance": 1,
+          "style": 3,
+          "testing": 1,
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 11,
+      "startedAt": "2026-08-23T11:51:55.040Z",
+      "durationMs": 29524,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 811,
+        "totalTokens": 26094,
+        "cost": 0.00344294
+      },
+      "findings": [
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 241,
+          "endLine": 241,
+          "severity": "critical",
+          "category": "correctness",
+          "description": "logSafePath is called but not defined",
+          "suggestion": "The function `logSafePath` is used to sanitize PLAN_PATH for logging but is not defined in the visible code. This will cause a runtime error when a plan path contains special characters that need escaping. Either define the function or use a simpler approach like replacing control characters."
+        }
+      ],
+      "summary": {
+        "n": 1,
+        "bySeverity": {
+          "critical": 1
+        },
+        "byCategory": {
+          "correctness": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 12,
+      "startedAt": "2026-08-23T11:52:24.573Z",
+      "durationMs": 67724,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1659,
+        "totalTokens": 26942,
+        "cost": 0.00492694
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 72,
+          "endLine": 72,
+          "severity": "minor",
+          "category": "security",
+          "description": "The `git ls-tree` check for symlinks is good, but the error message reveals the exact mode (e.g., '120000') which could help an attacker understand which mode values are valid for future attempts. Consider a generic 'invalid file type' message instead.",
+          "suggestion": "Replace the specific mode with a generic message like 'plan rejected (invalid file type)'."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "minor",
+          "category": "security",
+          "description": "The `wc -c` command outputs the file size, which could leak information about the plan's size to attackers. While not critical, this is unnecessary information disclosure.",
+          "suggestion": "Remove the `wc -c` command after successfully reading the plan file."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 111,
+          "endLine": 111,
+          "severity": "nit",
+          "category": "style",
+          "description": "The array initialization for EXCLUDES could be more concise.",
+          "suggestion": "Consider using `EXCLUDES=(':(exclude,glob)**/reviews/*.md')` and conditionally add the plan path in a single line."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 63,
+          "endLine": 65,
+          "severity": "minor",
+          "category": "security",
+          "description": "The error message for unknown arguments includes the full usage string, which could leak internal command structure to attackers.",
+          "suggestion": "Consider a simpler error message like 'Invalid argument' and log the full usage only at debug level."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 224,
+          "endLine": 226,
+          "severity": "minor",
+          "category": "security",
+          "description": "The `logSafePath` function is referenced but not defined in the shown code. If it's not properly implemented, control characters in PLAN_PATH could still cause issues.",
+          "suggestion": "Ensure `logSafePath` properly escapes or removes control characters. Consider using a library function for this."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 27,
+          "endLine": 36,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The extensive comment about DEFAULT_IMPL_REVIEW_MODEL is valuable but could be more concise while retaining the key security rationale.",
+          "suggestion": "Consider moving the detailed evaluation results to a design document and keeping only the security-critical reasoning inline."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 156,
+          "endLine": 160,
+          "severity": "minor",
+          "category": "security",
+          "description": "The plan path is directly interpolated into the comment without escaping. While GitHub comments sanitize HTML, this could still cause display issues.",
+          "suggestion": "Use a proper HTML escaping function for the plan path."
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "startLine": 322,
+          "endLine": 322,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The plan truncation message mentions '40 KB' but the actual limit is 40,000 characters, which is approximately 39 KB, not 40 KB.",
+          "suggestion": "Update the message to accurately reflect '40,000 characters' or adjust to a true 40 KB limit (40,960 characters)."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 140,
+          "endLine": 140,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The `planTruncated` field is required but there's no validation that it's only true when the plan was actually truncated.",
+          "suggestion": "Add a custom validation or refinement to ensure `planTruncated` is only true when the plan text length exceeds the limit."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 156,
+          "endLine": 156,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The timeout for implReviewTimeoutMs is not validated against a reasonable minimum. A very short timeout could cause unnecessary failures.",
+          "suggestion": "Add a minimum timeout validation (e.g., at least 5000ms) for the implementation review."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 200,
+          "endLine": 200,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The implementation review error handling doesn't distinguish between different types of failures (network vs validation vs rate limit), which could make debugging harder.",
+          "suggestion": "Consider categorizing the error type in the failed status for better observability."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 80,
+          "endLine": 80,
+          "severity": "minor",
+          "category": "performance",
+          "description": "The plan text is included in full in the error message when truncation occurs, which could lead to very large error messages.",
+          "suggestion": "Include only the first N characters or a hash of the plan in error messages."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 120,
+          "endLine": 120,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The criteria are hardcoded and could drift from the source document over time without detection.",
+          "suggestion": "Add a checksum or version identifier of the source criteria document to detect drift."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 150,
+          "endLine": 150,
+          "severity": "minor",
+          "category": "security",
+          "description": "The plan text is included in the system prompt without additional sanitization beyond length limiting.",
+          "suggestion": "Consider adding a warning in the prompt that the plan content is untrusted."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 95,
+          "endLine": 95,
+          "severity": "major",
+          "category": "testing",
+          "description": "The probe was run locally instead of in the actual CI environment, which means criterion 4.2 (run completes in CI) was not actually tested.",
+          "suggestion": "Either re-run the probe in a test PR against a feature branch, or clearly document that 4.2 remains unverified."
+        }
+      ],
+      "summary": {
+        "n": 15,
+        "bySeverity": {
+          "minor": 12,
+          "nit": 2,
+          "major": 1
+        },
+        "byCategory": {
+          "security": 6,
+          "style": 1,
+          "documentation": 1,
+          "correctness": 5,
+          "performance": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 13,
+      "startedAt": "2026-08-23T11:53:32.308Z",
+      "durationMs": 54485,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1118,
+        "totalTokens": 26401,
+        "cost": 0.00398019
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 105,
+          "severity": "major",
+          "category": "security",
+          "description": "Path traversal vulnerability in plan override parsing",
+          "suggestion": "The sed command for extracting Plan: override only checks for '..' segments but doesn't properly validate other traversal sequences like './' or absolute paths. A malicious PR body could still bypass this check."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 140,
+          "endLine": 145,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Git show failure handling could leave partial file",
+          "suggestion": "If git show fails after partially writing to the temp file, the rm command only executes if git show returns non-zero. However, if git show fails mid-write (e.g., disk full), a partial plan file could remain. Consider using atomic write patterns."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 225,
+          "endLine": 230,
+          "severity": "minor",
+          "category": "security",
+          "description": "PLAN_PATH logging uses logSafePath but not for length calculation",
+          "suggestion": "The length calculation uses the raw env.PLAN_PATH value before sanitization. If PLAN_PATH contains control characters, the length could be misleading. Apply logSafePath before calculating length."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 25,
+          "endLine": 35,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment references outdated change name",
+          "suggestion": "The comment mentions 'change finder-tool-loop-evals' but this is now a different change. Update the reference to be more generic or remove the specific reference."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Missing module docstring explaining the trust boundary",
+          "suggestion": "Given the critical security implications of this module handling untrusted plan data, add a module-level docstring explicitly stating the trust model and security considerations."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Implementation review runs even when code review fails",
+          "suggestion": "The pipeline runs implementation review even if the code review (finder+judge) fails. Consider making this conditional or at least documenting why this is intentional."
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "style",
+          "description": "Long vendored content without clear diff markers",
+          "suggestion": "The vendored criteria content is large. Consider adding diff markers or comments indicating where modifications were made from the original source to aid future maintenance."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "ImplReview schema allows empty findings with reviewed status",
+          "suggestion": "The schema permits status: 'reviewed' with an empty findings array. Consider whether this should be a separate 'no_findings' status to make the intention explicit."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.test.ts",
+          "startLine": 430,
+          "endLine": 435,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Test for control character defusing doesn't verify all cases",
+          "suggestion": "The test only checks newline replacement. Add tests for other control characters like tab, carriage return, and other ANSI escape sequences to ensure comprehensive sanitization."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.test.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Missing test for plan truncation behavior",
+          "suggestion": "The test suite doesn't cover what happens when the plan exceeds the 40KB limit. Add a test verifying truncation occurs and planTruncated flag is set."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "major": 1,
+          "minor": 7,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 3,
+          "style": 2,
+          "documentation": 1,
+          "testing": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 14,
+      "startedAt": "2026-08-23T11:54:26.806Z",
+      "durationMs": 66975,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1140,
+        "totalTokens": 26423,
+        "cost": 0.00401869
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 95,
+          "severity": "critical",
+          "category": "security",
+          "description": "Plan resolution regex vulnerable to path traversal injection",
+          "suggestion": "The regex `s#^[[:space:]]*Plan:[[:space:]]+(context/(changes|archive)/[A-Za-z0-9._/-]+/plan\\.md)[[:space:]]*$#p` allows `..` segments which could enable directory traversal. While the post-check `*..*)` guard catches traversal, tighten the regex to `[^./]` and explicitly reject `..` earlier for defense-in-depth."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 130,
+          "endLine": 150,
+          "severity": "major",
+          "category": "security",
+          "description": "Git object staging lacks explicit error handling for symlink attacks",
+          "suggestion": "While `git show` doesn't follow symlinks, add explicit validation: after `git ls-tree`, verify `MODE` is exactly `100644` or `100755` before proceeding. This prevents unexpected blob types from being processed."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 160,
+          "endLine": 170,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Diff exclusion array could fail on paths with spaces",
+          "suggestion": "Use `printf '%s\\n'` to safely handle paths containing spaces when building EXCLUDES array. A plan path with spaces could otherwise break the diff command."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 212,
+          "endLine": 225,
+          "severity": "minor",
+          "category": "security",
+          "description": "PLAN_PATH logging vulnerable to log injection",
+          "suggestion": "While `logSafePath` is used, the initial error message before sanitization could still inject control characters. Sanitize `env.PLAN_PATH` immediately on entry."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 24,
+          "endLine": 32,
+          "severity": "nit",
+          "category": "style",
+          "description": "Model default rationale should be in documentation",
+          "suggestion": "Move the detailed rationale for choosing `sonnet-5` to a comment block or separate documentation file. The inline comment is valuable but makes the config file noisy."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 50,
+          "endLine": 55,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Plan truncation warning might be misleading",
+          "suggestion": "Add context to the truncation warning indicating whether truncation occurred at a character boundary, to avoid suggesting partial UTF-8 sequences were included."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 200,
+          "endLine": 210,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Plan path display unsanitized in comment",
+          "suggestion": "Escape HTML special characters in `planPath` when rendering to prevent potential markup injection in the GitHub comment."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 150,
+          "endLine": 160,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "ImplReview schema allows inconsistent status/verdict",
+          "suggestion": "Add a refinement to ensure `status: 'reviewed'` implies `verdict` is one of the expected values, and `status: 'failed'` requires `error` field."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/plan-brief.md",
+          "startLine": 45,
+          "endLine": 50,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Success criteria ambiguous on cost measurement",
+          "suggestion": "Clarify whether cost ratio should be measured against a single run or aggregated across multiple runs, given the lack of baseline telemetry."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/research.md",
+          "startLine": 295,
+          "endLine": 300,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "External reference URLs missing",
+          "suggestion": "Add full URLs for the referenced papers (GitInject arXiv, Microsoft Defender report, CSA report) to make them verifiable."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "critical": 1,
+          "major": 1,
+          "minor": 6,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 4,
+          "style": 1,
+          "documentation": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 15,
+      "startedAt": "2026-08-23T11:55:33.794Z",
+      "durationMs": 63829,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1247,
+        "totalTokens": 26530,
+        "cost": 0.00420594
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 90,
+          "endLine": 91,
+          "severity": "critical",
+          "category": "security",
+          "description": "Insufficient symlink protection in plan staging",
+          "suggestion": "Add explicit check for `120000` (symlink) mode before reading the blob. The current check only excludes submodules (160000), allowing a symlinked `plan.md` to be staged and read by the process holding OPENROUTER_API_KEY."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 147,
+          "endLine": 147,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Potential path traversal in override regex",
+          "suggestion": "The regex `[A-Za-z0-9._/-]+` allows `..` segments which could enable directory traversal. Replace with `[A-Za-z0-9._/-]+` that excludes `..` or add an explicit traversal check after regex match."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 182,
+          "endLine": 182,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Array expansion could fail on spaces",
+          "suggestion": "The EXCLUDES array expansion `\"${EXCLUDES[@]}\"` is correct, but the comment suggests word-splitting concerns. Ensure the array is properly quoted to handle paths with spaces."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 29,
+          "endLine": 29,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Description outdated",
+          "suggestion": "Update description to mention three passes (finder + judge + impl-review) instead of two."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 215,
+          "endLine": 215,
+          "severity": "minor",
+          "category": "security",
+          "description": "Control character handling incomplete",
+          "suggestion": "The `logSafePath` replacement only handles newlines. Add replacement for other control characters (tabs, carriage returns) to fully prevent log injection."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 253,
+          "endLine": 254,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Missing error handling for judge output repair",
+          "suggestion": "Add `onJudgeOutputRepair` callback similar to `onOutputRepair` to handle judge output repair failures consistently."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 26,
+          "endLine": 26,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment references outdated change",
+          "suggestion": "Update comment to reference `impl-review-ci-agent` instead of `finder-tool-loop-evals`."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 46,
+          "endLine": 46,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Plan truncation may lose critical context",
+          "suggestion": "The 40,000 char truncation could split sentences or exclude important exclusions. Consider truncating at word boundaries or adding a warning when truncation occurs."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "No validation of plan text before processing",
+          "suggestion": "Add basic validation to ensure plan text contains expected sections (e.g., '## Changes', '## What We Are NOT Doing') before processing to avoid confusing results on malformed plans."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 150,
+          "endLine": 150,
+          "severity": "minor",
+          "category": "security",
+          "description": "Plan path not escaped in markdown link",
+          "suggestion": "Escape `planPath` in the markdown link to prevent breaking the comment if the path contains special markdown characters."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 185,
+          "endLine": 185,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent property order",
+          "suggestion": "Reorder `ImplReviewTelemetry` properties to match the order used in formatting functions (attempts, inputTokens, outputTokens, totalTokens, cost)."
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "startLine": 1020,
+          "endLine": 1020,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Criteria drift not documented",
+          "suggestion": "Add inline comment documenting the deviation from the original criteria regarding command execution (replaced with author claim verification)."
+        }
+      ],
+      "summary": {
+        "n": 12,
+        "bySeverity": {
+          "critical": 1,
+          "major": 1,
+          "minor": 6,
+          "nit": 4
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 5,
+          "documentation": 2,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 16,
+      "startedAt": "2026-08-23T11:56:37.630Z",
+      "durationMs": 64333,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1404,
+        "totalTokens": 26687,
+        "cost": 0.00448069
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 73,
+          "endLine": 81,
+          "severity": "critical",
+          "category": "security",
+          "description": "Plan path regex allows potentially unsafe characters",
+          "suggestion": "The regex `[A-Za-z0-9._/-]` allows dots and slashes which could enable path traversal attacks. Even with the `..` check, this could be exploited. Restrict to a safer character set like `[A-Za-z0-9_-]` and add explicit validation."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 110,
+          "severity": "major",
+          "category": "security",
+          "description": "Plan staging error handling could expose sensitive information",
+          "suggestion": "When `git show` fails, the error message could contain sensitive information. Redirect stderr to /dev/null or handle errors more securely to avoid potential information leakage."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 215,
+          "endLine": 225,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Empty plan file handling is ambiguous",
+          "suggestion": "Treating an empty plan file as 'no plan' could mask real issues. Consider this an error condition that requires explicit handling, or add a clear warning that the plan file was empty."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 25,
+          "endLine": 35,
+          "severity": "major",
+          "category": "performance",
+          "description": "Implementation review uses expensive model by default",
+          "suggestion": "Using `claude-sonnet-5` for implementation review significantly increases CI cost. Consider using a cheaper model for initial screening, or add configuration to disable this pass for cost-sensitive environments."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.test.ts",
+          "startLine": 205,
+          "endLine": 210,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Control character defusing test is incomplete",
+          "suggestion": "The test for defusing control characters in PLAN_PATH only checks newline. Add tests for other control characters like tabs, carriage returns, and other ANSI escape sequences."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 130,
+          "endLine": 140,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Diff exclusion logic could miss edge cases",
+          "suggestion": "The array-based exclusion for PLAN_PATH could fail with paths containing spaces. Quote the expansion properly or use a different approach to handle all valid path characters."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 255,
+          "endLine": 270,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent error logging format",
+          "suggestion": "The impl review telemetry line uses `io.logError` for what's actually informational output. Use a dedicated logging function or rename to avoid confusion."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.test.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "style",
+          "description": "Test file lacks proper header comment",
+          "suggestion": "Add a descriptive header comment explaining what this test file covers, following the pattern of other test files in the project."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "critical": 1,
+          "major": 3,
+          "minor": 2,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 2,
+          "performance": 1,
+          "testing": 1,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 17,
+      "startedAt": "2026-08-23T11:57:41.973Z",
+      "durationMs": 58204,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1407,
+        "totalTokens": 26690,
+        "cost": 0.00448594
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 55,
+          "endLine": 71,
+          "severity": "critical",
+          "category": "security",
+          "description": "Plan resolution regex is anchored but allows traversal via '..' segments. The check `*..*)` only rejects if '..' appears anywhere, but a path like `context/changes/../etc/passwd` would pass the initial regex and be rejected later. This is a defense-in-depth issue since the staged file is read via `git show` (which doesn't follow symlinks), but an attacker could still cause the workflow to resolve and log an arbitrary path.",
+          "suggestion": "Strengthen the regex to reject any '..' sequence in the path: `s#^[[:space:]]*Plan:[[:space:]]+(context/(changes|archive)/[A-Za-z0-9._/-]+/plan\\.md)[[:space:]]*$#\\1#p` → `s#^[[:space:]]*Plan:[[:space:]]+(context/(changes|archive)/[A-Za-z0-9._/-]+/plan\\.md)[[:space:]]*$#\\1#p` with a pre-check for '..' in the matched group."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 98,
+          "endLine": 118,
+          "severity": "major",
+          "category": "security",
+          "description": "The symlink-safe staging check only rejects symlinks (mode 120000) and submodules (160000), but doesn't handle other non-regular blob modes that could exist (e.g., 100664 for group-writable). While these would be caught by the `git show` failure, the error message should be more precise.",
+          "suggestion": "Change the mode check to explicitly accept only regular files: `case \"$MODE\" in 100644|100755) ;; *)` → `case \"$MODE\" in 100644|100755) ;; *) echo \"plan rejected (tree mode '${MODE:-none}' is not a regular file)\""
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 143,
+          "endLine": 153,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The diff exclusion array uses `:(exclude,glob)**/reviews/*.md` but the plan exclusion uses `:(exclude)${PLAN_PATH}` without glob. If PLAN_PATH contains spaces or special characters, this could break the pathspec.",
+          "suggestion": "Quote the plan path exclusion: `\"${EXCLUDES[@]}\"` → `\"${EXCLUDES[@]}\"` (already quoted) but ensure PLAN_PATH is properly escaped: `[ -n \"$PLAN_PATH\" ] && EXCLUDES+=(\":(exclude)${PLAN_PATH}\")`"
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 218,
+          "endLine": 223,
+          "severity": "minor",
+          "category": "security",
+          "description": "PLAN_PATH is logged via `logSafePath` which replaces control chars with '?', but the length calculation `String(planText.length)` happens before any sanitization of the path. An attacker could embed ANSI codes in PLAN_PATH to manipulate the log.",
+          "suggestion": "Apply `logSafePath` to the entire message template or sanitize PLAN_PATH before including it in the log line."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 35,
+          "endLine": 35,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment references `change finder-tool-loop-evals` but should reference the archived path since it's in context/archive/.",
+          "suggestion": "Update comment to reference the archived change path."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The implementation reviewer lacks integration tests covering the interaction between plan truncation and the verdict. While unit tests cover truncation, the end-to-end behavior of a truncated plan producing a specific verdict isn't verified.",
+          "suggestion": "Add an integration test that verifies a plan exceeding the 40KB limit results in a `REJECTED` verdict with appropriate truncation messaging."
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The vendored implementation review criteria lack inline documentation explaining why the command execution sections were removed from the original skill.",
+          "suggestion": "Add a comment at the start of the criteria explaining the security rationale for removing command execution steps in CI."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The `ImplReviewTelemetry` schema allows `cost` to be `number | undefined` but the formatting code assumes it's a number when calling `.toFixed(6)` without null checking.",
+          "suggestion": "Add a guard in `formatImplReviewLine` or make the schema stricter to ensure cost is always defined when present."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "nit",
+          "category": "style",
+          "description": "The implementation review section uses inconsistent markdown heading levels (### for verdict, #### for grades).",
+          "suggestion": "Standardize on ### for both verdict and grades sections."
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "critical": 1,
+          "major": 1,
+          "minor": 4,
+          "nit": 3
+        },
+        "byCategory": {
+          "security": 3,
+          "correctness": 2,
+          "style": 2,
+          "testing": 1,
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 18,
+      "startedAt": "2026-08-23T11:58:40.198Z",
+      "durationMs": 54386,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1092,
+        "totalTokens": 26375,
+        "cost": 0.00393469
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 97,
+          "severity": "critical",
+          "category": "security",
+          "description": "The regex for PR-body plan override uses `[A-Za-z0-9._/-]` which allows `../` path traversal segments. An attacker could set `Plan: context/changes/../../../etc/passwd` to escape the intended directory. The later `case \"$OVERRIDE\" in *..*)` check only rejects literal `..` segments, not traversal embedded in a valid-looking path. Use a stricter pattern that rejects `..` anywhere, e.g. `context/(changes|archive)/[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*/plan\\.md`.",
+          "suggestion": "Replace the regex with one that disallows `..` segments entirely, not just as a whole-path suffix."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 97,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The PR-body override regex anchors the end with `$` but does not strip CRLF (`\\r`) before matching. GitHub bodies are CRLF, so a trailing `\\r` would cause the override to be ignored silently. The `tr -d '\\r'` call is after the regex, not before.",
+          "suggestion": "Move `tr -d '\\r'` before the `sed` command, or use `sed -z` to handle NUL-terminated input."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 255,
+          "endLine": 255,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "If `PLAN_PATH` is unset but `--plan-file` is passed, the plan text is still used but the display path falls back to a hardcoded `\"(path not given)\"`. This could be confusing when debugging plan resolution. An unset `PLAN_PATH` should be treated as an error when a plan file is explicitly provided.",
+          "suggestion": "Require `PLAN_PATH` to be set when `--plan-file` is used, or surface a clearer warning that the path metadata is missing."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The new `impl-reviewer.ts` agent has unit tests, but there is no integration test covering the full end-to-end path: CLI plan flag → pipeline → impl-review agent → rendered comment. Without this, regressions in wiring (e.g., missing schema fields) could go unnoticed.",
+          "suggestion": "Add an integration test that invokes `runReviewCli` with a plan and asserts the comment contains the impl-review section."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The new `renderImplReviewSection` function renders a three-state block (APPROVED/NEEDS_ATTENTION/REJECTED) but its behavior and the meaning of each verdict are not documented in the code. Future maintainers may not understand the grading semantics.",
+          "suggestion": "Add a JSDoc block explaining the verdict levels and their mapping to the grades/findings."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 81,
+          "endLine": 81,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment `# SECURITY, two layers` uses a comma after a list item, which is unconventional. Use a colon or rephrase.",
+          "suggestion": "Change to `# SECURITY: two layers` or `# SECURITY — two layers`."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 30,
+          "endLine": 30,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment `// Its own constant, deliberately NOT an alias of DEFAULT_JUDGE_MODEL` uses `NOT` in all caps; the rest of the file uses lowercase for emphasis.",
+          "suggestion": "Change `NOT` to `not` for consistency with the codebase style."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "critical": 1,
+          "major": 1,
+          "minor": 3,
+          "nit": 2
+        },
+        "byCategory": {
+          "security": 1,
+          "correctness": 2,
+          "testing": 1,
+          "documentation": 1,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 19,
+      "startedAt": "2026-08-23T11:59:34.595Z",
+      "durationMs": 59688,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1184,
+        "totalTokens": 26467,
+        "cost": 0.00409569
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 62,
+          "endLine": 85,
+          "severity": "critical",
+          "category": "security",
+          "description": "Plan resolution uses untrusted PR body content without proper sanitization. The regex for extracting Plan: override allows any characters in the path except whitespace, which could include control characters that might interfere with logging or downstream processing.",
+          "suggestion": "Restrict the allowed character set in the plan path to alphanumeric, dots, hyphens, underscores, and forward slashes only. Add validation to reject paths containing control characters or other problematic characters."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 95,
+          "endLine": 115,
+          "severity": "critical",
+          "category": "security",
+          "description": "The git show command for staging the plan could follow symlinks if the mode check is bypassed or if there's a race condition. A malicious PR could create a symlink to sensitive files like /proc/self/environ.",
+          "suggestion": "Add additional protection by using git cat-file --blob to ensure we're reading the blob content directly, or add explicit checks for symlink content patterns. Consider using git hash-object to verify the blob type before reading."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 126,
+          "endLine": 138,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The diff exclusion logic uses an array that could be vulnerable to word-splitting if PLAN_PATH contains spaces. This could cause the git diff command to fail or behave unexpectedly.",
+          "suggestion": "Quote the array expansion properly or use a different approach that's safe against spaces in paths. Consider building the exclude arguments separately and quoting them appropriately."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 220,
+          "endLine": 230,
+          "severity": "minor",
+          "category": "security",
+          "description": "The logSafePath function is referenced but not defined in the visible code. PLAN_PATH is untrusted input that needs sanitization before logging.",
+          "suggestion": "Ensure logSafePath is defined and properly sanitizes control characters, replaces newlines with a safe marker, and limits length to prevent log injection attacks."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The pipeline now supports a new 'plan' input and 'implReviewTimeoutMs' timeout, but these aren't documented in the PipelineInput interface definition that's visible.",
+          "suggestion": "Update the PipelineInput interface documentation to clearly describe the new plan parameter and its untrusted nature, as well as the new timeout option."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 23,
+          "endLine": 35,
+          "severity": "nit",
+          "category": "style",
+          "description": "The comment explaining the choice of DEFAULT_IMPL_REVIEW_MODEL is quite long and contains implementation details that might drift over time.",
+          "suggestion": "Move the detailed rationale about model evaluation results to documentation or a separate decision file, keeping the comment focused on the current choice and basic reasoning."
+        },
+        {
+          "file": "packages/code-reviewer/src/schemas.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The ImplReviewSchema and ImplGrades types are defined but there are no visible tests for the schema validation edge cases (e.g., what happens with malformed grades or missing fields).",
+          "suggestion": "Add tests to verify schema validation properly rejects invalid impl review results, especially for the grade fields and verdict field constraints."
+        },
+        {
+          "file": "packages/code-reviewer/src/render.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "security",
+          "description": "The render function now handles untrusted plan content and planPath. If planPath contains control characters or markup, it could interfere with the markdown rendering.",
+          "suggestion": "Ensure planPath is properly escaped when rendering in markdown templates, especially if it's used in links or code spans."
+        },
+        {
+          "file": "packages/code-reviewer/src/prompts.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The implementation review criteria are vendored into the prompts but the divergence from the original skill's criteria isn't clearly documented inline.",
+          "suggestion": "Add inline comments documenting where and how the criteria differ from the original 10x-impl-review-ci reference, especially the sections about command execution that were intentionally omitted."
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "critical": 2,
+          "major": 1,
+          "minor": 5,
+          "nit": 1
+        },
+        "byCategory": {
+          "security": 4,
+          "correctness": 1,
+          "documentation": 2,
+          "style": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 20,
+      "startedAt": "2026-08-23T12:00:34.294Z",
+      "durationMs": 75992,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "ci",
+        "rung": "base",
+        "inputSha256": "315a588a6fbdd03da05f4e9b080afe67af009d6d67f0f457673497e004aa027e",
+        "sentBytes": 100030,
+        "noteActive": true,
+        "promptSha256": "e802502ca97f8e5659fbb4c90ef121fda11beb7fab8a033eb9010af60228ad7f"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 25283,
+        "outputTokens": 1623,
+        "totalTokens": 26906,
+        "cost": 0.00486394
+      },
+      "findings": [
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 72,
+          "endLine": 104,
+          "severity": "critical",
+          "category": "security",
+          "description": "Plan file staging from Git object lacks validation for file size limits",
+          "suggestion": "Add a size check before staging the plan file to prevent resource exhaustion attacks. The plan text is later capped at 40KB in the package, but the staging step should also enforce limits to prevent writing large files to disk."
+        },
+        {
+          "file": ".github/workflows/review.yml",
+          "startLine": 85,
+          "endLine": 85,
+          "severity": "minor",
+          "category": "security",
+          "description": "PLAN_PATH environment variable is passed through without validation",
+          "suggestion": "Consider adding a validation step for PLAN_PATH to ensure it matches expected patterns, even though it's only used for display."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 217,
+          "endLine": 230,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Empty plan file handling may not be consistent with the workflow's 'no plan' signal",
+          "suggestion": "Add a test to verify that an empty staged plan file (all whitespace) produces the same output as no plan file being staged. The current implementation trims before checking emptiness, which is correct but should be explicitly tested."
+        },
+        {
+          "file": "packages/code-reviewer/src/config.ts",
+          "startLine": 25,
+          "endLine": 35,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The rationale for DEFAULT_IMPL_REVIEW_MODEL choice is embedded in comments but not in documentation",
+          "suggestion": "Move the model selection rationale to AGENTS.md or create a separate model selection document to make it easier to find and update."
+        },
+        {
+          "file": "packages/code-reviewer/src/impl-reviewer.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "major",
+          "category": "testing",
+          "description": "The implementation review agent lacks tests for malformed plan inputs",
+          "suggestion": "Add tests for how the agent handles plans with: 1) Extremely long lines, 2) Invalid UTF-8 sequences, 3) Markdown that could confuse the parser, 4) Plans larger than the 40KB cap."
+        },
+        {
+          "file": ".github/actions/ai-review/action.yml",
+          "startLine": 12,
+          "endLine": 15,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Description of the third pass could be clearer about its advisory nature",
+          "suggestion": "Update the description to explicitly state that the implementation review is advisory and does not affect the ai-cr:* labels or exit code, matching what's documented in the workflow."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.ts",
+          "startLine": 265,
+          "endLine": 265,
+          "severity": "minor",
+          "category": "style",
+          "description": "Magic number 40KB for plan cap is hardcoded",
+          "suggestion": "Extract the 40KB limit to a named constant with documentation explaining why this value was chosen (based on real plan sizes)."
+        },
+        {
+          "file": "packages/code-reviewer/src/cli.test.ts",
+          "startLine": 440,
+          "endLine": 440,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Test for control characters in PLAN_PATH uses a simple replacement",
+          "suggestion": "Consider using a more robust sanitization function or add tests for edge cases like null bytes and other control characters that might not be caught by the simple replacement."
+        },
+        {
+          "file": "packages/code-reviewer/src/pipeline.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The pipeline's handling of the impl review failure mode needs better documentation",
+          "suggestion": "Add explicit documentation that implReview failures are isolated and don't affect the overall pipeline result, matching the design intent."
+        },
+        {
+          "file": "context/changes/impl-review-ci-agent/verification.md",
+          "startLine": 150,
+          "endLine": 160,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Cost telemetry verification notes that finder telemetry lacks cost data",
+          "suggestion": "Document this known gap and create a tracking issue to add cost telemetry to the finder and judge passes for complete visibility."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "critical": 1,
+          "minor": 7,
+          "major": 2
+        },
+        "byCategory": {
+          "security": 2,
+          "correctness": 1,
+          "documentation": 4,
+          "testing": 2,
+          "style": 1
+        }
+      },
+      "error": null
+    }
+  ]
+}

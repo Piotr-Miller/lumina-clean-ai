@@ -14,14 +14,7 @@ export type Severity = z.infer<typeof severitySchema>;
 // `documentation` exist so the finder can surface the gaps the judge's
 // test-coverage and documentation criteria score — the judge only sees
 // findings, never the diff.
-export const categorySchema = z.enum([
-  "security",
-  "performance",
-  "correctness",
-  "style",
-  "testing",
-  "documentation",
-]);
+export const categorySchema = z.enum(["security", "performance", "correctness", "style", "testing", "documentation"]);
 export type Category = z.infer<typeof categorySchema>;
 
 // Line numbers use number+refine instead of .int().min(1) for provider
@@ -39,9 +32,7 @@ const lineNumber = (description: string) =>
 
 export const findingSchema = z.object({
   file: z.string().min(1).describe("File path exactly as given in the review unit"),
-  startLine: lineNumber(
-    "Absolute 1-based line in the file where the issue starts; omit for file-level findings",
-  ),
+  startLine: lineNumber("Absolute 1-based line in the file where the issue starts; omit for file-level findings"),
   endLine: lineNumber("Absolute 1-based line where the issue ends, if it spans a range"),
   severity: severitySchema.describe("How bad the issue is if left unfixed"),
   category: categorySchema.describe("Which review dimension the issue belongs to"),
@@ -87,9 +78,7 @@ export const criterionScoreWireSchema = z.object({
     .enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"])
     .describe("Score from 1 (worst outcome) to 10 (best outcome), as a string"),
   justification: z.string().describe("Why this score, grounded in the referenced findings"),
-  findingIds: z
-    .array(z.string())
-    .describe("IDs of the findings supporting a deduction; empty when nothing applies"),
+  findingIds: z.array(z.string()).describe("IDs of the findings supporting a deduction; empty when nothing applies"),
 });
 
 /** The trusted per-criterion contract: score is a number, 1-10, guaranteed by the enum. */
@@ -225,6 +214,21 @@ export interface JudgeTelemetry {
   cost?: number;
 }
 
+/**
+ * The exact payload the finder's `<truncation-metadata>` fence rendered: the
+ * file the cap cut into, the fully over-cap files (capped at
+ * TRUNCATION_METADATA_MAX_FILES, remainder as omittedCount). Persisted
+ * verbatim in review.json so the passive live check registered in
+ * r5-finder-truncation-note/decision.md Disposition #2 can compare
+ * getFileContext targets against the files the note actually named without
+ * depending on Actions-log retention (impl-review F1).
+ */
+export interface TruncationMetadata {
+  cutFile?: string;
+  overCapFiles: string[];
+  omittedCount?: number;
+}
+
 /** Full result of the two-pass review pipeline (what review.json carries). */
 export interface PipelineResult {
   summary: string;
@@ -241,6 +245,12 @@ export interface PipelineResult {
   verdictReason: string;
   diffStats: DiffStats;
   diffTruncated: boolean;
+  /**
+   * Present only when diffTruncated is true — absent (never an empty object)
+   * otherwise, so an untruncated review.json is byte-identical to the
+   * pre-feature shape. See TruncationMetadata.
+   */
+  truncationMetadata?: TruncationMetadata;
   bodyTruncated: boolean;
   /**
    * Whether the plan was truncated at PLAN_CAP_CHARS. Present only when the
@@ -553,6 +563,15 @@ export const reviewUnitSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("diff"),
     diff: z.string().min(1).describe("Unified diff text"),
+    // Truncation facts from the pipeline's own cap decision (change
+    // r5-finder-truncation-note): set from capDiff/truncationReport, never
+    // re-detected from the diff text. Additive and optional, so existing
+    // constructors (evals, demo, probe) compile unchanged. cutFile is
+    // optional-not-nullable: absent means "cut fell between files or the
+    // text had no parseable headers".
+    truncated: z.boolean().optional(),
+    cutFile: z.string().optional(),
+    overCapFiles: z.array(z.string()).optional(),
   }),
   z.object({
     kind: z.literal("file"),

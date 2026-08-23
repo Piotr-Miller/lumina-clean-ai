@@ -23,7 +23,7 @@
 //   npx tsx --env-file-if-exists=.env scripts/fabrication-grade.mjs \
 //     context/changes/finder-fabrication-triggers/results/<file>.json
 import { createHash } from "node:crypto";
-import { readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
@@ -62,7 +62,10 @@ export function assertFlatVerdictSchema(schema = gradeVerdictSchema) {
 }
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-const groundTruthDir = `${repoRoot}context/changes/finder-fabrication-triggers/ground-truth`;
+// Re-pointed from the archived finder-fabrication-triggers campaign to the R5
+// measurement change; the ground truth there must stay byte-identical to the
+// archived frozen copy (sha256 pinned in the change's verification.md).
+const groundTruthDir = `${repoRoot}context/changes/r5-finder-truncation-note/ground-truth`;
 
 /** Write via a temp file + rename so a checkpoint is never half-written. */
 function writeFileAtomic(path, data) {
@@ -316,7 +319,19 @@ async function main() {
   const manifestPath = resultsPath.replace(/\.json$/, "-manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   assertRunIdentity({ results, manifest });
-  const groundTruthRelPath = `context/changes/finder-fabrication-triggers/ground-truth/${results.variant}.md`;
+  const groundTruthRelPath = `context/changes/r5-finder-truncation-note/ground-truth/${results.variant}.md`;
+  // Only ci.md is frozen into this change's ground-truth/ (Phase 2 froze
+  // exactly what the R5 arm grades). Other variants' inventories live in the
+  // read-only campaign archive — fail with the freeze discipline spelled out
+  // instead of a bare ENOENT (impl-review F2).
+  if (!existsSync(`${groundTruthDir}/${results.variant}.md`)) {
+    throw new Error(
+      `ground truth for variant "${results.variant}" is not frozen in this change (${groundTruthRelPath} is missing). ` +
+        "Copy it byte-identical from context/archive/2026-08-15-finder-fabrication-triggers/ground-truth/ into the " +
+        "ACTIVE change's ground-truth/ and pin its sha256 in that change's verification.md before grading — the " +
+        "archive itself is read-only and is never graded against directly (campaign freeze discipline, ci.md precedent).",
+    );
+  }
   const groundTruth = readFileSync(`${groundTruthDir}/${results.variant}.md`, "utf8");
   const groundTruthSha256 = createHash("sha256").update(groundTruth, "utf8").digest("hex");
   const manifestSummary = summarizeManifest(manifest);
@@ -339,7 +354,9 @@ async function main() {
       throw new Error(`${outPath} is already complete — delete it to re-grade (that re-spends)`);
     }
     if (priorCheckpoint.inputsSha256 !== results.inputsSha256) {
-      throw new Error(`checkpoint ${outPath} belongs to a different input (inputsSha256 mismatch) — refusing to resume`);
+      throw new Error(
+        `checkpoint ${outPath} belongs to a different input (inputsSha256 mismatch) — refusing to resume`,
+      );
     }
     console.log(
       `resuming from interrupted checkpoint (${String(priorCheckpoint.graderUsage?.calls ?? 0)} paid calls already made)`,
