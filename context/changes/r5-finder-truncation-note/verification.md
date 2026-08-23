@@ -152,3 +152,100 @@ Every rubric-flagged finding + 10 random clean findings are hand-read; a
 misgrade rate ≥ 15% invalidates the grading — stop. Additionally, every
 flagged M3 verdict receives the `m1_to_m3` migration label against the
 frozen definition under the PRIMARY up-side guard above.
+
+## Amendments — pre-spend clarifications (2026-08-23)
+
+Adopted from the phase-2 implementation review
+(`reviews/impl-review-phase-2.md`, F1–F4) after the pre-registration commit
+`078a1e8` but BEFORE any paid call: the attempt ledger reads 0/28, the
+dollar ledger below reads 0.0000 USD charged, and zero gradeable
+observations exist, so none of these can be results-driven (the campaign's
+Amendment A1 precedent). Each entry tightens or operationalizes a frozen
+bar; none relaxes one.
+
+### A1 — Outcome-sensitive hand-read precedence (F1)
+
+The 15% misgrade bar governs grading VALIDITY only. Independently of that
+rate: if the hand-read discovers any M1-class claim — a finding asserting
+that material absent from the capped input is missing/absent/not provided
+(the archived M1 mechanism), regardless of its recorded verdict — while the
+grader-recorded read-off shows M1 findings = 0, the success bar is NOT met.
+The arm then reads INCONCLUSIVE unless the affected verdict population
+(every finding sharing the misgraded finding's recorded verdict class,
+across all 20 gradeable runs) is fully hand-reviewed and the corrected
+counts are re-read against the frozen bars. This deliberately supersedes the
+campaign's validation-only protocol in the outcome-sensitive direction only.
+
+### A2 — Dollar-ledger enforcement (F2)
+
+The 5.50 USD ceiling is enforced procedurally, mirroring the attempt
+ledger. Frozen planning rates (projection/fallback rates fixed here, from
+the campaign calibration — not measured invoices): finder-attempt fallback
+0.012462 USD; per-verdict projection/fallback rate 0.02 USD; per-attempt
+planning rate 0.182414 USD (finder plus its eventual grading).
+
+- **Charged spend** = recorded known cost (probe `runs[].usage.cost` plus
+  graded `graderUsage.cost`) summed across ALL results and graded
+  checkpoint files ON DISK in this change's `results/` — committed or not,
+  complete or interrupted — plus fallbacks for unknown past cost: each
+  attempt with no recorded cost, and each attempt whose `costUnknownSteps`
+  is greater than zero, is charged one finder-attempt fallback; each grader
+  call without recorded cost (`graderUsage.calls − costKnownCalls`) is
+  charged one per-verdict fallback.
+- **Projected spend** = charged spend + the conservative cost of the ENTIRE
+  upcoming invocation: a probe invocation `--n k` projects k × 0.182414
+  USD; a grader invocation projects (number of findings in the target
+  results file lacking a persisted verdict in its graded checkpoint) × 0.02
+  USD — never merely the next verdict.
+- **Stop rule**: read the dollar ledger below before EVERY probe AND grader
+  invocation; refuse any invocation whose projected spend exceeds 5.50 USD.
+  If that refusal precludes reaching 20 gradeable runs, the arm closes
+  INCONCLUSIVE under the frozen ceiling rule.
+- **Bounded-overshoot caveat (recorded)**: procedural batch projection
+  cannot guarantee a literal hard ceiling — actual cost arrives only after
+  each call returns, so a batch whose true unit costs exceed the frozen
+  planning rates can overshoot before it is observed. The overshoot is
+  bounded by a single invocation's projection error (≈ 0.02 USD per verdict
+  at n=20 scale) and is accepted.
+
+Dollar-ledger one-liner (repo root; execute-tested 2026-08-23 — empty-state
+output `charged 0.0000 USD … remaining of 5.50 ceiling: 5.5000 USD`, and
+accumulation branches verified read-only against the archived campaign
+results):
+
+```bash
+node -e "const fs=require('fs');const d='context/changes/r5-finder-truncation-note/results';let known=0,ua=0,uv=0;for(const f of fs.readdirSync(d)){if(!f.endsWith('.json')||f.includes('-dry-'))continue;const j=JSON.parse(fs.readFileSync(d+'/'+f,'utf8'));if(f.endsWith('-graded.json')){const g=j.graderUsage||{};known+=g.cost||0;uv+=(g.calls||0)-(g.costKnownCalls||0);}else if(/-n\d+-/.test(f)&&!f.endsWith('-manifest.json')){for(const r of j.runs||[]){const u=r.usage||{};if(typeof u.cost==='number'){known+=u.cost;if((u.costUnknownSteps||0)>0)ua+=1;}else{ua+=1;}}}}const spent=known+ua*0.012462+uv*0.02;console.log('charged '+spent.toFixed(4)+' USD (recorded '+known.toFixed(4)+' | unknown-cost attempts '+ua+' | unknown-cost verdicts '+uv+') | remaining of 5.50 ceiling: '+(5.5-spent).toFixed(4)+' USD');"
+```
+
+(The JS deliberately contains no literal dollar sign — inside bash or
+PowerShell double quotes a bare `$5` expands to an empty positional
+parameter and silently corrupts the program; amounts print as `USD`.)
+
+### A3 — Deterministic clean controls (F3)
+
+The 10 clean controls are selected deterministically, never at discretion:
+order all findings graded `none` across the gradeable runs by (result-file
+stamp, run index within file, finding index within run), as zero-based
+positions 0..N−1; select positions floor(k·N/10) for k = 0..9. If N < 10,
+review all N clean findings.
+
+### A4 — Exhaustive falsifier read-off (F4)
+
+Supersedes the `≈` reading of the falsifier. Over the 20 gradeable runs,
+exactly one outcome obtains:
+
+| Outcome                   | Condition       |
+| ------------------------- | --------------- |
+| **SUCCESS**               | M1 findings = 0 |
+| **PARTIAL** (attenuation) | m1Runs = 1      |
+| **UNCHANGED** — falsified | m1Runs ∈ [2, 8] |
+| **WORSE** — falsified     | m1Runs ≥ 9      |
+
+UNCHANGED and WORSE are decision-bearing failures of the intended effect.
+PARTIAL is likewise a decision-bearing NON-SUCCESS: the success bar is not
+met, and Phase 4 records attenuation against this pre-registered meaning —
+it must not be renegotiated into a pass. M1 findings greater than 0 with
+m1Runs = 0 is impossible by construction and reads as an
+**aggregation-integrity error**: stop and audit the aggregation before any
+bar read-off. The success bar and all guards are unchanged; this amendment
+only removes the undefined middle.
