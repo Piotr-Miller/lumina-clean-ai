@@ -72,15 +72,15 @@ const INSTRUMENT_SHA = "7c9c12f";
 const PLAN_EXCLUDE = "context/changes/impl-review-ci-agent/plan.md";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-// Re-pointed from the archived finder-fabrication-triggers campaign (its
-// folder is read-only under context/archive/) to the R5 measurement change.
-// Only ci.md was re-frozen here: rung `rloc` and variant `instrument` stay
-// advertised, but their frozen inputs (rloc-context.txt, instrument.md) live
-// in the archive — a successor change must re-freeze them byte-identical into
-// ITS OWN change dir (sha256-pinned in its verification.md, the ci.md
-// precedent) before using those modes. The rloc guard below and the grader's
-// ground-truth check both fail fast with this discipline (impl-review F2).
-const changeDir = `${repoRoot}context/changes/r5-finder-truncation-note`;
+// Re-pointed (archived campaign → archived R5 → this change) to the R2
+// escalation re-run per the successor-change discipline. Only ci.md was
+// re-frozen here: rung `rloc` and variant `instrument` stay advertised, but
+// their frozen inputs (rloc-context.txt, instrument.md) live in the archive —
+// a successor change must re-freeze them byte-identical into ITS OWN change
+// dir (sha256-pinned in its verification.md, the ci.md precedent) before
+// using those modes. The rloc guard below and the grader's ground-truth check
+// both fail fast with this discipline (impl-review F2).
+const changeDir = `${repoRoot}context/changes/r2-prose-rerun`;
 const resultsDir = `${changeDir}/results`;
 const RLOC_CONTEXT_PATH = `${changeDir}/ground-truth/rloc-context.txt`;
 
@@ -91,13 +91,14 @@ const git = (...args) => execFileSync("git", args, { cwd: repoRoot, encoding: "u
 // ---------------------------------------------------------------------------
 
 export function parseArgs(argv) {
-  const args = { variant: undefined, rung: "base", n: 1, dry: false };
+  const args = { variant: undefined, rung: "base", n: 1, dry: false, preNote: false };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--variant") args.variant = argv[++i];
     else if (a === "--rung") args.rung = argv[++i];
     else if (a === "--n") args.n = Number(argv[++i]);
     else if (a === "--dry") args.dry = true;
+    else if (a === "--pre-note") args.preNote = true;
     else throw new Error(`unknown argument: ${a}`);
   }
   if (args.variant !== "ci" && args.variant !== "instrument") {
@@ -264,14 +265,21 @@ const summarise = (findings) => {
 };
 
 async function main() {
-  const { variant, rung, n, dry } = parseArgs(process.argv.slice(2));
+  const { variant, rung, n, dry, preNote } = parseArgs(process.argv.slice(2));
   const { sent, projectContext, manifest } = buildInput(variant, rung);
   // Provenance binds the intervention (r5 plan-review F6): the unit is the
   // exact one the paid call receives, noteActive is DERIVED from it, and
   // promptSha256 hashes the complete rendered model-visible prompt
   // (instructions + user prompt) alongside the intentionally unchanged
   // inputSha256.
-  const reviewUnit = buildProbeReviewUnit(sent, manifest);
+  //
+  // --pre-note (change r2-prose-rerun): builds the unit WITHOUT truncation
+  // facts, which by the production prompt contract ("untruncated prompt stays
+  // byte-identical to the pre-note prompt", prompts.test.ts) renders exactly
+  // what pre-R5 arms saw — required for a run that must combine with a screen
+  // recorded before the truncation note existed. noteActive then derives as
+  // false, so provenance states the prompt regime instead of asserting it.
+  const reviewUnit = preNote ? { kind: "diff", diff: sent } : buildProbeReviewUnit(sent, manifest);
   const noteActive = reviewUnit.truncated === true;
   const promptSha256 = createHash("sha256")
     .update(
