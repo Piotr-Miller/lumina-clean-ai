@@ -15,6 +15,7 @@ import {
   capPlan,
   DIFF_CAP_BYTES,
   DIFF_TRUNCATION_MARKER,
+  orderDiffForCap,
   PLAN_CAP_CHARS,
   PLAN_TRUNCATION_MARKER,
   runReviewPipeline,
@@ -1118,6 +1119,87 @@ describe("truncationReport", () => {
   });
 });
 
+// --- Path-order bias fix (orderDiffForCap) ---
+
+describe("orderDiffForCap", () => {
+  const header = (path: string): string => `diff --git a/${path} b/${path}`;
+  // Git path order sorts context/ before src/, so this is the shape that
+  // starved source files: huge prose first, the change's own code last.
+  const proseFirstOverCap = [
+    header("context/notes.md"),
+    `+${"p".repeat(DIFF_CAP_BYTES)}`,
+    header("src/app.ts"),
+    "+code",
+  ].join("\n");
+
+  it("returns an in-cap diff as the SAME string, prose-first or not", () => {
+    const small = [header("context/notes.md"), "+prose", header("src/app.ts"), "+code"].join("\n");
+    expect(orderDiffForCap(small)).toBe(small);
+  });
+
+  it("moves source ahead of prose on an over-cap diff, so the cap cuts prose", () => {
+    const ordered = orderDiffForCap(proseFirstOverCap);
+    expect(computeFileSegments(ordered).map((s) => s.path)).toEqual(["src/app.ts", "context/notes.md"]);
+    // The window now keeps the whole source file; the cut lands in the prose.
+    const report = truncationReport(ordered);
+    expect(report.truncated).toBe(true);
+    expect(report.cutFile).toBe("context/notes.md");
+    expect(report.overCapFiles).toEqual([]);
+  });
+
+  it("preserves each group's relative order (stable within source and within prose)", () => {
+    const diff = [
+      header("a.md"),
+      `+${"p".repeat(DIFF_CAP_BYTES)}`,
+      header("src/a.ts"),
+      "+a",
+      header("b.md"),
+      "+more prose",
+      header("src/b.ts"),
+      "+b",
+    ].join("\n");
+    expect(computeFileSegments(orderDiffForCap(diff)).map((s) => s.path)).toEqual([
+      "src/a.ts",
+      "src/b.ts",
+      "a.md",
+      "b.md",
+    ]);
+  });
+
+  it("restores the newline boundary when the diff's final segment is relocated", () => {
+    // proseFirstOverCap has no trailing newline, so the source segment it
+    // relocates would otherwise fuse with the prose header on one line.
+    const ordered = orderDiffForCap(proseFirstOverCap);
+    expect(ordered).toContain(`+code\n${header("context/notes.md")}`);
+  });
+
+  it("classifies git-quoted and upper-cased Markdown paths as prose", () => {
+    const quotedHeader = 'diff --git "a/no tes.MD" "b/no tes.MD"';
+    const diff = [quotedHeader, `+${"p".repeat(DIFF_CAP_BYTES)}`, header("src/app.ts"), "+code"].join("\n");
+    const ordered = orderDiffForCap(diff);
+    expect(computeFileSegments(ordered)[0].path).toBe("src/app.ts");
+  });
+
+  it("passes single-class and headerless over-cap diffs through unchanged", () => {
+    const allProse = [header("a.md"), `+${"p".repeat(DIFF_CAP_BYTES)}`, header("b.md"), "+q"].join("\n");
+    expect(orderDiffForCap(allProse)).toBe(allProse);
+    const allSource = [header("src/a.ts"), `+${"x".repeat(DIFF_CAP_BYTES)}`, header("src/b.ts"), "+y"].join("\n");
+    expect(orderDiffForCap(allSource)).toBe(allSource);
+    const headerless = "x".repeat(DIFF_CAP_BYTES + 10);
+    expect(orderDiffForCap(headerless)).toBe(headerless);
+  });
+
+  it("reassembles multi-byte content without corruption", () => {
+    const diff = [header("context/notes.md"), `+🙂${"p".repeat(DIFF_CAP_BYTES)}`, header("src/app.ts"), "+π代码"].join(
+      "\n",
+    );
+    const ordered = orderDiffForCap(diff);
+    expect(ordered).toContain("+π代码");
+    expect(ordered).toContain("+🙂");
+    expect(ordered).not.toContain("�");
+  });
+});
+
 describe("finder truncation wiring", () => {
   const captureFinder = (sink: { unit?: ReviewUnit }) => (unit: ReviewUnit) => {
     sink.unit = unit;
@@ -1175,5 +1257,27 @@ describe("finder truncation wiring", () => {
       deps: { finder: captureFinder(sink), judge: () => Promise.resolve(judgeResult()) },
     });
     expect(sink.unit).toEqual({ kind: "diff", diff: SMALL_DIFF });
+  });
+
+  it("orders source before prose on an over-cap diff, and reports the ORDERED cut", async () => {
+    // Prose-first over-cap diff: without ordering, the cap would keep the
+    // Markdown and report src/app.ts over-cap — the path-order bias.
+    const big = [
+      "diff --git a/context/notes.md b/context/notes.md",
+      `+${"p".repeat(DIFF_CAP_BYTES)}`,
+      "diff --git a/src/app.ts b/src/app.ts",
+      "+code",
+    ].join("\n");
+    const sink: { unit?: ReviewUnit } = {};
+    const result = await runReviewPipeline({
+      diff: big,
+      deps: { finder: captureFinder(sink), judge: () => Promise.resolve(judgeResult()) },
+    });
+    if (sink.unit?.kind !== "diff") throw new Error("finder unit missing");
+    expect(sink.unit.diff.startsWith("diff --git a/src/app.ts")).toBe(true);
+    expect(sink.unit.diff).toContain("+code");
+    expect(sink.unit.cutFile).toBe("context/notes.md");
+    expect(sink.unit.overCapFiles).toEqual([]);
+    expect(result.truncationMetadata).toEqual({ cutFile: "context/notes.md", overCapFiles: [] });
   });
 });
