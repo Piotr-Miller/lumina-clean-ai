@@ -52,6 +52,42 @@ export default defineConfig({
   ],
   vite: {
     plugins: [tailwindcss()],
+    // Dev-only fix for issue #15 (`npm run dev` SSR crash on the enhance page).
+    //
+    // The crash was never a duplicated React install — it is Vite's SSR dep
+    // optimizer discovering deps DURING a request. Astro's own subpaths are
+    // reached only while rendering, so the first render of the enhance page
+    // triggered `new dependencies optimized → reloading` mid-flight, which
+    // re-emits the SSR chunks under fresh `?v=` hashes while the in-flight
+    // render still holds the old ones. The observed symptoms are two faces of
+    // that one race: "more than one copy of React" / `useState` of null
+    // (2026-06-08), and a hard "file does not exist … deps_ssr/chunk-*.js?v=…"
+    // (2026-08-23). Pre-bundling the triggers at startup means no
+    // re-optimization fires mid-request.
+    //
+    // The list was built EMPIRICALLY by reading the dev log and re-running
+    // until no `new dependencies optimized` line appears during a request —
+    // not by guessing. Each entry was observed triggering a mid-request
+    // re-optimization; `astro/env/runtime` (the archived note's single
+    // candidate) was only the first of several, which is why the documented
+    // one-knob fix would not have closed the race.
+    //
+    // A render that survives a mid-request reload is NOT proof the race is
+    // gone — it only means that round was won. The bar is a clean log.
+    //
+    // `ssr.*` (not top-level `optimizeDeps`): top-level dep-optimization
+    // applies to the CLIENT environment only and is deliberately not inherited
+    // by server environments (Vite environment API), which is why an earlier
+    // client-side `optimizeDeps.include` attempt had no effect. Vite merges
+    // this into `environments.ssr.optimizeDeps`.
+    //
+    // Dev-only by construction: the optimizer does not run in `astro build`,
+    // so production output is byte-unaffected.
+    ssr: {
+      optimizeDeps: {
+        include: ["astro/env/runtime", "astro/zod", "@sentry/astro/middleware", "zod"],
+      },
+    },
     // Source-map generation for BOTH builds (follow-up 3.7). Astro 6 reads the
     // CLIENT island build's sourcemap ONLY from `vite.environments.client.build`
     // (astro core static-build.js — the client env defaults to `false` and does
