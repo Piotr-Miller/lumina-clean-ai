@@ -11,6 +11,7 @@
 import { test as setup, expect } from "@playwright/test";
 import { adminClient } from "./helpers/env";
 import { expectOkResponse } from "./helpers/expect-response";
+import { retryOnceOnWorkerRestart } from "./helpers/worker-restart-retry";
 
 const AUTH_FILE = "playwright/.auth/user.json";
 // Deterministic, dedicated to E2E — never a real account.
@@ -33,13 +34,15 @@ setup("authenticate: admin-create user + form sign-in, save storage state", asyn
   // The app's real sign-in contract (src/pages/api/auth/signin.ts): form POST,
   // success follows the 302 chain to "/" — a failed sign-in also ends 200 but
   // on /auth/signin?error=…, so assert the landing path, not just ok().
-  const signIn = await request.post("/api/auth/signin", {
-    form: { email: EMAIL, password: PASSWORD },
-    // Astro's CSRF guard (security.checkOrigin, default-on) 403s form POSTs
-    // whose Origin doesn't match the request URL. A browser always sends it;
-    // the API request context doesn't — supply it explicitly.
-    headers: { Origin: baseURL ?? "http://localhost:4321" },
-  });
+  const signIn = await retryOnceOnWorkerRestart(() =>
+    request.post("/api/auth/signin", {
+      form: { email: EMAIL, password: PASSWORD },
+      // Astro's CSRF guard (security.checkOrigin, default-on) 403s form POSTs
+      // whose Origin doesn't match the request URL. A browser always sends it;
+      // the API request context doesn't — supply it explicitly.
+      headers: { Origin: baseURL ?? "http://localhost:4321" },
+    }),
+  );
   await expectOkResponse(signIn, "signin");
   expect(new URL(signIn.url()).pathname).toBe("/");
 
