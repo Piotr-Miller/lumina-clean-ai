@@ -435,21 +435,21 @@ constants change, but the archive itself is untouched.
 
 #### Automated
 
-- [x] 3.1 Results + manifests + graded files committed; 20 gradeable across files OR ceiling-triggered INCONCLUSIVE recorded with attempt/cost totals; ledger ≤ 28; promptSha256 constant
-- [x] 3.2 Ground-truth sha256 verified pre-grade (live file) and post-grade (recorded value)
-- [x] 3.3 Prettier clean on appended verification.md
+- [x] 3.1 Results + manifests + graded files committed; 20 gradeable across files OR ceiling-triggered INCONCLUSIVE recorded with attempt/cost totals; ledger ≤ 28; promptSha256 constant — bcad219
+- [x] 3.2 Ground-truth sha256 verified pre-grade (live file) and post-grade (recorded value) — bcad219
+- [x] 3.3 Prettier clean on appended verification.md — bcad219
 
 #### Manual
 
-- [x] 3.4 Hand-read completed with frozen M1-rewrite labels, misgrade rate < 15%
-- [x] 3.5 Bar read-offs recorded (success bar, m1_to_m3_rewrites, both bands, falsifier)
+- [x] 3.4 Hand-read completed with frozen M1-rewrite labels, misgrade rate < 15% — bcad219
+- [x] 3.5 Bar read-offs recorded (success bar, m1_to_m3_rewrites, both bands, falsifier) — bcad219
 
 ### Phase 4: Close-out
 
 #### Automated
 
-- [ ] 4.1 Prettier clean on decision.md
+- [x] 4.1 Prettier clean on decision.md
 
 #### Manual
 
-- [ ] 4.2 Decision traceable to read-offs; passive live-check registered
+- [x] 4.2 Decision traceable to read-offs; passive live-check registered — manually verified and keep-pending-live-check disposition ratified 2026-08-23
