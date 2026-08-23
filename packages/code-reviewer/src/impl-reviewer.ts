@@ -1,7 +1,7 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { Output, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 
-import { MAX_OUTPUT_TOKENS, resolveConfig, resolveModels } from "./config.js";
+import { IMPL_REVIEW_MAX_OUTPUT_TOKENS, resolveConfig, resolveModels } from "./config.js";
 import { buildImplReviewInstructions, buildImplReviewPrompt, type ImplReviewPromptInput } from "./prompts.js";
 import type { SourceProvider } from "./reviewer.js";
 import {
@@ -92,9 +92,9 @@ export function createImplReviewer(options: ImplReviewerOptions = {}) {
     // phase's cost criterion unverifiable (plan-review F3). Free: accounting
     // adds response fields, not tokens.
     model: openrouter(implReviewModel, { usage: { include: true } }),
-    // See MAX_OUTPUT_TOKENS. This pass has the largest measured output of the
-    // three (5,297), and 16,384 is still ~3x that.
-    maxOutputTokens: MAX_OUTPUT_TOKENS,
+    // See IMPL_REVIEW_MAX_OUTPUT_TOKENS: this pass's output scales with plan
+    // length and killed a run at the shared 16,384 ceiling (PR #162).
+    maxOutputTokens: IMPL_REVIEW_MAX_OUTPUT_TOKENS,
     instructions: buildImplReviewInstructions(),
     // Plain Output.object, not tolerantReviewOutput: envelope repair exists for
     // glm-4.6's drift on the finder, and the judge runs the same sonnet model

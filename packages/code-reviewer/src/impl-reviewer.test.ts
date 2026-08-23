@@ -1,5 +1,5 @@
 import type { ProviderMetadata, StepResult, ToolSet } from "ai";
-import { MAX_OUTPUT_TOKENS } from "./config.js";
+import { IMPL_REVIEW_MAX_OUTPUT_TOKENS, MAX_OUTPUT_TOKENS } from "./config.js";
 import { MockLanguageModelV3 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -258,6 +258,10 @@ describe("implReview call", () => {
     const agent = createImplReviewer({ apiKey: "test-key" }).agent as unknown as {
       settings?: { maxOutputTokens?: number };
     };
-    expect(agent.settings?.maxOutputTokens).toBe(MAX_OUTPUT_TOKENS);
+    expect(agent.settings?.maxOutputTokens).toBe(IMPL_REVIEW_MAX_OUTPUT_TOKENS);
+    // This pass's ceiling must sit ABOVE the shared one: PR #162's review died
+    // at exactly the shared 16,384 on a long plan, so regressing the two back
+    // to one constant re-opens that failure.
+    expect(IMPL_REVIEW_MAX_OUTPUT_TOKENS).toBeGreaterThan(MAX_OUTPUT_TOKENS);
   });
 });

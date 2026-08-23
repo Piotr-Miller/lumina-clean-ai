@@ -56,6 +56,25 @@ export const DEFAULT_IMPL_REVIEW_MODEL = "anthropic/claude-sonnet-5";
  */
 export const MAX_OUTPUT_TOKENS = 16_384;
 
+/**
+ * The implementation review's own, higher ceiling.
+ *
+ * 16,384 was calibrated on finder/judge-sized outputs and the pass outgrew it
+ * in production: the phase-2 local probe emitted 13,327 output tokens, and on
+ * PR #162 (a 456-line archived plan) the generation hit exactly 16,384 —
+ * truncated mid-response, failed the strict parse, and rendered as a failed
+ * pass with $0.27 spent and nothing to show. This pass reads a full plan plus
+ * the capped diff and emits up to 10 findings each carrying detail and fix
+ * prose, so its output scales with plan length in a way the other two passes'
+ * never does (same reference-class lesson as DEFAULT_IMPL_REVIEW_TIMEOUT_MS).
+ *
+ * 32,768 is ~2.5x the largest COMPLETED output on record (13,327) and half the
+ * model maximum, so the credit-reservation failure MAX_OUTPUT_TOKENS exists to
+ * prevent stays bounded at half its original worst case. Finder and judge keep
+ * the lower ceiling — their measured outputs (74–1,560) never approached it.
+ */
+export const IMPL_REVIEW_MAX_OUTPUT_TOKENS = 32_768;
+
 export interface ModelOverrides {
   reviewModel?: string;
   judgeModel?: string;
