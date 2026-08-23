@@ -1,7 +1,7 @@
 ---
 change_id: r5-finder-truncation-note
 title: Tell the finder when its diff is truncated (R5 follow-up)
-status: impl_reviewed
+status: implemented
 created: 2026-08-22
 updated: 2026-08-23
 archived_at: null

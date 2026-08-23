@@ -448,8 +448,8 @@ constants change, but the archive itself is untouched.
 
 #### Automated
 
-- [x] 4.1 Prettier clean on decision.md
+- [x] 4.1 Prettier clean on decision.md — 27ae057
 
 #### Manual
 
-- [x] 4.2 Decision traceable to read-offs; passive live-check registered — manually verified and keep-pending-live-check disposition ratified 2026-08-23
+- [x] 4.2 Decision traceable to read-offs; passive live-check registered — manually verified and keep-pending-live-check disposition ratified 2026-08-23 — 27ae057
