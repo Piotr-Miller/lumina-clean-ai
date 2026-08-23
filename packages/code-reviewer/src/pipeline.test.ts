@@ -1143,6 +1143,31 @@ describe("finder truncation wiring", () => {
     expect(sink.unit.diff.endsWith(DIFF_TRUNCATION_MARKER)).toBe(true);
   });
 
+  it("persists the fence payload as truncationMetadata in the result for an oversized diff", async () => {
+    const big = [
+      "diff --git a/src/big.ts b/src/big.ts",
+      `+${"x".repeat(DIFF_CAP_BYTES)}`,
+      "diff --git a/src/beyond.ts b/src/beyond.ts",
+      "+y",
+    ].join("\n");
+    const result = await runReviewPipeline({
+      diff: big,
+      deps: { finder: captureFinder({}), judge: () => Promise.resolve(judgeResult()) },
+    });
+    // Byte-for-byte the object the <truncation-metadata> fence carried — the
+    // passive live check reads it from review.json instead of the Actions log
+    // (r5-finder-truncation-note decision.md Disposition #2, impl-review F1).
+    expect(result.truncationMetadata).toEqual({ cutFile: "src/big.ts", overCapFiles: ["src/beyond.ts"] });
+  });
+
+  it("adds no truncationMetadata key for an in-cap diff (review.json shape unchanged)", async () => {
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: { finder: captureFinder({}), judge: () => Promise.resolve(judgeResult()) },
+    });
+    expect("truncationMetadata" in result).toBe(false);
+  });
+
   it("adds no truncation fields for an in-cap diff (unit unchanged byte-for-byte)", async () => {
     const sink: { unit?: ReviewUnit } = {};
     await runReviewPipeline({

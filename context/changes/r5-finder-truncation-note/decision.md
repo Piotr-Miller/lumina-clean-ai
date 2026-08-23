@@ -99,6 +99,13 @@ path — no probe PR is created for this), record from the Actions run log and t
 The check is registered in `change.md` Notes; its outcome decides keep-vs-revert per
 Disposition #1.
 
+_Addendum (2026-08-23, post-review — impl-review F1, Fix A; strengthens the check's
+evidence, changes no bar or meaning)_: `review.json` now persists the rendered fence
+payload verbatim as `truncationMetadata` (`cutFile`, `overCapFiles` capped at 20,
+`omittedCount`), sharing the fence's single implementation. Observable (a) and the
+file-name side of (b) therefore read from the `ai-review-output` artifact alone;
+only the per-call `getFileContext` targets still come from the Actions run log.
+
 **3. Still-open follow-ups, restated without adoption** (both named in the archived
 campaign's decision.md; neither is owned by this change):
 

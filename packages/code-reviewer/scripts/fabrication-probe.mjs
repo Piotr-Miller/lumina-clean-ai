@@ -74,6 +74,12 @@ const PLAN_EXCLUDE = "context/changes/impl-review-ci-agent/plan.md";
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 // Re-pointed from the archived finder-fabrication-triggers campaign (its
 // folder is read-only under context/archive/) to the R5 measurement change.
+// Only ci.md was re-frozen here: rung `rloc` and variant `instrument` stay
+// advertised, but their frozen inputs (rloc-context.txt, instrument.md) live
+// in the archive — a successor change must re-freeze them byte-identical into
+// ITS OWN change dir (sha256-pinned in its verification.md, the ci.md
+// precedent) before using those modes. The rloc guard below and the grader's
+// ground-truth check both fail fast with this discipline (impl-review F2).
 const changeDir = `${repoRoot}context/changes/r5-finder-truncation-note`;
 const resultsDir = `${changeDir}/results`;
 const RLOC_CONTEXT_PATH = `${changeDir}/ground-truth/rloc-context.txt`;

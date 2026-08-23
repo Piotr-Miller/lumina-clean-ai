@@ -1,4 +1,4 @@
-import type { DiffStats, IdentifiedFinding, Lens, ReviewUnit } from "./schemas.js";
+import type { DiffStats, IdentifiedFinding, Lens, ReviewUnit, TruncationMetadata } from "./schemas.js";
 
 // All model-facing text lives here so prompt iterations (and future promptfoo
 // prompt variants) never touch agent wiring.
@@ -291,19 +291,23 @@ const TRUNCATION_NOTE =
 /** Cap on filenames rendered into <truncation-metadata>; the rest becomes omittedCount. */
 export const TRUNCATION_METADATA_MAX_FILES = 20;
 
-const truncationMetadata = (unit: { cutFile?: string; overCapFiles?: string[] }): string => {
+// Exported so the pipeline persists the EXACT object the fence renders into
+// review.json (truncation provenance for the passive live check registered in
+// r5-finder-truncation-note/decision.md Disposition #2, impl-review F1) — one
+// implementation, so the persisted record cannot drift from what the model saw.
+export function truncationMetadataPayload(unit: { cutFile?: string; overCapFiles?: string[] }): TruncationMetadata {
   const files = unit.overCapFiles ?? [];
   const listed = files.slice(0, TRUNCATION_METADATA_MAX_FILES);
   const omitted = files.length - listed.length;
-  return fence(
-    "truncation-metadata",
-    JSON.stringify({
-      ...(unit.cutFile === undefined ? {} : { cutFile: unit.cutFile }),
-      overCapFiles: listed,
-      ...(omitted > 0 ? { omittedCount: omitted } : {}),
-    }),
-  );
-};
+  return {
+    ...(unit.cutFile === undefined ? {} : { cutFile: unit.cutFile }),
+    overCapFiles: listed,
+    ...(omitted > 0 ? { omittedCount: omitted } : {}),
+  };
+}
+
+const truncationMetadata = (unit: { cutFile?: string; overCapFiles?: string[] }): string =>
+  fence("truncation-metadata", JSON.stringify(truncationMetadataPayload(unit)));
 
 export function buildPrompt(unit: ReviewUnit): string {
   switch (unit.kind) {

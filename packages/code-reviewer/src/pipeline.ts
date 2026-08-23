@@ -9,7 +9,7 @@ import {
   type ImplReviewerOptions,
 } from "./impl-reviewer.js";
 import { createJudge, type Judge, type JudgeCallOptions, type JudgeOptions } from "./judge.js";
-import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
+import { truncationMetadataPayload, type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
 import { withOneRetry } from "./retry.js";
 import {
   createReviewer,
@@ -557,6 +557,11 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     verdictReason: judgeResult.verdictReason,
     diffStats,
     diffTruncated,
+    // The exact fence payload the finder saw — truncation provenance for the
+    // passive live check (r5-finder-truncation-note decision.md Disposition
+    // #2, impl-review F1). Key absent when the cap did not fire, so an
+    // untruncated review.json keeps its pre-feature shape.
+    ...(truncation === undefined ? {} : { truncationMetadata: truncationMetadataPayload(truncation) }),
     bodyTruncated,
     // Key absent (not `false`) when the run had no plan, so a plan-less
     // review.json stays byte-identical to what shipped before this feature.

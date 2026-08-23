@@ -214,6 +214,21 @@ export interface JudgeTelemetry {
   cost?: number;
 }
 
+/**
+ * The exact payload the finder's `<truncation-metadata>` fence rendered: the
+ * file the cap cut into, the fully over-cap files (capped at
+ * TRUNCATION_METADATA_MAX_FILES, remainder as omittedCount). Persisted
+ * verbatim in review.json so the passive live check registered in
+ * r5-finder-truncation-note/decision.md Disposition #2 can compare
+ * getFileContext targets against the files the note actually named without
+ * depending on Actions-log retention (impl-review F1).
+ */
+export interface TruncationMetadata {
+  cutFile?: string;
+  overCapFiles: string[];
+  omittedCount?: number;
+}
+
 /** Full result of the two-pass review pipeline (what review.json carries). */
 export interface PipelineResult {
   summary: string;
@@ -230,6 +245,12 @@ export interface PipelineResult {
   verdictReason: string;
   diffStats: DiffStats;
   diffTruncated: boolean;
+  /**
+   * Present only when diffTruncated is true — absent (never an empty object)
+   * otherwise, so an untruncated review.json is byte-identical to the
+   * pre-feature shape. See TruncationMetadata.
+   */
+  truncationMetadata?: TruncationMetadata;
   bodyTruncated: boolean;
   /**
    * Whether the plan was truncated at PLAN_CAP_CHARS. Present only when the

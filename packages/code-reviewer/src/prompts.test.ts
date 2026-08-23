@@ -8,6 +8,7 @@ import {
   buildJudgePrompt,
   buildPrompt,
   TRUNCATION_METADATA_MAX_FILES,
+  truncationMetadataPayload,
   type JudgePromptInput,
 } from "./prompts.js";
 import {
@@ -500,6 +501,18 @@ describe("buildPrompt truncation note", () => {
     expect(prompt).toContain('"omittedCount":5');
     expect(prompt).toContain(`src/f${String(TRUNCATION_METADATA_MAX_FILES - 1)}.ts`);
     expect(prompt).not.toContain(`src/f${String(TRUNCATION_METADATA_MAX_FILES)}.ts`);
+  });
+
+  // Review.json persists this exact object as truncation provenance — parity
+  // with the fence is by construction (one implementation), pinned here so a
+  // refactor cannot split them (impl-review F1, r5 passive live check).
+  it("truncationMetadataPayload matches the fenced JSON byte-for-byte, cap included", () => {
+    const files = Array.from({ length: TRUNCATION_METADATA_MAX_FILES + 5 }, (_, i) => `src/f${String(i)}.ts`);
+    const unit = { cutFile: "src/cut.ts", overCapFiles: files };
+    const payload = truncationMetadataPayload(unit);
+    expect(payload.overCapFiles).toHaveLength(TRUNCATION_METADATA_MAX_FILES);
+    expect(payload.omittedCount).toBe(5);
+    expect(buildPrompt(truncatedUnit(unit))).toContain(JSON.stringify(payload));
   });
 
   it("keeps a natural-language-injection filename inert inside the fenced JSON", () => {
