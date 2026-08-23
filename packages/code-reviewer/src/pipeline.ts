@@ -205,6 +205,60 @@ export function computeManifest(diffText: string, capBytes: number | null): Wind
   return { totalBytes, capBytes, truncated: true, window, cutFile, cutOffsetInFile, overCap };
 }
 
+// Prose classification for the cap ordering below. The trailing-quote
+// tolerance matters: git-quoted paths parse with the closing quote attached
+// (see computeFileSegments' verbatim contract), and quoting a path must not
+// smuggle its prose back in front of source.
+const PROSE_PATH_PATTERN = /\.(?:md|mdx)"?$/i;
+
+/**
+ * Path-order bias fix for the diff cap — the follow-up registered in
+ * review-diff-truncation ("Not fixing path-order bias") and carried unfixed
+ * through finder-fabrication-triggers and r5-finder-truncation-note: git
+ * sorts `context/` before `packages/`/`src/`, so on an over-cap diff the
+ * byte-prefix cap systematically kept prose and cut source — the finder
+ * reviewed documentation while the code fell over the cap, and (since the
+ * truncation note) the note named the change's own source files as invisible.
+ *
+ * Moves Markdown segments after everything else, each group keeping its
+ * original relative order, and ONLY when the diff exceeds the cap: an in-cap
+ * diff returns the same string, so every review the cap never touched keeps
+ * its pre-feature prompt byte-identical (the truncation note's spread-empty
+ * discipline). Headerless text and single-class diffs also pass through
+ * unchanged. Callers cap and report on THIS function's output, never the raw
+ * diff, so cutFile/overCapFiles always describe what the finder actually saw.
+ */
+export function orderDiffForCap(diff: string): string {
+  const bytes = new TextEncoder().encode(diff);
+  if (bytes.length <= DIFF_CAP_BYTES) return diff;
+  const segments = computeFileSegments(diff);
+  const source = segments.filter((s) => !PROSE_PATH_PATTERN.test(s.path));
+  const prose = segments.filter((s) => PROSE_PATH_PATTERN.test(s.path));
+  if (source.length === 0 || prose.length === 0) return diff;
+  // Byte-level reassembly: segments carry UTF-8 byte offsets, and slicing the
+  // string by them instead would desync on any multi-byte character.
+  const parts: Uint8Array[] = [bytes.subarray(0, segments[0].startByte)];
+  const ordered = [...source, ...prose];
+  for (const [index, segment] of ordered.entries()) {
+    const part = bytes.subarray(segment.startByte, segment.endByte);
+    parts.push(part);
+    // Only the diff's final segment can lack a trailing newline; relocated
+    // ahead of another segment it would fuse with that segment's header line.
+    if (index < ordered.length - 1 && part.length > 0 && part[part.length - 1] !== 0x0a) {
+      parts.push(new Uint8Array([0x0a]));
+    }
+  }
+  let total = 0;
+  for (const part of parts) total += part.length;
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const part of parts) {
+    out.set(part, offset);
+    offset += part.length;
+  }
+  return new TextDecoder().decode(out);
+}
+
 /**
  * Truncation facts for the finder's note (change r5-finder-truncation-note),
  * computed on the RAW diff against the production cap. `cutFile` is OMITTED —
@@ -450,11 +504,17 @@ export interface PipelineInput {
 export async function runReviewPipeline(input: PipelineInput): Promise<PipelineResult> {
   const models = resolveModels(input.overrides);
   const timeouts = resolveTimeouts(input.timeouts);
-  const { diff, truncated: diffTruncated } = capDiff(input.diff);
+  // Ordered BEFORE capping so the byte-prefix cap keeps source and cuts prose
+  // (path-order bias fix); identity for every in-cap diff, so the common case
+  // stays byte-identical to the pre-ordering pipeline.
+  const orderedDiff = orderDiffForCap(input.diff);
+  const { diff, truncated: diffTruncated } = capDiff(orderedDiff);
   // Truncation facts for the finder's note (change r5-finder-truncation-note):
-  // computed on the RAW diff, and only when the cap actually fired — keyed off
-  // capDiff's own decision, never re-detected from the capped text.
-  const truncation = diffTruncated ? truncationReport(input.diff) : undefined;
+  // computed on the full ORDERED diff — the text the cap actually cut, so
+  // cutFile/overCapFiles name what the finder cannot see — and only when the
+  // cap fired, keyed off capDiff's own decision, never re-detected from the
+  // capped text.
+  const truncation = diffTruncated ? truncationReport(orderedDiff) : undefined;
   const { body: prBody, truncated: bodyTruncated } = capBody(input.prBody);
   // Capped here rather than at the CLI boundary so every embedder (promptfoo,
   // a future orchestrator) gets the same bound without re-deriving it.
