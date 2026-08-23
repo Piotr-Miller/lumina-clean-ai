@@ -62,10 +62,10 @@ export function assertFlatVerdictSchema(schema = gradeVerdictSchema) {
 }
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-// Re-pointed from the archived finder-fabrication-triggers campaign to the R5
-// measurement change; the ground truth there must stay byte-identical to the
-// archived frozen copy (sha256 pinned in the change's verification.md).
-const groundTruthDir = `${repoRoot}context/changes/r5-finder-truncation-note/ground-truth`;
+// Re-pointed (archived campaign → archived R5 → change r2-prose-rerun); the
+// ground truth there must stay byte-identical to the archived frozen copy
+// (sha256 pinned in the change's verification.md).
+const groundTruthDir = `${repoRoot}context/changes/r2-prose-rerun/ground-truth`;
 
 /** Write via a temp file + rename so a checkpoint is never half-written. */
 function writeFileAtomic(path, data) {
@@ -319,7 +319,7 @@ async function main() {
   const manifestPath = resultsPath.replace(/\.json$/, "-manifest.json");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   assertRunIdentity({ results, manifest });
-  const groundTruthRelPath = `context/changes/r5-finder-truncation-note/ground-truth/${results.variant}.md`;
+  const groundTruthRelPath = `context/changes/r2-prose-rerun/ground-truth/${results.variant}.md`;
   // Only ci.md is frozen into this change's ground-truth/ (Phase 2 froze
   // exactly what the R5 arm grades). Other variants' inventories live in the
   // read-only campaign archive — fail with the freeze discipline spelled out
