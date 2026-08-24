@@ -104,4 +104,54 @@ next-lowest until 10). Misgrade rate ≥ 15% invalidates the grading.
 
 ## Results
 
-(appended after the run; nothing above this heading changes)
+### Run (2026-08-24)
+
+`--variant fixture-irregular --rung base --n 20 --pre-note` →
+`results/fixture-irregular-base-n20-20260824T130226Z.json`. **20/20 gradeable,
+0 failures**, all `provider: Venice`, all `noteActive: false`.
+Finder $0.101935 + grader $2.015740 = **$2.12** of the $8 stop.
+
+**Freeze held.** The graded file records `groundTruth.sha256` =
+`9a3031108b…`, exactly the pinned value — the failure that invalidated the
+archived arm did not recur.
+
+### Counts
+
+|                     | archived irregular arm (invalid freeze) | **this run (valid)** |
+| ------------------- | --------------------------------------- | -------------------- |
+| fabricationRuns     | 2/20                                    | **1/20**             |
+| M1 / M2 / M3 / none | 1 / 1 / 1 / 146                         | 1 / 0 / 1 / 228      |
+| findings            | 149                                     | 230                  |
+
+### Read-off against the frozen bands
+
+| Condition                           | Result          |
+| ----------------------------------- | --------------- |
+| **H-naming survives** — count ≤ 5   | **1 ≤ 5 → YES** |
+| H-bugs was load-bearing — count ≥ 8 | no              |
+| INDETERMINATE — count 6–7           | no              |
+
+**Verdict: H-naming SURVIVES.** Removing the real compile error did **not**
+restore fabrication — it fell further (2 → 1). The archived arm's low rate was
+therefore **not** an artifact of the model having true bugs to report, and its
+substantive conclusion stands, now re-established on a properly frozen run.
+
+Representativeness (also read off, unchanged bar): |1 − 17| = 16 → **NOT
+REPRESENTATIVE**, by the widest margin of any arm.
+
+### Secondary observables (recorded, not gated)
+
+- **Invented-path findings: 0 of 230** — as predicted; naming is unchanged
+  from the archived arm.
+- **Duplicate-declaration claims: 0** (strict check). A loose first pass
+  returned 34 hits and would have wrongly invalidated the run — those were all
+  style "duplication" complaints. See `reviews/hand-read.md`; the artifact
+  itself was checked directly (1 `const …Defaults` per file, down from 16).
+- **Volume rose while fabrication fell**: 230 findings vs 149, with 1
+  fabrication run vs 2.
+
+### Hand-read — VALID
+
+`reviews/hand-read.md`: 2 flagged + 10 controls, **12 agree, 0 misgrades
+(0%)**. Both flagged findings fall in the same run, which is why the count is
+1/20 rather than 2/20.
