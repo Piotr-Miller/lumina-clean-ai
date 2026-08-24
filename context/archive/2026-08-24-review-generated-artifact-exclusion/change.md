@@ -90,3 +90,7 @@ will be standing.
 `npm run test` (as opposed to `test:unit`) also runs `tests/jobs.rls.test.ts`,
 which needs a live local Supabase and fails without one — pre-existing and
 environmental, covered by CI's `integration` job, not by this change.
+
+---
+
+**Archived 2026-08-24.** Shipped in PR #179 (commit recorded at merge).
