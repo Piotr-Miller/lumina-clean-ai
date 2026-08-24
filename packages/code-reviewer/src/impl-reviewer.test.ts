@@ -79,10 +79,13 @@ describe("createImplReviewer construction", () => {
   // cost reading silently becomes "free" — the blind spot #119 shipped with,
   // and the one that would make phase 4's cost criterion unverifiable
   // (plan-review F3). Nothing else in the package would notice its absence.
+  // Asserts the usage key specifically rather than deep-equalling the whole
+  // settings object: this test owns the accounting flag, and provider-routing
+  // (provider-routing.test.ts) legitimately adds its own key alongside it.
   it("enables provider usage accounting so per-run cost is observable", () => {
     currentModel = new MockLanguageModelV3();
     createImplReviewer({ apiKey: "test-key" });
-    expect(capturedSettings).toEqual({ usage: { include: true } });
+    expect((capturedSettings as { usage?: unknown }).usage).toEqual({ include: true });
   });
 
   it("honours an explicit model override and the env var", () => {
