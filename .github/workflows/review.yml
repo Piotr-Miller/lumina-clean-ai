@@ -177,10 +177,27 @@ jobs:
           # marks them binary, so they diff as one line regardless of size.
           # The getFileContext allowlist derives from this diff, so the
           # exclusions correctly narrow the tool's reach too.
+          # Ground-truth fixtures are the same class as those eval snapshots,
+          # and they cost three whole reviews before anyone noticed. A
+          # campaign PR commits a generated ground-truth/fixture*.diff: a
+          # synthetic unified diff, hundreds of KB, full of planted code under
+          # invented paths. orderDiffForCap classifies "not .md" as source, so
+          # a .diff sorts to the FRONT of the window — ahead of the real source
+          # that ordering exists to protect. On PRs #175/#176/#177 every actual
+          # file (fabrication-probe.mjs, build-fabrication-fixture.mjs,
+          # fabrication-grade.mjs) landed over-cap, and #177's seven findings
+          # all named packages/fixturepkg/* — paths that exist only INSIDE the
+          # fixture's payload. Its ai-cr:failed label described planted content,
+          # not the PR. Excluding the directory drops those diffs 438,635 B ->
+          # 32,444 B and 223,656 B -> 20,751 B: both then fit whole, untruncated.
           # Array, not `${PLAN_PATH:+…}`: an unquoted expansion word-splits a
           # path containing a space into a broken pathspec and fails the step
           # red. The PR controls its own filenames, so that is reachable.
-          EXCLUDES=(':(exclude,glob)**/reviews/*.md' ':(exclude,glob)**/results/*.json')
+          EXCLUDES=(
+            ':(exclude,glob)**/reviews/*.md'
+            ':(exclude,glob)**/results/*.json'
+            ':(exclude,glob)**/ground-truth/*'
+          )
           [ -n "$PLAN_PATH" ] && EXCLUDES+=(":(exclude)${PLAN_PATH}")
           git diff "origin/${BASE_REF}...${HEAD_SHA}" -- . "${EXCLUDES[@]}" > "$RUNNER_TEMP/pr.diff"
           wc -c "$RUNNER_TEMP/pr.diff"

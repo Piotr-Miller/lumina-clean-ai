@@ -209,6 +209,17 @@ export function computeManifest(diffText: string, capBytes: number | null): Wind
 // tolerance matters: git-quoted paths parse with the closing quote attached
 // (see computeFileSegments' verbatim contract), and quoting a path must not
 // smuggle its prose back in front of source.
+//
+// SHARP EDGE: this is a binary test, so "not prose" means "source" — including
+// generated payload that is neither. A committed ground-truth/fixture.diff is
+// hundreds of KB of synthetic content and sorts to the FRONT of the window,
+// starving the source this ordering exists to protect; on PRs #175/#176/#177
+// it consumed all three reviews (change `review-generated-artifact-exclusion`).
+// Generated artifacts are excluded upstream in review.yml's EXCLUDES rather
+// than classified here, because that is also where the getFileContext
+// allowlist is derived. If a future generated artifact crowds the window
+// again, add it there first; a third "generated" tier here needs evidence
+// about which extensions actually matter, which nothing has produced yet.
 const PROSE_PATH_PATTERN = /\.(?:md|mdx)"?$/i;
 
 /**
