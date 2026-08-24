@@ -1,7 +1,7 @@
 ---
 change_id: fixture-ordered-and-irregular
 title: "Two fixture arms: does ordering reduce fabrication, and does irregular naming fix the fixture?"
-status: preparing
+status: implemented
 created: 2026-08-24
 updated: 2026-08-24
 ---
@@ -24,7 +24,26 @@ enumerable pattern and nothing else — same defences, same prose, same placemen
 discipline — and pre-registers the mechanism prediction (invented paths = 0)
 alongside the rate bar.
 
-## Status
+## Outcome (2026-08-24)
 
-Pre-registration frozen (`verification.md`), all four inputs sha256-pinned,
-both placement gates verified by `--dry` with no paid call. Paid runs pending.
+**Arm A — DROP (7/20 vs the fixture''s own 11/20).** The first MEASURED evidence
+that PR #164''s source-first ordering reduces fabrication, on byte-identical
+input. Margin is ONE RUN (7 is exactly the threshold), the predicted
+prose-absence M1 flavour never appeared, and a second effect is entangled: arm A
+also produced zero invented-path findings on the same uniformly-named content
+that generated eight in the base arm. State the result at that strength.
+
+**Arm B — NOT REPRESENTATIVE (2/20), hypothesis falsified informatively.** The
+registered mechanism prediction HELD (0 invented paths across all 149 findings),
+but the rate moved AWAY from the baseline. Those invented-path findings were
+graded M3 and were inflating the base arm''s 11/20, so a synthetic fixture''s
+honest fabrication rate is nearer 2/20 than 11/20 — against a real diff''s 17/20.
+
+⚠️ **Confound (mine):** the irregular generator emits 16 duplicate
+`const batchDefaults` declarations in one file — a real compile error — so arm
+B''s RATE cannot separate "naming fixed" from "model had true bugs to report".
+The mechanism result is unaffected. Fix the generator before further arms.
+
+Hand-reads: arm A 18/19 agree (5.3%), arm B 13/13 (0%) — both valid. Spend
+$3.44 of a $15 stop. Full record: `verification.md`, `decision.md`,
+`reviews/hand-read.md`.

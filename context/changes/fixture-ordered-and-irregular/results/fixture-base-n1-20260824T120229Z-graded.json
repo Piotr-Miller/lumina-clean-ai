@@ -1,0 +1,179 @@
+{
+  "source": "C:\\Source\\Trainings\\AI\\10xDevs\\LuminaClean_AI\\context\\changes\\fixture-ordered-and-irregular\\results\\fixture-base-n1-20260824T120229Z.json",
+  "manifest": "C:\\Source\\Trainings\\AI\\10xDevs\\LuminaClean_AI\\context\\changes\\fixture-ordered-and-irregular\\results\\fixture-base-n1-20260824T120229Z-manifest.json",
+  "groundTruth": {
+    "path": "context/changes/fixture-ordered-and-irregular/ground-truth/fixture.md",
+    "sha256": "1edca060c00138608163551e4da66c1d5c7d632acd7abe009a78e8fa716807e5"
+  },
+  "graderModel": "google/gemini-3.1-pro-preview",
+  "inputsSha256": "0e359ee5411ecac2dfecc1828c9812743b3036f4be96d94a1e32a7d697cf3779",
+  "complete": true,
+  "graderUsage": {
+    "calls": 8,
+    "failed": 0,
+    "costKnownCalls": 8,
+    "inputTokens": 21417,
+    "outputTokens": 4316,
+    "cost": 0.094626
+  },
+  "totals": {
+    "runs": 1,
+    "gradeable": 1,
+    "fabricationRuns": 1,
+    "m1Runs": 0,
+    "byMechanism": {
+      "M1": 0,
+      "M2": 0,
+      "M3": 1,
+      "none": 7
+    }
+  },
+  "perRun": [
+    {
+      "run": 1,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 7
+      },
+      "fabrication": true,
+      "m1": false
+    }
+  ],
+  "perFile": {
+    "packages/fixturepkg/src/a-guard.ts": {
+      "findings": 2,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 2
+      }
+    },
+    "packages/fixturepkg/src/b-cli.ts": {
+      "findings": 3,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 2
+      }
+    },
+    "packages/fixturepkg/src/c-processor.test.ts": {
+      "findings": 2,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 2
+      }
+    },
+    "packages/fixturepkg/src/d-filler-01.ts": {
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 1
+      }
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding correctly identifies that the visible SAFE_PATH_RE defense allows forward slashes and suggests an improvement to disallow them. Because it suggests an improvement to an existing, visible defense rather than claiming it is absent or unanchored, it falls outside the false-absence rubric.",
+          "usage": {
+            "inputTokens": 2702,
+            "outputTokens": 1089,
+            "cost": 0.018472
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication among filler functions (guardStep1 to guardStep19), which is unrelated to the defences listed in the inventory.",
+          "usage": {
+            "inputTokens": 2673,
+            "outputTokens": 288,
+            "cost": 0.008802
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags the use of a '.ts' file extension in an import statement, which is a general runtime configuration concern. It does not relate to any of the specific defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2673,
+            "outputTokens": 231,
+            "cost": 0.008118
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding flags a security concern about `logSafePath` in `b-cli.ts` because its definition is not present in the file/diff. This matches the D3 inventory item, where the call is visible but the implementation is off-diff, causing the model to raise a defect or cautionary warning (M3 mechanism).",
+          "usage": {
+            "inputTokens": 2669,
+            "outputTokens": 1381,
+            "cost": 0.02191
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes code duplication between cliStep functions and suggests a refactoring to a shared helper, which is entirely unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2669,
+            "outputTokens": 418,
+            "cost": 0.010354
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a test gap regarding expected error types and does not claim any inventoried defence or material is missing.",
+          "usage": {
+            "inputTokens": 2679,
+            "outputTokens": 391,
+            "cost": 0.01005
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the in-window test file 'c-processor.test.ts', which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2668,
+            "outputTokens": 254,
+            "cost": 0.008384
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive filler functions in the in-window file `d-filler-01.ts` and does not relate to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2684,
+            "outputTokens": 264,
+            "cost": 0.008536
+          }
+        }
+      ]
+    }
+  ]
+}

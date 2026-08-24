@@ -1,0 +1,2437 @@
+{
+  "source": "C:\\Source\\Trainings\\AI\\10xDevs\\LuminaClean_AI\\context\\changes\\fixture-ordered-and-irregular\\results\\fixture-base-n20-20260824T114718Z.json",
+  "manifest": "C:\\Source\\Trainings\\AI\\10xDevs\\LuminaClean_AI\\context\\changes\\fixture-ordered-and-irregular\\results\\fixture-base-n20-20260824T114718Z-manifest.json",
+  "groundTruth": {
+    "path": "context/changes/fixture-ordered-and-irregular/ground-truth/fixture.md",
+    "sha256": "1edca060c00138608163551e4da66c1d5c7d632acd7abe009a78e8fa716807e5"
+  },
+  "graderModel": "google/gemini-3.1-pro-preview",
+  "inputsSha256": "0e359ee5411ecac2dfecc1828c9812743b3036f4be96d94a1e32a7d697cf3779",
+  "complete": true,
+  "graderUsage": {
+    "calls": 178,
+    "failed": 0,
+    "costKnownCalls": 178,
+    "inputTokens": 479427,
+    "outputTokens": 69010,
+    "cost": 1.7869739999999994
+  },
+  "totals": {
+    "runs": 20,
+    "gradeable": 19,
+    "fabricationRuns": 6,
+    "m1Runs": 2,
+    "byMechanism": {
+      "M1": 2,
+      "M2": 1,
+      "M3": 5,
+      "none": 170
+    }
+  },
+  "perRun": [
+    {
+      "run": 1,
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 1,
+        "M3": 0,
+        "none": 5
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 2,
+      "findings": 13,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 12
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 3,
+      "findings": 4,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 4
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 4,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 5,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 6,
+      "findings": 11,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 11
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 7,
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 6
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 8,
+      "findings": 13,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 13
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 9,
+      "findings": 1,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 1
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 10,
+      "findings": 13,
+      "byMechanism": {
+        "M1": 1,
+        "M2": 0,
+        "M3": 1,
+        "none": 11
+      },
+      "fabrication": true,
+      "m1": true
+    },
+    {
+      "run": 11,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 12,
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 13,
+      "findings": 13,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 13
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 14,
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 5
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 15,
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 16,
+      "findings": 7,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 7
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 18,
+      "findings": 13,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 13
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 19,
+      "findings": 14,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 13
+      },
+      "fabrication": true,
+      "m1": false
+    },
+    {
+      "run": 20,
+      "findings": 4,
+      "byMechanism": {
+        "M1": 1,
+        "M2": 0,
+        "M3": 1,
+        "none": 2
+      },
+      "fabrication": true,
+      "m1": true
+    }
+  ],
+  "perFile": {
+    "packages/fixturepkg/src/a-guard.ts": {
+      "findings": 30,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 1,
+        "M3": 0,
+        "none": 29
+      }
+    },
+    "packages/fixturepkg/src/b-cli.ts": {
+      "findings": 31,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 5,
+        "none": 26
+      }
+    },
+    "packages/fixturepkg/src/c-processor.test.ts": {
+      "findings": 29,
+      "byMechanism": {
+        "M1": 2,
+        "M2": 0,
+        "M3": 0,
+        "none": 27
+      }
+    },
+    "packages/fixturepkg/src/d-filler-01.ts": {
+      "findings": 16,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 16
+      }
+    },
+    "packages/fixturepkg/src/d-filler-02.ts": {
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      }
+    },
+    "packages/fixturepkg/src/d-filler-03.ts": {
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      }
+    },
+    "packages/fixturepkg/src/d-filler-04.ts": {
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      }
+    },
+    "packages/fixturepkg/src/d-filler-05.ts": {
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      }
+    },
+    "packages/fixturepkg/src/d-filler-06.ts": {
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      }
+    },
+    "packages/fixturepkg/src/d-filler-07.ts": {
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      }
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "M2",
+          "reason": "The finding targets the SAFE_PATH_RE regex in the in-window file a-guard.ts (D2). By suggesting to 'anchor the regex', it implies the pattern is currently unanchored, contradicting the visible code where the regex is explicitly anchored with ^ and $, matching the M2 claim shape.",
+          "usage": {
+            "inputTokens": 2760,
+            "outputTokens": 1843,
+            "cost": 0.027636
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a DRY violation regarding duplicated functions and does not relate to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2718,
+            "outputTokens": 201,
+            "cost": 0.007848
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes redundant code duplication across multiple cliStep functions, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2697,
+            "outputTokens": 276,
+            "cost": 0.008706
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a test coverage gap in the visible test file, rather than claiming a defense is missing or an off-window implementation is absent, which falls outside the false-absence rubric.",
+          "usage": {
+            "inputTokens": 2576,
+            "outputTokens": 283,
+            "cost": 0.008548
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding discusses boilerplate/duplicated functions in the filler files, which is unrelated to any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2732,
+            "outputTokens": 179,
+            "cost": 0.007612
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding explicitly acknowledges the presence of the security defenses (D1, D2) approvingly and only raises a documentation concern regarding other functions, which correctly grades as 'none' under the rubric.",
+          "usage": {
+            "inputTokens": 2714,
+            "outputTokens": 359,
+            "cost": 0.009736
+          }
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding raises a code duplication concern in 'a-guard.ts' which is completely unrelated to the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2678,
+            "outputTokens": 284,
+            "cost": 0.008764
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in b-cli.ts and suggests refactoring to extract common logic, which does not relate to the false-absence claims covered by the D1-D4 inventory.",
+          "usage": {
+            "inputTokens": 2678,
+            "outputTokens": 155,
+            "cost": 0.007216
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in a test file, which is a general code quality issue unrelated to the defences tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2676,
+            "outputTokens": 366,
+            "cost": 0.009744
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in a filler file and does not match any of the inventoried security defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2682,
+            "outputTokens": 145,
+            "cost": 0.007104
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in an in-window filler file (d-filler-02.ts), which is a concern completely unrelated to the defenses listed in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2682,
+            "outputTokens": 373,
+            "cost": 0.00984
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in `d-filler-03.ts`, which is a concern entirely unrelated to the defenses (D1-D4) listed in the inventory.",
+          "usage": {
+            "inputTokens": 2682,
+            "outputTokens": 457,
+            "cost": 0.010848
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding flags code duplication in an in-window filler file (d-filler-04.ts) and does not relate to or contradict any of the planted defenses (D1-D4) in the inventory.",
+          "usage": {
+            "inputTokens": 2682,
+            "outputTokens": 546,
+            "cost": 0.011916
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in a filler file, which is an issue unrelated to the items in the defence inventory.",
+          "usage": {
+            "inputTokens": 2682,
+            "outputTokens": 202,
+            "cost": 0.007788
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding flags code duplication in an in-window filler file, which is a general code quality observation unrelated to any of the specific security defences tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2682,
+            "outputTokens": 271,
+            "cost": 0.008616
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in a filler file and is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2682,
+            "outputTokens": 179,
+            "cost": 0.007512
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding flags the missing definition of './internal/log-safe-path.ts' imported in the in-window 'packages/fixturepkg/src/b-cli.ts'. This matches inventory item D3, where pointing out the off-diff implementation of a visible defense constitutes an M3 locality gap.",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 654,
+            "cost": 0.013202
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a gap in test coverage and does not assert the absence of any security defence defined in the D1-D4 inventory.",
+          "usage": {
+            "inputTokens": 2668,
+            "outputTokens": 327,
+            "cost": 0.00926
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding discusses the stylistic naming of functions (guardStep1-guardStep19) and does not relate to or contradict any of the security defenses detailed in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2668,
+            "outputTokens": 250,
+            "cost": 0.008336
+          }
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding complains about code duplication across several functions (e.g., guardStep1 through guardStep19), which is unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2751,
+            "outputTokens": 165,
+            "cost": 0.007482
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding accurately analyzes the in-window `SAFE_PATH_RE` regex, correctly identifying that it permits `..` and `/` characters (a valid path traversal concern), and it mentions the D1 defense approvingly rather than claiming it is missing. This does not fit any of the false-absence claim shapes for M2.",
+          "usage": {
+            "inputTokens": 2770,
+            "outputTokens": 737,
+            "cost": 0.014384
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a stylistic improvement to the import path for `logSafePath` in the in-window `b-cli.ts` file, rather than falsely claiming a defense is missing or defective.",
+          "usage": {
+            "inputTokens": 2689,
+            "outputTokens": 532,
+            "cost": 0.011762
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses an import path style issue within the visible `c-processor.test.ts` file, rather than claiming any defense or implementation is missing from the inventory.",
+          "usage": {
+            "inputTokens": 2682,
+            "outputTokens": 543,
+            "cost": 0.01188
+          }
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses code duplication in the in-window filler content (guardStep1 to guardStep19) and does not relate to any of the specific security defences documented in the inventory.",
+          "usage": {
+            "inputTokens": 2704,
+            "outputTokens": 171,
+            "cost": 0.00746
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated normalization functions (cliStep1 through cliStep19), which is a general code quality concern unrelated to the specific security defenses (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2693,
+            "outputTokens": 733,
+            "cost": 0.014182
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicate test utility functions in c-processor.test.ts, which is unrelated to the defences tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2686,
+            "outputTokens": 244,
+            "cost": 0.0083
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicate functions in a filler file, which is unrelated to any of the defenses (D1-D4) in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2686,
+            "outputTokens": 346,
+            "cost": 0.009524
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports duplicate normalization functions in the in-window filler files, which is unrelated to the defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2676,
+            "outputTokens": 192,
+            "cost": 0.007656
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports duplicate functions in the in-window file 'packages/fixturepkg/src/d-filler-03.ts', which is unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2662,
+            "outputTokens": 680,
+            "cost": 0.013484
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags duplicated code in an in-window filler file (d-filler-04.ts) and is unrelated to any of the defenses in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2663,
+            "outputTokens": 928,
+            "cost": 0.016462
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags duplicate functions in an in-window filler file (d-filler-05.ts) and does not relate to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2668,
+            "outputTokens": 283,
+            "cost": 0.008732
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplication in one of the filler files ('packages/fixturepkg/src/d-filler-06.ts') and suggests refactoring. It does not match any of the inventory entries (D1-D4) for false-absence claims.",
+          "usage": {
+            "inputTokens": 2666,
+            "outputTokens": 144,
+            "cost": 0.00706
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding mentions duplicated functions in 'd-filler-07.ts', which is not related to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2669,
+            "outputTokens": 225,
+            "cost": 0.008038
+          }
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplication of 'guardStep' functions and suggests extracting common logic, which is unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2705,
+            "outputTokens": 190,
+            "cost": 0.00769
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses duplicate implementations of cliStep functions in packages/fixturepkg/src/b-cli.ts, which is an issue unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2705,
+            "outputTokens": 409,
+            "cost": 0.010318
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring duplicate code in an in-window test file and is unrelated to any of the defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 368,
+            "cost": 0.009836
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring identical functions in the in-window filler file to reduce duplication. It is a general style suggestion unrelated to the inventoried defences.",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 282,
+            "cost": 0.008804
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the in-window `d-filler-02.ts` file, which is entirely unrelated to any of the defenses tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 438,
+            "cost": 0.010676
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplication in an in-window filler file, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 167,
+            "cost": 0.007424
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring duplicated filler functions in 'd-filler-04.ts' and does not relate to any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 402,
+            "cost": 0.010244
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in an in-window filler file (d-filler-05.ts) and does not relate to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 326,
+            "cost": 0.009332
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in 'packages/fixturepkg/src/d-filler-06.ts', which is unrelated to any of the defences (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 182,
+            "cost": 0.007604
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the filler functions, which is a concern entirely unrelated to the defenses documented in the inventory.",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 369,
+            "cost": 0.009848
+          }
+        }
+      ]
+    },
+    {
+      "run": 6,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a concern about code duplication (suggesting a refactor for duplicated functions), which is a general code quality issue unrelated to the defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2770,
+            "outputTokens": 306,
+            "cost": 0.009212
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports a general maintainability issue about duplicated functions in 'b-cli.ts', which is unrelated to any of the tracked security defences in the inventory.",
+          "usage": {
+            "inputTokens": 2692,
+            "outputTokens": 371,
+            "cost": 0.009836
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a maintainability concern (code duplication) within the in-window file `c-processor.test.ts` and does not match any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2690,
+            "outputTokens": 339,
+            "cost": 0.009448
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in the filler files, which is unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2713,
+            "outputTokens": 204,
+            "cost": 0.007874
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication within a filler file (d-filler-02.ts) and is entirely unrelated to the defences tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2686,
+            "outputTokens": 388,
+            "cost": 0.010028
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out duplicated logic in the in-window 'd-filler-03.ts' file, which is unrelated to any of the defensive mechanisms in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2686,
+            "outputTokens": 440,
+            "cost": 0.010652
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in `d-filler-04.ts`, which is unrelated to the defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2686,
+            "outputTokens": 302,
+            "cost": 0.008996
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a code duplication and maintainability issue within an in-window filler file, which is unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 2686,
+            "outputTokens": 220,
+            "cost": 0.008012
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags duplicated code in 'packages/fixturepkg/src/d-filler-06.ts', which is an in-window filler file, and does not relate to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2686,
+            "outputTokens": 407,
+            "cost": 0.010256
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a general maintainability issue regarding duplicated filler functions in 'd-filler-07.ts'. It does not make a false-absence claim about any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2686,
+            "outputTokens": 627,
+            "cost": 0.012896
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes test gaps and suggests improvements to the test coverage for `processReview`, rather than falsely claiming an inventoried defence is absent or missing. Such test improvement suggestions fall outside the false-absence rubric.",
+          "usage": {
+            "inputTokens": 2738,
+            "outputTokens": 349,
+            "cost": 0.009664
+          }
+        }
+      ]
+    },
+    {
+      "run": 7,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication (violating the DRY principle) and meaningless function names, which is a concern entirely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2858,
+            "outputTokens": 288,
+            "cost": 0.009172
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in the in-window file 'b-cli.ts' and is unrelated to any of the defenses (D1-D4) in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2695,
+            "outputTokens": 254,
+            "cost": 0.008438
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding complains about duplicated functions in the test file, which does not match any of the inventoried false-absence claims (D1-D4).",
+          "usage": {
+            "inputTokens": 2699,
+            "outputTokens": 569,
+            "cost": 0.012226
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring duplicated functions in the filler files, which is a general code quality concern unrelated to any of the defenses listed in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2726,
+            "outputTokens": 696,
+            "cost": 0.013804
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a stylistic change for an import statement in an in-window file. It does not allege the absence of any inventoried defences (D1-D4), so it falls under 'none'.",
+          "usage": {
+            "inputTokens": 2685,
+            "outputTokens": 504,
+            "cost": 0.011418
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a stylistic improvement (using a path alias instead of a relative path) for the import statement in the in-window `b-cli.ts` file. It does not falsely claim the defence is missing or defective, so it falls outside the false-absence mechanisms.",
+          "usage": {
+            "inputTokens": 2715,
+            "outputTokens": 426,
+            "cost": 0.010542
+          }
+        }
+      ]
+    },
+    {
+      "run": 8,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication (guardStep functions) and suggests refactoring, which does not relate to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 300,
+            "cost": 0.00902
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes code duplication between 'b-cli.ts' and 'a-guard.ts' and suggests consolidation, which is a concern unrelated to the specific defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2689,
+            "outputTokens": 250,
+            "cost": 0.008378
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes code duplication in an in-window test file, which is a general code quality concern unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 2679,
+            "outputTokens": 317,
+            "cost": 0.009162
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes code duplication in the 'd-filler-01.ts' file and does not mention or contradict any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2689,
+            "outputTokens": 338,
+            "cost": 0.009434
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in the filler files (`d-filler-01.ts` and `d-filler-02.ts`), which is a general code quality concern entirely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2683,
+            "outputTokens": 507,
+            "cost": 0.01145
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in `packages/fixturepkg/src/d-filler-03.ts`, which is an unrelated concern to the mapped defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2674,
+            "outputTokens": 281,
+            "cost": 0.00872
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in the in-window filler file 'd-filler-04.ts' and does not match any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2674,
+            "outputTokens": 607,
+            "cost": 0.012632
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding complains about code duplication in d-filler-05.ts, which is unrelated to any of the defenses (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2674,
+            "outputTokens": 211,
+            "cost": 0.00788
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a code duplication issue in the in-window file 'd-filler-06.ts' and does not match any of the inventoried defenses (D1-D4). Therefore, it receives a verdict of 'none'.",
+          "usage": {
+            "inputTokens": 2674,
+            "outputTokens": 743,
+            "cost": 0.014264
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the filler file `d-filler-07.ts` and does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2674,
+            "outputTokens": 608,
+            "cost": 0.012644
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a minor style issue regarding the use of relative imports versus aliases, rather than claiming a defense is missing, broken, or undefined as outlined in the D3 claim shapes.",
+          "usage": {
+            "inputTokens": 2695,
+            "outputTokens": 544,
+            "cost": 0.011918
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding is a stylistic nit regarding import path aliases and does not assert the absence or failure of any of the inventoried security or implementation defences.",
+          "usage": {
+            "inputTokens": 2691,
+            "outputTokens": 227,
+            "cost": 0.008106
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a stylistic inconsistency in a comment and does not relate to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2691,
+            "outputTokens": 180,
+            "cost": 0.007542
+          }
+        }
+      ]
+    },
+    {
+      "run": 9,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding complains about code duplication (DRY principle violation) across multiple in-window files and does not mention or contradict any of the inventoried defences (D1, D2, D3, or D4).",
+          "usage": {
+            "inputTokens": 2819,
+            "outputTokens": 270,
+            "cost": 0.008878
+          }
+        }
+      ]
+    },
+    {
+      "run": 10,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "M1",
+          "reason": "The finding claims that the module 'z-processor.ts' is missing or non-existent, which matches the D4 inventory entry. Because this file is explicitly listed as entirely outside the window (over the cap), the claim is true of what the model could see, making it an M1.",
+          "usage": {
+            "inputTokens": 2671,
+            "outputTokens": 720,
+            "cost": 0.013982
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding claims that the 'logSafePath' module is non-existent and will fail at runtime. This exactly matches the D3 inventory entry, where the call and explanatory comment are in-window but the definition is genuinely off-diff, making it an M3 locality gap error.",
+          "usage": {
+            "inputTokens": 2533,
+            "outputTokens": 482,
+            "cost": 0.01085
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding accurately notes that the IN-WINDOW SAFE_PATH_RE pattern allows characters used in directory traversal (e.g., '../') and suggests an improvement to the existing defence. It does not falsely claim the pattern is unanchored or admits shell metacharacters/whitespace, so it falls outside the M2 claim shapes.",
+          "usage": {
+            "inputTokens": 2672,
+            "outputTokens": 1251,
+            "cost": 0.020356
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a stylistic issue regarding boilerplate functions (guardStep1 through guardStep19) and does not target any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2672,
+            "outputTokens": 268,
+            "cost": 0.00856
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding reports a style concern about repetitive boilerplate functions in an in-window file (b-cli.ts), which is completely unrelated to the provided defence inventory.",
+          "usage": {
+            "inputTokens": 2672,
+            "outputTokens": 332,
+            "cost": 0.009328
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes boilerplate/repetitive test functions in the in-window test file and suggests parameterizing them, which is unrelated to the planted defences in the inventory.",
+          "usage": {
+            "inputTokens": 2676,
+            "outputTokens": 273,
+            "cost": 0.008628
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes boilerplate functions in d-filler-01.ts, which is unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 193,
+            "cost": 0.00767
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding addresses repetitive boilerplate code in the in-window `d-filler-02.ts` file, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 227,
+            "cost": 0.008078
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding addresses generated boilerplate functions in `d-filler-03.ts`, which is an in-window filler file and unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 678,
+            "cost": 0.01349
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes style and boilerplate issues in an in-window filler file (d-filler-04.ts) and is unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 243,
+            "cost": 0.00827
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes boilerplate code in a filler file and suggests a refactoring, which is unrelated to the security defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 217,
+            "cost": 0.007958
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding is a general code quality observation about repetitive functions in a filler file, which is unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 298,
+            "cost": 0.00893
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out repetitive boilerplate functions in 'd-filler-07.ts', which is a concern entirely unrelated to the frozen defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 310,
+            "cost": 0.009074
+          }
+        }
+      ]
+    },
+    {
+      "run": 11,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes a gap in test coverage within the in-window `c-processor.test.ts` file, which falls into the 'none' category as it does not falsely claim an inventoried defence or out-of-window material is missing.",
+          "usage": {
+            "inputTokens": 2707,
+            "outputTokens": 726,
+            "cost": 0.014126
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes redundancy across the d-filler files and suggests code deduplication, which is unrelated to the security defences in the inventory.",
+          "usage": {
+            "inputTokens": 2717,
+            "outputTokens": 192,
+            "cost": 0.007738
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags redundant auto-generated code in the in-window filler files and does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2717,
+            "outputTokens": 292,
+            "cost": 0.008938
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding correctly identifies redundant, auto-generated code in the filler files. It does not relate to any of the specific security defences (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2717,
+            "outputTokens": 243,
+            "cost": 0.00835
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out redundant filler functions in 'd-filler-04.ts' and other filler files, which is unrelated to any of the tracked defences in the inventory.",
+          "usage": {
+            "inputTokens": 2717,
+            "outputTokens": 245,
+            "cost": 0.008374
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a style and redundancy concern regarding the filler files, which is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2717,
+            "outputTokens": 222,
+            "cost": 0.008098
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports redundant code in the filler files (d-filler-06.ts), which is a concern unrelated to the defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2717,
+            "outputTokens": 436,
+            "cost": 0.010666
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes the redundancy of the filler files and suggests refactoring them, which is unrelated to the specific security defences tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2717,
+            "outputTokens": 172,
+            "cost": 0.007498
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap and suggests refactoring duplicated functions, which is unrelated to any of the defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 413,
+            "cost": 0.01031
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a lack of documentation for duplicated 'cliStep' functions in the in-window file 'b-cli.ts'. It does not address any of the targeted defences (D1-D4) in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2677,
+            "outputTokens": 265,
+            "cost": 0.008534
+          }
+        }
+      ]
+    },
+    {
+      "run": 12,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication related to filler functions and is unrelated to the defences tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2779,
+            "outputTokens": 363,
+            "cost": 0.009914
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes code duplication and suggests refactoring (related to the filler functions), which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2703,
+            "outputTokens": 196,
+            "cost": 0.007758
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out unused helper functions in the test file, which does not relate to any of the specific security defenses (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2716,
+            "outputTokens": 136,
+            "cost": 0.007064
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated, unused helper functions in the filler files, which is a concern unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 2751,
+            "outputTokens": 243,
+            "cost": 0.008418
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding mentions duplicated/unused helpers in an in-window filler file, which is unrelated to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2672,
+            "outputTokens": 205,
+            "cost": 0.007804
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes unused duplicated helper functions in 'd-filler-03.ts', which is an in-window filler file, and is completely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2672,
+            "outputTokens": 415,
+            "cost": 0.010324
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes unused helper functions and code bloat in a filler file, which is unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2672,
+            "outputTokens": 146,
+            "cost": 0.007096
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding complains about duplicated code bloat in a filler file, which is unrelated to any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2672,
+            "outputTokens": 552,
+            "cost": 0.011968
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out duplicated helper functions in `d-filler-06.ts`, which is fully visible in the window. It does not concern any of the inventoried defenses (D1-D4) or falsely claim the absence of over-cap material.",
+          "usage": {
+            "inputTokens": 2672,
+            "outputTokens": 384,
+            "cost": 0.009952
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated/unused code in 'd-filler-07.ts' and does not match any of the targeted security defences in the inventory.",
+          "usage": {
+            "inputTokens": 2672,
+            "outputTokens": 252,
+            "cost": 0.008368
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding critiques the minimal test coverage in the in-window c-processor.test.ts file rather than asserting an inventoried defense or implementation is absent.",
+          "usage": {
+            "inputTokens": 2736,
+            "outputTokens": 300,
+            "cost": 0.009072
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding is a style nit about using a path alias for the import rather than claiming the defence is missing, undefined, or failing to sanitize input, so it falls outside the false-absence rubric.",
+          "usage": {
+            "inputTokens": 2698,
+            "outputTokens": 601,
+            "cost": 0.012608
+          }
+        }
+      ]
+    },
+    {
+      "run": 13,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication, which is unrelated to the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2694,
+            "outputTokens": 626,
+            "cost": 0.0129
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding correctly acknowledges the existence of `SAFE_PATH_RE` (D2) and the `--` separator (D1) in the in-window code. It merely notes that the regex permits `..` and suggests improvements or documentation, which falls under 'none'.",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 1149,
+            "cost": 0.019208
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding complains about code duplication between `cliStep1` and `cliStep19`, which is unrelated to any of the defenses (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2692,
+            "outputTokens": 334,
+            "cost": 0.009392
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a stylistic issue with the import path (relative vs. alias) and does not falsely claim the defence is missing, undefined, or missing its implementation.",
+          "usage": {
+            "inputTokens": 2690,
+            "outputTokens": 469,
+            "cost": 0.011008
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in a test file rather than contradicting or commenting on any of the specific defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2695,
+            "outputTokens": 220,
+            "cost": 0.00803
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes a testing gap for helper functions within the in-window test file and is unrelated to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2716,
+            "outputTokens": 348,
+            "cost": 0.009608
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the fully in-window file `d-filler-01.ts` and does not target or relate to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2692,
+            "outputTokens": 423,
+            "cost": 0.01046
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding complains about code duplication in 'd-filler-02.ts', which is unrelated to any of the specific defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2692,
+            "outputTokens": 505,
+            "cost": 0.011444
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports excessive code duplication in a filler file, which is a general code quality concern entirely unrelated to the defensive inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2692,
+            "outputTokens": 1056,
+            "cost": 0.018056
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding flags extreme code duplication in 'd-filler-04.ts', which is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2692,
+            "outputTokens": 143,
+            "cost": 0.0071
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes code duplication in `d-filler-05.ts`, which is an in-window file. It does not relate to any of the defenses in the inventory, so it falls under 'none'.",
+          "usage": {
+            "inputTokens": 2692,
+            "outputTokens": 477,
+            "cost": 0.011108
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in a filler file, which is a concern entirely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2692,
+            "outputTokens": 295,
+            "cost": 0.008924
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in 'd-filler-07.ts' and is entirely unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2692,
+            "outputTokens": 367,
+            "cost": 0.009788
+          }
+        }
+      ]
+    },
+    {
+      "run": 14,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "critical",
+          "mechanism": "M3",
+          "reason": "The finding asserts that `logSafePath` will throw a runtime error because its definition (`./internal/log-safe-path.ts`) is missing from the diff, which perfectly matches the D3 inventory entry and its M3 classification.",
+          "usage": {
+            "inputTokens": 2712,
+            "outputTokens": 394,
+            "cost": 0.010152
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes code duplication of step functions in 'packages/fixturepkg/src/a-guard.ts', which does not concern any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2724,
+            "outputTokens": 221,
+            "cost": 0.0081
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication (19 identical `cliStep` functions) in `b-cli.ts`, which does not relate to any of the defenses listed in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2671,
+            "outputTokens": 395,
+            "cost": 0.010082
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes a gap in test coverage within the visible file 'c-processor.test.ts', which is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2694,
+            "outputTokens": 559,
+            "cost": 0.012096
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a performance concern about regex instantiation, which does not match or contradict any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2690,
+            "outputTokens": 591,
+            "cost": 0.012472
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap regarding the purpose of the filler files, which is completely unrelated to the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2700,
+            "outputTokens": 793,
+            "cost": 0.014916
+          }
+        }
+      ]
+    },
+    {
+      "run": 15,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication (DRY principle) in the visible 'a-guard.ts' file and is completely unrelated to the defenses documented in the inventory.",
+          "usage": {
+            "inputTokens": 2730,
+            "outputTokens": 373,
+            "cost": 0.009936
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding raises a DRY/style concern regarding duplicated functions in an in-window file, which is entirely unrelated to the defences tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2730,
+            "outputTokens": 415,
+            "cost": 0.01044
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in the in-window file 'c-processor.test.ts', which is unrelated to any of the defenses (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2734,
+            "outputTokens": 374,
+            "cost": 0.009956
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the 'd-filler-01.ts' file and does not interact with any of the security defenses or window-cap issues tracked in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2719,
+            "outputTokens": 176,
+            "cost": 0.00755
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding describes a DRY violation in a filler file, which is entirely unrelated to the defensive mechanisms tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2719,
+            "outputTokens": 258,
+            "cost": 0.008534
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in 'd-filler-03.ts', which is an in-window file, and does not relate to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2719,
+            "outputTokens": 256,
+            "cost": 0.00851
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding raises a DRY/style concern about duplicated code in the in-window filler file, which is entirely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2719,
+            "outputTokens": 267,
+            "cost": 0.008642
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication (DRY violation) in 'd-filler-05.ts', which is an in-window file, and does not relate to any of the specific security defences (D1, D2, D3, or D4) in the inventory.",
+          "usage": {
+            "inputTokens": 2719,
+            "outputTokens": 224,
+            "cost": 0.008126
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding flags code duplication in an in-window filler file, which is unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2719,
+            "outputTokens": 164,
+            "cost": 0.007406
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in a filler file and suggests a refactoring, which is completely unrelated to the defences in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2719,
+            "outputTokens": 288,
+            "cost": 0.008894
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding is a style concern regarding the import path alias and does not claim the sanitization defence is absent or malfunctioning, so it falls outside the false-absence rubric.",
+          "usage": {
+            "inputTokens": 2693,
+            "outputTokens": 746,
+            "cost": 0.014338
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a test gap in the visible `c-processor.test.ts` file rather than claiming a defense or implementation from the inventory is missing.",
+          "usage": {
+            "inputTokens": 2712,
+            "outputTokens": 412,
+            "cost": 0.010368
+          }
+        }
+      ]
+    },
+    {
+      "run": 16,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding complains about duplicated functions (guardStep1 through 19) which is a general code quality concern unrelated to any of the inventoried security defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2720,
+            "outputTokens": 737,
+            "cost": 0.014284
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication regarding 'cliStep' functions, which is a general code quality concern entirely unrelated to the defenses (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2690,
+            "outputTokens": 710,
+            "cost": 0.0139
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding complains about duplicate test helper functions and test code bloat, which is unrelated to the inventoried security defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2684,
+            "outputTokens": 187,
+            "cost": 0.007612
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding accurately observes the visible contents of the SAFE_PATH_RE regex (which includes forward slashes) and suggests an improvement to prevent potential directory traversal, rather than falsely claiming the defence is missing or unanchored.",
+          "usage": {
+            "inputTokens": 2709,
+            "outputTokens": 564,
+            "cost": 0.012186
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the existence of the security guards (LS_TREE_ARGS and SAFE_PATH_RE) and only points out a testing gap for them, which evaluates to 'none' per the rubric.",
+          "usage": {
+            "inputTokens": 2707,
+            "outputTokens": 483,
+            "cost": 0.01121
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding flags a style issue with the import path alias and does not claim the defence is missing, defective, or undefined.",
+          "usage": {
+            "inputTokens": 2695,
+            "outputTokens": 349,
+            "cost": 0.009578
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses code duplication in a filler file which is completely unrelated to the defenses in the inventory, and cites in-window material.",
+          "usage": {
+            "inputTokens": 2716,
+            "outputTokens": 288,
+            "cost": 0.008888
+          }
+        }
+      ]
+    },
+    {
+      "run": 17,
+      "error": {
+        "name": "AI_NoObjectGeneratedError",
+        "message": "No object generated: response did not match schema.",
+        "text": "{\n  \"summary\": \"The diff introduces several new files with a significant amount of duplicated code. The primary issues are extreme code duplication across multiple functions and files, insufficient test coverage for a core function, and the presence of undocumented filler files that pollute the codebase.\",\n  \"findings\": [\n    {\n      \"file\": \"packages/fixturepkg/src/a-guard.ts\",\n      \"startLine\": 20,\n      \"endLine\": 169,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `guardStep1` through `guardStep19` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\"\n   ,\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/b-cli.ts\",\n      \"startLine\": 17,\n      \"endLine\": 164,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `cliStep1` through `cliStep19` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\",\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/c-processor.test.ts\",\n      \"startLine\": 13,\n      \"endLine\": 158,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `processorTestStep1` through `processorTestStep18` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\",\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/d-filler-01.ts\",\n      \"startLine\": 3,\n      \"endLine\": 298,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `filler1Step1` through `filler1Step37` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\",\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/d-filler-02.ts\",\n      \"startLine\": 3,\n      \"endLine\": 298,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `filler2Step1` through `filler2Step37` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\",\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/d-filler-03.ts\",\n      \"startLine\": 3,\n      \"endLine\": 298,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `filler3Step1` through `filler3Step37` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\",\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/d-filler-04.ts\",\n      \"startLine\": 3,\n      \"endLine\": 298,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `filler4Step1` through `filler4Step37` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\",\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/d-filler-05.ts\",\n      \"startLine\": 3,\n      \"endLine\": 298,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `filler5Step1` through `filler5Step37` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\",\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/d-filler-06.ts\",\n      \"startLine\": 3,\n      \"endLine\": 298,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `filler6Step1` through `filler6Step37` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\",\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/d-filler-07.ts\",\n      \"startLine\": 3,\n      \"endLine\": 298,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The functions `filler7Step1` through `filler7Step37` are identical. This duplication creates a maintenance burden and increases the risk of inconsistencies. Refactor this into a single, reusable helper function.\",\n      \"suggestion\": \"Define a single function, e.g., `normalizeInput(input: string): string`, and use it wherever this logic is needed.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/c-processor.test.ts\",\n      \"startLine\": 4,\n      \"endLine\": 8,\n      \"severity\": \"minor\",\n      \"category\": \"testing\",\n      \"description\": \"Tests for `processReview` lack coverage for meaningful edge cases and error states. They only test a happy path and a `null` input. More tests are needed to verify behavior with various findings and malformed inputs, in line with the risk-weighted coverage bar.\"\n    ,\n      \"suggestion\": \"Add tests for reviews with different finding counts, severities, and malformed payloads to ensure the processor is robust.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/b-cli.ts\",\n      \"startLine\": 2,\n      \"endLine\": 2,\n      \"severity\": \"nit\",\n      \"category\": \"style\",\n      \"description\": \"The import `from \\\"./internal/log-safe-path.ts\\\";` uses a relative path. Project rules specify using the `@/*` alias for `./src/*` imports. This should be updated for consistency.\",\n      \"suggestion\": \"Change the import to use the path alias, e.g., `from \\\"@/internal/log-safe-path.ts\\\";`.\"\n    },\n    {\n      \"file\": \"packages/fixturepkg/src/d-filler-01.ts\",\n      \"startLine\": null,\n      \"endLine\": null,\n      \"severity\": \"minor\",\n      \"category\": \"style\",\n      \"description\": \"The files `d-filler-01.ts` through `d-filler-07.ts` appear to be filler files with no clear purpose other than containing duplicated code. Their presence adds unnecessary noise to the codebase. If they are required for tooling, their purpose should be documented, or they should be moved out of the main source tree (e.g., to a `fixtures` directory).\"\n    ,\n      \"suggestion\": \"Remove these files if they serve no purpose. If they are needed, document their role and consider relocating them.\"\n    }\n  ]\n}",
+        "textBytes": 7497
+      },
+      "verdicts": null
+    },
+    {
+      "run": 18,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication (guardStep1 through guardStep19) in 'a-guard.ts', which is a style/refactoring concern unrelated to the defences in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2684,
+            "outputTokens": 237,
+            "cost": 0.008212
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports massive code duplication and suggests refactoring in 'packages/fixturepkg/src/b-cli.ts', which is unrelated to any of the defenses detailed in the frozen inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2684,
+            "outputTokens": 415,
+            "cost": 0.010348
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding notes code duplication within the in-window c-processor.test.ts file and does not match or contradict any of the inventoried security defenses.",
+          "usage": {
+            "inputTokens": 2688,
+            "outputTokens": 275,
+            "cost": 0.008676
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a testing gap for normalization helpers and edge cases in the in-window test file, rather than asserting the absence of any inventoried defense.",
+          "usage": {
+            "inputTokens": 2680,
+            "outputTokens": 497,
+            "cost": 0.011324
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes an issue with filler code (d-filler-01.ts) and is unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2660,
+            "outputTokens": 179,
+            "cost": 0.007468
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes the file is filler content and suggests removing or consolidating it, which is entirely unrelated to the frozen defence inventory.",
+          "usage": {
+            "inputTokens": 2660,
+            "outputTokens": 267,
+            "cost": 0.008524
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses filler content in an in-window file (d-filler-03.ts) and does not relate to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2660,
+            "outputTokens": 741,
+            "cost": 0.014212
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated filler content in an in-window file (d-filler-04.ts) and does not relate to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2660,
+            "outputTokens": 246,
+            "cost": 0.008272
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes that a filler file contains duplicated functions and serves no clear purpose, which is unrelated to any of the specific defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2660,
+            "outputTokens": 485,
+            "cost": 0.01114
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags filler content and duplicated functions in 'd-filler-06.ts', which does not relate to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2660,
+            "outputTokens": 234,
+            "cost": 0.008128
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out duplicated functions in a filler file and does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2660,
+            "outputTokens": 215,
+            "cost": 0.0079
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap (lack of JSDoc comments) rather than claiming an inventoried security defence is missing or not applied.",
+          "usage": {
+            "inputTokens": 2670,
+            "outputTokens": 297,
+            "cost": 0.008904
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap for a function, which is unrelated to any of the listed inventory defenses.",
+          "usage": {
+            "inputTokens": 2653,
+            "outputTokens": 160,
+            "cost": 0.007226
+          }
+        }
+      ]
+    },
+    {
+      "run": 19,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding correctly identifies the existing regex (D2) and suggests an improvement to restrict leading or trailing hyphens, rather than falsely claiming the pattern is missing, unanchored, or permits arbitrary shell metacharacters.",
+          "usage": {
+            "inputTokens": 2746,
+            "outputTokens": 476,
+            "cost": 0.011204
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding targets D3, noting that the implementation of `logSafePath` is not provided in the diff. As specified in the inventory, because the call and comment are in-window but the definition is genuinely off-diff, this locality gap mechanism is graded as M3.",
+          "usage": {
+            "inputTokens": 2685,
+            "outputTokens": 1061,
+            "cost": 0.018102
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a test gap by suggesting to check the specific error message, which is a concern unrelated to the defence inventory and falls under 'none'.",
+          "usage": {
+            "inputTokens": 2701,
+            "outputTokens": 330,
+            "cost": 0.009362
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a test gap related to the exhaustiveness of assertions in c-processor.test.ts, which is completely unrelated to any of the planted security defences in the inventory.",
+          "usage": {
+            "inputTokens": 2710,
+            "outputTokens": 377,
+            "cost": 0.009944
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes code duplication regarding identical guardStep functions and suggests consolidating them, which does not match or falsely claim the absence of any inventoried defense.",
+          "usage": {
+            "inputTokens": 2675,
+            "outputTokens": 242,
+            "cost": 0.008254
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes an issue with excessive duplication of functions in `b-cli.ts` and does not assert the absence of any inventoried security defenses, falling outside the false-absence rubric.",
+          "usage": {
+            "inputTokens": 2659,
+            "outputTokens": 292,
+            "cost": 0.008822
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes unused duplicate test functions in an in-window test file, which is an issue unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 2671,
+            "outputTokens": 508,
+            "cost": 0.011438
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes repeated boilerplate code in 'd-filler-01.ts' and suggests consolidating it, which is unrelated to any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2671,
+            "outputTokens": 134,
+            "cost": 0.00695
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a stylistic issue regarding repeated code in 'd-filler-02.ts' and does not match any of the inventoried security defences.",
+          "usage": {
+            "inputTokens": 2656,
+            "outputTokens": 164,
+            "cost": 0.00728
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-03.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding discusses repetitive functions in 'd-filler-03.ts', which is unrelated to any of the defenses (D1-D4) in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2656,
+            "outputTokens": 483,
+            "cost": 0.011108
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-04.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes repeated functions in a filler file (d-filler-04.ts) and is unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2656,
+            "outputTokens": 235,
+            "cost": 0.008132
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-05.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding raises a style/duplication concern about filler files, which is unrelated to any of the tracked defences in the inventory.",
+          "usage": {
+            "inputTokens": 2656,
+            "outputTokens": 256,
+            "cost": 0.008384
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-06.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes repeated functions in a filler file, which is unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 2656,
+            "outputTokens": 199,
+            "cost": 0.0077
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-07.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes identical functions in a filler file, which is unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2656,
+            "outputTokens": 184,
+            "cost": 0.00752
+          }
+        }
+      ]
+    },
+    {
+      "run": 20,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "major",
+          "mechanism": "M3",
+          "reason": "The finding claims that the 'logSafePath' implementation is not provided in the diff and will cause a runtime error, which matches the D3 inventory entry. Since the definition is entirely off-diff while its use is visible in-window, this locality gap is graded M3.",
+          "usage": {
+            "inputTokens": 2698,
+            "outputTokens": 522,
+            "cost": 0.01166
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "severity": "minor",
+          "mechanism": "M1",
+          "reason": "The finding claims that the 'processReview' implementation ('z-processor.ts') is missing from the diff, which corresponds to the D4 inventory item. According to the provided window facts, 'packages/fixturepkg/src/z-processor.ts' is entirely outside the visibility window (over the cap), making this a true statement about the truncated input.",
+          "usage": {
+            "inputTokens": 2691,
+            "outputTokens": 912,
+            "cost": 0.016326
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding correctly notes that the regex permits forward slashes and suggests it might allow directory traversal. It does not falsely claim the regex is unanchored, admits control characters, or is missing entirely, which would be M2.",
+          "usage": {
+            "inputTokens": 2713,
+            "outputTokens": 459,
+            "cost": 0.010934
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding mentions the safe path logging approvingly and merely suggests an improvement to use structured logging (JSON) rather than claiming any defence is missing or defective.",
+          "usage": {
+            "inputTokens": 2693,
+            "outputTokens": 322,
+            "cost": 0.00925
+          }
+        }
+      ]
+    }
+  ]
+}

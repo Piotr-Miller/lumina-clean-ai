@@ -1,0 +1,2054 @@
+{
+  "variant": "fixture-irregular",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260824T120258Z",
+  "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "ede042eb21b78991b9436186b6aed1235e5da7a0d16c243af425a26b33d7532d",
+  "plannedAttempts": 20,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-24T12:02:58.681Z",
+      "durationMs": 12593,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 922,
+        "totalTokens": 25891,
+        "cost": 0.01196937
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 16,
+          "endLine": 16,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Duplicate const declaration for 'batchDefaults' will cause a runtime error. The variable is re-declared on lines 16, 34, 52, and multiple other locations throughout the file.",
+          "suggestion": "Remove duplicate const declarations and keep only one definition of batchDefaults."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "style",
+          "description": "Excessive code duplication. Functions drainPendingBatchFromBATCH3 through drainPendingBatchFromBATCH48 are nearly identical copies of earlier functions.",
+          "suggestion": "Refactor to use a single parameterized function instead of duplicating the same logic 45+ times."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 9,
+          "endLine": 9,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Duplicate const declaration for 'budgetDefaults' will cause a runtime error. The variable is re-declared on lines 9, 27, 45, and multiple other locations throughout the file.",
+          "suggestion": "Remove duplicate const declarations and keep only one definition of budgetDefaults."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "style",
+          "description": "Excessive code duplication. Functions consumeRetryBudgetFromBUDGET3 through consumeRetryBudgetFromBUDGET44 are nearly identical copies of earlier functions.",
+          "suggestion": "Refactor to use a single parameterized function instead of duplicating the same logic 40+ times."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code generation. Functions guardStep1 through guardStep19 are identical implementations with only the function name differing.",
+          "suggestion": "Extract common logic into a single function and generate or map the step-specific variations programmatically."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code generation. Functions cliStep1 through cliStep19 are identical implementations with only the function name differing.",
+          "suggestion": "Extract common logic into a single function and generate or map the step-specific variations programmatically."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code generation. Functions processorTestStep1 through processorTestStep18 are identical implementations with only the function name differing.",
+          "suggestion": "Extract common logic into a single function and generate or map the step-specific variations programmatically."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 12,
+          "endLine": 12,
+          "severity": "nit",
+          "category": "security",
+          "description": "SAFE_PATH_RE allows forward slashes at the start/end of paths, which could lead to unexpected path traversal behaviors.",
+          "suggestion": "Consider anchoring the regex more strictly to prevent leading/trailing slashes if they are not intended to be valid."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "major": 2,
+          "minor": 5,
+          "nit": 1
+        },
+        "byCategory": {
+          "correctness": 2,
+          "style": 5,
+          "security": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 2,
+      "startedAt": "2026-08-24T12:03:11.277Z",
+      "durationMs": 18757,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1240,
+        "totalTokens": 26209,
+        "cost": 0.00417067
+      },
+      "findings": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The file contains 20 nearly identical sections that are duplicated verbatim. This creates a maintenance burden and suggests the content should be generated or referenced rather than copied.",
+          "suggestion": "Refactor to use a single section template or generate the repeated content programmatically to avoid drift and reduce file size."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The file contains 20 nearly identical sections that are duplicated verbatim. This creates a maintenance burden and suggests the content should be generated or referenced rather than copied.",
+          "suggestion": "Refactor to use a single section template or generate the repeated content programmatically to avoid drift and reduce file size."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The file contains 20 nearly identical sections that are duplicated verbatim. This creates a maintenance burden and suggests the content should be generated or referenced rather than copied.",
+          "suggestion": "Refactor to use a single section template or generate the repeated content programmatically to avoid drift and reduce file size."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 20,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file defines 19 nearly identical helper functions (guardStep1 through guardStep19) that only differ by a numeric suffix. This pattern is repeated across multiple files and indicates a lack of abstraction.",
+          "suggestion": "Replace the numbered functions with a single generic function that accepts a step number parameter, or use a factory function to generate these helpers."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 12,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file defines 19 nearly identical helper functions (cliStep1 through cliStep19) that only differ by a numeric suffix. This pattern is repeated across multiple files and indicates a lack of abstraction.",
+          "suggestion": "Replace the numbered functions with a single generic function that accepts a step number parameter, or use a factory function to generate these helpers."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains multiple nearly identical function groups (drainPendingBatchFromBATCH1 through drainPendingBatchFromBATCH49) with duplicated logic.",
+          "suggestion": "Consolidate the duplicated logic into shared helper functions and use parameters to differentiate behavior instead of creating numbered variants."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains multiple nearly identical function groups (consumeRetryBudgetFromBUDGET1 through consumeRetryBudgetFromBUDGET8) with duplicated logic.",
+          "suggestion": "Consolidate the duplicated logic into shared helper functions and use parameters to differentiate behavior instead of creating numbered variants."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 12,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file defines 18 nearly identical helper functions (processorTestStep1 through processorTestStep18) that only differ by a numeric suffix.",
+          "suggestion": "Replace the numbered functions with a single generic function that accepts a step number parameter, or use a factory function to generate these helpers."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "critical",
+          "category": "correctness",
+          "description": "The file appears to be truncated mid-function with 'ex' at the end, which will cause a syntax error when the module is loaded.",
+          "suggestion": "Complete the function definition or remove the incomplete code to prevent runtime errors."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 5,
+          "endLine": 7,
+          "severity": "minor",
+          "category": "style",
+          "description": "The function drainPendingBatchFromBATCH1 is defined but never exported, unlike similar functions in the same file.",
+          "suggestion": "Either export the function consistently with others or remove it if it's not intended to be part of the public API."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "major": 3,
+          "minor": 6,
+          "critical": 1
+        },
+        "byCategory": {
+          "correctness": 4,
+          "style": 6
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 3,
+      "startedAt": "2026-08-24T12:03:30.037Z",
+      "durationMs": 13203,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1021,
+        "totalTokens": 25990,
+        "cost": 0.00378742
+      },
+      "findings": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "major",
+          "category": "style",
+          "description": "The file contains 20 nearly identical sections (Section 1–Section 20) with duplicated boilerplate text. This repetition inflates the file size without adding value and makes future maintenance error-prone.",
+          "suggestion": "Refactor to store the shared boilerplate once and reference it or generate the sections programmatically."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "major",
+          "category": "style",
+          "description": "Same duplication issue as notes-01-plan.md: 20 sections with identical boilerplate. Redundant content should be consolidated.",
+          "suggestion": "Consolidate shared boilerplate and avoid duplication across sections."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "major",
+          "category": "style",
+          "description": "Same duplication issue as the other markdown files: 20 sections with identical boilerplate. Redundant content should be consolidated.",
+          "suggestion": "Consolidate shared boilerplate and avoid duplication across sections."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 15,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "Functions guardStep1 through guardStep19 are identical except for their names. This pattern repeats in other files (cliStep*, processorTestStep*, etc.), indicating a systematic duplication issue.",
+          "suggestion": "Replace the series of numbered step functions with a single parameterized function (e.g., guardStep(stepNumber, input))."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 15,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Functions cliStep1 through cliStep19 are identical except for their names. This is the same duplication pattern observed in plan-guard.ts.",
+          "suggestion": "Replace the series of numbered step functions with a single parameterized function (e.g., cliStep(stepNumber, input))."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Functions processorTestStep1 through processorTestStep18 are identical except for their names. This is the same duplication pattern observed in other files.",
+          "suggestion": "Replace the series of numbered step functions with a single parameterized function (e.g., processorTestStep(stepNumber, input))."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 3,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "style",
+          "description": "Multiple functions (drainPendingBatchFromBATCH1, drainPendingBatchFromBATCH3, etc.) are duplicates of the same logic, with only slight variations in names. The constant batchDefaults is redefined multiple times. This duplication inflates the file and complicates maintenance.",
+          "suggestion": "Consolidate the duplicated functions into a single implementation and reuse it. Define constants once at the top level."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "style",
+          "description": "Multiple functions (consumeRetryBudgetFromBUDGET1, consumeRetryBudgetFromBUDGET3, etc.) are duplicates of the same logic, with only slight variations in names. The constant budgetDefaults is redefined multiple times. This duplication inflates the file and complicates maintenance.",
+          "suggestion": "Consolidate the duplicated functions into a single implementation and reuse it. Define constants once at the top level."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "major": 3,
+          "minor": 5
+        },
+        "byCategory": {
+          "style": 8
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 4,
+      "startedAt": "2026-08-24T12:03:43.245Z",
+      "durationMs": 13019,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1007,
+        "totalTokens": 25976,
+        "cost": 0.00376292
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 19,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: 19 near-identical guardStep functions differ only by a numeric suffix. Extract a common helper to reduce duplication.",
+          "suggestion": "Replace with a single generic guardStep function or a loop-generated map of step functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 14,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: 19 near-identical cliStep functions differ only by a numeric suffix. Extract a common helper.",
+          "suggestion": "Replace with a single generic cliStep function or a loop-generated map of step functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: 18 near-identical processorTestStep functions differ only by a numeric suffix. Extract a common helper.",
+          "suggestion": "Replace with a single generic processorTestStep function or a loop-generated map of step functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 8,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: 49 near-identical drainPendingBatchFromBATCH* functions with duplicated logic. Consolidate into parameterized helpers.",
+          "suggestion": "Define a single drainPendingBatch function and export aliases or a map if needed."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 8,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: 48 near-identical consumeRetryBudgetFromBUDGET* functions with duplicated logic. Consolidate into parameterized helpers.",
+          "suggestion": "Define a single consumeRetryBudget function and export aliases or a map if needed."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 19,
+          "endLine": 20,
+          "severity": "minor",
+          "category": "style",
+          "description": "Redeclaration of 'batchDefaults' constant shadows earlier declaration on line 6.",
+          "suggestion": "Move the constant declaration outside functions or rename subsequent occurrences to avoid shadowing."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 12,
+          "endLine": 13,
+          "severity": "minor",
+          "category": "style",
+          "description": "Redeclaration of 'budgetDefaults' constant shadows earlier declaration on line 6.",
+          "suggestion": "Move the constant declaration outside functions or rename subsequent occurrences to avoid shadowing."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 8,
+          "endLine": 385,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent naming: functions use both camelCase (drainPendingBatch) and PascalCase (drainPendingBatchFromBATCH*).",
+          "suggestion": "Stick to camelCase throughout; PascalCase is unconventional for functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 8,
+          "endLine": 379,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent naming: functions use both camelCase (consumeRetryBudget) and PascalCase (consumeRetryBudgetFromBUDGET*).",
+          "suggestion": "Stick to camelCase throughout; PascalCase is unconventional for functions."
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "minor": 7,
+          "nit": 2
+        },
+        "byCategory": {
+          "style": 9
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 5,
+      "startedAt": "2026-08-24T12:03:56.269Z",
+      "durationMs": 12334,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 704,
+        "totalTokens": 25673,
+        "cost": 0.00323267
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 22,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "The functions guardStep1 through guardStep19 are identical except for their names. This code duplication could be refactored into a single generic function.",
+          "suggestion": "Replace the duplicated functions with a single generic function, e.g., `export function guardStep(input: string): string { ... }`."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "The functions cliStep1 through cliStep19 are identical except for their names. This code duplication could be refactored into a single generic function.",
+          "suggestion": "Replace the duplicated functions with a single generic function, e.g., `export function cliStep(input: string): string { ... }`."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "The functions processorTestStep1 through processorTestStep18 are identical except for their names. This code duplication could be refactored into a single generic function.",
+          "suggestion": "Replace the duplicated functions with a single generic function, e.g., `export function processorTestStep(input: string): string { ... }`."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains many duplicated function definitions. For example, `drainPendingBatchFromBATCH1` through `drainPendingBatchFromBATCH49` are nearly identical, as are several other groups of functions. This code duplication could be refactored.",
+          "suggestion": "Refactor the duplicated functions into a smaller set of reusable functions with parameters to customize their behavior."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains many duplicated function definitions. For example, `consumeRetryBudgetFromBUDGET1` through `consumeRetryBudgetFromBUDGET8` are nearly identical. This code duplication could be refactored.",
+          "suggestion": "Refactor the duplicated functions into a smaller set of reusable functions with parameters to customize their behavior."
+        }
+      ],
+      "summary": {
+        "n": 5,
+        "bySeverity": {
+          "minor": 5
+        },
+        "byCategory": {
+          "style": 5
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 6,
+      "startedAt": "2026-08-24T12:04:08.611Z",
+      "durationMs": 2357,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 45,
+        "totalTokens": 25014,
+        "cost": 0.00207942
+      },
+      "findings": [],
+      "summary": {
+        "n": 0,
+        "bySeverity": {},
+        "byCategory": {}
+      },
+      "error": null
+    },
+    {
+      "run": 7,
+      "startedAt": "2026-08-24T12:04:10.973Z",
+      "durationMs": 30399,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1058,
+        "totalTokens": 26027,
+        "cost": 0.00385217
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 12,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "Function duplication: guardStep1 through guardStep19 are identical copies of the same input normalization logic. This creates unnecessary maintenance burden and bloat.",
+          "suggestion": "Replace the 19 near-identical functions with a single parameterized helper, e.g., `normalizeInput(input: string, maxLength = 512): string`."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 14,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Function duplication: cliStep1 through cliStep19 are identical copies of the same input normalization logic.",
+          "suggestion": "Consolidate into a single reusable function; call it from CLI steps as needed."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 17,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive batch-handling functions: drainPendingBatchFromBATCH1 through drainPendingBatchFromBATCH49 are near-duplicates with only naming differences.",
+          "suggestion": "Refactor to a single parameterized function; the current pattern inflates the bundle and complicates maintenance."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 9,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive budget-handling functions: consumeRetryBudgetFromBUDGET1 through consumeRetryBudgetFromBUDGET49 are near-duplicates.",
+          "suggestion": "Replace with a single configurable helper; duplication offers no functional benefit."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 13,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Function duplication in tests: processorTestStep1 through processorTestStep18 are identical.",
+          "suggestion": "Use a shared test utility; remove the per-step clones."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 12,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "testing",
+          "description": "No tests provided for the duplicated guardStep functions, despite their inclusion.",
+          "suggestion": "If the duplicated functions are kept, add tests; otherwise remove them."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 14,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "testing",
+          "description": "No tests for the duplicated cliStep functions.",
+          "suggestion": "Add tests or consolidate to reduce the testing surface."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 17,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "testing",
+          "description": "No tests for the many drainPendingBatchFromBATCH* functions.",
+          "suggestion": "Either add comprehensive tests or refactor to a single tested function."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 9,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "testing",
+          "description": "No tests for the many consumeRetryBudgetFromBUDGET* functions.",
+          "suggestion": "Consolidate and test a single implementation instead of many untested clones."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 12,
+          "endLine": 169,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "JSDoc comments for guardStep* functions are generic and do not explain why 19 separate functions exist.",
+          "suggestion": "Document the rationale or remove the duplication."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "minor": 9,
+          "nit": 1
+        },
+        "byCategory": {
+          "style": 5,
+          "testing": 4,
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 8,
+      "startedAt": "2026-08-24T12:04:41.378Z",
+      "durationMs": 36357,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 2056,
+        "totalTokens": 27025,
+        "cost": 0.00559867
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 30,
+          "endLine": 30,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Redeclaration of 'batchDefaults' constant will cause compilation error",
+          "suggestion": "Move the constant declaration outside the function scope or rename subsequent declarations"
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 54,
+          "endLine": 54,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Redeclaration of 'batchDefaults' constant will cause compilation error",
+          "suggestion": "Move the constant declaration outside the function scope or rename subsequent declarations"
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 78,
+          "endLine": 78,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Redeclaration of 'batchDefaults' constant will cause compilation error",
+          "suggestion": "Move the constant declaration outside the function scope or rename subsequent declarations"
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 8,
+          "endLine": 8,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Redeclaration of 'budgetDefaults' constant will cause compilation error",
+          "suggestion": "Move the constant declaration outside the function scope or rename subsequent declarations"
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 22,
+          "endLine": 22,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Redeclaration of 'budgetDefaults' constant will cause compilation error",
+          "suggestion": "Move the constant declaration outside the function scope or rename subsequent declarations"
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 36,
+          "endLine": 36,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Redeclaration of 'budgetDefaults' constant will cause compilation error",
+          "suggestion": "Move the constant declaration outside the function scope or rename subsequent declarations"
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 379,
+          "endLine": 379,
+          "severity": "major",
+          "category": "correctness",
+          "description": "File appears to be truncated with incomplete code",
+          "suggestion": "Complete the file implementation"
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 3,
+          "endLine": 3,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Import from './internal/log-safe-path.ts' may fail if file doesn't exist",
+          "suggestion": "Ensure the file exists and exports logSafePath"
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 4,
+          "endLine": 4,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Import from './verdict-engine.ts' may fail if file doesn't exist",
+          "suggestion": "Ensure the file exists and exports processReview"
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "major": 9
+        },
+        "byCategory": {
+          "correctness": 9
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 9,
+      "startedAt": "2026-08-24T12:05:17.743Z",
+      "durationMs": 25823,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1527,
+        "totalTokens": 26496,
+        "cost": 0.00467292
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 17,
+          "endLine": 169,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Massive code duplication: The file contains 19 nearly identical functions (guardStep1 through guardStep19) that perform the same input normalization. This pattern is repeated across other files. This makes the codebase hard to maintain and error-prone, as changes must be applied in many places.",
+          "suggestion": "Refactor to a single parameterized function, e.g., `guardStep(input: string, step: number): string`, or simply reuse one function for all steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 11,
+          "endLine": 164,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Massive code duplication: The file contains 19 nearly identical functions (cliStep1 through cliStep19) that perform the same input normalization. This pattern is repeated across other files. This makes the codebase hard to maintain and error-prone, as changes must be applied in many places.",
+          "suggestion": "Refactor to a single parameterized function, e.g., `cliStep(input: string, step: number): string`, or simply reuse one function for all steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Massive code duplication: The file contains 18 nearly identical functions (processorTestStep1 through processorTestStep18) that perform the same input normalization. This pattern is repeated across other files. This makes the codebase hard to maintain and error-prone, as changes must be applied in many places.",
+          "suggestion": "Refactor to a single parameterized function, e.g., `processorTestStep(input: string, step: number): string`, or simply reuse one function for all steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 4,
+          "endLine": 385,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Massive code duplication: The file contains many nearly identical functions (e.g., drainPendingBatchFromBATCH1, drainPendingBatchFromBATCH3, etc.) that perform the same batch processing logic. This makes the codebase hard to maintain and error-prone.",
+          "suggestion": "Refactor to a single parameterized function or reuse one function for all batches. The repeated `batchDefaults` constant declarations are also duplicated."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Massive code duplication: The file contains many nearly identical functions (e.g., consumeRetryBudgetFromBUDGET1, consumeRetryBudgetFromBUDGET3, etc.) that perform the same retry budget logic. This makes the codebase hard to maintain and error-prone.",
+          "suggestion": "Refactor to a single parameterized function or reuse one function for all budgets. The repeated `budgetDefaults` constant declarations are also duplicated."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 4,
+          "endLine": 7,
+          "severity": "minor",
+          "category": "performance",
+          "description": "Inefficient string splitting: The `drainPendingBatch` function splits a string by '/' and then filters out empty strings. If the input string can be large, this creates an intermediate array unnecessarily.",
+          "suggestion": "Consider using a more efficient method to parse the string, especially if this function is called frequently with large inputs."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 4,
+          "endLine": 7,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent function naming: The function `drainPendingBatch` uses camelCase, while the other functions in the file use `drainPendingBatchFromBATCHX` with a number suffix.",
+          "suggestion": "For consistency, either rename `drainPendingBatch` to `drainPendingBatchFromBATCH0` or refactor the naming scheme across the file."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 20,
+          "endLine": 25,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent function naming: The function `consumeRetryBudgetFromBUDGET1` uses a number suffix, while `consumeRetryBudget` does not.",
+          "suggestion": "For consistency, either rename `consumeRetryBudget` to `consumeRetryBudgetFromBUDGET0` or refactor the naming scheme across the file."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 17,
+          "endLine": 169,
+          "severity": "nit",
+          "category": "style",
+          "description": "Repetitive JSDoc comments: The comments for the guardStep functions are identical except for the step number.",
+          "suggestion": "Consider a single comment for the group or a more generic comment that doesn't need to be duplicated for each function."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 11,
+          "endLine": 164,
+          "severity": "nit",
+          "category": "style",
+          "description": "Repetitive JSDoc comments: The comments for the cliStep functions are identical except for the step number.",
+          "suggestion": "Consider a single comment for the group or a more generic comment that doesn't need to be duplicated for each function."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "nit",
+          "category": "style",
+          "description": "Repetitive JSDoc comments: The comments for the processorTestStep functions are identical except for the step number.",
+          "suggestion": "Consider a single comment for the group or a more generic comment that doesn't need to be duplicated for each function."
+        }
+      ],
+      "summary": {
+        "n": 11,
+        "bySeverity": {
+          "major": 5,
+          "minor": 1,
+          "nit": 5
+        },
+        "byCategory": {
+          "correctness": 5,
+          "performance": 1,
+          "style": 5
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 10,
+      "startedAt": "2026-08-24T12:05:43.570Z",
+      "durationMs": 1874,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 42,
+        "totalTokens": 25011,
+        "cost": 0.00207417
+      },
+      "findings": [],
+      "summary": {
+        "n": 0,
+        "bySeverity": {},
+        "byCategory": {}
+      },
+      "error": null
+    },
+    {
+      "run": 11,
+      "startedAt": "2026-08-24T12:05:45.448Z",
+      "durationMs": 32379,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 983,
+        "totalTokens": 25952,
+        "cost": 0.01207612
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 18,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The file contains 19 near-identical functions (guardStep1 through guardStep19) that perform the same normalization logic. This is likely generated boilerplate; consider consolidating into a single parameterized function to reduce maintenance burden.",
+          "suggestion": "Replace the duplicated functions with a single generic helper, e.g., `export function guardStep(input: string, step?: number): string`. If step numbers are needed for tracing, pass them as a parameter."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The file contains 19 near-identical functions (cliStep1 through cliStep19) that perform the same normalization logic. This duplication increases the risk of inconsistencies and makes the code harder to maintain.",
+          "suggestion": "Consolidate the duplicated step functions into a single reusable function. If step-specific behavior is required, use a configuration object or a strategy pattern."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 17,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The file contains 18 near-identical functions (processorTestStep1 through processorTestStep18) that perform the same normalization logic. Test utilities should be concise; this duplication obscures intent.",
+          "suggestion": "Extract the common normalization logic into a single helper function and reuse it across test steps. If step-specific data is needed, pass it as an argument."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The file contains extensive boilerplate duplication with functions like drainPendingBatchFromBATCH1 through drainPendingBatchFromBATCH49. This pattern makes the module unnecessarily large and difficult to navigate.",
+          "suggestion": "Refactor to use a single core function (e.g., drainPendingBatch) and parameterize batch-specific behavior. Consider using a map or factory if each batch requires distinct configuration."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The file contains extensive boilerplate duplication with functions like consumeRetryBudgetFromBUDGET1 through consumeRetryBudgetFromBUDGET8. This pattern inflates the module size and hinders maintainability.",
+          "suggestion": "Consolidate the duplicated logic into a single parameterized function. If budgets differ, accept a budget identifier or configuration object as an argument."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "nit",
+          "category": "style",
+          "description": "The file redeclares the constant `batchDefaults` multiple times (lines 15, 33, 51, etc.). While not a runtime error due to block scope, this is confusing and violates DRY principles.",
+          "suggestion": "Declare `batchDefaults` once at the module level and reference it throughout the file to avoid redundancy."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "nit",
+          "category": "style",
+          "description": "The file redeclares the constant `budgetDefaults` multiple times (lines 9, 25, 41, etc.). This repetition is unnecessary and can be misleading.",
+          "suggestion": "Define `budgetDefaults` once at the top of the module and reuse it across functions to improve clarity."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "minor": 5,
+          "nit": 2
+        },
+        "byCategory": {
+          "correctness": 5,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 12,
+      "startedAt": "2026-08-24T12:06:17.834Z",
+      "durationMs": 18066,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 904,
+        "totalTokens": 25873,
+        "cost": 0.00358267
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "major",
+          "category": "correctness",
+          "description": "File contains massive code duplication with 48 nearly identical function definitions (drainPendingBatchFromBATCH1 through drainPendingBatchFromBATCH48). This suggests a generation error and will cause maintainability issues.",
+          "suggestion": "Refactor to use a single generic function with parameters instead of duplicating code."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Similar massive code duplication with 48 nearly identical function definitions (consumeRetryBudgetFromBUDGET1 through consumeRetryBudgetFromBUDGET48). This indicates a generation error.",
+          "suggestion": "Consolidate into a single parameterized function to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 11,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Contains 19 nearly identical guard functions (guardStep1 through guardStep19) with identical implementations. This duplication is unnecessary.",
+          "suggestion": "Replace with a single generic guard function."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 11,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Contains 19 nearly identical CLI step functions (cliStep1 through cliStep19) with identical implementations.",
+          "suggestion": "Consolidate into a single function."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 11,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Contains 18 nearly identical test helper functions (processorTestStep1 through processorTestStep18) with identical implementations.",
+          "suggestion": "Use a single helper function."
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 20 identical sections with duplicated boilerplate content. This appears to be placeholder/generated content.",
+          "suggestion": "Remove duplicated sections and keep only unique content."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "Same duplication issue as notes-01-plan.md with 20 identical sections.",
+          "suggestion": "Remove duplicated sections."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "Same duplication issue with 20 identical sections.",
+          "suggestion": "Remove duplicated sections."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 369,
+          "endLine": 369,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File ends abruptly with 'ex' suggesting incomplete generation or truncation.",
+          "suggestion": "Complete the file or remove if it's unintended."
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "major": 2,
+          "minor": 4,
+          "nit": 3
+        },
+        "byCategory": {
+          "correctness": 6,
+          "style": 3
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 13,
+      "startedAt": "2026-08-24T12:06:35.905Z",
+      "durationMs": 75792,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1437,
+        "totalTokens": 26406,
+        "cost": 0.00451542
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 25,
+          "endLine": 25,
+          "severity": "critical",
+          "category": "correctness",
+          "description": "Redeclaration of 'batchDefaults' constant will cause a runtime error. Constants cannot be redeclared in the same scope in TypeScript/JavaScript.",
+          "suggestion": "Either rename one of the constants or consolidate them into a single declaration."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 15,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "19 functions (guardStep1 through guardStep19) have identical implementations. This creates maintenance burden and suggests the code should be refactored.",
+          "suggestion": "Consider using a single guardStep function if all steps perform the same normalization logic."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "19 functions (cliStep1 through cliStep19) have identical implementations, duplicating the same trimming and whitespace collapsing logic.",
+          "suggestion": "Extract the common logic into a single function that can be reused across all steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 13,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "18 test helper functions (processorTestStep1 through processorTestStep18) are identical duplications.",
+          "suggestion": "Refactor to use a single helper function or a parameterized approach."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 7,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "style",
+          "description": "Multiple functions (drainPendingBatchFromBATCH1 through drainPendingBatchFromBATCH49) contain duplicated implementations with only numeric suffixes differing.",
+          "suggestion": "Consider using a factory pattern or parameterized function to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "style",
+          "description": "Similar duplication pattern as queue-drain.ts with multiple functions having identical implementations.",
+          "suggestion": "Apply the same refactoring approach as suggested for queue-drain.ts."
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File contains 20 identical sections with the same content repeated.",
+          "suggestion": "If this is test fixture data, consider using a more concise representation or generating the content programmatically."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "critical": 1,
+          "minor": 5,
+          "nit": 1
+        },
+        "byCategory": {
+          "correctness": 1,
+          "style": 5,
+          "documentation": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 14,
+      "startedAt": "2026-08-24T12:07:51.706Z",
+      "durationMs": 11840,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 984,
+        "totalTokens": 25953,
+        "cost": 0.00372267
+      },
+      "findings": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 20 nearly identical sections, leading to excessive duplication. Consider reducing to a representative subset or using a programmatic approach to generate the content.",
+          "suggestion": "Reduce duplication by keeping a few representative sections or generating the content dynamically."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 20 nearly identical sections, leading to excessive duplication. Consider reducing to a representative subset or using a programmatic approach to generate the content.",
+          "suggestion": "Reduce duplication by keeping a few representative sections or generating the content dynamically."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 20 nearly identical sections, leading to excessive duplication. Consider reducing to a representative subset or using a programmatic approach to generate the content.",
+          "suggestion": "Reduce duplication by keeping a few representative sections or generating the content dynamically."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 25,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "Multiple functions (guardStep1 through guardStep19) are identical except for their names. This introduces unnecessary duplication and maintenance overhead.",
+          "suggestion": "Refactor to use a single generic function or a factory to avoid code duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 15,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Multiple functions (cliStep1 through cliStep19) are identical except for their names. This introduces unnecessary duplication and maintenance overhead.",
+          "suggestion": "Refactor to use a single generic function or a factory to avoid code duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Multiple functions (processorTestStep1 through processorTestStep18) are identical except for their names. This introduces unnecessary duplication and maintenance overhead.",
+          "suggestion": "Refactor to use a single generic function or a factory to avoid code duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 7,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains many near-identical functions and duplicated constants (e.g., batchDefaults redefined multiple times). This obscures intent and increases maintenance burden.",
+          "suggestion": "Consolidate duplicated logic and constants, and consider using a loop or higher-order function to generate repetitive exports."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains many near-identical functions and duplicated constants (e.g., budgetDefaults redefined multiple times). This obscures intent and increases maintenance burden.",
+          "suggestion": "Consolidate duplicated logic and constants, and consider using a loop or higher-order function to generate repetitive exports."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "minor": 8
+        },
+        "byCategory": {
+          "style": 8
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 15,
+      "startedAt": "2026-08-24T12:08:03.553Z",
+      "durationMs": 30043,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1116,
+        "totalTokens": 26085,
+        "cost": 0.00395367
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 19,
+          "endLine": 169,
+          "severity": "major",
+          "category": "style",
+          "description": "The file contains 19 nearly identical functions (guardStep1 through guardStep19) that perform the same input normalization logic. This is excessive code duplication that should be refactored into a single parameterized function.",
+          "suggestion": "Replace the 19 separate functions with a single function that accepts the input and an optional step identifier if needed for logging/debugging purposes."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "major",
+          "category": "style",
+          "description": "Contains 19 nearly identical functions (cliStep1 through cliStep19) with duplicated input normalization logic. This pattern repeats the same issue found in plan-guard.ts.",
+          "suggestion": "Refactor into a single helper function; the step-specific naming provides no value given the identical implementation."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 17,
+          "endLine": 158,
+          "severity": "major",
+          "category": "style",
+          "description": "Contains 18 nearly identical functions (processorTestStep1 through processorTestStep18) with the same input normalization pattern.",
+          "suggestion": "Consolidate into one test helper function; the numbered variants add unnecessary noise to the test file."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "major",
+          "category": "style",
+          "description": "The file contains multiple groups of nearly identical functions (drainPendingBatchFromBATCH1 through drainPendingBatchFromBATCH49) with only incremental naming changes. This is an extreme example of code duplication.",
+          "suggestion": "Replace with a single configurable function that can handle different batch types or configurations through parameters rather than having dozens of near-identical exports."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "major",
+          "category": "style",
+          "description": "Similar to queue-drain.ts, this file contains multiple nearly identical functions (consumeRetryBudgetFromBUDGET1 through consumeRetryBudgetFromBUDGET8) with duplicated logic.",
+          "suggestion": "Refactor into a single function with parameters for different budget configurations."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 379,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The file appears to be truncated mid-export statement ('ex' at line 379), indicating an incomplete implementation or copy-paste artifact.",
+          "suggestion": "Complete the implementation or remove the incomplete code."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 4,
+          "endLine": 12,
+          "severity": "minor",
+          "category": "security",
+          "description": "The SAFE_PATH_RE regex is overly permissive, allowing dots and hyphens at any position in the path. This could potentially allow path traversal attacks if not properly handled elsewhere.",
+          "suggestion": "Consider a more restrictive regex that prevents leading dots/hyphens and ensures the path doesn't contain dangerous sequences like '../'."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 13,
+          "endLine": 13,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Constant 'batchDefaults' is redeclared multiple times in the same scope (lines 13, 35, 57, etc.), which will cause runtime errors in strict mode.",
+          "suggestion": "Declare the constant once at the module level and reuse it throughout the file."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 7,
+          "endLine": 7,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Similar to queue-drain.ts, the 'budgetDefaults' constant is redeclared multiple times in the same scope.",
+          "suggestion": "Declare the constant once and reuse it throughout the module."
+        }
+      ],
+      "summary": {
+        "n": 9,
+        "bySeverity": {
+          "major": 5,
+          "minor": 4
+        },
+        "byCategory": {
+          "style": 5,
+          "correctness": 3,
+          "security": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 16,
+      "startedAt": "2026-08-24T12:08:33.604Z",
+      "durationMs": 19584,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1471,
+        "totalTokens": 26440,
+        "cost": 0.00457492
+      },
+      "findings": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File consists entirely of duplicated boilerplate sections (1–20) with identical content. The intended purpose or content is missing, resulting in an empty plan document.",
+          "suggestion": "Replace the duplicated sections with actual plan notes or remove the file if it is not required."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File consists entirely of duplicated boilerplate sections (1–20) with identical content. The intended purpose or content is missing, resulting in an empty research document.",
+          "suggestion": "Replace the duplicated sections with actual research notes or remove the file if it is not required."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File consists entirely of duplicated boilerplate sections (1–20) with identical content. The intended purpose or content is missing, resulting in an empty verification document.",
+          "suggestion": "Replace the duplicated sections with actual verification notes or remove the file if it is not required."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "Exports 19 nearly identical helper functions (guardStep1–guardStep19) that only differ by name. This indicates generated code that should be refactored to a single parameterized function.",
+          "suggestion": "Consolidate the repetitive helpers into a single function, e.g., `guardStep(step: number, input: string): string`, to reduce duplication and improve maintainability."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Exports 19 nearly identical helper functions (cliStep1–cliStep19) that only differ by name. This indicates generated code that should be refactored to a single parameterized function.",
+          "suggestion": "Consolidate the repetitive helpers into a single function, e.g., `cliStep(step: number, input: string): string`, to reduce duplication and improve maintainability."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Exports 18 nearly identical helper functions (processorTestStep1–processorTestStep18) that only differ by name. This indicates generated code that should be refactored to a single parameterized function.",
+          "suggestion": "Consolidate the repetitive helpers into a single function, e.g., `processorTestStep(step: number, input: string): string`, to reduce duplication and improve maintainability."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Multiple function definitions conflict due to identical names (`batchDefaults` declared at lines 23 and 44). This will cause a runtime error.",
+          "suggestion": "Rename or scope the duplicate `batchDefaults` declarations to avoid conflicts."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Multiple function definitions conflict due to identical names (`budgetDefaults` declared at lines 17 and 37). This will cause a runtime error.",
+          "suggestion": "Rename or scope the duplicate `budgetDefaults` declarations to avoid conflicts."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks module-level documentation explaining its purpose and the role of the generated helpers.",
+          "suggestion": "Add a top-level JSDoc comment describing the module's responsibility and usage patterns."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks module-level documentation explaining its purpose and the role of the generated helpers.",
+          "suggestion": "Add a top-level JSDoc comment describing the module's responsibility and usage patterns."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks module-level documentation explaining its purpose and the role of the generated helpers.",
+          "suggestion": "Add a top-level JSDoc comment describing the module's responsibility and usage patterns."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks module-level documentation explaining its purpose and the role of the generated helpers.",
+          "suggestion": "Add a top-level JSDoc comment describing the module's responsibility and usage patterns."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks module-level documentation explaining its purpose and the role of the generated helpers.",
+          "suggestion": "Add a top-level JSDoc comment describing the module's responsibility and usage patterns."
+        }
+      ],
+      "summary": {
+        "n": 13,
+        "bySeverity": {
+          "minor": 8,
+          "nit": 5
+        },
+        "byCategory": {
+          "correctness": 5,
+          "style": 3,
+          "documentation": 5
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 17,
+      "startedAt": "2026-08-24T12:08:53.195Z",
+      "durationMs": 1996,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 43,
+        "totalTokens": 25012,
+        "cost": 0.00207592
+      },
+      "findings": [],
+      "summary": {
+        "n": 0,
+        "bySeverity": {},
+        "byCategory": {}
+      },
+      "error": null
+    },
+    {
+      "run": 18,
+      "startedAt": "2026-08-24T12:08:55.194Z",
+      "durationMs": 18524,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 948,
+        "totalTokens": 25917,
+        "cost": 0.00365967
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 25,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: guardStep1 through guardStep19 are identical implementations. Consider consolidating to a single exported function or a factory to reduce maintenance burden.",
+          "suggestion": "Replace the 19 near-identical functions with a single normalizeInput(input: string): string helper, or generate them programmatically if the names are required."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 15,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: cliStep1 through cliStep19 are identical implementations. Consider consolidating to a single exported function or a factory to reduce maintenance burden.",
+          "suggestion": "Replace the 19 near-identical functions with a single normalizeInput(input: string): string helper, or generate them programmatically if the names are required."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: processorTestStep1 through processorTestStep18 are identical implementations. Consider consolidating to a single exported function or a factory to reduce maintenance burden.",
+          "suggestion": "Replace the 18 near-identical functions with a single normalizeInput(input: string): string helper, or generate them programmatically if the names are required."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: Multiple functions (drainPendingBatchFromBATCH1 through drainPendingBatchFromBATCH49) are near-identical. The constant batchDefaults is redeclared multiple times, which is confusing and error-prone.",
+          "suggestion": "Consolidate the batch logic into a few reusable helpers. Avoid redeclaring constants; export a single batchDefaults at module scope."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive code: Multiple functions (consumeRetryBudgetFromBUDGET1 and others) are near-identical. The constant budgetDefaults is redeclared multiple times, which is confusing and error-prone.",
+          "suggestion": "Consolidate the budget logic into a few reusable helpers. Avoid redeclaring constants; export a single budgetDefaults at module scope."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 3,
+          "endLine": 3,
+          "severity": "minor",
+          "category": "style",
+          "description": "Import path uses relative './internal/log-safe-path.ts' instead of the @/* alias required by repo rules.",
+          "suggestion": "Change import to use the @/* alias, e.g., '@/internal/log-safe-path' or the appropriate alias as defined in the project."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 3,
+          "endLine": 3,
+          "severity": "minor",
+          "category": "style",
+          "description": "Import path uses relative './verdict-engine.ts' instead of the @/* alias required by repo rules.",
+          "suggestion": "Change import to use the @/* alias, e.g., '@/verdict-engine' or the appropriate alias as defined in the project."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "minor": 7
+        },
+        "byCategory": {
+          "style": 7
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 19,
+      "startedAt": "2026-08-24T12:09:13.725Z",
+      "durationMs": 38774,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1362,
+        "totalTokens": 26331,
+        "cost": 0.00438417
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 31,
+          "endLine": 169,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Massive code duplication: 19 identical guardStep functions that only differ by their suffix number. This creates a maintenance nightmare where any change must be replicated across all functions. Consider using a single function with a parameter or generating these functions programmatically.",
+          "suggestion": "Replace the duplicated functions with a single guardStep(stepNumber: number, input: string) function or use a factory pattern to generate them."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Code duplication: 19 identical cliStep functions with only numeric suffix differences. This pattern is repeated across multiple files in the PR.",
+          "suggestion": "Consolidate into a single cliStep(stepNumber: number, input: string) function."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 13,
+          "endLine": 158,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Code duplication: 18 identical processorTestStep functions with only numeric suffix differences.",
+          "suggestion": "Replace with a single processorTestStep(stepNumber: number, input: string) function."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Multiple issues: 1) Code duplication with 49 nearly identical functions. 2) Variable 'batchDefaults' is redeclared multiple times (lines 13, 29, 45, etc.) which could cause runtime errors in strict mode. 3) Functions like drainPendingBatchFromBATCH3 are identical to drainPendingBatch but with different names.",
+          "suggestion": "1) Remove duplicate batchDefaults declarations. 2) Consolidate similar functions. 3) Use a single drainPendingBatch function with optional parameters."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 7,
+          "endLine": 11,
+          "severity": "minor",
+          "category": "security",
+          "description": "Path validation regex SAFE_PATH_RE allows forward slashes anywhere in the path, which could allow directory traversal attacks if used for file access without additional checks. The regex should anchor the path and validate it doesn't contain '..' sequences.",
+          "suggestion": "Consider strengthening the path validation to prevent directory traversal, e.g., by checking for '..' and ensuring the path stays within expected boundaries."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Similar to queue-drain.ts, this file has massive code duplication and redeclares 'budgetDefaults' multiple times (lines 8, 20, 32, etc.).",
+          "suggestion": "Remove duplicate variable declarations and consolidate the nearly identical functions."
+        }
+      ],
+      "summary": {
+        "n": 6,
+        "bySeverity": {
+          "major": 5,
+          "minor": 1
+        },
+        "byCategory": {
+          "correctness": 5,
+          "security": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 20,
+      "startedAt": "2026-08-24T12:09:52.506Z",
+      "durationMs": 21757,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture-irregular",
+        "rung": "base",
+        "inputSha256": "0b66e3d2b1e296c654c6900df05adbee100e6a80b478633f0d0fea8e2bac9abd",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "f9fa9ca37d5b071f69837d44494f0959ab5f77111ccfd8fd7b4bd829ddad15df"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24969,
+        "outputTokens": 1417,
+        "totalTokens": 26386,
+        "cost": 0.00448042
+      },
+      "findings": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File contains 20 nearly identical sections with duplicated content. This suggests generated or test data that may not need to be version controlled.",
+          "suggestion": "Consider whether this fixture data is necessary in the repository or if it can be generated programmatically during tests."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File contains 20 nearly identical sections with duplicated content. This suggests generated or test data that may not need to be version controlled.",
+          "suggestion": "Consider whether this fixture data is necessary in the repository or if it can be generated programmatically during tests."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File contains 20 nearly identical sections with duplicated content. This suggests generated or test data that may not need to be version controlled.",
+          "suggestion": "Consider whether this fixture data is necessary in the repository or if it can be generated programmatically during tests."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 19,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Contains 19 near-identical functions (guardStep1 through guardStep19) with the same implementation. This code duplication makes maintenance difficult.",
+          "suggestion": "Refactor to use a single generic function or a factory pattern to eliminate duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 15,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Contains 19 near-identical functions (cliStep1 through cliStep19) with the same implementation. This code duplication makes maintenance difficult.",
+          "suggestion": "Refactor to use a single generic function or a factory pattern to eliminate duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Contains 18 near-identical functions (processorTestStep1 through processorTestStep18) with the same implementation. This code duplication makes maintenance difficult.",
+          "suggestion": "Refactor to use a single generic function or a factory pattern to eliminate duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 7,
+          "endLine": 385,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Contains multiple near-identical function groups (drainPendingBatchFromBATCH1 through drainPendingBatchFromBATCH49) with duplicated implementations.",
+          "suggestion": "Refactor to use a single generic function or a factory pattern to eliminate duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Contains multiple near-identical function groups (consumeRetryBudgetFromBUDGET1 through consumeRetryBudgetFromBUDGET8) with duplicated implementations.",
+          "suggestion": "Refactor to use a single generic function or a factory pattern to eliminate duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The file lacks documentation explaining the purpose of the numerous step functions and why they need to be separate.",
+          "suggestion": "Add documentation explaining the design rationale for the duplicated functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The file lacks documentation explaining the purpose of the numerous step functions and why they need to be separate.",
+          "suggestion": "Add documentation explaining the design rationale for the duplicated functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The file lacks documentation explaining the purpose of the numerous step functions and why they need to be separate.",
+          "suggestion": "Add documentation explaining the design rationale for the duplicated functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "startLine": 1,
+          "endLine": 385,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The file lacks documentation explaining the purpose of the numerous batch functions and why they need to be separate.",
+          "suggestion": "Add documentation explaining the design rationale for the duplicated functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "startLine": 1,
+          "endLine": 379,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The file lacks documentation explaining the purpose of the numerous budget functions and why they need to be separate.",
+          "suggestion": "Add documentation explaining the design rationale for the duplicated functions."
+        }
+      ],
+      "summary": {
+        "n": 13,
+        "bySeverity": {
+          "minor": 8,
+          "nit": 5
+        },
+        "byCategory": {
+          "correctness": 8,
+          "documentation": 5
+        }
+      },
+      "error": null
+    }
+  ]
+}

@@ -103,4 +103,73 @@ grading — stop, record, no read-off for it.
 
 ## Results
 
-(appended after the runs; nothing above this heading changes)
+### Runs (2026-08-24)
+
+| Arm | Command                                                                        | Gradeable | Notes                                                                                                                                                       |
+| --- | ------------------------------------------------------------------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A   | `--variant fixture --rung base --n 20 --pre-note --ordered` (+ `--n 1` top-up) | **20/20** | 1 attempt failed with `AI_NoObjectGeneratedError` (known glm envelope drift); topped up to reach the pre-registered 20 gradeable rather than reading off 19 |
+| B   | `--variant fixture-irregular --rung base --n 20 --pre-note`                    | **20/20** | 0 failures                                                                                                                                                  |
+
+All runs `provider: Venice`, `noteActive: false`. Arm A's manifest records
+`ordered: true`, cut in `d-filler-07.ts`, overCap 5 — matching the placement
+gate. **Total spend $3.44** (finder $0.24 + grader $3.20) of the $15 stop.
+
+### Arm A — ordered: **DROP**
+
+|                     | fixture base arm | **arm A (ordered)** |
+| ------------------- | ---------------- | ------------------- |
+| fabricationRuns     | 11/20            | **7/20**            |
+| m1Runs              | 5                | 2                   |
+| M1 / M2 / M3 / none | 5 / 0 / 23 / 139 | 2 / 1 / 6 / 177     |
+| findings            | 167              | 186                 |
+
+Read-off vs B_fixture = 11: **7 ≤ 7 → DROP.**
+
+**PR #164's source-first ordering measurably reduces fabrication** on
+byte-identical input — previously asserted only by construction.
+
+- ⚠️ **The margin is ONE RUN.** 7 is exactly the DROP threshold; 8 would have
+  read UNCHANGED. This is a boundary result, not a comfortable one.
+- Directional prediction **HELD** (predicted DROP or low-UNCHANGED).
+- Mechanism sub-prediction **PARTIALLY FAILED**: M1 persisted as predicted
+  (2 findings, both the D4 `z-processor.ts` shape), but the predicted _new_
+  M1 flavour — absence claims about the now-over-cap prose — **did not
+  appear at all**. Zero M1 findings cite a prose file.
+- Unpredicted: **M2 appeared (1)** where the base arm had none, and **zero
+  invented-path findings** occurred despite identical uniformly-named content
+  (the base arm had 8). See the decision's confound note.
+
+### Arm B — irregular: **NOT REPRESENTATIVE**, hypothesis falsified
+
+|                     | CI baseline       | fixture base     | **arm B (irregular)** |
+| ------------------- | ----------------- | ---------------- | --------------------- |
+| fabricationRuns     | 17/20             | 11/20            | **2/20**              |
+| M1 / M2 / M3 / none | 10 / 6 / 48 / 102 | 5 / 0 / 23 / 139 | 1 / 1 / 1 / 146       |
+
+Read-off vs B = 17: |2 − 17| = 15 → **FAIL. NOT REPRESENTATIVE**, and _further_
+from the baseline than the fixture it was meant to improve.
+
+- **Primary mechanism prediction HELD:** invented-path findings = **0**, across
+  all 149 findings, not just the flagged ones.
+- The pre-registered fallback reading therefore applies verbatim: "the naming
+  artifact was real but was not the (only) cause of the rate gap". Stronger
+  than that — removing it made the fixture _less_ representative, because those
+  invented-path findings were themselves graded M3 and were **inflating** the
+  base arm's 11/20.
+
+### Hand-read — both arms VALID
+
+`reviews/hand-read.md`. Arm A: 18 agree, 1 misgrade → **5.3%**. Arm B: 13
+agree, 0 misgrades → **0%**. Both below the 15% bar. Arm A's misgrade leaves
+`fabricationRuns` at 7/20, so the DROP read-off is unchanged.
+
+### ⚠️ Confound found in arm B (instrument defect, mine)
+
+`queue-drain.ts` in `fixture-irregular.diff` declares `const batchDefaults`
+**16 times in one file** — a real TypeScript compile error emitted by the
+`irregularBody` generator. Two controls correctly reported it as a true defect.
+
+Arm B's rate therefore has two live explanations it cannot separate: the
+registered naming hypothesis, or simply that the model had genuine bugs to
+report instead of inventing. The **mechanism** result (0 invented paths) stands
+regardless; the **rate** result is confounded. Recorded in `decision.md`.

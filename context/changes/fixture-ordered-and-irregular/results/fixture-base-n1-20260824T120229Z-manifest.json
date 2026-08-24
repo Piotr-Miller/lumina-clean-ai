@@ -1,0 +1,89 @@
+{
+  "variant": "fixture",
+  "rung": "base",
+  "recipe": "diff e8ebb66...9c49a0c -- . :(exclude,glob)**/reviews/*.md :(exclude)context/changes/impl-review-ci-agent/plan.md",
+  "rawBytes": 190852,
+  "sentBytes": 100030,
+  "inputSha256": "3617b8cce8b20c8696e3c388bee2c01f2be336f665b5be0c292ac28bd33fe3f7",
+  "rulesRef": "e8ebb66",
+  "rulesChars": 2915,
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "0e359ee5411ecac2dfecc1828c9812743b3036f4be96d94a1e32a7d697cf3779",
+  "rlocContext": null,
+  "model": "z-ai/glm-4.6",
+  "totalBytes": 190852,
+  "capBytes": 100000,
+  "truncated": true,
+  "window": [
+    {
+      "path": "packages/fixturepkg/src/a-guard.ts",
+      "startByte": 0,
+      "endByte": 7155,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/b-cli.ts",
+      "startByte": 7155,
+      "endByte": 14016,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/c-processor.test.ts",
+      "startByte": 14016,
+      "endByte": 20932,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/d-filler-01.ts",
+      "startByte": 20932,
+      "endByte": 33567,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/d-filler-02.ts",
+      "startByte": 33567,
+      "endByte": 46202,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/d-filler-03.ts",
+      "startByte": 46202,
+      "endByte": 58837,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/d-filler-04.ts",
+      "startByte": 58837,
+      "endByte": 71472,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/d-filler-05.ts",
+      "startByte": 71472,
+      "endByte": 84107,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/d-filler-06.ts",
+      "startByte": 84107,
+      "endByte": 96742,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/d-filler-07.ts",
+      "startByte": 96742,
+      "endByte": 109377,
+      "complete": false
+    }
+  ],
+  "cutFile": "packages/fixturepkg/src/d-filler-07.ts",
+  "cutOffsetInFile": 3258,
+  "overCap": [
+    "packages/fixturepkg/src/d-filler-08.ts",
+    "packages/fixturepkg/src/z-processor.ts",
+    "context/fixture/notes-01-plan.md",
+    "context/fixture/notes-02-research.md",
+    "context/fixture/notes-03-verification.md"
+  ],
+  "ordered": true
+}

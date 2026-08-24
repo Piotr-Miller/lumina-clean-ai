@@ -1,0 +1,123 @@
+{
+  "variant": "fixture",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260824T120229Z",
+  "inputSha256": "3617b8cce8b20c8696e3c388bee2c01f2be336f665b5be0c292ac28bd33fe3f7",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "0e359ee5411ecac2dfecc1828c9812743b3036f4be96d94a1e32a7d697cf3779",
+  "plannedAttempts": 1,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-24T12:02:29.534Z",
+      "durationMs": 17791,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "3617b8cce8b20c8696e3c388bee2c01f2be336f665b5be0c292ac28bd33fe3f7",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "97fc10c504e297dd92f197469aae5fc504d4c9345862e3086ec46e3ff550aaf2"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 26949,
+        "outputTokens": 904,
+        "totalTokens": 27853,
+        "cost": 0.01317007
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 4,
+          "endLine": 4,
+          "severity": "minor",
+          "category": "security",
+          "description": "The SAFE_PATH_RE regex allows forward slashes at the beginning and end of paths, which could enable directory traversal attacks if used to construct filesystem paths. Consider anchoring more strictly or using a dedicated path validation library.",
+          "suggestion": "Use /^[A-Za-z0-9._-]+$/ to disallow slashes entirely, or validate paths separately if traversal is needed."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 20,
+          "endLine": 169,
+          "severity": "nit",
+          "category": "style",
+          "description": "The guardStep1 through guardStep19 functions are identical implementations. This duplication increases maintenance burden and code size.",
+          "suggestion": "Extract the common logic into a single helper function and call it with different step identifiers if needed."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 3,
+          "endLine": 3,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Import path uses .ts extension which may cause issues depending on the runtime configuration. Deno requires it but Node.js does not.",
+          "suggestion": "Ensure consistent import behavior across target runtimes or use a build step to handle extensions."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 10,
+          "endLine": 10,
+          "severity": "minor",
+          "category": "security",
+          "description": "The logSafePath function is referenced but not defined in this file. Ensure it properly sanitizes control characters to prevent log injection.",
+          "suggestion": "Verify the implementation of logSafePath in the referenced internal module."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 15,
+          "endLine": 164,
+          "severity": "nit",
+          "category": "style",
+          "description": "The cliStep1 through cliStep19 functions are identical implementations, duplicating the same pattern as in a-guard.ts.",
+          "suggestion": "Refactor to use a shared helper function to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 8,
+          "endLine": 8,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Test expects processReview(null) to throw but doesn't specify what error. Tests should be explicit about expected error types/messages.",
+          "suggestion": "Use expect(() => processReview(null)).toThrow(ExpectedErrorType) or check error message."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "nit",
+          "category": "style",
+          "description": "The processorTestStep1 through processorTestStep18 functions are identical boilerplate, adding unnecessary noise to the test file.",
+          "suggestion": "Move shared test utilities to a separate test helpers file."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "The entire file consists of 37 identical functions (filler1Step1 through filler1Step37). This pattern is repeated across multiple filler files.",
+          "suggestion": "Consider if these files are necessary or if they can be generated/removed to reduce repository bloat."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "minor": 4,
+          "nit": 4
+        },
+        "byCategory": {
+          "security": 2,
+          "style": 4,
+          "correctness": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    }
+  ]
+}
