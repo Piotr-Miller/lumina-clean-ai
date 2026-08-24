@@ -1,7 +1,8 @@
 ---
 change_id: r5-note-revert
 title: "Revert the finder truncation note — its live check found the tool channel inert"
-status: implemented
+status: archived
+archived_at: 2026-08-24T18:10:00Z
 created: 2026-08-24
 updated: 2026-08-24
 ---
