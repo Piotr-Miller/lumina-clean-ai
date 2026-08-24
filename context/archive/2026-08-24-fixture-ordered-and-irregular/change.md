@@ -1,7 +1,8 @@
 ---
 change_id: fixture-ordered-and-irregular
 title: "Two fixture arms: does ordering reduce fabrication, and does irregular naming fix the fixture?"
-status: implemented
+status: archived
+archived_at: 2026-08-24T12:20:00Z
 created: 2026-08-24
 updated: 2026-08-24
 ---
