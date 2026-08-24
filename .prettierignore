@@ -1,3 +1,13 @@
 # Managed skill trees + manifest-hashed prompts — byte fidelity vs .claude/.10x-cli-manifest.json required, never format
 .claude/
 .agents/
+
+# Archived changes are IMMUTABLE, and several pin sha256 hashes of their own
+# ground truth in verification.md. Same reason as the trees above: byte
+# fidelity is the point, so formatting them is destructive, not cosmetic.
+# `npm run format` reformatted 150+ files here in one run (and rewrote CRLF->LF
+# in documents committed months ago) before this entry existed; it was caught
+# and reverted by hand. A prettier pass that lands AFTER a hash is taken is
+# exactly the freeze violation guarded in fabrication-grade.mjs
+# (assertGroundTruthFrozen) — that one cost a paid measurement arm.
+context/archive/

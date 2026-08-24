@@ -43,6 +43,7 @@ const result = (overrides: Partial<PipelineResult> = {}): PipelineResult => ({
   verdictReason: "looks solid",
   diffStats: { files: 1, additions: 2, deletions: 1 },
   diffTruncated: false,
+  offDiffFindingPaths: [],
   bodyTruncated: false,
   droppedFindingIdRefs: 0,
   models: { finder: "cheap/finder", judge: "big/judge" },
@@ -96,9 +97,7 @@ describe("renderStickyComment", () => {
   it("notes diff/body truncation and dropped references only when present", () => {
     const clean = renderStickyComment(result());
     expect(clean).not.toContain("⚠️");
-    const noisy = renderStickyComment(
-      result({ diffTruncated: true, bodyTruncated: true, droppedFindingIdRefs: 2 }),
-    );
+    const noisy = renderStickyComment(result({ diffTruncated: true, bodyTruncated: true, droppedFindingIdRefs: 2 }));
     expect(noisy).toContain("diff truncated at 100 KB");
     expect(noisy).toContain("PR body truncated at 2,000 chars");
     expect(noisy).toContain("2 unknown finding reference(s)");
@@ -140,16 +139,12 @@ describe("renderStickyComment (model-controlled Markdown isolation)", () => {
   });
 
   it("keeps a backtick-carrying file path inside its code span", () => {
-    const comment = renderStickyComment(
-      result({ findings: [identified("F1", { file: "src/a`.ts" })] }),
-    );
+    const comment = renderStickyComment(result({ findings: [identified("F1", { file: "src/a`.ts" })] }));
     expect(comment).toContain("``src/a`.ts:5``");
   });
 
   it("renders a file-level finding as its path alone, never file:0", () => {
-    const comment = renderStickyComment(
-      result({ findings: [identified("F1", { startLine: undefined })] }),
-    );
+    const comment = renderStickyComment(result({ findings: [identified("F1", { startLine: undefined })] }));
     expect(comment).toContain("`src/a.ts`");
     expect(comment).not.toContain("src/a.ts:0");
   });
@@ -363,7 +358,12 @@ describe("renderStickyComment gated implementation review", () => {
   // something false about their own PR.
   it("names the gate rather than borrowing the no-plan wording", () => {
     const comment = renderStickyComment(
-      result({ implReview: { status: "skipped", reason: "the code review did not pass, so the implementation review was not run" } }),
+      result({
+        implReview: {
+          status: "skipped",
+          reason: "the code review did not pass, so the implementation review was not run",
+        },
+      }),
     );
     expect(comment).toContain("Implementation review — not run");
     expect(comment).toContain("the code review did not pass");
@@ -377,5 +377,18 @@ describe("renderStickyComment gated implementation review", () => {
     );
     expect(comment).not.toMatch(/^# heading/mu);
     expect(comment).toContain("@<!-- -->someone");
+  });
+});
+
+describe("off-diff finding warning", () => {
+  it("warns beside the verdict, naming every off-diff path", () => {
+    const md = renderStickyComment(result({ offDiffFindingPaths: ["packages/fixturepkg/src/plan-guard.ts"] }));
+    expect(md).toContain("do not appear in this PR's diff at all");
+    expect(md).toContain("`packages/fixturepkg/src/plan-guard.ts`");
+    expect(md).toContain("Treat those findings as unreliable");
+  });
+
+  it("says nothing at all in the healthy case", () => {
+    expect(renderStickyComment(result())).not.toContain("do not appear in this PR's diff");
   });
 });
