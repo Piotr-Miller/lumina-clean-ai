@@ -77,3 +77,7 @@ the same case and now sits beside them.
 - [x] `npm run format` now touches **0** files under `context/archive/` (was
       ~130); the remaining repo-wide churn is pre-existing and was reverted, not
       committed
+
+---
+
+**Archived 2026-08-24.** Shipped in PR #184.
