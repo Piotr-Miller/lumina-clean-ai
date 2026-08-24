@@ -79,3 +79,7 @@ that a subtree must **never** be added there to silence drift.
 - [x] package: lint, typecheck — 21 files / 608 tests
 - [x] `AGENTS.md` corrected: the `code-reviewer` job is that package's only
       **lint/type/test** coverage, but no longer its formatting coverage
+
+---
+
+**Archived 2026-08-24.** Shipped in PR #185.
