@@ -43,6 +43,10 @@ import {
   resultExtensionFromContentType,
   verifyReplicateSignature,
 } from "../../../src/lib/services/replicate-webhook.ts";
+// Side-effect-free core, extracted so it is reachable by `deno test` — this
+// module runs Sentry.init + Deno.serve at top level and so cannot itself be
+// imported by a test (change `edge-function-test-harness`).
+import { createPredictionWithBurstRetry, REPLICATE_PREDICTIONS_URL } from "./replicate-create.ts";
 
 // Sentry (Edge / Deno runtime). DSN is a Supabase Edge secret
 // (`supabase secrets set SENTRY_DSN=…`) — same project as the app, NOT a Worker
@@ -157,7 +161,6 @@ setObservabilityWarnCapture((message) => {
 // source-cleanup gap is pre-existing (24h retention sweep) and tracked by S-08.
 // A 300s TTL was the cold-boot reliability gap S-09 closes.
 const SOURCE_URL_TTL_SECONDS = 3600;
-const REPLICATE_PREDICTIONS_URL = "https://api.replicate.com/v1/predictions";
 const PHOTOS_BUCKET = "photos";
 // Kickoff-race backstop: the DB webhook fires /start on the `queued` INSERT, but
 // the client PUTs the source object only AFTER create-job returns. When the
@@ -170,24 +173,10 @@ const SOURCE_SIGN_RETRY_DELAY_MS = 750;
 // Cap how much Replicate error text we persist/return: the body can echo the
 // signed source URL, and error_message is read by the owner. Bound it.
 const MAX_ERROR_DETAIL_CHARS = 300;
-// Replicate burst-limit backoff (roadmap Parked → "Replicate burst-limit
-// backoff (S-04)"). `predictions.create` can answer 429 when the per-account
-// burst limit is hit by rapid resubmits; without a retry that transient
-// surfaces to the user as a terminal `start_failed` on a job that would have
-// succeeded a second later. This is SMOOTHING, not a cost bound — S-05's
-// daily cap is the structural spend guard and is unaffected.
+// The Replicate burst-limit backoff (429 retry) and its constants now live in
+// ./replicate-create.ts so `deno test` can reach them — see that module's
+// header. Behavior is unchanged; only the location moved.
 //
-// Narrow by construction, same discipline as signSourceWithRetry: 429 only
-// (any other non-2xx still fails fast), and only for a rejected create — a
-// 429 means Replicate accepted nothing, so replaying cannot double-spend or
-// orphan a prediction. Two extra attempts with a short backoff keep the worst
-// case ~2s (or ~10s when Replicate asks for longer), well inside the /start
-// invocation budget and pg_net's fire-and-forget window.
-const PREDICTION_CREATE_MAX_ATTEMPTS = 3;
-const PREDICTION_CREATE_RETRY_DELAYS_MS = [500, 1_500];
-// Honour Retry-After when Replicate sends it, but never sleep unboundedly on
-// a header we do not control.
-const PREDICTION_CREATE_MAX_RETRY_AFTER_MS = 5_000;
 // /callback output-download bounds: a slow or oversized response must not hang or
 // OOM the function. 30s is generous for a CDN image fetch; 25 MB mirrors the
 // photos bucket limit, so a legitimate Bread output always fits.
@@ -334,57 +323,6 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Retry-After in ms, or null when the header is absent or unusable.
- * Replicate sends the delta-seconds form; the HTTP-date form is accepted too
- * because the spec allows it. Anything non-finite, negative, or past the cap
- * degrades to the caller's own backoff rather than a surprise long sleep.
- */
-function retryAfterMs(header: string | null): number | null {
-  if (!header) return null;
-  const trimmed = header.trim();
-  if (trimmed === "") return null;
-  const seconds = Number(trimmed);
-  const ms = Number.isFinite(seconds) ? seconds * 1_000 : Date.parse(trimmed) - Date.now();
-  if (!Number.isFinite(ms) || ms <= 0) return null;
-  return Math.min(ms, PREDICTION_CREATE_MAX_RETRY_AFTER_MS);
-}
-
-/**
- * POST predictions.create, retrying ONLY a 429 burst-limit rejection.
- *
- * Safe to replay: a 429 means Replicate created nothing, so no attempt can
- * double-spend or orphan a prediction. Every other outcome — success, 4xx,
- * 5xx, timeout — is returned or thrown on the first attempt exactly as
- * before, so this narrows to the one transient it is meant to smooth.
- */
-async function createPredictionWithBurstRetry(token: string, body: Record<string, unknown>): Promise<Response> {
-  let res!: Response;
-  for (let attempt = 1; attempt <= PREDICTION_CREATE_MAX_ATTEMPTS; attempt++) {
-    res = await fetch(REPLICATE_PREDICTIONS_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      // Bound the kickoff POST so a hung Replicate API call can't stall the
-      // invocation with the row stuck `processing` (#2). Reuse the 30s output
-      // budget, mirroring the /callback output fetch. Applied per attempt.
-      signal: AbortSignal.timeout(OUTPUT_FETCH_TIMEOUT_MS),
-    });
-    if (res.status !== 429 || attempt === PREDICTION_CREATE_MAX_ATTEMPTS) return res;
-    // The body is not read here: returning it unread on the final attempt is
-    // what lets the caller build its bounded error detail unchanged.
-    const wait = retryAfterMs(res.headers.get("Retry-After")) ?? PREDICTION_CREATE_RETRY_DELAYS_MS[attempt - 1];
-    console.warn(
-      `enhance/start: Replicate predictions.create returned 429 (burst limit) on attempt ${attempt}/` +
-        `${PREDICTION_CREATE_MAX_ATTEMPTS}; retrying in ${wait}ms`,
-    );
-    await delay(wait);
-  }
-  return res;
-}
 
 // A "not found" signing failure means the client's source upload hasn't landed
 // yet (the kickoff race). Distinguish it from real errors so only the race is
@@ -498,7 +436,11 @@ async function handleStart(req: Request): Promise<Response> {
       return jsonResponse(200, { skipped: "already_claimed_or_terminal" });
     }
 
-    const predictionRes = await createPredictionWithBurstRetry(replicateToken, predictionBody);
+    // Reuses the 30s output budget, mirroring the /callback output fetch;
+    // applied per attempt inside the helper.
+    const predictionRes = await createPredictionWithBurstRetry(replicateToken, predictionBody, {
+      timeoutMs: OUTPUT_FETCH_TIMEOUT_MS,
+    });
 
     if (!predictionRes.ok) {
       predictionCreateStatus = predictionRes.status;

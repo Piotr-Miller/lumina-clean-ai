@@ -44,7 +44,17 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno check --config supabase/functions/enhance/deno.json supabase/functions/enhance/index.ts
+      # The whole directory, not just index.ts: the extracted side-effect-free
+      # modules and their tests must be type-checked too, or a break in them
+      # would only surface at `deno test` (or, worse, at deploy).
+      - run: deno check --config supabase/functions/enhance/deno.json supabase/functions/enhance/
+      # Behavioural coverage for the Edge Function (change
+      # `edge-function-test-harness`). Until this existed, `deno check` plus a
+      # stubbed E2E was the function's entire coverage — and the E2E Replicate
+      # stub never returns 429, so the burst-limit retry shipped unexercised.
+      # Hermetic: fetch/sleep are injected, so no network, no secrets, no real
+      # backoff waiting — fork-PR-safe and fast.
+      - run: deno test --config supabase/functions/enhance/deno.json supabase/functions/enhance/
       - run: npm run build
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
