@@ -162,9 +162,13 @@ function irregularBody(mod, seed) {
       `  return handled;`,
       `}`,
     ],
+    // NOTE: this variant must NOT declare `${mod.noun}Defaults` — the file
+    // header declares it once. Emitting it here put 16 duplicate `const`
+    // declarations in one file, a REAL compile error that confounded the
+    // first irregular arm: two hand-read controls correctly reported it as a
+    // true defect, so that arm could not tell "irregular naming reduced
+    // fabrication" from "the model had genuine bugs to report instead".
     [
-      `const ${mod.noun}Defaults = { attempts: 3, backoffMs: 250, jitter: true };`,
-      "",
       `export function ${mod.fn}(overrides: Partial<typeof ${mod.noun}Defaults> = {}) {`,
       `  const merged = { ...${mod.noun}Defaults, ...overrides };`,
       `  if (merged.attempts < 1) throw new Error("attempts must be positive");`,
@@ -178,6 +182,10 @@ function irregularBody(mod, seed) {
 function irregularFile(mod, targetBytes, seed) {
   const lines = [
     `// ${mod.file.replace(".ts", "")}: ${mod.noun} handling for the review runner.`,
+    "",
+    // Declared ONCE per file. The defaults object is referenced by one of the
+    // body variants below; emitting it per-body is the duplicate-const bug.
+    `const ${mod.noun}Defaults = { attempts: 3, backoffMs: 250, jitter: true };`,
     "",
   ];
   let i = 0;

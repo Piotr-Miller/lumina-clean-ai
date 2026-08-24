@@ -1,0 +1,4783 @@
+diff --git a/context/fixture/notes-01-plan.md b/context/fixture/notes-01-plan.md
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/context/fixture/notes-01-plan.md
+@@ -0,0 +1,362 @@
++# Plan notes
++
++## Section 1 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 1 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 1 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 1 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 2 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 2 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 2 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 2 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 3 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 3 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 3 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 3 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 4 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 4 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 4 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 4 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 5 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 5 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 5 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 5 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 6 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 6 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 6 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 6 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 7 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 7 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 7 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 7 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 8 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 8 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 8 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 8 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 9 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 9 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 9 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 9 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 10 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 10 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 10 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 10 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 11 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 11 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 11 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 11 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 12 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 12 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 12 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 12 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 13 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 13 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 13 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 13 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 14 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 14 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 14 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 14 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 15 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 15 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 15 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 15 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 16 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 16 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 16 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 16 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 17 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 17 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 17 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 17 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 18 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 18 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 18 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 18 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 19 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 19 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 19 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 19 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 20 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 20 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 20 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 20 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
+diff --git a/context/fixture/notes-02-research.md b/context/fixture/notes-02-research.md
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/context/fixture/notes-02-research.md
+@@ -0,0 +1,362 @@
++# Research notes
++
++## Section 1 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 1 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 1 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 1 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 2 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 2 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 2 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 2 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 3 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 3 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 3 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 3 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 4 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 4 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 4 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 4 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 5 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 5 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 5 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 5 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 6 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 6 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 6 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 6 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 7 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 7 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 7 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 7 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 8 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 8 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 8 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 8 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 9 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 9 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 9 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 9 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 10 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 10 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 10 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 10 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 11 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 11 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 11 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 11 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 12 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 12 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 12 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 12 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 13 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 13 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 13 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 13 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 14 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 14 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 14 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 14 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 15 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 15 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 15 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 15 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 16 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 16 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 16 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 16 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 17 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 17 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 17 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 17 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 18 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 18 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 18 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 18 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 19 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 19 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 19 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 19 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 20 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 20 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 20 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 20 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
+diff --git a/context/fixture/notes-03-verification.md b/context/fixture/notes-03-verification.md
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/context/fixture/notes-03-verification.md
+@@ -0,0 +1,362 @@
++# Verification notes
++
++## Section 1 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 1 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 1 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 1 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 2 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 2 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 2 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 2 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 3 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 3 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 3 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 3 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 4 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 4 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 4 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 4 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 5 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 5 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 5 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 5 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 6 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 6 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 6 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 6 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 7 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 7 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 7 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 7 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 8 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 8 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 8 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 8 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 9 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 9 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 9 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 9 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 10 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 10 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 10 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 10 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 11 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 11 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 11 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 11 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 12 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 12 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 12 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 12 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 13 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 13 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 13 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 13 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 14 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 14 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 14 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 14 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 15 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 15 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 15 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 15 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 16 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 16 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 16 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 16 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 17 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 17 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 17 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 17 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 18 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 18 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 18 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 18 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 19 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 19 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 19 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 19 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 20 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 20 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 20 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 20 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
+diff --git a/packages/fixturepkg/src/plan-guard.ts b/packages/fixturepkg/src/plan-guard.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/plan-guard.ts
+@@ -0,0 +1,169 @@
++// Plan resolution guards. Both defences below are deliberately explicit.
++
++// D1: the option/path separator is present, so a path that begins with a
++// dash can never be parsed as an option.
++export const LS_TREE_ARGS = (sha: string, path: string) => ["ls-tree", sha, "--", path];
++
++// D2: an explicit safe path set, anchored at both ends. Anything outside
++// this class — whitespace, shell metacharacters, control characters — is
++// rejected before the value is used.
++export const SAFE_PATH_RE = /^[A-Za-z0-9._/-]+$/;
++
++export function isSafePlanPath(candidate: string): boolean {
++  return SAFE_PATH_RE.test(candidate);
++}
++
++// guard — generated review helpers.
++
++/** Step 1 of guard: normalises one review input before grading. */
++export function guardStep1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of guard: normalises one review input before grading. */
++export function guardStep2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of guard: normalises one review input before grading. */
++export function guardStep3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of guard: normalises one review input before grading. */
++export function guardStep4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of guard: normalises one review input before grading. */
++export function guardStep5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of guard: normalises one review input before grading. */
++export function guardStep6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of guard: normalises one review input before grading. */
++export function guardStep7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of guard: normalises one review input before grading. */
++export function guardStep8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of guard: normalises one review input before grading. */
++export function guardStep9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of guard: normalises one review input before grading. */
++export function guardStep10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of guard: normalises one review input before grading. */
++export function guardStep11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of guard: normalises one review input before grading. */
++export function guardStep12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of guard: normalises one review input before grading. */
++export function guardStep13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of guard: normalises one review input before grading. */
++export function guardStep14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of guard: normalises one review input before grading. */
++export function guardStep15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of guard: normalises one review input before grading. */
++export function guardStep16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of guard: normalises one review input before grading. */
++export function guardStep17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of guard: normalises one review input before grading. */
++export function guardStep18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of guard: normalises one review input before grading. */
++export function guardStep19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/review-cli.ts b/packages/fixturepkg/src/review-cli.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/review-cli.ts
+@@ -0,0 +1,164 @@
++// CLI entry for the review runner.
++import { logSafePath } from "./internal/log-safe-path.ts";
++
++export function reportResolvedPlan(planPath: string): void {
++  // logSafePath defuses control characters so a crafted path cannot forge
++  // or restyle log lines. The path itself is untrusted (it comes from the
++  // pull-request body), so it is never logged raw.
++  console.log(`resolved plan: ${logSafePath(planPath)}`);
++}
++
++// cli — generated review helpers.
++
++/** Step 1 of cli: normalises one review input before grading. */
++export function cliStep1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of cli: normalises one review input before grading. */
++export function cliStep2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of cli: normalises one review input before grading. */
++export function cliStep3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of cli: normalises one review input before grading. */
++export function cliStep4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of cli: normalises one review input before grading. */
++export function cliStep5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of cli: normalises one review input before grading. */
++export function cliStep6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of cli: normalises one review input before grading. */
++export function cliStep7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of cli: normalises one review input before grading. */
++export function cliStep8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of cli: normalises one review input before grading. */
++export function cliStep9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of cli: normalises one review input before grading. */
++export function cliStep10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of cli: normalises one review input before grading. */
++export function cliStep11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of cli: normalises one review input before grading. */
++export function cliStep12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of cli: normalises one review input before grading. */
++export function cliStep13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of cli: normalises one review input before grading. */
++export function cliStep14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of cli: normalises one review input before grading. */
++export function cliStep15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of cli: normalises one review input before grading. */
++export function cliStep16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of cli: normalises one review input before grading. */
++export function cliStep17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of cli: normalises one review input before grading. */
++export function cliStep18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of cli: normalises one review input before grading. */
++export function cliStep19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/verdict.test.ts b/packages/fixturepkg/src/verdict.test.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/verdict.test.ts
+@@ -0,0 +1,158 @@
++// Tests for the review processor. The implementation under test lives in
++// ./verdict-engine.ts.
++import { processReview } from "./verdict-engine.ts";
++
++test("processReview returns a verdict for a well-formed review", () => {
++  expect(processReview({ findings: [] }).verdict).toBe("passed");
++});
++
++test("processReview rejects an empty payload", () => {
++  expect(() => processReview(null)).toThrow();
++});
++
++// processorTest — generated review helpers.
++
++/** Step 1 of processorTest: normalises one review input before grading. */
++export function processorTestStep1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of processorTest: normalises one review input before grading. */
++export function processorTestStep2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of processorTest: normalises one review input before grading. */
++export function processorTestStep3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of processorTest: normalises one review input before grading. */
++export function processorTestStep4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of processorTest: normalises one review input before grading. */
++export function processorTestStep5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of processorTest: normalises one review input before grading. */
++export function processorTestStep6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of processorTest: normalises one review input before grading. */
++export function processorTestStep7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of processorTest: normalises one review input before grading. */
++export function processorTestStep8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of processorTest: normalises one review input before grading. */
++export function processorTestStep9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of processorTest: normalises one review input before grading. */
++export function processorTestStep10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of processorTest: normalises one review input before grading. */
++export function processorTestStep11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of processorTest: normalises one review input before grading. */
++export function processorTestStep12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of processorTest: normalises one review input before grading. */
++export function processorTestStep13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of processorTest: normalises one review input before grading. */
++export function processorTestStep14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of processorTest: normalises one review input before grading. */
++export function processorTestStep15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of processorTest: normalises one review input before grading. */
++export function processorTestStep16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of processorTest: normalises one review input before grading. */
++export function processorTestStep17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of processorTest: normalises one review input before grading. */
++export function processorTestStep18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/queue-drain.ts b/packages/fixturepkg/src/queue-drain.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/queue-drain.ts
+@@ -0,0 +1,388 @@
++// queue-drain: batch handling for the review runner.
++
++const batchDefaults = { attempts: 3, backoffMs: 250, jitter: true };
++
++export function drainPendingBatch(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH1(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH2(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH3(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH4(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH5(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH6(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH7(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH8(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH9(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH10(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH11(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH12(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH13(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH14(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH15(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH16(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH17(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH18(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH19(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH20(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH21(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH22(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH23(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH24(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH25(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH26(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH27(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH28(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH29(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH30(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH31(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH32(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH33(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH34(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH35(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH36(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH37(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH38(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH39(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH40(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH41(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH42(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH43(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH44(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH45(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH46(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH47(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH48(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH49(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH50(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH51(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function drainPendingBatchFromBATCH52(batch: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of batch) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function drainPendingBatchFromBATCH53(overrides: Partial<typeof batchDefaults> = {}) {
++  const merged = { ...batchDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function drainPendingBatchFromBATCH54(batch: string, limit = 64): string {
++  if (!batch) return "";
++  const parts = batch.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
+diff --git a/packages/fixturepkg/src/retry-budget.ts b/packages/fixturepkg/src/retry-budget.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/retry-budget.ts
+@@ -0,0 +1,376 @@
++// retry-budget: budget handling for the review runner.
++
++const budgetDefaults = { attempts: 3, backoffMs: 250, jitter: true };
++
++export async function consumeRetryBudget(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET1(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET2(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET3(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET4(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET5(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET6(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET7(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET8(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET9(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET10(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET11(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET12(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET13(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET14(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET15(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET16(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET17(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET18(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET19(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET20(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET21(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET22(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET23(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET24(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET25(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET26(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET27(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET28(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET29(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET30(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET31(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET32(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET33(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET34(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET35(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET36(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET37(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET38(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET39(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET40(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET41(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET42(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET43(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET44(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET45(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET46(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET47(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET48(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET49(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function consumeRetryBudgetFromBUDGET50(budget: string, limit = 64): string {
++  if (!budget) return "";
++  const parts = budget.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function consumeRetryBudgetFromBUDGET51(budget: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of budget) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function consumeRetryBudgetFromBUDGET52(overrides: Partial<typeof budgetDefaults> = {}) {
++  const merged = { ...budgetDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
+diff --git a/packages/fixturepkg/src/manifest-cache.ts b/packages/fixturepkg/src/manifest-cache.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/manifest-cache.ts
+@@ -0,0 +1,367 @@
++// manifest-cache: manifest handling for the review runner.
++
++const manifestDefaults = { attempts: 3, backoffMs: 250, jitter: true };
++
++export function readCachedManifest(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST1(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST2(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST3(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST4(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST5(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST6(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST7(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST8(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST9(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST10(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST11(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST12(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST13(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST14(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST15(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST16(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST17(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST18(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST19(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST20(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST21(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST22(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST23(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST24(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST25(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST26(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST27(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST28(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST29(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST30(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST31(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST32(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST33(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST34(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST35(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST36(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST37(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST38(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST39(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST40(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST41(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST42(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST43(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST44(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST45(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST46(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST47(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST48(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function readCachedManifestFromMANIFEST49(manifest: string, limit = 64): string {
++  if (!manifest) return "";
++  const parts = manifest.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function readCachedManifestFromMANIFEST50(manifest: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of manifest) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function readCachedManifestFromMANIFEST51(overrides: Partial<typeof manifestDefaults> = {}) {
++  const merged = { ...manifestDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
+diff --git a/packages/fixturepkg/src/token-bucket.ts b/packages/fixturepkg/src/token-bucket.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/token-bucket.ts
+@@ -0,0 +1,382 @@
++// token-bucket: bucket handling for the review runner.
++
++const bucketDefaults = { attempts: 3, backoffMs: 250, jitter: true };
++
++export function refillTokenBucket(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET1(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET2(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET3(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET4(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET5(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET6(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET7(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET8(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET9(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET10(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET11(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET12(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET13(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET14(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET15(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET16(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET17(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET18(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET19(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET20(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET21(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET22(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET23(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET24(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET25(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET26(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET27(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET28(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET29(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET30(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET31(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET32(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET33(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET34(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET35(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET36(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET37(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET38(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET39(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET40(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET41(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET42(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET43(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET44(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET45(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET46(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET47(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET48(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET49(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET50(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function refillTokenBucketFromBUCKET51(bucket: string, limit = 64): string {
++  if (!bucket) return "";
++  const parts = bucket.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function refillTokenBucketFromBUCKET52(bucket: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of bucket) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function refillTokenBucketFromBUCKET53(overrides: Partial<typeof bucketDefaults> = {}) {
++  const merged = { ...bucketDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
+diff --git a/packages/fixturepkg/src/sweep-policy.ts b/packages/fixturepkg/src/sweep-policy.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/sweep-policy.ts
+@@ -0,0 +1,376 @@
++// sweep-policy: window handling for the review runner.
++
++const windowDefaults = { attempts: 3, backoffMs: 250, jitter: true };
++
++export async function resolveSweepWindow(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW1(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW2(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW3(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW4(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW5(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW6(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW7(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW8(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW9(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW10(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW11(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW12(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW13(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW14(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW15(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW16(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW17(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW18(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW19(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW20(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW21(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW22(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW23(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW24(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW25(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW26(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW27(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW28(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW29(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW30(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW31(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW32(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW33(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW34(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW35(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW36(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW37(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW38(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW39(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW40(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW41(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW42(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW43(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW44(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW45(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW46(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW47(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW48(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW49(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function resolveSweepWindowFromWINDOW50(window: string, limit = 64): string {
++  if (!window) return "";
++  const parts = window.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function resolveSweepWindowFromWINDOW51(window: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of window) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function resolveSweepWindowFromWINDOW52(overrides: Partial<typeof windowDefaults> = {}) {
++  const merged = { ...windowDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
+diff --git a/packages/fixturepkg/src/webhook-verify.ts b/packages/fixturepkg/src/webhook-verify.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/webhook-verify.ts
+@@ -0,0 +1,352 @@
++// webhook-verify: signature handling for the review runner.
++
++const signatureDefaults = { attempts: 3, backoffMs: 250, jitter: true };
++
++export function checkSignatureFreshness(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE1(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE2(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE3(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE4(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE5(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE6(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE7(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE8(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE9(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE10(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE11(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE12(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE13(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE14(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE15(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE16(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE17(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE18(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE19(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE20(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE21(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE22(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE23(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE24(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE25(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE26(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE27(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE28(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE29(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE30(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE31(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE32(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE33(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE34(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE35(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE36(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE37(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE38(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE39(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE40(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE41(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE42(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE43(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE44(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE45(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE46(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function checkSignatureFreshnessFromSIGNATURE47(signature: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of signature) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE48(overrides: Partial<typeof signatureDefaults> = {}) {
++  const merged = { ...signatureDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function checkSignatureFreshnessFromSIGNATURE49(signature: string, limit = 64): string {
++  if (!signature) return "";
++  const parts = signature.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
+diff --git a/packages/fixturepkg/src/result-store.ts b/packages/fixturepkg/src/result-store.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/result-store.ts
+@@ -0,0 +1,376 @@
++// result-store: result handling for the review runner.
++
++const resultDefaults = { attempts: 3, backoffMs: 250, jitter: true };
++
++export function persistRenderedResult(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT1(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT2(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT3(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT4(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT5(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT6(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT7(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT8(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT9(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT10(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT11(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT12(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT13(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT14(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT15(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT16(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT17(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT18(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT19(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT20(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT21(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT22(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT23(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT24(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT25(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT26(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT27(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT28(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT29(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT30(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT31(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT32(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT33(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT34(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT35(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT36(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT37(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT38(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT39(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT40(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT41(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT42(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT43(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT44(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT45(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT46(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT47(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT48(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT49(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function persistRenderedResultFromRESULT50(overrides: Partial<typeof resultDefaults> = {}) {
++  const merged = { ...resultDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function persistRenderedResultFromRESULT51(result: string, limit = 64): string {
++  if (!result) return "";
++  const parts = result.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function persistRenderedResultFromRESULT52(result: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of result) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
+diff --git a/packages/fixturepkg/src/path-alias.ts b/packages/fixturepkg/src/path-alias.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/path-alias.ts
+@@ -0,0 +1,382 @@
++// path-alias: alias handling for the review runner.
++
++const aliasDefaults = { attempts: 3, backoffMs: 250, jitter: true };
++
++export async function expandWorkspaceAlias(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS1(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS2(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS3(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS4(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS5(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS6(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS7(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS8(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS9(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS10(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS11(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS12(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS13(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS14(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS15(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS16(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS17(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS18(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS19(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS20(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS21(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS22(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS23(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS24(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS25(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS26(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS27(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS28(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS29(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS30(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS31(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS32(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS33(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS34(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS35(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS36(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS37(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS38(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS39(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS40(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS41(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS42(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS43(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS44(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS45(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS46(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS47(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS48(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS49(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS50(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
++export async function expandWorkspaceAliasFromALIAS51(alias: string[]): Promise<number> {
++  let handled = 0;
++  for (const entry of alias) {
++    if (entry.length === 0) continue;
++    handled += 1;
++  }
++  return handled;
++}
++
++export function expandWorkspaceAliasFromALIAS52(overrides: Partial<typeof aliasDefaults> = {}) {
++  const merged = { ...aliasDefaults, ...overrides };
++  if (merged.attempts < 1) throw new Error("attempts must be positive");
++  return merged;
++}
++
++export function expandWorkspaceAliasFromALIAS53(alias: string, limit = 64): string {
++  if (!alias) return "";
++  const parts = alias.split("/").filter(Boolean);
++  return parts.slice(0, limit).join("/");
++}
++
+diff --git a/packages/fixturepkg/src/verdict-engine.ts b/packages/fixturepkg/src/verdict-engine.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/verdict-engine.ts
+@@ -0,0 +1,117 @@
++// The review processor: turns raw findings into a verdict.
++export interface ReviewPayload {
++  findings: { severity: string }[];
++}
++
++export function processReview(payload: ReviewPayload | null) {
++  if (!payload) throw new Error("payload is required");
++  const blocking = payload.findings.filter((f) => f.severity === "critical");
++  return { verdict: blocking.length > 0 ? "failed" : "passed", blocking: blocking.length };
++}
++
++// processor — generated review helpers.
++
++/** Step 1 of processor: normalises one review input before grading. */
++export function processorStep1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of processor: normalises one review input before grading. */
++export function processorStep2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of processor: normalises one review input before grading. */
++export function processorStep3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of processor: normalises one review input before grading. */
++export function processorStep4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of processor: normalises one review input before grading. */
++export function processorStep5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of processor: normalises one review input before grading. */
++export function processorStep6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of processor: normalises one review input before grading. */
++export function processorStep7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of processor: normalises one review input before grading. */
++export function processorStep8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of processor: normalises one review input before grading. */
++export function processorStep9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of processor: normalises one review input before grading. */
++export function processorStep10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of processor: normalises one review input before grading. */
++export function processorStep11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of processor: normalises one review input before grading. */
++export function processorStep12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of processor: normalises one review input before grading. */
++export function processorStep13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
