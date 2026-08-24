@@ -1,0 +1,79 @@
+{
+  "variant": "fixture",
+  "rung": "base",
+  "recipe": "diff e8ebb66...9c49a0c -- . :(exclude,glob)**/reviews/*.md :(exclude)context/changes/impl-review-ci-agent/plan.md",
+  "rawBytes": 190852,
+  "sentBytes": 100030,
+  "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+  "rulesRef": "e8ebb66",
+  "rulesChars": 2915,
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "6ab60a8933fdf0047065a647608687d062a29dc148427ef70ab51bf99c57a5b9",
+  "rlocContext": null,
+  "model": "z-ai/glm-4.6",
+  "totalBytes": 190852,
+  "capBytes": 100000,
+  "truncated": true,
+  "window": [
+    {
+      "path": "context/fixture/notes-01-plan.md",
+      "startByte": 0,
+      "endByte": 21156,
+      "complete": true
+    },
+    {
+      "path": "context/fixture/notes-02-research.md",
+      "startByte": 21156,
+      "endByte": 42408,
+      "complete": true
+    },
+    {
+      "path": "context/fixture/notes-03-verification.md",
+      "startByte": 42408,
+      "endByte": 63756,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/a-guard.ts",
+      "startByte": 63756,
+      "endByte": 70911,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/b-cli.ts",
+      "startByte": 70911,
+      "endByte": 77772,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/c-processor.test.ts",
+      "startByte": 77772,
+      "endByte": 84688,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/d-filler-01.ts",
+      "startByte": 84688,
+      "endByte": 97323,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/d-filler-02.ts",
+      "startByte": 97323,
+      "endByte": 109958,
+      "complete": false
+    }
+  ],
+  "cutFile": "packages/fixturepkg/src/d-filler-02.ts",
+  "cutOffsetInFile": 2677,
+  "overCap": [
+    "packages/fixturepkg/src/d-filler-03.ts",
+    "packages/fixturepkg/src/d-filler-04.ts",
+    "packages/fixturepkg/src/d-filler-05.ts",
+    "packages/fixturepkg/src/d-filler-06.ts",
+    "packages/fixturepkg/src/d-filler-07.ts",
+    "packages/fixturepkg/src/d-filler-08.ts",
+    "packages/fixturepkg/src/z-processor.ts"
+  ],
+  "ordered": false
+}

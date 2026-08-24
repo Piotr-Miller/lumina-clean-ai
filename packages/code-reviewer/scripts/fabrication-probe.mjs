@@ -43,7 +43,7 @@
 //     --variant ci --rung base --n 8 [--dry]
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
@@ -96,9 +96,26 @@ const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 // dir (sha256-pinned in its verification.md, the ci.md precedent) before
 // using those modes. The rloc guard below and the grader's ground-truth check
 // both fail fast with this discipline (impl-review F2).
-const changeDir = `${repoRoot}context/changes/r2-prose-rerun`;
+const changeDir = `${repoRoot}context/changes/fabrication-fixture`;
 const resultsDir = `${changeDir}/results`;
 const RLOC_CONTEXT_PATH = `${changeDir}/ground-truth/rloc-context.txt`;
+const FIXTURE_DIFF_PATH = `${changeDir}/ground-truth/fixture.diff`;
+
+// Fail fast on a stale changeDir instead of silently resurrecting it. Before
+// this guard, `--dry` ran `mkdirSync(recursive)` and happily wrote manifests
+// into an ARCHIVED change's path — inventing an active change directory that
+// the archive discipline says must not exist. The grader already fails fast on
+// its ground truth; this closes the same hole on the probe side.
+function assertChangeDirExists() {
+  if (!existsSync(changeDir)) {
+    throw new Error(
+      `probe changeDir does not exist: ${changeDir}\n` +
+        "It has almost certainly been archived. Re-point `changeDir` at the ACTIVE change and " +
+        "re-freeze that change's ground truth byte-identically (sha256-pinned in its verification.md) " +
+        "before running — never write results into an archived path.",
+    );
+  }
+}
 
 const git = (...args) => execFileSync("git", args, { cwd: repoRoot, encoding: "utf8", maxBuffer: 60 * 1024 * 1024 });
 
@@ -118,13 +135,18 @@ export function parseArgs(argv) {
     else if (a === "--ordered") args.ordered = true;
     else throw new Error(`unknown argument: ${a}`);
   }
-  if (args.variant !== "ci" && args.variant !== "instrument") {
-    throw new Error(`--variant must be ci|instrument, got: ${String(args.variant)}`);
+  if (args.variant !== "ci" && args.variant !== "instrument" && args.variant !== "fixture") {
+    throw new Error(`--variant must be ci|instrument|fixture, got: ${String(args.variant)}`);
+  }
+  // The fixture is a synthetic, generated input with its own planted defences;
+  // the pathspec ablations are defined against the real PR #127 diff only.
+  if (args.variant === "fixture" && args.rung !== "base" && args.rung !== "r1") {
+    throw new Error("--variant fixture supports --rung base|r1 only (the ablations are ci-variant recipes)");
   }
   if (!["base", "r1", "r2", "r3", "rloc"].includes(args.rung)) {
     throw new Error(`--rung must be base|r1|r2|r3|rloc, got: ${String(args.rung)}`);
   }
-  if (args.rung !== "base" && args.variant !== "ci") {
+  if (args.rung !== "base" && args.variant === "instrument") {
     throw new Error("rungs r1/r2/r3/rloc are defined for --variant ci only (plan.md)");
   }
   if (!Number.isSafeInteger(args.n) || args.n < 1) {
@@ -192,7 +214,10 @@ export function buildProbeReviewUnit(sent, manifest) {
 }
 
 function buildInput(variant, rung, ordered = false) {
-  const gitRaw = git(...recipeArgs(variant, rung));
+  // The fixture is generated, not derived from git: its bytes are the frozen
+  // artifact (sha256 in the change's verification.md), so it is read verbatim.
+  const gitRaw =
+    variant === "fixture" ? readFileSync(FIXTURE_DIFF_PATH, "utf8") : git(...recipeArgs(variant, rung));
   // `--ordered` reproduces CURRENT production (PR #164): source before prose,
   // THEN the cap — so the window keeps code and the cut lands in Markdown.
   // Default stays bare-capDiff, the pipeline every archived anchor was frozen
@@ -239,7 +264,10 @@ function buildInput(variant, rung, ordered = false) {
   // unlike finder-distribution.mjs's floating origin/master read. Fail CLOSED
   // (review F2): reviewing without the rules the historical runs saw would
   // silently change the finder's behavior mid-campaign.
-  const rulesRef = variant === "ci" ? CI_BASE : `${INSTRUMENT_SHA}^1`;
+  // The fixture reuses the CI variant's pinned rules so the trusted-rules
+  // channel is identical to the arm whose baseline (B=17) it is compared against
+  // — otherwise a rate difference could be the rules, not the diff.
+  const rulesRef = variant === "instrument" ? `${INSTRUMENT_SHA}^1` : CI_BASE;
   let projectContext;
   try {
     projectContext = git("show", `${rulesRef}:.github/ai-review-rules.md`);
@@ -289,6 +317,7 @@ const summarise = (findings) => {
 
 async function main() {
   const { variant, rung, n, dry, preNote, ordered } = parseArgs(process.argv.slice(2));
+  assertChangeDirExists();
   const { sent, projectContext, manifest } = buildInput(variant, rung, ordered);
   // Recorded in the manifest so a results file can never be mistaken for one
   // produced under the other cap pipeline — the two windows differ materially.

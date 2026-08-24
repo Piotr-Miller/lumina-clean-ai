@@ -1,0 +1,2216 @@
+{
+  "variant": "fixture",
+  "rung": "base",
+  "model": "z-ai/glm-4.6",
+  "stamp": "20260824T110516Z",
+  "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "6ab60a8933fdf0047065a647608687d062a29dc148427ef70ab51bf99c57a5b9",
+  "plannedAttempts": 20,
+  "complete": true,
+  "runs": [
+    {
+      "run": 1,
+      "startedAt": "2026-08-24T11:05:16.228Z",
+      "durationMs": 2470,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 21,
+        "totalTokens": 24689,
+        "cost": 0.01064399
+      },
+      "findings": [],
+      "summary": {
+        "n": 0,
+        "bySeverity": {},
+        "byCategory": {}
+      },
+      "error": null
+    },
+    {
+      "run": 2,
+      "startedAt": "2026-08-24T11:05:18.702Z",
+      "durationMs": 21930,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 1794,
+        "totalTokens": 26462,
+        "cost": 0.00512274
+      },
+      "findings": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 20 sections with identical boilerplate text. Consider consolidating or generating this content programmatically to reduce maintenance overhead and file size.",
+          "suggestion": "Extract the repeated section into a template or generate via script."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 20 sections with identical boilerplate text. Consider consolidating or generating this content programmatically to reduce maintenance overhead and file size.",
+          "suggestion": "Extract the repeated section into a template or generate via script."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 20 sections with identical boilerplate text. Consider consolidating or generating this content programmatically to reduce maintenance overhead and file size.",
+          "suggestion": "Extract the repeated section into a template or generate via script."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 15,
+          "endLine": 169,
+          "severity": "nit",
+          "category": "style",
+          "description": "Functions guardStep1 through guardStep19 are nearly identical except for the step number. This pattern repeats across multiple files, leading to code duplication.",
+          "suggestion": "Refactor into a single parameterized function or factory to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 10,
+          "endLine": 164,
+          "severity": "nit",
+          "category": "style",
+          "description": "Functions cliStep1 through cliStep19 are nearly identical except for the step number. This pattern repeats across multiple files, leading to code duplication.",
+          "suggestion": "Refactor into a single parameterized function or factory to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 10,
+          "endLine": 158,
+          "severity": "nit",
+          "category": "style",
+          "description": "Functions processorTestStep1 through processorTestStep18 are nearly identical except for the step number. This pattern repeats across multiple files, leading to code duplication.",
+          "suggestion": "Refactor into a single parameterized function or factory to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/e-filler-03.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/f-filler-04.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/g-filler-05.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/h-filler-06.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/i-filler-07.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/j-filler-08.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/k-filler-09.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/l-filler-10.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 37 nearly identical step functions with only incremental differences. This excessive duplication inflates file size without adding value.",
+          "suggestion": "Replace with a data-driven approach or higher-order function to eliminate repetition."
+        }
+      ],
+      "summary": {
+        "n": 17,
+        "bySeverity": {
+          "nit": 17
+        },
+        "byCategory": {
+          "style": 17
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 3,
+      "startedAt": "2026-08-24T11:05:40.641Z",
+      "durationMs": 22594,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 1422,
+        "totalTokens": 26090,
+        "cost": 0.00447174
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 18,
+          "endLine": 169,
+          "severity": "major",
+          "category": "style",
+          "description": "Excessive code duplication: 19 nearly identical functions (guardStep1-19) that only differ by name. This should be refactored into a single parameterized function or factory.",
+          "suggestion": "Replace with a single function that accepts the step number as parameter, or use a loop to generate these functions if absolutely necessary."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 4,
+          "endLine": 4,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Import from non-existent file: './internal/log-safe-path.ts' is imported but this file is not present in the diff.",
+          "suggestion": "Ensure the imported file exists or remove the import if unused."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 18,
+          "endLine": 164,
+          "severity": "major",
+          "category": "style",
+          "description": "Excessive code duplication: 19 nearly identical functions (cliStep1-19) that only differ by name. This should be refactored into a single parameterized function or factory.",
+          "suggestion": "Replace with a single function that accepts the step number as parameter, or use a loop to generate these functions if absolutely necessary."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 18,
+          "endLine": 158,
+          "severity": "major",
+          "category": "style",
+          "description": "Excessive code duplication: 18 nearly identical functions (processorTestStep1-18) that only differ by name. This should be refactored into a single parameterized function or factory.",
+          "suggestion": "Replace with a single function that accepts the step number as parameter, or use a loop to generate these functions if absolutely necessary."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "major",
+          "category": "style",
+          "description": "Excessive code duplication: 37 nearly identical functions (filler1Step1-37) that only differ by name. This should be refactored into a single parameterized function or factory.",
+          "suggestion": "Replace with a single function that accepts the step number as parameter, or use a loop to generate these functions if absolutely necessary."
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 4,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "Excessive content duplication: 20 identical sections with only section numbers changing. Consider using a more concise format or referencing a common section.",
+          "suggestion": "Replace repeated sections with a reference to a common template or use a more structured format that avoids repetition."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 4,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "Excessive content duplication: 20 identical sections with only section numbers changing. Consider using a more concise format or referencing a common section.",
+          "suggestion": "Replace repeated sections with a reference to a common template or use a more structured format that avoids repetition."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 4,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "Excessive content duplication: 20 identical sections with only section numbers changing. Consider using a more concise format or referencing a common section.",
+          "suggestion": "Replace repeated sections with a reference to a common template or use a more structured format that avoids repetition."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "major": 5,
+          "minor": 3
+        },
+        "byCategory": {
+          "style": 7,
+          "correctness": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 4,
+      "startedAt": "2026-08-24T11:06:03.236Z",
+      "durationMs": 1670,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 49,
+        "totalTokens": 24717,
+        "cost": 0.00206899
+      },
+      "findings": [],
+      "summary": {
+        "n": 0,
+        "bySeverity": {},
+        "byCategory": {}
+      },
+      "error": null
+    },
+    {
+      "run": 5,
+      "startedAt": "2026-08-24T11:06:04.912Z",
+      "durationMs": 9950,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 871,
+        "totalTokens": 25539,
+        "cost": 0.00350749
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "nit",
+          "category": "style",
+          "description": "File contains 19 near-identical helper functions (guardStep1 through guardStep19) with only the function name differing. This pattern repeats across multiple files, indicating a need for abstraction or generation to reduce duplication.",
+          "suggestion": "Consider generating these functions programmatically or abstracting the common logic into a single parameterized helper to reduce maintenance burden and file size."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "nit",
+          "category": "style",
+          "description": "Same duplication issue as in a-guard.ts: 19 near-identical cliStep functions. The repetition across files suggests these may be generated scaffolding.",
+          "suggestion": "If these are intentionally generated fixtures, add a comment indicating they are auto-generated to avoid confusion during code review."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "nit",
+          "category": "style",
+          "description": "Contains 18 near-identical processorTestStep functions. The pattern of duplication is consistent with other files in this diff.",
+          "suggestion": "Group these repetitive helpers into a single module or generate them to avoid manual duplication errors."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "Contains 37 near-identical filler1Step functions. The sheer number of duplicated functions in this file is particularly excessive.",
+          "suggestion": "This file appears to be filler/scaffolding; consider whether it's necessary to include in version control or if it can be generated on demand."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "Same duplication issue as d-filler-01.ts with 37 filler2Step functions. The repetitive pattern across filler files suggests these may be test scaffolding.",
+          "suggestion": "If these are test fixtures, consider using a factory pattern or parameterized tests instead of duplicating functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/internal/log-safe-path.ts",
+          "startLine": 1,
+          "endLine": 50,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File is referenced by b-cli.ts but not present in the diff. This creates a broken import that will cause runtime errors.",
+          "suggestion": "Add the missing log-safe-path.ts implementation or update the import path to point to the correct location."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 1,
+          "endLine": 50,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File is referenced by c-processor.test.ts but not present in the diff. This creates a broken import that will cause test failures.",
+          "suggestion": "Add the missing z-processor.ts implementation or update the import in the test file."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "nit": 5,
+          "minor": 2
+        },
+        "byCategory": {
+          "style": 5,
+          "correctness": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 6,
+      "startedAt": "2026-08-24T11:06:14.865Z",
+      "durationMs": 10469,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 636,
+        "totalTokens": 25304,
+        "cost": 0.00309624
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 2,
+          "endLine": 2,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Imported `logSafePath` is declared but never used in this file.",
+          "suggestion": "Remove the unused import."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 12,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 19 near-identical functions (guardStep1 through guardStep19) with duplicated logic.",
+          "suggestion": "Refactor to a single parameterized function to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 7,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 19 near-identical functions (cliStep1 through cliStep19) with duplicated logic.",
+          "suggestion": "Refactor to a single parameterized function to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 12,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 18 near-identical functions (processorTestStep1 through processorTestStep18) with duplicated logic.",
+          "suggestion": "Refactor to a single parameterized function to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 37 near-identical functions (filler1Step1 through filler1Step37) with duplicated logic.",
+          "suggestion": "Refactor to a single parameterized function to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 37 near-identical functions (filler2Step1 through filler2Step37) with duplicated logic.",
+          "suggestion": "Refactor to a single parameterized function to reduce duplication."
+        }
+      ],
+      "summary": {
+        "n": 6,
+        "bySeverity": {
+          "minor": 6
+        },
+        "byCategory": {
+          "correctness": 1,
+          "style": 5
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 7,
+      "startedAt": "2026-08-24T11:06:25.338Z",
+      "durationMs": 14338,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 855,
+        "totalTokens": 25523,
+        "cost": 0.00347949
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 15,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 19 near-identical functions (guardStep1 through guardStep19) that only differ by their numeric suffix. This pattern is repeated across multiple files. Consider consolidating into a single generic helper or a map to reduce duplication and improve maintainability.",
+          "suggestion": "Replace the series with a single function that accepts a step number or a configuration object, e.g., `guard(step: number, input: string): string`."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 11,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Similarly, this file defines 19 near-duplicate functions (cliStep1 through cliStep19). The same consolidation approach applies.",
+          "suggestion": "Refactor to a single `cli(step: number, input: string): string` function."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 13,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Defines 18 near-identical functions (processorTestStep1 through processorTestStep18). This duplication adds unnecessary noise to the test file.",
+          "suggestion": "Replace with a single helper or a data-driven approach."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "Contains 37 near-duplicate functions (filler1Step1 through filler1Step37). The pattern is repeated in d-filler-02.ts and likely others. This level of duplication makes the codebase unwieldy.",
+          "suggestion": "Consider generating these functions programmatically or using a factory pattern to avoid manual repetition."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "Same duplication issue as d-filler-01.ts (37 functions).",
+          "suggestion": "Apply the same refactoring as for d-filler-01.ts."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The file z-processor.ts is referenced in c-processor.test.ts but is not included in the diff. Ensure that any new or changed surface behavior is documented and tested.",
+          "suggestion": "Include z-processor.ts in the review or confirm it is unchanged."
+        },
+        {
+          "file": "packages/fixturepkg/src/internal/log-safe-path.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The file internal/log-safe-path.ts is imported in b-cli.ts but not provided in the diff. Verify that this internal module exists and its behavior is documented.",
+          "suggestion": "Add the missing file to the diff or confirm it is part of the repository."
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "minor": 7
+        },
+        "byCategory": {
+          "style": 5,
+          "documentation": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 8,
+      "startedAt": "2026-08-24T11:06:39.680Z",
+      "durationMs": 7984,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 686,
+        "totalTokens": 25354,
+        "cost": 0.00318374
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 4,
+          "endLine": 12,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The SAFE_PATH_RE regex allows forward slashes at the beginning or end of paths (e.g., '/path' or 'path/'), which may not be intended. Consider using more specific path validation if absolute paths or trailing slashes are not allowed.",
+          "suggestion": "Update regex to /^[A-Za-z0-9._/-]+$/ if only relative paths without trailing slashes are allowed, or add additional validation."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 4,
+          "endLine": 8,
+          "severity": "nit",
+          "category": "style",
+          "description": "The reportResolvedPlan function uses console.log for output. Consider using a proper logging library for production code.",
+          "suggestion": "Replace console.log with a structured logging interface if this is production code."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 7,
+          "endLine": 11,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The test for processReview with null payload should be more specific about the expected error type or message.",
+          "suggestion": "Use expect(() => processReview(null)).toThrow(TypeError) or check for specific error message."
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The documentation file contains repeated boilerplate sections that could be condensed.",
+          "suggestion": "Consider consolidating repeated sections into a single reference to reduce file size."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The documentation file contains repeated boilerplate sections that could be condensed.",
+          "suggestion": "Consider consolidating repeated sections into a single reference to reduce file size."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The documentation file contains repeated boilerplate sections that could be condensed.",
+          "suggestion": "Consider consolidating repeated sections into a single reference to reduce file size."
+        }
+      ],
+      "summary": {
+        "n": 6,
+        "bySeverity": {
+          "minor": 2,
+          "nit": 4
+        },
+        "byCategory": {
+          "correctness": 1,
+          "style": 1,
+          "testing": 1,
+          "documentation": 3
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 9,
+      "startedAt": "2026-08-24T11:06:47.669Z",
+      "durationMs": 21724,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 1311,
+        "totalTokens": 25979,
+        "cost": 0.01290149
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 11,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Massive code duplication: 19 nearly identical functions (guardStep1 through guardStep19) with identical implementations. This violates DRY principles and creates a maintenance burden.",
+          "suggestion": "Extract the common logic into a single parameterized function or use a factory pattern to generate these helpers."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 9,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Code duplication: 19 identical functions (cliStep1 through cliStep19) with identical implementations.",
+          "suggestion": "Consolidate into a single reusable function with a step parameter."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 9,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Code duplication in test helpers: 18 identical functions (processorTestStep1 through processorTestStep18).",
+          "suggestion": "Extract common test helper logic to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Excessive code duplication: 37 identical functions (filler1Step1 through filler1Step37) with identical implementations.",
+          "suggestion": "This appears to be filler code; consider removing or consolidating."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Duplicate filler module with 37 identical functions, mirroring d-filler-01.ts.",
+          "suggestion": "Remove duplicate filler module or consolidate with d-filler-01.ts."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Another module with 19 identical functions (processorStep1 through processorStep19), following the same duplication pattern.",
+          "suggestion": "Consolidate with the other step functions into a shared utility."
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "Repetitive content: The same paragraph is duplicated 20 times across 20 sections with only the section number changing.",
+          "suggestion": "Consider a more concise way to represent this information or remove redundant sections."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "Same duplication issue as notes-01-plan.md: 20 identical sections with only section numbers differing.",
+          "suggestion": "Consolidate or reference a single section template."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "Identical duplication pattern as the other note files: 20 repeated sections.",
+          "suggestion": "Remove redundancy or use a templating approach."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 1,
+          "endLine": 10,
+          "severity": "nit",
+          "category": "style",
+          "description": "Comment style inconsistency: Mixed use of // and /* */ comments in the same file.",
+          "suggestion": "Standardize on a single comment style (prefer // for non-JSDoc comments)."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 1,
+          "endLine": 8,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "Missing documentation for the logSafePath import and usage.",
+          "suggestion": "Add a comment explaining what logSafePath does and why it's necessary."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 8,
+          "severity": "nit",
+          "category": "testing",
+          "description": "Minimal test coverage: Only two basic tests for what appears to be a review processor.",
+          "suggestion": "Add more comprehensive tests covering edge cases and error conditions."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 8,
+          "severity": "nit",
+          "category": "style",
+          "description": "Inconsistent import ordering: Relative import for processReview but generated exports follow.",
+          "suggestion": "Group imports at the top, separate from exports."
+        }
+      ],
+      "summary": {
+        "n": 13,
+        "bySeverity": {
+          "minor": 9,
+          "nit": 4
+        },
+        "byCategory": {
+          "correctness": 6,
+          "style": 5,
+          "documentation": 1,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 10,
+      "startedAt": "2026-08-24T11:07:09.401Z",
+      "durationMs": 2310,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 52,
+        "totalTokens": 24720,
+        "cost": 0.00207424
+      },
+      "findings": [],
+      "summary": {
+        "n": 0,
+        "bySeverity": {},
+        "byCategory": {}
+      },
+      "error": null
+    },
+    {
+      "run": 11,
+      "startedAt": "2026-08-24T11:07:11.712Z",
+      "durationMs": 19655,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 1168,
+        "totalTokens": 25836,
+        "cost": 0.00402724
+      },
+      "findings": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "The file contains 20 nearly identical sections with duplicated content. This excessive repetition adds maintenance burden without clear value. Consider consolidating or reducing duplication.",
+          "suggestion": "Extract common content into a shared section or use references to avoid duplication."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "Same duplication issue as notes-01-plan.md. The 20 sections are identical except for section numbers.",
+          "suggestion": "Refactor to eliminate duplication across these fixture files."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "Same duplication issue as the other two notes files.",
+          "suggestion": "Consider using a template or generator for these fixture files to avoid manual duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 22,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "The file contains 19 nearly identical functions (guardStep1 through guardStep19) with only the function name differing. This violates DRY principle and makes maintenance difficult.",
+          "suggestion": "Create a single generic function or use a factory pattern to generate these steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 17,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Same duplication issue as a-guard.ts with 19 identical cliStep functions.",
+          "suggestion": "Refactor to eliminate code duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 16,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Same duplication issue with 18 identical processorTestStep functions.",
+          "suggestion": "Extract common logic into a reusable utility."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 4,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "Contains 37 identical filler1Step functions with only the number differing.",
+          "suggestion": "Use a more maintainable approach for generating these functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 4,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "Same duplication issue as d-filler-01.ts with 37 identical filler2Step functions.",
+          "suggestion": "Consider using code generation or a factory pattern."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 4,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "Same duplication issue with 37 identical processorStep functions.",
+          "suggestion": "Refactor to reduce maintenance burden."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 1,
+          "endLine": 21,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The security guards (LS_TREE_ARGS and SAFE_PATH_RE) lack documentation explaining their specific security purpose and usage examples.",
+          "suggestion": "Add JSDoc comments explaining the security implications and when to use these utilities."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 4,
+          "endLine": 16,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The reportResolvedPlan function lacks documentation about its purpose and the security considerations of path sanitization.",
+          "suggestion": "Add JSDoc explaining the function's role and security measures."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 4,
+          "endLine": 14,
+          "severity": "nit",
+          "category": "testing",
+          "description": "The test file only includes basic happy path and null input tests. More comprehensive test coverage is needed for edge cases.",
+          "suggestion": "Add tests for various input scenarios, malformed data, and boundary conditions."
+        }
+      ],
+      "summary": {
+        "n": 12,
+        "bySeverity": {
+          "nit": 6,
+          "minor": 6
+        },
+        "byCategory": {
+          "style": 9,
+          "documentation": 2,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 12,
+      "startedAt": "2026-08-24T11:07:31.378Z",
+      "durationMs": 14678,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 1329,
+        "totalTokens": 25997,
+        "cost": 0.00430899
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 3,
+          "endLine": 3,
+          "severity": "minor",
+          "category": "style",
+          "description": "Import should use @/* alias for ./src/* paths per repository rules",
+          "suggestion": "Change to `import { logSafePath } from \"@/internal/log-safe-path.ts\";`"
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 3,
+          "endLine": 3,
+          "severity": "minor",
+          "category": "style",
+          "description": "Import should use @/* alias for ./src/* paths per repository rules",
+          "suggestion": "Change to `import { processReview } from \"@/z-processor.ts\";`"
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 19,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "Massive code duplication: 19 nearly identical functions that only differ by step number",
+          "suggestion": "Refactor to a single parameterized function like `export function guardStep(step: number, input: string): string`"
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 11,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Massive code duplication: 19 nearly identical functions that only differ by step number",
+          "suggestion": "Refactor to a single parameterized function like `export function cliStep(step: number, input: string): string`"
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Massive code duplication: 18 nearly identical functions that only differ by step number",
+          "suggestion": "Refactor to a single parameterized function like `export function processorTestStep(step: number, input: string): string`"
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "Massive code duplication: 37 nearly identical functions that only differ by step number",
+          "suggestion": "Refactor to a single parameterized function like `export function filler1Step(step: number, input: string): string`"
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "Massive code duplication: 37 nearly identical functions that only differ by step number",
+          "suggestion": "Refactor to a single parameterized function like `export function filler2Step(step: number, input: string): string`"
+        }
+      ],
+      "summary": {
+        "n": 7,
+        "bySeverity": {
+          "minor": 7
+        },
+        "byCategory": {
+          "style": 7
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 13,
+      "startedAt": "2026-08-24T11:07:46.057Z",
+      "durationMs": 21609,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 1896,
+        "totalTokens": 26564,
+        "cost": 0.00530124
+      },
+      "findings": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "File contains 20 nearly identical sections, indicating significant duplication. Consider consolidating or referencing a single section.",
+          "suggestion": "Extract the repeated content into a single section and reference it where needed, or remove unnecessary duplication."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "File contains 20 nearly identical sections, indicating significant duplication. Consider consolidating or referencing a single section.",
+          "suggestion": "Extract the repeated content into a single section and reference it where needed, or remove unnecessary duplication."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "style",
+          "description": "File contains 20 nearly identical sections, indicating significant duplication. Consider consolidating or referencing a single section.",
+          "suggestion": "Extract the repeated content into a single section and reference it where needed, or remove unnecessary duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 21,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "Functions guardStep1 through guardStep19 are identical, indicating code duplication. Consider refactoring into a single reusable function.",
+          "suggestion": "Replace the duplicated functions with a single parameterized function, e.g., `guardStep(step: number, input: string)`."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "Functions cliStep1 through cliStep19 are identical, indicating code duplication. Consider refactoring into a single reusable function.",
+          "suggestion": "Replace the duplicated functions with a single parameterized function, e.g., `cliStep(step: number, input: string)`."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 13,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "Functions processorTestStep1 through processorTestStep18 are identical, indicating code duplication. Consider refactoring into a single reusable function.",
+          "suggestion": "Replace the duplicated functions with a single parameterized function, e.g., `processorTestStep(step: number, input: string)`."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "File contains 37 nearly identical functions (filler1Step1 to filler1Step37), indicating significant duplication. Consider refactoring into a single reusable function.",
+          "suggestion": "Replace the duplicated functions with a single parameterized function, e.g., `filler1Step(step: number, input: string)`."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "File contains 37 nearly identical functions (filler2Step1 to filler2Step37), indicating significant duplication. Consider refactoring into a single reusable function.",
+          "suggestion": "Replace the duplicated functions with a single parameterized function, e.g., `filler2Step(step: number, input: string)`."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "File contains 37 nearly identical functions (processorStep1 to processorStep37), indicating significant duplication. Consider refactoring into a single reusable function.",
+          "suggestion": "Replace the duplicated functions with a single parameterized function, e.g., `processorStep(step: number, input: string)`."
+        },
+        {
+          "file": "packages/fixturepkg/src/internal/log-safe-path.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "File contains 37 nearly identical functions (logSafePathStep1 to logSafePathStep37), indicating significant duplication. Consider refactoring into a single reusable function.",
+          "suggestion": "Replace the duplicated functions with a single parameterized function, e.g., `logSafePathStep(step: number, input: string)`."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks a top-level comment explaining the purpose of the module and the duplicated helper functions.",
+          "suggestion": "Add a module-level comment describing the intent and usage of the guard functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks a top-level comment explaining the purpose of the module and the duplicated helper functions.",
+          "suggestion": "Add a module-level comment describing the intent and usage of the CLI helper functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks a top-level comment explaining the purpose of the module and the duplicated helper functions.",
+          "suggestion": "Add a module-level comment describing the intent and usage of the processor test helper functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks a top-level comment explaining the purpose of the module and the duplicated helper functions.",
+          "suggestion": "Add a module-level comment describing the intent and usage of the filler1 helper functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks a top-level comment explaining the purpose of the module and the duplicated helper functions.",
+          "suggestion": "Add a module-level comment describing the intent and usage of the filler2 helper functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks a top-level comment explaining the purpose of the module and the duplicated helper functions.",
+          "suggestion": "Add a module-level comment describing the intent and usage of the processor helper functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/internal/log-safe-path.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "File lacks a top-level comment explaining the purpose of the module and the duplicated helper functions.",
+          "suggestion": "Add a module-level comment describing the intent and usage of the logSafePath helper functions."
+        }
+      ],
+      "summary": {
+        "n": 17,
+        "bySeverity": {
+          "minor": 10,
+          "nit": 7
+        },
+        "byCategory": {
+          "style": 10,
+          "documentation": 7
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 14,
+      "startedAt": "2026-08-24T11:08:07.669Z",
+      "durationMs": 19423,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 1171,
+        "totalTokens": 25839,
+        "cost": 0.00403249
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 17,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Code duplication: guardStep1 through guardStep19 are identical implementations. This violates DRY principles and increases maintenance burden.",
+          "suggestion": "Extract the common logic into a single parameterized function or use a higher-order function to generate these steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Code duplication: cliStep1 through cliStep19 are identical implementations. This violates DRY principles and increases maintenance burden.",
+          "suggestion": "Extract the common logic into a single parameterized function or use a higher-order function to generate these steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Code duplication: processorTestStep1 through processorTestStep18 are identical implementations. This violates DRY principles and increases maintenance burden.",
+          "suggestion": "Extract the common logic into a single parameterized function or use a higher-order function to generate these steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Code duplication: filler1Step1 through filler1Step37 are identical implementations. This violates DRY principles and increases maintenance burden.",
+          "suggestion": "Extract the common logic into a single parameterized function or use a higher-order function to generate these steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Code duplication: filler2Step1 through filler2Step37 are identical implementations. This violates DRY principles and increases maintenance burden.",
+          "suggestion": "Extract the common logic into a single parameterized function or use a higher-order function to generate these steps."
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Excessive content duplication: The file contains 20 nearly identical sections with the same content repeated. This makes the document difficult to maintain and read.",
+          "suggestion": "Consolidate repeated content into a single section or use templating/markdown features to avoid duplication."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Excessive content duplication: The file contains 20 nearly identical sections with the same content repeated. This makes the document difficult to maintain and read.",
+          "suggestion": "Consolidate repeated content into a single section or use templating/markdown features to avoid duplication."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "Excessive content duplication: The file contains 20 nearly identical sections with the same content repeated. This makes the document difficult to maintain and read.",
+          "suggestion": "Consolidate repeated content into a single section or use templating/markdown features to avoid duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 6,
+          "endLine": 11,
+          "severity": "minor",
+          "category": "testing",
+          "description": "Incomplete test coverage: The test file only includes basic smoke tests but doesn't test the generated helper functions (processorTestStep1 through processorTestStep18).",
+          "suggestion": "Add unit tests for the generated helper functions to ensure they behave correctly with various inputs."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 2,
+          "endLine": 2,
+          "severity": "nit",
+          "category": "style",
+          "description": "Import statement uses './internal/log-safe-path.ts' which may not follow the project's import alias convention (if @/* alias is required).",
+          "suggestion": "Use the @/* alias for imports from ./src/* as specified in the repository rules."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "minor": 9,
+          "nit": 1
+        },
+        "byCategory": {
+          "correctness": 5,
+          "documentation": 3,
+          "testing": 1,
+          "style": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 15,
+      "startedAt": "2026-08-24T11:08:27.096Z",
+      "durationMs": 6915,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 638,
+        "totalTokens": 25306,
+        "cost": 0.00309974
+      },
+      "findings": [],
+      "summary": {
+        "n": 0,
+        "bySeverity": {},
+        "byCategory": {}
+      },
+      "error": null
+    },
+    {
+      "run": 16,
+      "startedAt": "2026-08-24T11:08:34.019Z",
+      "durationMs": 28249,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 2231,
+        "totalTokens": 26899,
+        "cost": 0.00588749
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "The file contains 19 near-identical functions (guardStep1 through guardStep19) with duplicated logic. This pattern is error-prone and impacts maintainability. Consider consolidating into a single parameterized function.",
+          "suggestion": "Replace the 19 functions with a single normalizeInput(input: string): string function and call it where needed, reducing code duplication and the risk of drift."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Similar to a-guard.ts, this file includes 19 duplicated cliStep functions. The repetition adds unnecessary noise and increases the likelihood of inconsistencies.",
+          "suggestion": "Consolidate the cliStep1-19 functions into a single normalizeCliInput(input: string): string function to improve clarity and reduce redundancy."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The test file defines 18 processorTestStep functions but does not use them in any tests. This dead code inflates the file without adding test coverage.",
+          "suggestion": "Remove the unused processorTestStep functions or, if they are intended for normalization, centralize the normalization logic and test it directly."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "This file consists entirely of 37 nearly identical filler1Step functions with no apparent purpose or usage. This bloats the codebase and complicates navigation.",
+          "suggestion": "If these functions are not used, remove the entire file. If they are placeholders, replace them with a README or comment indicating their intended future use."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Similar to d-filler-01.ts, this file contains 37 identical filler2Step functions without context or usage, contributing to codebase clutter.",
+          "suggestion": "Remove this file unless it serves a specific, documented purpose. If it is intended for normalization, abstract the logic into a shared module."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "major",
+          "category": "documentation",
+          "description": "The duplicated guardStep functions lack documentation explaining why 19 separate functions exist instead of one. This obscures intent and makes future refactoring risky.",
+          "suggestion": "Add a comment at the top of the duplicated block explaining the rationale for the duplication, or refactor to a single function with clear documentation."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "major",
+          "category": "documentation",
+          "description": "The cliStep functions are undocumented, leaving readers to guess why 19 versions exist. This hampers maintainability.",
+          "suggestion": "Document the purpose of the duplication or refactor to a single function with appropriate inline comments."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The processorTestStep functions are exported but not used, and there is no comment indicating their intended purpose.",
+          "suggestion": "Add a comment explaining the intended use of these functions or remove them if they are obsolete."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "major",
+          "category": "documentation",
+          "description": "The file lacks any documentation or indication of why 37 identical functions are present, making it unclear whether this is intentional or accidental.",
+          "suggestion": "Add a top-level comment describing the purpose of this file and its functions, or remove it if it is unnecessary."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "major",
+          "category": "documentation",
+          "description": "No documentation explains the presence of 37 identical filler2Step functions, leading to confusion about the file's role.",
+          "suggestion": "Document the file's purpose or remove it if it does not serve a clear function."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "The repetitive pattern of guardStep functions could be abstracted into a loop or higher-order function to reduce verbosity.",
+          "suggestion": "Use an array of step numbers and generate the functions dynamically, or replace with a single function that takes a step identifier if needed."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "The cliStep functions can be reduced to a single exported function to minimize code duplication and improve readability.",
+          "suggestion": "Refactor to a single normalizeInput function and remove the numbered variants."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "The processorTestStep functions follow the same duplication pattern as other files, contributing to inconsistency in the codebase style.",
+          "suggestion": "Adopt a consistent normalization utility across the project and avoid exporting near-identical functions."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "The large number of identical functions detracts from code style and makes navigation difficult.",
+          "suggestion": "If these functions are necessary, consider using a factory function or an object with methods to reduce the number of top-level exports."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "The duplication pattern in this file is inconsistent with typical code style guidelines, which favor DRY principles.",
+          "suggestion": "Refactor to eliminate duplication or remove the file if it is not needed."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "major",
+          "category": "testing",
+          "description": "The guardStep functions are not covered by tests despite being part of the security-sensitive path-handling logic. This leaves a gap in verification.",
+          "suggestion": "Add unit tests for the normalization behavior, especially edge cases like whitespace-only input and input at the 512-character boundary."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "major",
+          "category": "testing",
+          "description": "The cliStep functions are not tested, which is risky given they are used in CLI output handling.",
+          "suggestion": "Write tests for the cliStep normalization logic to ensure consistent behavior across all steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The file defines processorTestStep functions but only includes two tests for processReview, neither of which use the helper functions.",
+          "suggestion": "Either remove the unused helpers or add tests that exercise them to justify their presence."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "testing",
+          "description": "No tests are provided for the filler1Step functions, indicating they are likely unused or placeholder code.",
+          "suggestion": "If these functions are intended for use, add tests; otherwise, remove them to reduce dead code."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The filler2Step functions lack test coverage, suggesting they are not part of the verified codebase.",
+          "suggestion": "Add tests or remove the functions to avoid unverified code in the project."
+        }
+      ],
+      "summary": {
+        "n": 20,
+        "bySeverity": {
+          "minor": 14,
+          "major": 6
+        },
+        "byCategory": {
+          "correctness": 4,
+          "testing": 6,
+          "documentation": 5,
+          "style": 5
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 17,
+      "startedAt": "2026-08-24T11:09:02.280Z",
+      "durationMs": 16963,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 994,
+        "totalTokens": 25662,
+        "cost": 0.00372274
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 2,
+          "endLine": 2,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Import './internal/log-safe-path.ts' cannot be resolved; the file is not present in the diff. This will cause a runtime error if reportResolvedPlan is called.",
+          "suggestion": "Add the missing './internal/log-safe-path.ts' module or remove the import if unused."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 4,
+          "endLine": 4,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Import './z-processor.ts' cannot be resolved; the file is not present in the diff. This will cause a runtime error when running the test file.",
+          "suggestion": "Add the missing './z-processor.ts' module or update the import path."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "testing",
+          "description": "The test file defines many generated helper functions but contains only two trivial tests for processReview. There are no tests for the generated step functions, which constitute the majority of the file.",
+          "suggestion": "Add tests for the generated helper functions or remove them if they are not intended to be tested."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 1,
+          "endLine": 169,
+          "severity": "nit",
+          "category": "style",
+          "description": "The file contains 19 nearly identical functions (guardStep1 through guardStep19) with only the function name differing. This pattern is repeated across multiple files, leading to unnecessary duplication.",
+          "suggestion": "Consider refactoring to a single parameterized function or a factory to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 1,
+          "endLine": 164,
+          "severity": "nit",
+          "category": "style",
+          "description": "The file contains 19 nearly identical functions (cliStep1 through cliStep19) with only the function name differing. This pattern is repeated across multiple files, leading to unnecessary duplication.",
+          "suggestion": "Consider refactoring to a single parameterized function or a factory to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 1,
+          "endLine": 158,
+          "severity": "nit",
+          "category": "style",
+          "description": "The file contains 18 nearly identical functions (processorTestStep1 through processorTestStep18) with only the function name differing. This pattern is repeated across multiple files, leading to unnecessary duplication.",
+          "suggestion": "Consider refactoring to a single parameterized function or a factory to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "The file contains 37 nearly identical functions (filler1Step1 through filler1Step37) with only the function name differing. This pattern is repeated across multiple files, leading to unnecessary duplication.",
+          "suggestion": "Consider refactoring to a single parameterized function or a factory to reduce duplication."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "nit",
+          "category": "style",
+          "description": "The file contains 37 nearly identical functions (filler2Step1 through filler2Step37) with only the function name differing. This pattern is repeated across multiple files, leading to unnecessary duplication.",
+          "suggestion": "Consider refactoring to a single parameterized function or a factory to reduce duplication."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "minor": 3,
+          "nit": 5
+        },
+        "byCategory": {
+          "correctness": 2,
+          "testing": 1,
+          "style": 5
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 18,
+      "startedAt": "2026-08-24T11:09:19.248Z",
+      "durationMs": 19667,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 1041,
+        "totalTokens": 25709,
+        "cost": 0.00380499
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 9,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Massive code duplication: 19 identical guardStep* functions that perform the same string normalization logic. This violates DRY principles and creates maintenance burden.",
+          "suggestion": "Extract the common normalization logic into a single reusable function and call it from each step, or remove the unnecessary step-specific variants entirely."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Same code duplication issue as a-guard.ts: 19 identical cliStep* functions with identical implementation.",
+          "suggestion": "Consolidate into a single function or remove the step-specific variants."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 18,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Duplicate normalization functions in test file: 18 identical processorTestStep* functions.",
+          "suggestion": "Remove duplicated test helpers or extract to a shared utility."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "File contains 37 identical filler1Step* functions with no apparent purpose beyond increasing file size.",
+          "suggestion": "Remove this filler file entirely or consolidate the functionality."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Same duplication issue as d-filler-01.ts: 37 identical filler2Step* functions.",
+          "suggestion": "Remove this filler file entirely or consolidate the functionality."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 13,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Same duplication pattern: 19 identical processorStep* functions.",
+          "suggestion": "Consolidate into a single reusable function."
+        },
+        {
+          "file": "packages/fixturepkg/src/internal/log-safe-path.ts",
+          "startLine": 3,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Same duplication pattern in internal module: 37 identical logSafePathStep* functions.",
+          "suggestion": "Consolidate into a single reusable function."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 1,
+          "endLine": 10,
+          "severity": "minor",
+          "category": "documentation",
+          "description": "The processReview function is referenced in tests but its implementation is not shown in the diff, making it difficult to assess the actual functionality.",
+          "suggestion": "Include the implementation of processReview in the diff or provide documentation about its purpose."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 5,
+          "endLine": 11,
+          "severity": "nit",
+          "category": "style",
+          "description": "Import statement references './internal/log-safe-path.ts' but this file appears to contain helper functions rather than just path sanitization based on the diff.",
+          "suggestion": "Consider renaming the file to better reflect its contents or move the helper functions elsewhere."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 3,
+          "endLine": 7,
+          "severity": "nit",
+          "category": "style",
+          "description": "SAFE_PATH_RE regex is overly restrictive - it allows hyphens and underscores but not other common filename characters like spaces or plus signs.",
+          "suggestion": "If this is meant to be a general path sanitizer, consider expanding the allowed character set or documenting the specific restrictions."
+        }
+      ],
+      "summary": {
+        "n": 10,
+        "bySeverity": {
+          "minor": 8,
+          "nit": 2
+        },
+        "byCategory": {
+          "correctness": 7,
+          "documentation": 1,
+          "style": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 19,
+      "startedAt": "2026-08-24T11:09:38.920Z",
+      "durationMs": 27727,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 1198,
+        "totalTokens": 25866,
+        "cost": 0.00407974
+      },
+      "findings": [
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 2,
+          "endLine": 2,
+          "severity": "major",
+          "category": "correctness",
+          "description": "Import statement references './internal/log-safe-path.ts' but no such file exists in the diff. This will cause a runtime error when reportResolvedPlan is called.",
+          "suggestion": "Create the missing file at packages/fixturepkg/src/internal/log-safe-path.ts or correct the import path."
+        },
+        {
+          "file": "packages/fixturepkg/src/z-processor.ts",
+          "startLine": 1,
+          "endLine": 1,
+          "severity": "major",
+          "category": "correctness",
+          "description": "The file c-processor.test.ts imports processReview from './z-processor.ts', but this file is not present in the diff. The test will fail due to the missing module.",
+          "suggestion": "Add the missing z-processor.ts implementation or remove the test file."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 12,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "style",
+          "description": "The guardStep1 through guardStep19 functions are identical copies of the same normalization logic. This violates DRY principles and inflates the codebase unnecessarily.",
+          "suggestion": "Extract the common normalization logic into a single reusable function and call it from each step wrapper if needed."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "style",
+          "description": "The cliStep1 through cliStep19 functions are identical copies, duplicating the same normalization logic.",
+          "suggestion": "Consolidate the duplicated functions into a single helper."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 15,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "style",
+          "description": "The processorTestStep1 through processorTestStep18 functions are identical copies, duplicating normalization logic in test code.",
+          "suggestion": "Extract the duplicated normalization logic into a shared test utility."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "This entire file consists of 37 identical copies of a normalization function (filler1Step1 through filler1Step37) with no clear purpose.",
+          "suggestion": "Remove this filler file entirely or replace with actual implementation."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "style",
+          "description": "This entire file consists of 37 identical copies of a normalization function (filler2Step1 through filler2Step37) with no clear purpose.",
+          "suggestion": "Remove this filler file entirely or replace with actual implementation."
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The file contains 20 identical sections of boilerplate text, creating excessive verbosity without adding unique information.",
+          "suggestion": "Condense the repeated sections into a single clear description or remove redundant content."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The file contains 20 identical sections of boilerplate text, creating excessive verbosity without adding unique information.",
+          "suggestion": "Condense the repeated sections into a single clear description or remove redundant content."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "documentation",
+          "description": "The file contains 20 identical sections of boilerplate text, creating excessive verbosity without adding unique information.",
+          "suggestion": "Condense the repeated sections into a single clear description or remove redundant content."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 3,
+          "endLine": 12,
+          "severity": "nit",
+          "category": "testing",
+          "description": "The tests are trivial and only verify basic functionality without covering edge cases or the normalization logic that dominates the file.",
+          "suggestion": "Add tests for the normalization functions or remove the generated step functions if they're not part of the public API."
+        }
+      ],
+      "summary": {
+        "n": 11,
+        "bySeverity": {
+          "major": 2,
+          "minor": 5,
+          "nit": 4
+        },
+        "byCategory": {
+          "correctness": 2,
+          "style": 5,
+          "documentation": 3,
+          "testing": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "run": 20,
+      "startedAt": "2026-08-24T11:10:06.657Z",
+      "durationMs": 14075,
+      "provenance": {
+        "model": "z-ai/glm-4.6",
+        "variant": "fixture",
+        "rung": "base",
+        "inputSha256": "52fe5f9a084c43d83b22ae4dba77e1601961a87c0389c5f1ea1908f4eb1c2fcf",
+        "sentBytes": 100030,
+        "noteActive": false,
+        "promptSha256": "26b8e21646bd3d0e360c5124d6f0eb12a394a6775e2854be6545a7e7678b10cc"
+      },
+      "provider": "Venice",
+      "usage": {
+        "steps": 1,
+        "inputTokens": 24668,
+        "outputTokens": 873,
+        "totalTokens": 25541,
+        "cost": 0.00351099
+      },
+      "findings": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "File consists of 20 sections with duplicated content. This bloats the repository and adds no value.",
+          "suggestion": "Remove duplicated sections or consolidate into a single representative section."
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "File consists of 20 sections with duplicated content. This bloats the repository and adds no value.",
+          "suggestion": "Remove duplicated sections or consolidate into a single representative section."
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "startLine": 1,
+          "endLine": 362,
+          "severity": "nit",
+          "category": "style",
+          "description": "File consists of 20 sections with duplicated content. This bloats the repository and adds no value.",
+          "suggestion": "Remove duplicated sections or consolidate into a single representative section."
+        },
+        {
+          "file": "packages/fixturepkg/src/a-guard.ts",
+          "startLine": 12,
+          "endLine": 169,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Functions guardStep1 through guardStep19 are identical except for the step number. This indicates a copy-paste error.",
+          "suggestion": "Refactor to a single parameterized function or remove unused steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/b-cli.ts",
+          "startLine": 13,
+          "endLine": 164,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Functions cliStep1 through cliStep19 are identical except for the step number. This indicates a copy-paste error.",
+          "suggestion": "Refactor to a single parameterized function or remove unused steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/c-processor.test.ts",
+          "startLine": 13,
+          "endLine": 158,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Functions processorTestStep1 through processorTestStep18 are identical except for the step number. This indicates a copy-paste error.",
+          "suggestion": "Refactor to a single parameterized function or remove unused steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-01.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Functions filler1Step1 through filler1Step37 are identical except for the step number. This indicates a copy-paste error.",
+          "suggestion": "Refactor to a single parameterized function or remove unused steps."
+        },
+        {
+          "file": "packages/fixturepkg/src/d-filler-02.ts",
+          "startLine": 1,
+          "endLine": 298,
+          "severity": "minor",
+          "category": "correctness",
+          "description": "Functions filler2Step1 through filler2Step37 are identical except for the step number. This indicates a copy-paste error.",
+          "suggestion": "Refactor to a single parameterized function or remove unused steps."
+        }
+      ],
+      "summary": {
+        "n": 8,
+        "bySeverity": {
+          "nit": 3,
+          "minor": 5
+        },
+        "byCategory": {
+          "style": 3,
+          "correctness": 5
+        }
+      },
+      "error": null
+    }
+  ]
+}
