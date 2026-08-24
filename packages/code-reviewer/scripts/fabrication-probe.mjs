@@ -196,23 +196,21 @@ function recipeArgs(variant, rung) {
 // production's truncation note and this instrument share one implementation.
 
 /**
- * The exact ReviewUnit the paid finder call receives (r5 plan-review F6):
- * extracted and hermetically tested so provenance can DERIVE noteActive from
- * the unit instead of asserting it. Truncation facts come from the probe's
- * own manifest — the same computeManifest production's truncationReport uses.
+ * The exact ReviewUnit the paid finder call receives.
+ *
+ * It used to attach the truncation facts (`truncated`/`cutFile`/
+ * `overCapFiles`) that production's finder note consumed. **The note was
+ * reverted** (change `r5-note-revert`) after its live check measured 0
+ * getFileContext calls across three oversized production reviews, so the unit
+ * is now just kind+diff — which is exactly what `--pre-note` already produced.
+ * Every probe run is therefore pre-note-equivalent by construction, and the
+ * probe again matches production byte-for-byte.
+ *
+ * `manifest` is still accepted (and ignored) so archived commands keep working;
+ * it remains the record of what the model could see.
  */
-export function buildProbeReviewUnit(sent, manifest) {
-  return {
-    kind: "diff",
-    diff: sent,
-    ...(manifest.truncated
-      ? {
-          truncated: true,
-          ...(manifest.cutFile === null || manifest.cutFile === undefined ? {} : { cutFile: manifest.cutFile }),
-          overCapFiles: manifest.overCap,
-        }
-      : {}),
-  };
+export function buildProbeReviewUnit(sent, _manifest) {
+  return { kind: "diff", diff: sent };
 }
 
 function buildInput(variant, rung, ordered = false) {
@@ -325,20 +323,20 @@ async function main() {
   // Recorded in the manifest so a results file can never be mistaken for one
   // produced under the other cap pipeline — the two windows differ materially.
   manifest.ordered = ordered;
-  // Provenance binds the intervention (r5 plan-review F6): the unit is the
-  // exact one the paid call receives, noteActive is DERIVED from it, and
-  // promptSha256 hashes the complete rendered model-visible prompt
-  // (instructions + user prompt) alongside the intentionally unchanged
-  // inputSha256.
+  // Provenance binds the run: the unit is the exact one the paid call
+  // receives, and promptSha256 hashes the complete rendered model-visible
+  // prompt (instructions + user prompt) alongside the unchanged inputSha256.
   //
-  // --pre-note (change r2-prose-rerun): builds the unit WITHOUT truncation
-  // facts, which by the production prompt contract ("untruncated prompt stays
-  // byte-identical to the pre-note prompt", prompts.test.ts) renders exactly
-  // what pre-R5 arms saw — required for a run that must combine with a screen
-  // recorded before the truncation note existed. noteActive then derives as
-  // false, so provenance states the prompt regime instead of asserting it.
-  const reviewUnit = preNote ? { kind: "diff", diff: sent } : buildProbeReviewUnit(sent, manifest);
-  const noteActive = reviewUnit.truncated === true;
+  // The finder truncation note was REVERTED (change `r5-note-revert`), so the
+  // unit is kind+diff for every run and `noteActive` is now always false —
+  // kept in the record because archived arms are labelled by it and the field
+  // must keep meaning the same thing. `--pre-note` is accepted as a NO-OP so
+  // the commands written into archived verification.md files still run.
+  const reviewUnit = buildProbeReviewUnit(sent, manifest);
+  const noteActive = false;
+  if (preNote) {
+    console.warn("--pre-note is a no-op: the finder truncation note was reverted, so every run is pre-note.");
+  }
   const promptSha256 = createHash("sha256")
     .update(
       buildInstructions("general", { fileContextTool: false, projectContext: projectContext || undefined }) +

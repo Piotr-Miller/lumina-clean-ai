@@ -19,7 +19,6 @@ import {
   PLAN_CAP_CHARS,
   PLAN_TRUNCATION_MARKER,
   runReviewPipeline,
-  truncationReport,
   type FinderStepInfo,
 } from "./pipeline.js";
 import { type JudgePromptInput } from "./prompts.js";
@@ -1094,33 +1093,9 @@ describe("computeFileSegments / computeManifest (library port)", () => {
   });
 });
 
-describe("truncationReport", () => {
-  it("reports an in-cap diff as untruncated with no cutFile key", () => {
-    const report = truncationReport(SMALL_DIFF);
-    expect(report).toEqual({ truncated: false, overCapFiles: [] });
-    expect("cutFile" in report).toBe(false);
-  });
-
-  it("omits cutFile when the cap lands exactly on a file boundary", () => {
-    const h1 = "diff --git a/a.txt b/a.txt\n";
-    const pad = `+${"x".repeat(DIFF_CAP_BYTES - h1.length - 2)}\n`;
-    const diff = `${h1}${pad}diff --git a/b.txt b/b.txt\n+y`;
-    expect(computeFileSegments(diff)[1].startByte).toBe(DIFF_CAP_BYTES);
-    const report = truncationReport(diff);
-    expect(report.truncated).toBe(true);
-    expect("cutFile" in report).toBe(false);
-    expect(report.overCapFiles).toEqual(["b.txt"]);
-  });
-
-  it("reports oversized headerless text as truncated with no files", () => {
-    const report = truncationReport("x".repeat(DIFF_CAP_BYTES + 10));
-    expect(report).toEqual({ truncated: true, overCapFiles: [] });
-    expect("cutFile" in report).toBe(false);
-  });
-});
-
-// --- Path-order bias fix (orderDiffForCap) ---
-
+// The `truncationReport` suite lived here. Removed with the finder truncation
+// note (change `r5-note-revert`); computeFileSegments/computeManifest keep
+// their own coverage above, since orderDiffForCap and the probe still use them.
 describe("orderDiffForCap", () => {
   const header = (path: string): string => `diff --git a/${path} b/${path}`;
   // Git path order sorts context/ before src/, so this is the shape that
@@ -1141,10 +1116,12 @@ describe("orderDiffForCap", () => {
     const ordered = orderDiffForCap(proseFirstOverCap);
     expect(computeFileSegments(ordered).map((s) => s.path)).toEqual(["src/app.ts", "context/notes.md"]);
     // The window now keeps the whole source file; the cut lands in the prose.
-    const report = truncationReport(ordered);
-    expect(report.truncated).toBe(true);
-    expect(report.cutFile).toBe("context/notes.md");
-    expect(report.overCapFiles).toEqual([]);
+    // Asserted via computeManifest since truncationReport went with the
+    // reverted finder note — the ordering guarantee itself is unchanged.
+    const manifest = computeManifest(ordered, DIFF_CAP_BYTES);
+    expect(manifest.truncated).toBe(true);
+    expect(manifest.cutFile).toBe("context/notes.md");
+    expect(manifest.overCap).toEqual([]);
   });
 
   it("preserves each group's relative order (stable within source and within prose)", () => {
@@ -1200,13 +1177,17 @@ describe("orderDiffForCap", () => {
   });
 });
 
-describe("finder truncation wiring", () => {
+describe("finder unit carries no truncation channel (r5 note reverted)", () => {
   const captureFinder = (sink: { unit?: ReviewUnit }) => (unit: ReviewUnit) => {
     sink.unit = unit;
     return Promise.resolve({ summary: "s", findings: [] });
   };
 
-  it("passes truncated/cutFile/overCapFiles into the finder unit for an oversized diff", async () => {
+  // The note fired correctly and named real invisible source; the finder simply
+  // never fetched (0 getFileContext calls across three oversized production
+  // reviews with the tool available). These guards pin the reverted state so
+  // the channel cannot reappear without a decision.
+  it("sends ONLY kind+diff for an oversized diff — no truncated/cutFile/overCapFiles", async () => {
     const big = [
       "diff --git a/src/big.ts b/src/big.ts",
       `+${"x".repeat(DIFF_CAP_BYTES)}`,
@@ -1214,70 +1195,25 @@ describe("finder truncation wiring", () => {
       "+y",
     ].join("\n");
     const sink: { unit?: ReviewUnit } = {};
-    await runReviewPipeline({
+    const result = await runReviewPipeline({
       diff: big,
       deps: { finder: captureFinder(sink), judge: () => Promise.resolve(judgeResult()) },
     });
     if (sink.unit?.kind !== "diff") throw new Error("finder unit missing");
-    expect(sink.unit.truncated).toBe(true);
-    expect(sink.unit.cutFile).toBe("src/big.ts");
-    expect(sink.unit.overCapFiles).toEqual(["src/beyond.ts"]);
+    expect(Object.keys(sink.unit).sort()).toEqual(["diff", "kind"]);
     expect(sink.unit.diff.endsWith(DIFF_TRUNCATION_MARKER)).toBe(true);
-  });
-
-  it("persists the fence payload as truncationMetadata in the result for an oversized diff", async () => {
-    const big = [
-      "diff --git a/src/big.ts b/src/big.ts",
-      `+${"x".repeat(DIFF_CAP_BYTES)}`,
-      "diff --git a/src/beyond.ts b/src/beyond.ts",
-      "+y",
-    ].join("\n");
-    const result = await runReviewPipeline({
-      diff: big,
-      deps: { finder: captureFinder({}), judge: () => Promise.resolve(judgeResult()) },
-    });
-    // Byte-for-byte the object the <truncation-metadata> fence carried — the
-    // passive live check reads it from review.json instead of the Actions log
-    // (r5-finder-truncation-note decision.md Disposition #2, impl-review F1).
-    expect(result.truncationMetadata).toEqual({ cutFile: "src/big.ts", overCapFiles: ["src/beyond.ts"] });
-  });
-
-  it("adds no truncationMetadata key for an in-cap diff (review.json shape unchanged)", async () => {
-    const result = await runReviewPipeline({
-      diff: SMALL_DIFF,
-      deps: { finder: captureFinder({}), judge: () => Promise.resolve(judgeResult()) },
-    });
+    // What REMAINS: the cap fired and the result still says so.
+    expect(result.diffTruncated).toBe(true);
     expect("truncationMetadata" in result).toBe(false);
   });
 
-  it("adds no truncation fields for an in-cap diff (unit unchanged byte-for-byte)", async () => {
+  it("keeps an in-cap diff byte-identical and untruncated", async () => {
     const sink: { unit?: ReviewUnit } = {};
-    await runReviewPipeline({
+    const result = await runReviewPipeline({
       diff: SMALL_DIFF,
       deps: { finder: captureFinder(sink), judge: () => Promise.resolve(judgeResult()) },
     });
     expect(sink.unit).toEqual({ kind: "diff", diff: SMALL_DIFF });
-  });
-
-  it("orders source before prose on an over-cap diff, and reports the ORDERED cut", async () => {
-    // Prose-first over-cap diff: without ordering, the cap would keep the
-    // Markdown and report src/app.ts over-cap — the path-order bias.
-    const big = [
-      "diff --git a/context/notes.md b/context/notes.md",
-      `+${"p".repeat(DIFF_CAP_BYTES)}`,
-      "diff --git a/src/app.ts b/src/app.ts",
-      "+code",
-    ].join("\n");
-    const sink: { unit?: ReviewUnit } = {};
-    const result = await runReviewPipeline({
-      diff: big,
-      deps: { finder: captureFinder(sink), judge: () => Promise.resolve(judgeResult()) },
-    });
-    if (sink.unit?.kind !== "diff") throw new Error("finder unit missing");
-    expect(sink.unit.diff.startsWith("diff --git a/src/app.ts")).toBe(true);
-    expect(sink.unit.diff).toContain("+code");
-    expect(sink.unit.cutFile).toBe("context/notes.md");
-    expect(sink.unit.overCapFiles).toEqual([]);
-    expect(result.truncationMetadata).toEqual({ cutFile: "context/notes.md", overCapFiles: [] });
+    expect(result.diffTruncated).toBe(false);
   });
 });

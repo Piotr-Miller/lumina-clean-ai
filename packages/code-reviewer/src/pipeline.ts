@@ -9,7 +9,7 @@ import {
   type ImplReviewerOptions,
 } from "./impl-reviewer.js";
 import { createJudge, type Judge, type JudgeCallOptions, type JudgeOptions } from "./judge.js";
-import { truncationMetadataPayload, type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
+import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
 import { withOneRetry } from "./retry.js";
 import {
   createReviewer,
@@ -259,27 +259,10 @@ export function orderDiffForCap(diff: string): string {
   return new TextDecoder().decode(out);
 }
 
-/**
- * Truncation facts for the finder's note (change r5-finder-truncation-note),
- * computed on the RAW diff against the production cap. `cutFile` is OMITTED —
- * never null — when the cut lands exactly between files or the text has no
- * parseable headers, matching ReviewUnit's optional-not-nullable field.
- * Git-quoted paths are reported verbatim as parsed, never decoded; the
- * prompt layer JSON-encodes them, which makes the quoting safe.
- */
-export function truncationReport(rawDiff: string): {
-  truncated: boolean;
-  cutFile?: string;
-  overCapFiles: string[];
-} {
-  const { truncated } = capDiff(rawDiff);
-  const manifest = computeManifest(rawDiff, DIFF_CAP_BYTES);
-  return {
-    truncated,
-    ...(manifest.cutFile === null ? {} : { cutFile: manifest.cutFile }),
-    overCapFiles: manifest.overCap,
-  };
-}
+// `truncationReport` lived here — it derived the cut file and over-cap list
+// for the finder's truncation note. Removed with the note (change
+// `r5-note-revert`); `computeFileSegments` / `computeManifest` above stay,
+// because `orderDiffForCap` and the fabrication probe both use them.
 
 function capBody(body: string | undefined): { body: string | undefined; truncated: boolean } {
   if (body === undefined || body.length <= BODY_CAP_CHARS) return { body, truncated: false };
@@ -509,12 +492,6 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   // stays byte-identical to the pre-ordering pipeline.
   const orderedDiff = orderDiffForCap(input.diff);
   const { diff, truncated: diffTruncated } = capDiff(orderedDiff);
-  // Truncation facts for the finder's note (change r5-finder-truncation-note):
-  // computed on the full ORDERED diff — the text the cap actually cut, so
-  // cutFile/overCapFiles name what the finder cannot see — and only when the
-  // cap fired, keyed off capDiff's own decision, never re-detected from the
-  // capped text.
-  const truncation = diffTruncated ? truncationReport(orderedDiff) : undefined;
   const { body: prBody, truncated: bodyTruncated } = capBody(input.prBody);
   // Capped here rather than at the CLI boundary so every embedder (promptfoo,
   // a future orchestrator) gets the same bound without re-deriving it.
@@ -584,7 +561,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   });
 
   const reviewResult = await withOneRetry(
-    () => finder({ kind: "diff", diff, ...(truncation ?? {}) }, { timeoutMs: timeouts.finderTimeoutMs }),
+    () => finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs }),
     retryOptions("finder"),
   );
   // reviewer.review already normalized; mergeFindings adds the dedup +
@@ -617,11 +594,6 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     verdictReason: judgeResult.verdictReason,
     diffStats,
     diffTruncated,
-    // The exact fence payload the finder saw — truncation provenance for the
-    // passive live check (r5-finder-truncation-note decision.md Disposition
-    // #2, impl-review F1). Key absent when the cap did not fire, so an
-    // untruncated review.json keeps its pre-feature shape.
-    ...(truncation === undefined ? {} : { truncationMetadata: truncationMetadataPayload(truncation) }),
     bodyTruncated,
     // Key absent (not `false`) when the run had no plan, so a plan-less
     // review.json stays byte-identical to what shipped before this feature.
