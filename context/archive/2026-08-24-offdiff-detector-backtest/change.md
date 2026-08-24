@@ -65,3 +65,7 @@ that cannot fail is not evidence.
       same artifact set
 - [x] `packages/code-reviewer` — lint, typecheck, 608 tests
 - [x] `npm run format:check` clean (the new gate from PR #185 covers this script)
+
+---
+
+**Archived 2026-08-24.** Shipped in PR #186.
