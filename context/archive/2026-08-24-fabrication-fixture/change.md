@@ -1,7 +1,8 @@
 ---
 change_id: fabrication-fixture
 title: "Build and validate the fabrication fixture"
-status: implemented
+status: archived
+archived_at: 2026-08-24T11:30:00Z
 created: 2026-08-24
 updated: 2026-08-24
 ---
