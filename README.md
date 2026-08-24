@@ -56,6 +56,8 @@ npm run dev
 
 The enhance UI lives on the home page (`/`) — the Local engine works anonymously; Cloud AI requires signing up.
 
+6. _Working on this repo with an AI coding agent (Claude Code / Codex)?_ The steps above are all you need to run the app. The agent **skills** are gitignored course artifacts that a clone cannot reproduce — restore them with [`context/foundation/agent-env-setup.md`](context/foundation/agent-env-setup.md).
+
 ## Available Scripts
 
 - `npm run dev` - Start Astro dev server (Node/Vite; for workerd fidelity use `npm run build && npx wrangler dev`)
@@ -188,7 +190,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs four jobs: **ci** (lint, unit t
 
 ## Documentation
 
-The written foundation the app was built from lives in [`context/foundation/`](context/foundation/): [`prd.md`](context/foundation/prd.md) (vision, user stories, guardrails), [`roadmap.md`](context/foundation/roadmap.md), [`test-plan.md`](context/foundation/test-plan.md) (risk map + phased test rollout), and [`tech-stack.md`](context/foundation/tech-stack.md). MVP scope and non-goals: [`idea-notes.md`](idea-notes.md).
+The written foundation the app was built from lives in [`context/foundation/`](context/foundation/): [`prd.md`](context/foundation/prd.md) (vision, user stories, guardrails), [`roadmap.md`](context/foundation/roadmap.md), [`test-plan.md`](context/foundation/test-plan.md) (risk map + phased test rollout), and [`tech-stack.md`](context/foundation/tech-stack.md). MVP scope and non-goals: [`idea-notes.md`](idea-notes.md). Two runbooks cover what a clone cannot reproduce: [`manual-setup-runbook.md`](context/foundation/manual-setup-runbook.md) (external services) and [`agent-env-setup.md`](context/foundation/agent-env-setup.md) (AI-agent tooling).
 
 ## License
 
