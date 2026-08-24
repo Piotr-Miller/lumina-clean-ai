@@ -93,4 +93,59 @@ read-off.
 
 ## Results
 
-(appended after the run; nothing above this heading changes)
+### Paid run (2026-08-24)
+
+`fabrication-probe.mjs --variant fixture --rung base --n 20 --pre-note` →
+`results/fixture-base-n20-20260824T110516Z.json`. **20/20 gradeable, 0 finder
+errors**; every run `provider: Venice`, `noteActive: false` (pre-note prompt
+confirmed, as the arm requires). Finder cost **$0.092326**.
+
+Grading: `…-graded.json`, complete, 0 failed calls, `groundTruth.sha256` =
+`122bc3ea…` (the frozen value). Grader cost **$1.512444** across 167 calls.
+**Total spend $1.604770** — under the ~$4 estimate and far under the $12 stop.
+
+### Counts (grader-recorded)
+
+|                         | CI baseline (B) | fixture   |
+| ----------------------- | --------------- | --------- |
+| fabricationRuns (M2+M3) | **17/20**       | **11/20** |
+| m1Runs                  | 5               | **5**     |
+| findings                | 166             | 167       |
+| M1                      | 10              | 5         |
+| M2                      | 6               | **0**     |
+| M3                      | 48              | 23        |
+| none                    | 102             | 139       |
+
+### Hand-read — grading VALID
+
+28 flagged + 10 deterministic clean controls adjudicated in
+`reviews/hand-read.md`: **37 agree, 1 misgrade → 2.63%**, below the 15% bar.
+The misgrade (H-28, M3 → M2) moves only the M2/M3 split and leaves
+`fabricationRuns` at 11/20, so no read-off changes.
+
+### Read-off against the frozen bar
+
+1. **Band 1 — |count − 17| ≤ 3:** |11 − 17| = **6 → FAIL**
+2. **Band 2 — M3-dominant:** M3 23 vs M1 5, M2 0 → **PASS**
+
+Both bands were required. **VERDICT: NOT REPRESENTATIVE.**
+
+Recorded as the pre-registration prescribed ("Anything outside band 1 → NOT
+REPRESENTATIVE, recorded as such with the count … a legitimate and publishable
+negative"). No bar was moved after seeing the number.
+
+### Secondary observables (recorded, never gated)
+
+- **M1 is live and calibrated:** m1Runs **5/20 — identical to the CI
+  baseline's 5/20**. The planted D4 target reproduces the cap mechanism exactly.
+- **M2 = 0.** The fixture produced no contradiction-of-a-visible-defence at all,
+  against the baseline's 6 — the outcome the archived fixture-spec predicted
+  ("a validated M2 trigger … would be a guess").
+- **Finding volume matches** (167 vs 166) while the fabrication _rate_ does not,
+  so volume is not a proxy for fidelity.
+- **Distribution is lumpier than the real diff's:** 4 runs produced zero
+  findings; 3 produced 17–20.
+- **New fabrication mode — invented file paths.** 8 of 28 flags (29%) cite
+  `e-filler-03.ts` … `l-filler-10.ts`, files that exist nowhere: the model
+  extrapolated the letter prefix and numbers from the visible `d-filler-01..08`
+  naming pattern. See `decision.md`.

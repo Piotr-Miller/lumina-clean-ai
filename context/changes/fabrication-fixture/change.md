@@ -1,7 +1,7 @@
 ---
 change_id: fabrication-fixture
 title: "Build and validate the fabrication fixture"
-status: preparing
+status: implemented
 created: 2026-08-24
 updated: 2026-08-24
 ---
@@ -49,8 +49,18 @@ offsets lets a future intervention be tested against the mechanisms directly.
   discipline spelled out — the same protection the grader already had on its
   ground truth.
 
-## Status
+## Outcome (2026-08-24)
 
-Pre-registration frozen (`verification.md`) with inputs sha256-pinned and the
-placement gate verified by `--dry`. Paid n=20 baseline pending; results and the
-read-off get appended to `verification.md`, then a `decision.md`.
+**NOT REPRESENTATIVE** — 11/20 fabrication runs against the required 14-20;
+M3-dominant band passed. Both were required, so the fixture does not reproduce
+the real diff's behaviour. Recorded as the pre-registration prescribed; no bar
+was moved after seeing the number.
+
+The mechanisms DO reproduce: m1Runs 5/20 exactly matches the CI baseline and
+M3 dominates. What differs is the rate (11 vs 17) and M2 (0 vs 6). A new
+fabrication mode appeared that the real diff never showed — invented file paths
+extrapolated from the generated filler's regular naming — which is the
+fixture's own artifact and the named first thing to attack if anyone retries.
+
+Spend $1.60 of a $12 stop. Full record: `verification.md` (Results),
+`decision.md`, `reviews/hand-read.md`.
