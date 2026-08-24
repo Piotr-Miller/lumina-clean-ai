@@ -73,3 +73,7 @@ session back.
       `password-reset-client.options.ts` exists; PR #172's diff confirmed to
       touch the archive and **not** `roadmap.md`; issue #7 already closed, so
       `github-issues.md` needs no sync
+
+---
+
+**Archived 2026-08-24.** Shipped in PR #180.
