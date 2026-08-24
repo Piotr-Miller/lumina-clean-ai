@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@std/assert@^1.0.8": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
+    "npm:@sentry/core@^10.58.0": "10.58.0",
     "npm:@sentry/deno@^10.58.0": "10.58.0"
   },
   "jsr": {
@@ -55,6 +56,7 @@
   },
   "workspace": {
     "dependencies": [
+      "npm:@sentry/core@^10.58.0",
       "npm:@sentry/deno@^10.58.0"
     ]
   }

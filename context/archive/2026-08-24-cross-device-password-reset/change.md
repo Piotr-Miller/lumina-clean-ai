@@ -13,14 +13,21 @@ Closes the roadmap **Parked** item "Cross-device password reset (PKCE →
 non-PKCE emitted token)", deferred from S-06 on 2026-06-03. It delivers the
 remainder of **FR-015**.
 
-**The bug:** request a reset on a laptop, open the mail on a phone, and
-`/auth/confirm` fails with "invalid or expired" and bounces to
-forgot-password. Cause: `@supabase/ssr`'s `createServerClient` **hardcodes
-`flowType: "pkce"`** (verified against the library source via Context7 — it
-overrides any value the caller passes). PKCE binds the emailed token to a code
-verifier held in the requesting browser, so the link mints as
-`token_hash=pkce_…` and `verifyOtp` only succeeds in that same browser. This is
-the common real-world path, not an edge case.
+> ⚠️ **Read "Post-merge smoke" at the bottom before citing this section.** The
+> premise below is the one this change was written against, and the smoke
+> DISPROVED it on the current stack: a `pkce_` token verifies cross-device fine
+> today. What remains true is the mechanism (SSR forces PKCE; the fix emits a
+> portable token); what is NOT true is that a reproducible user-facing bug was
+> fixed.
+
+**The premise (as recorded, since disproved):** request a reset on a laptop,
+open the mail on a phone, and `/auth/confirm` fails with "invalid or expired"
+and bounces to forgot-password. Cause: `@supabase/ssr`'s `createServerClient`
+**hardcodes `flowType: "pkce"`** (verified against the library source via
+Context7 — it overrides any value the caller passes; this part still holds).
+PKCE binds the emailed token to a code verifier held in the requesting browser,
+so the link mints as `token_hash=pkce_…` — and the claim was that `verifyOtp`
+then succeeds only in that same browser.
 
 ## Correction to the recorded plan
 
@@ -70,8 +77,45 @@ app-side sender, no email-template change**.
   still passes any single-browser test and fails only for the real
   request-on-laptop / read-on-phone case.
 
-**Not verified end-to-end here:** delivering a real reset mail and opening it on
-a second device needs the prod project (local Supabase mail goes to Inbucket).
-The token-shape change is the whole mechanism and is unit-pinned, but a prod
-smoke — request a reset, open the link on a phone, land on set-new-password —
-is the honest final confirmation and is not claimed by this change.
+**Not verified end-to-end at merge time:** see the post-merge smoke below, which
+closed this — and corrected the premise.
+
+## Post-merge smoke (2026-08-24) — the premise was STALE
+
+Run with `scripts/local-reset-smoke.ts` against the local stack: it sends a real
+recovery mail per client configuration, reads the token out of Mailpit, and
+verifies it from a **fresh `createServerClient` with an empty cookie jar** —
+which is exactly what `/auth/confirm` builds, and exactly what a second device
+has.
+
+| Arm                                                           | Result                                            |
+| ------------------------------------------------------------- | ------------------------------------------------- |
+| A — SSR send (pre-fix path)                                   | emits `pkce_…` — **device-bound token confirmed** |
+| B — fixed send                                                | emits a plain hash — **portable token confirmed** |
+| C — verify B from a fresh SSR client                          | no error, **usable session**, correct user        |
+| D — CONTROL: verify A's `pkce_` token from a fresh SSR client | **no error, session PRESENT, correct user**       |
+
+**Arm D is the finding.** The archived S-06 note (and this change's own premise)
+held that a `pkce_` token fails `verifyOtp` on another device. On the current
+stack it does **not**: the pre-fix token verifies cross-device and returns a
+full session. So the user-facing bug this change was written to fix **does not
+reproduce today** — GoTrue/supabase-js evidently now accept a `pkce_` hashed
+token without the code verifier.
+
+**Why the change still stands (not reverted):**
+
+- It is a genuine simplification: the send leg no longer needs cookies, a
+  session, or the PKCE machinery it never used.
+- It makes portability **explicit** instead of depending on GoTrue continuing to
+  be lenient about verifier-free `pkce_` verification — a behaviour we do not
+  control and which arm D shows has already changed once.
+- Arms B and C prove the shipped path works end-to-end. Nothing regressed.
+
+**What must NOT be claimed:** that this fixed a reproducible user-facing bug.
+The honest statement is that it removes a fragile coupling and makes the
+emitted token portable by construction.
+
+**Caveat:** this measured the LOCAL stack. Hosted GoTrue may run a different
+version, so prod could still behave as the original diagnosis described. Re-run
+arm D's reasoning there if the question ever matters; the expected result on the
+current evidence is "both work".

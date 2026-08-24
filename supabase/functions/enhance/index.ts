@@ -47,92 +47,22 @@ import {
 // module runs Sentry.init + Deno.serve at top level and so cannot itself be
 // imported by a test (change `edge-function-test-harness`).
 import { createPredictionWithBurstRetry, REPLICATE_PREDICTIONS_URL } from "./replicate-create.ts";
+import { MAX_ERROR_DETAIL_CHARS, scrubSentryEvent } from "./sentry-scrub.ts";
+import { signSourceWithRetry } from "./source-sign.ts";
 
 // Sentry (Edge / Deno runtime). DSN is a Supabase Edge secret
 // (`supabase secrets set SENTRY_DSN=…`) — same project as the app, NOT a Worker
 // secret. Capture is MANUAL (the two outer catches below): the Deno SDK does no
 // auto-instrumentation here. DSN absent → SDK no-ops.
 //
-// `scrubSentryEvent` MIRRORS `src/lib/observability/sentry-scrub.ts` — the Deno
-// runtime cannot import app `src/` across the runtime boundary, so the privacy
-// logic is duplicated. Keep the two in sync. It runs on BOTH `beforeSend` and
-// `beforeSendTransaction` (light tracing is on at 5%), redacting signed Storage
-// URL query/signature, emails, bearer/provider tokens, request headers/cookies,
-// `user.ip_address`, and bounding strings to MAX_ERROR_DETAIL_CHARS.
-const SCRUB_EMAIL_RE = /[^\s@"'<>]+@[^\s@"'<>]+\.[^\s@"'<>]+/g;
-const SCRUB_TOKEN_RES: RegExp[] = [
-  /Bearer\s+[A-Za-z0-9._-]+/g,
-  /\bwhsec_[A-Za-z0-9/+_=-]+/g,
-  /\br8_[A-Za-z0-9]+/g,
-  /\bsbp?_[A-Za-z0-9]{16,}/g,
-  /\beyJ[A-Za-z0-9._-]{20,}/g,
-];
-const SCRUB_URL_QUERY_RE = /(https?:\/\/[^\s"'?]+)\?[^\s"'<>]*/g;
-const SCRUB_SENSITIVE_KEY_RE = /^(authorization|cookie|set-cookie|x-.*-key|.*token.*|.*secret.*|email|apikey)$/i;
-
-function scrubRedactString(input: string): string {
-  let out = input.replace(SCRUB_URL_QUERY_RE, "$1?[redacted]");
-  for (const re of SCRUB_TOKEN_RES) out = out.replace(re, "[redacted-token]");
-  out = out.replace(SCRUB_EMAIL_RE, "[email]");
-  if (out.length > MAX_ERROR_DETAIL_CHARS) out = out.slice(0, MAX_ERROR_DETAIL_CHARS) + "…[truncated]";
-  return out;
-}
-
-function scrubRedactDeep(value: unknown, depth = 0): unknown {
-  if (depth > 6) return "[depth-limited]";
-  if (typeof value === "string") return scrubRedactString(value);
-  if (Array.isArray(value)) return value.map((v) => scrubRedactDeep(v, depth + 1));
-  if (value && typeof value === "object") {
-    const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      out[k] = SCRUB_SENSITIVE_KEY_RE.test(k) ? "[redacted]" : scrubRedactDeep(v, depth + 1);
-    }
-    return out;
-  }
-  return value;
-}
-
-function scrubSentryEvent<T extends Sentry.Event>(event: T): T {
-  const e = event as Record<string, unknown>;
-  if (typeof e.message === "string") e.message = scrubRedactString(e.message);
-  const exception = e.exception as { values?: { value?: unknown }[] } | undefined;
-  if (exception?.values) {
-    for (const ex of exception.values) if (typeof ex.value === "string") ex.value = scrubRedactString(ex.value);
-  }
-  const req = e.request as Record<string, unknown> | undefined;
-  if (req) {
-    if (typeof req.url === "string") req.url = req.url.replace(SCRUB_URL_QUERY_RE, "$1?[redacted]").split("?")[0];
-    if (req.query_string != null) req.query_string = "[redacted]";
-    if (req.cookies != null) req.cookies = "[redacted]";
-    if (req.headers && typeof req.headers === "object") req.headers = scrubRedactDeep(req.headers);
-    if (req.data != null) req.data = scrubRedactDeep(req.data);
-  }
-  const user = e.user as Record<string, unknown> | undefined;
-  if (user) {
-    user.ip_address = null;
-    delete user.email;
-  }
-  const spans = e.spans as { description?: unknown; data?: unknown }[] | undefined;
-  if (spans) {
-    for (const s of spans) {
-      if (typeof s.description === "string") s.description = scrubRedactString(s.description);
-      if (s.data != null) s.data = scrubRedactDeep(s.data);
-    }
-  }
-  const contexts = e.contexts as { trace?: { data?: unknown } } | undefined;
-  if (contexts?.trace?.data) {
-    contexts.trace.data = scrubRedactDeep(contexts.trace.data) as Record<string, unknown>;
-  }
-  const breadcrumbs = e.breadcrumbs as { message?: unknown; data?: unknown }[] | undefined;
-  if (breadcrumbs) {
-    for (const crumb of breadcrumbs) {
-      if (typeof crumb.message === "string") crumb.message = scrubRedactString(crumb.message);
-      if (crumb.data != null) crumb.data = scrubRedactDeep(crumb.data);
-    }
-  }
-  if (e.extra != null) e.extra = scrubRedactDeep(e.extra);
-  return event;
-}
+// `scrubSentryEvent` MIRRORS `src/lib/observability/sentry-scrub.ts`; it now
+// lives in ./sentry-scrub.ts so `deno test` can reach it, and
+// sentry-scrub.test.ts asserts OUTPUT PARITY against the app copy — the
+// "keep the two in sync" instruction is a gate rather than a comment. It runs
+// on BOTH `beforeSend` and `beforeSendTransaction` (light tracing is on at
+// 5%), redacting signed Storage URL query/signature, emails, bearer/provider
+// tokens, request headers/cookies, `user.ip_address`, and bounding strings to
+// MAX_ERROR_DETAIL_CHARS.
 
 Sentry.init({
   dsn: Deno.env.get("SENTRY_DSN"),
@@ -162,17 +92,11 @@ setObservabilityWarnCapture((message) => {
 // A 300s TTL was the cold-boot reliability gap S-09 closes.
 const SOURCE_URL_TTL_SECONDS = 3600;
 const PHOTOS_BUCKET = "photos";
-// Kickoff-race backstop: the DB webhook fires /start on the `queued` INSERT, but
-// the client PUTs the source object only AFTER create-job returns. When the
-// function is warm, /start can run before the upload lands and createSignedReadUrl
-// 404s ("Object not found"). Retry a bounded number of times to absorb that race;
-// ~4.5s total, well inside pg_net's fire-and-forget window. Any non-404 signing
-// error fails fast.
-const SOURCE_SIGN_MAX_ATTEMPTS = 6;
-const SOURCE_SIGN_RETRY_DELAY_MS = 750;
-// Cap how much Replicate error text we persist/return: the body can echo the
-// signed source URL, and error_message is read by the owner. Bound it.
-const MAX_ERROR_DETAIL_CHARS = 300;
+// The kickoff-race signing retry (SOURCE_SIGN_* constants + isObjectNotFound)
+// lives in ./source-sign.ts, and MAX_ERROR_DETAIL_CHARS — which bounds how much
+// Replicate error text we persist, since the body can echo the signed source
+// URL — is exported by ./sentry-scrub.ts alongside the scrub that applies it.
+// Both moved so `deno test` can reach them; behavior unchanged.
 // The Replicate burst-limit backoff (429 retry) and its constants now live in
 // ./replicate-create.ts so `deno test` can reach them — see that module's
 // header. Behavior is unchanged; only the location moved.
@@ -323,29 +247,8 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-
-// A "not found" signing failure means the client's source upload hasn't landed
-// yet (the kickoff race). Distinguish it from real errors so only the race is
-// retried.
-function isObjectNotFound(err: unknown): boolean {
-  return err instanceof Error && /object not found/i.test(err.message);
-}
-
-// Sign the source READ URL, retrying ONLY while the object is still missing
-// (upload in flight). See SOURCE_SIGN_MAX_ATTEMPTS for the rationale.
-async function signSourceWithRetry(admin: ReturnType<typeof buildAdminClient>, sourcePath: string): Promise<string> {
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= SOURCE_SIGN_MAX_ATTEMPTS; attempt++) {
-    try {
-      return await createSignedReadUrl(admin, sourcePath, SOURCE_URL_TTL_SECONDS);
-    } catch (err) {
-      lastErr = err;
-      if (!isObjectNotFound(err) || attempt === SOURCE_SIGN_MAX_ATTEMPTS) break;
-      await delay(SOURCE_SIGN_RETRY_DELAY_MS);
-    }
-  }
-  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
-}
+// isObjectNotFound + the retry loop now live in ./source-sign.ts so `deno test`
+// can reach them; the signing call itself is bound here and passed in.
 
 async function handleStart(req: Request): Promise<Response> {
   // 1. Authenticate the DB-webhook call (shared bearer; no Supabase JWT).
@@ -402,7 +305,9 @@ async function handleStart(req: Request): Promise<Response> {
     // flight when a warm /start runs). Locally the signed URL carries the
     // internal `kong` host; rewrite its origin to the public tunnel (no-op in
     // prod). See toPublicStorageUrl.
-    const signedSourceUrl = toPublicStorageUrl(await signSourceWithRetry(admin, job.source_path));
+    const signedSourceUrl = toPublicStorageUrl(
+      await signSourceWithRetry(() => createSignedReadUrl(admin, job.source_path, SOURCE_URL_TTL_SECONDS)),
+    );
     const callbackUrl = `${enhanceFunctionBaseUrl()}/callback?jobId=${encodeURIComponent(jobId)}`;
 
     // Replicate requires the webhook to be a public HTTPS URL, and without one
