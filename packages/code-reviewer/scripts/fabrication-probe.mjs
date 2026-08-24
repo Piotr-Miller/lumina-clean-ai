@@ -96,10 +96,11 @@ const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 // dir (sha256-pinned in its verification.md, the ci.md precedent) before
 // using those modes. The rloc guard below and the grader's ground-truth check
 // both fail fast with this discipline (impl-review F2).
-const changeDir = `${repoRoot}context/changes/fabrication-fixture`;
+const changeDir = `${repoRoot}context/changes/fixture-ordered-and-irregular`;
 const resultsDir = `${changeDir}/results`;
 const RLOC_CONTEXT_PATH = `${changeDir}/ground-truth/rloc-context.txt`;
-const FIXTURE_DIFF_PATH = `${changeDir}/ground-truth/fixture.diff`;
+/** Each fixture variant reads its own frozen diff, named after the variant. */
+const fixtureDiffPath = (variant) => `${changeDir}/ground-truth/${variant}.diff`;
 
 // Fail fast on a stale changeDir instead of silently resurrecting it. Before
 // this guard, `--dry` ran `mkdirSync(recursive)` and happily wrote manifests
@@ -135,13 +136,14 @@ export function parseArgs(argv) {
     else if (a === "--ordered") args.ordered = true;
     else throw new Error(`unknown argument: ${a}`);
   }
-  if (args.variant !== "ci" && args.variant !== "instrument" && args.variant !== "fixture") {
-    throw new Error(`--variant must be ci|instrument|fixture, got: ${String(args.variant)}`);
+  const VARIANTS = ["ci", "instrument", "fixture", "fixture-irregular"];
+  if (!VARIANTS.includes(args.variant)) {
+    throw new Error(`--variant must be ${VARIANTS.join("|")}, got: ${String(args.variant)}`);
   }
-  // The fixture is a synthetic, generated input with its own planted defences;
+  // Fixtures are synthetic, generated inputs with their own planted defences;
   // the pathspec ablations are defined against the real PR #127 diff only.
-  if (args.variant === "fixture" && args.rung !== "base" && args.rung !== "r1") {
-    throw new Error("--variant fixture supports --rung base|r1 only (the ablations are ci-variant recipes)");
+  if (args.variant.startsWith("fixture") && args.rung !== "base" && args.rung !== "r1") {
+    throw new Error(`--variant ${args.variant} supports --rung base|r1 only (the ablations are ci-variant recipes)`);
   }
   if (!["base", "r1", "r2", "r3", "rloc"].includes(args.rung)) {
     throw new Error(`--rung must be base|r1|r2|r3|rloc, got: ${String(args.rung)}`);
@@ -216,8 +218,9 @@ export function buildProbeReviewUnit(sent, manifest) {
 function buildInput(variant, rung, ordered = false) {
   // The fixture is generated, not derived from git: its bytes are the frozen
   // artifact (sha256 in the change's verification.md), so it is read verbatim.
-  const gitRaw =
-    variant === "fixture" ? readFileSync(FIXTURE_DIFF_PATH, "utf8") : git(...recipeArgs(variant, rung));
+  const gitRaw = variant.startsWith("fixture")
+    ? readFileSync(fixtureDiffPath(variant), "utf8")
+    : git(...recipeArgs(variant, rung));
   // `--ordered` reproduces CURRENT production (PR #164): source before prose,
   // THEN the cap — so the window keeps code and the cut lands in Markdown.
   // Default stays bare-capDiff, the pipeline every archived anchor was frozen
@@ -482,3 +485,4 @@ async function main() {
 
 const isMain = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) await main();
+
