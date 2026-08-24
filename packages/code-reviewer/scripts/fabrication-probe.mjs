@@ -14,8 +14,17 @@
 //   instrument  two-dot `7c9c12f^1 7c9c12f` minus reviews/*.md — byte-anchor
 //               266,444. What the archived 2/8 collapse evidence measured.
 //
+// ⚠️ PRODUCTION FIDELITY (change `finder-provider-routing` / fixture successor,
+// 2026-08-24): the rungs below cap with a bare `capDiff`, which is what
+// production did UP TO PR #164. Production now runs `orderDiffForCap` FIRST,
+// moving Markdown behind source before the cap, so on an over-cap diff it is
+// PROSE that falls outside the window, not source. The bare-capDiff path is
+// kept as the default because every archived byte anchor and every frozen
+// ground-truth window depends on it — changing it would silently invalidate the
+// campaign's results. Use `--ordered` to reproduce CURRENT production instead.
+//
 // Rungs (CI variant only; pathspec ablations per plan.md + review F3):
-//   base   recipe → capDiff (production cap)
+//   base   recipe → capDiff (production cap AS OF THE CAMPAIGN; see above)
 //   r1     recipe, cap LIFTED (full diff sent) — ablates the cap (M1)
 //   r2     recipe minus context/** → capDiff — ablates prose
 //   r3     recipe restricted to prose (minus packages/** AND .github/**) → capDiff
@@ -37,7 +46,14 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { asStepCost, capDiff, computeFileSegments, computeManifest, DIFF_CAP_BYTES } from "../src/pipeline.js";
+import {
+  asStepCost,
+  capDiff,
+  computeFileSegments,
+  computeManifest,
+  DIFF_CAP_BYTES,
+  orderDiffForCap,
+} from "../src/pipeline.js";
 import { buildInstructions, buildPrompt } from "../src/prompts.js";
 import { createReviewer } from "../src/reviewer.js";
 
@@ -91,7 +107,7 @@ const git = (...args) => execFileSync("git", args, { cwd: repoRoot, encoding: "u
 // ---------------------------------------------------------------------------
 
 export function parseArgs(argv) {
-  const args = { variant: undefined, rung: "base", n: 1, dry: false, preNote: false };
+  const args = { variant: undefined, rung: "base", n: 1, dry: false, preNote: false, ordered: false };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--variant") args.variant = argv[++i];
@@ -99,6 +115,7 @@ export function parseArgs(argv) {
     else if (a === "--n") args.n = Number(argv[++i]);
     else if (a === "--dry") args.dry = true;
     else if (a === "--pre-note") args.preNote = true;
+    else if (a === "--ordered") args.ordered = true;
     else throw new Error(`unknown argument: ${a}`);
   }
   if (args.variant !== "ci" && args.variant !== "instrument") {
@@ -174,8 +191,14 @@ export function buildProbeReviewUnit(sent, manifest) {
   };
 }
 
-function buildInput(variant, rung) {
-  const raw = git(...recipeArgs(variant, rung));
+function buildInput(variant, rung, ordered = false) {
+  const gitRaw = git(...recipeArgs(variant, rung));
+  // `--ordered` reproduces CURRENT production (PR #164): source before prose,
+  // THEN the cap — so the window keeps code and the cut lands in Markdown.
+  // Default stays bare-capDiff, the pipeline every archived anchor was frozen
+  // against. The manifest is computed on the SAME text that was capped, so an
+  // ordered run's window/overCap describe what the model actually saw.
+  const raw = ordered ? orderDiffForCap(gitRaw) : gitRaw;
   let sent;
   let capBytes;
   if (rung === "r1") {
@@ -265,8 +288,11 @@ const summarise = (findings) => {
 };
 
 async function main() {
-  const { variant, rung, n, dry, preNote } = parseArgs(process.argv.slice(2));
-  const { sent, projectContext, manifest } = buildInput(variant, rung);
+  const { variant, rung, n, dry, preNote, ordered } = parseArgs(process.argv.slice(2));
+  const { sent, projectContext, manifest } = buildInput(variant, rung, ordered);
+  // Recorded in the manifest so a results file can never be mistaken for one
+  // produced under the other cap pipeline — the two windows differ materially.
+  manifest.ordered = ordered;
   // Provenance binds the intervention (r5 plan-review F6): the unit is the
   // exact one the paid call receives, noteActive is DERIVED from it, and
   // promptSha256 hashes the complete rendered model-visible prompt
@@ -297,7 +323,7 @@ async function main() {
   mkdirSync(resultsDir, { recursive: true });
 
   if (dry) {
-    const outPath = `${resultsDir}/${variant}-${rung}-dry-manifest.json`;
+    const outPath = `${resultsDir}/${variant}-${rung}${ordered ? "-ordered" : ""}-dry-manifest.json`;
     writeFileSync(outPath, JSON.stringify(manifest, null, 2) + "\n");
     console.log(JSON.stringify({ sentBytes: manifest.sentBytes, rawBytes: manifest.rawBytes }, null, 2));
     console.log(`\nwindow (${String(manifest.window.length)} files, cut=${String(manifest.cutFile)}):`);
