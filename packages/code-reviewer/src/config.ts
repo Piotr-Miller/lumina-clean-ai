@@ -75,6 +75,44 @@ export const MAX_OUTPUT_TOKENS = 16_384;
  */
 export const IMPL_REVIEW_MAX_OUTPUT_TOKENS = 32_768;
 
+/**
+ * Provider routing for every STRUCTURED model call in the pipeline.
+ *
+ * THE FAILURE THIS PREVENTS: structured-output support on OpenRouter is a
+ * property of the ENDPOINT, not the model — the same model id is served by
+ * several upstreams and only some enforce a strict json_schema. Providers
+ * silently ignore parameters they do not support, so a strict-schema request
+ * routed to a non-enforcing endpoint comes back as free-form text that fails
+ * the parse. Measured twice on this repo: the fabrication campaign hit 4/4
+ * calibration failures under unpinned routing with three DISTINCT malformed
+ * envelopes (Amendment A1), and on 2026-08-23 a live advisory review died with
+ * 55 output tokens and "No output generated" (run 32665515420).
+ *
+ * `require_parameters: true` is OpenRouter's own documented remedy: it excludes
+ * endpoints that cannot honour the request's parameters, so a json_schema call
+ * can only land somewhere that enforces it.
+ *
+ * DELIBERATELY NOT THE CAMPAIGN'S PIN. `fabrication-probe.mjs` pins
+ * `{order: ["venice"], allow_fallbacks: false, quantizations: ["fp4"]}` — that
+ * exists to make measurements comparable within one endpoint, and copying it
+ * here would trade an occasional malformed envelope for an outright outage
+ * whenever that single upstream is down or rate-limited. Fallbacks stay ON:
+ * routing may move freely among endpoints that DO enforce the schema.
+ *
+ * Escape hatch: set `OPENROUTER_REQUIRE_PARAMETERS=false` to restore unfiltered
+ * routing without a release, should the filter ever leave too few endpoints.
+ */
+export const DEFAULT_PROVIDER_ROUTING = { require_parameters: true } as const;
+
+/**
+ * Resolves the routing preference, honouring the escape hatch. Only the exact
+ * string "false" disables it: an unset, empty, or malformed value keeps the
+ * safer default rather than silently reverting to the failure mode above.
+ */
+export function resolveProviderRouting(): { require_parameters: true } | undefined {
+  return process.env.OPENROUTER_REQUIRE_PARAMETERS === "false" ? undefined : DEFAULT_PROVIDER_ROUTING;
+}
+
 export interface ModelOverrides {
   reviewModel?: string;
   judgeModel?: string;

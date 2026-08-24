@@ -1,7 +1,13 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 
-import { MAX_OUTPUT_TOKENS, resolveConfig, resolveModels } from "./config.js";
+import { MAX_OUTPUT_TOKENS, resolveConfig, resolveModels, resolveProviderRouting } from "./config.js";
+
+/** Spread-empty when routing is disabled, so the request stays byte-identical to the pre-feature one. */
+const providerRoutingSetting = () => {
+  const routing = resolveProviderRouting();
+  return routing ? { provider: routing } : {};
+};
 import { buildJudgeInstructions, buildJudgePrompt, type JudgePromptInput } from "./prompts.js";
 import { tolerantJudgeOutput } from "./output-repair.js";
 import { validateJudgeReferences } from "./scorecard.js";
@@ -51,7 +57,11 @@ export function createJudge(options: JudgeOptions = {}) {
     // Usage accounting is OPT-IN and the judge shipped without it, which is why
     // its cost was permanently undefined — the gap that made criterion 4.8
     // uncomputable. Free: accounting adds response fields, not tokens.
-    model: openrouter(judgeModel, { usage: { include: true } }),
+    // `provider` keeps this strict-schema call on endpoints that actually
+    // enforce the schema — see DEFAULT_PROVIDER_ROUTING. The judge has its own
+    // repair layer precisely because malformed envelopes reached it once; this
+    // attacks the routing cause rather than the symptom.
+    model: openrouter(judgeModel, { usage: { include: true }, ...providerRoutingSetting() }),
     // See MAX_OUTPUT_TOKENS: uncapped, the provider asks for the model maximum
     // and OpenRouter reserves credit against that, not against actual use.
     maxOutputTokens: MAX_OUTPUT_TOKENS,

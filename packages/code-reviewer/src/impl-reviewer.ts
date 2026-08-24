@@ -1,7 +1,7 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { Output, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 
-import { IMPL_REVIEW_MAX_OUTPUT_TOKENS, resolveConfig, resolveModels } from "./config.js";
+import { IMPL_REVIEW_MAX_OUTPUT_TOKENS, resolveConfig, resolveModels, resolveProviderRouting } from "./config.js";
 import { buildImplReviewInstructions, buildImplReviewPrompt, type ImplReviewPromptInput } from "./prompts.js";
 import type { SourceProvider } from "./reviewer.js";
 import {
@@ -91,7 +91,15 @@ export function createImplReviewer(options: ImplReviewerOptions = {}) {
     // the blind spot #119 shipped with, and the one that would have made this
     // phase's cost criterion unverifiable (plan-review F3). Free: accounting
     // adds response fields, not tokens.
-    model: openrouter(implReviewModel, { usage: { include: true } }),
+    // See DEFAULT_PROVIDER_ROUTING: a strict-schema call must only reach an
+    // endpoint that enforces the schema. Spread-empty when disabled.
+    model: openrouter(implReviewModel, {
+      usage: { include: true },
+      ...(() => {
+        const routing = resolveProviderRouting();
+        return routing ? { provider: routing } : {};
+      })(),
+    }),
     // See IMPL_REVIEW_MAX_OUTPUT_TOKENS: this pass's output scales with plan
     // length and killed a run at the shared 16,384 ceiling (PR #162).
     maxOutputTokens: IMPL_REVIEW_MAX_OUTPUT_TOKENS,
