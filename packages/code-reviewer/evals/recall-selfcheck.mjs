@@ -21,7 +21,14 @@ function check(name, result, expectPass, expectReason) {
   const ok = result.pass === expectPass && (expectReason === undefined || String(result.reason).includes(expectReason));
   if (!ok) failures += 1;
   console.log(
-    (ok ? "ok  " : "FAIL") + " - " + name + " (pass=" + String(result.pass) + ", score=" + result.score.toFixed(2) + ")",
+    (ok ? "ok  " : "FAIL") +
+      " - " +
+      name +
+      " (pass=" +
+      String(result.pass) +
+      ", score=" +
+      result.score.toFixed(2) +
+      ")",
   );
 }
 
@@ -124,7 +131,6 @@ check("a manufactured major fails no_false_alarms", reviewMustPass(reviewWith("m
 check("a manufactured critical fails no_false_alarms", reviewMustPass(reviewWith("critical")), false);
 check("a drifted bare array fails no_false_alarms", reviewMustPass(JSON.stringify([{ severity: "major" }])), false);
 
-
 // --- Hardening fixtures ------------------------------------------------------
 // The fabrication metric is an llm-rubric and cannot be checked from bare node.
 // What remains here is the over-suppression guard and quote fidelity.
@@ -157,7 +163,12 @@ const fidelity = (evidence) =>
   });
 
 check("a verbatim quote scores full fidelity", fidelity("const MAX_KEY_LENGTH = 64;"), true, "1 of 1");
-check("an invented quote scores zero without failing the row", fidelity("const MAX_KEY_LENGTH = 4096;"), true, "0 of 1");
+check(
+  "an invented quote scores zero without failing the row",
+  fidelity("const MAX_KEY_LENGTH = 4096;"),
+  true,
+  "0 of 1",
+);
 check(
   "a run with no evidence reads as not applicable",
   scoreEvidenceFidelity(JSON.stringify({ summary: "s", findings: [{ description: "x" }] }), {

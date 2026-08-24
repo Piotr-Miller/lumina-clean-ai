@@ -190,7 +190,9 @@ function irregularFile(mod, targetBytes, seed) {
   ];
   let i = 0;
   while (bytes(lines.join("\n")) < targetBytes) {
-    lines.push(...irregularBody({ ...mod, fn: `${mod.fn}${i === 0 ? "" : `From${mod.noun.toUpperCase()}${i}`}` }, seed + i));
+    lines.push(
+      ...irregularBody({ ...mod, fn: `${mod.fn}${i === 0 ? "" : `From${mod.noun.toUpperCase()}${i}`}` }, seed + i),
+    );
     lines.push("");
     i += 1;
   }
@@ -198,41 +200,39 @@ function irregularFile(mod, targetBytes, seed) {
 }
 
 /** D1 + D2 — both defences VISIBLE, so a claim that they are absent is M2. */
-const guardFile = () =>
-  [
-    "// Plan resolution guards. Both defences below are deliberately explicit.",
-    "",
-    "// D1: the option/path separator is present, so a path that begins with a",
-    "// dash can never be parsed as an option.",
-    'export const LS_TREE_ARGS = (sha: string, path: string) => ["ls-tree", sha, "--", path];',
-    "",
-    "// D2: an explicit safe path set, anchored at both ends. Anything outside",
-    "// this class — whitespace, shell metacharacters, control characters — is",
-    "// rejected before the value is used.",
-    "export const SAFE_PATH_RE = /^[A-Za-z0-9._/-]+$/;",
-    "",
-    "export function isSafePlanPath(candidate: string): boolean {",
-    "  return SAFE_PATH_RE.test(candidate);",
-    "}",
-    "",
-    ...fillerFile("guard", 6_000),
-  ];
+const guardFile = () => [
+  "// Plan resolution guards. Both defences below are deliberately explicit.",
+  "",
+  "// D1: the option/path separator is present, so a path that begins with a",
+  "// dash can never be parsed as an option.",
+  'export const LS_TREE_ARGS = (sha: string, path: string) => ["ls-tree", sha, "--", path];',
+  "",
+  "// D2: an explicit safe path set, anchored at both ends. Anything outside",
+  "// this class — whitespace, shell metacharacters, control characters — is",
+  "// rejected before the value is used.",
+  "export const SAFE_PATH_RE = /^[A-Za-z0-9._/-]+$/;",
+  "",
+  "export function isSafePlanPath(candidate: string): boolean {",
+  "  return SAFE_PATH_RE.test(candidate);",
+  "}",
+  "",
+  ...fillerFile("guard", 6_000),
+];
 
 /** D3 — the CALL and its comment are here; the DEFINITION is nowhere in the diff. */
-const cliFile = () =>
-  [
-    "// CLI entry for the review runner.",
-    "import { logSafePath } from \"./internal/log-safe-path.ts\";",
-    "",
-    "export function reportResolvedPlan(planPath: string): void {",
-    "  // logSafePath defuses control characters so a crafted path cannot forge",
-    "  // or restyle log lines. The path itself is untrusted (it comes from the",
-    "  // pull-request body), so it is never logged raw.",
-    "  console.log(`resolved plan: ${logSafePath(planPath)}`);",
-    "}",
-    "",
-    ...fillerFile("cli", 6_000),
-  ];
+const cliFile = () => [
+  "// CLI entry for the review runner.",
+  'import { logSafePath } from "./internal/log-safe-path.ts";',
+  "",
+  "export function reportResolvedPlan(planPath: string): void {",
+  "  // logSafePath defuses control characters so a crafted path cannot forge",
+  "  // or restyle log lines. The path itself is untrusted (it comes from the",
+  "  // pull-request body), so it is never logged raw.",
+  "  console.log(`resolved plan: ${logSafePath(planPath)}`);",
+  "}",
+  "",
+  ...fillerFile("cli", 6_000),
+];
 
 /**
  * D4's TEST — in-window, and it imports the over-cap implementation.
@@ -241,39 +241,37 @@ const cliFile = () =>
  * point at a file absent from the diff ENTIRELY, turning D4's planted M1
  * (over-cap) into an off-diff M3 and silently changing what is measured.
  */
-const processorTestFile = (implPath = "./z-processor.ts") =>
-  [
-    "// Tests for the review processor. The implementation under test lives in",
-    `// ${implPath}.`,
-    `import { processReview } from "${implPath}";`,
-    "",
-    'test("processReview returns a verdict for a well-formed review", () => {',
-    '  expect(processReview({ findings: [] }).verdict).toBe("passed");',
-    "});",
-    "",
-    'test("processReview rejects an empty payload", () => {',
-    "  expect(() => processReview(null)).toThrow();",
-    "});",
-    "",
-    ...fillerFile("processorTest", 6_000),
-  ];
+const processorTestFile = (implPath = "./z-processor.ts") => [
+  "// Tests for the review processor. The implementation under test lives in",
+  `// ${implPath}.`,
+  `import { processReview } from "${implPath}";`,
+  "",
+  'test("processReview returns a verdict for a well-formed review", () => {',
+  '  expect(processReview({ findings: [] }).verdict).toBe("passed");',
+  "});",
+  "",
+  'test("processReview rejects an empty payload", () => {',
+  "  expect(() => processReview(null)).toThrow();",
+  "});",
+  "",
+  ...fillerFile("processorTest", 6_000),
+];
 
 /** D4's IMPLEMENTATION — must land beyond the cap. */
-const processorFile = () =>
-  [
-    "// The review processor: turns raw findings into a verdict.",
-    "export interface ReviewPayload {",
-    "  findings: { severity: string }[];",
-    "}",
-    "",
-    "export function processReview(payload: ReviewPayload | null) {",
-    '  if (!payload) throw new Error("payload is required");',
-    '  const blocking = payload.findings.filter((f) => f.severity === "critical");',
-    '  return { verdict: blocking.length > 0 ? "failed" : "passed", blocking: blocking.length };',
-    "}",
-    "",
-    ...fillerFile("processor", 4_000),
-  ];
+const processorFile = () => [
+  "// The review processor: turns raw findings into a verdict.",
+  "export interface ReviewPayload {",
+  "  findings: { severity: string }[];",
+  "}",
+  "",
+  "export function processReview(payload: ReviewPayload | null) {",
+  '  if (!payload) throw new Error("payload is required");',
+  '  const blocking = payload.findings.filter((f) => f.severity === "critical");',
+  '  return { verdict: blocking.length > 0 ? "failed" : "passed", blocking: blocking.length };',
+  "}",
+  "",
+  ...fillerFile("processor", 4_000),
+];
 
 // ---------------------------------------------------------------------------
 // Assembly
@@ -306,7 +304,10 @@ export function buildIrregularFixture() {
     const mod = IRREGULAR_MODULES[n % IRREGULAR_MODULES.length];
     // Suffix only after the list is exhausted, and with a word rather than a
     // number, so there is still no countable sequence to extrapolate.
-    const suffix = n < IRREGULAR_MODULES.length ? "" : `-${["extra", "legacy", "compat"][Math.floor(n / IRREGULAR_MODULES.length) - 1] ?? "aux"}`;
+    const suffix =
+      n < IRREGULAR_MODULES.length
+        ? ""
+        : `-${["extra", "legacy", "compat"][Math.floor(n / IRREGULAR_MODULES.length) - 1] ?? "aux"}`;
     const chunk = fileDiff(
       `packages/fixturepkg/src/${mod.file.replace(".ts", `${suffix}.ts`)}`,
       irregularFile(mod, 12_000, n),

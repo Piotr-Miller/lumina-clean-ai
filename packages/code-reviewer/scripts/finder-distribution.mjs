@@ -42,8 +42,7 @@ import { DIFF_CAP_BYTES, DIFF_TRUNCATION_MARKER } from "../src/pipeline.js";
 import { createReviewer } from "../src/reviewer.js";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-const git = (...args) =>
-  execFileSync("git", args, { cwd: repoRoot, encoding: "utf8", maxBuffer: 60 * 1024 * 1024 });
+const git = (...args) => execFileSync("git", args, { cwd: repoRoot, encoding: "utf8", maxBuffer: 60 * 1024 * 1024 });
 
 // capDiff is private to pipeline.ts and stays that way — widening a production
 // export for a research script would be the wrong trade. Replicated here from the
@@ -51,9 +50,7 @@ const git = (...args) =>
 const capDiff = (diff) => {
   const bytes = new TextEncoder().encode(diff);
   if (bytes.length <= DIFF_CAP_BYTES) return { diff, truncated: false };
-  const capped = new TextDecoder("utf-8", { fatal: false })
-    .decode(bytes.slice(0, DIFF_CAP_BYTES))
-    .replace(/�+$/u, "");
+  const capped = new TextDecoder("utf-8", { fatal: false }).decode(bytes.slice(0, DIFF_CAP_BYTES)).replace(/�+$/u, "");
   return { diff: capped + DIFF_TRUNCATION_MARKER, truncated: true };
 };
 

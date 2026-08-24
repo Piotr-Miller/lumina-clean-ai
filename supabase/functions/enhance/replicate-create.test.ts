@@ -48,16 +48,17 @@ function recordingSleep() {
 
 const noopWarn = () => {};
 
-const run = (
-  fetchImpl: typeof fetch,
-  sleep: (ms: number) => Promise<void>,
-): Promise<Response> =>
-  createPredictionWithBurstRetry("test-token", { version: "v1" }, {
-    timeoutMs: TIMEOUT_MS,
-    fetchImpl,
-    sleep,
-    warn: noopWarn,
-  });
+const run = (fetchImpl: typeof fetch, sleep: (ms: number) => Promise<void>): Promise<Response> =>
+  createPredictionWithBurstRetry(
+    "test-token",
+    { version: "v1" },
+    {
+      timeoutMs: TIMEOUT_MS,
+      fetchImpl,
+      sleep,
+      warn: noopWarn,
+    },
+  );
 
 Deno.test("success on the first attempt makes exactly one call and never sleeps", async () => {
   const f = stubFetch({ status: 201 });

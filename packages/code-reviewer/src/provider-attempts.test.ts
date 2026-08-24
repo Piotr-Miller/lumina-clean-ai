@@ -110,9 +110,7 @@ describe("final-step guard at the provider boundary (impl-review-phase-3 F2)", (
     const doGenerate = vi
       .fn()
       .mockImplementation((request: { tools?: unknown[] }) =>
-        Promise.resolve(
-          (request.tools ?? []).length > 0 ? toolCallGeneration() : successfulGeneration(),
-        ),
+        Promise.resolve((request.tools ?? []).length > 0 ? toolCallGeneration() : successfulGeneration()),
       );
     currentModel = new MockLanguageModelV3({ doGenerate });
     const reviewer = createReviewer({ apiKey: "test-key", source: () => "ctx", maxSteps: 3 });
@@ -123,9 +121,7 @@ describe("final-step guard at the provider boundary (impl-review-phase-3 F2)", (
     // within the maxSteps budget. Without prepareFinalStep wired into the
     // agent this loop ends tool-calling at the step cap with no output.
     expect(doGenerate).toHaveBeenCalledTimes(3);
-    const toolCounts = doGenerate.mock.calls.map(
-      (call) => ((call[0] as { tools?: unknown[] }).tools ?? []).length,
-    );
+    const toolCounts = doGenerate.mock.calls.map((call) => ((call[0] as { tools?: unknown[] }).tools ?? []).length);
     expect(toolCounts).toEqual([1, 1, 0]);
   });
 });
@@ -157,10 +153,7 @@ describe("project review context wiring (impl-review-phase-1 F4)", () => {
   const RULES = "Always merge Tailwind classes with cn().";
 
   it("delivers trusted rules to the finder's system instructions and never to the judge", async () => {
-    const doGenerate = vi
-      .fn()
-      .mockResolvedValueOnce(successfulGeneration())
-      .mockResolvedValueOnce(judgeGeneration());
+    const doGenerate = vi.fn().mockResolvedValueOnce(successfulGeneration()).mockResolvedValueOnce(judgeGeneration());
     currentModel = new MockLanguageModelV3({ doGenerate });
     const result = await runReviewPipeline({
       diff: "diff --git a/a b/a\n+x",
@@ -174,10 +167,7 @@ describe("project review context wiring (impl-review-phase-1 F4)", () => {
   });
 
   it("caps an oversized rules text with a visible marker before it reaches the finder", async () => {
-    const doGenerate = vi
-      .fn()
-      .mockResolvedValueOnce(successfulGeneration())
-      .mockResolvedValueOnce(judgeGeneration());
+    const doGenerate = vi.fn().mockResolvedValueOnce(successfulGeneration()).mockResolvedValueOnce(judgeGeneration());
     currentModel = new MockLanguageModelV3({ doGenerate });
     await runReviewPipeline({
       diff: "diff --git a/a b/a\n+x",
@@ -205,9 +195,7 @@ describe("provider attempts with maxRetries: 0", () => {
     const doGenerate = vi.fn().mockRejectedValue(error);
     currentModel = new MockLanguageModelV3({ doGenerate });
     const { judge } = createJudge({ apiKey: "test-key" });
-    await expect(
-      judge({ findings, diffStats: { files: 1, additions: 1, deletions: 0 } }),
-    ).rejects.toBe(error);
+    await expect(judge({ findings, diffStats: { files: 1, additions: 1, deletions: 0 } })).rejects.toBe(error);
     expect(doGenerate).toHaveBeenCalledTimes(1);
   });
 

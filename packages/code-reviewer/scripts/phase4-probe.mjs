@@ -165,8 +165,7 @@ console.log(JSON.stringify({ model: reviewer.model, grades: result.grades, verdi
 console.log("\nverdictReason:", result.verdictReason);
 console.log("\nfindings:");
 for (const f of result.findings) {
-  const anchor =
-    f.locus === "code" ? `${f.file}:${String(f.startLine)}` : f.locus === "file" ? f.file : "(absent)";
+  const anchor = f.locus === "code" ? `${f.file}:${String(f.startLine)}` : f.locus === "file" ? f.file : "(absent)";
   console.log(`
   ${f.id} [${f.severity}/${f.impact}] ${f.dimension} :: locus=${f.locus} ${anchor}`);
   console.log(`    ${f.title}`);

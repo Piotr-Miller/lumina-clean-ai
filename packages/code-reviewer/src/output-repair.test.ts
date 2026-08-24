@@ -54,22 +54,16 @@ describe("repairReviewResultShape", () => {
 
   it("maps report-style severities onto the canonical enum", () => {
     const ladder = ["CRITICAL", "WARNING", "OBSERVATION", "info", "Major"];
-    const repaired = repairReviewResultShape(
-      ladder.map((severity) => ({ ...DRIFTED_FINDING, severity })),
-    ) as { findings: { severity: string }[] };
-    expect(repaired.findings.map((f) => f.severity)).toEqual([
-      "critical",
-      "major",
-      "minor",
-      "nit",
-      "major",
-    ]);
+    const repaired = repairReviewResultShape(ladder.map((severity) => ({ ...DRIFTED_FINDING, severity }))) as {
+      findings: { severity: string }[];
+    };
+    expect(repaired.findings.map((f) => f.severity)).toEqual(["critical", "major", "minor", "nit", "major"]);
   });
 
   it("never overwrites a file the model did supply", () => {
-    const repaired = repairReviewResultShape([
-      { ...DRIFTED_FINDING, file: "real.ts", path: "wrong.ts" },
-    ]) as { findings: { file: string }[] };
+    const repaired = repairReviewResultShape([{ ...DRIFTED_FINDING, file: "real.ts", path: "wrong.ts" }]) as {
+      findings: { file: string }[];
+    };
     expect(repaired.findings[0].file).toBe("real.ts");
   });
 
@@ -120,10 +114,7 @@ const parse = (text: string, onRepair?: (detail: { reason: string }) => void) =>
 describe("tolerantReviewOutput", () => {
   it("parses a canonical response without reporting a repair", async () => {
     const onRepair = vi.fn();
-    const result = await parse(
-      JSON.stringify({ summary: "fine", findings: [CANONICAL_FINDING] }),
-      onRepair,
-    );
+    const result = await parse(JSON.stringify({ summary: "fine", findings: [CANONICAL_FINDING] }), onRepair);
     expect(result.summary).toBe("fine");
     expect(onRepair).not.toHaveBeenCalled();
   });
@@ -142,9 +133,7 @@ describe("tolerantReviewOutput", () => {
 
   it("rethrows when a repair still cannot satisfy the schema", async () => {
     // Findings missing required fields are not something this layer invents.
-    await expect(parse(JSON.stringify([{ severity: "WARNING" }]))).rejects.toThrow(
-      NoObjectGeneratedError,
-    );
+    await expect(parse(JSON.stringify([{ severity: "WARNING" }]))).rejects.toThrow(NoObjectGeneratedError);
   });
 
   it("refuses to repair a failure that is not a schema mismatch", () => {
@@ -159,9 +148,7 @@ describe("tolerantReviewOutput", () => {
 
   it("repairs the live drift through the pure decision function", () => {
     const text = JSON.stringify([DRIFTED_FINDING]);
-    expect(repairParsedOutput(schemaFailure(text), text)?.findings[0].file).toBe(
-      "packages/code-reviewer/src/cli.ts",
-    );
+    expect(repairParsedOutput(schemaFailure(text), text)?.findings[0].file).toBe("packages/code-reviewer/src/cli.ts");
   });
 });
 
@@ -203,9 +190,7 @@ describe("extractJsonObject", () => {
 
 describe("repairParsedJudgeOutput", () => {
   const validJudge = () => ({
-    scores: Object.fromEntries(
-      CRITERIA.map(({ key }) => [key, { score: "7", justification: "j", findingIds: [] }]),
-    ),
+    scores: Object.fromEntries(CRITERIA.map(({ key }) => [key, { score: "7", justification: "j", findingIds: [] }])),
     verdict: "passed",
     verdictReason: "fine",
     summary: "s",
