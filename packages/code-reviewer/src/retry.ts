@@ -85,18 +85,14 @@ export interface RetryOptions {
   onRetry?: (error: unknown, delayMs: number) => void;
 }
 
-const realSleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const realSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Re-invoke `fn` at most once, only on a retryable failure and after the
  * policy delay (a computed delay of 0 skips the sleep call entirely);
  * rethrow otherwise/after.
  */
-export async function withOneRetry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions = {},
-): Promise<T> {
+export async function withOneRetry<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   try {
     return await fn();
   } catch (error) {

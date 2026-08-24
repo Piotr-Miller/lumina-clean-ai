@@ -9,12 +9,7 @@ import {
   buildPrompt,
   type JudgePromptInput,
 } from "./prompts.js";
-import {
-  implDimensionSchema,
-  lensSchema,
-  scoresWireSchema,
-  type IdentifiedFinding,
-} from "./schemas.js";
+import { implDimensionSchema, lensSchema, scoresWireSchema, type IdentifiedFinding } from "./schemas.js";
 
 describe("buildInstructions", () => {
   it("produces a distinct instruction set per lens", () => {
@@ -453,7 +448,6 @@ describe("buildImplReviewPrompt", () => {
   });
 });
 
-
 // The finder truncation note (change r5-finder-truncation-note) was REVERTED
 // after its pre-registered live check found the tool channel inert — see
 // context/archive/2026-08-22-r5-finder-truncation-note/decision.md. Its suite
@@ -482,5 +476,3 @@ describe("buildPrompt carries no finder truncation channel (r5 note reverted)", 
     expect(withTool).toContain("fetch that file with getFileContext before judging the hunk");
   });
 });
-
-

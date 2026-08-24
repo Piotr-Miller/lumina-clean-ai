@@ -114,9 +114,7 @@ describe("retryDelayMs", () => {
   });
 
   it("uses the transient default for a timeout abort", () => {
-    expect(retryDelayMs(new DOMException("timed out", "TimeoutError"), noJitter)).toBe(
-      TRANSIENT_DELAY_MS,
-    );
+    expect(retryDelayMs(new DOMException("timed out", "TimeoutError"), noJitter)).toBe(TRANSIENT_DELAY_MS);
   });
 
   it("honors a usable numeric Retry-After header (seconds → ms)", () => {
@@ -139,15 +137,11 @@ describe("retryDelayMs", () => {
     ["whitespace", "  "],
     ["non-finite", "Infinity"],
   ])("falls back to the class default on a %s Retry-After (never immediate)", (_name, value) => {
-    expect(retryDelayMs(apiError(429, { "retry-after": value }), noJitter)).toBe(
-      RATE_LIMIT_DELAY_MS,
-    );
+    expect(retryDelayMs(apiError(429, { "retry-after": value }), noJitter)).toBe(RATE_LIMIT_DELAY_MS);
   });
 
   it("clamps an oversized Retry-After to the cap, jitter included", () => {
-    expect(retryDelayMs(apiError(429, { "retry-after": "9999" }), () => 1)).toBe(
-      MAX_RETRY_DELAY_MS,
-    );
+    expect(retryDelayMs(apiError(429, { "retry-after": "9999" }), () => 1)).toBe(MAX_RETRY_DELAY_MS);
   });
 
   it("adds bounded jitter to nonzero delays", () => {
@@ -193,10 +187,7 @@ describe("withOneRetry", () => {
 
   it("retries a schema mismatch immediately: no sleep call at all", async () => {
     const { calls, sleep } = recordingSleep();
-    const fn = vi
-      .fn()
-      .mockRejectedValueOnce(schemaMismatchError())
-      .mockResolvedValueOnce("recovered");
+    const fn = vi.fn().mockRejectedValueOnce(schemaMismatchError()).mockResolvedValueOnce("recovered");
     await expect(withOneRetry(fn, { sleep })).resolves.toBe("recovered");
     expect(fn).toHaveBeenCalledTimes(2);
     expect(calls).toEqual([]);
@@ -211,9 +202,7 @@ describe("withOneRetry", () => {
       return Promise.resolve();
     };
     const fn = vi.fn().mockRejectedValueOnce(error).mockResolvedValueOnce("recovered");
-    await expect(withOneRetry(fn, { sleep, random: noJitter, onRetry })).resolves.toBe(
-      "recovered",
-    );
+    await expect(withOneRetry(fn, { sleep, random: noJitter, onRetry })).resolves.toBe("recovered");
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(onRetry).toHaveBeenCalledWith(error, RATE_LIMIT_DELAY_MS);
     expect(order).toEqual(["onRetry", "sleep"]);
@@ -225,9 +214,7 @@ describe("withOneRetry", () => {
       throw new Error("telemetry exploded");
     });
     const fn = vi.fn().mockRejectedValueOnce(apiError(503)).mockResolvedValueOnce("recovered");
-    await expect(withOneRetry(fn, { sleep, random: noJitter, onRetry })).resolves.toBe(
-      "recovered",
-    );
+    await expect(withOneRetry(fn, { sleep, random: noJitter, onRetry })).resolves.toBe("recovered");
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenCalledTimes(2);
     expect(calls).toEqual([TRANSIENT_DELAY_MS]);
@@ -241,9 +228,7 @@ describe("withOneRetry", () => {
 
   it("never fires onRetry on a non-retryable failure", async () => {
     const onRetry = vi.fn();
-    await expect(
-      withOneRetry(() => Promise.reject(apiError(401)), { onRetry }),
-    ).rejects.toBeInstanceOf(APICallError);
+    await expect(withOneRetry(() => Promise.reject(apiError(401)), { onRetry })).rejects.toBeInstanceOf(APICallError);
     expect(onRetry).not.toHaveBeenCalled();
   });
 });

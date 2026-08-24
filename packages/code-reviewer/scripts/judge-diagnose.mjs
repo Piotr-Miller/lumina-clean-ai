@@ -20,8 +20,7 @@ const HEAD = process.env.HEAD_SHA ?? "08f82f2";
 const PLAN_PATH = "context/changes/impl-review-ci-agent/plan.md";
 const CACHE = new URL("./judge-diagnose-findings.json", import.meta.url);
 
-const run = (cmd, args) =>
-  execFileSync(cmd, args, { cwd: repoRoot, encoding: "utf8", maxBuffer: 50 * 1024 * 1024 });
+const run = (cmd, args) => execFileSync(cmd, args, { cwd: repoRoot, encoding: "utf8", maxBuffer: 50 * 1024 * 1024 });
 
 // Exactly review.yml's "Compute PR diff (three-dot vs merge-base)".
 const diff = run("git", [
@@ -85,35 +84,35 @@ let ok = 0;
 let bad = 0;
 
 for (let attempt = 1; attempt <= REPEATS; attempt += 1) {
-try {
-  const { judge } = createJudge();
-  const verdict = await judge(
-    { findings, prTitle: pr.title, prBody: pr.body, diffStats },
-    { timeoutMs: Number(process.env.JUDGE_TIMEOUT_MS ?? "300000") },
-  );
-  ok += 1;
-  console.log(`\n[judge ${String(attempt)}/${String(REPEATS)}] SUCCEEDED`);
-  console.log(JSON.stringify({ verdict: verdict.verdict, reason: verdict.verdictReason }, null, 2));
-} catch (error) {
-  bad += 1;
-  console.log(`\n[judge ${String(attempt)}/${String(REPEATS)}]`);
-  // Duck-typed: this script lives outside the package, so `ai` is not
-  // resolvable here for the real isInstance check.
-  const isNoObject = String(error?.name).includes("NoObjectGenerated") || "text" in Object(error);
-  console.log("\n[judge] FAILED");
-  console.log("  isNoObjectGenerated:", isNoObject);
-  console.log("  name   :", error?.name);
-  console.log("  message:", error?.message);
-  if (isNoObject) {
-    console.log("  finishReason:", JSON.stringify(error.finishReason));
-    console.log("  usage       :", JSON.stringify(error.usage));
-    console.log("  cause       :", String(error.cause?.message ?? error.cause).slice(0, 600));
-    const text = error.text;
-    console.log(`\n===== RAW MODEL TEXT (${String(text?.length ?? 0)} chars) =====`);
-    console.log(text === undefined ? "(undefined — the model returned no text at all)" : text.slice(0, 4000));
-    console.log("===== END RAW TEXT =====");
+  try {
+    const { judge } = createJudge();
+    const verdict = await judge(
+      { findings, prTitle: pr.title, prBody: pr.body, diffStats },
+      { timeoutMs: Number(process.env.JUDGE_TIMEOUT_MS ?? "300000") },
+    );
+    ok += 1;
+    console.log(`\n[judge ${String(attempt)}/${String(REPEATS)}] SUCCEEDED`);
+    console.log(JSON.stringify({ verdict: verdict.verdict, reason: verdict.verdictReason }, null, 2));
+  } catch (error) {
+    bad += 1;
+    console.log(`\n[judge ${String(attempt)}/${String(REPEATS)}]`);
+    // Duck-typed: this script lives outside the package, so `ai` is not
+    // resolvable here for the real isInstance check.
+    const isNoObject = String(error?.name).includes("NoObjectGenerated") || "text" in Object(error);
+    console.log("\n[judge] FAILED");
+    console.log("  isNoObjectGenerated:", isNoObject);
+    console.log("  name   :", error?.name);
+    console.log("  message:", error?.message);
+    if (isNoObject) {
+      console.log("  finishReason:", JSON.stringify(error.finishReason));
+      console.log("  usage       :", JSON.stringify(error.usage));
+      console.log("  cause       :", String(error.cause?.message ?? error.cause).slice(0, 600));
+      const text = error.text;
+      console.log(`\n===== RAW MODEL TEXT (${String(text?.length ?? 0)} chars) =====`);
+      console.log(text === undefined ? "(undefined — the model returned no text at all)" : text.slice(0, 4000));
+      console.log("===== END RAW TEXT =====");
+    }
   }
-}
 }
 
 console.log(`\n===== judge: ${String(ok)} ok / ${String(bad)} failed of ${String(REPEATS)} =====`);

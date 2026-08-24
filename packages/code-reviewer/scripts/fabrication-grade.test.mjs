@@ -98,7 +98,12 @@ describe("assertRunIdentity", () => {
 });
 
 describe("gradeFinding", () => {
-  const base = { model: "fake-model", groundTruth: "D4: impl-reviewer.ts is OVER-CAP.", manifestSummary: "ws", finding };
+  const base = {
+    model: "fake-model",
+    groundTruth: "D4: impl-reviewer.ts is OVER-CAP.",
+    manifestSummary: "ws",
+    finding,
+  };
 
   it("wires model, schema, prompt, and no-retry into the paid call and returns verdict + usage", async () => {
     const calls = [];

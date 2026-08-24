@@ -3,14 +3,7 @@
 // contract: any produced verdict (incl. "failed") is exit 0 — advisory data;
 // exit 1 means technical failure only (the action's posting steps rely on it).
 
-import {
-  appendFileSync,
-  mkdirSync,
-  readFileSync,
-  realpathSync,
-  statSync,
-  writeFileSync,
-} from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 
 import { runReviewCli, type CliIo } from "./cli.js";
 

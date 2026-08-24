@@ -35,10 +35,7 @@ export interface ValidatedJudgeOutput {
  * count the drops — the judge can never mint findings. Pure: the input output
  * object is not mutated.
  */
-export function validateJudgeReferences(
-  output: JudgeOutput,
-  knownIds: readonly string[],
-): ValidatedJudgeOutput {
+export function validateJudgeReferences(output: JudgeOutput, knownIds: readonly string[]): ValidatedJudgeOutput {
   const known = new Set(knownIds);
   let droppedFindingIdRefs = 0;
   const scores = { ...output.scores };

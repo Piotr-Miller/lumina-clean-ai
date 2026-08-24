@@ -91,11 +91,11 @@ If you move off the corporate-managed machine, or the EDR/security agent is remo
 
 LuminaClean ships as a **Worker** (see `name: "lumina-clean-ai"` in `wrangler.jsonc`), not a Pages project. Most tutorials show Pages commands; here are the Workers equivalents.
 
-| Pages command | Workers equivalent |
-| --- | --- |
-| `wrangler pages deployment list --project-name <p>` | `wrangler deployments list --name lumina-clean-ai` |
-| `wrangler pages deployment tail --project-name <p>` | `wrangler tail lumina-clean-ai` *(or `wrangler tail --name lumina-clean-ai`)* |
-| `wrangler pages secret list --project-name <p>` | `wrangler secret list --name lumina-clean-ai` |
+| Pages command                                       | Workers equivalent                                                            |
+| --------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `wrangler pages deployment list --project-name <p>` | `wrangler deployments list --name lumina-clean-ai`                            |
+| `wrangler pages deployment tail --project-name <p>` | `wrangler tail lumina-clean-ai` _(or `wrangler tail --name lumina-clean-ai`)_ |
+| `wrangler pages secret list --project-name <p>`     | `wrangler secret list --name lumina-clean-ai`                                 |
 
 Key differences:
 

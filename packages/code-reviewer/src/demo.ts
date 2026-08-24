@@ -1,12 +1,7 @@
 // Runnable demo (npm run dev): reviews a simulated diff through the library.
 // This file owns process exit; the library only ever throws.
 
-import {
-  createReviewer,
-  findingKey,
-  lensSchema,
-  type SourceProvider,
-} from "./index.js";
+import { createReviewer, findingKey, lensSchema, type SourceProvider } from "./index.js";
 
 const FILE_PATH = "src/users.js";
 

@@ -483,5 +483,3 @@ async function main() {
 
 const isMain = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) await main();
-
-

@@ -294,7 +294,6 @@ const oneLine = (text, limit = 160) => {
   return flat.length <= limit ? flat : flat.slice(0, limit) + "…";
 };
 
-
 /**
  * Over-suppression guard for the paired vulnerable fixture: the planted defect
  * must be REPORTED, not merely quoted.
@@ -409,7 +408,10 @@ export function scoreEvidenceFidelity(output, context) {
   }
 
   const offered = review.findings
-    .map((finding, index) => ({ index, evidence: typeof finding?.evidence === "string" ? finding.evidence.trim() : "" }))
+    .map((finding, index) => ({
+      index,
+      evidence: typeof finding?.evidence === "string" ? finding.evidence.trim() : "",
+    }))
     .filter((entry) => entry.evidence.length > 0);
 
   if (offered.length === 0) {
@@ -435,7 +437,8 @@ export function scoreEvidenceFidelity(output, context) {
       " evidence string(s) quote the diff verbatim" +
       (invented.length === 0
         ? ""
-        : " — not found: " + invented.map((entry) => '#' + String(entry.index) + ' "' + oneLine(entry.evidence, 80) + '"').join("; ")),
+        : " — not found: " +
+          invented.map((entry) => "#" + String(entry.index) + ' "' + oneLine(entry.evidence, 80) + '"').join("; ")),
   };
 }
 

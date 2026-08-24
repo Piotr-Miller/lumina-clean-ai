@@ -64,9 +64,7 @@ describe("categorySchema (rubric-signal categories)", () => {
 // what the enum constrains. The numeric score is produced by
 // normalizeJudgeOutput, exercised separately below.
 const criterion = { score: "8", justification: "j", findingIds: ["F1"] };
-const validScores = Object.fromEntries(
-  Object.keys(scoresWireSchema.shape).map((key) => [key, criterion]),
-);
+const validScores = Object.fromEntries(Object.keys(scoresWireSchema.shape).map((key) => [key, criterion]));
 const validJudgeOutput = {
   scores: validScores,
   verdict: "passed",
@@ -87,10 +85,19 @@ describe("judgeOutputSchema", () => {
     // These were the live failure: a model returning any of them produces valid
     // JSON that then fails validation. They used to be caught by an invisible
     // refine; the enum now states the constraint in the schema itself.
-    ["an out-of-range score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "11" } } }],
+    [
+      "an out-of-range score",
+      { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "11" } } },
+    ],
     ["a zero score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "0" } } }],
-    ["a fractional score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "6.5" } } }],
-    ["a 0-100 scale score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "85" } } }],
+    [
+      "a fractional score",
+      { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "6.5" } } },
+    ],
+    [
+      "a 0-100 scale score",
+      { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: "85" } } },
+    ],
     ["a numeric score", { ...validJudgeOutput, scores: { ...validScores, complexity: { ...criterion, score: 8 } } }],
     ["an empty summary", { ...validJudgeOutput, summary: "" }],
   ])("rejects %s", (_name, invalid) => {
@@ -202,9 +209,7 @@ describe("implReviewOutputSchema", () => {
   it("rejects an unknown dimension on a finding", () => {
     const bad = {
       ...valid,
-      findings: [
-        { dimension: "vibes", severity: "WARNING", impact: "LOW", title: "t", detail: "d", fix: "f" },
-      ],
+      findings: [{ dimension: "vibes", severity: "WARNING", impact: "LOW", title: "t", detail: "d", fix: "f" }],
     };
     expect(implReviewOutputSchema.safeParse(bad).success).toBe(false);
   });
@@ -223,7 +228,15 @@ describe("implReviewOutputSchema", () => {
       // with the fixture — otherwise this tests the consistency rule by accident.
       grades: { ...grades, plan_adherence: "WARNING" },
       findings: [
-        { dimension: "plan_adherence", severity: "WARNING", impact: "LOW", title: "t", detail: "d", fix: "f", ...finding },
+        {
+          dimension: "plan_adherence",
+          severity: "WARNING",
+          impact: "LOW",
+          title: "t",
+          detail: "d",
+          fix: "f",
+          ...finding,
+        },
       ],
     });
     const parse = (finding: Record<string, unknown>) => implReviewOutputSchema.safeParse(withFinding(finding));
@@ -259,7 +272,14 @@ describe("implReviewOutputSchema", () => {
   // discriminated union that consumers use is produced by normalizeImplFinding
   // AFTER validation. This is the seam that keeps oneOf out of the schema.
   describe("normalizeImplFinding", () => {
-    const base = { dimension: "plan_adherence", severity: "WARNING", impact: "LOW", title: "t", detail: "d", fix: "f" } as const;
+    const base = {
+      dimension: "plan_adherence",
+      severity: "WARNING",
+      impact: "LOW",
+      title: "t",
+      detail: "d",
+      fix: "f",
+    } as const;
 
     it("constructs each variant with exactly its own fields", () => {
       expect(normalizeImplFinding({ ...base, locus: "code", file: "src/a.ts", startLine: 12 })).toEqual({
@@ -280,7 +300,9 @@ describe("implReviewOutputSchema", () => {
     // Unreachable via the schema, but normalizeImplFinding must be sound on its
     // own terms rather than trusting that a caller validated first.
     it("throws rather than emitting a half-built variant", () => {
-      expect(() => normalizeImplFinding({ ...base, locus: "code", file: "src/a.ts" })).toThrow(/missing file or startLine/);
+      expect(() => normalizeImplFinding({ ...base, locus: "code", file: "src/a.ts" })).toThrow(
+        /missing file or startLine/,
+      );
       expect(() => normalizeImplFinding({ ...base, locus: "file" })).toThrow(/missing file/);
     });
   });

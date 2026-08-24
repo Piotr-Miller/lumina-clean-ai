@@ -236,9 +236,7 @@ export function tolerantReviewOutput(options: TolerantReviewOutputOptions = {}) 
   });
   return {
     ...base,
-    async parseCompleteOutput(
-      ...args: Parameters<typeof base.parseCompleteOutput>
-    ): Promise<ReviewResult> {
+    async parseCompleteOutput(...args: Parameters<typeof base.parseCompleteOutput>): Promise<ReviewResult> {
       const [parseOptions] = args;
       try {
         return await base.parseCompleteOutput(...args);

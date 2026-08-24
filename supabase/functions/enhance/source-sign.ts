@@ -48,7 +48,10 @@ export interface SignSourceOptions {
  * The LAST error is rethrown, never a synthesized one, so the caller's failure
  * classification still sees the real message.
  */
-export async function signSourceWithRetry(sign: () => Promise<string>, options: SignSourceOptions = {}): Promise<string> {
+export async function signSourceWithRetry(
+  sign: () => Promise<string>,
+  options: SignSourceOptions = {},
+): Promise<string> {
   const sleep = options.sleep ?? defaultSleep;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= SOURCE_SIGN_MAX_ATTEMPTS; attempt++) {

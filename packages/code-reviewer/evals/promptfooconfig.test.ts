@@ -126,12 +126,9 @@ describe("case wiring", () => {
 
   // Same trap for the hardening graders: each fails closed without its own var,
   // so as a default it would fail every unrelated case by construction.
-  it.each(["requireDefectReported", "scoreEvidenceFidelity"])(
-    "keeps %s off defaultTest",
-    (grader) => {
-      expect(gradersOf(config.defaultTest.assert)).not.toContain(grader);
-    },
-  );
+  it.each(["requireDefectReported", "scoreEvidenceFidelity"])("keeps %s off defaultTest", (grader) => {
+    expect(gradersOf(config.defaultTest.assert)).not.toContain(grader);
+  });
 
   it.each(config.tests.map((test) => [test.description, test] as const))(
     "grades %s consistently with its vars",
