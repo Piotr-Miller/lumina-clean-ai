@@ -27,6 +27,15 @@ jobs:
       - run: npm ci
       - run: npx astro sync
       - run: npm run lint
+      # Formatting is gated repo-wide, NOT per-graph. `npm run lint` only
+      # covers the root ESLint project; packages/code-reviewer and
+      # supabase/functions are deliberately outside it (own configs, own
+      # jobs), so for months nothing kept them formatted and a plain
+      # `npm run format` rewrote 28 files of unrelated churn. Prettier does
+      # not need the ESLint/tsc project graph, so a graph exclusion was never
+      # a reason to leave maintained source ungoverned — this check reaches
+      # everything .prettierignore does not deliberately protect.
+      - run: npm run format:check
       # Pure unit tests only (incl. the /callback hardening suite). The
       # jobs.rls.test.ts integration suite runs in the `integration` job below
       # (it needs Docker + a local Supabase); see tests/README.md.
