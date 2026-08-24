@@ -1,0 +1,79 @@
+{
+  "variant": "fixture-irregular",
+  "rung": "base",
+  "recipe": "diff e8ebb66...9c49a0c -- . :(exclude,glob)**/reviews/*.md :(exclude)context/changes/impl-review-ci-agent/plan.md",
+  "rawBytes": 191425,
+  "sentBytes": 100030,
+  "inputSha256": "8c8038217d909b4e31bd9b5fda7437a05f1db047f90e57e7dfb4e9b358102127",
+  "rulesRef": "e8ebb66",
+  "rulesChars": 2915,
+  "rulesSha256": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+  "inputsSha256": "4bc55a4d3bca3b69f81164849e53a524954881b522d48e7ce1930b9e33ee5a5c",
+  "rlocContext": null,
+  "model": "z-ai/glm-4.6",
+  "totalBytes": 191425,
+  "capBytes": 100000,
+  "truncated": true,
+  "window": [
+    {
+      "path": "context/fixture/notes-01-plan.md",
+      "startByte": 0,
+      "endByte": 21156,
+      "complete": true
+    },
+    {
+      "path": "context/fixture/notes-02-research.md",
+      "startByte": 21156,
+      "endByte": 42408,
+      "complete": true
+    },
+    {
+      "path": "context/fixture/notes-03-verification.md",
+      "startByte": 42408,
+      "endByte": 63756,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/plan-guard.ts",
+      "startByte": 63756,
+      "endByte": 70920,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/review-cli.ts",
+      "startByte": 70920,
+      "endByte": 77796,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/verdict.test.ts",
+      "startByte": 77796,
+      "endByte": 84706,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/queue-drain.ts",
+      "startByte": 84706,
+      "endByte": 97495,
+      "complete": true
+    },
+    {
+      "path": "packages/fixturepkg/src/retry-budget.ts",
+      "startByte": 97495,
+      "endByte": 110102,
+      "complete": false
+    }
+  ],
+  "cutFile": "packages/fixturepkg/src/retry-budget.ts",
+  "cutOffsetInFile": 2505,
+  "overCap": [
+    "packages/fixturepkg/src/manifest-cache.ts",
+    "packages/fixturepkg/src/token-bucket.ts",
+    "packages/fixturepkg/src/sweep-policy.ts",
+    "packages/fixturepkg/src/webhook-verify.ts",
+    "packages/fixturepkg/src/result-store.ts",
+    "packages/fixturepkg/src/path-alias.ts",
+    "packages/fixturepkg/src/verdict-engine.ts"
+  ],
+  "ordered": false
+}

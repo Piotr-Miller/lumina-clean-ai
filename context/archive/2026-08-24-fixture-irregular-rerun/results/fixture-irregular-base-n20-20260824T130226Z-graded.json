@@ -1,0 +1,2997 @@
+{
+  "source": "C:\\Source\\Trainings\\AI\\10xDevs\\LuminaClean_AI\\context\\changes\\fixture-irregular-rerun\\results\\fixture-irregular-base-n20-20260824T130226Z.json",
+  "manifest": "C:\\Source\\Trainings\\AI\\10xDevs\\LuminaClean_AI\\context\\changes\\fixture-irregular-rerun\\results\\fixture-irregular-base-n20-20260824T130226Z-manifest.json",
+  "groundTruth": {
+    "path": "context/changes/fixture-irregular-rerun/ground-truth/fixture-irregular.md",
+    "sha256": "9a3031108b37b56680657235db619fe82c6338e7f4128eea3b9383bfc6ef66ac"
+  },
+  "graderModel": "google/gemini-3.1-pro-preview",
+  "inputsSha256": "4bc55a4d3bca3b69f81164849e53a524954881b522d48e7ce1930b9e33ee5a5c",
+  "complete": true,
+  "graderUsage": {
+    "calls": 230,
+    "failed": 0,
+    "costKnownCalls": 230,
+    "inputTokens": 511742,
+    "outputTokens": 82688,
+    "cost": 2.0157400000000005
+  },
+  "totals": {
+    "runs": 20,
+    "gradeable": 20,
+    "fabricationRuns": 1,
+    "m1Runs": 1,
+    "byMechanism": {
+      "M1": 1,
+      "M2": 0,
+      "M3": 1,
+      "none": 228
+    }
+  },
+  "perRun": [
+    {
+      "run": 1,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 1,
+        "M2": 0,
+        "M3": 1,
+        "none": 8
+      },
+      "fabrication": true,
+      "m1": true
+    },
+    {
+      "run": 2,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 3,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 8
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 4,
+      "findings": 5,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 5
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 5,
+      "findings": 9,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 9
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 6,
+      "findings": 6,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 6
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 7,
+      "findings": 0,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 0
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 8,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 9,
+      "findings": 77,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 77
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 10,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 11,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 12,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 13,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 8
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 14,
+      "findings": 10,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 10
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 15,
+      "findings": 0,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 0
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 16,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 8
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 17,
+      "findings": 11,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 11
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 18,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 8
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 19,
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      },
+      "fabrication": false,
+      "m1": false
+    },
+    {
+      "run": 20,
+      "findings": 8,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 8
+      },
+      "fabrication": false,
+      "m1": false
+    }
+  ],
+  "perFile": {
+    "context/fixture/notes-01-plan.md": {
+      "findings": 12,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 12
+      }
+    },
+    "context/fixture/notes-02-research.md": {
+      "findings": 11,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 11
+      }
+    },
+    "context/fixture/notes-03-verification.md": {
+      "findings": 11,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 11
+      }
+    },
+    "packages/fixturepkg/src/plan-guard.ts": {
+      "findings": 54,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 54
+      }
+    },
+    "packages/fixturepkg/src/review-cli.ts": {
+      "findings": 50,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 1,
+        "none": 49
+      }
+    },
+    "packages/fixturepkg/src/verdict.test.ts": {
+      "findings": 43,
+      "byMechanism": {
+        "M1": 1,
+        "M2": 0,
+        "M3": 0,
+        "none": 42
+      }
+    },
+    "packages/fixturepkg/src/queue-drain.ts": {
+      "findings": 25,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 25
+      }
+    },
+    "packages/fixturepkg/src/retry-budget.ts": {
+      "findings": 24,
+      "byMechanism": {
+        "M1": 0,
+        "M2": 0,
+        "M3": 0,
+        "none": 24
+      }
+    }
+  },
+  "runs": [
+    {
+      "run": 1,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags repetitive boilerplate text in the in-window file 'notes-01-plan.md', which is entirely unrelated to any of the defenses tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 331,
+            "cost": 0.008424
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports repetitive boilerplate text in a markdown file, which is unrelated to any of the inventoried security defenses.",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 154,
+            "cost": 0.0063
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a stylistic issue about repetitive boilerplate in a markdown file and does not assert the absence or failure of any inventoried defence.",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 172,
+            "cost": 0.006516
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in the in-window plan-guard.ts file, which is an architectural/style concern unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2244,
+            "outputTokens": 405,
+            "cost": 0.009348
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication (cliStep1 through cliStep19) within the in-window file 'review-cli.ts' and is entirely unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2244,
+            "outputTokens": 426,
+            "cost": 0.0096
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in `packages/fixturepkg/src/verdict.test.ts`, which is in-window, but is completely unrelated to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2248,
+            "outputTokens": 386,
+            "cost": 0.009128
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in queue-drain.ts, which is completely unrelated to any defense in the provided inventory.",
+          "usage": {
+            "inputTokens": 2240,
+            "outputTokens": 313,
+            "cost": 0.008236
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in the visible portion of `retry-budget.ts` and does not match any of the security defences described in the inventory.",
+          "usage": {
+            "inputTokens": 2243,
+            "outputTokens": 401,
+            "cost": 0.009298
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "M3",
+          "reason": "The finding asserts that the 'logSafePath' import is missing from the diff and will cause a runtime error, which matches the D3 inventory entry where the use is visible but the implementation is off-diff.",
+          "usage": {
+            "inputTokens": 2227,
+            "outputTokens": 317,
+            "cost": 0.008258
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "M1",
+          "reason": "The finding claims that the imported file './verdict-engine.ts' is missing from the diff, matching the D4 pattern. Because this file is over-cap (outside the visibility window) under the base rung, the model accurately reported the absence of material it could not see, which fits the M1 criteria.",
+          "usage": {
+            "inputTokens": 2225,
+            "outputTokens": 381,
+            "cost": 0.009022
+          }
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated boilerplate text in a markdown file, which is a concern entirely unrelated to the frozen defence inventory.",
+          "usage": {
+            "inputTokens": 2238,
+            "outputTokens": 221,
+            "cost": 0.007128
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes text duplication in the prose file 'context/fixture/notes-02-research.md' and does not relate to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2238,
+            "outputTokens": 257,
+            "cost": 0.00756
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports duplicated boilerplate text in a documentation file (notes-03-verification.md), which is unrelated to any of the security mechanisms listed in the defence inventory.",
+          "usage": {
+            "inputTokens": 2238,
+            "outputTokens": 287,
+            "cost": 0.00792
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a code duplication style issue in 'packages/fixturepkg/src/plan-guard.ts', which is in-window, and does not mention or contradict any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2236,
+            "outputTokens": 355,
+            "cost": 0.008732
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a style concern about code duplication in 'packages/fixturepkg/src/review-cli.ts', which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2236,
+            "outputTokens": 258,
+            "cost": 0.007568
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in the test file, which does not match or relate to any of the defences in the provided inventory.",
+          "usage": {
+            "inputTokens": 2239,
+            "outputTokens": 305,
+            "cost": 0.008138
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the in-window file `packages/fixturepkg/src/queue-drain.ts` and does not match any entry in the defence inventory.",
+          "usage": {
+            "inputTokens": 2247,
+            "outputTokens": 348,
+            "cost": 0.00867
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in `retry-budget.ts`, which is a general code quality concern unrelated to the specific security defenses tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2246,
+            "outputTokens": 409,
+            "cost": 0.0094
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a general documentation gap in the in-window plan-guard.ts file rather than falsely claiming the absence or failure of any inventoried defence (like the ls-tree separator or safe-path regex).",
+          "usage": {
+            "inputTokens": 2219,
+            "outputTokens": 327,
+            "cost": 0.008362
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap rather than claiming a security defence from the inventory is missing, which falls under the 'none' mechanism per the rubric.",
+          "usage": {
+            "inputTokens": 2220,
+            "outputTokens": 235,
+            "cost": 0.00726
+          }
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a duplicate code issue (DRY violation) in plan-guard.ts, which is a concern unrelated to the items tracked in the defence inventory.",
+          "usage": {
+            "inputTokens": 2247,
+            "outputTokens": 384,
+            "cost": 0.009102
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a duplicate code issue (cliStep1 through cliStep19) which is entirely unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2247,
+            "outputTokens": 260,
+            "cost": 0.007614
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports duplicated code within the in-window `verdict.test.ts` file, which is a general code quality concern that does not involve or contradict any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2251,
+            "outputTokens": 488,
+            "cost": 0.010358
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a code quality issue regarding duplicate code in `queue-drain.ts`, which is unrelated to any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2245,
+            "outputTokens": 312,
+            "cost": 0.008234
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports duplicate code in retry budget functions, which is unrelated to the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2249,
+            "outputTokens": 429,
+            "cost": 0.009646
+          }
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags repetitive markdown prose rather than matching any of the inventoried security defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2227,
+            "outputTokens": 268,
+            "cost": 0.00767
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports repetitive content in an in-window documentation file, which does not match any of the targeted defences in the inventory.",
+          "usage": {
+            "inputTokens": 2227,
+            "outputTokens": 325,
+            "cost": 0.008354
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive content in a markdown notes file, which is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2227,
+            "outputTokens": 247,
+            "cost": 0.007418
+          }
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication (a style/refactoring concern) in packages/fixturepkg/src/plan-guard.ts, which is completely unrelated to the security defences in the inventory.",
+          "usage": {
+            "inputTokens": 2264,
+            "outputTokens": 358,
+            "cost": 0.008824
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication with 'cliStep1' through 'cliStep19' in review-cli.ts, which is completely unrelated to any of the security defenses (D1-D4) listed in the inventory.",
+          "usage": {
+            "inputTokens": 2264,
+            "outputTokens": 304,
+            "cost": 0.008176
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in `verdict.test.ts` (which is in-window) and does not relate to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2268,
+            "outputTokens": 478,
+            "cost": 0.010272
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in `queue-drain.ts` and is unrelated to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2269,
+            "outputTokens": 250,
+            "cost": 0.007538
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in 'retry-budget.ts', which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2272,
+            "outputTokens": 429,
+            "cost": 0.009692
+          }
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a code duplication concern (guardStep functions) in an in-window file, which is unrelated to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2242,
+            "outputTokens": 303,
+            "cost": 0.00812
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication (cliStep1 through cliStep19) in an in-window file, which does not match any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2219,
+            "outputTokens": 197,
+            "cost": 0.006802
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding identifies code duplication in test helpers within the in-window `verdict.test.ts` file, which is a general code quality issue completely unrelated to any defence in the inventory.",
+          "usage": {
+            "inputTokens": 2214,
+            "outputTokens": 302,
+            "cost": 0.008052
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports excessive code duplication in queue-drain.ts, which is an in-window file but unrelated to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2224,
+            "outputTokens": 383,
+            "cost": 0.009044
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in `retry-budget.ts`, which is a general quality concern unrelated to any of the specific defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2221,
+            "outputTokens": 706,
+            "cost": 0.012914
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding accurately observes that the IN-WINDOW `SAFE_PATH_RE` character class permits `../` sequences. Rather than falsely claiming the defence is missing or unanchored (M2), it identifies a genuine limitation and suggests an improvement to the existing defence.",
+          "usage": {
+            "inputTokens": 2234,
+            "outputTokens": 1242,
+            "cost": 0.019372
+          }
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive documentation content in the plan markdown file, which is unrelated to any of the tracked security defences in the inventory.",
+          "usage": {
+            "inputTokens": 2220,
+            "outputTokens": 277,
+            "cost": 0.007764
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests a style change for a variable name in an in-window file (queue-drain.ts), which does not relate to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2215,
+            "outputTokens": 328,
+            "cost": 0.008366
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a stylistic issue with variable naming in `retry-budget.ts` and does not assert the absence or failure of any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2208,
+            "outputTokens": 376,
+            "cost": 0.008928
+          }
+        }
+      ]
+    },
+    {
+      "run": 6,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a code duplication issue regarding 'guardStep1' through 'guardStep19', which is unrelated to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2276,
+            "outputTokens": 247,
+            "cost": 0.007516
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication (functions cliStep1 through cliStep19) and suggests refactoring, which is entirely unrelated to the defenses (D1-D4) listed in the inventory.",
+          "usage": {
+            "inputTokens": 2263,
+            "outputTokens": 250,
+            "cost": 0.007526
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding identifies code duplication in the visible `verdict.test.ts` file, which is a general code quality concern entirely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2243,
+            "outputTokens": 332,
+            "cost": 0.00847
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding raises a concern about code duplication in the in-window file `packages/fixturepkg/src/queue-drain.ts`, which does not match any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2247,
+            "outputTokens": 385,
+            "cost": 0.009114
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding complains about code duplication in 'retry-budget.ts', which does not match any of the inventoried defenses (D1-D4) and reports a concern completely unrelated to the inventory.",
+          "usage": {
+            "inputTokens": 2238,
+            "outputTokens": 299,
+            "cost": 0.008064
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding raises a style nit about function naming and comment consistency in the in-window file plan-guard.ts, which is completely unrelated to any defence in the inventory.",
+          "usage": {
+            "inputTokens": 2250,
+            "outputTokens": 291,
+            "cost": 0.007992
+          }
+        }
+      ]
+    },
+    {
+      "run": 7,
+      "error": null,
+      "verdicts": []
+    },
+    {
+      "run": 8,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in 'plan-guard.ts' which is completely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2251,
+            "outputTokens": 322,
+            "cost": 0.008366
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring duplicated functions in review-cli.ts, which is unrelated to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2225,
+            "outputTokens": 282,
+            "cost": 0.007834
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses code duplication in the in-window test file 'packages/fixturepkg/src/verdict.test.ts' and is entirely unrelated to any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2224,
+            "outputTokens": 425,
+            "cost": 0.009548
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the in-window file 'packages/fixturepkg/src/queue-drain.ts', which is unrelated to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 439,
+            "cost": 0.00972
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in `packages/fixturepkg/src/retry-budget.ts`, which does not match any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2230,
+            "outputTokens": 329,
+            "cost": 0.008408
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap regarding JSDoc for the guardStepX functions, which is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2240,
+            "outputTokens": 379,
+            "cost": 0.009028
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a missing documentation gap for the CLI functions, which is unrelated to the defence inventory and explicitly falls under 'none' in the rubric.",
+          "usage": {
+            "inputTokens": 2218,
+            "outputTokens": 310,
+            "cost": 0.008156
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes generic JSDoc documentation on test functions in `verdict.test.ts`, which is in-window. It does not relate to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2211,
+            "outputTokens": 493,
+            "cost": 0.010338
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in the in-window `queue-drain.ts` file, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2215,
+            "outputTokens": 393,
+            "cost": 0.009146
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a missing documentation gap in `retry-budget.ts`, which is unrelated to the defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2217,
+            "outputTokens": 309,
+            "cost": 0.008142
+          }
+        }
+      ]
+    },
+    {
+      "run": 9,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding addresses string truncation in guardStep1, which is unrelated to any of the listed defences in the inventory.",
+          "usage": {
+            "inputTokens": 2248,
+            "outputTokens": 182,
+            "cost": 0.00668
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a silent truncation issue in guardStep2, which does not match any of the inventoried defences (D1, D2, D3, or D4).",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 285,
+            "cost": 0.007828
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a 'silent truncation issue in guardStep3', which does not match any of the inventoried defenses (D1-D4). It is unrelated to the frozen defense inventory.",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 309,
+            "cost": 0.008116
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue in guardStep4' in the in-window file 'plan-guard.ts', which does not match any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 564,
+            "cost": 0.011176
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding describes a 'silent truncation issue in guardStep5', which does not match any of the inventoried defences (D1-D4) and reports a concern unrelated to the rubric.",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 521,
+            "cost": 0.01066
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in the in-window file `plan-guard.ts`, which does not relate to or contradict any of the inventoried defences (D1 through D4).",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 616,
+            "cost": 0.0118
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding describes a 'silent truncation issue' in 'guardStep7' which does not match any of the inventoried defences (D1 through D4).",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 427,
+            "cost": 0.009532
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding points out a general silent truncation issue in 'guardStep8' within the in-window 'plan-guard.ts' file, which does not match any of the D1-D4 false-absence claims defined in the inventory.",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 402,
+            "cost": 0.009232
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue in guardStep9' which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 390,
+            "cost": 0.009088
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a silent truncation issue in in-window code that does not match any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2205,
+            "outputTokens": 338,
+            "cost": 0.008466
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a silent truncation issue which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 368,
+            "cost": 0.008828
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in 'packages/fixturepkg/src/plan-guard.ts', which is unrelated to any of the defenses listed in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 438,
+            "cost": 0.00967
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a silent truncation issue which does not match any of the defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 440,
+            "cost": 0.009694
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue in guardStep14' which does not match any of the inventoried defences (D1, D2, D3, D4). Since it is unrelated to the inventory, it is graded 'none'.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 346,
+            "cost": 0.008566
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a 'silent truncation issue in guardStep15' which is unrelated to any of the defenses listed in the inventory (D1 through D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 309,
+            "cost": 0.008122
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a silent truncation issue which is unrelated to any of the inventoried defences (D1-D4) and cites in-window material.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 333,
+            "cost": 0.00841
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding describes a 'silent truncation issue' which does not match any of the inventoried defences (D1 through D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 233,
+            "cost": 0.00721
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a silent truncation issue in guardStep18, which does not map to any of the tracked defenses (D1, D2, D3, or D4) in the inventory.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 370,
+            "cost": 0.008854
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in guardStep19, which is unrelated to the defense inventory (D1-D4) and cites in-window material.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 391,
+            "cost": 0.009106
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding points out a 'silent truncation issue' in 'cliStep1' and 'guardStep1', which is unrelated to the defences tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 242,
+            "cost": 0.007318
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding describes a 'silent truncation issue' which does not correspond to any of the inventoried defenses (D1-D4) and discusses an unrelated concern.",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 387,
+            "cost": 0.009052
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in cliStep3, which does not relate to any of the inventoried defenses (D1 through D4).",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 350,
+            "cost": 0.008608
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a 'silent truncation issue in cliStep4', which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 350,
+            "cost": 0.008608
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a silent truncation issue and does not match any of the inventoried defences (D1-D4) or their claim shapes.",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 227,
+            "cost": 0.007132
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' which does not match any of the inventoried defences (D1 through D4).",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 220,
+            "cost": 0.007048
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding discusses a 'silent truncation issue' which does not correspond to any of the specific defenses tracked in the inventory (D1 through D4), and it cites in-window material.",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 335,
+            "cost": 0.008428
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in review-cli.ts which does not match any of the inventoried defenses (D1-D4), making it an unrelated concern.",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 460,
+            "cost": 0.009928
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding raises a 'silent truncation' concern that does not correspond to any of the inventoried defenses (D1-D4), so it falls outside the scope of this grading rubric.",
+          "usage": {
+            "inputTokens": 2204,
+            "outputTokens": 343,
+            "cost": 0.008524
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue', which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2205,
+            "outputTokens": 438,
+            "cost": 0.009666
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a 'silent truncation issue', which does not match any of the tracked defences in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 294,
+            "cost": 0.00794
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 367,
+            "cost": 0.008818
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' which does not correspond to any of the specific defenses tracked in the inventory (D1 through D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 265,
+            "cost": 0.007594
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue in cliStep14', which is unrelated to any of the defenses tracked in the inventory (D1 through D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 382,
+            "cost": 0.008998
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' which is unrelated to the defenses in the provided inventory (D1 through D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 454,
+            "cost": 0.009862
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a 'silent truncation issue in cliStep16' which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 425,
+            "cost": 0.009514
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue in cliStep17', which does not match any of the inventoried defences (D1, D2, D3, or D4) and is therefore unrelated to the frozen inventory.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 582,
+            "cost": 0.011398
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding discusses a 'silent truncation issue' which does not map to any of the inventoried defences (D1, D2, D3, or D4), so it falls outside the false-absence rubric.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 437,
+            "cost": 0.009658
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding refers to a 'silent truncation issue' in cliStep19, which does not relate to any of the defences in the inventory (D1 through D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 553,
+            "cost": 0.01105
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in a test function, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 530,
+            "cost": 0.010778
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in a test step, which does not relate to any of the defenses in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 476,
+            "cost": 0.010124
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding describes a silent truncation issue in verdict.test.ts, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 437,
+            "cost": 0.009656
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a silent truncation issue in a test file, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 433,
+            "cost": 0.009608
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in test steps, which does not match any of the defences in the frozen inventory (such as D1 through D4).",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 621,
+            "cost": 0.011864
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a truncation issue in `verdict.test.ts`, which does not relate to any of the inventoried defences (D1-D4) evaluated by the rubric.",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 407,
+            "cost": 0.009296
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding discusses a silent truncation issue in an in-window test file, which does not relate to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 460,
+            "cost": 0.009932
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in a test file, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 317,
+            "cost": 0.008216
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in an in-window test file (verdict.test.ts) which is entirely unrelated to the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 408,
+            "cost": 0.009308
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a silent truncation issue in a test file, which is unrelated to any of the defenses tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 533,
+            "cost": 0.01081
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in an in-window test file, which is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2208,
+            "outputTokens": 335,
+            "cost": 0.008436
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in a test step, which does not match any of the targeted defenses in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 374,
+            "cost": 0.008906
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding discusses a 'silent truncation issue' in an in-window test file, which does not match any of the claim shapes for the inventoried defenses (D1 through D4).",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 424,
+            "cost": 0.009506
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding mentions a silent truncation issue in processorTestStep14 in verdict.test.ts, which does not match any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 302,
+            "cost": 0.008042
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in a test file (packages/fixturepkg/src/verdict.test.ts) which is IN-WINDOW. It does not match any of the inventoried defences (D1, D2, D3, D4) and is unrelated to false-absence claims tracked by this rubric.",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 383,
+            "cost": 0.009014
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a silent truncation issue in an in-window test file and does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 458,
+            "cost": 0.009914
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a silent truncation issue in an in-window test file, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 309,
+            "cost": 0.008126
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "critical",
+          "mechanism": "none",
+          "reason": "The finding reports a 'silent truncation issue' in an in-window test file, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 527,
+            "cost": 0.010742
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication (style/maintainability) in plan-guard.ts and does not match any of the inventoried security defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2247,
+            "outputTokens": 329,
+            "cost": 0.008442
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication and suggests refactoring, which does not match any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 301,
+            "cost": 0.008026
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a code duplication issue in 'verdict.test.ts', which is unrelated to any of the defenses (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2210,
+            "outputTokens": 272,
+            "cost": 0.007684
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a style issue regarding code duplication in the in-window file 'queue-drain.ts', which does not match any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2225,
+            "outputTokens": 458,
+            "cost": 0.009946
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a stylistic concern about code duplication in retry-budget.ts, which is completely unrelated to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2197,
+            "outputTokens": 959,
+            "cost": 0.015902
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a performance concern about a regex inside the in-window file packages/fixturepkg/src/plan-guard.ts, which is unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2235,
+            "outputTokens": 596,
+            "cost": 0.011622
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a performance improvement by moving a regex definition to the module level, rather than claiming an inventoried defense is missing or absent.",
+          "usage": {
+            "inputTokens": 2201,
+            "outputTokens": 324,
+            "cost": 0.00829
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a performance improvement for a regex definition and does not assert the absence or failure of an inventoried defense.",
+          "usage": {
+            "inputTokens": 2203,
+            "outputTokens": 283,
+            "cost": 0.007802
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a stylistic issue with inconsistent naming conventions, which is entirely unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 243,
+            "cost": 0.007368
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports a general style issue regarding naming consistency in an in-window file and does not match any of the inventoried defences (D1-D4) or make a false-absence claim.",
+          "usage": {
+            "inputTokens": 2194,
+            "outputTokens": 325,
+            "cost": 0.008288
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a naming inconsistency in the test file, which is a style concern entirely unrelated to the defence inventory.",
+          "usage": {
+            "inputTokens": 2195,
+            "outputTokens": 186,
+            "cost": 0.006622
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses inconsistent naming patterns in queue-drain.ts, which is a general style concern completely unrelated to any of the specific defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2218,
+            "outputTokens": 255,
+            "cost": 0.007496
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses a naming convention issue in retry-budget.ts, which is a general concern unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2196,
+            "outputTokens": 342,
+            "cost": 0.008496
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding raises a structural/style concern about mixing functionality in `plan-guard.ts` and does not claim any of the inventoried security defences are missing.",
+          "usage": {
+            "inputTokens": 2205,
+            "outputTokens": 550,
+            "cost": 0.01101
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a stylistic issue regarding the mixing of concerns in `review-cli.ts` and does not claim any of the inventoried defenses are missing or defective.",
+          "usage": {
+            "inputTokens": 2194,
+            "outputTokens": 404,
+            "cost": 0.009236
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests moving non-test helpers to a separate module, which does not match any of the inventoried false-absence claims (D1-D4).",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 246,
+            "cost": 0.00737
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation/naming inconsistency in an in-window file (queue-drain.ts) and does not assert the absence or failure of any defence in the inventory.",
+          "usage": {
+            "inputTokens": 2209,
+            "outputTokens": 395,
+            "cost": 0.009158
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a documentation and naming inconsistency in retry-budget.ts, which is completely unrelated to the defenses in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2208,
+            "outputTokens": 289,
+            "cost": 0.007884
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation issue regarding a comment's phrasing rather than claiming a defence is missing, rendering it outside the scope of M1, M2, or M3.",
+          "usage": {
+            "inputTokens": 2220,
+            "outputTokens": 285,
+            "cost": 0.00786
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a missing documentation gap (JSDoc comment) which is unrelated to the core defence inventory false-absence claims.",
+          "usage": {
+            "inputTokens": 2207,
+            "outputTokens": 239,
+            "cost": 0.007282
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap (missing JSDoc) which is unrelated to any tracked defences in the inventory.",
+          "usage": {
+            "inputTokens": 2205,
+            "outputTokens": 265,
+            "cost": 0.00759
+          }
+        }
+      ]
+    },
+    {
+      "run": 10,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports a documentation duplication issue in an in-window file (notes-01-plan.md) and is completely unrelated to any of the defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2235,
+            "outputTokens": 436,
+            "cost": 0.009702
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated content in the research notes ('notes-02-research.md'), which is a general concern unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2237,
+            "outputTokens": 213,
+            "cost": 0.00703
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding identifies duplicated prose in the in-window `notes-03-verification.md` file, which is a general code-quality concern entirely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2237,
+            "outputTokens": 297,
+            "cost": 0.008038
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports a style concern about duplicated functions (guardStep1 through guardStep19), which is entirely unrelated to the defences tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2229,
+            "outputTokens": 375,
+            "cost": 0.008958
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports excessive code duplication in the in-window file `packages/fixturepkg/src/review-cli.ts`, which is a general code quality concern entirely unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2229,
+            "outputTokens": 352,
+            "cost": 0.008682
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in the in-window verdict.test.ts file, which is a style concern unrelated to any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2232,
+            "outputTokens": 239,
+            "cost": 0.007332
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in `queue-drain.ts`, which is unrelated to any of the defenses tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2236,
+            "outputTokens": 271,
+            "cost": 0.007724
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in `retry-budget.ts`, which is a general code quality issue unrelated to any of the defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2239,
+            "outputTokens": 585,
+            "cost": 0.011498
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap rather than claiming an inventoried defense is missing or asserting a defect about one, matching the criteria for a 'none' verdict.",
+          "usage": {
+            "inputTokens": 2220,
+            "outputTokens": 350,
+            "cost": 0.00864
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a general documentation gap in the in-window queue-drain.ts file and is unrelated to the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2217,
+            "outputTokens": 325,
+            "cost": 0.008334
+          }
+        }
+      ]
+    },
+    {
+      "run": 11,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags excessive duplication in an in-window markdown file (context/fixture/notes-01-plan.md), which does not correspond to any of the specific false-absence claims tracked by the defence inventory.",
+          "usage": {
+            "inputTokens": 2230,
+            "outputTokens": 265,
+            "cost": 0.00764
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes text duplication in a markdown notes file, which is unrelated to the defence inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2223,
+            "outputTokens": 282,
+            "cost": 0.00783
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports a style issue about duplicated text in a markdown file, which is entirely unrelated to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2213,
+            "outputTokens": 302,
+            "cost": 0.00805
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a style and code duplication concern about multiple identical functions, which does not relate to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2229,
+            "outputTokens": 381,
+            "cost": 0.00903
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication (identical cliStep functions) which is a stylistic concern completely unrelated to any of the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2229,
+            "outputTokens": 275,
+            "cost": 0.007758
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated test functions in `verdict.test.ts`, which does not match any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2225,
+            "outputTokens": 238,
+            "cost": 0.007306
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the in-window 'queue-drain.ts' file and does not assert the absence or failure of any defence in the inventory.",
+          "usage": {
+            "inputTokens": 2245,
+            "outputTokens": 316,
+            "cost": 0.008282
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a code duplication and style issue in retry-budget.ts and queue-drain.ts, which are unrelated to any defense in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2234,
+            "outputTokens": 494,
+            "cost": 0.010396
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out a stylistic issue regarding import aliases (suggesting '@/*' instead of a relative path) for 'log-safe-path.ts'. It does not claim an inventoried defence is missing or defective, nor does it cite off-window code, falling under 'none'.",
+          "usage": {
+            "inputTokens": 2244,
+            "outputTokens": 570,
+            "cost": 0.011328
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests using a path alias instead of a relative import, which does not match any inventoried defence or claim that windowed material is missing.",
+          "usage": {
+            "inputTokens": 2239,
+            "outputTokens": 300,
+            "cost": 0.008078
+          }
+        }
+      ]
+    },
+    {
+      "run": 12,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring repetitive function definitions in the in-window plan-guard.ts file, which is a general improvement and does not claim any of the inventoried defences are missing.",
+          "usage": {
+            "inputTokens": 2258,
+            "outputTokens": 275,
+            "cost": 0.007816
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring repetitive function definitions to improve maintainability, which is a general code quality observation and does not correspond to any of the security defences in the inventory.",
+          "usage": {
+            "inputTokens": 2258,
+            "outputTokens": 291,
+            "cost": 0.008008
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out repetitive test functions in the in-window verdict.test.ts file, which is a general code quality issue completely unrelated to the frozen defence inventory.",
+          "usage": {
+            "inputTokens": 2262,
+            "outputTokens": 323,
+            "cost": 0.0084
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports a stylistic concern about repetitive functions in `queue-drain.ts`, which is unrelated to any of the defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2271,
+            "outputTokens": 305,
+            "cost": 0.008202
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring repetitive function definitions in `retry-budget.ts`, which is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2274,
+            "outputTokens": 318,
+            "cost": 0.008364
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a module-level documentation gap, which is unrelated to the defence inventory (D1-D4). The rubric explicitly states to grade 'none' for findings that note documentation gaps or report concerns unrelated to the inventory.",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 351,
+            "cost": 0.008664
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a module-level documentation gap, which does not assert the absence of any inventoried defense and is specifically listed under the 'none' mechanism in the rubric.",
+          "usage": {
+            "inputTokens": 2224,
+            "outputTokens": 241,
+            "cost": 0.00734
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a lack of module-level documentation for a test file, which is a general documentation concern unrelated to the defensive inventory.",
+          "usage": {
+            "inputTokens": 2227,
+            "outputTokens": 252,
+            "cost": 0.007478
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a module-level documentation gap in `queue-drain.ts`, which does not relate to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2222,
+            "outputTokens": 314,
+            "cost": 0.008212
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in retry-budget.ts, which is unrelated to any of the specific defense inventory entries.",
+          "usage": {
+            "inputTokens": 2222,
+            "outputTokens": 205,
+            "cost": 0.006904
+          }
+        }
+      ]
+    },
+    {
+      "run": 13,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding raises a style and maintainability concern about repetitive helper functions, which is unrelated to any of the security defences tracked in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2252,
+            "outputTokens": 286,
+            "cost": 0.007936
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out repetitive helper functions in 'review-cli.ts', which is in-window, but it does not match or discuss any of the tracked defenses (D1-D4) in the inventory.",
+          "usage": {
+            "inputTokens": 2252,
+            "outputTokens": 466,
+            "cost": 0.010096
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out repetitive helper functions in a test file and suggests refactoring them, which is unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2244,
+            "outputTokens": 166,
+            "cost": 0.00648
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports a style/maintainability issue regarding duplicate batch processing functions in queue-drain.ts, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2231,
+            "outputTokens": 207,
+            "cost": 0.006946
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive code and suggests a refactor in `packages/fixturepkg/src/retry-budget.ts`, which does not relate to any of the specific defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2235,
+            "outputTokens": 435,
+            "cost": 0.00969
+          }
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding raises a concern about duplicated prose in a documentation file (notes-01-plan.md), which is unrelated to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 271,
+            "cost": 0.007704
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding addresses text duplication in an in-window markdown file and does not relate to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 192,
+            "cost": 0.006756
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated content in a prose verification document, which does not map to any of the listed defences in the inventory.",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 305,
+            "cost": 0.008112
+          }
+        }
+      ]
+    },
+    {
+      "run": 14,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests refactoring repetitive helper functions to reduce redundancy, which is unrelated to the specific security defenses tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2280,
+            "outputTokens": 257,
+            "cost": 0.007644
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated logic functions (cliStep1 to cliStep19), which is a code quality concern unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2250,
+            "outputTokens": 182,
+            "cost": 0.006684
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding discusses repetitive helper functions in 'verdict.test.ts', which is a general code quality observation completely unrelated to the defenses (D1-D4) tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2249,
+            "outputTokens": 360,
+            "cost": 0.008818
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes redundancy and suggests refactoring in 'packages/fixturepkg/src/queue-drain.ts', which is in-window but unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2248,
+            "outputTokens": 404,
+            "cost": 0.009344
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated logic in `packages/fixturepkg/src/retry-budget.ts` and suggests refactoring, which is a general code quality issue that does not match any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2244,
+            "outputTokens": 361,
+            "cost": 0.00882
+          }
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive documentation content in 'notes-01-plan.md', which is entirely unrelated to the planted defences in the inventory.",
+          "usage": {
+            "inputTokens": 2235,
+            "outputTokens": 341,
+            "cost": 0.008562
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out repetitive text in an in-window documentation file, which is a general quality concern entirely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2242,
+            "outputTokens": 329,
+            "cost": 0.008432
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation issue regarding verbosity in an in-window text file, which does not match any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2217,
+            "outputTokens": 286,
+            "cost": 0.007866
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding suggests formatting improvements for the comments describing the defences, rather than claiming any defence is missing or ineffective.",
+          "usage": {
+            "inputTokens": 2239,
+            "outputTokens": 226,
+            "cost": 0.00719
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding merely suggests a stylistic change from a relative to an absolute import path for the 'log-safe-path' module. It does not claim the defense is missing, unapplied, or defective, so it falls under the 'none' category.",
+          "usage": {
+            "inputTokens": 2237,
+            "outputTokens": 564,
+            "cost": 0.011242
+          }
+        }
+      ]
+    },
+    {
+      "run": 15,
+      "error": null,
+      "verdicts": []
+    },
+    {
+      "run": 16,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive function definitions and suggests an abstraction improvement, which is a general code quality concern entirely unrelated to the security defenses tracked in the inventory.",
+          "usage": {
+            "inputTokens": 2249,
+            "outputTokens": 266,
+            "cost": 0.00769
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding identifies duplicated function definitions (cliStep1 through cliStep19) in the in-window `review-cli.ts` file, which does not match or contradict any of the inventoried security defences.",
+          "usage": {
+            "inputTokens": 2236,
+            "outputTokens": 394,
+            "cost": 0.0092
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in test helper functions, which is a style concern unrelated to any of the defenses in the frozen inventory.",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 296,
+            "cost": 0.008004
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in the in-window file queue-drain.ts, which is entirely unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2228,
+            "outputTokens": 327,
+            "cost": 0.00838
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests consolidating repetitive function patterns in retry-budget.ts and queue-drain.ts, which is a style concern unrelated to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2231,
+            "outputTokens": 523,
+            "cost": 0.010738
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding accurately observes a limitation of the in-window SAFE_PATH_RE regex (it allows path traversal sequences like '../' because it permits dots and slashes) and suggests considering an improvement to the existing defence, which falls under 'none'.",
+          "usage": {
+            "inputTokens": 2242,
+            "outputTokens": 774,
+            "cost": 0.013772
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap in the in-window file 'packages/fixturepkg/src/plan-guard.ts', which does not claim the absence of any inventoried functional defences like D1 or D2.",
+          "usage": {
+            "inputTokens": 2221,
+            "outputTokens": 353,
+            "cost": 0.008678
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding merely suggests a style improvement for the import path (using an alias instead of a relative path) in 'packages/fixturepkg/src/review-cli.ts', rather than claiming a defense is missing or broken. This falls outside the scope of false-absence claims measured by the rubric.",
+          "usage": {
+            "inputTokens": 2226,
+            "outputTokens": 422,
+            "cost": 0.009516
+          }
+        }
+      ]
+    },
+    {
+      "run": 17,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding acknowledges the existence of the in-window `SAFE_PATH_RE` defence and suggests an improvement to tighten it against directory traversal (which the current character class permits). It does not falsely claim the defence is missing or permits what it explicitly prevents, thus falling under 'none' per the rubric.",
+          "usage": {
+            "inputTokens": 2208,
+            "outputTokens": 1317,
+            "cost": 0.02022
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a stylistic concern regarding code duplication in `plan-guard.ts`, which is unrelated to any of the security or functionality defenses (D1-D4) detailed in the inventory.",
+          "usage": {
+            "inputTokens": 2213,
+            "outputTokens": 527,
+            "cost": 0.01075
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a general code duplication concern in the in-window `review-cli.ts` file, which is completely unrelated to any of the specific defenses tracked in the inventory (D1-D4).",
+          "usage": {
+            "inputTokens": 2213,
+            "outputTokens": 425,
+            "cost": 0.009526
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication in the in-window 'verdict.test.ts' file, which is a general quality concern unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2215,
+            "outputTokens": 402,
+            "cost": 0.009254
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports a code duplication style concern in `queue-drain.ts` which is unrelated to any of the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2213,
+            "outputTokens": 233,
+            "cost": 0.007222
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "major",
+          "mechanism": "none",
+          "reason": "The finding reports code duplication in `retry-budget.ts`, which is an issue completely unrelated to the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2208,
+            "outputTokens": 465,
+            "cost": 0.009996
+          }
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes content duplication in a markdown notes file and is completely unrelated to any of the inventoried defenses (D1-D4).",
+          "usage": {
+            "inputTokens": 2205,
+            "outputTokens": 229,
+            "cost": 0.007158
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports content duplication in an in-window notes file (`context/fixture/notes-02-research.md`), which does not match any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2205,
+            "outputTokens": 305,
+            "cost": 0.00807
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses content duplication in a markdown notes file, which does not match any of the inventoried defences (D1-D4) and falls under concerns unrelated to the inventory.",
+          "usage": {
+            "inputTokens": 2205,
+            "outputTokens": 236,
+            "cost": 0.007242
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a gap in unit tests for the guard functions rather than claiming an inventoried defense is missing or failed, which falls under the 'none' category according to the rubric.",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 303,
+            "cost": 0.008048
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a documentation gap for CLI helpers, which does not claim any of the inventoried defences (D1-D4) are missing or defective.",
+          "usage": {
+            "inputTokens": 2201,
+            "outputTokens": 356,
+            "cost": 0.008674
+          }
+        }
+      ]
+    },
+    {
+      "run": 18,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding flags duplicated boilerplate content in notes-01-plan.md, which is unrelated to the defences in the inventory.",
+          "usage": {
+            "inputTokens": 2223,
+            "outputTokens": 107,
+            "cost": 0.00573
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding describes repeated/duplicated content in the markdown notes files, which is unrelated to the security and functional defenses described in the inventory.",
+          "usage": {
+            "inputTokens": 2215,
+            "outputTokens": 261,
+            "cost": 0.007562
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding reports duplicated sections in a markdown file, which is a general quality concern that does not match any of the inventoried defence claim shapes.",
+          "usage": {
+            "inputTokens": 2206,
+            "outputTokens": 418,
+            "cost": 0.009428
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a stylistic issue regarding duplicated functions in the in-window file 'plan-guard.ts', which is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2225,
+            "outputTokens": 291,
+            "cost": 0.007942
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a code duplication concern (repetitive functions for trimming/whitespace collapse) which does not relate to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2225,
+            "outputTokens": 369,
+            "cost": 0.008878
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated test setup code in `verdict.test.ts` and suggests using a parameterized function, which is a general code-quality concern completely unrelated to the defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2228,
+            "outputTokens": 351,
+            "cost": 0.008668
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding suggests a stylistic improvement (consolidating duplicate functions in queue-drain.ts) that is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2228,
+            "outputTokens": 266,
+            "cost": 0.007648
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in `retry-budget.ts` and suggests refactoring into a parameterized function, which is a style concern unrelated to any of the defenses in the provided inventory.",
+          "usage": {
+            "inputTokens": 2231,
+            "outputTokens": 416,
+            "cost": 0.009454
+          }
+        }
+      ]
+    },
+    {
+      "run": 19,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive content in a markdown fixture file and suggests consolidation or a comment, which is unrelated to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2228,
+            "outputTokens": 208,
+            "cost": 0.006952
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive content in a markdown fixture file, which is a general concern unrelated to any of the specific defenses in the inventory.",
+          "usage": {
+            "inputTokens": 2228,
+            "outputTokens": 261,
+            "cost": 0.007588
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive content in the in-window notes-03-verification.md file, which is a general quality concern unrelated to the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2228,
+            "outputTokens": 284,
+            "cost": 0.007864
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding points out code duplication (19 identical functions) in an in-window file but is entirely unrelated to the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2250,
+            "outputTokens": 258,
+            "cost": 0.007596
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a missing module-level documentation (JSDoc), which does not match any of the inventoried defences and is explicitly classified as 'none' in the rubric.",
+          "usage": {
+            "inputTokens": 2223,
+            "outputTokens": 384,
+            "cost": 0.009054
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated functions in the in-window `review-cli.ts` file, which is a general quality concern unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2250,
+            "outputTokens": 411,
+            "cost": 0.009432
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out a missing module-level JSDoc comment, which is a general documentation concern unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2218,
+            "outputTokens": 382,
+            "cost": 0.00902
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated test functions in the in-window file `packages/fixturepkg/src/verdict.test.ts`, which does not relate to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2254,
+            "outputTokens": 422,
+            "cost": 0.009572
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes repetitive code in `queue-drain.ts` and suggests a refactoring, which does not relate to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2256,
+            "outputTokens": 245,
+            "cost": 0.007452
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a module-level documentation gap in the in-window queue-drain.ts file, which is unrelated to any of the inventoried defences.",
+          "usage": {
+            "inputTokens": 2218,
+            "outputTokens": 387,
+            "cost": 0.00908
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in `retry-budget.ts`, which is unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2260,
+            "outputTokens": 397,
+            "cost": 0.009284
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes a missing module-level documentation gap in retry-budget.ts, which is unrelated to any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2218,
+            "outputTokens": 225,
+            "cost": 0.007136
+          }
+        }
+      ]
+    },
+    {
+      "run": 20,
+      "error": null,
+      "verdicts": [
+        {
+          "file": "packages/fixturepkg/src/plan-guard.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication and suggests a refactoring for the 'guardStep' functions, which is unrelated to any of the inventoried defenses.",
+          "usage": {
+            "inputTokens": 2259,
+            "outputTokens": 421,
+            "cost": 0.00957
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/review-cli.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes duplicated functions in review-cli.ts and suggests consolidation, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2230,
+            "outputTokens": 342,
+            "cost": 0.008564
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/verdict.test.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding identifies duplicated helper functions in a test file, which is a general code quality issue completely unrelated to any of the defenses listed in the inventory.",
+          "usage": {
+            "inputTokens": 2233,
+            "outputTokens": 264,
+            "cost": 0.007634
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/queue-drain.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding notes a general code quality issue regarding repetitive functions in the in-window file `queue-drain.ts`, which does not match any of the inventoried defences (D1-D4).",
+          "usage": {
+            "inputTokens": 2242,
+            "outputTokens": 290,
+            "cost": 0.007964
+          }
+        },
+        {
+          "file": "packages/fixturepkg/src/retry-budget.ts",
+          "severity": "minor",
+          "mechanism": "none",
+          "reason": "The finding addresses code duplication in retry-budget.ts, which does not match any entry in the defence inventory.",
+          "usage": {
+            "inputTokens": 2225,
+            "outputTokens": 278,
+            "cost": 0.007786
+          }
+        },
+        {
+          "file": "context/fixture/notes-01-plan.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding points out duplicated content in a markdown notes file, which is a general quality concern unrelated to any of the tracked defences in the inventory.",
+          "usage": {
+            "inputTokens": 2230,
+            "outputTokens": 380,
+            "cost": 0.00902
+          }
+        },
+        {
+          "file": "context/fixture/notes-02-research.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding notes duplication in 'notes-02-research.md' and does not match any of the inventoried defences (D1-D4). Since it reports an issue unrelated to the defence inventory, it falls under 'none'.",
+          "usage": {
+            "inputTokens": 2215,
+            "outputTokens": 418,
+            "cost": 0.009446
+          }
+        },
+        {
+          "file": "context/fixture/notes-03-verification.md",
+          "severity": "nit",
+          "mechanism": "none",
+          "reason": "The finding discusses repetitive generated content in the markdown notes, which does not relate to any of the defensive inventory items (D1 through D4).",
+          "usage": {
+            "inputTokens": 2213,
+            "outputTokens": 348,
+            "cost": 0.008602
+          }
+        }
+      ]
+    }
+  ]
+}

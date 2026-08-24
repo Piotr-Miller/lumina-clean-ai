@@ -96,7 +96,7 @@ const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 // dir (sha256-pinned in its verification.md, the ci.md precedent) before
 // using those modes. The rloc guard below and the grader's ground-truth check
 // both fail fast with this discipline (impl-review F2).
-const changeDir = `${repoRoot}context/changes/fixture-ordered-and-irregular`;
+const changeDir = `${repoRoot}context/changes/fixture-irregular-rerun`;
 const resultsDir = `${changeDir}/results`;
 const RLOC_CONTEXT_PATH = `${changeDir}/ground-truth/rloc-context.txt`;
 /** Each fixture variant reads its own frozen diff, named after the variant. */
@@ -485,4 +485,5 @@ async function main() {
 
 const isMain = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) await main();
+
 
