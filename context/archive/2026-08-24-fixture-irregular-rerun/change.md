@@ -1,7 +1,8 @@
 ---
 change_id: fixture-irregular-rerun
 title: "Re-run the irregular fixture on a fixed generator (deconfound + re-freeze)"
-status: implemented
+status: archived
+archived_at: 2026-08-24T13:15:00Z
 created: 2026-08-24
 updated: 2026-08-24
 ---
