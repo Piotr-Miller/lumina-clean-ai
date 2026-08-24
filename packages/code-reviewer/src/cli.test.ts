@@ -25,6 +25,7 @@ const pipelineResult = (overrides: Partial<PipelineResult> = {}): PipelineResult
   verdictReason: "looks solid",
   diffStats: { files: 1, additions: 2, deletions: 1 },
   diffTruncated: false,
+  offDiffFindingPaths: [],
   bodyTruncated: false,
   droppedFindingIdRefs: 0,
   models: { finder: "cheap/finder", judge: "big/judge" },
@@ -141,8 +142,7 @@ describe("runReviewCli exit codes", () => {
 });
 
 describe("runReviewCli input routing and pipeline wiring", () => {
-  const inputOf = (pipeline: ReturnType<typeof vi.fn>): PipelineInput =>
-    pipeline.mock.calls[0]?.[0] as PipelineInput;
+  const inputOf = (pipeline: ReturnType<typeof vi.fn>): PipelineInput => pipeline.mock.calls[0]?.[0] as PipelineInput;
 
   it("reads the diff from --diff-file when given, stdin otherwise", async () => {
     const fromFile = fakeIo();
@@ -256,10 +256,7 @@ describe("runReviewCli input routing and pipeline wiring", () => {
     });
     expect(await runReviewCli([], {}, io, pipeline)).toBe(0);
     // Rounded ms; a non-Error throw falls back to its string form.
-    expect(io.errors).toEqual([
-      "retrying finder after TimeoutError in 2000ms",
-      "retrying judge after boom in 10500ms",
-    ]);
+    expect(io.errors).toEqual(["retrying finder after TimeoutError in 2000ms", "retrying judge after boom in 10500ms"]);
   });
 
   it("links the Actions run in comment.md when the env triple is present", async () => {
@@ -270,23 +267,14 @@ describe("runReviewCli input routing and pipeline wiring", () => {
       GITHUB_RUN_ID: "42",
     };
     await runReviewCli([], env, io, okPipeline());
-    expect(io.files.get(join(".review-out", "comment.md"))).toContain(
-      "https://github.com/acme/repo/actions/runs/42",
-    );
+    expect(io.files.get(join(".review-out", "comment.md"))).toContain("https://github.com/acme/repo/actions/runs/42");
   });
 });
 
 describe("runReviewCli --source-root (diff-scoped file context)", () => {
-  const inputOf = (pipeline: ReturnType<typeof vi.fn>): PipelineInput =>
-    pipeline.mock.calls[0]?.[0] as PipelineInput;
+  const inputOf = (pipeline: ReturnType<typeof vi.fn>): PipelineInput => pipeline.mock.calls[0]?.[0] as PipelineInput;
 
-  const DIFF = [
-    "diff --git a/src/a.ts b/src/a.ts",
-    "--- a/src/a.ts",
-    "+++ b/src/a.ts",
-    "@@ -1 +1 @@",
-    "+x",
-  ].join("\n");
+  const DIFF = ["diff --git a/src/a.ts b/src/a.ts", "--- a/src/a.ts", "+++ b/src/a.ts", "@@ -1 +1 @@", "+x"].join("\n");
 
   it("stays byte-identical to today without the flag: no source, no maxSteps, no step callback", async () => {
     const pipeline = okPipeline();
@@ -307,13 +295,13 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     expect(input.finderMaxSteps).toBe(5);
     expect(input.onFinderStep).toBeDefined();
     // The provider serves allowlisted reads through io.readFile...
-    await expect(
-      Promise.resolve(input.source?.({ path: "src/a.ts" })),
-    ).resolves.toBe(`content of ${join("root", "src/a.ts")}`);
+    await expect(Promise.resolve(input.source?.({ path: "src/a.ts" }))).resolves.toBe(
+      `content of ${join("root", "src/a.ts")}`,
+    );
     // ...and refuses paths outside the diff.
-    await expect(
-      Promise.resolve(input.source?.({ path: "../secrets.env" })),
-    ).resolves.toContain("not part of the reviewed diff");
+    await expect(Promise.resolve(input.source?.({ path: "../secrets.env" }))).resolves.toContain(
+      "not part of the reviewed diff",
+    );
   });
 
   it("skips the source entirely when the diff yields no reviewable paths", async () => {
@@ -342,12 +330,7 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     async (bad) => {
       const io = fakeIo({ readStdin: () => DIFF });
       const pipeline = okPipeline();
-      const code = await runReviewCli(
-        ["--source-root", "root"],
-        { REVIEW_FINDER_MAX_STEPS: bad },
-        io,
-        pipeline,
-      );
+      const code = await runReviewCli(["--source-root", "root"], { REVIEW_FINDER_MAX_STEPS: bad }, io, pipeline);
       expect(code).toBe(1);
       expect(io.errors.at(0)).toContain("REVIEW_FINDER_MAX_STEPS");
       expect(pipeline).not.toHaveBeenCalled();
@@ -462,7 +445,13 @@ describe("runReviewCli implementation-review telemetry line", () => {
       io,
       okPipeline(
         reviewedResult({
-          implReviewTelemetry: { attempts: 1, inputTokens: 51_407, outputTokens: 13_327, totalTokens: 64_734, cost: 0.236084 },
+          implReviewTelemetry: {
+            attempts: 1,
+            inputTokens: 51_407,
+            outputTokens: 13_327,
+            totalTokens: 64_734,
+            cost: 0.236084,
+          },
         }),
       ),
     );
@@ -545,9 +534,7 @@ describe("runReviewCli cost summary line (criterion 4.8)", () => {
   it("states the impl-review spend as a ratio of the code review", async () => {
     const io = fakeIo();
     await runReviewCli([], {}, io, okPipeline(withCosts({ implReviewTelemetry: { attempts: 1, cost: 0.08 } })));
-    expect(costLine(io)).toBe(
-      "review cost: finder=$0.010000 judge=$0.030000 impl=$0.080000 impl/(finder+judge)=2.00x",
-    );
+    expect(costLine(io)).toBe("review cost: finder=$0.010000 judge=$0.030000 impl=$0.080000 impl/(finder+judge)=2.00x");
   });
 
   it("marks the impl pass as not run rather than implying it was free", async () => {

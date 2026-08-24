@@ -16,6 +16,49 @@ export function findingKey(finding: Pick<Finding, "file" | "startLine">): string
 }
 
 /**
+ * Git quotes paths containing unusual bytes, and `computeFileSegments` keeps
+ * the closing quote verbatim. Compare unquoted or a quoted path never matches
+ * the same path as a model reports it.
+ */
+const unquotePath = (path: string): string => path.replace(/^"/, "").replace(/"$/, "");
+
+/**
+ * Paths a review's findings name that do not appear in the reviewed diff AT
+ * ALL — sorted, deduped. Empty is the healthy case.
+ *
+ * WHY THIS EXISTS. A finding about a file the PR never touched is not a real
+ * finding, and the failure it detects is otherwise silent. On PRs #175–#177 a
+ * generated `ground-truth/fixture*.diff` sorted to the front of the cap window
+ * (it is not `.md`, so `orderDiffForCap` classified the payload as source) and
+ * the finder reviewed the fixture's CONTENTS instead of the pull request. #177
+ * reported seven findings against `packages/fixturepkg/src/*` — paths that
+ * exist only inside that payload — and the run was labelled `ai-cr:failed` on
+ * their strength. Three reviews were spent that way before anyone noticed,
+ * and reading the finding paths is what finally exposed it in seconds.
+ *
+ * PR #179 excluded the artifact that caused those three. This makes the CLASS
+ * observable rather than silent: the `.md`-or-source split is still binary, so
+ * some future generated artifact can crowd the window the same way, and when
+ * it does this surfaces on the first PR instead of the fourth.
+ *
+ * Deliberately REPORTS rather than drops. A path can also be off-diff because
+ * the model lightly mangled a real one, and silently discarding findings would
+ * trade a visible reliability signal for an invisible loss of real ones.
+ * Compared against the FULL diff, never the capped one, so an over-cap file is
+ * not mistaken for a fabricated path.
+ */
+export function offDiffFindingPaths(diffPaths: Iterable<string>, findings: Finding[]): string[] {
+  const known = new Set<string>();
+  for (const path of diffPaths) known.add(unquotePath(path));
+  const offDiff = new Set<string>();
+  for (const finding of findings) {
+    const file = unquotePath(finding.file);
+    if (file !== "" && !known.has(file)) offDiff.add(file);
+  }
+  return [...offDiff].sort(compareStrings);
+}
+
+/**
  * Repair semantically invalid locations the schema alone cannot enforce:
  * coerce `file` to the unit's path for single-file units (file/hunk), and
  * drop `endLine` when it lacks a `startLine` or precedes it. Keeps stable

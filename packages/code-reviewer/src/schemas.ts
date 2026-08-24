@@ -239,6 +239,14 @@ export interface PipelineResult {
   verdictReason: string;
   diffStats: DiffStats;
   diffTruncated: boolean;
+  /**
+   * Paths the findings name that appear nowhere in the reviewed diff — sorted,
+   * deduped, empty in the healthy case. A non-empty value means the review is
+   * partly about files this PR never touched; see `offDiffFindingPaths`.
+   * Diff units only: single-file units have their `file` coerced to the unit's
+   * own path, so the check is vacuous there and the field stays empty.
+   */
+  offDiffFindingPaths: string[];
   bodyTruncated: boolean;
   /**
    * Whether the plan was truncated at PLAN_CAP_CHARS. Present only when the

@@ -221,15 +221,30 @@ export function renderStickyComment(result: PipelineResult, options: { runUrl?: 
 
   if (result.findings.length > 0) {
     // Stable sort: severity rank desc, merge order (file/line/category) as tiebreak.
-    const bySeverity = [...result.findings].sort(
-      (a, b) => severityRank[b.severity] - severityRank[a.severity],
-    );
+    const bySeverity = [...result.findings].sort((a, b) => severityRank[b.severity] - severityRank[a.severity]);
     const top = bySeverity.slice(0, MAX_RENDERED_FINDINGS);
     lines.push("", `#### Top findings`, "", ...top.map(renderFinding));
     const remaining = result.findings.length - top.length;
     if (remaining > 0) lines.push("", `…and ${String(remaining)} more finding(s) in review.json.`);
   } else {
     lines.push("", "No findings.");
+  }
+
+  // Sits WITH the findings, not in the footnote list below: a reader scanning
+  // a red verdict never reaches a footnote, and this caveat says the findings
+  // themselves may not be about this PR. It is the signal that would have
+  // caught PRs #175-#177 on the first one instead of the fourth — there a
+  // generated fixture's payload crowded the cap window, the finder reviewed
+  // that payload, and #177 filed seven findings against packages/fixturepkg/*,
+  // paths in no version of this repository, then wore an ai-cr:failed label
+  // earned by planted content.
+  if (result.offDiffFindingPaths.length > 0) {
+    lines.push(
+      "",
+      `⚠️ ${String(result.offDiffFindingPaths.length)} path(s) named above do not appear in this PR's diff at all: ` +
+        `${result.offDiffFindingPaths.map(codeSpan).join(", ")}. Treat those findings as unreliable — the review ` +
+        `may be describing content that is not this change.`,
+    );
   }
 
   lines.push(...renderImplReviewSection(result));

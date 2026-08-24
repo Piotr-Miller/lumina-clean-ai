@@ -1,7 +1,7 @@
 import type { ProviderMetadata, StepResult, ToolSet } from "ai";
 
 import { resolveModels } from "./config.js";
-import { mergeFindings } from "./findings.js";
+import { mergeFindings, offDiffFindingPaths } from "./findings.js";
 import {
   createImplReviewer,
   type ImplReviewCallOptions,
@@ -605,6 +605,13 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     verdictReason: judgeResult.verdictReason,
     diffStats,
     diffTruncated,
+    // Against the FULL diff, not the capped one: an over-cap file is invisible
+    // to the finder but still genuinely part of the PR, and flagging it as
+    // off-diff would bury the real signal (a path in no version of the diff).
+    offDiffFindingPaths: offDiffFindingPaths(
+      computeFileSegments(input.diff).map((segment) => segment.path),
+      findings,
+    ),
     bodyTruncated,
     // Key absent (not `false`) when the run had no plan, so a plan-less
     // review.json stays byte-identical to what shipped before this feature.
