@@ -47,7 +47,15 @@ function errorPath(message: string): string {
 const SENT_PATH = `${FORGOT_PASSWORD_PATH}?sent=1`;
 
 export interface ResetPasswordInput {
-  /** Request-scoped SSR supabase client (built by the route); `null` when Supabase is not configured. */
+  /**
+   * Supabase client for the SEND leg; `null` when Supabase is not configured.
+   *
+   * MUST be an implicit-flow client (`createPasswordResetClient`), NOT the
+   * request-scoped SSR client: `@supabase/ssr` forces `flowType: "pkce"`,
+   * which binds the emailed recovery token to the requesting browser and
+   * breaks reset from another device (FR-015). See
+   * `password-reset-client.options.ts`.
+   */
   supabase: SupabaseClient | null;
   /** The inbound form POST. */
   request: Request;
