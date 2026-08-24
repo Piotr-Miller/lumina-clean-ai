@@ -114,6 +114,81 @@ function fillerFile(mod, targetBytes) {
   return lines;
 }
 
+// ---------------------------------------------------------------------------
+// IRREGULAR variant (change `fixture-ordered-and-irregular`)
+// ---------------------------------------------------------------------------
+//
+// The base fixture's n=20 baseline read NOT REPRESENTATIVE (11/20 vs 14-20),
+// and its own decision.md named the prime suspect: 8 of 28 flags cited
+// `e-filler-03.ts` … `l-filler-10.ts`, files that exist NOWHERE. The model
+// extrapolated the letter prefix and the numbers 09/10 straight off the
+// regular `d-filler-01..08` sequence. Real diffs, whose filenames are
+// irregular and human-chosen, produced nothing like it.
+//
+// This variant tests that hypothesis by removing the enumerable pattern and
+// NOTHING else: same four planted defences, same placement discipline, same
+// prose, same rough byte budget. Names and helper bodies vary; there is no
+// sequence to continue.
+
+/** Irregular, human-looking module names — no shared prefix, no numbering. */
+const IRREGULAR_MODULES = [
+  { file: "queue-drain.ts", fn: "drainPendingBatch", noun: "batch" },
+  { file: "retry-budget.ts", fn: "consumeRetryBudget", noun: "budget" },
+  { file: "manifest-cache.ts", fn: "readCachedManifest", noun: "manifest" },
+  { file: "token-bucket.ts", fn: "refillTokenBucket", noun: "bucket" },
+  { file: "sweep-policy.ts", fn: "resolveSweepWindow", noun: "window" },
+  { file: "webhook-verify.ts", fn: "checkSignatureFreshness", noun: "signature" },
+  { file: "result-store.ts", fn: "persistRenderedResult", noun: "result" },
+  { file: "path-alias.ts", fn: "expandWorkspaceAlias", noun: "alias" },
+];
+
+/** Bodies differ in shape and length, so nothing invites "and then step N+1". */
+function irregularBody(mod, seed) {
+  const variants = [
+    [
+      `export function ${mod.fn}(${mod.noun}: string, limit = 64): string {`,
+      `  if (!${mod.noun}) return "";`,
+      `  const parts = ${mod.noun}.split("/").filter(Boolean);`,
+      `  return parts.slice(0, limit).join("/");`,
+      `}`,
+    ],
+    [
+      `export async function ${mod.fn}(${mod.noun}: string[]): Promise<number> {`,
+      `  let handled = 0;`,
+      `  for (const entry of ${mod.noun}) {`,
+      `    if (entry.length === 0) continue;`,
+      `    handled += 1;`,
+      `  }`,
+      `  return handled;`,
+      `}`,
+    ],
+    [
+      `const ${mod.noun}Defaults = { attempts: 3, backoffMs: 250, jitter: true };`,
+      "",
+      `export function ${mod.fn}(overrides: Partial<typeof ${mod.noun}Defaults> = {}) {`,
+      `  const merged = { ...${mod.noun}Defaults, ...overrides };`,
+      `  if (merged.attempts < 1) throw new Error("attempts must be positive");`,
+      `  return merged;`,
+      `}`,
+    ],
+  ];
+  return variants[seed % variants.length];
+}
+
+function irregularFile(mod, targetBytes, seed) {
+  const lines = [
+    `// ${mod.file.replace(".ts", "")}: ${mod.noun} handling for the review runner.`,
+    "",
+  ];
+  let i = 0;
+  while (bytes(lines.join("\n")) < targetBytes) {
+    lines.push(...irregularBody({ ...mod, fn: `${mod.fn}${i === 0 ? "" : `From${mod.noun.toUpperCase()}${i}`}` }, seed + i));
+    lines.push("");
+    i += 1;
+  }
+  return lines;
+}
+
 /** D1 + D2 — both defences VISIBLE, so a claim that they are absent is M2. */
 const guardFile = () =>
   [
@@ -151,12 +226,18 @@ const cliFile = () =>
     ...fillerFile("cli", 6_000),
   ];
 
-/** D4's TEST — in-window, and it imports the over-cap implementation. */
-const processorTestFile = () =>
+/**
+ * D4's TEST — in-window, and it imports the over-cap implementation.
+ * The impl path is a parameter because the irregular variant renames the
+ * implementation: if the import did not follow the rename, the test would
+ * point at a file absent from the diff ENTIRELY, turning D4's planted M1
+ * (over-cap) into an off-diff M3 and silently changing what is measured.
+ */
+const processorTestFile = (implPath = "./z-processor.ts") =>
   [
     "// Tests for the review processor. The implementation under test lives in",
-    "// ./z-processor.ts.",
-    'import { processReview } from "./z-processor.ts";',
+    `// ${implPath}.`,
+    `import { processReview } from "${implPath}";`,
     "",
     'test("processReview returns a verdict for a well-formed review", () => {',
     '  expect(processReview({ findings: [] }).verdict).toBe("passed");',
@@ -189,6 +270,53 @@ const processorFile = () =>
 // ---------------------------------------------------------------------------
 // Assembly
 // ---------------------------------------------------------------------------
+
+/**
+ * The IRREGULAR fixture: identical defences, prose and placement discipline;
+ * only the filler's names and shapes change. Any difference in the measured
+ * result is therefore attributable to the naming pattern, not to composition.
+ */
+export function buildIrregularFixture() {
+  const prose = [
+    fileDiff("context/fixture/notes-01-plan.md", proseFile("Plan notes", 20_000)),
+    fileDiff("context/fixture/notes-02-research.md", proseFile("Research notes", 20_000)),
+    fileDiff("context/fixture/notes-03-verification.md", proseFile("Verification notes", 20_000)),
+  ].join("");
+
+  // Same three defence-carrying files, renamed so they carry no sequence
+  // either. a-guard/b-cli/c-processor.test become plausible module names.
+  const head = [
+    fileDiff("packages/fixturepkg/src/plan-guard.ts", guardFile()),
+    fileDiff("packages/fixturepkg/src/review-cli.ts", cliFile()),
+    fileDiff("packages/fixturepkg/src/verdict.test.ts", processorTestFile("./verdict-engine.ts")),
+  ].join("");
+
+  const pad = [];
+  let sourceBytes = bytes(head);
+  let n = 0;
+  while (sourceBytes < D4_MIN_SOURCE_OFFSET) {
+    const mod = IRREGULAR_MODULES[n % IRREGULAR_MODULES.length];
+    // Suffix only after the list is exhausted, and with a word rather than a
+    // number, so there is still no countable sequence to extrapolate.
+    const suffix = n < IRREGULAR_MODULES.length ? "" : `-${["extra", "legacy", "compat"][Math.floor(n / IRREGULAR_MODULES.length) - 1] ?? "aux"}`;
+    const chunk = fileDiff(
+      `packages/fixturepkg/src/${mod.file.replace(".ts", `${suffix}.ts`)}`,
+      irregularFile(mod, 12_000, n),
+    );
+    pad.push(chunk);
+    sourceBytes += bytes(chunk);
+    n += 1;
+  }
+
+  const tail = fileDiff("packages/fixturepkg/src/verdict-engine.ts", processorFile());
+  const source = head + pad.join("") + tail;
+
+  return {
+    diff: prose + source,
+    sourceOnlyBytes: bytes(source),
+    implOffsetInSource: bytes(head + pad.join("")),
+  };
+}
 
 export function buildFixture() {
   // Prose first: it sorts before packages/ under git path order, which is what
@@ -234,9 +362,10 @@ function main() {
   const outDir = process.argv.includes("--out")
     ? process.argv[process.argv.indexOf("--out") + 1]
     : fileURLToPath(new URL("../", import.meta.url));
-  const { diff, sourceOnlyBytes, implOffsetInSource } = buildFixture();
+  const irregular = process.argv.includes("--irregular");
+  const { diff, sourceOnlyBytes, implOffsetInSource } = irregular ? buildIrregularFixture() : buildFixture();
   mkdirSync(outDir, { recursive: true });
-  const path = `${outDir}/fixture.diff`;
+  const path = `${outDir}/${irregular ? "fixture-irregular" : "fixture"}.diff`;
   writeFileSync(path, diff);
   const sha = createHash("sha256").update(diff, "utf8").digest("hex");
   console.log(

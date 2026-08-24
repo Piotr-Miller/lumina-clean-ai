@@ -1,0 +1,4168 @@
+diff --git a/context/fixture/notes-01-plan.md b/context/fixture/notes-01-plan.md
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/context/fixture/notes-01-plan.md
+@@ -0,0 +1,362 @@
++# Plan notes
++
++## Section 1 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 1 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 1 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 1 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 2 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 2 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 2 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 2 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 3 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 3 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 3 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 3 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 4 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 4 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 4 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 4 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 5 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 5 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 5 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 5 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 6 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 6 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 6 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 6 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 7 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 7 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 7 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 7 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 8 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 8 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 8 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 8 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 9 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 9 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 9 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 9 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 10 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 10 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 10 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 10 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 11 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 11 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 11 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 11 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 12 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 12 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 12 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 12 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 13 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 13 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 13 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 13 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 14 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 14 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 14 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 14 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 15 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 15 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 15 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 15 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 16 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 16 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 16 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 16 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 17 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 17 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 17 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 17 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 18 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 18 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 18 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 18 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 19 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 19 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 19 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 19 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 20 — review pipeline notes (Plan notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 20 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 20 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 20 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
+diff --git a/context/fixture/notes-02-research.md b/context/fixture/notes-02-research.md
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/context/fixture/notes-02-research.md
+@@ -0,0 +1,362 @@
++# Research notes
++
++## Section 1 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 1 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 1 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 1 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 2 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 2 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 2 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 2 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 3 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 3 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 3 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 3 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 4 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 4 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 4 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 4 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 5 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 5 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 5 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 5 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 6 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 6 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 6 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 6 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 7 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 7 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 7 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 7 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 8 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 8 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 8 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 8 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 9 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 9 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 9 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 9 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 10 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 10 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 10 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 10 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 11 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 11 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 11 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 11 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 12 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 12 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 12 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 12 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 13 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 13 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 13 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 13 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 14 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 14 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 14 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 14 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 15 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 15 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 15 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 15 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 16 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 16 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 16 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 16 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 17 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 17 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 17 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 17 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 18 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 18 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 18 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 18 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 19 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 19 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 19 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 19 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 20 — review pipeline notes (Research notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 20 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 20 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 20 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
+diff --git a/context/fixture/notes-03-verification.md b/context/fixture/notes-03-verification.md
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/context/fixture/notes-03-verification.md
+@@ -0,0 +1,362 @@
++# Verification notes
++
++## Section 1 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 1 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 1 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 1 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 2 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 2 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 2 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 2 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 3 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 3 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 3 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 3 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 4 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 4 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 4 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 4 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 5 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 5 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 5 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 5 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 6 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 6 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 6 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 6 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 7 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 7 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 7 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 7 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 8 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 8 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 8 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 8 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 9 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 9 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 9 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 9 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 10 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 10 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 10 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 10 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 11 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 11 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 11 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 11 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 12 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 12 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 12 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 12 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 13 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 13 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 13 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 13 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 14 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 14 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 14 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 14 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 15 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 15 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 15 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 15 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 16 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 16 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 16 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 16 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 17 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 17 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 17 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 17 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 18 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 18 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 18 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 18 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 19 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 19 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 19 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 19 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
++## Section 20 — review pipeline notes (Verification notes)
++
++The reviewer resolves the plan deterministically rather than through a model
++tool call, because a model that declines to call the tool is indistinguishable
++from a repository that has no plan at all. Section 20 records how the
++staged candidate is read from the git object instead of the checkout, so a
++symlinked plan file is never followed by the process holding the API token.
++
++Path handling is the recurring hazard. Every path that reaches a log line is
++passed through the sanitiser before it is written, and every path that reaches
++the filesystem is matched against the diff's own allowlist first. Reviewers
++reading step 20 should treat both as load-bearing rather than stylistic.
++
++The truncation budget applies to the diff, the plan, and the trusted rules
++separately. Section 20 deliberately does not restate the byte figures,
++because they are configuration and drift; the invariant is that a truncated
++input must always announce itself rather than read as a complete one.
++
+diff --git a/packages/fixturepkg/src/a-guard.ts b/packages/fixturepkg/src/a-guard.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/a-guard.ts
+@@ -0,0 +1,169 @@
++// Plan resolution guards. Both defences below are deliberately explicit.
++
++// D1: the option/path separator is present, so a path that begins with a
++// dash can never be parsed as an option.
++export const LS_TREE_ARGS = (sha: string, path: string) => ["ls-tree", sha, "--", path];
++
++// D2: an explicit safe path set, anchored at both ends. Anything outside
++// this class — whitespace, shell metacharacters, control characters — is
++// rejected before the value is used.
++export const SAFE_PATH_RE = /^[A-Za-z0-9._/-]+$/;
++
++export function isSafePlanPath(candidate: string): boolean {
++  return SAFE_PATH_RE.test(candidate);
++}
++
++// guard — generated review helpers.
++
++/** Step 1 of guard: normalises one review input before grading. */
++export function guardStep1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of guard: normalises one review input before grading. */
++export function guardStep2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of guard: normalises one review input before grading. */
++export function guardStep3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of guard: normalises one review input before grading. */
++export function guardStep4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of guard: normalises one review input before grading. */
++export function guardStep5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of guard: normalises one review input before grading. */
++export function guardStep6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of guard: normalises one review input before grading. */
++export function guardStep7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of guard: normalises one review input before grading. */
++export function guardStep8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of guard: normalises one review input before grading. */
++export function guardStep9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of guard: normalises one review input before grading. */
++export function guardStep10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of guard: normalises one review input before grading. */
++export function guardStep11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of guard: normalises one review input before grading. */
++export function guardStep12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of guard: normalises one review input before grading. */
++export function guardStep13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of guard: normalises one review input before grading. */
++export function guardStep14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of guard: normalises one review input before grading. */
++export function guardStep15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of guard: normalises one review input before grading. */
++export function guardStep16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of guard: normalises one review input before grading. */
++export function guardStep17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of guard: normalises one review input before grading. */
++export function guardStep18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of guard: normalises one review input before grading. */
++export function guardStep19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/b-cli.ts b/packages/fixturepkg/src/b-cli.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/b-cli.ts
+@@ -0,0 +1,164 @@
++// CLI entry for the review runner.
++import { logSafePath } from "./internal/log-safe-path.ts";
++
++export function reportResolvedPlan(planPath: string): void {
++  // logSafePath defuses control characters so a crafted path cannot forge
++  // or restyle log lines. The path itself is untrusted (it comes from the
++  // pull-request body), so it is never logged raw.
++  console.log(`resolved plan: ${logSafePath(planPath)}`);
++}
++
++// cli — generated review helpers.
++
++/** Step 1 of cli: normalises one review input before grading. */
++export function cliStep1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of cli: normalises one review input before grading. */
++export function cliStep2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of cli: normalises one review input before grading. */
++export function cliStep3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of cli: normalises one review input before grading. */
++export function cliStep4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of cli: normalises one review input before grading. */
++export function cliStep5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of cli: normalises one review input before grading. */
++export function cliStep6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of cli: normalises one review input before grading. */
++export function cliStep7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of cli: normalises one review input before grading. */
++export function cliStep8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of cli: normalises one review input before grading. */
++export function cliStep9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of cli: normalises one review input before grading. */
++export function cliStep10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of cli: normalises one review input before grading. */
++export function cliStep11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of cli: normalises one review input before grading. */
++export function cliStep12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of cli: normalises one review input before grading. */
++export function cliStep13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of cli: normalises one review input before grading. */
++export function cliStep14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of cli: normalises one review input before grading. */
++export function cliStep15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of cli: normalises one review input before grading. */
++export function cliStep16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of cli: normalises one review input before grading. */
++export function cliStep17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of cli: normalises one review input before grading. */
++export function cliStep18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of cli: normalises one review input before grading. */
++export function cliStep19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/c-processor.test.ts b/packages/fixturepkg/src/c-processor.test.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/c-processor.test.ts
+@@ -0,0 +1,158 @@
++// Tests for the review processor. The implementation under test lives in
++// ./z-processor.ts.
++import { processReview } from "./z-processor.ts";
++
++test("processReview returns a verdict for a well-formed review", () => {
++  expect(processReview({ findings: [] }).verdict).toBe("passed");
++});
++
++test("processReview rejects an empty payload", () => {
++  expect(() => processReview(null)).toThrow();
++});
++
++// processorTest — generated review helpers.
++
++/** Step 1 of processorTest: normalises one review input before grading. */
++export function processorTestStep1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of processorTest: normalises one review input before grading. */
++export function processorTestStep2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of processorTest: normalises one review input before grading. */
++export function processorTestStep3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of processorTest: normalises one review input before grading. */
++export function processorTestStep4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of processorTest: normalises one review input before grading. */
++export function processorTestStep5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of processorTest: normalises one review input before grading. */
++export function processorTestStep6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of processorTest: normalises one review input before grading. */
++export function processorTestStep7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of processorTest: normalises one review input before grading. */
++export function processorTestStep8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of processorTest: normalises one review input before grading. */
++export function processorTestStep9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of processorTest: normalises one review input before grading. */
++export function processorTestStep10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of processorTest: normalises one review input before grading. */
++export function processorTestStep11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of processorTest: normalises one review input before grading. */
++export function processorTestStep12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of processorTest: normalises one review input before grading. */
++export function processorTestStep13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of processorTest: normalises one review input before grading. */
++export function processorTestStep14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of processorTest: normalises one review input before grading. */
++export function processorTestStep15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of processorTest: normalises one review input before grading. */
++export function processorTestStep16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of processorTest: normalises one review input before grading. */
++export function processorTestStep17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of processorTest: normalises one review input before grading. */
++export function processorTestStep18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/d-filler-01.ts b/packages/fixturepkg/src/d-filler-01.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/d-filler-01.ts
+@@ -0,0 +1,298 @@
++// filler1 — generated review helpers.
++
++/** Step 1 of filler1: normalises one review input before grading. */
++export function filler1Step1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of filler1: normalises one review input before grading. */
++export function filler1Step2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of filler1: normalises one review input before grading. */
++export function filler1Step3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of filler1: normalises one review input before grading. */
++export function filler1Step4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of filler1: normalises one review input before grading. */
++export function filler1Step5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of filler1: normalises one review input before grading. */
++export function filler1Step6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of filler1: normalises one review input before grading. */
++export function filler1Step7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of filler1: normalises one review input before grading. */
++export function filler1Step8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of filler1: normalises one review input before grading. */
++export function filler1Step9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of filler1: normalises one review input before grading. */
++export function filler1Step10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of filler1: normalises one review input before grading. */
++export function filler1Step11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of filler1: normalises one review input before grading. */
++export function filler1Step12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of filler1: normalises one review input before grading. */
++export function filler1Step13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of filler1: normalises one review input before grading. */
++export function filler1Step14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of filler1: normalises one review input before grading. */
++export function filler1Step15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of filler1: normalises one review input before grading. */
++export function filler1Step16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of filler1: normalises one review input before grading. */
++export function filler1Step17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of filler1: normalises one review input before grading. */
++export function filler1Step18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of filler1: normalises one review input before grading. */
++export function filler1Step19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 20 of filler1: normalises one review input before grading. */
++export function filler1Step20(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 21 of filler1: normalises one review input before grading. */
++export function filler1Step21(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 22 of filler1: normalises one review input before grading. */
++export function filler1Step22(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 23 of filler1: normalises one review input before grading. */
++export function filler1Step23(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 24 of filler1: normalises one review input before grading. */
++export function filler1Step24(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 25 of filler1: normalises one review input before grading. */
++export function filler1Step25(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 26 of filler1: normalises one review input before grading. */
++export function filler1Step26(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 27 of filler1: normalises one review input before grading. */
++export function filler1Step27(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 28 of filler1: normalises one review input before grading. */
++export function filler1Step28(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 29 of filler1: normalises one review input before grading. */
++export function filler1Step29(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 30 of filler1: normalises one review input before grading. */
++export function filler1Step30(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 31 of filler1: normalises one review input before grading. */
++export function filler1Step31(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 32 of filler1: normalises one review input before grading. */
++export function filler1Step32(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 33 of filler1: normalises one review input before grading. */
++export function filler1Step33(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 34 of filler1: normalises one review input before grading. */
++export function filler1Step34(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 35 of filler1: normalises one review input before grading. */
++export function filler1Step35(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 36 of filler1: normalises one review input before grading. */
++export function filler1Step36(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 37 of filler1: normalises one review input before grading. */
++export function filler1Step37(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/d-filler-02.ts b/packages/fixturepkg/src/d-filler-02.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/d-filler-02.ts
+@@ -0,0 +1,298 @@
++// filler2 — generated review helpers.
++
++/** Step 1 of filler2: normalises one review input before grading. */
++export function filler2Step1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of filler2: normalises one review input before grading. */
++export function filler2Step2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of filler2: normalises one review input before grading. */
++export function filler2Step3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of filler2: normalises one review input before grading. */
++export function filler2Step4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of filler2: normalises one review input before grading. */
++export function filler2Step5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of filler2: normalises one review input before grading. */
++export function filler2Step6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of filler2: normalises one review input before grading. */
++export function filler2Step7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of filler2: normalises one review input before grading. */
++export function filler2Step8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of filler2: normalises one review input before grading. */
++export function filler2Step9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of filler2: normalises one review input before grading. */
++export function filler2Step10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of filler2: normalises one review input before grading. */
++export function filler2Step11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of filler2: normalises one review input before grading. */
++export function filler2Step12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of filler2: normalises one review input before grading. */
++export function filler2Step13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of filler2: normalises one review input before grading. */
++export function filler2Step14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of filler2: normalises one review input before grading. */
++export function filler2Step15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of filler2: normalises one review input before grading. */
++export function filler2Step16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of filler2: normalises one review input before grading. */
++export function filler2Step17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of filler2: normalises one review input before grading. */
++export function filler2Step18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of filler2: normalises one review input before grading. */
++export function filler2Step19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 20 of filler2: normalises one review input before grading. */
++export function filler2Step20(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 21 of filler2: normalises one review input before grading. */
++export function filler2Step21(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 22 of filler2: normalises one review input before grading. */
++export function filler2Step22(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 23 of filler2: normalises one review input before grading. */
++export function filler2Step23(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 24 of filler2: normalises one review input before grading. */
++export function filler2Step24(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 25 of filler2: normalises one review input before grading. */
++export function filler2Step25(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 26 of filler2: normalises one review input before grading. */
++export function filler2Step26(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 27 of filler2: normalises one review input before grading. */
++export function filler2Step27(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 28 of filler2: normalises one review input before grading. */
++export function filler2Step28(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 29 of filler2: normalises one review input before grading. */
++export function filler2Step29(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 30 of filler2: normalises one review input before grading. */
++export function filler2Step30(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 31 of filler2: normalises one review input before grading. */
++export function filler2Step31(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 32 of filler2: normalises one review input before grading. */
++export function filler2Step32(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 33 of filler2: normalises one review input before grading. */
++export function filler2Step33(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 34 of filler2: normalises one review input before grading. */
++export function filler2Step34(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 35 of filler2: normalises one review input before grading. */
++export function filler2Step35(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 36 of filler2: normalises one review input before grading. */
++export function filler2Step36(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 37 of filler2: normalises one review input before grading. */
++export function filler2Step37(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/d-filler-03.ts b/packages/fixturepkg/src/d-filler-03.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/d-filler-03.ts
+@@ -0,0 +1,298 @@
++// filler3 — generated review helpers.
++
++/** Step 1 of filler3: normalises one review input before grading. */
++export function filler3Step1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of filler3: normalises one review input before grading. */
++export function filler3Step2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of filler3: normalises one review input before grading. */
++export function filler3Step3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of filler3: normalises one review input before grading. */
++export function filler3Step4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of filler3: normalises one review input before grading. */
++export function filler3Step5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of filler3: normalises one review input before grading. */
++export function filler3Step6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of filler3: normalises one review input before grading. */
++export function filler3Step7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of filler3: normalises one review input before grading. */
++export function filler3Step8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of filler3: normalises one review input before grading. */
++export function filler3Step9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of filler3: normalises one review input before grading. */
++export function filler3Step10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of filler3: normalises one review input before grading. */
++export function filler3Step11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of filler3: normalises one review input before grading. */
++export function filler3Step12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of filler3: normalises one review input before grading. */
++export function filler3Step13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of filler3: normalises one review input before grading. */
++export function filler3Step14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of filler3: normalises one review input before grading. */
++export function filler3Step15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of filler3: normalises one review input before grading. */
++export function filler3Step16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of filler3: normalises one review input before grading. */
++export function filler3Step17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of filler3: normalises one review input before grading. */
++export function filler3Step18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of filler3: normalises one review input before grading. */
++export function filler3Step19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 20 of filler3: normalises one review input before grading. */
++export function filler3Step20(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 21 of filler3: normalises one review input before grading. */
++export function filler3Step21(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 22 of filler3: normalises one review input before grading. */
++export function filler3Step22(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 23 of filler3: normalises one review input before grading. */
++export function filler3Step23(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 24 of filler3: normalises one review input before grading. */
++export function filler3Step24(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 25 of filler3: normalises one review input before grading. */
++export function filler3Step25(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 26 of filler3: normalises one review input before grading. */
++export function filler3Step26(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 27 of filler3: normalises one review input before grading. */
++export function filler3Step27(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 28 of filler3: normalises one review input before grading. */
++export function filler3Step28(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 29 of filler3: normalises one review input before grading. */
++export function filler3Step29(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 30 of filler3: normalises one review input before grading. */
++export function filler3Step30(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 31 of filler3: normalises one review input before grading. */
++export function filler3Step31(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 32 of filler3: normalises one review input before grading. */
++export function filler3Step32(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 33 of filler3: normalises one review input before grading. */
++export function filler3Step33(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 34 of filler3: normalises one review input before grading. */
++export function filler3Step34(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 35 of filler3: normalises one review input before grading. */
++export function filler3Step35(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 36 of filler3: normalises one review input before grading. */
++export function filler3Step36(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 37 of filler3: normalises one review input before grading. */
++export function filler3Step37(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/d-filler-04.ts b/packages/fixturepkg/src/d-filler-04.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/d-filler-04.ts
+@@ -0,0 +1,298 @@
++// filler4 — generated review helpers.
++
++/** Step 1 of filler4: normalises one review input before grading. */
++export function filler4Step1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of filler4: normalises one review input before grading. */
++export function filler4Step2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of filler4: normalises one review input before grading. */
++export function filler4Step3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of filler4: normalises one review input before grading. */
++export function filler4Step4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of filler4: normalises one review input before grading. */
++export function filler4Step5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of filler4: normalises one review input before grading. */
++export function filler4Step6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of filler4: normalises one review input before grading. */
++export function filler4Step7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of filler4: normalises one review input before grading. */
++export function filler4Step8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of filler4: normalises one review input before grading. */
++export function filler4Step9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of filler4: normalises one review input before grading. */
++export function filler4Step10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of filler4: normalises one review input before grading. */
++export function filler4Step11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of filler4: normalises one review input before grading. */
++export function filler4Step12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of filler4: normalises one review input before grading. */
++export function filler4Step13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of filler4: normalises one review input before grading. */
++export function filler4Step14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of filler4: normalises one review input before grading. */
++export function filler4Step15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of filler4: normalises one review input before grading. */
++export function filler4Step16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of filler4: normalises one review input before grading. */
++export function filler4Step17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of filler4: normalises one review input before grading. */
++export function filler4Step18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of filler4: normalises one review input before grading. */
++export function filler4Step19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 20 of filler4: normalises one review input before grading. */
++export function filler4Step20(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 21 of filler4: normalises one review input before grading. */
++export function filler4Step21(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 22 of filler4: normalises one review input before grading. */
++export function filler4Step22(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 23 of filler4: normalises one review input before grading. */
++export function filler4Step23(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 24 of filler4: normalises one review input before grading. */
++export function filler4Step24(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 25 of filler4: normalises one review input before grading. */
++export function filler4Step25(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 26 of filler4: normalises one review input before grading. */
++export function filler4Step26(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 27 of filler4: normalises one review input before grading. */
++export function filler4Step27(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 28 of filler4: normalises one review input before grading. */
++export function filler4Step28(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 29 of filler4: normalises one review input before grading. */
++export function filler4Step29(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 30 of filler4: normalises one review input before grading. */
++export function filler4Step30(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 31 of filler4: normalises one review input before grading. */
++export function filler4Step31(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 32 of filler4: normalises one review input before grading. */
++export function filler4Step32(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 33 of filler4: normalises one review input before grading. */
++export function filler4Step33(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 34 of filler4: normalises one review input before grading. */
++export function filler4Step34(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 35 of filler4: normalises one review input before grading. */
++export function filler4Step35(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 36 of filler4: normalises one review input before grading. */
++export function filler4Step36(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 37 of filler4: normalises one review input before grading. */
++export function filler4Step37(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/d-filler-05.ts b/packages/fixturepkg/src/d-filler-05.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/d-filler-05.ts
+@@ -0,0 +1,298 @@
++// filler5 — generated review helpers.
++
++/** Step 1 of filler5: normalises one review input before grading. */
++export function filler5Step1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of filler5: normalises one review input before grading. */
++export function filler5Step2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of filler5: normalises one review input before grading. */
++export function filler5Step3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of filler5: normalises one review input before grading. */
++export function filler5Step4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of filler5: normalises one review input before grading. */
++export function filler5Step5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of filler5: normalises one review input before grading. */
++export function filler5Step6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of filler5: normalises one review input before grading. */
++export function filler5Step7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of filler5: normalises one review input before grading. */
++export function filler5Step8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of filler5: normalises one review input before grading. */
++export function filler5Step9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of filler5: normalises one review input before grading. */
++export function filler5Step10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of filler5: normalises one review input before grading. */
++export function filler5Step11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of filler5: normalises one review input before grading. */
++export function filler5Step12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of filler5: normalises one review input before grading. */
++export function filler5Step13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of filler5: normalises one review input before grading. */
++export function filler5Step14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of filler5: normalises one review input before grading. */
++export function filler5Step15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of filler5: normalises one review input before grading. */
++export function filler5Step16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of filler5: normalises one review input before grading. */
++export function filler5Step17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of filler5: normalises one review input before grading. */
++export function filler5Step18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of filler5: normalises one review input before grading. */
++export function filler5Step19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 20 of filler5: normalises one review input before grading. */
++export function filler5Step20(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 21 of filler5: normalises one review input before grading. */
++export function filler5Step21(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 22 of filler5: normalises one review input before grading. */
++export function filler5Step22(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 23 of filler5: normalises one review input before grading. */
++export function filler5Step23(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 24 of filler5: normalises one review input before grading. */
++export function filler5Step24(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 25 of filler5: normalises one review input before grading. */
++export function filler5Step25(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 26 of filler5: normalises one review input before grading. */
++export function filler5Step26(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 27 of filler5: normalises one review input before grading. */
++export function filler5Step27(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 28 of filler5: normalises one review input before grading. */
++export function filler5Step28(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 29 of filler5: normalises one review input before grading. */
++export function filler5Step29(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 30 of filler5: normalises one review input before grading. */
++export function filler5Step30(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 31 of filler5: normalises one review input before grading. */
++export function filler5Step31(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 32 of filler5: normalises one review input before grading. */
++export function filler5Step32(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 33 of filler5: normalises one review input before grading. */
++export function filler5Step33(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 34 of filler5: normalises one review input before grading. */
++export function filler5Step34(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 35 of filler5: normalises one review input before grading. */
++export function filler5Step35(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 36 of filler5: normalises one review input before grading. */
++export function filler5Step36(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 37 of filler5: normalises one review input before grading. */
++export function filler5Step37(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/d-filler-06.ts b/packages/fixturepkg/src/d-filler-06.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/d-filler-06.ts
+@@ -0,0 +1,298 @@
++// filler6 — generated review helpers.
++
++/** Step 1 of filler6: normalises one review input before grading. */
++export function filler6Step1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of filler6: normalises one review input before grading. */
++export function filler6Step2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of filler6: normalises one review input before grading. */
++export function filler6Step3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of filler6: normalises one review input before grading. */
++export function filler6Step4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of filler6: normalises one review input before grading. */
++export function filler6Step5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of filler6: normalises one review input before grading. */
++export function filler6Step6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of filler6: normalises one review input before grading. */
++export function filler6Step7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of filler6: normalises one review input before grading. */
++export function filler6Step8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of filler6: normalises one review input before grading. */
++export function filler6Step9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of filler6: normalises one review input before grading. */
++export function filler6Step10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of filler6: normalises one review input before grading. */
++export function filler6Step11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of filler6: normalises one review input before grading. */
++export function filler6Step12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of filler6: normalises one review input before grading. */
++export function filler6Step13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of filler6: normalises one review input before grading. */
++export function filler6Step14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of filler6: normalises one review input before grading. */
++export function filler6Step15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of filler6: normalises one review input before grading. */
++export function filler6Step16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of filler6: normalises one review input before grading. */
++export function filler6Step17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of filler6: normalises one review input before grading. */
++export function filler6Step18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of filler6: normalises one review input before grading. */
++export function filler6Step19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 20 of filler6: normalises one review input before grading. */
++export function filler6Step20(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 21 of filler6: normalises one review input before grading. */
++export function filler6Step21(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 22 of filler6: normalises one review input before grading. */
++export function filler6Step22(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 23 of filler6: normalises one review input before grading. */
++export function filler6Step23(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 24 of filler6: normalises one review input before grading. */
++export function filler6Step24(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 25 of filler6: normalises one review input before grading. */
++export function filler6Step25(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 26 of filler6: normalises one review input before grading. */
++export function filler6Step26(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 27 of filler6: normalises one review input before grading. */
++export function filler6Step27(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 28 of filler6: normalises one review input before grading. */
++export function filler6Step28(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 29 of filler6: normalises one review input before grading. */
++export function filler6Step29(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 30 of filler6: normalises one review input before grading. */
++export function filler6Step30(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 31 of filler6: normalises one review input before grading. */
++export function filler6Step31(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 32 of filler6: normalises one review input before grading. */
++export function filler6Step32(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 33 of filler6: normalises one review input before grading. */
++export function filler6Step33(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 34 of filler6: normalises one review input before grading. */
++export function filler6Step34(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 35 of filler6: normalises one review input before grading. */
++export function filler6Step35(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 36 of filler6: normalises one review input before grading. */
++export function filler6Step36(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 37 of filler6: normalises one review input before grading. */
++export function filler6Step37(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/d-filler-07.ts b/packages/fixturepkg/src/d-filler-07.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/d-filler-07.ts
+@@ -0,0 +1,298 @@
++// filler7 — generated review helpers.
++
++/** Step 1 of filler7: normalises one review input before grading. */
++export function filler7Step1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of filler7: normalises one review input before grading. */
++export function filler7Step2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of filler7: normalises one review input before grading. */
++export function filler7Step3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of filler7: normalises one review input before grading. */
++export function filler7Step4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of filler7: normalises one review input before grading. */
++export function filler7Step5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of filler7: normalises one review input before grading. */
++export function filler7Step6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of filler7: normalises one review input before grading. */
++export function filler7Step7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of filler7: normalises one review input before grading. */
++export function filler7Step8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of filler7: normalises one review input before grading. */
++export function filler7Step9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of filler7: normalises one review input before grading. */
++export function filler7Step10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of filler7: normalises one review input before grading. */
++export function filler7Step11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of filler7: normalises one review input before grading. */
++export function filler7Step12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of filler7: normalises one review input before grading. */
++export function filler7Step13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of filler7: normalises one review input before grading. */
++export function filler7Step14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of filler7: normalises one review input before grading. */
++export function filler7Step15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of filler7: normalises one review input before grading. */
++export function filler7Step16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of filler7: normalises one review input before grading. */
++export function filler7Step17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of filler7: normalises one review input before grading. */
++export function filler7Step18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of filler7: normalises one review input before grading. */
++export function filler7Step19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 20 of filler7: normalises one review input before grading. */
++export function filler7Step20(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 21 of filler7: normalises one review input before grading. */
++export function filler7Step21(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 22 of filler7: normalises one review input before grading. */
++export function filler7Step22(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 23 of filler7: normalises one review input before grading. */
++export function filler7Step23(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 24 of filler7: normalises one review input before grading. */
++export function filler7Step24(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 25 of filler7: normalises one review input before grading. */
++export function filler7Step25(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 26 of filler7: normalises one review input before grading. */
++export function filler7Step26(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 27 of filler7: normalises one review input before grading. */
++export function filler7Step27(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 28 of filler7: normalises one review input before grading. */
++export function filler7Step28(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 29 of filler7: normalises one review input before grading. */
++export function filler7Step29(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 30 of filler7: normalises one review input before grading. */
++export function filler7Step30(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 31 of filler7: normalises one review input before grading. */
++export function filler7Step31(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 32 of filler7: normalises one review input before grading. */
++export function filler7Step32(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 33 of filler7: normalises one review input before grading. */
++export function filler7Step33(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 34 of filler7: normalises one review input before grading. */
++export function filler7Step34(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 35 of filler7: normalises one review input before grading. */
++export function filler7Step35(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 36 of filler7: normalises one review input before grading. */
++export function filler7Step36(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 37 of filler7: normalises one review input before grading. */
++export function filler7Step37(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/d-filler-08.ts b/packages/fixturepkg/src/d-filler-08.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/d-filler-08.ts
+@@ -0,0 +1,298 @@
++// filler8 — generated review helpers.
++
++/** Step 1 of filler8: normalises one review input before grading. */
++export function filler8Step1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of filler8: normalises one review input before grading. */
++export function filler8Step2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of filler8: normalises one review input before grading. */
++export function filler8Step3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of filler8: normalises one review input before grading. */
++export function filler8Step4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of filler8: normalises one review input before grading. */
++export function filler8Step5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of filler8: normalises one review input before grading. */
++export function filler8Step6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of filler8: normalises one review input before grading. */
++export function filler8Step7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of filler8: normalises one review input before grading. */
++export function filler8Step8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of filler8: normalises one review input before grading. */
++export function filler8Step9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of filler8: normalises one review input before grading. */
++export function filler8Step10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of filler8: normalises one review input before grading. */
++export function filler8Step11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of filler8: normalises one review input before grading. */
++export function filler8Step12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of filler8: normalises one review input before grading. */
++export function filler8Step13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 14 of filler8: normalises one review input before grading. */
++export function filler8Step14(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 15 of filler8: normalises one review input before grading. */
++export function filler8Step15(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 16 of filler8: normalises one review input before grading. */
++export function filler8Step16(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 17 of filler8: normalises one review input before grading. */
++export function filler8Step17(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 18 of filler8: normalises one review input before grading. */
++export function filler8Step18(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 19 of filler8: normalises one review input before grading. */
++export function filler8Step19(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 20 of filler8: normalises one review input before grading. */
++export function filler8Step20(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 21 of filler8: normalises one review input before grading. */
++export function filler8Step21(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 22 of filler8: normalises one review input before grading. */
++export function filler8Step22(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 23 of filler8: normalises one review input before grading. */
++export function filler8Step23(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 24 of filler8: normalises one review input before grading. */
++export function filler8Step24(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 25 of filler8: normalises one review input before grading. */
++export function filler8Step25(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 26 of filler8: normalises one review input before grading. */
++export function filler8Step26(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 27 of filler8: normalises one review input before grading. */
++export function filler8Step27(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 28 of filler8: normalises one review input before grading. */
++export function filler8Step28(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 29 of filler8: normalises one review input before grading. */
++export function filler8Step29(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 30 of filler8: normalises one review input before grading. */
++export function filler8Step30(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 31 of filler8: normalises one review input before grading. */
++export function filler8Step31(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 32 of filler8: normalises one review input before grading. */
++export function filler8Step32(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 33 of filler8: normalises one review input before grading. */
++export function filler8Step33(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 34 of filler8: normalises one review input before grading. */
++export function filler8Step34(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 35 of filler8: normalises one review input before grading. */
++export function filler8Step35(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 36 of filler8: normalises one review input before grading. */
++export function filler8Step36(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 37 of filler8: normalises one review input before grading. */
++export function filler8Step37(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
+diff --git a/packages/fixturepkg/src/z-processor.ts b/packages/fixturepkg/src/z-processor.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/packages/fixturepkg/src/z-processor.ts
+@@ -0,0 +1,117 @@
++// The review processor: turns raw findings into a verdict.
++export interface ReviewPayload {
++  findings: { severity: string }[];
++}
++
++export function processReview(payload: ReviewPayload | null) {
++  if (!payload) throw new Error("payload is required");
++  const blocking = payload.findings.filter((f) => f.severity === "critical");
++  return { verdict: blocking.length > 0 ? "failed" : "passed", blocking: blocking.length };
++}
++
++// processor — generated review helpers.
++
++/** Step 1 of processor: normalises one review input before grading. */
++export function processorStep1(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 2 of processor: normalises one review input before grading. */
++export function processorStep2(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 3 of processor: normalises one review input before grading. */
++export function processorStep3(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 4 of processor: normalises one review input before grading. */
++export function processorStep4(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 5 of processor: normalises one review input before grading. */
++export function processorStep5(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 6 of processor: normalises one review input before grading. */
++export function processorStep6(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 7 of processor: normalises one review input before grading. */
++export function processorStep7(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 8 of processor: normalises one review input before grading. */
++export function processorStep8(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 9 of processor: normalises one review input before grading. */
++export function processorStep9(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 10 of processor: normalises one review input before grading. */
++export function processorStep10(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 11 of processor: normalises one review input before grading. */
++export function processorStep11(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 12 of processor: normalises one review input before grading. */
++export function processorStep12(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
++/** Step 13 of processor: normalises one review input before grading. */
++export function processorStep13(input: string): string {
++  const trimmed = input.trim();
++  if (trimmed.length === 0) return "";
++  // Collapse whitespace so downstream comparisons are shape-insensitive.
++  return trimmed.replace(/\s+/g, " ").slice(0, 512);
++}
++
