@@ -223,12 +223,6 @@ export interface JudgeTelemetry {
  * getFileContext targets against the files the note actually named without
  * depending on Actions-log retention (impl-review F1).
  */
-export interface TruncationMetadata {
-  cutFile?: string;
-  overCapFiles: string[];
-  omittedCount?: number;
-}
-
 /** Full result of the two-pass review pipeline (what review.json carries). */
 export interface PipelineResult {
   summary: string;
@@ -245,12 +239,6 @@ export interface PipelineResult {
   verdictReason: string;
   diffStats: DiffStats;
   diffTruncated: boolean;
-  /**
-   * Present only when diffTruncated is true — absent (never an empty object)
-   * otherwise, so an untruncated review.json is byte-identical to the
-   * pre-feature shape. See TruncationMetadata.
-   */
-  truncationMetadata?: TruncationMetadata;
   bodyTruncated: boolean;
   /**
    * Whether the plan was truncated at PLAN_CAP_CHARS. Present only when the
@@ -563,15 +551,12 @@ export const reviewUnitSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("diff"),
     diff: z.string().min(1).describe("Unified diff text"),
-    // Truncation facts from the pipeline's own cap decision (change
-    // r5-finder-truncation-note): set from capDiff/truncationReport, never
-    // re-detected from the diff text. Additive and optional, so existing
-    // constructors (evals, demo, probe) compile unchanged. cutFile is
-    // optional-not-nullable: absent means "cut fell between files or the
-    // text had no parseable headers".
-    truncated: z.boolean().optional(),
-    cutFile: z.string().optional(),
-    overCapFiles: z.array(z.string()).optional(),
+    // The finder's truncation note carried `truncated`/`cutFile`/
+    // `overCapFiles` here (change r5-finder-truncation-note). Removed after
+    // the pre-registered live check found the tool channel INERT — see
+    // context/archive/2026-08-22-r5-finder-truncation-note/decision.md
+    // Disposition #1. The 100 KB cap itself, `diffTruncated`, the human-facing
+    // warning and the implementation-review note all remain.
   }),
   z.object({
     kind: z.literal("file"),
