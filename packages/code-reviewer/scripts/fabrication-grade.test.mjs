@@ -9,6 +9,7 @@ import {
   aggregateGrades,
   allVerdictsSettled,
   assertFlatVerdictSchema,
+  assertGroundTruthFrozen,
   assertRunIdentity,
   buildGradePrompt,
   gradeFinding,
@@ -300,5 +301,55 @@ describe("reusableVerdict", () => {
   it("refuses to resume from a misaligned checkpoint", () => {
     const checkpointRun = { run: 1, verdicts: [settled] };
     expect(() => reusableVerdict(checkpointRun, 0, { file: "OTHER.ts" })).toThrow(/refusing to resume/);
+  });
+});
+
+// The freeze violation these encode really happened: the irregular arm pinned
+// f423d87f… and the grader read b6bddc46… because pre-commit prettier
+// reformatted the ground truth after the hash was taken. The grader recorded
+// the hash but never compared it, so a paid arm was graded against a file that
+// was not the frozen one. The table below is the real archived pin.
+describe("assertGroundTruthFrozen", () => {
+  const SHA = "9a3031108b37b56680657235db619fe82c6338e7f4128eea3b9383bfc6ef66ac";
+  const verificationMd = [
+    "## Frozen inputs",
+    "",
+    "| File                                  | sha256   |",
+    "| ------------------------------------- | -------- |",
+    "| `ground-truth/fixture-irregular.diff` | `81003a16f646d815e67354c7dcfd2dff4d8978c7d933ed74f9f0a912777045b6` |",
+    "| `ground-truth/fixture-irregular.md`   | `" + SHA + "` |",
+    "",
+  ].join("\n");
+
+  it("passes and returns the pin when the file matches it", () => {
+    expect(assertGroundTruthFrozen({ verificationMd, variant: "fixture-irregular", sha256: SHA })).toBe(SHA);
+  });
+
+  it("refuses to grade when the file drifted from its pin", () => {
+    expect(() =>
+      assertGroundTruthFrozen({ verificationMd, variant: "fixture-irregular", sha256: "b6bddc46".padEnd(64, "0") }),
+    ).toThrow(/FREEZE VIOLATION/);
+  });
+
+  it("names re-pinning without diagnosis as voiding prior runs", () => {
+    expect(() =>
+      assertGroundTruthFrozen({ verificationMd, variant: "fixture-irregular", sha256: "0".repeat(64) }),
+    ).toThrow(/void/);
+  });
+
+  it("refuses to grade an UNPINNED ground truth rather than passing silently", () => {
+    expect(() => assertGroundTruthFrozen({ verificationMd, variant: "ci", sha256: SHA })).toThrow(/not PINNED/);
+  });
+
+  it("matches the row for its own variant, never a neighbouring row", () => {
+    // The .diff row sits directly above the .md row and carries a different
+    // hash; a loose pattern would happily match it and pass a drifted file.
+    expect(() =>
+      assertGroundTruthFrozen({
+        verificationMd,
+        variant: "fixture-irregular",
+        sha256: "81003a16f646d815e67354c7dcfd2dff4d8978c7d933ed74f9f0a912777045b6",
+      }),
+    ).toThrow(/FREEZE VIOLATION/);
   });
 });

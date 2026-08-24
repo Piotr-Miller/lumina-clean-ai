@@ -65,7 +65,51 @@ const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 // Re-pointed (archived campaign → archived R5 → change r2-prose-rerun); the
 // ground truth there must stay byte-identical to the archived frozen copy
 // (sha256 pinned in the change's verification.md).
-const groundTruthDir = `${repoRoot}context/changes/fixture-irregular-rerun/ground-truth`;
+const changeDir = `${repoRoot}context/changes/fixture-irregular-rerun`;
+const groundTruthDir = `${changeDir}/ground-truth`;
+
+/**
+ * Freeze ENFORCEMENT, not freeze reporting.
+ *
+ * THE FAILURE THIS PREVENTS, observed: the irregular arm pinned `f423d87f…`
+ * in verification.md, and the grader read `b6bddc46…`. The ground truth was
+ * produced by scripted text replacement and the **pre-commit prettier hook
+ * reformatted it after the hash was taken**, so the frozen input and the
+ * graded input were different files. Nothing caught it, because the grader
+ * computed the sha256 and merely *recorded* it in the output — a hash written
+ * down next to the thing it hashes always matches and proves nothing. It
+ * surfaced only during a hand-read, after the arm had been paid for.
+ *
+ * So the pin is read back from the change's own verification.md and compared
+ * BEFORE the first paid grader call. Deriving it from the file on disk would
+ * reintroduce the bug; the whole point is that the two come from different
+ * places and must agree.
+ */
+export function assertGroundTruthFrozen({ verificationMd, variant, sha256 }) {
+  const escaped = variant.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const row = new RegExp(`\\|\\s*\`ground-truth/${escaped}\\.md\`\\s*\\|\\s*\`([0-9a-f]{64})\`\\s*\\|`).exec(
+    verificationMd,
+  );
+  if (row === null) {
+    throw new Error(
+      `ground truth for variant "${variant}" is not PINNED: no sha256 row for ` +
+        `\`ground-truth/${variant}.md\` in the change's verification.md. Add it to the ` +
+        '"Frozen inputs" table before grading — an unpinned ground truth cannot be ' +
+        "shown to have survived the pre-commit hooks (campaign freeze discipline).",
+    );
+  }
+  if (row[1] !== sha256) {
+    throw new Error(
+      `FREEZE VIOLATION for variant "${variant}": verification.md pins ${row[1]}, ` +
+        `but the file on disk hashes to ${sha256}. The ground truth changed after it was ` +
+        "frozen — the usual cause is the pre-commit prettier hook reformatting it. Run " +
+        "prettier over the ground truth FIRST, confirm the hash is stable across a second " +
+        "pass, re-pin it, and only then grade. Do not re-pin to the current value without " +
+        "confirming what changed: any paid run already graded against the old pin is void.",
+    );
+  }
+  return row[1];
+}
 
 /** Write via a temp file + rename so a checkpoint is never half-written. */
 function writeFileAtomic(path, data) {
@@ -334,6 +378,14 @@ async function main() {
   }
   const groundTruth = readFileSync(`${groundTruthDir}/${results.variant}.md`, "utf8");
   const groundTruthSha256 = createHash("sha256").update(groundTruth, "utf8").digest("hex");
+  // Before the first paid grader call, never after: a freeze that is only
+  // checked post-hoc is what let the irregular arm be graded against a
+  // prettier-reformatted ground truth.
+  assertGroundTruthFrozen({
+    verificationMd: readFileSync(`${changeDir}/verification.md`, "utf8"),
+    variant: results.variant,
+    sha256: groundTruthSha256,
+  });
   const manifestSummary = summarizeManifest(manifest);
 
   const openrouter = createOpenRouter({ apiKey });
