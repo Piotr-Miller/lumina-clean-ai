@@ -28,6 +28,7 @@ const PUBLIC_SKILLS = [
   "10x-impl-review-ci",
   "code-review",
   "documentation",
+  "gauntlet-loop",
   "learning",
   "skill-optimizer",
   "typescript-magician",
