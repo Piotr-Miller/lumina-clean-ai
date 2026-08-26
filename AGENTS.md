@@ -34,7 +34,7 @@ LuminaClean AI — night/low-light photo denoise + exposure-correction MVP. Two 
 ### Commands
 
 - `npm run dev` — start Astro dev server (Node/Vite — **not** the Cloudflare workerd runtime; use `npm run build && npx wrangler dev` for workerd fidelity)
-- `npm run build` — production build (SSR via `@astrojs/cloudflare`)
+- `npm run build` — production build (SSR via `@astrojs/cloudflare`). ⚠️ **It can exit 0 without building.** If a `workerd` process tree left over from an earlier `wrangler dev` still holds `dist/`, Astro's `emptyDir` throws (`rmdirSync` appears in the log) and the command **still reports success**, leaving the previous build in place — so you serve a stale bundle and debug a change that never shipped. Killing the `wrangler` process alone does not clear it: the `workerd` children outlive their parent on Windows, so stop those too before rebuilding. **Verify by content, never by exit code** — grep `dist/client/_astro/` for a string your change introduced. Observed 2026-08-25; the failure and its consequence are written up in `context/changes/gauntlet-enhance-ui/gauntlet/workbench.md`.
 - `npm run preview` — preview production build
 - `npm run lint` — ESLint with type-checked rules
 - `npm run lint:fix` — auto-fix lint issues
