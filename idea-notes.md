@@ -12,7 +12,7 @@ Night and low-light photos taken on mobile devices suffer from heavy digital noi
 - Simple user account system for storing jobs and gating cloud usage (Supabase Auth + RLS)
 - Before / After comparison slider for the processed result
 - Async cloud pipeline: signed upload → Database Webhook → Edge Function → Replicate prediction with webhook callback → Supabase Realtime push to frontend
-- Basic cost protection: RLS-gated cloud access + SQL rate limiting (global cap of 50 cloud AI ops / day across all users, resetting at 00:00 UTC; configurable via `CLOUD_DAILY_CAP`). **Set conservatively to 3 in prod; `0` = kill-switch.**
+- Basic cost protection: RLS-gated cloud access + an application-side daily cap (global cap of 50 cloud AI ops / day across all users, resetting at 00:00 UTC; configurable via `CLOUD_DAILY_CAP`). The count and the rejection happen in the create-job handler against the RLS-gated `jobs` table — **not** in a SQL trigger or constraint. **Set conservatively to 3 in prod; `0` = kill-switch.**
 
 **Added after MVP launch (post-MVP, already shipped):**
 
