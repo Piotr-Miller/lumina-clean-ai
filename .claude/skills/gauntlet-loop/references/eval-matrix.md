@@ -434,9 +434,21 @@ working. The label is not.
 - Use the skill as its banner says: supervised, free domains (A, C, D, F), never paid, never unattended.
 - **Treat every domain-A verdict as referee-grade evidence**, whatever the staging looked like. That is
   the practical form of the §3 finding, and it holds whether or not the gate is ever amended.
-- Three improvements this run earned were **not applied**, and should be batched if anyone resumes:
-  masking brand marks at capture, verifying a build by content rather than exit code, and the domain-A
-  blinding-claim correction. Each touches operating instructions and therefore costs a §2 re-measure.
+- Four improvements are **not applied**, and should be batched if anyone resumes. Three this run
+  earned: masking brand marks at capture, verifying a build by content rather than exit code, and the
+  domain-A blinding-claim correction.
+- The fourth arrived later and from outside this run: **`bars.md` §B gives domain B an objective this
+  product cannot use.** §B frames the domain as closing the distance to the frozen cloud result — the
+  right mechanic, the wrong goal here. `prd.md` §83/§116/§Non-Goals make the Local↔Cloud quality gap
+  the upgrade incentive ("Local is the free taste — **it should NOT be too good**"), so a lead
+  following §B's default instinct optimises straight through the funnel and a `WINS` verdict on a
+  night photo is a product failure, not a win. Domain B needs its objective stated as a **position**
+  relative to the bar rather than a victory over it. Raised by change `local-engine-ceiling`
+  (`context/changes/local-engine-ceiling/change.md`, issue #188) and recorded here because that change
+  is itself parked — nobody resuming the skill would have found it there.
+- Each of the four touches operating instructions and therefore costs a §2 re-measure. **Recording
+  them does not; only applying them does** — which is why the fourth is written down while all four
+  stay parked.
 
 Do not restart the §3-by-better-staging line of work. It was tried, measured, and is recorded here as a
 dead end.
