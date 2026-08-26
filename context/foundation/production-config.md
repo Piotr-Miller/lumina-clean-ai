@@ -94,6 +94,37 @@ Names only (Settings → Secrets and variables → Actions):
 
 ---
 
+## 7. Replicate — cost controls & spend ceiling
+
+**Verified 2026-08-26** (account billing page, read-only; change `atomic-cloud-daily-cap`). Recorded here because S-05 named a "provider billing alert" as the daily cap's operational backstop and nothing in this file has ever described one.
+
+**There is no self-service spend limit or billing alert on Replicate, and there was none when S-05 named it.** The monthly spend limit was deprecated on **2025-07-01** — _"The ability to set a monthly spend limit on your account has been deprecated"_ ([changelog](https://replicate.com/changelog/2025-07-01-set-a-monthly-spend-limit)) — eleven months before S-05 (2026-06) recorded it as the backstop. It survives only as a support request. The billing page carries no limit/budget/alert/threshold control of any kind, and the docs describe no low-balance notification. **Do not go looking for this alert again; it does not exist as a self-service feature.**
+
+**What actually bounds spend — observed state 2026-08-26:**
+
+| Signal              | Value                                                                |
+| ------------------- | -------------------------------------------------------------------- |
+| Billing mode        | **Prepaid credit**                                                   |
+| Credit remaining    | **$19.77**                                                           |
+| **Auto-reload**     | **DISABLED** ← this is what makes the bound real                     |
+| Outstanding balance | $0.00                                                                |
+| Usage this month    | $0.00 (4 cap-counted jobs in Aug; rounds to zero at cent resolution) |
+
+Prepaid credit with auto-reload off is a **hard ceiling, and a stronger control than the alert S-05 wanted** — it stops work rather than reporting after the fact: _"As soon as your balance hits zero, we will prevent any new work from starting and shut down any infrastructure we're running for you"_ ([prepaid credit docs](https://replicate.com/docs/topics/billing/prepaid-credit)). A single prediction may slightly overshoot the balance and is charged at month end, so the ceiling is hard but not cent-exact.
+
+**Verify** (no CLI — this is console-only): https://replicate.com/account/billing → confirm **Credit remaining** and that **Manage auto-reload** still reads disabled.
+
+**Four limits of this backstop — it does not make the daily cap correct:**
+
+1. It bounds **total lifetime spend**, not per-day overrun. FR-014 promises that an over-cap request is _rejected_; a ceiling on the eventual bill is not that promise.
+2. It is **incidental, not designed**. Auto-reload-off is the default state; nothing ties it to the cap contract, and no one chose it as a cost control.
+3. It **fails silently**. There are no documented low-balance emails, so exhaustion surfaces to users as failed cloud jobs, not to the operator as a warning.
+4. It is **one click from gone** — "Add credit" or enabling auto-reload removes it, with nothing in the repo connecting that action to FR-014.
+
+Treat it as defence in depth. The enforcing control is the application-side cap (see `AGENTS.md` and change `atomic-cloud-daily-cap`, issue #191).
+
+---
+
 ## Credential inventory (names + location, NEVER values)
 
 | Credential                                           | Where it lives                                                        | Notes                                                  |
@@ -106,6 +137,8 @@ Names only (Settings → Secrets and variables → Actions):
 | Replicate token + webhook secret + DB webhook secret | **set 2026-06-08** — Edge Function secrets + Vault (flip-ON / D.1)    | webhook secret = Replicate's real account default (F1) |
 
 ## Pending / follow-ups
+
+- ~~**Replicate billing alert (the S-05 backstop)**~~ — **CLOSED 2026-08-26 as NOT AVAILABLE:** the self-service monthly spend limit was deprecated 2025-07-01, so the backstop S-05 promised never existed. Effective replacement already in place: prepaid credit **$19.77** with **auto-reload disabled** = hard ceiling. Full record + its four limits in §7. Optional, not taken: request a spend limit from Replicate support.
 
 - ~~**Safe Browsing review**~~ — **RESOLVED 2026-06-07**: Google review passed, "Deceptive pages" false positive cleared, warnings being removed.
 - ~~**#14** — disable workers.dev once branded domain is established~~ — **DONE 2026-08-07** (PR #113): `workers_dev:false` + `preview_urls:false` in `wrangler.jsonc`, plus http→https 301 in middleware. Archived → `context/archive/2026-06-06-disable-workers-dev-subdomain/`.
