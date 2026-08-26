@@ -5,6 +5,14 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  # Manual recovery trigger. A master push whose event is never delivered (an
+  # Actions outage throttling inbound traffic, 2026-08-26) leaves the commit on
+  # master with production still serving the previous one — and there is no run
+  # to "re-run", so without this there is NO way to recover short of pushing
+  # another commit. `deploy` and `deploy-skipped-alarm` below accept this event
+  # for the same reason: a dispatch that runs the gates but cannot deploy would
+  # leave open the very gap it exists to close.
+  workflow_dispatch:
 
 # Cancel superseded runs to save Actions minutes: pushing a new commit to a PR
 # branch aborts that branch's in-flight run instead of letting it finish. Scoped
@@ -416,7 +424,12 @@ jobs:
 
   deploy:
     needs: [ci, integration, e2e]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    # Still master-only and still fully gated by `needs`; `workflow_dispatch` is
+    # accepted so a lost push event can be recovered by hand. Manual dispatch
+    # does NOT bypass a gate — it re-runs all three.
+    if: >-
+      github.ref == 'refs/heads/master'
+      && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -495,7 +508,7 @@ jobs:
     if: >-
       ${{ always()
       && github.ref == 'refs/heads/master'
-      && github.event_name == 'push'
+      && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
       && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
     runs-on: ubuntu-latest
     steps:
