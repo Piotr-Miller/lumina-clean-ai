@@ -209,7 +209,13 @@
       "Bash(python -)",
       "Skill(10x-archive)",
       "Bash(gh pr *)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(ps -eo pid,ppid,sid,cmd)",
+      "Bash(cd *)",
+      "Bash(chcon -t container_file_t supabase)",
+      "Bash(podman volume *)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(podman ps *)"
     ],
     "deny": [
       "Bash(rm -rf *)"

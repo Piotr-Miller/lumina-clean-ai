@@ -30,6 +30,7 @@ const PUBLIC_SKILLS = [
   "documentation",
   "gauntlet-loop",
   "learning",
+  "run-local-stack",
   "skill-optimizer",
   "typescript-magician",
 ];
