@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   claimJobForProcessing,
   countCloudJobsToday,
@@ -501,6 +501,232 @@ describe("countCloudJobsToday (S-05 global daily-cap count)", () => {
 
     const after = await countCloudJobsToday(supabaseAdmin);
     expect(after - before).toBe(0);
+  });
+});
+
+describe("admit_cloud_job (FR-014 guarded admission)", () => {
+  const created: TestUser[] = [];
+
+  afterEach(async () => {
+    for (const u of created) {
+      await deleteTestUser(u.id);
+    }
+    created.length = 0;
+  });
+
+  async function makeUser(prefix?: string): Promise<TestUser> {
+    const u = await createTestUser(prefix);
+    created.push(u);
+    return u;
+  }
+
+  // Same controlled-row seeder as the countCloudJobsToday block: a direct admin
+  // insert with an explicit status / prediction-id / created_at, bypassing the
+  // storage path so the RPC's predicate can be asserted in isolation.
+  async function seedJob(
+    userId: string,
+    status: "queued" | "processing" | "succeeded" | "failed",
+    replicatePredictionId: string | null,
+    createdAtIso?: string,
+  ): Promise<void> {
+    const row: Record<string, unknown> = {
+      user_id: userId,
+      status,
+      source_path: `${userId}/seed/source.jpg`,
+      replicate_prediction_id: replicatePredictionId,
+    };
+    if (createdAtIso) row.created_at = createdAtIso;
+    const { error } = await withGatewayRetry(() => supabaseAdmin.from("jobs").insert(row));
+    expect(error).toBeNull();
+  }
+
+  interface AdmitResult {
+    data: boolean | null;
+    error: { message: string } | null;
+  }
+
+  /**
+   * Invoke the guarded write directly. `cap` is `number | null` on purpose — the
+   * null case is a first-class test (a plpgsql `IF NULL THEN` does not branch, so
+   * a fall-through would admit every request).
+   *
+   * The count is GLOBAL, so every cap below is derived from a freshly measured
+   * baseline (`countCloudJobsToday`) rather than written as an absolute — the same
+   * baseline-delta technique the countCloudJobsToday block uses.
+   */
+  async function admit(
+    client: SupabaseClient,
+    userId: string,
+    cap: number | null,
+    jobId = crypto.randomUUID(),
+  ): Promise<AdmitResult & { jobId: string }> {
+    const result = (await client.rpc("admit_cloud_job", {
+      p_job_id: jobId,
+      p_user_id: userId,
+      p_source_path: `${userId}/${jobId}/source.jpg`,
+      p_gamma: 1.4,
+      p_strength: 0.15,
+      p_cap: cap,
+    })) as AdmitResult;
+    return { ...result, jobId };
+  }
+
+  async function jobExists(jobId: string): Promise<boolean> {
+    const { count, error } = await supabaseAdmin
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("id", jobId);
+    expect(error).toBeNull();
+    return (count ?? 0) > 0;
+  }
+
+  it("admits and inserts a queued row while today's billable count is under the cap", async () => {
+    const user = await makeUser("admit-under");
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    const { data, error, jobId } = await admit(supabaseAdmin, user.id, before + 1);
+    expect(error).toBeNull();
+    expect(data).toBe(true);
+
+    const { data: row } = (await supabaseAdmin
+      .from("jobs")
+      .select("id, user_id, status, source_path, gamma, strength, replicate_prediction_id")
+      .eq("id", jobId)
+      .single()) as {
+      data: {
+        id: string;
+        user_id: string;
+        status: string;
+        source_path: string;
+        gamma: number | null;
+        strength: number | null;
+        replicate_prediction_id: string | null;
+      } | null;
+    };
+    expect(row).toMatchObject({
+      id: jobId,
+      user_id: user.id,
+      status: "queued",
+      source_path: `${user.id}/${jobId}/source.jpg`,
+      gamma: 1.4,
+      strength: 0.15,
+      replicate_prediction_id: null,
+    });
+
+    expect(await countCloudJobsToday(supabaseAdmin)).toBe(before + 1);
+  });
+
+  it("admits the last slot and then rejects at exactly the cap, inserting nothing", async () => {
+    const user = await makeUser("admit-boundary");
+    const before = await countCloudJobsToday(supabaseAdmin);
+    const cap = before + 1;
+
+    const first = await admit(supabaseAdmin, user.id, cap);
+    expect(first.error).toBeNull();
+    expect(first.data).toBe(true);
+
+    // The count is now exactly `cap`: `count >= cap` rejects, mirroring isOverDailyCap.
+    const second = await admit(supabaseAdmin, user.id, cap);
+    expect(second.error).toBeNull();
+    expect(second.data).toBe(false);
+    expect(await jobExists(second.jobId)).toBe(false);
+
+    expect(await countCloudJobsToday(supabaseAdmin)).toBe(cap);
+  });
+
+  it("rejects the first request when the cap is 0 (operator kill-switch)", async () => {
+    const user = await makeUser("admit-killswitch");
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    const { data, error, jobId } = await admit(supabaseAdmin, user.id, 0);
+    expect(error).toBeNull();
+    expect(data).toBe(false);
+    expect(await jobExists(jobId)).toBe(false);
+    expect(await countCloudJobsToday(supabaseAdmin)).toBe(before);
+  });
+
+  it("fails closed on a null or negative cap, inserting nothing", async () => {
+    const user = await makeUser("admit-badcap");
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    // `count >= NULL` is NULL and `IF NULL THEN` does not branch, so without the
+    // explicit guard this call would fall through to the insert and admit.
+    const nullCap = await admit(supabaseAdmin, user.id, null);
+    expect(nullCap.error).toBeNull();
+    expect(nullCap.data).toBe(false);
+    expect(await jobExists(nullCap.jobId)).toBe(false);
+
+    const negativeCap = await admit(supabaseAdmin, user.id, -1);
+    expect(negativeCap.error).toBeNull();
+    expect(negativeCap.data).toBe(false);
+    expect(await jobExists(negativeCap.jobId)).toBe(false);
+
+    expect(await countCloudJobsToday(supabaseAdmin)).toBe(before);
+  });
+
+  it("does not let a pre-model failure consume a slot", async () => {
+    const user = await makeUser("admit-premodel-fail");
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    // `failed` with no prediction id never reached Replicate, so it cost nothing.
+    await seedJob(user.id, "failed", null);
+
+    // The cap sits exactly one above the baseline, so this admits ONLY if the
+    // seeded row was excluded from the count.
+    const { data, error } = await admit(supabaseAdmin, user.id, before + 1);
+    expect(error).toBeNull();
+    expect(data).toBe(true);
+  });
+
+  it("lets a failed job that reached the model consume a slot", async () => {
+    const user = await makeUser("admit-postmodel-fail");
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    // `failed` WITH a prediction id did invoke the model — it is billable.
+    await seedJob(user.id, "failed", "pred-billable");
+
+    const { data, error, jobId } = await admit(supabaseAdmin, user.id, before + 1);
+    expect(error).toBeNull();
+    expect(data).toBe(false);
+    expect(await jobExists(jobId)).toBe(false);
+  });
+
+  it("does not count rows created on an earlier UTC day", async () => {
+    const user = await makeUser("admit-yesterday");
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    await seedJob(user.id, "queued", null, yesterday);
+
+    const { data, error } = await admit(supabaseAdmin, user.id, before + 1);
+    expect(error).toBeNull();
+    expect(data).toBe(true);
+  });
+
+  it("is not executable by anon and inserts nothing", async () => {
+    const user = await makeUser("admit-deny-anon");
+    const anon = createSupabaseClient(supabaseUrl, supabaseAnonKey);
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    // Assert "errored and no row appeared" rather than a specific PostgREST code:
+    // a missing EXECUTE grant and an unexposed function deny with different
+    // shapes, and either is a pass.
+    const { data, error, jobId } = await admit(anon, user.id, before + 1);
+    expect(error).not.toBeNull();
+    expect(data).not.toBe(true);
+    expect(await jobExists(jobId)).toBe(false);
+    expect(await countCloudJobsToday(supabaseAdmin)).toBe(before);
+  });
+
+  it("is not executable by an authenticated user and inserts nothing", async () => {
+    const user = await makeUser("admit-deny-user");
+    const before = await countCloudJobsToday(supabaseAdmin);
+
+    const { data, error, jobId } = await admit(user.client, user.id, before + 1);
+    expect(error).not.toBeNull();
+    expect(data).not.toBe(true);
+    expect(await jobExists(jobId)).toBe(false);
+    expect(await countCloudJobsToday(supabaseAdmin)).toBe(before);
   });
 });
 
