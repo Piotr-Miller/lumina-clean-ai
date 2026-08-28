@@ -38,7 +38,12 @@ needs explicit serialization.
 (`supabase/migrations/20260614120000_reaper_stale_source_paths.sql`) is a
 `SECURITY DEFINER` / `set search_path = ''` function revoked from
 `public`/`anon`/`authenticated` and granted `execute` to `service_role` only. That
-grant model and header-comment style is the template for this migration.
+**grant model** and header-comment style is the template for this migration — but
+its security context is NOT: the reaper needs owner privileges because it reads
+`storage.objects`, which `service_role` cannot reach. `public.jobs` is already
+reachable by `service_role` (INSERT/SELECT + BYPASSRLS), so this function is
+`SECURITY INVOKER`. (Corrected 2026-08-28 after `reviews/impl-review-phase-1.md`
+F1; see § Review Response — Phase 1.)
 
 **The oracle already has a shape.** `tests/jobs.rls.test.ts:381` ("allows exactly
 one concurrent claim and one write-once prediction identity") is the concurrency
@@ -106,7 +111,7 @@ A cloud submission that would exceed `CLOUD_DAILY_CAP` is rejected **no matter h
 many requests arrive simultaneously**, because admission is a single database
 statement that holds a lock across count-and-insert. Verified by: a real-Postgres
 fan-out of 8 concurrent admissions at `cap - 1` producing exactly one inserted row;
-the function present, `SECURITY DEFINER`, and executable by `service_role` alone in
+the function present, `SECURITY INVOKER`, and executable by `service_role` alone in
 `luminaclean-prod`; and no live document in the repository still describing the cap
 as a soft, app-level, non-atomic guard.
 
@@ -135,7 +140,7 @@ as a soft, app-level, non-atomic guard.
 
 ## Implementation Approach
 
-A `SECURITY DEFINER` function `public.admit_cloud_job(...)` takes a
+A `SECURITY INVOKER` function `public.admit_cloud_job(...)` takes a
 **transaction-scoped advisory lock**, re-counts today's billable jobs with the
 existing predicate expressed directly in SQL, inserts the row if and only if the
 count is under the cap, and returns a boolean. `createPhotoJob` calls it instead of
@@ -162,8 +167,8 @@ which is why it is safe under Supavisor transaction pooling.
 and a plpgsql `IF NULL THEN` does not branch — so a null `p_cap` would fall through
 to the insert and admit every request. Reject explicitly on `p_cap IS NULL` (and on
 a negative cap) before the count. `CLOUD_DAILY_CAP` cannot be null through the app
-today, but a `SECURITY DEFINER` function that admits paid work must not depend on
-its caller getting the argument right.
+today, but a function that admits paid work must not depend on its caller getting
+the argument right.
 
 **Two clocks, and only one is authoritative.** The JS pre-check derives the UTC day
 start from the Worker's clock; the RPC derives it from the database clock. Within
@@ -222,8 +227,10 @@ public.admit_cloud_job(
 ) returns boolean
 ```
 
-`language plpgsql`, `security definer`, `set search_path = ''`, **volatile** (not
-`stable` — it writes). Body order is load-bearing:
+`language plpgsql`, `security invoker`, `set search_path = ''`, **volatile** (not
+`stable` — it writes). `security invoker`, not `definer`: `service_role` already has
+INSERT/SELECT on `public.jobs` plus BYPASSRLS, so owner privileges add no capability
+— only blast radius if the execute grant is ever widened. Body order is load-bearing:
 
 1. **Fail closed on a bad cap** — return `false` (or `raise`) when `p_cap IS NULL`
    or `p_cap < 0`, _before_ anything else. Do not rely on a comparison against NULL.
@@ -250,8 +257,9 @@ first request — the kill-switch); otherwise insert `id` / `user_id` /
 
 Grants follow `20260614120000` exactly: `revoke all on function … from public`,
 `revoke all … from anon, authenticated`, `grant execute … to service_role`. The
-`from public` revoke is the load-bearing one for a `SECURITY DEFINER` function —
-`anon`/`authenticated` inherit `PUBLIC`, so revoking only those two is not enough.
+`from public` revoke is the load-bearing one — `EXECUTE` is granted to `PUBLIC` by
+default, and `anon`/`authenticated` inherit `PUBLIC`, so revoking only those two is
+not enough.
 
 Index: partial on `created_at` with the billable predicate as the index predicate,
 so the serialized count is an index scan rather than a sequential scan.
@@ -508,7 +516,7 @@ and it is the single highest-risk stale line in the repo because it _instructs
 readers not to look for the race_.
 
 **Contract**: The § "Project: Astro + Supabase + Cloudflare → Product" paragraph.
-State that the cap is enforced by `public.admit_cloud_job`, a `SECURITY DEFINER`
+State that the cap is enforced by `public.admit_cloud_job`, a `SECURITY INVOKER`
 guarded write holding a transaction-scoped advisory lock across count-and-insert;
 that the handler's `countCloudJobsToday` pre-check is a non-authoritative fast path;
 and that the count predicate is unchanged. Keep the existing pointer to the
@@ -659,7 +667,7 @@ before this completes and verifies.
 executable by `PUBLIC` is a different security posture than the one designed.
 
 **Contract**: Read-only checks: the function exists with the expected signature and
-`prosecdef = true`; execute is granted to `service_role` and **not** to `PUBLIC`,
+`prosecdef = false`; execute is granted to `service_role` and **not** to `PUBLIC`,
 `anon`, or `authenticated` (check `PUBLIC` explicitly — the other two inherit from
 it); the partial index exists.
 
@@ -677,7 +685,7 @@ closing pointer (currently "the application-side cap") to name `admit_cloud_job`
 
 #### Automated Verification:
 
-- Verification queries return the function, `prosecdef = true`, `service_role`-only
+- Verification queries return the function, `prosecdef = false`, `service_role`-only
   execute with no `PUBLIC` grant, and the partial index
 
 #### Manual Verification:
@@ -806,6 +814,24 @@ against the working tree and accepted:
 | F7  | "EXPLAIN must choose the index" is nondeterministic  | ACCEPTED — eligibility (`enable_seqscan=off`) separated from preference (seed + `ANALYZE` + plain `EXPLAIN`).                                                                                                                                                                       |
 | F8  | `change.md` says no approach chosen                  | ACCEPTED — note updated to record the guarded-RPC/advisory-lock approach.                                                                                                                                                                                                           |
 
+## Review Response — Phase 1 Implementation
+
+`reviews/impl-review-phase-1.md` (2026-08-28, verdict NEEDS ATTENTION; 0 critical,
+1 warning, 2 observations). Each finding was reproduced against the local stack
+before it was decided:
+
+| #   | Finding                                          | Resolution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1  | `SECURITY DEFINER` widens the privilege boundary | **ACCEPTED** — function switched to `security invoker`. Premise verified (`service_role` is `rolbypassrls = t` with `INSERT,SELECT` on `public.jobs`, so owner privileges add no capability). Consequence measured: with `execute` leaked to `authenticated`, the INVOKER form fails `permission denied for table jobs` and inserts **0** rows; the DEFINER form returns `true` and inserts **1**, with a caller-controlled `p_user_id`. All 29 integration tests pass under invoker, closing the review's stated blind spot. Nine plan passages updated, incl. Phase 4's expectation → `prosecdef = false`.                                                                                                                                                                             |
+| F2  | `change.md` misstates the migration phase        | **ACCEPTED** — the note now says the migration exists and was verified locally in Phase 1, and that only its _production application_ is Phase 4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| F3  | `npm run format:check` not reproducible          | **ACKNOWLEDGED, out of scope.** Reproduced, but pre-existing and not caused by this change: `supabase/.temp/**` is gitignored via the _nested_ `supabase/.gitignore`, which Prettier never reads — the same blind spot `eslint.config.js` already documents and works around. It fails on any branch while the local stack is running and is green whenever it is down. **CI is unaffected**: the `ci` job runs `format:check` and never starts Supabase (that is the separate `integration` job). Deleting `.temp` satisfies the literal command once but regenerates on every `supabase start`. A `.prettierignore` entry would fix it permanently, but `AGENTS.md` governs that file and says not to add subtrees to silence drift — so it belongs to its own change, not to Phase 1. |
+
+**Where F1 came from**, recorded so it is not re-introduced: the plan copied
+`20260614120000_reaper_stale_source_paths.sql` as its template. That precedent needs
+`SECURITY DEFINER` for a real reason — it reads `storage.objects`, which
+`service_role` cannot reach through PostgREST. `admit_cloud_job` only touches
+`public.jobs`. The grant model transferred; the security context should not have.
+
 ## References
 
 - Frame brief: `context/changes/atomic-cloud-daily-cap/frame.md`
@@ -830,18 +856,18 @@ against the working tree and accepted:
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npx supabase db reset`
-- [x] 1.2 Predicate + denial tests pass: `npx vitest run tests/jobs.rls.test.ts`
-- [x] 1.3 Unit tests still pass: `npm run test:unit`
-- [x] 1.4 Type checking passes: `npm run typecheck`
-- [x] 1.5 Linting passes: `npm run lint`
-- [x] 1.6 Formatting passes: `npm run format:check`
+- [x] 1.1 Migration applies cleanly: `npx supabase db reset` — 978e1b8
+- [x] 1.2 Predicate + denial tests pass: `npx vitest run tests/jobs.rls.test.ts` — 978e1b8
+- [x] 1.3 Unit tests still pass: `npm run test:unit` — 978e1b8
+- [x] 1.4 Type checking passes: `npm run typecheck` — 978e1b8
+- [x] 1.5 Linting passes: `npm run lint` — 978e1b8
+- [x] 1.6 Formatting passes: `npm run format:check` — 978e1b8
 
 #### Manual
 
-- [x] 1.7 Index eligibility confirmed with `enable_seqscan = off`
-- [x] 1.8 Index preference confirmed after seeding + `ANALYZE`
-- [x] 1.9 No `PUBLIC` execute grant on the function
+- [x] 1.7 Index eligibility confirmed with `enable_seqscan = off` — 978e1b8
+- [x] 1.8 Index preference confirmed after seeding + `ANALYZE` — 978e1b8
+- [x] 1.9 No `PUBLIC` execute grant on the function — 978e1b8
 
 ### Phase 2: Wire the admission path + the concurrent oracle
 

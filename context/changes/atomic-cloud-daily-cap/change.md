@@ -15,10 +15,15 @@ FR-014 stands as a hard invariant** (decided 2026-08-26; grounds and accepted
 costs in `frame.md` § Contract Decision).
 
 **The implementation approach is selected**: admission becomes one guarded write —
-a `SECURITY DEFINER` RPC (`public.admit_cloud_job`) holding a transaction-scoped
+a `SECURITY INVOKER` RPC (`public.admit_cloud_job`) holding a transaction-scoped
 advisory lock across count-and-insert, with the cap value still supplied from
 `CLOUD_DAILY_CAP` and the handler's count demoted to a non-authoritative fast path
-(`plan.md`; revised 2026-08-28 after `reviews/plan-review.md`).
+(`plan.md`; revised 2026-08-28 after `reviews/plan-review.md`). It was `SECURITY
+DEFINER` until `reviews/impl-review-phase-1.md` F1; see `plan.md` § Review Response
+— Phase 1 for the measured reason it is not.
 
-No production or schema change has been made yet — the migration is Phase 4 and is
-deliberately applied and verified before the implementing PR merges.
+**No PRODUCTION schema change has been applied yet.** The migration itself exists
+and was created and verified locally in Phase 1
+(`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`); Phase 4 is where
+it is applied to `luminaclean-prod` and verified, deliberately before the
+implementing PR merges.

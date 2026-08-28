@@ -28,19 +28,35 @@
 -- (c) WHY THE NULL-CAP GUARD IS FIRST. `count >= NULL` evaluates to NULL, and a
 --     plpgsql `IF NULL THEN` does not branch — a null `p_cap` would therefore fall
 --     straight through to the insert and admit EVERY request. The cap value stays
---     owned by the application (`CLOUD_DAILY_CAP`), but a SECURITY DEFINER function
---     that admits paid work must not depend on its caller getting the argument
---     right, so a null or negative cap is rejected explicitly, before the count.
+--     owned by the application (`CLOUD_DAILY_CAP`), but a function that admits
+--     paid work must not depend on its caller getting the argument right, so a
+--     null or negative cap is rejected explicitly, before the count.
 --
 -- The cap VALUE is deliberately not moved into the database: `CLOUD_DAILY_CAP`
 -- remains the single source of truth for policy; the database owns atomicity only.
 --
--- `search_path = ''` (per the 20260614120000 reaper precedent) means every object
--- must be qualified: `public.jobs` and the enum literal cast as
--- `public.photo_job_status`. `now()` / `date_trunc` resolve from pg_catalog, which
--- is always implicitly searched. Grant model follows that same migration:
--- revoke from PUBLIC (the load-bearing one — anon/authenticated inherit PUBLIC),
--- revoke from anon/authenticated explicitly, grant execute to service_role only.
+-- (d) WHY THIS IS *NOT* SECURITY DEFINER, unlike the reaper it otherwise copies.
+--     `public.stale_source_object_paths` (20260614120000) must be SECURITY DEFINER
+--     because it reads `storage.objects`, which `service_role` cannot reach through
+--     PostgREST. This function only touches `public.jobs`, where `service_role`
+--     already holds INSERT/SELECT and BYPASSRLS — so owner privileges would buy it
+--     nothing it does not already have. What they WOULD buy is blast radius: with
+--     SECURITY DEFINER, a single future `grant execute ... to authenticated` slip
+--     turns this into a postgres-privileged insertion endpoint taking a
+--     caller-controlled `p_user_id` and `p_source_path`, letting any signed-in user
+--     write rows they do not own and defeating the authenticated-INSERT revoke in
+--     20260621185226. Measured on the local stack, 2026-08-28: with that grant
+--     leaked, the INVOKER form fails `permission denied for table jobs` and inserts
+--     0 rows, while the DEFINER form returns true and inserts 1. Atomicity is
+--     unaffected either way — the advisory lock does not depend on privilege.
+--     So: copy the reaper's GRANT MODEL, not its security context.
+--
+-- `search_path = ''` (per that same reaper precedent) means every object must be
+-- qualified: `public.jobs` and the enum literal cast as `public.photo_job_status`.
+-- `now()` / `date_trunc` resolve from pg_catalog, which is always implicitly
+-- searched. Grant model follows that migration exactly: revoke from PUBLIC (the
+-- load-bearing one — anon/authenticated inherit PUBLIC), revoke from
+-- anon/authenticated explicitly, grant execute to service_role only.
 
 create or replace function public.admit_cloud_job(
   p_job_id      uuid,
@@ -52,7 +68,7 @@ create or replace function public.admit_cloud_job(
 )
   returns boolean
   language plpgsql
-  security definer
+  security invoker
   set search_path = ''
   volatile
 as $$
