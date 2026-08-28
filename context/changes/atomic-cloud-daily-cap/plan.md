@@ -943,12 +943,12 @@ record the detection rate next to the assertion.
 
 #### Automated
 
-- [x] 2.1 Type checking passes across the graph incl. `scripts/`: `npm run typecheck`
-- [x] 2.2 Linting passes: `npm run lint`
-- [x] 2.3 Unit tests pass incl. RPC-parameter and warning-message assertions
-- [x] 2.4 Integration suite passes incl. service fan-out and route composition test
-- [x] 2.5 E2E gate still green: `npm run test:e2e`
-- [x] 2.6 Scoped mutation check on `photo-job.service.ts`
+- [x] 2.1 Type checking passes across the graph incl. `scripts/`: `npm run typecheck` — 14b1802
+- [x] 2.2 Linting passes: `npm run lint` — 14b1802
+- [x] 2.3 Unit tests pass incl. RPC-parameter and warning-message assertions — 14b1802
+- [x] 2.4 Integration suite passes incl. service fan-out and route composition test — 14b1802
+- [x] 2.5 E2E gate still green: `npm run test:e2e` — 14b1802
+- [x] 2.6 Scoped mutation check on `photo-job.service.ts` — 14b1802
 
 #### Manual
 
