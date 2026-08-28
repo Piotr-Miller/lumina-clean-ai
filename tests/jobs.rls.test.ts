@@ -580,6 +580,34 @@ describe("admit_cloud_job (FR-014 guarded admission)", () => {
     return (count ?? 0) > 0;
   }
 
+  /**
+   * Discriminating probe for the EXECUTE grant ITSELF.
+   *
+   * The positive-cap denial assertions below error under BOTH a correct grant
+   * model and a leaked one: with `execute` leaked, a `security invoker` call
+   * simply gets further before dying (`permission denied for table jobs` at the
+   * insert, or at the count for a role with no SELECT). An error-not-null
+   * assertion therefore cannot tell "execution was denied" apart from "execution
+   * was allowed and the table privileges saved us" — it stays green either way,
+   * which makes it a weak proof of the grant model it is supposed to prove.
+   *
+   * A negative cap returns `false` from the bad-cap guard BEFORE touching any
+   * table, so the only thing that can raise there is the missing EXECUTE grant.
+   * Measured on the local stack 2026-08-28: with `execute` granted to
+   * `authenticated` this returns `false` and no error; with the grant correctly
+   * absent it raises `permission denied for function admit_cloud_job`.
+   *
+   * Keep BOTH shapes: this one proves the grant, the positive-cap one proves the
+   * table-level backstop behind it.
+   */
+  async function expectExecuteDenied(client: SupabaseClient, userId: string): Promise<void> {
+    const { data, error } = await admit(client, userId, -1);
+    expect(error).not.toBeNull();
+    // Under a leaked EXECUTE grant this would be `false` — the bad-cap guard's
+    // return value — with no error at all.
+    expect(data).not.toBe(false);
+  }
+
   it("admits and inserts a queued row while today's billable count is under the cap", async () => {
     const user = await makeUser("admit-under");
     const before = await countCloudJobsToday(supabaseAdmin);
@@ -716,6 +744,8 @@ describe("admit_cloud_job (FR-014 guarded admission)", () => {
     expect(data).not.toBe(true);
     expect(await jobExists(jobId)).toBe(false);
     expect(await countCloudJobsToday(supabaseAdmin)).toBe(before);
+
+    await expectExecuteDenied(anon, user.id);
   });
 
   it("is not executable by an authenticated user and inserts nothing", async () => {
@@ -727,6 +757,8 @@ describe("admit_cloud_job (FR-014 guarded admission)", () => {
     expect(data).not.toBe(true);
     expect(await jobExists(jobId)).toBe(false);
     expect(await countCloudJobsToday(supabaseAdmin)).toBe(before);
+
+    await expectExecuteDenied(user.client, user.id);
   });
 });
 
