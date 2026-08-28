@@ -3,7 +3,7 @@ change_id: atomic-cloud-daily-cap
 title: Resolve the global Cloud AI daily-cap contract and operational backstop
 status: implementing
 created: 2026-08-26
-updated: 2026-08-28
+updated: 2026-08-29
 archived_at: null
 issue: 191
 ---
@@ -27,3 +27,10 @@ and was created and verified locally in Phase 1
 (`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`); Phase 4 is where
 it is applied to `luminaclean-prod` and verified, deliberately before the
 implementing PR merges.
+
+**Phase 2 note (2026-08-29):** the admission path is wired — `createPhotoJob`
+now calls the RPC and returns `null` on a decline, which the route maps onto the
+unchanged 429. The plan's designated atomicity oracle (a service-layer fan-out)
+was found NOT to detect a non-atomic function reliably and was replaced by an
+RPC-layer fan-out; see `plan.md` § Implementation Note — Phase 2 for the
+negative-control measurement behind that call.

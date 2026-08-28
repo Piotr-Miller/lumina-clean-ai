@@ -847,6 +847,61 @@ pass resolved. All three new findings accepted:
 **On the standing `format:check` condition**: unchanged and still out of scope —
 see § Review Response — Phase 1, F3. The re-review reached the same conclusion.
 
+## Implementation Note — Phase 2: the oracle the plan named does not work
+
+Phase 2 §6 designated the **service-layer fan-out** the atomicity oracle, on the
+reasoning that every one of the 8 `createPhotoJob` calls reaches the RPC, so all
+8 must contend. Every call does reach it. They do not ARRIVE together: each
+`createPhotoJob` awaits `createSignedUploadUrl` first, and that storage round-trip
+staggers the eight requests past each other's count→insert window.
+
+This was caught by running the tests against a **negative control** — the real
+`admit_cloud_job` with `pg_advisory_xact_lock` removed and nothing else changed —
+rather than by reading the code. Measured on the local stack, 2026-08-28/29:
+first a standalone 10-round probe per shape, then the shipped tests themselves,
+3 runs.
+
+| fan-out shape                          | probe, 10 rounds | shipped tests, 3 runs |
+| -------------------------------------- | ---------------- | --------------------- |
+| RPC-layer, pool pre-warmed             | detected 10/10   | FAILED 3/3            |
+| service-layer (`createPhotoJob`)       | detected 7/10    | FAILED 1/3            |
+| route-layer (`createCloudJobResponse`) | not probed       | FAILED 2/3            |
+
+Against the real function all three pass, in every probe round and every suite
+run — so the added detection power costs no false positives.
+
+The first version of the service fan-out, written exactly as the plan specified,
+**passed against the lock-less build** on its first run. A 7-in-10 detector is a
+coin flip on the single property this change exists to prove, and it would have
+shipped as "the test that proves the guarded write".
+
+**Resolution — adapted, not skipped.** The concurrency block now carries three
+tests instead of two, and the oracle label moved:
+
+1. **RPC-layer fan-out — the atomicity oracle.** 8 concurrent
+   `supabaseAdmin.rpc("admit_cloud_job", …)` calls at `cap = baseline + 1`. No
+   storage hop, so all eight land inside the same window. Verified end-to-end in
+   the shipped test file: 3/3 runs FAIL against the lock-less build, 3/3 pass
+   against the real one.
+2. **Service-layer fan-out — service composition** (the plan's oracle, relabelled
+   with its measured detection rate in a comment). It still proves `createPhotoJob`
+   routes admission through the guarded write and returns `null` — not a job with
+   no row — for every loser.
+3. **Route-layer fan-out — outcome composition**, unchanged from the plan.
+
+**The pool warm-up in the oracle is load-bearing, not hygiene.** On a cold
+PostgREST pool the first requests of a run open connections one at a time, which
+staggers the fan-out; the very first probe round returned 1 winner against the
+lock-less function while rounds 2–10 returned 8. The oracle therefore fires a
+throwaway `p_cap = 0` burst (always declines, inserts nothing, cannot move the
+baseline) before it measures. Without it the failure mode is a **false pass on the
+only test that can catch a non-atomic admission** — the shape `lessons.md` calls a
+guard that cannot see the failure it exists to catch.
+
+Generalisation worth keeping: a concurrency test's passing run proves nothing
+about the test. Calibrate it against a build with the mechanism removed, and
+record the detection rate next to the assertion.
+
 ## References
 
 - Frame brief: `context/changes/atomic-cloud-daily-cap/frame.md`
@@ -871,29 +926,29 @@ see § Review Response — Phase 1, F3. The re-review reached the same conclusio
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npx supabase db reset` — 978e1b8
-- [x] 1.2 Predicate + denial tests pass: `npx vitest run tests/jobs.rls.test.ts` — 978e1b8
-- [x] 1.3 Unit tests still pass: `npm run test:unit` — 978e1b8
-- [x] 1.4 Type checking passes: `npm run typecheck` — 978e1b8
-- [x] 1.5 Linting passes: `npm run lint` — 978e1b8
-- [x] 1.6 Formatting passes: `npm run format:check` — 978e1b8
+- [x] 1.1 Migration applies cleanly: `npx supabase db reset` — 978e1b8, d5c15ca
+- [x] 1.2 Predicate + denial tests pass: `npx vitest run tests/jobs.rls.test.ts` — 978e1b8, d5c15ca
+- [x] 1.3 Unit tests still pass: `npm run test:unit` — 978e1b8, d5c15ca
+- [x] 1.4 Type checking passes: `npm run typecheck` — 978e1b8, d5c15ca
+- [x] 1.5 Linting passes: `npm run lint` — 978e1b8, d5c15ca
+- [x] 1.6 Formatting passes: `npm run format:check` — 978e1b8, d5c15ca
 
 #### Manual
 
-- [x] 1.7 Index eligibility confirmed with `enable_seqscan = off` — 978e1b8
-- [x] 1.8 Index preference confirmed after seeding + `ANALYZE` — 978e1b8
-- [x] 1.9 No `PUBLIC` execute grant on the function — 978e1b8
+- [x] 1.7 Index eligibility confirmed with `enable_seqscan = off` — 978e1b8, d5c15ca
+- [x] 1.8 Index preference confirmed after seeding + `ANALYZE` — 978e1b8, d5c15ca
+- [x] 1.9 No `PUBLIC` execute grant on the function — 978e1b8, d5c15ca
 
 ### Phase 2: Wire the admission path + the concurrent oracle
 
 #### Automated
 
-- [ ] 2.1 Type checking passes across the graph incl. `scripts/`: `npm run typecheck`
-- [ ] 2.2 Linting passes: `npm run lint`
-- [ ] 2.3 Unit tests pass incl. RPC-parameter and warning-message assertions
-- [ ] 2.4 Integration suite passes incl. service fan-out and route composition test
-- [ ] 2.5 E2E gate still green: `npm run test:e2e`
-- [ ] 2.6 Scoped mutation check on `photo-job.service.ts`
+- [x] 2.1 Type checking passes across the graph incl. `scripts/`: `npm run typecheck`
+- [x] 2.2 Linting passes: `npm run lint`
+- [x] 2.3 Unit tests pass incl. RPC-parameter and warning-message assertions
+- [x] 2.4 Integration suite passes incl. service fan-out and route composition test
+- [x] 2.5 E2E gate still green: `npm run test:e2e`
+- [x] 2.6 Scoped mutation check on `photo-job.service.ts`
 
 #### Manual
 

@@ -11,11 +11,39 @@ import {
 import { BREAD_VERSION } from "@/lib/services/bread";
 import { failTimedOutJobResponse } from "@/lib/services/timeout.handler";
 import { cancelCloudJobResponse } from "@/lib/services/cancel.handler";
+import { createCloudJobResponse } from "@/lib/services/cloud-create-job.handler";
 import { STRINGS } from "@/lib/enhance-strings";
+import type { CreatePhotoJobCommand, CreatePhotoJobResponse } from "@/types";
 import { supabaseAdmin, supabaseAnonKey, supabaseUrl } from "./env";
 import { createTestUser, deleteTestUser, type TestUser } from "./helpers/test-users";
 
 const PHOTOS_BUCKET = "photos";
+
+/**
+ * "Effectively uncapped" sentinel for every `createPhotoJob` call that is SETUP
+ * for a test about something else. `admit_cloud_job`'s `p_cap` is `integer`, so
+ * this stays well inside int4 rather than reaching for a max-value constant.
+ */
+const UNCAPPED = 1_000_000;
+
+/**
+ * `createPhotoJob` returns `null` when the FR-014 guarded write declines
+ * admission, so every call site now has to narrow. At `UNCAPPED` a decline can
+ * only mean `admit_cloud_job` is missing or broken on this stack — it is never
+ * the case under test — so throwing here turns that into one clear failure
+ * instead of a `Cannot read properties of null` several lines later. Tests that
+ * DO exercise a decline call `createPhotoJob` directly with a real cap.
+ */
+async function createJobOrThrow(
+  cmd: Omit<CreatePhotoJobCommand, "cap">,
+  cap = UNCAPPED,
+): Promise<CreatePhotoJobResponse> {
+  const res = await createPhotoJob(supabaseAdmin, { ...cmd, cap });
+  if (!res) {
+    throw new Error(`createPhotoJob: guarded write declined admission at cap=${cap} — check admit_cloud_job`);
+  }
+  return res;
+}
 
 /**
  * The ONE transient failure this suite tolerates, matched narrowly on purpose.
@@ -210,7 +238,7 @@ describe("public.jobs RLS + photo-job service", () => {
   it("createPhotoJob inserts a queued row and a usable signed URL", async () => {
     const user = await makeUser("create");
 
-    const res = await createPhotoJob(supabaseAdmin, {
+    const res = await createJobOrThrow({
       userId: user.id,
       fileExtension: "jpg",
       mimeType: "image/jpeg",
@@ -244,7 +272,7 @@ describe("public.jobs RLS + photo-job service", () => {
     const user = await makeUser("bread-params");
 
     // With params: the row carries the chosen gamma/strength.
-    const withParams = await createPhotoJob(supabaseAdmin, {
+    const withParams = await createJobOrThrow({
       userId: user.id,
       fileExtension: "jpg",
       mimeType: "image/jpeg",
@@ -261,7 +289,7 @@ describe("public.jobs RLS + photo-job service", () => {
     expect(rowA?.strength).toBe(0.05);
 
     // Without params: the columns stay null (Edge Function falls back to defaults).
-    const noParams = await createPhotoJob(supabaseAdmin, {
+    const noParams = await createJobOrThrow({
       userId: user.id,
       fileExtension: "jpg",
       mimeType: "image/jpeg",
@@ -280,7 +308,7 @@ describe("public.jobs RLS + photo-job service", () => {
     const user = await makeUser("succeed");
 
     // Set up: create the job and upload the source via the helper's URL.
-    const created = await createPhotoJob(supabaseAdmin, {
+    const created = await createJobOrThrow({
       userId: user.id,
       fileExtension: "jpg",
       mimeType: "image/jpeg",
@@ -339,7 +367,7 @@ describe("public.jobs RLS + photo-job service", () => {
   it("markJobSucceeded no-ops on a non-processing row (F9 guard blocks resurrection)", async () => {
     const user = await makeUser("f9guard");
 
-    const created = await createPhotoJob(supabaseAdmin, {
+    const created = await createJobOrThrow({
       userId: user.id,
       fileExtension: "jpg",
       mimeType: "image/jpeg",
@@ -380,7 +408,7 @@ describe("public.jobs RLS + photo-job service", () => {
 
   it("allows exactly one concurrent claim and one write-once prediction identity", async () => {
     const user = await makeUser("claim-race");
-    const created = await createPhotoJob(supabaseAdmin, {
+    const created = await createJobOrThrow({
       userId: user.id,
       fileExtension: "jpg",
       mimeType: "image/jpeg",
@@ -762,6 +790,170 @@ describe("admit_cloud_job (FR-014 guarded admission)", () => {
   });
 });
 
+/**
+ * FR-014 at the CONCURRENT boundary — the claim the whole change exists for.
+ *
+ * Three tests, three DIFFERENT claims, deliberately not merged. The shipped racy
+ * code would have passed a "the cap is checked" assertion, which is how the race
+ * survived three slices.
+ *
+ * Each was calibrated against a deliberately lock-less build of
+ * `admit_cloud_job` (the real function with `pg_advisory_xact_lock` removed and
+ * nothing else changed) on 2026-08-28/29 — first a standalone 10-round probe,
+ * then these tests themselves, 3 runs:
+ *
+ *   | fan-out shape      | probe, 10 rounds | these tests, 3 runs |
+ *   | ------------------ | ---------------- | ------------------- |
+ *   | RPC-layer (warmed) | detected 10/10   | FAILED 3/3          |
+ *   | service-layer      | detected 7/10    | FAILED 1/3          |
+ *   | route-layer        | not probed       | FAILED 2/3          |
+ *
+ * Against the REAL function all three pass — 10/10 probe rounds and every suite
+ * run — so none of them carries a false positive.
+ *
+ * That measurement is why the RPC-layer test — not the service-layer one — is
+ * labelled the oracle. The plan expected the service-layer fan-out to be it, on
+ * the reasoning that every call reaches the RPC. Every call does; they just do
+ * not ARRIVE together, because each `createPhotoJob` awaits a signed-URL mint
+ * first and that storage round-trip staggers them past each other's window. A
+ * 7-in-10 oracle is a coin flip on the one property this change exists to prove.
+ */
+describe("FR-014 concurrent admission (guarded write under fan-out)", () => {
+  const created: TestUser[] = [];
+
+  afterEach(async () => {
+    for (const u of created) {
+      await deleteTestUser(u.id);
+    }
+    created.length = 0;
+  });
+
+  async function makeUser(prefix?: string): Promise<TestUser> {
+    const u = await createTestUser(prefix);
+    created.push(u);
+    return u;
+  }
+
+  const FANOUT = 8;
+
+  function admitRpc(userId: string, cap: number, jobId: string) {
+    return supabaseAdmin.rpc("admit_cloud_job", {
+      p_job_id: jobId,
+      p_user_id: userId,
+      p_source_path: `${userId}/${jobId}/source.jpg`,
+      p_gamma: null,
+      p_strength: null,
+      p_cap: cap,
+    });
+  }
+
+  async function rowsOwnedBy(userId: string): Promise<number> {
+    const { count, error } = await supabaseAdmin
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+    expect(error).toBeNull();
+    return count ?? 0;
+  }
+
+  it("admits exactly one of 8 simultaneous admissions at the last free slot (atomicity oracle)", async () => {
+    const user = await makeUser("fanout-rpc");
+
+    // Warm the PostgREST connection pool BEFORE measuring. This is load-bearing,
+    // not hygiene: on a cold pool the first requests of a run open connections
+    // one at a time, which staggers the fan-out and makes even a lock-less
+    // function return a single winner — a false pass on the only test that can
+    // catch a non-atomic admission. `p_cap = 0` always declines and inserts
+    // nothing, so warming cannot move the baseline measured below.
+    await Promise.all(Array.from({ length: FANOUT }, () => admitRpc(user.id, 0, crypto.randomUUID())));
+
+    const baseline = await countCloudJobsToday(supabaseAdmin);
+    // Exactly one slot left: `count >= cap` must reject everything after the winner.
+    const cap = baseline + 1;
+
+    const jobIds = Array.from({ length: FANOUT }, () => crypto.randomUUID());
+    const results = await Promise.all(jobIds.map((jobId) => admitRpc(user.id, cap, jobId)));
+
+    expect(results.filter((r) => r.error !== null)).toHaveLength(0);
+    // THE oracle. Against the lock-less build this reads 8 (or 6, or 2) here.
+    expect(results.filter((r) => r.data === true)).toHaveLength(1);
+    // …and the losers wrote nothing. The row count is the invariant, not the
+    // return value: a function that returned `false` and inserted anyway would
+    // satisfy the assertion above and still overshoot the cap. Scoped to this
+    // test's own user so a concurrent suite on the shared stack cannot perturb it.
+    expect(await rowsOwnedBy(user.id)).toBe(1);
+    expect(await countCloudJobsToday(supabaseAdmin)).toBe(cap);
+  });
+
+  it("admits at most one of 8 simultaneous createPhotoJob calls (service composition)", async () => {
+    const user = await makeUser("fanout-service");
+    const baseline = await countCloudJobsToday(supabaseAdmin);
+    const cap = baseline + 1;
+
+    const results = await Promise.all(
+      Array.from({ length: FANOUT }, () =>
+        createPhotoJob(supabaseAdmin, {
+          userId: user.id,
+          fileExtension: "jpg",
+          mimeType: "image/jpeg",
+          cap,
+        }),
+      ),
+    );
+
+    // What this proves: `createPhotoJob` routes admission through the guarded
+    // write and hands back `null` — not a job with no row — for every loser.
+    // What it does NOT prove: that all eight contended at the database gate. The
+    // signed-URL mint ahead of each RPC staggers them, so this shape detected a
+    // lock-less function in only 7 of 10 calibration rounds. The atomicity claim
+    // belongs to the RPC-layer test above; this one is corroboration.
+    expect(results.filter((r) => r !== null)).toHaveLength(1);
+    expect(await rowsOwnedBy(user.id)).toBe(1);
+    expect(await countCloudJobsToday(supabaseAdmin)).toBe(cap);
+  });
+
+  it("returns exactly one 200 and seven 429s for 8 simultaneous route calls (outcome composition)", async () => {
+    const user = await makeUser("fanout-route");
+    const baseline = await countCloudJobsToday(supabaseAdmin);
+    const cap = baseline + 1;
+
+    const responses = await Promise.all(
+      Array.from({ length: FANOUT }, () =>
+        createCloudJobResponse({
+          user: { id: user.id },
+          request: new Request("https://example.test/api/enhance/cloud/create-job", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileExtension: "jpg", mimeType: "image/jpeg" }),
+          }),
+          admin: supabaseAdmin,
+          cap,
+        }),
+      ),
+    );
+    const statuses = responses.map((r) => r.status);
+
+    // What this proves: the ROUTE composes into the right outcome, and every
+    // loser gets the cap contract rather than a 500 or a second 200.
+    expect(statuses.filter((status) => status === 200)).toHaveLength(1);
+    expect(statuses.filter((status) => status === 429)).toHaveLength(FANOUT - 1);
+    expect(await rowsOwnedBy(user.id)).toBe(1);
+
+    // What it does NOT prove: that all eight contended at `admit_cloud_job`. Each
+    // request runs a sweep and the fast-path count first, so a later one may
+    // observe the winner's committed row and 429 from the pre-check without ever
+    // reaching the guarded write. It still has teeth as a regression test: under
+    // the pre-change code all eight counts resolved before any insert committed,
+    // so this returned eight 200s.
+    const bodies = await Promise.all(
+      responses.filter((r) => r.status === 429).map((r) => r.json() as Promise<{ error?: { code?: string } }>),
+    );
+    for (const body of bodies) {
+      expect(body.error?.code).toBe("daily_cap_reached");
+    }
+  });
+});
+
 describe("sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)", () => {
   const created: TestUser[] = [];
 
@@ -786,7 +978,7 @@ describe("sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)
   }
 
   async function uploadSource(userId: string): Promise<{ jobId: string }> {
-    const job = await createPhotoJob(supabaseAdmin, { userId, fileExtension: "jpg", mimeType: "image/jpeg" });
+    const job = await createJobOrThrow({ userId, fileExtension: "jpg", mimeType: "image/jpeg" });
     const put = await fetch(job.uploadUrl, {
       method: "PUT",
       headers: { "Content-Type": "image/jpeg" },
@@ -1071,7 +1263,7 @@ describe("POST /api/enhance/cloud/cancel — cross-user IDOR + flip (route bound
     const a = await makeUser("cancel-owner");
 
     // Real job + uploaded source so the source-delete on cancel is provable.
-    const job = await createPhotoJob(supabaseAdmin, { userId: a.id, fileExtension: "jpg", mimeType: "image/jpeg" });
+    const job = await createJobOrThrow({ userId: a.id, fileExtension: "jpg", mimeType: "image/jpeg" });
     const put = await fetch(job.uploadUrl, {
       method: "PUT",
       headers: { "Content-Type": "image/jpeg" },
