@@ -28,7 +28,7 @@ Well beyond plain CRUD, and it is the product's unique value:
 
 - **Local enhancement engine** — `src/lib/engines/local-engine.ts` (gamma correction + Gaussian blur on Canvas, with `canvas-helpers.ts` / `image-helpers.ts`).
 - **Adaptive auto-parameters** — `src/lib/engines/auto-params.ts` analyzes the image and suggests enhancement parameters (the criterion's own "automatic suggestion" example, almost literally).
-- **Global daily cost cap** — `countCloudJobsToday()` + `isOverDailyCap()` (`photo-job.service.ts:138/:160`): UTC-day, cross-user billable-job counting with a pre-model-failure exclusion rule and a `cap=0` kill-switch.
+- **Global daily cost cap** — enforced by `public.admit_cloud_job` (`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`), a `SECURITY INVOKER` guarded write that holds a transaction-scoped advisory lock across count-and-insert, so the cap holds even under simultaneous submissions (S-16 / #191). `countCloudJobsToday()` + `isOverDailyCap()` (`photo-job.service.ts:185/:207`) remain as the non-authoritative fast path that rejects an over-cap request before any storage or model work. The counting rule is the same at both ends: UTC-day, cross-user, billable jobs only (a pre-model failure is excluded), with a `cap=0` kill-switch.
 - **Webhook signature verification** — `src/lib/services/replicate-webhook.ts`.
 - **Chroma denoise post-pass** — `src/lib/engines/chroma-denoise.ts`, behind a feature flag.
 
@@ -37,7 +37,7 @@ Well beyond plain CRUD, and it is the product's unique value:
 `context/foundation/test-plan.md` §2 defines a 6-row Risk Map; named tests map directly to it:
 
 - **Risk #2 (auth gate bypass)** → `tests/cloud-create-job.handler.test.ts:191` — describe block literally titled "anonymous auth gate (Risk #2)": anon request rejected 401 _before_ any insert or signed URL.
-- **Risk #3 (daily cap fails to block)** → same file, :79 "global daily-cap route boundary": over-cap 429, last-slot-passes, `cap=0` kill-switch.
+- **Risk #3 (daily cap fails to block)** → `tests/cloud-create-job.handler.test.ts:91` "global daily-cap route boundary": over-cap 429, last-slot-passes, `cap=0` kill-switch; `:211` covers the guarded write declining after the fast path admits. The **race** is covered against a real Postgres in `tests/jobs.rls.test.ts:821` "FR-014 concurrent admission (guarded write under fan-out)" — 8 simultaneous admissions at the boundary yield exactly one row; predicate + grant fidelity at `:535`.
 - **Risk #4 (IDOR)** → `tests/jobs.rls.test.ts:593` "cross-user IDOR (route boundary)": user B supplying user A's jobId flips nothing (:629).
 - **Risk #5 (24h source retention)** → `tests/jobs.rls.test.ts:460` "sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)" — against real Supabase Storage, not mocks.
 - **Risks #1/#6 (silent stall / watchdog)** → `tests/replicate-webhook.test.ts` (signature verifier) and Playwright E2E `tests/e2e/cloud-stall-surfaces-timeout.spec.ts` + `north-star-cloud-result.spec.ts`.
@@ -90,7 +90,7 @@ Znacznie więcej niż CRUD — i to jest właśnie unikalna wartość produktu:
 
 - **Lokalny silnik poprawy zdjęć** — `src/lib/engines/local-engine.ts` (korekcja gamma + rozmycie Gaussa na Canvas, z helperami `canvas-helpers.ts` / `image-helpers.ts`).
 - **Adaptacyjne auto-parametry** — `src/lib/engines/auto-params.ts` analizuje obraz i sugeruje parametry przetwarzania (niemal dosłownie przykład "automatycznej sugestii" z kryterium).
-- **Globalny dzienny limit kosztów** — `countCloudJobsToday()` + `isOverDailyCap()` (`photo-job.service.ts:138/:160`): zliczanie płatnych jobów w dniu UTC dla wszystkich użytkowników, z regułą wykluczania porażek sprzed modelu i kill-switchem `cap=0`.
+- **Globalny dzienny limit kosztów** — egzekwowany przez `public.admit_cloud_job` (`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`), funkcję `SECURITY INVOKER` wykonującą jeden strzeżony zapis: trzyma blokadę doradczą w zakresie transakcji przez cały czas zliczania i wstawiania, więc limit obowiązuje także przy jednoczesnych zgłoszeniach (S-16 / #191). `countCloudJobsToday()` + `isOverDailyCap()` (`photo-job.service.ts:185/:207`) pozostają jako nieautorytatywna szybka ścieżka, która odrzuca żądanie ponad limit zanim dojdzie do jakiejkolwiek pracy na storage lub modelu. Reguła zliczania jest po obu stronach ta sama: dzień UTC, wszyscy użytkownicy, tylko płatne joby (porażki sprzed modelu są wykluczone), z kill-switchem `cap=0`.
 - **Weryfikacja podpisu webhooka** — `src/lib/services/replicate-webhook.ts`.
 - **Post-pass odszumiania chrominancji** — `src/lib/engines/chroma-denoise.ts` (za feature flagą).
 
@@ -99,7 +99,7 @@ Znacznie więcej niż CRUD — i to jest właśnie unikalna wartość produktu:
 `context/foundation/test-plan.md` §2 zawiera mapę 6 ryzyk; konkretne testy mapują się wprost:
 
 - **Ryzyko #2 (obejście bramki auth)** → `tests/cloud-create-job.handler.test.ts:191` — blok describe dosłownie nazwany "anonymous auth gate (Risk #2)": anonimowe żądanie odrzucone 401 _zanim_ nastąpi jakikolwiek insert czy podpisany URL.
-- **Ryzyko #3 (limit dzienny nie blokuje)** → ten sam plik, :79 "global daily-cap route boundary": 429 ponad limitem, ostatni wolny slot przechodzi, kill-switch `cap=0`.
+- **Ryzyko #3 (limit dzienny nie blokuje)** → `tests/cloud-create-job.handler.test.ts:91` "global daily-cap route boundary": 429 ponad limitem, ostatni wolny slot przechodzi, kill-switch `cap=0`; `:211` pokrywa odmowę strzeżonego zapisu po tym, jak szybka ścieżka dopuściła żądanie. **Wyścig** jest pokryty na prawdziwym Postgresie w `tests/jobs.rls.test.ts:821` "FR-014 concurrent admission (guarded write under fan-out)" — 8 jednoczesnych zgłoszeń na granicy limitu daje dokładnie jeden wiersz; wierność predykatu i model uprawnień w `:535`.
 - **Ryzyko #4 (IDOR)** → `tests/jobs.rls.test.ts:593` "cross-user IDOR (route boundary)": użytkownik B z jobId użytkownika A niczego nie zmienia (:629).
 - **Ryzyko #5 (retencja źródła ≤24h)** → `tests/jobs.rls.test.ts:460` "sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)" — na prawdziwym Supabase Storage, bez mocków.
 - **Ryzyka #1/#6 (cichy stall / watchdog)** → `tests/replicate-webhook.test.ts` (weryfikator podpisu) oraz E2E Playwright `tests/e2e/cloud-stall-surfaces-timeout.spec.ts` i `north-star-cloud-result.spec.ts`.

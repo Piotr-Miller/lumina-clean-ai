@@ -12,7 +12,7 @@ Night and low-light photos taken on mobile devices suffer from heavy digital noi
 - Simple user account system for storing jobs and gating cloud usage (Supabase Auth + RLS)
 - Before / After comparison slider for the processed result
 - Async cloud pipeline: signed upload → Database Webhook → Edge Function → Replicate prediction with webhook callback → Supabase Realtime push to frontend
-- Basic cost protection: RLS-gated cloud access + an application-side daily cap (global cap of 50 cloud AI ops / day across all users, resetting at 00:00 UTC; configurable via `CLOUD_DAILY_CAP`). The count and the rejection happen in the create-job handler against the RLS-gated `jobs` table — **not** in a SQL trigger or constraint. **Set conservatively to 3 in prod; `0` = kill-switch.**
+- Basic cost protection: RLS-gated cloud access + a global daily cap (50 cloud AI ops / day across all users, resetting at 00:00 UTC; configurable via `CLOUD_DAILY_CAP`). The cap value stays in application config, but the **enforcement is one guarded database write** — `public.admit_cloud_job`, a `SECURITY INVOKER` function that holds a transaction-scoped advisory lock across the count and the insert, so simultaneous submissions at the boundary can no longer all pass (change `atomic-cloud-daily-cap`, S-16, issue #191). The handler's pre-insert count is a non-authoritative fast path that avoids storage work in the common case. **Set conservatively to 3 in prod; `0` = kill-switch.**
 
 **Added after MVP launch (post-MVP, already shipped):**
 

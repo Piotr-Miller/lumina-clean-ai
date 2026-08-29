@@ -39,3 +39,15 @@ negative-control measurement behind that call.
 0 critical / 2 warnings / 2 observations. All four triaged and addressed in a
 follow-up commit; F3's "several measurement rounds" suggestion was the one part
 declined, with the reason recorded next to the decision.
+
+**Phase 3 note (2026-08-29):** the record is corrected across seven live files —
+`AGENTS.md`, `idea-notes.md`, `roadmap.md` (S-05 slice row + S-05 body Unknowns
+and Risk + two Parked bullets, plus a new S-16 slice row / body / Backlog Handoff
+row), `test-plan.md` (Risk #3 response guidance + a dated §6.6 append that leaves
+the 2026-06-10 note's account of what was true then intact + a new §6.6 entry),
+`mvp-check-report.md` (EN and PL), `lessons.md` (a new standing rule that
+explicitly supersedes the immutable archive's "soft, app-level guardrail"
+insight), and `github-issues.md` (a Final-mapping row for S-16 / #191 at status
+`implementing`, plus a `## Status updates` registration row). Nothing was marked
+done: the `## Done` ledger, the Backlog Handoff `done` flip, and #191's closure
+remain Phase 5 / `/10x-archive`'s. No file under `context/archive/` was touched.
