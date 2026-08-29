@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createPhotoJob, isOverDailyCap } from "@/lib/services/photo-job.service";
+import { createPhotoJob, isOverDailyCap, setObservabilityWarnCapture } from "@/lib/services/photo-job.service";
 
 /**
  * Pure unit tests for the S-05 cap decision. No DB / no `astro:env` import,
@@ -105,12 +105,28 @@ describe("createPhotoJob — guarded admission outcome", () => {
     expect(rpc).toHaveBeenCalledTimes(1);
   });
 
-  it("fails closed on a non-boolean RPC result (treats it as declined, not admitted)", async () => {
-    // `admit_cloud_job` cannot currently return NULL, but only an explicit `true`
-    // may hand back a job — anything else must not be reported as a created row.
+  it("throws on a non-boolean RPC result — contract drift is a fault, not a full cap", async () => {
+    // `admit_cloud_job` is declared `returns boolean` and cannot currently return
+    // NULL, so a null means the database contract drifted. Reporting it as a
+    // rejection would surface a 429 ("try again tomorrow") for a broken
+    // deployment and swallow the 500 the route's outer catch exists to raise.
+    // Still fail-closed for spend: no job is handed back, so nothing is uploaded.
     const { admin } = makeStubAdmin({ admitted: null });
 
-    await expect(createPhotoJob(admin, CREATE_CMD)).resolves.toBeNull();
+    await expect(createPhotoJob(admin, CREATE_CMD)).rejects.toThrow(/non-boolean result/);
+  });
+
+  it("does not emit the daily-cap warning for a contract-drift fault", async () => {
+    // The cap warning is the race signal operators watch; firing it for a fault
+    // would poison that signal with events that have nothing to do with the cap.
+    const { admin } = makeStubAdmin({ admitted: null });
+    const captured: string[] = [];
+    setObservabilityWarnCapture((msg) => captured.push(msg));
+
+    await expect(createPhotoJob(admin, CREATE_CMD)).rejects.toThrow();
+
+    expect(captured).toHaveLength(0);
+    setObservabilityWarnCapture(() => undefined);
   });
 
   it("passes the cap, the server-derived path and the S-12 Bread params to the RPC", async () => {

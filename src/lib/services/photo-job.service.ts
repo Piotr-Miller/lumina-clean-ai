@@ -131,15 +131,25 @@ export async function createPhotoJob(
   if (admitError) {
     throw new Error(`createPhotoJob: guarded admission failed for job ${jobId}: ${admitError.message}`);
   }
-  // Fail closed: only an explicit `true` admits. Anything else (`false`, or a
-  // null the function cannot currently return) is treated as a rejection rather
-  // than handed back as a job whose row may not exist.
-  if (admitted !== true) {
+  // `false` is the ONE normal rejection: today's billable count met the cap.
+  if (admitted === false) {
     const msg = `createPhotoJob: daily-cap guarded write rejected admission (cap=${cmd.cap})`;
     // eslint-disable-next-line no-console
     console.warn(msg);
     captureWarning(msg);
     return null;
+  }
+  // Anything that is neither `true` nor `false` means the database contract
+  // drifted — `admit_cloud_job` returns `boolean not null`, so a null or a
+  // non-boolean is a fault, NOT an exhausted cap. Folding it into the rejection
+  // path would tell the user "try again tomorrow" (429) for what is really a
+  // broken deployment, and hide it from the 500 the outer catch exists to
+  // report. Throwing stays fail-closed for spend: no job is returned, so no
+  // upload and no model work follow.
+  if (admitted !== true) {
+    throw new Error(
+      `createPhotoJob: admit_cloud_job returned a non-boolean result (${JSON.stringify(admitted)}) for job ${jobId}`,
+    );
   }
 
   return {

@@ -764,8 +764,14 @@ on explicit confirmation — closes issue #191.
   pre-model failure frees a slot, `failed` _with_ a prediction id does not, earlier
   UTC day excluded, rejection inserts nothing
 - Denial: anon and authenticated clients cannot execute the RPC and insert nothing
-- **Service-layer fan-out (atomicity oracle)**: 8 concurrent `createPhotoJob` at
-  `cap - 1` → exactly one non-null, exactly one row inserted
+- **RPC-layer fan-out (THE atomicity oracle)**: 8 concurrent
+  `admit_cloud_job` calls at `cap - 1`, after a connection-pool warm-up →
+  exactly one `true`, exactly one row inserted. _(Superseded the service-layer
+  fan-out as the oracle on 2026-08-29 — that shape was measured NOT to detect a
+  lock-less function reliably; see § Implementation Note — Phase 2.)_
+- **Service-layer fan-out (composition)**: 8 concurrent `createPhotoJob` at
+  `cap - 1` → exactly one non-null, exactly one row inserted. Proves
+  `createPhotoJob` routes through the guarded write, not that the eight contended.
 - **Route-layer fan-out (outcome-level composition)**: 8 concurrent
   `createCloudJobResponse` with a real admin client → exactly one 200, seven 429s
 
@@ -901,6 +907,42 @@ guard that cannot see the failure it exists to catch.
 Generalisation worth keeping: a concurrency test's passing run proves nothing
 about the test. Calibrate it against a build with the mechanism removed, and
 record the detection rate next to the assertion.
+
+### Support edits outside the Phase 2 file list
+
+Recorded so the scope record matches the diff (`reviews/impl-review-phase-2.md`
+F4). All are accurate and low-risk, none were in §§1–6:
+
+- `tests/README.md` — its numbered "what the suite covers" list would have gone
+  stale on _this phase's own tests_; adds the guarded-admission and concurrency
+  entries and drops a pre-existing "six"/seven miscount.
+- `photo-job.service.ts` — `countCloudJobsToday`'s doc comment now says it is the
+  non-authoritative fast path, so the "which check is load-bearing" statement
+  lives at both ends of the pair, not only in the handler.
+- `tests/cloud-create-job.handler.test.ts` — a Risk #2 doc block was sitting above
+  the S-12 describe; moved to the describe it actually documents (pre-existing
+  misplacement, no behaviour change).
+- Phase 1 Progress rows carried an uncommitted second SHA from the p1 re-review;
+  it rode along in the Phase 2 commit rather than being left dirty.
+
+### Post-review fixes (2026-08-29, `reviews/impl-review-phase-2.md`)
+
+- **F1 ACCEPTED.** `admitted !== true` folded a null RPC result into the cap
+  rejection, so database-contract drift would have surfaced as a 429 "try again
+  tomorrow" instead of the 500 the outer catch exists to raise. Now `false`
+  rejects and anything else throws; still fail-closed for spend. Two unit tests:
+  the throw, and that the cap warning does NOT fire for a fault (that warning is
+  the race signal — polluting it with non-cap events costs its meaning).
+- **F2 ACCEPTED.** Both remaining "service fan-out proves atomicity" passages
+  corrected (this file's Testing Strategy, and the handler test's doc block).
+- **F3 ACCEPTED IN PART.** The warm-up's responses are now asserted, so a
+  silently failing warm-up can no longer leave a cold pool behind a green test.
+  The suggested _several measurement rounds_ is DECLINED: each extra round needs
+  its own baseline and winner cleanup, which makes the test's bookkeeping its own
+  failure source, and the single warmed round already measured 10/10 on the probe
+  and 3/3 on the shipped test against the lock-less control. F3's own blind spot
+  — a pool that serializes every round — is not addressed by adding rounds.
+- **F4 ACCEPTED.** Recorded above.
 
 ## References
 

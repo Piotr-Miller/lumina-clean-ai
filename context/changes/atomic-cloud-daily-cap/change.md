@@ -1,7 +1,7 @@
 ---
 change_id: atomic-cloud-daily-cap
 title: Resolve the global Cloud AI daily-cap contract and operational backstop
-status: implementing
+status: impl_reviewed
 created: 2026-08-26
 updated: 2026-08-29
 archived_at: null
@@ -34,3 +34,8 @@ unchanged 429. The plan's designated atomicity oracle (a service-layer fan-out)
 was found NOT to detect a non-atomic function reliably and was replaced by an
 RPC-layer fan-out; see `plan.md` § Implementation Note — Phase 2 for the
 negative-control measurement behind that call.
+
+**Phase 2 review (2026-08-29):** `reviews/impl-review-phase-2.md` — APPROVED,
+0 critical / 2 warnings / 2 observations. All four triaged and addressed in a
+follow-up commit; F3's "several measurement rounds" suggestion was the one part
+declined, with the reason recorded next to the decision.

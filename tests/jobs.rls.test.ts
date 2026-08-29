@@ -865,7 +865,13 @@ describe("FR-014 concurrent admission (guarded write under fan-out)", () => {
     // function return a single winner — a false pass on the only test that can
     // catch a non-atomic admission. `p_cap = 0` always declines and inserts
     // nothing, so warming cannot move the baseline measured below.
-    await Promise.all(Array.from({ length: FANOUT }, () => admitRpc(user.id, 0, crypto.randomUUID())));
+    const warmup = await Promise.all(Array.from({ length: FANOUT }, () => admitRpc(user.id, 0, crypto.randomUUID())));
+    // Assert the warm-up actually ran. If these calls silently errored — a
+    // revoked grant, a dropped function — the pool would still be cold and the
+    // measurement below would be the very false pass the warm-up exists to
+    // prevent, with nothing in the output saying so.
+    expect(warmup.filter((r) => r.error !== null)).toHaveLength(0);
+    expect(warmup.filter((r) => r.data === false)).toHaveLength(FANOUT);
 
     const baseline = await countCloudJobsToday(supabaseAdmin);
     // Exactly one slot left: `count >= cap` must reject everything after the winner.

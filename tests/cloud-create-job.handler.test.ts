@@ -202,8 +202,8 @@ describe("createCloudJobResponse — S-12 Bread params reach the guarded write",
  * UTC midnight between the Worker clock and the database clock.
  *
  * This is the only layer where that mapping can be pinned deterministically. The
- * service-layer fan-out in tests/jobs.rls.test.ts proves the ATOMICITY (only one
- * of N concurrent admissions wins); this proves the loser is turned into the
+ * warmed RPC-layer fan-out in tests/jobs.rls.test.ts is what proves the ATOMICITY
+ * (only one of N concurrent admissions wins); this proves the loser is turned into the
  * byte-identical 429 the pre-check returns, and that the rejection is visible in
  * the LOCAL console rather than only in Sentry — `captureWarning` defaults to a
  * no-op, so a capture-only call would leave a developer with no signal at all.
