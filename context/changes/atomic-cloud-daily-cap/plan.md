@@ -989,7 +989,7 @@ F4). All are accurate and low-risk, none were in §§1–6:
 - [x] 2.2 Linting passes: `npm run lint` — 14b1802
 - [x] 2.3 Unit tests pass incl. RPC-parameter and warning-message assertions — 14b1802
 - [x] 2.4 Integration suite passes incl. service fan-out and route composition test — 14b1802
-- [x] 2.5 E2E gate still green: `npm run test:e2e` — 14b1802
+- [x] 2.5 E2E gate still green: `npm run test:e2e` — 14b1802, f4c3dce
 - [x] 2.6 Scoped mutation check on `photo-job.service.ts` — 14b1802
 
 #### Manual
