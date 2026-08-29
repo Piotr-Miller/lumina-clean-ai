@@ -78,6 +78,6 @@
 | Fresh mutation run over `photo-job.service.ts:110-150` | PASS — 16/16 mutants killed, isolated cache used to prevent stale incremental reuse  |
 | Built-content verification                             | PASS — current `admit_cloud_job` call and rejection warning present in `dist/server` |
 
-Manual criteria 2.7–2.9 remain pending in the plan: real cloud job end-to-end, the local `CLOUD_DAILY_CAP=0` response, and the forced race-loss console line.
+Manual criteria 2.7–2.9 were completed on 2026-08-29: after repairing missing local Vault wiring and a stale callback tunnel, a real Replicate job reached `succeeded` in 172s with the result present and source deleted; a production Worker started with `CLOUD_DAILY_CAP=0` returned the exact existing 429 body from a zero-row baseline (normal local cap 5); and an 8-way forced service fan-out printed seven race-loss warnings while admitting one job.
 
 No security, authorization, data-loss, performance, resource-leak, or architectural defect was found. The previously settled `SECURITY INVOKER`/`DEFINER` question and the running-stack `supabase/.temp/**` formatting failure were not reopened.

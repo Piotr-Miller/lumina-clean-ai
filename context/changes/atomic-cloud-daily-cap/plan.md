@@ -994,9 +994,9 @@ F4). All are accurate and low-risk, none were in §§1–6:
 
 #### Manual
 
-- [ ] 2.7 Local stack: a real cloud job completes end-to-end
-- [ ] 2.8 `CLOUD_DAILY_CAP=0` returns the unchanged 429 copy
-- [ ] 2.9 Race-loss line appears in the local console on a forced rejection
+- [x] 2.7 Local stack: a real cloud job completes end-to-end — 2026-08-29: after restoring the missing local Vault webhook wiring and replacing a stale callback tunnel, `d1-live-submit.ts` reached `queued` → `processing` → `succeeded` through real Replicate in 172s; result object present, source object deleted
+- [x] 2.8 `CLOUD_DAILY_CAP=0` returns the unchanged 429 copy — 2026-08-29: with the normal local cap at 5 and the billable baseline at 0, an authenticated POST against the production Worker under the `--var CLOUD_DAILY_CAP:0` override returned `429` + `daily_cap_reached` + the unchanged message
+- [x] 2.9 Race-loss line appears in the local console on a forced rejection — 2026-08-29: targeted 8-way `createPhotoJob` fan-out passed with one winner and seven `daily-cap guarded write rejected admission (cap=1)` stderr lines
 
 ### Phase 3: Correct the record
 
