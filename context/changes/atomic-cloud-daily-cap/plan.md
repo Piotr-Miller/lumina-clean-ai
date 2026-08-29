@@ -1002,17 +1002,17 @@ F4). All are accurate and low-risk, none were in §§1–6:
 
 #### Automated
 
-- [x] 3.1 Formatting passes: `npm run format:check`
-- [x] 3.2 Linting passes: `npm run lint`
-- [x] 3.3 Skill parity unaffected: `npm run check:skills`
-- [x] 3.4 File-specific assertions pass for all eight corrected passages
+- [x] 3.1 Formatting passes: `npm run format:check` — 58bd9e3
+- [x] 3.2 Linting passes: `npm run lint` — 58bd9e3
+- [x] 3.3 Skill parity unaffected: `npm run check:skills` — 58bd9e3
+- [x] 3.4 File-specific assertions pass for all eight corrected passages — 58bd9e3
 
 #### Manual
 
-- [x] 3.5 Each corrected passage reads correctly in context
-- [x] 3.6 The `lessons.md` rule names the superseded archive insight
-- [x] 3.7 No file under `context/archive/` was modified
-- [x] 3.8 Done-ledger, Backlog Handoff `done`, and #191 closure left untouched
+- [x] 3.5 Each corrected passage reads correctly in context — 58bd9e3
+- [x] 3.6 The `lessons.md` rule names the superseded archive insight — 58bd9e3
+- [x] 3.7 No file under `context/archive/` was modified — 58bd9e3
+- [x] 3.8 Done-ledger, Backlog Handoff `done`, and #191 closure left untouched — 58bd9e3
 
 ### Phase 4: Production migration — pre-merge gate
 

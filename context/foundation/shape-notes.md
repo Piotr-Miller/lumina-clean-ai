@@ -31,7 +31,7 @@ checkpoint:
     - topic: "anonymous-visitor capability"
       decision: "Local engine only; no Cloud AI; no persisted history"
     - topic: "MVP scope deferrals"
-      decision: "Defer to v2: Admin role + admin screens; per-user SQL rate limiting (replaced in v1 by global daily cap enforced server-side + Replicate billing alert)"
+      decision: "Defer to v2: Admin role + admin screens; per-user SQL rate limiting (replaced in v1 by global daily cap enforced server-side + Replicate billing alert). ⚠️ Corrected 2026-08-29: no such backstop ever existed — Replicate deprecated self-service spend limits 2025-07-01 (production-config.md §7)."
     - topic: "MVP scope kept in v1"
       decision: "Both engines (Cloud + Local); engine toggle; before/after comparison slider; email+password auth; async cloud pipeline; Cloudflare Pages deploy"
     - topic: "timeline budget"
@@ -210,7 +210,7 @@ The decisions the app does NOT make — and explicitly delegates to the user —
 - **No native mobile apps** in v1. Web only at launch; iOS/Android native are a separate product surface.
 - **No social features** — no sharing galleries, no public profiles, no collaborative editing. Single-tenant by design in v1.
 - **No Admin role or Admin UI in v1.** Deferred to v2. Operator tasks (inspecting daily-cap consumption, watching cloud spend, pausing cloud processing, manually clearing a stuck job) are handled out-of-band via direct Supabase dashboard access until v2.
-- **No per-user rate limiting in v1.** Deferred to v2. v1 enforces only a global daily cap (FR-014) plus a billing alert from the cloud-model provider as backstop.
+- **No per-user rate limiting in v1.** Deferred to v2. v1 enforces only a global daily cap (FR-014) plus a billing alert from the cloud-model provider as backstop. ⚠️ **Corrected 2026-08-29:** no such backstop has ever existed — Replicate deprecated self-service spend limits on 2025-07-01 (`production-config.md` §7). The global cap is the only enforcing control, which is why S-16 (#191) made it atomic.
 - **No history UI in v1.** Job data persists (it must, for Realtime delivery in FR-010), but the user-facing history list view is deferred to v2.
 
 **Non-functional non-goals (quality dimensions v1 will NOT aim for):**
@@ -247,7 +247,7 @@ User-volunteered stack hints from `idea-notes.md`:
 - **Engine toggle**: Strategy Pattern between Cloud AI and Local engine.
 - **Auth & data**: Supabase Auth + Row-Level Security (RLS) for cloud usage gating.
 - **Async cloud pipeline**: signed upload → Database Webhook → Edge Function → Replicate prediction with webhook callback → Supabase Realtime push to frontend.
-- **Cost protection**: RLS-gated cloud access + a SQL-enforced global daily cap on Cloud AI ops across all users (default 50, reset 00:00 UTC; configurable via `CLOUD_DAILY_CAP`, `0` = kill-switch).
+- **Cost protection**: RLS-gated cloud access + a SQL-enforced global daily cap on Cloud AI ops across all users (default 50, reset 00:00 UTC; configurable via `CLOUD_DAILY_CAP`, `0` = kill-switch). ⚠️ **Note 2026-08-29:** not the original seed text — `cap-doc-drift` rewrote this bullet on 2026-06-10 (seed: "SQL-side rate limiting (20 AI ops / user / 24h)") and introduced "SQL-enforced", false until S-16 `atomic-cloud-daily-cap` (#191) made it true. Third instance of the drift class `AGENTS.md` records; the neighbouring `Cloudflare Pages` hint shows this block is otherwise a verbatim capture.
 - **Hosting**: Cloudflare Pages.
 
 These will be evaluated, accepted, or revisited downstream — they are NOT pre-committed by the PRD.

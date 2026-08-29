@@ -15,10 +15,10 @@
 
 All four operations exist for the core item (job + its photo objects) and act on persisted data:
 
-- **Create** — `createPhotoJob()` in `src/lib/services/photo-job.service.ts:89` inserts a `queued` row into `public.jobs` and mints a one-shot signed upload URL; exposed via `POST /api/enhance/cloud/create-job` (`src/pages/api/enhance/cloud/create-job.ts` → `cloud-create-job.handler.ts`).
-- **Read** — `getJobById()` (`photo-job.service.ts:213`); user-facing read in `src/components/hooks/useCloudJob.ts:232` (`.select("status, result_path, error_message, error_code")` + a Supabase Realtime subscription), gated by the RLS policy `jobs_select_own`.
-- **Update** — guarded status transitions on persisted rows: `claimJobForProcessing()` (:233), `recordJobPrediction()` (:258), `markJobSucceeded()` (:181), `markJobFailed()` (:290), and the user-triggered `markPendingJobFailedForOwner()` (:328) reached via `POST /api/enhance/cloud/timeout`.
-- **Delete** — `deleteJobSource()`/`deleteJobResult()` (:67/:72) on every terminal transition, owner-scoped `sweepStalePendingJobsForOwner()` (:376), and the scheduled global reaper `sweepAbandonedSourcesGlobally()` (:490) driven by pg_cron.
+- **Create** — `createPhotoJob()` in `src/lib/services/photo-job.service.ts` inserts a `queued` row into `public.jobs` and mints a one-shot signed upload URL; exposed via `POST /api/enhance/cloud/create-job` (`src/pages/api/enhance/cloud/create-job.ts` → `cloud-create-job.handler.ts`).
+- **Read** — `getJobById()` (`photo-job.service.ts`); user-facing read in `src/components/hooks/useCloudJob.ts:232` (`.select("status, result_path, error_message, error_code")` + a Supabase Realtime subscription), gated by the RLS policy `jobs_select_own`.
+- **Update** — guarded status transitions on persisted rows: `claimJobForProcessing()`, `recordJobPrediction()`, `markJobSucceeded()`, `markJobFailed()`, and the user-triggered `markPendingJobFailedForOwner()` reached via `POST /api/enhance/cloud/timeout`.
+- **Delete** — `deleteJobSource()`/`deleteJobResult()` on every terminal transition, owner-scoped `sweepStalePendingJobsForOwner()`, and the scheduled global reaper `sweepAbandonedSourcesGlobally()` driven by pg_cron.
 
 One honest caveat: there is no manual "delete my job" button — deletion is policy-driven (the ≤24h source-retention privacy guardrail), which is a deliberate design decision for this domain, and it genuinely removes persisted data.
 
@@ -28,7 +28,7 @@ Well beyond plain CRUD, and it is the product's unique value:
 
 - **Local enhancement engine** — `src/lib/engines/local-engine.ts` (gamma correction + Gaussian blur on Canvas, with `canvas-helpers.ts` / `image-helpers.ts`).
 - **Adaptive auto-parameters** — `src/lib/engines/auto-params.ts` analyzes the image and suggests enhancement parameters (the criterion's own "automatic suggestion" example, almost literally).
-- **Global daily cost cap** — enforced by `public.admit_cloud_job` (`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`), a `SECURITY INVOKER` guarded write that holds a transaction-scoped advisory lock across count-and-insert, so the cap holds even under simultaneous submissions (S-16 / #191). `countCloudJobsToday()` + `isOverDailyCap()` (`photo-job.service.ts:185/:207`) remain as the non-authoritative fast path that rejects an over-cap request before any storage or model work. The counting rule is the same at both ends: UTC-day, cross-user, billable jobs only (a pre-model failure is excluded), with a `cap=0` kill-switch.
+- **Global daily cost cap** — enforced by `public.admit_cloud_job` (`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`), a `SECURITY INVOKER` guarded write that holds a transaction-scoped advisory lock across count-and-insert, so the cap holds even under simultaneous submissions (S-16 / #191). `countCloudJobsToday()` + `isOverDailyCap()` (`photo-job.service.ts`) remain as the non-authoritative fast path that rejects an over-cap request before any storage or model work. The counting rule is the same at both ends: UTC-day, cross-user, billable jobs only (a pre-model failure is excluded), with a `cap=0` kill-switch.
 - **Webhook signature verification** — `src/lib/services/replicate-webhook.ts`.
 - **Chroma denoise post-pass** — `src/lib/engines/chroma-denoise.ts`, behind a feature flag.
 
@@ -36,17 +36,17 @@ Well beyond plain CRUD, and it is the product's unique value:
 
 `context/foundation/test-plan.md` §2 defines a 6-row Risk Map; named tests map directly to it:
 
-- **Risk #2 (auth gate bypass)** → `tests/cloud-create-job.handler.test.ts:191` — describe block literally titled "anonymous auth gate (Risk #2)": anon request rejected 401 _before_ any insert or signed URL.
-- **Risk #3 (daily cap fails to block)** → `tests/cloud-create-job.handler.test.ts:91` "global daily-cap route boundary": over-cap 429, last-slot-passes, `cap=0` kill-switch; `:211` covers the guarded write declining after the fast path admits. The **race** is covered against a real Postgres in `tests/jobs.rls.test.ts:821` "FR-014 concurrent admission (guarded write under fan-out)" — 8 simultaneous admissions at the boundary yield exactly one row; predicate + grant fidelity at `:535`.
-- **Risk #4 (IDOR)** → `tests/jobs.rls.test.ts:593` "cross-user IDOR (route boundary)": user B supplying user A's jobId flips nothing (:629).
-- **Risk #5 (24h source retention)** → `tests/jobs.rls.test.ts:460` "sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)" — against real Supabase Storage, not mocks.
+- **Risk #2 (auth gate bypass)** → `tests/cloud-create-job.handler.test.ts` — describe block literally titled "anonymous auth gate (Risk #2)": anon request rejected 401 _before_ any insert or signed URL.
+- **Risk #3 (daily cap fails to block)** → `tests/cloud-create-job.handler.test.ts` "global daily-cap route boundary": over-cap 429, last-slot-passes, `cap=0` kill-switch; "guarded write declines after the fast path admits" covers the decline after the fast path admits. The **race** is covered against a real Postgres in `tests/jobs.rls.test.ts` "FR-014 concurrent admission (guarded write under fan-out)" — 8 simultaneous admissions at the boundary yield exactly one row; predicate + grant fidelity in "admit_cloud_job (FR-014 guarded admission)".
+- **Risk #4 (IDOR)** → `tests/jobs.rls.test.ts` "cross-user IDOR (route boundary)": user B supplying user A's jobId flips nothing.
+- **Risk #5 (24h source retention)** → `tests/jobs.rls.test.ts` "sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)" — against real Supabase Storage, not mocks.
 - **Risks #1/#6 (silent stall / watchdog)** → `tests/replicate-webhook.test.ts` (signature verifier) and Playwright E2E `tests/e2e/cloud-stall-surfaces-timeout.spec.ts` + `north-star-cloud-result.spec.ts`.
 
 #### ✅ 4. Authentication tied to a user
 
 - Supabase email+password auth: `src/pages/api/auth/{signin,signup,signout,reset-password,update-password}.ts`.
 - `src/middleware.ts` resolves the session on every request into `locals.user` and redirects unauthenticated users off `PROTECTED_ROUTES`.
-- Resources are owner-scoped in the database: RLS policies `jobs_select_own` / `jobs_insert_own` (`supabase/migrations/20260528120000_create_jobs_table.sql:86,93`) and `photos_{select,insert,update,delete}_own` on Storage (`20260528120100_create_photos_storage.sql`).
+- Resources are owner-scoped in the database: reads go through the RLS policy `jobs_select_own` (`user_id = auth.uid()`, `supabase/migrations/20260528120000_create_jobs_table.sql`) and `photos_{select,insert,update,delete}_own` on Storage (`20260528120100_create_photos_storage.sql`). Job rows are not client-insertable — `20260621185226_restrict_jobs_insert_to_service_role.sql` dropped `jobs_insert_own` and revoked INSERT from `authenticated`, so rows are created only by the server-side guarded write `public.admit_cloud_job` (granted to `service_role` alone), whose owner id comes from the session (`context.locals.user`), never the request body.
 - The gate is enforced at the API, not just the UI (401 before side effects — see Risk #2 test), and client-supplied jobIds route through owner-scoped mutations (Risk #4 test).
 
 #### ✅ 5. Documentation
@@ -77,10 +77,10 @@ No criterion is unmet. Two polish items:
 
 Wszystkie cztery operacje istnieją dla głównego bytu i działają na trwałych danych:
 
-- **Create** — `createPhotoJob()` w `src/lib/services/photo-job.service.ts:89` wstawia wiersz `queued` do `public.jobs` i generuje jednorazowy podpisany URL uploadu; dostępne przez `POST /api/enhance/cloud/create-job` (`src/pages/api/enhance/cloud/create-job.ts` → `cloud-create-job.handler.ts`).
-- **Read** — `getJobById()` (`photo-job.service.ts:213`); odczyt po stronie użytkownika w `src/components/hooks/useCloudJob.ts:232` (select statusu/wyniku + subskrypcja Supabase Realtime), chroniony polityką RLS `jobs_select_own`.
-- **Update** — strzeżone przejścia statusów na zapisanych wierszach: `claimJobForProcessing()` (:233), `recordJobPrediction()` (:258), `markJobSucceeded()` (:181), `markJobFailed()` (:290) oraz wyzwalane przez użytkownika `markPendingJobFailedForOwner()` (:328) przez `POST /api/enhance/cloud/timeout`.
-- **Delete** — `deleteJobSource()`/`deleteJobResult()` (:67/:72) przy każdym przejściu terminalnym, sweep właścicielski `sweepStalePendingJobsForOwner()` (:376) oraz globalny, cykliczny reaper `sweepAbandonedSourcesGlobally()` (:490) uruchamiany przez pg_cron.
+- **Create** — `createPhotoJob()` w `src/lib/services/photo-job.service.ts` wstawia wiersz `queued` do `public.jobs` i generuje jednorazowy podpisany URL uploadu; dostępne przez `POST /api/enhance/cloud/create-job` (`src/pages/api/enhance/cloud/create-job.ts` → `cloud-create-job.handler.ts`).
+- **Read** — `getJobById()` (`photo-job.service.ts`); odczyt po stronie użytkownika w `src/components/hooks/useCloudJob.ts:232` (select statusu/wyniku + subskrypcja Supabase Realtime), chroniony polityką RLS `jobs_select_own`.
+- **Update** — strzeżone przejścia statusów na zapisanych wierszach: `claimJobForProcessing()`, `recordJobPrediction()`, `markJobSucceeded()`, `markJobFailed()` oraz wyzwalane przez użytkownika `markPendingJobFailedForOwner()` przez `POST /api/enhance/cloud/timeout`.
+- **Delete** — `deleteJobSource()`/`deleteJobResult()` przy każdym przejściu terminalnym, sweep właścicielski `sweepStalePendingJobsForOwner()` oraz globalny, cykliczny reaper `sweepAbandonedSourcesGlobally()` uruchamiany przez pg_cron.
 
 Uczciwa uwaga: nie ma ręcznego przycisku "usuń job" — kasowanie wynika z polityki retencji (guardrail prywatności: źródło ≤24h), co jest świadomą decyzją projektową i realnie usuwa trwałe dane.
 
@@ -90,7 +90,7 @@ Znacznie więcej niż CRUD — i to jest właśnie unikalna wartość produktu:
 
 - **Lokalny silnik poprawy zdjęć** — `src/lib/engines/local-engine.ts` (korekcja gamma + rozmycie Gaussa na Canvas, z helperami `canvas-helpers.ts` / `image-helpers.ts`).
 - **Adaptacyjne auto-parametry** — `src/lib/engines/auto-params.ts` analizuje obraz i sugeruje parametry przetwarzania (niemal dosłownie przykład "automatycznej sugestii" z kryterium).
-- **Globalny dzienny limit kosztów** — egzekwowany przez `public.admit_cloud_job` (`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`), funkcję `SECURITY INVOKER` wykonującą jeden strzeżony zapis: trzyma blokadę doradczą w zakresie transakcji przez cały czas zliczania i wstawiania, więc limit obowiązuje także przy jednoczesnych zgłoszeniach (S-16 / #191). `countCloudJobsToday()` + `isOverDailyCap()` (`photo-job.service.ts:185/:207`) pozostają jako nieautorytatywna szybka ścieżka, która odrzuca żądanie ponad limit zanim dojdzie do jakiejkolwiek pracy na storage lub modelu. Reguła zliczania jest po obu stronach ta sama: dzień UTC, wszyscy użytkownicy, tylko płatne joby (porażki sprzed modelu są wykluczone), z kill-switchem `cap=0`.
+- **Globalny dzienny limit kosztów** — egzekwowany przez `public.admit_cloud_job` (`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`), funkcję `SECURITY INVOKER` wykonującą jeden strzeżony zapis: trzyma blokadę doradczą w zakresie transakcji przez cały czas zliczania i wstawiania, więc limit obowiązuje także przy jednoczesnych zgłoszeniach (S-16 / #191). `countCloudJobsToday()` + `isOverDailyCap()` (`photo-job.service.ts`) pozostają jako nieautorytatywna szybka ścieżka, która odrzuca żądanie ponad limit zanim dojdzie do jakiejkolwiek pracy na storage lub modelu. Reguła zliczania jest po obu stronach ta sama: dzień UTC, wszyscy użytkownicy, tylko płatne joby (porażki sprzed modelu są wykluczone), z kill-switchem `cap=0`.
 - **Weryfikacja podpisu webhooka** — `src/lib/services/replicate-webhook.ts`.
 - **Post-pass odszumiania chrominancji** — `src/lib/engines/chroma-denoise.ts` (za feature flagą).
 
@@ -98,17 +98,17 @@ Znacznie więcej niż CRUD — i to jest właśnie unikalna wartość produktu:
 
 `context/foundation/test-plan.md` §2 zawiera mapę 6 ryzyk; konkretne testy mapują się wprost:
 
-- **Ryzyko #2 (obejście bramki auth)** → `tests/cloud-create-job.handler.test.ts:191` — blok describe dosłownie nazwany "anonymous auth gate (Risk #2)": anonimowe żądanie odrzucone 401 _zanim_ nastąpi jakikolwiek insert czy podpisany URL.
-- **Ryzyko #3 (limit dzienny nie blokuje)** → `tests/cloud-create-job.handler.test.ts:91` "global daily-cap route boundary": 429 ponad limitem, ostatni wolny slot przechodzi, kill-switch `cap=0`; `:211` pokrywa odmowę strzeżonego zapisu po tym, jak szybka ścieżka dopuściła żądanie. **Wyścig** jest pokryty na prawdziwym Postgresie w `tests/jobs.rls.test.ts:821` "FR-014 concurrent admission (guarded write under fan-out)" — 8 jednoczesnych zgłoszeń na granicy limitu daje dokładnie jeden wiersz; wierność predykatu i model uprawnień w `:535`.
-- **Ryzyko #4 (IDOR)** → `tests/jobs.rls.test.ts:593` "cross-user IDOR (route boundary)": użytkownik B z jobId użytkownika A niczego nie zmienia (:629).
-- **Ryzyko #5 (retencja źródła ≤24h)** → `tests/jobs.rls.test.ts:460` "sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)" — na prawdziwym Supabase Storage, bez mocków.
+- **Ryzyko #2 (obejście bramki auth)** → `tests/cloud-create-job.handler.test.ts` — blok describe dosłownie nazwany "anonymous auth gate (Risk #2)": anonimowe żądanie odrzucone 401 _zanim_ nastąpi jakikolwiek insert czy podpisany URL.
+- **Ryzyko #3 (limit dzienny nie blokuje)** → `tests/cloud-create-job.handler.test.ts` "global daily-cap route boundary": 429 ponad limitem, ostatni wolny slot przechodzi, kill-switch `cap=0`; blok "guarded write declines after the fast path admits" pokrywa odmowę po dopuszczeniu przez szybką ścieżkę. **Wyścig** jest pokryty na prawdziwym Postgresie w `tests/jobs.rls.test.ts` "FR-014 concurrent admission (guarded write under fan-out)" — 8 jednoczesnych zgłoszeń na granicy limitu daje dokładnie jeden wiersz; wierność predykatu i model uprawnień w bloku "admit_cloud_job (FR-014 guarded admission)".
+- **Ryzyko #4 (IDOR)** → `tests/jobs.rls.test.ts` "cross-user IDOR (route boundary)": użytkownik B z jobId użytkownika A niczego nie zmienia.
+- **Ryzyko #5 (retencja źródła ≤24h)** → `tests/jobs.rls.test.ts` "sweepAbandonedSourcesGlobally (Risk #5 retention reaper, real storage)" — na prawdziwym Supabase Storage, bez mocków.
 - **Ryzyka #1/#6 (cichy stall / watchdog)** → `tests/replicate-webhook.test.ts` (weryfikator podpisu) oraz E2E Playwright `tests/e2e/cloud-stall-surfaces-timeout.spec.ts` i `north-star-cloud-result.spec.ts`.
 
 #### ✅ 4. Uwierzytelnianie powiązane z użytkownikiem
 
 - Supabase auth (email+hasło): `src/pages/api/auth/{signin,signup,signout,reset-password,update-password}.ts`.
 - `src/middleware.ts` rozwiązuje sesję przy każdym żądaniu do `locals.user` i przekierowuje niezalogowanych z tras `PROTECTED_ROUTES`.
-- Zasoby są przypisane do właściciela w bazie: polityki RLS `jobs_select_own` / `jobs_insert_own` (`supabase/migrations/20260528120000_create_jobs_table.sql:86,93`) oraz `photos_{select,insert,update,delete}_own` na Storage (`20260528120100_create_photos_storage.sql`).
+- Zasoby są przypisane do właściciela w bazie: odczyty przechodzą przez politykę RLS `jobs_select_own` (`user_id = auth.uid()`, `supabase/migrations/20260528120000_create_jobs_table.sql`) oraz `photos_{select,insert,update,delete}_own` na Storage (`20260528120100_create_photos_storage.sql`). Wierszy jobów nie da się wstawić z klienta — `20260621185226_restrict_jobs_insert_to_service_role.sql` usunęła politykę `jobs_insert_own` i odebrała INSERT roli `authenticated`, więc wiersze tworzy wyłącznie serwerowy strzeżony zapis `public.admit_cloud_job` (uprawnienie wykonania ma tylko `service_role`), a id właściciela pochodzi z sesji (`context.locals.user`), nigdy z ciała żądania.
 - Bramka egzekwowana na poziomie API, nie tylko UI (401 przed efektami ubocznymi — test ryzyka #2), a jobId od klienta przechodzi przez mutacje ograniczone do właściciela (test ryzyka #4).
 
 #### ✅ 5. Dokumentacja

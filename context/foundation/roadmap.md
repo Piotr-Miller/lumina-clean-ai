@@ -288,9 +288,11 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **GitHub issue:** [#191](https://github.com/Piotr-Miller/lumina-clean-ai/issues/191)
 - **PRD refs:** FR-014 (re-opens the obligation S-05 / #6 closed on archive); MVP Guardrail "cloud daily cap actually blocks"
 - **Prerequisites:** S-05 (the cap and its user-facing message), S-07 (production, where the migration is applied)
+- **Parallel with:** S-15 (copy-only; zero shared files)
 - **Sequencing:** the migration is applied to `luminaclean-prod` **before** the implementing PR merges. CI deploys the Worker and the Edge Function on merge to master but **not** migrations, and the new function is additive and inert until the new Worker calls it — so applying first is safe and merging first reproduces the S-11 failure mode (jobs migrations never `db push`ed → blocking production bug). The post-deploy production smoke and `/10x-archive` land in a follow-up PR.
 - **What it changes:** admission moves into one guarded database write, `public.admit_cloud_job` (`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`) — a `SECURITY INVOKER` / `search_path = ''` plpgsql function, executable by `service_role` only, that takes a transaction-scoped advisory lock (`pg_advisory_xact_lock`) and then counts-and-inserts inside it. `createPhotoJob` calls it instead of `.insert()` and returns `null` on a decline, which the route maps onto the unchanged 429. A partial index on `created_at` with the billable predicate serves the now-critical-path count. The cap **value** stays in `CLOUD_DAILY_CAP`: the database owns atomicity, not policy.
 - **Explicitly not in scope:** per-user caps (still parked), moving the cap value into SQL, a counter table, and any change to the count predicate or the user-facing contract.
+- **Blockers:** production database access to apply `20260828120000_atomic_cloud_daily_cap.sql` to `luminaclean-prod` **before** the PR merges (Phase 4); the post-deploy production smoke (Phase 5) cannot run until the Worker carrying the RPC call is deployed.
 - **Risk:** Low-medium. Admission now serializes on a single advisory lock — unmeasurable at `cap = 3` and the observed traffic, and the shard (key per UTC day) is obvious if volume ever changes that. The real risk is ordering: rolling the database back without rolling the Worker back would 500 every cloud submission, so revert the code first, then the migration. A conditional `INSERT … WHERE (SELECT count(*) …) < cap` is **not** an acceptable simplification — it does not close the race under READ COMMITTED.
 - **Status:** in progress (planned, implementing; migration verified locally, not yet applied to prod)
 
@@ -321,8 +323,9 @@ This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; 
 - `new` — a draft change exists; no research yet.
 - `preparing` — research/framing/plan is actively being produced (e.g. a `frame.md` or research notes exist).
 - GitHub `ready` — the next indicated step (`/10x-research` or `/10x-plan`) can begin.
+- GitHub `implementing` — the plan is approved and phases are landing; past `/10x-plan`, not yet archived.
 
-So a slice may be `new`/`preparing` as a _change_ while its _issue_ is `ready` to start the next step. A slice that is **Parked** must not carry an issue `status:ready`; use `status:proposed` until it is promoted into the slice table.
+So a slice may be `new`/`preparing` as a _change_ while its _issue_ is `ready` to start the next step. The **Backlog Handoff** column is headed "Ready for `/10x-plan`" but has drifted into a status field: `yes` (plan it next), `in progress` (planned, implementing), `on hold` (deliberate hold), `done` (archived). A slice that is **Parked** must not carry an issue `status:ready`; use `status:proposed` until it is promoted into the slice table.
 
 ## Open Roadmap Questions
 

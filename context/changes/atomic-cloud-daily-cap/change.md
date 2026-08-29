@@ -51,3 +51,15 @@ insight), and `github-issues.md` (a Final-mapping row for S-16 / #191 at status
 `implementing`, plus a `## Status updates` registration row). Nothing was marked
 done: the `## Done` ledger, the Backlog Handoff `done` flip, and #191's closure
 remain Phase 5 / `/10x-archive`'s. No file under `context/archive/` was touched.
+
+**Phase 3 review (2026-08-29):** `reviews/impl-review-phase-3.md` — NEEDS
+ATTENTION, 1 critical / 2 warnings / 4 observations. All seven contract items
+matched and every factual claim in the new text verified against the migration,
+the service, the route and the tests; the scope boundary held (nothing marked
+done, no archive file touched, #191 still open). The critical finding is F1:
+`context/mvp-check-report.md` still carries 26 stale `file:line` pointers —
+20 of them broken by this change's own +47-line edit to `photo-job.service.ts`
+and its new describe block — despite the plan explicitly requiring those refs be
+re-derived. F2/F3 are gaps in the plan's own file list (`production-config.md`
+and the upstream `prd.md` / `shape-notes.md` still carry claims this phase
+disproved elsewhere). Findings are untriaged.

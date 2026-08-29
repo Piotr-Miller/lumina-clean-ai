@@ -479,6 +479,8 @@ only** — a control session has no skill to activate, so its §1 cell is `n/a`.
 
 **Fails if** it runs a loop where a test was the right answer, or wires a critic into CI.
 
+> ⚠️ **2026-08-29 — case 2.1's repo state changed.** These runs were recorded while the global daily cap was a non-atomic application-side `count → insert` and `AGENTS.md` falsely claimed SQL enforcement. Both are now fixed (S-16 `atomic-cloud-daily-cap`, #191): enforcement is `public.admit_cloud_job`, a guarded write holding `pg_advisory_xact_lock` across count-and-insert. The run rows above are left **verbatim** as the record of what those samples said — do not score a fresh 2.1 run against them. A model that does not name the race or the `AGENTS.md` discrepancy is now **correct, not worse**. The rubric is unchanged: 2.1 passes on routing, not diagnosis.
+
 ## 3. Critic isolation _(blocking)_
 
 | #   | Check                                                        | Expected                                                                             |

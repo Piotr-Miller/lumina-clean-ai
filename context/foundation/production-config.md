@@ -121,7 +121,7 @@ Prepaid credit with auto-reload off is a **hard ceiling, and a stronger control 
 3. It **fails silently**. There are no documented low-balance emails, so exhaustion surfaces to users as failed cloud jobs, not to the operator as a warning.
 4. It is **one click from gone** — "Add credit" or enabling auto-reload removes it, with nothing in the repo connecting that action to FR-014.
 
-Treat it as defence in depth. The enforcing control is the application-side cap (see `AGENTS.md` and change `atomic-cloud-daily-cap`, issue #191).
+Treat it as defence in depth. The enforcing control is the daily cap itself — since S-16 (#191) a guarded database write, `public.admit_cloud_job`, holding a transaction-scoped advisory lock across count-and-insert; the handler's `countCloudJobsToday` check is a non-authoritative fast path (see `AGENTS.md`). The date it is applied to `luminaclean-prod` is recorded below (Phase 4, before this PR merges).
 
 ---
 
