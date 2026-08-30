@@ -71,22 +71,33 @@ Use `npm run test:watch` during development.
 
 ## What the suite covers
 
-`jobs.rls.test.ts` asserts the six privacy and lifecycle guardrails the
-F-01 foundation owns:
+`jobs.rls.test.ts` asserts the privacy and lifecycle guardrails the F-01
+foundation owns:
 
 1. **Cross-user SELECT isolation** — user A cannot read user B's job rows.
 2. **Anon INSERT denied** — anonymous JWT cannot insert into `public.jobs`.
 3. **Anon Storage read denied** — anonymous JWT cannot download a real
    photo object.
 4. **Signed URL is one-shot** — second PUT to the same token fails.
-5. **`createPhotoJob` happy path** — inserts the queued row and returns a
-   usable signed URL the test then uses to PUT a file.
+5. **`createPhotoJob` happy path** — admits the queued row through
+   `admit_cloud_job` and returns a usable signed URL the test then uses to PUT
+   a file.
 6. **`markJobSucceeded` retention contract** — updates the row to
    `succeeded` AND deletes the source object in the same call.
 7. **Retention reaper** (`sweepAbandonedSourcesGlobally`) — the scheduled
    ≤24h backstop: a stale `source.*` object is removed (status-agnostic, age-
    driven), a fresh one is left in place, and a stale non-terminal job flips to
    `failed('abandoned')` while a fresh in-flight job is spared (don't-reap-live).
+8. **Guarded admission** (`admit_cloud_job`, FR-014) — predicate fidelity
+   (under/at cap, `cap = 0` kill-switch, null/negative cap, pre-model failures
+   free a slot, earlier UTC days excluded) plus the grant model: neither anon nor
+   an authenticated user can EXECUTE it.
+9. **FR-014 under concurrency** — three separate claims. The **RPC-layer fan-out
+   is the atomicity oracle** (8 simultaneous `admit_cloud_job` calls at the last
+   free slot → exactly one winner); the service- and route-layer fan-outs are
+   composition tests. Each is labelled in-file with its measured detection rate
+   against a lock-less build of the function — a concurrency test that has never
+   been run against the broken case proves nothing about itself.
 
 ## How this runs in CI
 

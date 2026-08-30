@@ -25,6 +25,10 @@ const SAMPLE_IMAGE = process.argv[2] ?? "https://picsum.photos/seed/d1live/640/4
 const BUCKET = "photos";
 const POLL_MS = 2000;
 const MAX_WAIT_MS = 6 * 60 * 1000; // cold boot can be multi-minute (S-09)
+// This harness proves the live Replicate round trip, not the FR-014 daily cap,
+// so it runs effectively uncapped. `admit_cloud_job`'s `p_cap` is int4 — stay
+// well inside 2147483647.
+const UNCAPPED = 1_000_000;
 
 const admin = createClient(API_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -64,11 +68,19 @@ async function main() {
   const userId = user.user.id;
 
   const t0 = Date.now();
-  const { jobId, uploadToken, sourcePath } = await createPhotoJob(admin, {
+  const created = await createPhotoJob(admin, {
     userId,
     fileExtension: "jpg",
     mimeType: "image/jpeg",
+    cap: UNCAPPED,
   });
+  // Fail fast: `null` means the guarded write declined admission. At UNCAPPED
+  // that can only mean admit_cloud_job is missing or misbehaving on this stack —
+  // destructuring a null here would abort with a far less useful message.
+  if (!created) {
+    throw new Error(`createPhotoJob: admission declined at cap=${UNCAPPED} — check admit_cloud_job on this stack`);
+  }
+  const { jobId, uploadToken, sourcePath } = created;
   console.log(`job ${jobId} created (queued; webhook → /start fired). Uploading source now (racing /start)…`);
 
   const up = await admin.storage.from(BUCKET).uploadToSignedUrl(sourcePath, uploadToken, bytes, {

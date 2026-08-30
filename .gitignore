@@ -30,6 +30,10 @@ _worktrees/
 reports/
 stryker.log
 
+# supabase CLI local scratch — also in supabase/.gitignore, which tools that
+# read only the root gitignore (prettier) do not see
+supabase/.temp/
+
 # macOS-specific files
 .DS_Store
 

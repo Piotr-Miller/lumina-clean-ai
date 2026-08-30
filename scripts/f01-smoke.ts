@@ -28,6 +28,10 @@ import { createPhotoJob, markJobSucceeded } from "@/lib/services/photo-job.servi
 const PHOTOS_BUCKET = "photos";
 const SUBSCRIBE_TIMEOUT_MS = 5_000;
 const REALTIME_EVENT_TIMEOUT_MS = 10_000;
+// This smoke proves the Realtime + retention chain, not the FR-014 daily cap, so
+// it runs effectively uncapped. `admit_cloud_job`'s `p_cap` is int4 — stay well
+// inside 2147483647.
+const UNCAPPED = 1_000_000;
 
 function log(msg: string): void {
   // eslint-disable-next-line no-console
@@ -117,7 +121,14 @@ async function main(): Promise<void> {
       userId: user.id,
       fileExtension: "jpg",
       mimeType: "image/jpeg",
+      cap: UNCAPPED,
     });
+    // Fail fast: `null` means the guarded write declined admission. At
+    // UNCAPPED that can only mean the function is missing or misbehaving —
+    // proceeding against a null would fail later with a confusing symptom.
+    if (!job) {
+      throw new Error(`createPhotoJob: admission declined at cap=${UNCAPPED} — check admit_cloud_job on this stack`);
+    }
     log(`  job.id=${job.jobId} sourcePath=${job.sourcePath}`);
 
     log("→ PUT source via signed URL");

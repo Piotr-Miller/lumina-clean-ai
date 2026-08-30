@@ -42,6 +42,13 @@ export interface CreatePhotoJobCommand {
   userId: string;
   fileExtension: "jpg" | "png" | "heic";
   mimeType: "image/jpeg" | "image/png" | "image/heic";
+  /**
+   * Global daily cap (`CLOUD_DAILY_CAP`) handed to the guarded admission write
+   * (FR-014). **Required, never optional** — an optional cap would let a call
+   * site admit uncapped by omission, which is the bypass this change exists to
+   * close. `0` rejects every submission (operator kill-switch).
+   */
+  cap: number;
   /** Optional Bread params (S-12). Omitted → row stores null and the Edge Function uses locked defaults. */
   gamma?: number;
   strength?: number;

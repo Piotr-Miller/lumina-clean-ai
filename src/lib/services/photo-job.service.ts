@@ -74,22 +74,43 @@ export async function deleteJobResult(admin: SupabaseClient, resultPath: string)
 }
 
 /**
- * Mint a one-shot signed upload URL for a new photo source object and
- * insert the matching `queued` row in `public.jobs`. The client then PUTs
- * the file directly to the absolute signed URL.
+ * Mint a one-shot signed upload URL for a new photo source object and admit the
+ * matching `queued` row into `public.jobs` through the **guarded write**. The
+ * client then PUTs the file directly to the absolute signed URL.
+ *
+ * **This function is the FR-014 enforcement point**, not the handler's
+ * `countCloudJobsToday` pre-check. The row is created by
+ * `public.admit_cloud_job` (migration `20260828120000`), which holds a
+ * transaction-scoped advisory lock across the count AND the insert, so `N`
+ * simultaneous submissions at `count = cap - 1` can no longer all pass the same
+ * count and all insert. Returns `null` when the guarded write declines — the
+ * same "someone else won" shape {@link claimJobForProcessing} already uses. An
+ * RPC *error* still throws: that is a fault, not a rejection.
+ *
+ * In the wired route the `null` return only happens when the handler's cheap
+ * pre-check already admitted the request, so it **is the race signal** (or a
+ * UTC-midnight disagreement between the Worker clock the pre-check uses and the
+ * database clock the RPC uses — the database is authoritative by definition).
+ * It is logged via `console.warn` AND `captureWarning`, matching every other
+ * swallow site here: a `captureWarning`-only call is invisible locally, because
+ * the hook defaults to a no-op and only production maps it to Sentry.
+ *
+ * Order is mint-then-admit, unchanged: a declined admission leaves an unused
+ * signed upload token and no object, which costs nothing.
  *
  * The signed URL is **one-shot**: if the client retries the upload (e.g.,
  * after a network failure), the caller must invoke `createPhotoJob` again
  * to mint a fresh token. S-03 should design its retry UX accordingly.
  *
- * `admin` must be built via `createAdminClient` (server-only, bypasses RLS).
- * `cmd.userId` is authoritative caller context (typically
- * `context.locals.user.id`) — never client-supplied.
+ * `admin` must be built via `createAdminClient` (server-only, bypasses RLS) —
+ * `admit_cloud_job` is granted to `service_role` alone. `cmd.userId` is
+ * authoritative caller context (typically `context.locals.user.id`) — never
+ * client-supplied.
  */
 export async function createPhotoJob(
   admin: SupabaseClient,
   cmd: CreatePhotoJobCommand,
-): Promise<CreatePhotoJobResponse> {
+): Promise<CreatePhotoJobResponse | null> {
   const jobId = crypto.randomUUID();
   const sourcePath = `${cmd.userId}/${jobId}/source.${cmd.fileExtension}`;
 
@@ -98,17 +119,37 @@ export async function createPhotoJob(
     throw new Error(`createPhotoJob: failed to mint signed upload URL for ${sourcePath}: ${signError.message}`);
   }
 
-  const { error: insertError } = await admin.from(JOBS_TABLE).insert({
-    id: jobId,
-    user_id: cmd.userId,
-    status: "queued",
-    source_path: sourcePath,
+  const { data: admitted, error: admitError } = (await admin.rpc("admit_cloud_job", {
+    p_job_id: jobId,
+    p_user_id: cmd.userId,
+    p_source_path: sourcePath,
     // Per-job Bread params (S-12); null → Edge Function uses the locked defaults.
-    gamma: cmd.gamma ?? null,
-    strength: cmd.strength ?? null,
-  });
-  if (insertError) {
-    throw new Error(`createPhotoJob: failed to insert job row ${jobId}: ${insertError.message}`);
+    p_gamma: cmd.gamma ?? null,
+    p_strength: cmd.strength ?? null,
+    p_cap: cmd.cap,
+  })) as { data: boolean | null; error: { message: string } | null };
+  if (admitError) {
+    throw new Error(`createPhotoJob: guarded admission failed for job ${jobId}: ${admitError.message}`);
+  }
+  // `false` is the ONE normal rejection: today's billable count met the cap.
+  if (admitted === false) {
+    const msg = `createPhotoJob: daily-cap guarded write rejected admission (cap=${cmd.cap})`;
+    // eslint-disable-next-line no-console
+    console.warn(msg);
+    captureWarning(msg);
+    return null;
+  }
+  // Anything that is neither `true` nor `false` means the database contract
+  // drifted — `admit_cloud_job` returns `boolean not null`, so a null or a
+  // non-boolean is a fault, NOT an exhausted cap. Folding it into the rejection
+  // path would tell the user "try again tomorrow" (429) for what is really a
+  // broken deployment, and hide it from the 500 the outer catch exists to
+  // report. Throwing stays fail-closed for spend: no job is returned, so no
+  // upload and no model work follow.
+  if (admitted !== true) {
+    throw new Error(
+      `createPhotoJob: admit_cloud_job returned a non-boolean result (${JSON.stringify(admitted)}) for job ${jobId}`,
+    );
   }
 
   return {
@@ -130,6 +171,12 @@ export async function createPhotoJob(
  *
  * The predicate is the De Morgan form of `NOT (failed AND id IS NULL)`:
  * `status <> 'failed' OR replicate_prediction_id IS NOT NULL`.
+ *
+ * **Non-authoritative.** Since `atomic-cloud-daily-cap` this count is the
+ * handler's cheap fast path, not the FR-014 gate: it rejects an over-cap request
+ * before any storage or model work, but the enforcement point is the guarded
+ * write inside {@link createPhotoJob}. The predicate below and its SQL twin in
+ * `admit_cloud_job` must stay identical — change one, change both.
  *
  * This is a global (cross-user) count, so it MUST run via the service-role
  * `admin` client (RLS would otherwise scope it to one user). `admin` must be

@@ -124,7 +124,19 @@ export default defineConfig({
       // S-05 global daily cap: max Cloud AI jobs (across all users) per UTC day.
       // create-job rejects with 429 daily_cap_reached once reached. 0 disables
       // cloud entirely (operator kill-switch).
-      CLOUD_DAILY_CAP: envField.number({ context: "server", access: "secret", default: 50 }),
+      // Constrained to a valid int4: the cap is passed as the `p_cap integer`
+      // argument of the `public.admit_cloud_job` guarded write (migration
+      // 20260828120000), so a fractional, negative, or out-of-range value must
+      // fail at config load rather than as a runtime Postgres error inside the
+      // admission path.
+      CLOUD_DAILY_CAP: envField.number({
+        context: "server",
+        access: "secret",
+        default: 50,
+        int: true,
+        min: 0,
+        max: 2147483647,
+      }),
       // Chroma-denoise post-pass (S-11) — a client-side quality layer over the
       // Bread result. Read at SSR and threaded into the enhance island as the
       // `chromaEnabled` prop, so it's a runtime kill-switch (`wrangler secret put`,

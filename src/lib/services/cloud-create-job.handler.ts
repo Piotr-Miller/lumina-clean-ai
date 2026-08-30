@@ -10,12 +10,14 @@ import { createPhotoJobRequestSchema } from "@/lib/services/photo-job.schema";
 /**
  * Env-free core of POST /api/enhance/cloud/create-job.
  *
- * Carries the full auth → parse → zod → sweep → cap → insert request→response
- * sequence, but receives the already-built admin client and the resolved cap as
- * parameters instead of reading `astro:env/server`. Keeping this module free of
- * that build-time virtual import means Vitest can load it under Node (Lesson #4)
- * and drive the route-boundary contract with a stub admin client — including the
- * load-bearing reject-BEFORE-insert ordering of the daily cap (PRD FR-014).
+ * Carries the full auth → parse → zod → sweep → cap fast path → guarded admission
+ * request→response sequence, but receives the already-built admin client and the
+ * resolved cap as parameters instead of reading `astro:env/server`. Keeping this
+ * module free of that build-time virtual import means Vitest can load it under
+ * Node (Lesson #4) and drive the route-boundary contract with a stub admin
+ * client — including the load-bearing reject-BEFORE-admission ordering of the
+ * daily-cap fast path, and the 429 mapping of a declined guarded write
+ * (PRD FR-014).
  *
  * The thin route wrapper (`src/pages/api/enhance/cloud/create-job.ts`) owns the
  * env-coupled shell: reading the three `astro:env/server` values, the
@@ -36,6 +38,19 @@ export function json(body: unknown, status: number): Response {
     headers: { "Content-Type": "application/json" },
   });
 }
+
+/**
+ * The ONE `daily_cap_reached` body. Two sites now return it — the handler's
+ * non-authoritative pre-check and a decline from the guarded write in
+ * `createPhotoJob` — and the user-facing contract must be byte-identical from
+ * both, so it is written once here rather than duplicated at each return.
+ */
+const DAILY_CAP_REACHED_BODY = {
+  error: {
+    code: "daily_cap_reached",
+    message: "The daily Cloud AI limit has been reached. Please try again tomorrow.",
+  },
+} as const;
 
 export interface CreateCloudJobInput {
   /** Authoritative session user (`context.locals.user`); `null` for anonymous. */
@@ -98,31 +113,37 @@ export async function createCloudJobResponse(input: CreateCloudJobInput): Promis
       );
     }
 
-    // Global daily cap (PRD FR-014): reject before any signed URL / storage /
-    // Replicate work. The cap value is the route's concern (env); the count +
-    // boundary decision live in the env-free service helpers. `cap = 0` rejects
-    // every submission (operator kill-switch). A count-query throw falls through
-    // to the outer catch → 500.
+    // Global daily cap (PRD FR-014), part 1 of 2 — the NON-AUTHORITATIVE fast
+    // path. This count is an optimization, not the gate: it rejects an over-cap
+    // submission before any signed URL / storage / Replicate work, which is the
+    // PRD property worth keeping. It cannot be the invariant, because the count
+    // and the insert are two operations and nothing serializes them — N
+    // simultaneous requests at `count = cap - 1` all pass here. The enforcement
+    // point is the guarded write inside `createPhotoJob` below, which holds a
+    // transaction-scoped advisory lock across count-and-insert. `cap = 0`
+    // rejects every submission (operator kill-switch). A count-query throw
+    // falls through to the outer catch → 500.
     if (isOverDailyCap(await countCloudJobsToday(admin), cap)) {
-      return json(
-        {
-          error: {
-            code: "daily_cap_reached",
-            message: "The daily Cloud AI limit has been reached. Please try again tomorrow.",
-          },
-        },
-        429,
-      );
+      return json(DAILY_CAP_REACHED_BODY, 429);
     }
 
     const result = await createPhotoJob(admin, {
       userId: user.id,
       fileExtension: parsed.data.fileExtension,
       mimeType: parsed.data.mimeType,
+      cap,
       // S-12 Bread params (validated + bounded by the schema; undefined → defaults).
       gamma: parsed.data.gamma,
       strength: parsed.data.strength,
     });
+    // Part 2 of 2 — the ACTUAL FR-014 gate. `null` means the guarded write
+    // declined: the fast path above admitted this request, then the atomic
+    // count-and-insert found the cap already taken (a concurrent submission won,
+    // or the two clocks straddled UTC midnight). Same 429, same body — a race
+    // loser is rejected exactly like any other over-cap request.
+    if (result === null) {
+      return json(DAILY_CAP_REACHED_BODY, 429);
+    }
     return json(result, 200);
   } catch (err) {
     // eslint-disable-next-line no-console

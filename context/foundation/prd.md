@@ -181,7 +181,7 @@ The product has two tiers of access for v1. Sign-up and sign-in use **email + pa
 - **No native mobile apps** in v1. Web only at launch; native iOS/Android are a separate product surface.
 - **No social features** — no sharing galleries, no public profiles, no collaborative editing. Single-tenant by design in v1.
 - **No Admin role or Admin UI in v1.** Deferred to v2. Operator tasks (inspecting daily-cap consumption, watching cloud-processing spend, pausing cloud processing, manually clearing a stuck job) are handled out-of-band until v2.
-- **No per-user rate limiting in v1.** Deferred to v2. v1 enforces only a global daily cap (FR-014) plus a cost-alert backstop from the cloud-model provider.
+- **No per-user rate limiting in v1.** Deferred to v2. v1 enforces only a global daily cap (FR-014) plus a cost-alert backstop from the cloud-model provider. ⚠️ **Corrected 2026-08-29:** no such backstop has ever existed — Replicate deprecated self-service spend limits on 2025-07-01 (`production-config.md` §7). The global cap is the only enforcing control, which is why S-16 (#191) made it atomic.
 - **No history UI in v1.** Job data persists (it must, for the result push in FR-010), but the user-facing history list view is deferred to v2.
 
 **Non-functional non-goals (quality dimensions v1 will NOT aim for):**
