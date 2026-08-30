@@ -84,3 +84,32 @@ verification reproduced every designed property against prod — `prosecdef = fa
 partial index `jobs_billable_created_at_idx`. Applied date + verification recorded
 in `production-config.md` §7. Phase 5 (post-merge smoke + archive) is outstanding
 and cannot run until CI deploys the Worker.
+
+**Support edits outside the Phase 3 file list (recorded 2026-08-30).** Raised by
+the advisory implementation review on PR #198 (P1, P2); recorded so the scope
+record matches the diff, in the same spirit as `plan.md` § Support edits outside
+the Phase 2 file list.
+
+- **`.gitignore` — `supabase/.temp/`.** This **supersedes an out-of-scope ruling
+  this plan made twice** (§ Review Response — Phase 1, F3, and § Review Response —
+  Phase 1 Re-review). Stating it plainly: those rulings put the whole
+  `format:check` **condition** out of scope — "it belongs to its own change" — not
+  merely the `.prettierignore` mechanism, so this is a deliberate reversal, not a
+  loophole. Phase 3 triage (F7) reversed it on the grounds that the root
+  `.gitignore` route **exposes the already-existing nested `supabase/.gitignore`
+  to Prettier** rather than widening `.prettierignore`, so it restores criterion
+  3.1's reproducibility without touching the file `AGENTS.md` governs and without
+  needing an exception to that rule. It matches an in-tree precedent
+  (`.stryker-tmp/`, `.gitignore:29`) for the same category of generated,
+  gitignored, ephemeral tool scratch. The edit is one line plus a comment and is
+  reversible; the reversal is recorded here rather than left implicit.
+- **`.claude/skills/gauntlet-loop/references/eval-matrix.md` and its byte-identical
+  `.agents/` twin.** Phase 3 triage (F6) appended one dated note under the §2
+  rubric recording that case 2.1's repo state changed: the run rows describe a
+  non-atomic cap and an `AGENTS.md` that falsely claimed SQL enforcement, both of
+  which this change fixes. The rows are left **verbatim** — they are a dated run
+  log and were correct when made; the hazard is a calibrator inverting the score
+  of a fresh 2.1 run, not staleness. Both trees are in `PUBLIC_SKILLS`, so they
+  were edited identically and `npm run check:skills` re-run (no drift, 36 pairs).
+  `gauntlet-loop` is repo-authored and absent from `.claude/.10x-cli-manifest.json`,
+  so no manifest hash is involved.
