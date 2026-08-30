@@ -106,7 +106,7 @@ Beyond the recorded list:
   something that has not happened yet.
 - **Fix**: "merged" → "merges"; commit the §7 record and open the PR so 4.3's "in this PR" is
   a fact rather than an intention.
-- **Decision**: FIXED (2026-08-30), tense half only — §7 now reads "**before** the implementing PR merges". The second half (commit the §7 record, open the PR so 4.3's "in this PR" is fact) is **deliberately left to the user**, per the repo rule that commits and pushes are theirs. Criterion 4.3 therefore remains stamped against an intention until that happens. The underlying sequencing was independently confirmed correct: `git show master:src/lib/services/photo-job.service.ts` contains no `admit_cloud_job` call, so the deployed Worker cannot reach the new function.
+- **Decision**: FIXED (2026-08-30), **both halves**. Tense: §7 now reads "**before** the implementing PR merges". PR: the §7 record was committed in `fb51672` and the branch opened as **PR #198** on 2026-08-30 (first push of this branch — no remote existed before), so criterion 4.3's "recorded … **in this PR**" is now a fact rather than an intention. The underlying sequencing was independently confirmed correct: `git show master:src/lib/services/photo-job.service.ts` contains no `admit_cloud_job` call, so the deployed Worker cannot reach the new function until this PR merges.
 
 ### F4 — the recorded verification is catalog-only and omits the precondition SECURITY INVOKER depends on
 
@@ -147,17 +147,20 @@ verdict stays **NEEDS ATTENTION** as the record of the review _as filed_.
 | --- | ----------- | ---------------------------------------------------- |
 | F1  | WARNING     | FIXED — roadmap Status + Blockers                    |
 | F2  | WARNING     | FIXED — all three parts of `change.md`               |
-| F3  | OBSERVATION | FIXED — tense only; the PR half is the user's        |
+| F3  | OBSERVATION | FIXED — tense + PR #198 opened; 4.3 now factual      |
 | F4  | OBSERVATION | FIXED — two §7 rows, values re-verified against prod |
 
 Every anchor was re-checked before triage rather than taken on trust, and F4's prod
 values were re-queried rather than transcribed — the report critiques the Phase 4
 record, which this session wrote.
 
-**One finding is only half-closed by design.** F3's second half — committing the §7
-record and opening the PR — is the user's to do, so criterion 4.3 ("recorded … **in
-this PR**") stays an intention until then. That is a live, accurate gap, not an
-oversight.
+**F3 was half-closed at triage time and is now fully closed.** Its second half —
+committing the §7 record and opening the PR — was the user's to do under the repo's
+commit rule. Done on 2026-08-30: `fb51672`, then **PR #198**. Criterion 4.3's
+"recorded … **in this PR**" is therefore satisfied rather than aspirational. Recorded
+here because the gap was real when this report was written, and the fix is the kind
+that silently stops being true — exactly the drift class this whole change exists to
+correct.
 
 **Verification after triage:** `npm run format:check` clean.
 

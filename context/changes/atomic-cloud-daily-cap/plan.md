@@ -1023,7 +1023,7 @@ F4). All are accurate and low-risk, none were in §§1–6:
 #### Manual
 
 - [x] 4.2 Migration applied to `luminaclean-prod` and verified BEFORE merge — 2026-08-29: `npx supabase db push --linked` after a dry run showing exactly one pending migration; prod history 11/11 in parity, recorded as `20260828120000 / atomic_cloud_daily_cap`
-- [x] 4.3 Applied date + verification recorded in `production-config.md` §7 in this PR — 2026-08-29: applied-date paragraph + 8-row verification table appended to §7, resolving the forward reference the closing pointer now makes
+- [x] 4.3 Applied date + verification recorded in `production-config.md` §7 in this PR — 2026-08-29: applied-date paragraph + verification table appended to §7, resolving the forward reference the closing pointer now makes; extended to 10 rows on 2026-08-30 by phase-4 review F4 (`service_role`'s INSERT/SELECT grants on `public.jobs` — the precondition `SECURITY INVOKER` depends on — plus the INSERT column/type check). "In this PR" became factual with `fb51672` → **PR #198** (2026-08-30)
 
 ### Phase 5: Post-merge smoke + archive (follow-up PR)
 
