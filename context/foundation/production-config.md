@@ -123,6 +123,47 @@ Prepaid credit with auto-reload off is a **hard ceiling, and a stronger control 
 
 Treat it as defence in depth. The enforcing control is the daily cap itself — since S-16 (#191) a guarded database write, `public.admit_cloud_job`, holding a transaction-scoped advisory lock across count-and-insert; the handler's `countCloudJobsToday` check is a non-authoritative fast path (see `AGENTS.md`). The date it is applied to `luminaclean-prod` is recorded below (Phase 4, before this PR merges).
 
+**Applied to `luminaclean-prod` on 2026-08-29** (S-16 `atomic-cloud-daily-cap`, #191)
+via `npx supabase db push --linked`, **before** the implementing PR merges. Migration
+`20260828120000_atomic_cloud_daily_cap.sql`; prod migration history now 11/11 in parity
+with `supabase/migrations/`, recorded under the file's own version.
+
+Order matters: CI deploys the Worker and the Edge Function on merge to master but **not**
+migrations. The function is additive and inert until the new Worker calls it, so applying
+first is safe; merging first would 500 every cloud submission (the S-11 failure mode).
+
+Verification run immediately after apply (read-only, against prod):
+
+| Check                                                      | Result                                                                                                                               |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Function signature                                         | `admit_cloud_job(uuid,uuid,text,double precision,double precision,integer)`                                                          |
+| `prosecdef`                                                | `false` — SECURITY INVOKER, not DEFINER                                                                                              |
+| `proconfig`                                                | `search_path=""`                                                                                                                     |
+| EXECUTE — `PUBLIC`                                         | `false` (checked explicitly; `anon`/`authenticated` inherit from it)                                                                 |
+| EXECUTE — `anon`, `authenticated`                          | `false`, `false`                                                                                                                     |
+| EXECUTE — `service_role`                                   | `true`                                                                                                                               |
+| Raw ACL                                                    | `{postgres=X/postgres,service_role=X/postgres}` — no `PUBLIC` entry                                                                  |
+| Partial index `jobs_billable_created_at_idx`               | present; predicate `(status <> 'failed') OR (replicate_prediction_id IS NOT NULL)` — the complement of the count's exclusion         |
+| `service_role` on `public.jobs` (the INVOKER precondition) | INSERT `true`, SELECT `true`, `rolbypassrls = true`; `authenticated` INSERT `false`, `anon` INSERT `false`; RLS enabled on the table |
+| INSERT target columns present + typed                      | `id:uuid`, `user_id:uuid`, `status:USER-DEFINED`, `source_path:text`, `gamma:double precision`, `strength:double precision`          |
+
+Baseline before the push confirmed the function, its ACL, and the index were all absent,
+and that prod's `jobs` table carried every column the signature and predicate need.
+
+The last two rows matter because the function is `SECURITY INVOKER`: it can only write
+because `service_role` **independently** holds INSERT/SELECT on `public.jobs` — the
+reason `SECURITY DEFINER` was dropped in Phase 1. That grant is not implied by a
+successful `CREATE FUNCTION`, and this project has already been bitten by prod/local
+grant divergence (`20260804212000_explicit_service_role_grants_on_jobs.sql` exists
+because CLI 2.111+ stopped seeding those grants). plpgsql also compiles statement
+bodies lazily, so creation alone does not prove the INSERT resolves against prod's
+schema — hence the explicit column/type row. Nothing has yet **executed** the function
+in production; that is Phase 5's smoke.
+
+**Still outstanding (Phase 5, post-merge follow-up PR):** one real cloud job succeeding on
+production after the deploy, a `CLOUD_DAILY_CAP=0` rejection with the cap restored to `3`
+afterwards, and that smoke result recorded here.
+
 ---
 
 ## Credential inventory (names + location, NEVER values)

@@ -1018,12 +1018,12 @@ F4). All are accurate and low-risk, none were in §§1–6:
 
 #### Automated
 
-- [ ] 4.1 Verification queries return the function, `prosecdef`, grants (no `PUBLIC`), and index
+- [x] 4.1 Verification queries return the function, `prosecdef`, grants (no `PUBLIC`), and index — 2026-08-29: signature `admit_cloud_job(uuid,uuid,text,double precision,double precision,integer)`, `prosecdef=false`, `search_path=""`, EXECUTE false for `PUBLIC`/`anon`/`authenticated` and true for `service_role` (acl `{postgres=X/postgres,service_role=X/postgres}`), `jobs_billable_created_at_idx` present
 
 #### Manual
 
-- [ ] 4.2 Migration applied to `luminaclean-prod` and verified BEFORE merge
-- [ ] 4.3 Applied date + verification recorded in `production-config.md` §7 in this PR
+- [x] 4.2 Migration applied to `luminaclean-prod` and verified BEFORE merge — 2026-08-29: `npx supabase db push --linked` after a dry run showing exactly one pending migration; prod history 11/11 in parity, recorded as `20260828120000 / atomic_cloud_daily_cap`
+- [x] 4.3 Applied date + verification recorded in `production-config.md` §7 in this PR — 2026-08-29: applied-date paragraph + 8-row verification table appended to §7, resolving the forward reference the closing pointer now makes
 
 ### Phase 5: Post-merge smoke + archive (follow-up PR)
 

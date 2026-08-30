@@ -3,7 +3,7 @@ change_id: atomic-cloud-daily-cap
 title: Resolve the global Cloud AI daily-cap contract and operational backstop
 status: impl_reviewed
 created: 2026-08-26
-updated: 2026-08-29
+updated: 2026-08-30
 archived_at: null
 issue: 191
 ---
@@ -22,11 +22,17 @@ advisory lock across count-and-insert, with the cap value still supplied from
 DEFINER` until `reviews/impl-review-phase-1.md` F1; see `plan.md` § Review Response
 — Phase 1 for the measured reason it is not.
 
-**No PRODUCTION schema change has been applied yet.** The migration itself exists
-and was created and verified locally in Phase 1
-(`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`); Phase 4 is where
-it is applied to `luminaclean-prod` and verified, deliberately before the
-implementing PR merges.
+**The PRODUCTION schema change was applied on 2026-08-29, pre-merge.**
+`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql` was created and
+verified locally in Phase 1, then applied to `luminaclean-prod` in Phase 4 via
+`npx supabase db push --linked` and verified there — deliberately **before** the
+implementing PR merges, because CI deploys the Worker and Edge Function on merge
+but not migrations. The function is additive and inert until the new Worker calls
+it. Evidence: `context/foundation/production-config.md` §7.
+_(Until 2026-08-29 this paragraph read "No PRODUCTION schema change has been
+applied yet"; the phase-3 F2 triage cited it as the ground truth for keeping §7's
+wording prod-neutral. That reasoning was correct on its date — the premise has
+since changed.)_
 
 **Phase 2 note (2026-08-29):** the admission path is wired — `createPhotoJob`
 now calls the RPC and returns `null` on a decline, which the route maps onto the
@@ -62,4 +68,19 @@ done, no archive file touched, #191 still open). The critical finding is F1:
 and its new describe block — despite the plan explicitly requiring those refs be
 re-derived. F2/F3 are gaps in the plan's own file list (`production-config.md`
 and the upstream `prd.md` / `shape-notes.md` still carry claims this phase
-disproved elsewhere). Findings are untriaged.
+disproved elsewhere). **All seven triaged and fixed in `e868bcd`** (2026-08-29);
+none skipped, accepted-as-risk, or dismissed. Five were fixed differently than the
+report proposed — in each case the report's own fix would have introduced a
+second-order error — and two of the report's own claims were corrected in the
+process. See the report's `## Triage outcome` section.
+
+**Phase 4 note (2026-08-29):** the pre-merge production gate is closed. A dry run
+confirmed exactly one pending migration, then `npx supabase db push --linked`
+applied `20260828120000` to `luminaclean-prod`; prod migration history is 11/11 in
+parity with `supabase/migrations/`, recorded under the file's own version. The 4.1
+verification reproduced every designed property against prod — `prosecdef = false`,
+`search_path = ""`, EXECUTE false for `PUBLIC`/`anon`/`authenticated` and true for
+`service_role` (acl `{postgres=X/postgres,service_role=X/postgres}`), and the
+partial index `jobs_billable_created_at_idx`. Applied date + verification recorded
+in `production-config.md` §7. Phase 5 (post-merge smoke + archive) is outstanding
+and cannot run until CI deploys the Worker.
