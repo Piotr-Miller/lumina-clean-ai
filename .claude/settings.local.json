@@ -215,7 +215,8 @@
       "Bash(chcon -t container_file_t supabase)",
       "Bash(podman volume *)",
       "Bash(echo \"exit=$?\")",
-      "Bash(podman ps *)"
+      "Bash(podman ps *)",
+      "Bash(kill 179577)"
     ],
     "deny": [
       "Bash(rm -rf *)"
