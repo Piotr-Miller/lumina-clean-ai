@@ -25,17 +25,17 @@ Phase 4's claims are claims about production, so they were re-run against
 `luminaclean-prod` (`tebdkqpgjjypdethpezo`) rather than read from the record.
 Every recorded value reproduced:
 
-| Check                            | Recorded in §7                                       | Re-observed                                                 |
-| -------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------- |
-| Function + signature             | `admit_cloud_job(uuid,uuid,text,float8,float8,int4)` | matches                                                     |
-| `prosecdef`                      | `false`                                              | `false`                                                     |
-| `proconfig`                      | `search_path=""`                                     | `search_path=""`                                            |
-| EXECUTE — `PUBLIC`               | `false`                                              | `false`                                                     |
-| EXECUTE — `anon`/`authenticated` | `false` / `false`                                    | `false` / `false`                                           |
-| EXECUTE — `service_role`         | `true`                                               | `true`                                                      |
-| Raw ACL                          | `{postgres=X/postgres,service_role=X/postgres}`      | matches — no `PUBLIC` entry                                 |
-| `jobs_billable_created_at_idx`   | present, billable predicate                          | present, `(status <> 'failed') OR (prediction_id NOT NULL)` |
-| Migration history                | 11/11 parity                                         | 11 prod migrations, 11 files, names match 1:1               |
+| Check                            | Recorded in §7                                       | Re-observed                                                           |
+| -------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------- |
+| Function + signature             | `admit_cloud_job(uuid,uuid,text,float8,float8,int4)` | matches                                                               |
+| `prosecdef`                      | `false`                                              | `false`                                                               |
+| `proconfig`                      | `search_path=""`                                     | `search_path=""`                                                      |
+| EXECUTE — `PUBLIC`               | `false`                                              | `false`                                                               |
+| EXECUTE — `anon`/`authenticated` | `false` / `false`                                    | `false` / `false`                                                     |
+| EXECUTE — `service_role`         | `true`                                               | `true`                                                                |
+| Raw ACL                          | `{postgres=X/postgres,service_role=X/postgres}`      | matches — no `PUBLIC` entry                                           |
+| `jobs_billable_created_at_idx`   | present, billable predicate                          | present, `(status <> 'failed') OR (replicate_prediction_id NOT NULL)` |
+| Migration history                | 11/11 parity                                         | 11 prod migrations, 11 files, names match 1:1                         |
 
 Beyond the recorded list:
 

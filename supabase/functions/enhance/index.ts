@@ -148,14 +148,17 @@ function buildAdminClient() {
 // callback. Prefer an explicit override; otherwise derive from the auto-injected
 // SUPABASE_URL.
 //
-// ⚠️ The derived fallback is NOT reliable in the hosted Edge runtime: there the
-// injected SUPABASE_URL is not the public https URL, so the derived callback is
-// not https and /start silently drops the webhook — every prod prediction was
-// created webhook-less at S-08/S-09 flip-ON until EDGE_FUNCTION_URL was set
+// ⚠️ The derived fallback is NOT dependable in the hosted Edge runtime. At
+// S-08/S-09 flip-ON the injected SUPABASE_URL was not the public https URL, so
+// the derived callback was not https and /start silently dropped the webhook —
+// every prod prediction was created webhook-less until EDGE_FUNCTION_URL was set
 // explicitly. This comment used to claim the derivation was "correct in prod";
-// production proved otherwise (lessons.md, and production-config.md marks
-// EDGE_FUNCTION_URL REQUIRED). Treat the fallback as a local-dev convenience
-// only — assertHttpsCallback below is what stops the silent stall.
+// production proved otherwise then (lessons.md; production-config.md marks
+// EDGE_FUNCTION_URL REQUIRED). On 2026-08-31 the derivation WAS observed
+// producing a valid https callback with the override absent — why it differs is
+// unknown, so treat the fallback as unverified per environment rather than as
+// either reliable or broken, keep the override set, and rely on
+// assertHttpsCallback below as the actual invariant.
 /**
  * Local/CI-only escape hatch, default OFF — the same shape as
  * E2E_ALLOWED_OUTPUT_ORIGIN, and it carries the same warning: **never set this
@@ -208,8 +211,12 @@ function enhanceFunctionBaseUrl(): string {
 // function paths ride the same tunnel rooted at the API port), avoiding a second
 // env var — and the `SUPABASE_*` prefix, which Edge Functions reserve. The
 // signed token is bound to the object PATH (not the host), so swapping the
-// origin is safe. In prod EDGE_FUNCTION_URL is unset and SUPABASE_URL is already
-// public, so this is a no-op.
+// origin is safe. In prod EDGE_FUNCTION_URL IS set (to the public function URL),
+// so the rewrite runs but is an identity: its origin already equals the signed
+// URL's. This comment previously claimed the secret was unset in prod, which
+// contradicted the block above and was wrong once it was set — see
+// production-config.md § Edge Function secrets, where it was found missing on
+// 2026-08-31 and re-set.
 function toPublicStorageUrl(signedUrl: string): string {
   const fnUrl = Deno.env.get("EDGE_FUNCTION_URL");
   if (!fnUrl) return signedUrl;

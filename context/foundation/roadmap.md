@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-07-10
+updated: 2026-08-31
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -44,7 +44,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-11 | bread-chroma-postpass             | (post-MVP quality) get cleaner shadow colors from Bread without sacrificing luminance detail                                              | S-04, S-07       | Post-MVP cloud enhancement quality                         | done                                                                  |
 | S-12 | adaptive-enhancement-parameters   | (post-MVP UX/quality) tune Local or Bread in a right-side panel, start from Auto recommendations, and override any slider manually        | S-01, S-04       | Post-MVP enhancement control; extends US-01, US-02         | done                                                                  |
 | S-15 | localization                      | (post-MVP i18n) switch the whole UI to one of 7 languages (EN + DE, PL, FR, ES, UKR, ZH), persisted; copy-only, engines unaffected        | S-01, S-12       | Post-MVP internationalization; extends US-01, US-02 UI     | ready                                                                 |
-| S-16 | atomic-cloud-daily-cap            | (post-MVP correctness) the global daily cap holds under simultaneous submissions — same message, now a hard invariant                     | S-05, S-07       | FR-014 (re-opens the S-05 obligation)                      | in progress                                                           |
+| S-16 | atomic-cloud-daily-cap            | (post-MVP correctness) the global daily cap holds under simultaneous submissions — same message, now a hard invariant                     | S-05, S-07       | FR-014 (re-opens the S-05 obligation)                      | done                                                                  |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
 
@@ -292,9 +292,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Sequencing:** the migration is applied to `luminaclean-prod` **before** the implementing PR merges. CI deploys the Worker and the Edge Function on merge to master but **not** migrations, and the new function is additive and inert until the new Worker calls it — so applying first is safe and merging first reproduces the S-11 failure mode (jobs migrations never `db push`ed → blocking production bug). The post-deploy production smoke and `/10x-archive` land in a follow-up PR.
 - **What it changes:** admission moves into one guarded database write, `public.admit_cloud_job` (`supabase/migrations/20260828120000_atomic_cloud_daily_cap.sql`) — a `SECURITY INVOKER` / `search_path = ''` plpgsql function, executable by `service_role` only, that takes a transaction-scoped advisory lock (`pg_advisory_xact_lock`) and then counts-and-inserts inside it. `createPhotoJob` calls it instead of `.insert()` and returns `null` on a decline, which the route maps onto the unchanged 429. A partial index on `created_at` with the billable predicate serves the now-critical-path count. The cap **value** stays in `CLOUD_DAILY_CAP`: the database owns atomicity, not policy.
 - **Explicitly not in scope:** per-user caps (still parked), moving the cap value into SQL, a counter table, and any change to the count predicate or the user-facing contract.
-- **Blockers:** the post-deploy production smoke (Phase 5) cannot run until the Worker carrying the RPC call is deployed. (The Phase 4 blocker — applying the migration to `luminaclean-prod` before the PR merges — was cleared 2026-08-29.)
+- **Blockers:** none. The Worker carrying the RPC call deployed with PR #198 on 2026-08-30, and the Phase 5 production smoke passed 2026-08-31 (two real cloud jobs plus a `CLOUD_DAILY_CAP=0` rejection — see `production-config.md` §7). What remains is bookkeeping: `/10x-archive` and closing #191. (The Phase 4 blocker — applying the migration to `luminaclean-prod` before the PR merged — was cleared 2026-08-29.)
 - **Risk:** Low-medium. Admission now serializes on a single advisory lock — unmeasurable at `cap = 3` and the observed traffic, and the shard (key per UTC day) is obvious if volume ever changes that. The real risk is ordering: rolling the database back without rolling the Worker back would 500 every cloud submission, so revert the code first, then the migration. A conditional `INSERT … WHERE (SELECT count(*) …) < cap` is **not** an acceptable simplification — it does not close the race under READ COMMITTED.
-- **Status:** in progress (planned, implementing; migration applied to `luminaclean-prod` 2026-08-29 pre-merge and verified — see `production-config.md` §7; Phase 5 post-merge smoke + archive outstanding)
+- **Status:** done (archived 2026-08-31 → `context/archive/2026-08-26-atomic-cloud-daily-cap/`. Issue #191.)
 
 ## Backlog Handoff
 
@@ -314,7 +314,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-11       | bread-chroma-postpass             | Bread chroma-denoise post-pass + pinned version resolution          | done                  | `phase:post-mvp`. Archived 2026-06-25 → `context/archive/2026-06-18-bread-chroma-postpass/`. Issue #51. PRs #70 (p1–4) + #74 (p5).                                                                                               |
 | S-12       | adaptive-enhancement-parameters   | Manual + Auto parameter panel for Local and Bread                   | done                  | `phase:post-mvp`. Archived 2026-07-01 → `context/archive/2026-06-18-adaptive-enhancement-parameters/`. Issue #52. PR #81.                                                                                                        |
 | S-15       | localization                      | UI localization: 7-language switcher (EN + DE, PL, FR, ES, UKR, ZH) | on hold               | `phase:post-mvp`. **Do not start** (user 2026-07-10). Strings already externalized (enhance-ui-refresh). Next: `/10x-new localization` → `/10x-research` → `/10x-plan`. Issue #96.                                               |
-| S-16       | atomic-cloud-daily-cap            | Make the global Cloud AI daily cap atomic (FR-014 hard invariant)   | in progress           | `phase:post-mvp`. Re-opens the FR-014 obligation #6 (S-05) closed on archive — the shipped cap was a non-atomic read-then-write. Planned + implementing (`context/changes/atomic-cloud-daily-cap/`). Issue #191.                 |
+| S-16       | atomic-cloud-daily-cap            | Make the global Cloud AI daily cap atomic (FR-014 hard invariant)   | done                  | `phase:post-mvp`. Archived 2026-08-31 → `context/archive/2026-08-26-atomic-cloud-daily-cap/`. Issue #191.                                                                                                                        |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 
@@ -369,6 +369,7 @@ Items that were once parked but have since been implemented or promoted to a sli
 
 ## Done
 
+- **S-16: a Cloud AI request that would exceed the global daily cap is rejected **no matter how many requests arrive simultaneously** — the user-facing behaviour (the same 429 and the same "try again tomorrow" copy) is unchanged, but the cap becomes a hard invariant instead of a best-effort check.** — Archived 2026-08-31 → `context/archive/2026-08-26-atomic-cloud-daily-cap/`. Lesson: —.
 - **F-01: (foundation) a private Supabase Storage bucket and a jobs/predictions table exist with per-user RLS, signed-upload capability, a 24-hour source-retention policy, and shared entity/DTO types in `src/types.ts`. Not user-visible on its own.** — Archived 2026-05-29 → `context/archive/2026-05-28-photo-jobs-data-and-storage/`. Lesson: —.
 - **S-01: an anonymous visitor can upload a photo (JPG/PNG), run the client-side Local engine (Canvas gamma correction + Gaussian blur), compare the result against the original with a before/after slider, and download it — entirely in the browser, no network round-trip after load.** — Archived 2026-05-29 → `context/archive/2026-05-28-local-engine-enhance-flow/`. Lesson: —.
 - **S-02: a visitor can create an account with email + password, sign in and out, and recover a forgotten password via an email-based reset flow.** — Archived 2026-05-30 → `context/archive/2026-05-29-account-access-and-password-reset/`. Lesson: —.

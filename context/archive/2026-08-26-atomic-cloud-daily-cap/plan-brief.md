@@ -44,11 +44,11 @@ contract is unchanged — same 429, same code, same message.
 | Pre-check                 | Kept, explicitly labelled non-authoritative                         | Preserves "rejected before any storage work"; the code must say which check is load-bearing.                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Plan   |
 | Race-loser semantics      | Identical 429 + `console.warn` **and** `captureWarning`             | The capture hook is a no-op locally and maps to Sentry in prod, so a capture-only call would be invisible on the very machine you debug on.                                                                                                                                                                                                                                                                                                                                                                                                           | Review |
 | Bad-cap handling          | Reject on null/negative `p_cap`; `int`/`min`/`max` on the env field | `count >= NULL` is NULL and a plpgsql `IF` would fall through to the insert — a fail-open in the one function that admits paid work.                                                                                                                                                                                                                                                                                                                                                                                                                  | Review |
-| Oracle                    | Three tests, three distinct claims                                  | The service fan-out is the atomicity oracle; the route fan-out is outcome-level only, because a later request can see the winner's row and 429 before reaching the gate.                                                                                                                                                                                                                                                                                                                                                                              | Review |
+| Oracle                    | Three tests, three distinct claims                                  | The **warmed direct-RPC fan-out** is the atomicity oracle; the service and route fan-outs are composition tests. The route one is outcome-level only, because a later request can see the winner's row and 429 before reaching the gate. (Corrected 2026-08-29: the plan originally expected the service fan-out to be the oracle; measured at only 7/10 detection against a lock-less control, so it was superseded — see `plan.md` § Implementation Note — Phase 2.)                                                                                | Review |
 | Prod migration ordering   | Apply + verify **before** merge                                     | CI deploys the Worker but not migrations; merging first would 500 every submission — the S-11 failure mode exactly.                                                                                                                                                                                                                                                                                                                                                                                                                                   | Plan   |
 | Post-merge evidence       | Follow-up PR carrying the smoke record **and** the archive          | The smoke cannot exist in the PR that ships the code; archiving there too means the change is stamped done only once its central claim is proven live.                                                                                                                                                                                                                                                                                                                                                                                                | Review |
 | Ledger                    | S-05 stays `done` + annotated; new **S-16** carries FR-014          | S-05's user-facing outcome genuinely shipped; reopening a `done` row would make the ledger's `done` column unreliable.                                                                                                                                                                                                                                                                                                                                                                                                                                | Plan   |
-| Done-ledger / issue close | Owned by `/10x-archive`, not by this plan                           | `AGENTS.md`'s archive extension already assigns them there, and #191 has no Final-mapping row to update yet anyway.                                                                                                                                                                                                                                                                                                                                                                                                                                   | Review |
+| Done-ledger / issue close | Owned by `/10x-archive`, not by this plan                           | `AGENTS.md`'s archive extension already assigns them there. (Superseded 2026-08-29: #191 **does** now have a Final-mapping row in `github-issues.md`, so the archive step updates it rather than creating it.)                                                                                                                                                                                                                                                                                                                                        | Review |
 | Archive supersession      | New `lessons.md` rule + explicit pointers from every live doc       | Archives are immutable; a `lessons.md` rule reaches future work automatically, an archive only reaches whoever lands on it.                                                                                                                                                                                                                                                                                                                                                                                                                           | Plan   |
 
 ## Scope
@@ -88,13 +88,13 @@ logic, no behavioural change.
 
 ## Phases at a Glance
 
-| Phase                                    | What it delivers                                                                  | Key risk                                                                   |
-| ---------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 1. The atomic admission primitive        | Migration + index + env constraint + predicate/denial tests; nothing calls it yet | A wrong SQL predicate silently changes who gets charged                    |
-| 2. Wire the path + concurrent oracle     | RPC wiring, both `scripts/` callers, test rewrites, the three concurrency claims  | 11 typechecked call sites and a nullable return; the insert-spy assertions |
-| 3. Correct the record                    | 8 passages across 6 live docs + `lessons.md` rule + roadmap S-16 + tracker row    | Missing a stale claim — a blanket grep passes while two files stay wrong   |
-| 4. Production migration (pre-merge gate) | Function live in prod, verified, evidence recorded in this PR                     | Merging before applying → 500 on every cloud submission (the S-11 failure) |
-| 5. Post-merge smoke + archive            | Live smoke recorded in §7; `/10x-archive` closes the ledger and #191              | Needs a follow-up PR; the change sits un-archived until the smoke runs     |
+| Phase                                    | What it delivers                                                                  | Key risk                                                                          |
+| ---------------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 1. The atomic admission primitive        | Migration + index + env constraint + predicate/denial tests; nothing calls it yet | A wrong SQL predicate silently changes who gets charged                           |
+| 2. Wire the path + concurrent oracle     | RPC wiring, both `scripts/` callers, test rewrites, the three concurrency claims  | 11 typechecked call sites and a nullable return; the insert-spy assertions        |
+| 3. Correct the record                    | 8 passages across 6 live docs + `lessons.md` rule + roadmap S-16 + tracker row    | Missing a stale claim — a blanket grep passes while two files stay wrong          |
+| 4. Production migration (pre-merge gate) | Function live in prod, verified, evidence recorded in this PR                     | Merging before applying → 500 on every cloud submission (the S-11 failure)        |
+| 5. Post-merge smoke + archive            | Live smoke recorded in §7; `/10x-archive` closes the ledger and #191              | Smoke passed 2026-08-31; the change sits un-archived until the follow-up PR lands |
 
 **Prerequisites:** Docker + local Supabase for the integration and E2E gates;
 Supabase access to `luminaclean-prod` and the ability to flip `CLOUD_DAILY_CAP` on
@@ -112,8 +112,10 @@ follow-up PR for phase 5.
   it first, so it is commented at the site.
 - The route-layer fan-out proves the **outcome**, not that all eight requests reached
   the gate: the fast-path count can reject a latecomer that never calls the RPC. The
-  service fan-out is what proves atomicity. Both are kept; the plan labels which is
-  which, so a future reader does not over-trust the route test.
+  **warmed direct-RPC fan-out** is what proves atomicity; the service fan-out proves
+  only composition — that `createPhotoJob` routes through the guarded write, not that
+  the eight contended. All three are kept; the plan labels which is which, so a future
+  reader does not over-trust the route or service test.
 - The service-role key can pass any `p_cap`. Not a new hole (that key can already
   insert directly), but the invariant is enforced against _callers_, not against a
   compromised server key.
@@ -123,8 +125,9 @@ follow-up PR for phase 5.
 
 ## Success Criteria (Summary)
 
-- 8 simultaneous service-layer admissions at `cap - 1` produce exactly one accepted
-  job and exactly one row.
+- 8 simultaneous **direct-RPC** admissions at `cap - 1` (after a connection-pool
+  warm-up) produce exactly one `true` and exactly one row — the atomicity oracle. The
+  service- and route-layer fan-outs repeat the shape as composition checks.
 - A cloud job still works end-to-end on production, and `CLOUD_DAILY_CAP=0` still
   rejects, after the function is live.
 - Searching the repository outside `context/archive/` finds no document claiming the

@@ -111,26 +111,26 @@ repo. They can be deleted manually at any time.
 
 ## Final mapping (roadmap item → issue)
 
-| Roadmap ID | Issue                                                              | Change ID                           | Status       | Labels                                               |
-| ---------- | ------------------------------------------------------------------ | ----------------------------------- | ------------ | ---------------------------------------------------- |
-| F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1)     | `photo-jobs-data-and-storage`       | ready        | `roadmap` `foundation` `status:ready`                |
-| S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2)     | `local-engine-enhance-flow`         | ready        | `roadmap` `slice` `status:ready`                     |
-| S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3)     | `account-access-and-password-reset` | ready        | `roadmap` `slice` `status:ready`                     |
-| S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4)     | `gated-cloud-upload`                | done         | `roadmap` `slice` `status:proposed`                  |
-| S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5)     | `cloud-ai-realtime-result`          | done         | `roadmap` `slice` `status:proposed` `north-star`     |
-| S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6)     | `cloud-daily-cap`                   | done         | `roadmap` `slice` `status:proposed`                  |
-| S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7)     | `account-session-ux`                | done         | `roadmap` `slice` `status:ready`                     |
-| S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)     | `production-deployment`             | done         | `roadmap` `slice` `status:ready`                     |
-| S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)     | `cloud-job-retention-cleanup`       | done         | `roadmap` `slice` `status:ready`                     |
-| S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12)   | `cloud-source-url-ttl-fix`          | done         | `roadmap` `slice` `status:ready`                     |
-| S-11       | [#51](https://github.com/Piotr-Miller/lumina-clean-ai/issues/51)   | `bread-chroma-postpass`             | done         | `roadmap` `slice` `status:done` `phase:post-mvp`     |
-| S-12       | [#52](https://github.com/Piotr-Miller/lumina-clean-ai/issues/52)   | `adaptive-enhancement-parameters`   | done         | `roadmap` `slice` `phase:post-mvp`                   |
-| S-13       | [#60](https://github.com/Piotr-Miller/lumina-clean-ai/issues/60)   | `premium-retinexformer-enhancement` | proposed     | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
-| S-14       | [#61](https://github.com/Piotr-Miller/lumina-clean-ai/issues/61)   | `premium-max-tier`                  | proposed     | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
-| S-15       | [#96](https://github.com/Piotr-Miller/lumina-clean-ai/issues/96)   | `localization`                      | ready        | `roadmap` `slice` `status:ready` `phase:post-mvp`    |
-| S-16       | [#191](https://github.com/Piotr-Miller/lumina-clean-ai/issues/191) | `atomic-cloud-daily-cap`            | implementing | `bug` `status:ready`                                 |
-| — (change) | [#182](https://github.com/Piotr-Miller/lumina-clean-ai/issues/182) | `developer-feedback`                | proposed     | `enhancement` `status:proposed` `phase:post-mvp`     |
-| — (change) | [#188](https://github.com/Piotr-Miller/lumina-clean-ai/issues/188) | `local-engine-ceiling`              | proposed     | `enhancement` `status:proposed` `phase:post-mvp`     |
+| Roadmap ID | Issue                                                              | Change ID                           | Status   | Labels                                               |
+| ---------- | ------------------------------------------------------------------ | ----------------------------------- | -------- | ---------------------------------------------------- |
+| F-01       | [#1](https://github.com/Piotr-Miller/lumina-clean-ai/issues/1)     | `photo-jobs-data-and-storage`       | ready    | `roadmap` `foundation` `status:ready`                |
+| S-01       | [#2](https://github.com/Piotr-Miller/lumina-clean-ai/issues/2)     | `local-engine-enhance-flow`         | ready    | `roadmap` `slice` `status:ready`                     |
+| S-02       | [#3](https://github.com/Piotr-Miller/lumina-clean-ai/issues/3)     | `account-access-and-password-reset` | ready    | `roadmap` `slice` `status:ready`                     |
+| S-03       | [#4](https://github.com/Piotr-Miller/lumina-clean-ai/issues/4)     | `gated-cloud-upload`                | done     | `roadmap` `slice` `status:proposed`                  |
+| S-04 ⭐    | [#5](https://github.com/Piotr-Miller/lumina-clean-ai/issues/5)     | `cloud-ai-realtime-result`          | done     | `roadmap` `slice` `status:proposed` `north-star`     |
+| S-05       | [#6](https://github.com/Piotr-Miller/lumina-clean-ai/issues/6)     | `cloud-daily-cap`                   | done     | `roadmap` `slice` `status:proposed`                  |
+| S-06       | [#7](https://github.com/Piotr-Miller/lumina-clean-ai/issues/7)     | `account-session-ux`                | done     | `roadmap` `slice` `status:ready`                     |
+| S-07       | [#8](https://github.com/Piotr-Miller/lumina-clean-ai/issues/8)     | `production-deployment`             | done     | `roadmap` `slice` `status:ready`                     |
+| S-08       | [#9](https://github.com/Piotr-Miller/lumina-clean-ai/issues/9)     | `cloud-job-retention-cleanup`       | done     | `roadmap` `slice` `status:ready`                     |
+| S-09       | [#12](https://github.com/Piotr-Miller/lumina-clean-ai/issues/12)   | `cloud-source-url-ttl-fix`          | done     | `roadmap` `slice` `status:ready`                     |
+| S-11       | [#51](https://github.com/Piotr-Miller/lumina-clean-ai/issues/51)   | `bread-chroma-postpass`             | done     | `roadmap` `slice` `status:done` `phase:post-mvp`     |
+| S-12       | [#52](https://github.com/Piotr-Miller/lumina-clean-ai/issues/52)   | `adaptive-enhancement-parameters`   | done     | `roadmap` `slice` `phase:post-mvp`                   |
+| S-13       | [#60](https://github.com/Piotr-Miller/lumina-clean-ai/issues/60)   | `premium-retinexformer-enhancement` | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
+| S-14       | [#61](https://github.com/Piotr-Miller/lumina-clean-ai/issues/61)   | `premium-max-tier`                  | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp` |
+| S-15       | [#96](https://github.com/Piotr-Miller/lumina-clean-ai/issues/96)   | `localization`                      | ready    | `roadmap` `slice` `status:ready` `phase:post-mvp`    |
+| S-16       | [#191](https://github.com/Piotr-Miller/lumina-clean-ai/issues/191) | `atomic-cloud-daily-cap`            | done     | `bug` `status:ready`                                 |
+| — (change) | [#182](https://github.com/Piotr-Miller/lumina-clean-ai/issues/182) | `developer-feedback`                | proposed | `enhancement` `status:proposed` `phase:post-mvp`     |
+| — (change) | [#188](https://github.com/Piotr-Miller/lumina-clean-ai/issues/188) | `local-engine-ceiling`              | proposed | `enhancement` `status:proposed` `phase:post-mvp`     |
 
 ⭐ = north star (validation milestone).
 
@@ -185,6 +185,7 @@ Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" n
 | 2026-08-26 | S-05 (re-opened obligation) | [#191](https://github.com/Piotr-Miller/lumina-clean-ai/issues/191) | opened for `atomic-cloud-daily-cap` — the global cap is a non-atomic read-then-write check. Contract resolved before opening: **FR-014 stands as a hard invariant**, so this re-opens the FR-014 obligation that #6 (S-05) closed on archive. Labelled `status:ready` — unlike #182/#188 nothing is blocked. Note: `roadmap.md:38` still shows S-05 `done` against FR-014                                                                                                                                                |
 | 2026-08-26 | — (chore)                   | [#192](https://github.com/Piotr-Miller/lumina-clean-ai/issues/192) | opened for `bread-unit-cost-verification` — verify the ≈ $0.0006/run Bread estimate that the roadmap's Monetization entry relies on and that carries its own unresolved "verify" annotation. Surfaced while closing #191's backstop question: prepaid + auto-reload-off makes `Credit remaining` a usable meter. NOT ready to plan: no change folder yet (`/10x-new`). Method warning recorded — measure forward, never back-derive from lifetime spend                                                                  |
 | 2026-08-29 | S-16                        | [#191](https://github.com/Piotr-Miller/lumina-clean-ai/issues/191) | registered in the Final-mapping table — the change was promoted to roadmap slice **S-16** `atomic-cloud-daily-cap` (slice table + body + Backlog Handoff row added the same day, all non-`done`). Status cell set to `implementing`: phases 1–3 landed, the production migration (phase 4) is a pre-merge gate and the smoke + archive (phase 5) a follow-up PR. The issue itself is untouched — `done`, the Backlog Handoff `done` flip, the `## Done` ledger entry, and the close comment all belong to `/10x-archive` |
+| 2026-08-31 | S-16                        | [#191](https://github.com/Piotr-Miller/lumina-clean-ai/issues/191) | archived → `context/archive/2026-08-26-atomic-cloud-daily-cap/`; roadmap S-16 Status → `done`, Backlog Handoff → `done`, `## Done` ledger entry added. Production smoke passed 2026-08-31 (two real cloud jobs + a `CLOUD_DAILY_CAP=0` rejection). Issue close pending operator confirmation                                                                                                                                                                                                                             |
 
 > The F-01/S-01/S-02 rows are recorded for completeness based on their archive dates; this log section was introduced with the S-03 archive (2026-05-31).
 
