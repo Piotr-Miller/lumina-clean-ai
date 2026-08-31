@@ -208,8 +208,12 @@ function enhanceFunctionBaseUrl(): string {
 // function paths ride the same tunnel rooted at the API port), avoiding a second
 // env var — and the `SUPABASE_*` prefix, which Edge Functions reserve. The
 // signed token is bound to the object PATH (not the host), so swapping the
-// origin is safe. In prod EDGE_FUNCTION_URL is unset and SUPABASE_URL is already
-// public, so this is a no-op.
+// origin is safe. In prod EDGE_FUNCTION_URL IS set (to the public function URL),
+// so the rewrite runs but is an identity: its origin already equals the signed
+// URL's. This comment previously claimed the secret was unset in prod, which
+// contradicted the block above and was wrong once it was set — see
+// production-config.md § Edge Function secrets, where it was found missing on
+// 2026-08-31 and re-set.
 function toPublicStorageUrl(signedUrl: string): string {
   const fnUrl = Deno.env.get("EDGE_FUNCTION_URL");
   if (!fnUrl) return signedUrl;

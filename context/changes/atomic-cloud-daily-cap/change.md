@@ -82,8 +82,9 @@ verification reproduced every designed property against prod — `prosecdef = fa
 `search_path = ""`, EXECUTE false for `PUBLIC`/`anon`/`authenticated` and true for
 `service_role` (acl `{postgres=X/postgres,service_role=X/postgres}`), and the
 partial index `jobs_billable_created_at_idx`. Applied date + verification recorded
-in `production-config.md` §7. Phase 5 (post-merge smoke + archive) is outstanding
-and cannot run until CI deploys the Worker.
+in `production-config.md` §7. PR #198 merged on 2026-08-30, and the master deploy
+completed successfully at 20:59:41Z. Phase 5 (post-deploy smoke + archive) remains
+outstanding and is now ready to run.
 
 **Support edits outside the Phase 3 file list (recorded 2026-08-30).** Raised by
 the advisory implementation review on PR #198 (P1, P2); recorded so the scope
