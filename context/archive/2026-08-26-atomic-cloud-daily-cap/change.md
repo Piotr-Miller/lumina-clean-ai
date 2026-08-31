@@ -1,10 +1,10 @@
 ---
 change_id: atomic-cloud-daily-cap
 title: Resolve the global Cloud AI daily-cap contract and operational backstop
-status: impl_reviewed
+status: archived
 created: 2026-08-26
 updated: 2026-08-31
-archived_at: null
+archived_at: 2026-08-31T13:40:57Z
 issue: 191
 ---
 
