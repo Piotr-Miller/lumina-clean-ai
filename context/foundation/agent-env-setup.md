@@ -40,11 +40,11 @@ file used to restate the number and went stale twice; see the note at the end of
 [`Piotr-Miller/10x-toolkit`](https://github.com/Piotr-Miller/10x-toolkit).** It holds every
 gitignored artifact — both skill trees, the prompts, the CLI manifest, and the full checker:
 
-| Absent after `git clone`                                                      | Restored by             |
-| ----------------------------------------------------------------------------- | ----------------------- |
-| `.claude/skills/10x-*/` and `.agents/skills/10x-*/` (course skills, per tree) | `node sync.mjs restore` |
-| `.claude/prompts/`, `.claude/.10x-cli-manifest.json`                          | the same restore        |
-| `scripts/local/` — the **full** sync checker, its config and its tests        | the same restore        |
+| Absent after `git clone`                                                          | Restored by             |
+| --------------------------------------------------------------------------------- | ----------------------- |
+| every non-allowlisted skill directory in **both** trees (the course skills)       | `node sync.mjs restore` |
+| `.claude/prompts/`, `.claude/config-templates/`, `.claude/.10x-cli-manifest.json` | the same restore        |
+| `scripts/local/` — the **full** sync checker, its config and its tests            | the same restore        |
 
 **Restore from the mirror; do not rebuild from the CLI.** A `10x sync --all` can re-fetch the
 course skills, but it is _strictly worse_ as a restore path, for three reasons:
@@ -213,7 +213,7 @@ Use `10x get` for targeted work — a single lesson, artifact, or type:
 > suppresses it, but that choice persists in the CLI's `config.json` and affects later runs, so
 > prefer moving the block over silently opting out.
 
-✅ `ls .claude/skills/` shows the new `10x-*` skills; then §3 (incl. §3.5).
+✅ `ls .claude/skills/` shows the new skills — **check for names without a `10x-` prefix too**, as m5l4 shipped three; then §3 (incl. §3.5). A `git status` that stays clean confirms `.gitignore`'s allowlist already covers whatever arrived.
 
 ## 3. The re-sync procedure
 
@@ -336,9 +336,15 @@ Other machines then pick it up with `git pull && node sync.mjs restore`.
 
 - Lesson artifacts are **managed by the CLI, not edited by hand**.
 - `.claude/skills/` is the source of truth; `.agents/skills/` is derived.
-- **Never commit** `10x-*` skills (other than `10x-impl-review-ci`), `.claude/prompts/`, the CLI
-  manifest, or `scripts/local/`. `.gitignore` enforces this, but a `git add -f` would defeat it.
-  After a restore, a clean `git status` is the proof this still holds.
+- **Never commit a skill that is not on the allowlist**, nor `.claude/prompts/`,
+  `.claude/config-templates/`, the CLI manifest, or `scripts/local/`. Publication is
+  **deny-by-default**: `.gitignore` ignores every skill directory and re-includes only the
+  eight tracked ones (the same set as `PUBLIC_SKILLS` in `scripts/check-skills-sync.ts` and in
+  the mirror's `sync.mjs`). ⚠️ **Do not think of this as "the `10x-*` skills".** That prefix was
+  the rule until 2026-09-01, and m5l4 walked straight past it: `pack-init`, `setup-cicd` and
+  `tf-registry` are course skills carrying no `10x-` prefix, so they sat untracked in this
+  public repo, one `git add -A` from publication (PR #207). `.gitignore` enforces the rule, but
+  a `git add -f` would defeat it. After a restore, a clean `git status` is the proof it holds.
 - **The mirror is the durable copy, not this workspace.** Anything gitignored here survives only
   because `10x-toolkit` has it. Snapshot after every fetch or hand-edit (§3.5).
 - The **upstream README is authoritative** for CLI install/usage:
