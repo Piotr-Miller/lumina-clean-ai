@@ -46,14 +46,39 @@ supabase/.temp/
 # 10x-Workflow course artifacts are LOCAL-ONLY in this public repo (course
 # rule: don't publish the workflow skills; m5l3 explicitly allowlists ONLY
 # 10x-impl-review-ci for public repos — it powers the public CI reviewer).
-# Restore locally with `10x get <lesson>` (see AGENTS.md). The CLI manifest
-# and fetched course prompts are local CLI state, likewise unpublished.
-.claude/skills/10x-*/
+# Restore locally from the private 10x-toolkit mirror (`node sync.mjs restore`;
+# see context/foundation/agent-env-setup.md §2.2). The CLI manifest, fetched
+# course prompts and config templates are local CLI state, likewise unpublished.
+#
+# DENY BY DEFAULT: every skill directory is unpublished unless allowlisted
+# below. This replaced a `10x-*` prefix pattern, which silently missed m5l4's
+# pack-init / setup-cicd / tf-registry — course skills that carry no 10x-
+# prefix and so sat untracked in a public repo, one `git add -A` from
+# publication. A prefix cannot express "course content"; only an allowlist of
+# what is deliberately public can. Keep this list in lockstep with
+# PUBLIC_SKILLS in scripts/check-skills-sync.ts and in the mirror's sync.mjs —
+# the three describe one set. Adding a skill here publishes it: be deliberate.
+.claude/skills/*/
 !.claude/skills/10x-impl-review-ci/
-.agents/skills/10x-*/
+!.claude/skills/code-review/
+!.claude/skills/documentation/
+!.claude/skills/gauntlet-loop/
+!.claude/skills/learning/
+!.claude/skills/run-local-stack/
+!.claude/skills/skill-optimizer/
+!.claude/skills/typescript-magician/
+.agents/skills/*/
 !.agents/skills/10x-impl-review-ci/
+!.agents/skills/code-review/
+!.agents/skills/documentation/
+!.agents/skills/gauntlet-loop/
+!.agents/skills/learning/
+!.agents/skills/run-local-stack/
+!.agents/skills/skill-optimizer/
+!.agents/skills/typescript-magician/
 .claude/prompts/
 .claude/.10x-cli-manifest.json
+.claude/config-templates/
 # The full course-workflow sync checker embeds course-skill content in its
 # adaptation allowlists — local-only, next to the skills it validates.
 scripts/local/
