@@ -1004,8 +1004,8 @@ grep is only the completeness backstop:
 - `scripts/check-skills-sync.ts` — `PUBLIC_SKILLS` narrowed to two (3 hits); file stays (F3).
 - `packages/code-reviewer/src/prompts.ts:147, :176`, `prompts.test.ts:262, :300`,
   `schemas.ts:325` — pinned per §3 above.
-- `context/foundation/github-issues.md` — **append** a row to `## Status updates
-    (post-creation)`; do not edit the `#209` creation entry at `:162`.
+- `context/foundation/github-issues.md` — **append** a row to the post-creation
+  `## Status updates` section; do not edit the `#209` creation entry at `:162`.
 - `context/team/*` — **no edits**. `mom-test-validation.md:19, 69` record an incident and an
   interview question; they are evidence of what happened, not instructions.
   `opportunity-map.md` has no hits. Same rule as `context/archive/`.
