@@ -1,9 +1,9 @@
 ---
 change_id: github-packages-skill-distribution
 title: Dystrybucja skilli przez GitHub Packages i jawny CLI sync
-status: preparing
+status: plan_reviewed
 created: 2026-09-02
-updated: 2026-09-02
+updated: 2026-09-03
 archived_at: null
 ---
 
