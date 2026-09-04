@@ -1161,7 +1161,7 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Manual
 
-- [ ] 2.5 Maintainer accepts command help and representative safe diagnostics
+- [x] 2.5 Maintainer accepts command help and representative safe diagnostics — Piotr-Miller/ai-toolkit@3c3171d
 
 ### Phase 3: Build Deterministic Managed and Recovery Payloads
 
