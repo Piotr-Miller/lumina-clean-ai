@@ -7,8 +7,8 @@ repository: Piotr-Miller/lumina-clean-ai
 topic: "GitHub Packages + explicit CLI skill distribution and safe legacy cleanup"
 tags: [research, codebase, github-packages, agent-skills, cli, migration]
 status: complete
-last_updated: 2026-09-02
-last_updated_by: Codex
+last_updated: 2026-09-04
+last_updated_by: Claude Code
 ---
 
 # Research: GitHub Packages + explicit CLI skill distribution and safe legacy cleanup
@@ -79,6 +79,26 @@ Publishing should happen from the private package repository using that reposito
 Do **not** grant this public LuminaClean AI repository Actions access to the private package and do not make the package a dependency of its build. GitHub warns that forks can gain workflow access to a private package when a public repository is granted Actions access. Skills are developer tooling, not an application runtime dependency, so there is no reason to put this credential boundary in public CI.
 
 The current GitHub CLI token cannot list npm packages (`read:packages` is absent and the API returned HTTP 403), so package-name availability and existing package access must be verified before implementation.
+
+#### Local registry authentication, as configured and verified
+
+The consumer-side configuration was set up and verified on 2026-09-04 (Fedora, Node v24.19.0, npm 11.17.0). It is two lines in the **user-level** `~/.npmrc` — npm's `userconfig`, confirmed via `npm config get userconfig` — and deliberately not a project-level `.npmrc`, which would place private-registry configuration inside a repository that must stay free of this dependency:
+
+```ini
+@piotr-miller:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=<classic PAT with read:packages>
+```
+
+The token must be a **classic** PAT (`ghp_` prefix); the GitHub CLI's own OAuth token (`gho_`) carries `gist, read:org, repo, workflow` and cannot read packages, which is the HTTP 403 recorded in the paragraph above. npm expands `${VAR}` in `.npmrc` at read time, so `_authToken=${GITHUB_PACKAGES_TOKEN}` keeps the secret out of the file entirely; whichever form is used, the file holds credentials and must be mode `600`.
+
+**`repo` is not needed to read a private package, and should not be granted.** A `read:packages`-only token was verified to authenticate against the registry (`npm whoami --registry=https://npm.pkg.github.com` returned the owner account) while being unable to reach private repositories at all: `GET /repos/Piotr-Miller/10x-toolkit` returned 404 where the `repo`-scoped CLI token returned 200, and `GET /user/repos?visibility=private` returned an empty list. This matters because the token sits in plaintext at rest, so least privilege is the difference between a leaked package-read and a leaked write credential for every repository the owner has.
+
+Two verification gotchas are worth recording, because both can be mistaken for a broken configuration:
+
+- **`npm config get //npm.pkg.github.com/:_authToken` always fails** with "option is protected, and cannot be retrieved in this way". Auth values cannot be read back, so neither the token nor a `${VAR}` expansion can be confirmed locally — the only real check is an authenticated registry call such as `npm whoami --registry=...`. Scopes are read separately, from the `x-oauth-scopes` response header on `https://api.github.com/user`.
+- **`GET /user/repos` returns 200 even with `read:packages` alone**, listing public repositories only. It is not evidence of residual `repo` access; the private-visibility probes above are the discriminating test.
+
+Until the package is first published, `npm exec --package=@piotr-miller/ai-toolkit@1.0.0` returns 404. With the configuration above verified, that 404 is the absence of the package, not a configuration or credential fault.
 
 ### Assessment of the additional model recommendation
 
@@ -388,7 +408,7 @@ These questions must be answered before `/10x-plan` can produce an implementatio
 4. What is the long-term course refresh path: official `10x sync --all` followed by deterministic overlay generation, or indefinite mirror restore? Recommendation: prove official reconstruction before retiring the mirror.
 5. Which of the eight public vendored skills should eventually move to package ownership? Recommendation: none in v1; migrate them one at a time after moving their CI contracts.
 6. What rollback window is acceptable? Recommendation: one successful upgrade cycle after initial canary, with a tagged mirror and pinned previous package version.
-7. Is the proposed package name available and can the maintainer token be granted `read:packages`? Current credentials cannot verify this.
+7. Is the proposed package name available? **Partially resolved 2026-09-04**: the maintainer token half is settled — a classic PAT scoped to `read:packages` alone is configured in `~/.npmrc` and authenticates against `npm.pkg.github.com` (see "Local registry authentication" above). Name availability remains unverified and can only be settled by attempting the first publish.
 
 ## Decision Gate
 
