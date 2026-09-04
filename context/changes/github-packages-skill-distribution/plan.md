@@ -284,9 +284,20 @@ delivered):
 Only the `pure local delta` class yields an overlay; record its expected base hash. The `ambiguous`
 class is a hard gate: it must be empty, or each member is explicitly resolved (re-fetch the old base
 bytes, or reviewed hunk-by-hunk) and the resolution recorded in `inventory/upstream-snapshot.json`.
-Today it is provably empty (nothing upstream has advanced past the manifest), so every derived
-overlay is a local delta by construction. Coverage caveat: the manifest hashes skills and prompts;
-the five config templates are declared but unhashed and fall to manual review. A file absent from
+Coverage caveat, measured 2026-09-04 (`inventory/upstream-snapshot.json`, stage 1): the manifest is
+a partial baseline, not a complete one. It fingerprints 44 of the 59 declared skill files and all 30
+prompts — 74 paths, every one still byte-identical to what `10x get` delivered. It fingerprints
+**nothing else**: 15 declared skill files and the 5 config templates carry no hash, 10 files sit on
+disk undeclared by their skill's entry, and 9 skill directories are outside the manifest entirely.
+So the ambiguous class is provably empty **over the 74 hashed paths** and undecidable over the rest.
+
+That gap is not evenly distributed, which is the part that matters: the two files the local checker
+marks as carrying local extensions — `10x-archive/SKILL.md` and `10x-impl-review/SKILL.md`
+(`scripts/local/lib/skills-sync-config.ts` `EXTENDED_SKILLS`) — are both in the unhashed 15, as is
+`10x-impl-review/SKILL.user.md` in `MANUAL_PARITY_FILES`. The only known local deltas are precisely
+the files the partition has no base for. Derivation therefore treats that checker config —
+`extendedSkills`, `manualParityFiles`, `adaptedLines`, `acceptedLocalHashes` — as the authoritative
+extension record and the manifest arithmetic as corroboration, never the reverse. A file absent from
 the manifest classifies as standalone or excluded; it never silently makes the whole workspace file
 an overlay. The package repository commit, not the workstation, becomes the authoritative source.
 Record the upstream manifest hash for the complete snapshot.
