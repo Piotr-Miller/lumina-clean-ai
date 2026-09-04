@@ -216,7 +216,8 @@
       "Bash(podman volume *)",
       "Bash(echo \"exit=$?\")",
       "Bash(podman ps *)",
-      "Bash(kill 179577)"
+      "Bash(kill 179577)",
+      "Bash(gh auth *)"
     ],
     "deny": [
       "Bash(rm -rf *)"
