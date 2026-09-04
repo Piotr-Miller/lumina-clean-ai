@@ -98,7 +98,7 @@ Two verification gotchas are worth recording, because both can be mistaken for a
 - **`npm config get //npm.pkg.github.com/:_authToken` always fails** with "option is protected, and cannot be retrieved in this way". Auth values cannot be read back, so neither the token nor a `${VAR}` expansion can be confirmed locally — the only real check is an authenticated registry call such as `npm whoami --registry=...`. Scopes are read separately, from the `x-oauth-scopes` response header on `https://api.github.com/user`.
 - **`GET /user/repos` returns 200 even with `read:packages` alone**, listing public repositories only. It is not evidence of residual `repo` access; the private-visibility probes above are the discriminating test.
 
-Until the package is first published, `npm exec --package=@piotr-miller/ai-toolkit@1.0.0` returns 404. With the configuration above verified, that 404 is the absence of the package, not a configuration or credential fault.
+The name is confirmed free under this scope: the registry returns 404 for the package manifest and `GET /user/packages?package_type=npm` returns an empty list. Until the first publication, therefore, `npm exec --package=@piotr-miller/ai-toolkit@1.0.0` returns 404, and with the configuration above verified that 404 is the absence of the package rather than a configuration or credential fault.
 
 ### Assessment of the additional model recommendation
 
@@ -408,7 +408,7 @@ These questions must be answered before `/10x-plan` can produce an implementatio
 4. What is the long-term course refresh path: official `10x sync --all` followed by deterministic overlay generation, or indefinite mirror restore? Recommendation: prove official reconstruction before retiring the mirror.
 5. Which of the eight public vendored skills should eventually move to package ownership? Recommendation: none in v1; migrate them one at a time after moving their CI contracts.
 6. What rollback window is acceptable? Recommendation: one successful upgrade cycle after initial canary, with a tagged mirror and pinned previous package version.
-7. Is the proposed package name available? **Partially resolved 2026-09-04**: the maintainer token half is settled — a classic PAT scoped to `read:packages` alone is configured in `~/.npmrc` and authenticates against `npm.pkg.github.com` (see "Local registry authentication" above). Name availability remains unverified and can only be settled by attempting the first publish.
+7. ~~Is the proposed package name available and can the maintainer token be granted `read:packages`?~~ **Resolved 2026-09-04.** Both preflight halves pass. The token half: a classic PAT scoped to `read:packages` alone authenticates against the registry (`npm whoami --registry=https://npm.pkg.github.com` returns the owner account). The name half: `GET https://npm.pkg.github.com/@piotr-miller%2fai-toolkit` returns 404 and `GET /user/packages?package_type=npm` returns an empty list, so the owner holds no npm package under this scope at all. This satisfies the Phase 1 §2 preflight. It is deliberately **not** recorded as proof that publication will succeed — the first `npm publish` remains the only definitive test of the name claim and of `packages: write`, and that is a risk carried into Phase 5, where the first publication is made under `rc` so a failure costs a discarded release candidate rather than the stable version. Phase 1 §2 is not complete: the private `Piotr-Miller/ai-toolkit` repository and `docs/bootstrap-auth.md` are still outstanding.
 
 ## Decision Gate
 
