@@ -6,9 +6,9 @@ Replace LuminaClean AI's mixed manual/mirror skill-distribution workflow with a 
 versioned `@piotr-miller/ai-toolkit` package delivered through GitHub Packages and invoked
 explicitly from a developer workstation. The package has two deliberately different channels:
 
-- **managed** — the six public skills Lumina did not author: `10x-impl-review-ci` plus the five
-  registry-sourced skills (`code-review`, `documentation`, `learning`, `skill-optimizer`,
-  `typescript-magician`); the package owns their installed paths and applies strict hash-based
+- **managed** — the five registry-sourced skills Lumina did not author (`code-review`,
+  `documentation`, `learning`, `skill-optimizer`, `typescript-magician`); the package owns their
+  installed paths and applies strict hash-based
   update, conflict, stale-file, and uninstall semantics. The two repo-authored skills
   (`gauntlet-loop`, `run-local-stack`) and their helpers stay git-tracked in Lumina as
   `consumer-owned` — they are authored, tested, and reviewed here and arrive with the clone;
@@ -38,9 +38,9 @@ last-installed hash, and `snapshot` replaces the mirror tree without an atomic s
 The research supports a private GitHub Package, but the user has deliberately widened v1 beyond
 the research's conservative payload recommendation:
 
-- the six non-repo-authored public skills enter the managed channel; `gauntlet-loop` and
-  `run-local-stack` stay tracked in Lumina as `consumer-owned`, so a skill edit never round-trips
-  through a private release;
+- the five registry-sourced skills enter the managed channel; `10x-impl-review-ci`,
+  `gauntlet-loop`, and `run-local-stack` stay tracked in Lumina as `consumer-owned`, so a skill edit
+  never round-trips through a private release;
 - all remaining course artifacts and approved reproducible tooling enter the recovery channel;
 - the package remains owner-only while recovery content is aboard;
 - access must be narrowed/stripped before any collaborator or repository is granted package access;
@@ -237,13 +237,17 @@ the scope-to-registry mapping and never a token.
 default every unclassified path to excluded.
 
 **Contract**: Every path is classified into exactly one of four channels: `managed`, `recovery`,
-`consumer-owned`, or `excluded`. Managed inventory contains the six non-repo-authored public skills
-only (`10x-impl-review-ci`, `code-review`, `documentation`, `learning`, `skill-optimizer`,
-`typescript-magician`) — no repo-owned skills or support files. Recovery inventory contains every
+`consumer-owned`, or `excluded`. Managed inventory contains the five registry-sourced skills
+only (`code-review`, `documentation`, `learning`, `skill-optimizer`, `typescript-magician`) — no
+repo-owned skills, no course-delivered skills, and no support files. `10x-impl-review-ci` is
+**`consumer-owned`, decided 2026-09-04**: the CLI manifest attributes it to lesson m5l3, so
+distributing it would open a repackaging channel for course content whose licence is unresolved,
+and its public presence in Lumina is a deliberate exception that public contributors already rely
+on. Keeping it is the smaller change. Recovery inventory contains every
 remaining approved course artifact, prompt, config template, 10x manifest, and local checker file.
 `consumer-owned` paths are never distributed by either channel: the repo-authored skill trees
 `gauntlet-loop` and `run-local-stack` in both `.claude/skills/` and `.agents/skills/` with their
-test `tests/gauntlet-loop-skill.test.ts`; `.codex/**` (Lumina-owned public Codex config — an MCP
+test `tests/gauntlet-loop-skill.test.ts`; the course-delivered `10x-impl-review-ci` in both trees; `.codex/**` (Lumina-owned public Codex config — an MCP
 entry, lint/test hooks, a generated `environment.toml` — with no course-privacy claim); and the
 gauntlet helpers `scripts/gauntlet-stage.ts` + `scripts/lib/gauntlet-staging.ts` (whose only lint,
 type, and test coverage is Lumina's root graph via `tests/gauntlet-staging.test.ts`). All stay
@@ -483,7 +487,7 @@ package contents match the two-channel contract.
 
 **Files**: `content/managed/**`, `payload/{claude,codex}/managed/**`, `scripts/build-payload.*`
 
-**Intent**: Package the six non-repo-authored public skills as managed content.
+**Intent**: Package the five registry-sourced skills as managed content.
 
 **Contract**: The managed payload carries no `consumer-owned` path (Phase 1 §3): `gauntlet-loop`,
 `run-local-stack`, and their helpers are not packaged. Pre-adapted Claude and Codex outputs are
@@ -547,15 +551,16 @@ manifest hash against final packed bytes, and rejects missing, extra, or forbidd
 
 **Repositories**: `Piotr-Miller/ai-toolkit` and, later, `Piotr-Miller/lumina-clean-ai`
 
-**Files**: toolkit copies of the public parity tests, scoped to the six managed skills
+**Files**: toolkit copies of the public parity tests, scoped to the five managed skills
 
 **Intent**: Put source/payload correctness gates next to the new source of truth before Lumina's
 vendored copies are removed in Phase 8.
 
 **Contract**: Toolkit tests cover skill frontmatter/name agreement, declared Claude/Codex adaptation
-differences, and exact payload bytes for the six managed skills. Gauntlet skill contracts
+differences, and exact payload bytes for the five managed skills. Gauntlet skill contracts
 (`tests/gauntlet-loop-skill.test.ts`) and staging helper behavior (`tests/gauntlet-staging.test.ts`)
-are not migrated — both are `consumer-owned` and stay in Lumina's root graph. Lumina's other
+are not migrated — both are `consumer-owned` and stay in Lumina's root graph, as does
+`10x-impl-review-ci`, whose parity stays under Lumina's own `npm run check:skills`. Lumina's other
 existing tests remain in place until stable cutover.
 
 ### Success Criteria
@@ -625,7 +630,7 @@ the dist-tag after registry-byte validation; it never rebuilds or republishes th
 
 **Contract**: The gate proves the repository/package is private, owner-only, and grants no connected
 consumer-repository Actions access. If GitHub's API cannot prove the state, publication fails closed.
-The policy also requires license resolution for the six registry-sourced skills and removal of all
+The policy also requires license resolution for the five registry-sourced skills and removal of all
 course recovery bytes before any access expansion.
 
 #### 4. Scheduled access watchdog and remediation runbook
@@ -900,21 +905,21 @@ path, or private-package dependency enters tracked application files.
 
 **Repositories**: Lumina and `Piotr-Miller/ai-toolkit`
 
-**Files**: the six managed skill trees (both `.claude/skills/` and `.agents/skills/` copies),
+**Files**: the five managed skill trees (both `.claude/skills/` and `.agents/skills/` copies),
 `.gitignore` re-include list, `PUBLIC_SKILLS` in `scripts/check-skills-sync.ts`
 
 **Intent**: Ensure the package—not Git history plus package—becomes the active owner while keeping
 Lumina's credential-free CI green.
 
 **Contract**: Confirm every payload-bound test has landed and passed in the private package, then
-untrack the six managed skill trees from Lumina. The untrack set is exactly the git-tracked paths the
-distributed inventories claim (Phase 4 §5). `consumer-owned` paths stay tracked: the `gauntlet-loop`
-and `run-local-stack` trees, `tests/gauntlet-loop-skill.test.ts`, `.codex/**`,
+untrack the five managed skill trees from Lumina. The untrack set is exactly the git-tracked paths the
+distributed inventories claim (Phase 4 §5). `consumer-owned` paths stay tracked: the `gauntlet-loop`,
+`run-local-stack`, and `10x-impl-review-ci` trees, `tests/gauntlet-loop-skill.test.ts`, `.codex/**`,
 `scripts/gauntlet-stage.ts`, `scripts/lib/gauntlet-staging.ts`, and `tests/gauntlet-staging.test.ts`.
-Because those two skills still live in both consumer trees, the parity gate is **narrowed, not
+Because those three skills still live in both consumer trees, the parity gate is **narrowed, not
 removed**: `npm run check:skills`, `scripts/check-skills-sync.ts`, and
 `scripts/lib/public-skills-parity.ts` (+ tests) stay, with `PUBLIC_SKILLS` and the `.gitignore`
-re-include list shrunk from eight entries to two. The allowlist rule in `AGENTS.md` ("three places
+re-include list shrunk from eight entries to three. The allowlist rule in `AGENTS.md` ("three places
 state one set") keeps holding for the two. Keep application/runtime tests that do not depend on
 private payloads. Fresh public-clone CI must install no private package and
 must pass without those authoring artifacts; authenticated maintainers restore them only via setup.
@@ -934,7 +939,7 @@ license access-widening preconditions; watchdog/remediation; official-sync-plus-
 the mirror's cold status. Replace old `10x-toolkit restore`, manual copy/adapt, and count-status claims.
 `CLAUDE.md` remains the pointer to `AGENTS.md` unless an actual appended block is discovered.
 
-Three items in this rewrite need a decision, not a path edit:
+Two items in this rewrite need a path edit, and the third is now decided:
 
 - **`packages/code-reviewer` citations.** `src/prompts.ts:147` names
   `.claude/skills/10x-impl-review-ci/references/impl-review-instructions.md`, and `prompts.ts:176`,
@@ -942,17 +947,20 @@ Three items in this rewrite need a decision, not a path edit:
   hand-maintained transcription — `.github/workflows/review.yml` and `.github/actions/ai-review/`
   never read the skill tree, so public CI does not break — but after cutover the source lives in a
   private repo, versions independently, and is absent from a fresh public clone; line-number
-  citations across that boundary rot silently. Pin each citation to the released artifact
-  (`@piotr-miller/ai-toolkit@1.0.0`, `impl-review-instructions.md` §<heading>) and drop the line
-  numbers — headings survive edits, lines do not.
+  citations across that boundary rot silently. **The cross-repository half of this no longer
+  applies** — `10x-impl-review-ci` is `consumer-owned`, so the cited file stays in the public tree
+  next to its citation. The line numbers should still become headings: they rot on any edit to the
+  skill, which is what `prompts.test.ts` pins them against.
 - **`AGENTS.md:110` "powers the public CI reviewer".** Loose phrasing for the transcription above;
   rewrite it to say the reviewer's prompt is transcribed from the skill and the skill is not read at
   runtime.
-- **`10x-impl-review-ci` disposition.** `AGENTS.md` calls it "the single permitted public exception"
-  on the strength of that claim. Per F3 it is one of the six managed skills (auth-gated, both trees);
-  `AGENTS.md` and `.gitignore` must stop describing it as public-tracked. If the maintainer instead
-  wants it to stay public, it joins the `consumer-owned` class next to `gauntlet-loop` — decide once,
-  here, and reflect it in Phase 1 §3.
+- **`10x-impl-review-ci` disposition — decided 2026-09-04: `consumer-owned`.** The plan review's F3
+  read it as one of six managed skills, but the CLI manifest attributes it to lesson m5l3, so the
+  managed channel would have become a repackaging path for course content with an unresolved licence.
+  It stays public and git-tracked in both trees, keeps its `.gitignore` re-include and its
+  `PUBLIC_SKILLS` entry, and stays reachable to public contributors. `AGENTS.md` still needs the
+  accuracy fix in the bullet above, but its "single permitted public exception" framing survives
+  intact. Phase 1 §3 and Phase 8 §2 are updated to match.
 
 #### 4. Retain the local checker for one release window
 
