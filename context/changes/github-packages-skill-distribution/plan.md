@@ -1006,10 +1006,11 @@ grep is only the completeness backstop:
 - `context/foundation/agent-env-setup.md` — 17 mirror-specific hits; the restore runbook itself.
 - `AGENTS.md` — the allowlist bullet (`:110`: mirror restore, `sync.mjs snapshot`, "eight
   tracked", "three places state one set", "powers the public CI reviewer") and `:112` (restore via
-  mirror). Counts become two; the three-place rule keeps holding for the two.
+  mirror). Counts become three; the three-place rule keeps holding for the three. The "single
+  permitted public exception" framing for `10x-impl-review-ci` survives the cutover unchanged.
 - `.gitignore` — comment block `:49`, `:59` and the re-include lines `:62-69` / `:71-78`
-  (8 → 2 per tree: `gauntlet-loop`, `run-local-stack`).
-- `scripts/check-skills-sync.ts` — `PUBLIC_SKILLS` narrowed to two (3 hits); file stays (F3).
+  (8 → 3 per tree: `10x-impl-review-ci`, `gauntlet-loop`, `run-local-stack`).
+- `scripts/check-skills-sync.ts` — `PUBLIC_SKILLS` narrowed to three (3 hits); file stays (F3).
 - `packages/code-reviewer/src/prompts.ts:147, :176`, `prompts.test.ts:262, :300`,
   `schemas.ts:325` — pinned per §3 above.
 - `context/foundation/github-issues.md` — **append** a row to the post-creation
