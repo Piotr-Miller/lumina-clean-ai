@@ -1154,10 +1154,10 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Automated
 
-- [ ] 2.1 Package lint, format, typecheck, build, and unit suites pass on Node 24
-- [ ] 2.2 Negative safety fixtures prove rejected states perform zero writes
-- [ ] 2.3 Command tests enforce managed, recovery, status, and uninstall channel boundaries
-- [ ] 2.4 Dry-run, JSON output, and repeated setup are deterministic and idempotent
+- [x] 2.1 Package lint, format, typecheck, build, and unit suites pass on Node 24 — Piotr-Miller/ai-toolkit@5c747b5
+- [x] 2.2 Negative safety fixtures prove rejected states perform zero writes — Piotr-Miller/ai-toolkit@5c747b5
+- [x] 2.3 Command tests enforce managed, recovery, status, and uninstall channel boundaries — Piotr-Miller/ai-toolkit@5c747b5
+- [x] 2.4 Dry-run, JSON output, and repeated setup are deterministic and idempotent — Piotr-Miller/ai-toolkit@5c747b5
 
 #### Manual
 
