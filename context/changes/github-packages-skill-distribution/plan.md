@@ -1143,12 +1143,12 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 - [x] 1.1 Mirror verification confirms content parity with the pointer-only discrepancy recorded — Piotr-Miller/10x-toolkit@75240cb
 - [x] 1.2 Two-channel inventories account for every candidate path with exclusive ownership — Piotr-Miller/ai-toolkit@762c2ed
-- [ ] 1.3 Three-way partition has no unresolved ambiguous files; bases plus overlays reconstruct trees byte-for-byte
+- [x] 1.3 Three-way partition has no unresolved ambiguous files; bases plus overlays reconstruct trees byte-for-byte — Piotr-Miller/ai-toolkit@a1f475b
 - [x] 1.4 Package name and authenticated owner read preflight pass without repository credentials — 190e153
 
 #### Manual
 
-- [ ] 1.5 Maintainer approves discrepancy disposition, inventories, overlays, seed delta, and mirror tag
+- [x] 1.5 Maintainer approves discrepancy disposition, inventories, overlays, seed delta, and mirror tag — Piotr-Miller/10x-toolkit@freeze/2026-09-04-pre-ai-toolkit
 
 ### Phase 2: Build the Manifest-Safe Toolkit CLI
 
