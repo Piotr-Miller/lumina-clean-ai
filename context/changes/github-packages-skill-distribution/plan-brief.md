@@ -26,9 +26,9 @@ changes; public CI stays credential-free; the mirror becomes a cold read-only ro
 | Decision          | Choice                                                          | Why                                                                    | Source   |
 | ----------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------- | -------- |
 | Distribution      | Private `@piotr-miller/ai-toolkit` with explicit CLI            | Versioned bytes without lifecycle mutation                             | Research |
-| Channels          | Managed eight + full recovery scope in one package              | One fresh-machine setup while preserving distinct ownership semantics  | Plan     |
+| Channels          | Managed five + full recovery scope in one package               | One fresh-machine setup while preserving distinct ownership semantics  | Plan     |
 | Package access    | Owner-only while recovery exists                                | Course content must not reach new readers                              | Plan     |
-| Managed licensing | Non-blocking provenance in v1; hard gate before access widens   | The six skills are already public; private packaging adds no audience  | Plan     |
+| Managed licensing | Non-blocking provenance in v1; hard gate before access widens   | The five skills are already public; private packaging adds no audience | Plan     |
 | Refresh source    | Official `10x sync --all` + committed base-hash overlays        | Replaces trust in workstation snapshots with reproducible derivation   | Plan     |
 | Authentication    | Preconfigured user-level npm auth is required                   | The CLI cannot authenticate before npm downloads it                    | Plan     |
 | Uninstall         | Managed-only by default; recovery requires `--include-recovery` | Ordinary toolkit cleanup must not erase course data                    | Plan     |
@@ -73,7 +73,7 @@ and 1 supervised live-workspace transition cycle.
 ## Open Risks & Assumptions
 
 - Publication fails closed if GitHub's API cannot prove owner-only access.
-- Access expansion requires stripping recovery and resolving the six managed-skill licenses first.
+- Access expansion requires stripping recovery and resolving the five managed-skill licenses first.
 - The access watchdog detects manual drift after the fact; accepted exposure is one six-hour interval.
 
 ## Success Criteria (Summary)
