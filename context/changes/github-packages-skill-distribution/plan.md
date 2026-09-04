@@ -240,10 +240,11 @@ default every unclassified path to excluded.
 `consumer-owned`, or `excluded`. Managed inventory contains the five registry-sourced skills
 only (`code-review`, `documentation`, `learning`, `skill-optimizer`, `typescript-magician`) — no
 repo-owned skills, no course-delivered skills, and no support files. `10x-impl-review-ci` is
-**`consumer-owned`, decided 2026-09-04**: the CLI manifest attributes it to lesson m5l3, so
-distributing it would open a repackaging channel for course content whose licence is unresolved,
-and its public presence in Lumina is a deliberate exception that public contributors already rely
-on. Keeping it is the smaller change. Recovery inventory contains every
+**`consumer-owned`, decided 2026-09-04**: the CLI manifest attributes it to lesson m5l3, and m5l3's
+grant is scoped to publishing that one skill **inside a public repository** — it is not a grant to
+repackage it into a distributable artifact, which is a different act with a different audience. Its
+public presence in Lumina is therefore licensed and relied on by public contributors, while the
+managed channel would need a permission nobody has given. Keeping it is also the smaller change. Recovery inventory contains every
 remaining approved course artifact, prompt, config template, 10x manifest, and local checker file.
 `consumer-owned` paths are never distributed by either channel: the repo-authored skill trees
 `gauntlet-loop` and `run-local-stack` in both `.claude/skills/` and `.agents/skills/` with their
@@ -951,9 +952,12 @@ Two items in this rewrite need a path edit, and the third is now decided:
   applies** — `10x-impl-review-ci` is `consumer-owned`, so the cited file stays in the public tree
   next to its citation. The line numbers should still become headings: they rot on any edit to the
   skill, which is what `prompts.test.ts` pins them against.
-- **`AGENTS.md:110` "powers the public CI reviewer".** Loose phrasing for the transcription above;
-  rewrite it to say the reviewer's prompt is transcribed from the skill and the skill is not read at
-  runtime.
+- **"Powers the public CI reviewer" — in two files, not one.** Loose phrasing for the transcription
+  above; rewrite `AGENTS.md:110` **and** the identical claim in the `.gitignore` comment block
+  (`:46-48`) to say the reviewer's prompt is transcribed from the skill and the skill is not read at
+  runtime. That block also tells the reader to keep the allowlist in lockstep with the mirror's
+  `sync.mjs` as one of "three places"; after cutover the mirror is cold, so say which two places
+  remain live and that the third is frozen.
 - **`10x-impl-review-ci` disposition — decided 2026-09-04: `consumer-owned`.** The plan review's F3
   read it as one of six managed skills, but the CLI manifest attributes it to lesson m5l3, so the
   managed channel would have become a repackaging path for course content with an unresolved licence.
@@ -1127,7 +1131,7 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 #### Automated
 
 - [x] 1.1 Mirror verification confirms content parity with the pointer-only discrepancy recorded — Piotr-Miller/10x-toolkit@75240cb
-- [ ] 1.2 Two-channel inventories account for every candidate path with exclusive ownership
+- [x] 1.2 Two-channel inventories account for every candidate path with exclusive ownership — Piotr-Miller/ai-toolkit@762c2ed
 - [ ] 1.3 Three-way partition has no unresolved ambiguous files; bases plus overlays reconstruct trees byte-for-byte
 - [x] 1.4 Package name and authenticated owner read preflight pass without repository credentials — 190e153
 
