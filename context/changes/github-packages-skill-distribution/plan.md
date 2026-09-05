@@ -1167,11 +1167,11 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Automated
 
-- [ ] 3.1 Two clean payload builds produce identical trees, manifests, and tarball hashes
-- [ ] 3.2 Managed and recovery content sets are complete, exclusive, and ownership-safe
-- [ ] 3.3 Deny and secret scans reject seeded faults and find none in the real tarball
-- [ ] 3.4 Exact-byte, attribution, sentinel, and per-tool adaptation tests pass
-- [ ] 3.5 Packed artifact contains only explicitly allowlisted paths
+- [x] 3.1 Two clean payload builds produce identical trees, manifests, and tarball hashes — Piotr-Miller/ai-toolkit@9ad4691
+- [x] 3.2 Managed and recovery content sets are complete, exclusive, and ownership-safe — Piotr-Miller/ai-toolkit@9ad4691
+- [x] 3.3 Deny and secret scans reject seeded faults and find none in the real tarball — Piotr-Miller/ai-toolkit@9ad4691
+- [x] 3.4 Exact-byte, attribution, sentinel, and per-tool adaptation tests pass — Piotr-Miller/ai-toolkit@9ad4691
+- [x] 3.5 Packed artifact contains only explicitly allowlisted paths — Piotr-Miller/ai-toolkit@9ad4691
 
 #### Manual
 
