@@ -1181,12 +1181,12 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Automated
 
-- [ ] 4.1 Packed-artifact matrix passes on Ubuntu and Windows including negative cases
-- [ ] 4.2 Windows EOL, path-case, and atomic replacement contracts pass
-- [ ] 4.3 Publication is CI-only and fails closed when owner-only access cannot be proved
-- [ ] 4.4 Scheduled watchdog fixtures detect every access-policy drift class
-- [ ] 4.5 Lumina remains free of private dependencies, credentials, and package-read CI permissions
-- [ ] 4.6 Tracked paths claimed by distributed inventories equal Phase 8 §2's untrack set
+- [x] 4.1 Packed-artifact matrix passes on Ubuntu and Windows including negative cases — Piotr-Miller/ai-toolkit@c049e25
+- [x] 4.2 Windows EOL, path-case, and atomic replacement contracts pass — Piotr-Miller/ai-toolkit@c049e25
+- [x] 4.3 Publication is CI-only and fails closed when owner-only access cannot be proved — Piotr-Miller/ai-toolkit@c049e25
+- [x] 4.4 Scheduled watchdog fixtures detect every access-policy drift class — Piotr-Miller/ai-toolkit@c049e25
+- [x] 4.5 Lumina remains free of private dependencies, credentials, and package-read CI permissions — Piotr-Miller/ai-toolkit@c049e25
+- [x] 4.6 Tracked paths claimed by distributed inventories equal Phase 8 §2's untrack set — Piotr-Miller/ai-toolkit@c049e25
 
 #### Manual
 
