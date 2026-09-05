@@ -1175,7 +1175,7 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Manual
 
-- [ ] 3.6 Maintainer approves tarball inventory, provenance, recovery scope, and access warning
+- [x] 3.6 Maintainer approves tarball inventory, provenance, recovery scope, and access warning — Piotr-Miller/ai-toolkit@62f4c27
 
 ### Phase 4: Secure and Exercise the Release Pipeline
 
