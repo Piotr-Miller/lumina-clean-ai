@@ -700,6 +700,15 @@ private toolkit repository.
 Publish the first full owner-only artifact under `rc`, then exercise the real registry bytes on clean
 Linux and Windows Lumina clones. Nothing is promoted to `latest` in this phase.
 
+**The release candidate that satisfies these criteria is `1.0.0-rc.2`, not `1.0.0-rc.1`.** rc.1 was
+published and is inert: npm links the binary through a symlink, and the entry-point guard compared
+`process.argv[1]` against `import.meta.url` unresolved, so the CLI exited 0 having done nothing —
+the documented invocation did nothing at all. npm versions are immutable, so rc.1 cannot be
+repaired; it is retained as the rollback anchor it was published to be, never promoted and never
+deleted, and rc.2 carries the fix (`d023f85`) plus the symlinked-bin test that would have caught it.
+The criteria below are written against "rc.1" because the plan predates that discovery; their
+evidence is rc.2.
+
 ### Changes Required
 
 #### 1. Immutable release candidate
@@ -1196,14 +1205,14 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Automated
 
-- [ ] 5.1 Registry rc.1 bytes match the validated immutable artifact digests
-- [ ] 5.2 Full real-registry matrix passes on Ubuntu and Windows
-- [ ] 5.3 Fresh Lumina setup succeeds on both platforms with expected clean local state
-- [ ] 5.4 Rc evidence records artifact, upstream, access, platform, and retention proofs
+- [x] 5.1 Registry rc.1 bytes match the validated immutable artifact digests — Piotr-Miller/ai-toolkit@225b349, publish run 34045697269
+- [x] 5.2 Full real-registry matrix passes on Ubuntu and Windows — canary run 34046484605, 16/16 on both
+- [x] 5.3 Fresh Lumina setup succeeds on both platforms with expected clean local state — canary run 34046484605
+- [x] 5.4 Rc evidence records artifact, upstream, access, platform, and retention proofs — Piotr-Miller/ai-toolkit@39c4b1d, docs/releases/1.0.0-rc.2.md
 
 #### Manual
 
-- [ ] 5.5 Maintainer authorizes first publication and accepts the rc canary evidence
+- [x] 5.5 Maintainer authorizes first publication and accepts the rc canary evidence — Piotr-Miller/ai-toolkit@39c4b1d
 
 ### Phase 6: Apply the Seed Delta and Promote `1.0.0`
 
