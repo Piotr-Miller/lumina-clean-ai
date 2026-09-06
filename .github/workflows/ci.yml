@@ -19,6 +19,14 @@ on:
 # per ref. master is deliberately EXCLUDED from cancellation (cancel-in-progress
 # false on refs/heads/master) so a merge's deploy run is never killed mid-flight
 # by a follow-up push.
+# Declared explicitly rather than inherited. With no block here the run takes
+# the repository default, which on this account is `read` — and that default
+# includes `packages: read`, so every job would carry a token able to read the
+# owner's private packages for no reason. Jobs that need more ask for it
+# themselves.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
