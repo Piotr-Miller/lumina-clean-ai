@@ -44,8 +44,8 @@ the research's conservative payload recommendation:
 - all remaining course artifacts and approved reproducible tooling enter the recovery channel;
 - the package remains owner-only while recovery content is aboard;
 - access must be narrowed/stripped before any collaborator or repository is granted package access;
-- the existing mirror goes cold only after a real `1.0.0-rc.1 -> 1.0.0 -> 1.0.0-rc.1 -> 1.0.0`
-  transition succeeds.
+- the existing mirror goes cold only after a real `1.0.0-rc.3 -> 1.0.0 -> 1.0.0-rc.3 -> 1.0.0`
+  transition succeeds (the pair was written as rc.1 ↔ 1.0.0; Phase 6 records why it is rc.3).
 
 ### Key Discoveries
 
@@ -167,7 +167,7 @@ for v1.
 
 ### Older code reading newer state
 
-The seed pair keeps one supported manifest schema while proving that `1.0.0-rc.1` can safely read and
+The seed pair keeps one supported manifest schema while proving that `1.0.0-rc.3` can safely read and
 roll back state written by `1.0.0`. Unknown future schema versions are a separate negative case:
 older code must perform no writes and must preserve-and-report. Synthetic higher-schema fixtures
 exercise this on every release without making the real seed rollback impossible.
@@ -764,6 +764,27 @@ appropriate pre-cutover state.
 Create the pre-registered single logical payload delta, publish stable bytes under `rc`, re-run the
 registry gate, and promote those identical bytes to `latest` only after human approval.
 
+**The seed pair is `1.0.0-rc.3` ↔ `1.0.0`, not `1.0.0-rc.1` ↔ `1.0.0`.** Beyond rc.1 being inert
+(Phase 5 above), rc.1 and rc.2 both shipped an **incomplete recovery channel**: five targets
+`inventory/recovery.json` promised — the 10x CLI manifest and all four files of the retained local
+checker — were never in the payload, because the derivation enumerated the two skill trees,
+`.claude/prompts` and `.claude/config-templates`, and stopped there. Nothing caught it because every
+check compared the payload against itself; `check:promises` now compares the inventories' promise to
+the manifest's delivery and gates CI and publish, fail-closed. Delivering the 10x manifest then
+exposed a second defect — the overlap guard read a manifest **we** had written and refused all 147
+paths it claimed — so ownership is now decided by bytes, not by path. rc.1 and rc.2 stay published,
+immutable, never promoted and never deleted, but neither can serve as the anchor the transition cycle
+needs. rc.3 (`dcea4b5e…`) is the lower half of the pair; the criteria below name rc.1 because the plan
+predates all of this, and their evidence is rc.3.
+
+**`latest` is deliberately not promoted, so 6.3 and 6.5 stay open past this phase.** `1.0.0` is
+published under the `rc` dist-tag; its digest recomputed from the downloaded registry tarball equals
+the authorised `f4e4f4e2…`, and the canary is 16/16 on both hosts. Promotion is held until Phase 7 has
+proven adoption, upgrade, rollback and re-upgrade against real registry versions, because promoting
+first would make `latest` the default before anything had exercised a rollback off it. Phase 6
+therefore closes its build-and-verify half, and the promotion decision becomes the gate on entering
+Phase 8 — taken against these already-tested bytes, never a rebuild.
+
 ### Changes Required
 
 #### 1. One auditable recovery-checker advance
@@ -776,7 +797,7 @@ registry gate, and promote those identical bytes to `latest` only after human ap
 checker (recovery) learns to reject toolkit/10x manifest ownership overlap, and the managed
 provenance stamp (managed) moves to `1.0.0`.
 
-**Contract**: The checker advance is the sole logical payload change between rc.1 and stable, plus
+**Contract**: The checker advance is the sole logical payload change between rc.3 and stable, plus
 the managed provenance stamp it necessarily updates. Regenerate through the normal standalone/overlay
 path, never by editing `payload/` directly. Release notes and manifest record the source provenance,
 before/after hashes for both channels, affected targets, and the **observed checker output captured
@@ -794,7 +815,7 @@ stable until the seed-pair scope is reviewed again.
 
 **Contract**: Publish `1.0.0` initially under `rc`, run the complete Ubuntu/Windows registry matrix,
 then require human approval to move `latest` to that already-tested version. Exact version commands,
-not moving tags, are used in evidence. The manifest schema remains supported by rc.1 so real rollback
+not moving tags, are used in evidence. The manifest schema remains supported by rc.3 so real rollback
 can proceed; synthetic future-schema fixtures remain the guard for unsupported schema versions.
 
 ### Success Criteria
@@ -822,6 +843,12 @@ can proceed; synthetic future-schema fixtures remain the guard for unsupported s
 Exercise the transition on the real maintained workspace, including the pre-manifest adoption case and
 both managed and recovery local modifications. This evidence gates mirror retirement.
 
+**Every version named below is `1.0.0-rc.3`.** The phase was written before rc.1 turned out inert and
+before rc.1/rc.2 turned out to ship an incomplete recovery channel (Phase 6 above). A cycle anchored on
+either would install a CLI that cannot run, or a recovery channel missing the very checker whose
+advance is the delta under test. The Progress title 7.2 keeps its original wording — read "Rc.1" there
+as rc.3.
+
 ### Changes Required
 
 #### 1. Live-workspace adoption dry-run
@@ -832,7 +859,7 @@ both managed and recovery local modifications. This evidence gates mirror retire
 
 **Intent**: Classify existing targets before the package claims them.
 
-**Contract**: Run pinned rc.1 `setup --dry-run` with no toolkit manifest. Byte-identical targets are
+**Contract**: Run pinned rc.3 `setup --dry-run` with no toolkit manifest. Byte-identical targets are
 reported as adoptable; drifted or ambiguous targets are preserved and listed with channel, hashes,
 and next action. The report must show zero unintended overwrite/delete operations. A human approves
 the report before real setup.
@@ -847,12 +874,12 @@ the report before real setup.
 
 **Contract**: Execute:
 
-1. install/setup `1.0.0-rc.1`, verify status and both legacy checks;
+1. install/setup `1.0.0-rc.3`, verify status and both legacy checks;
 2. introduce one controlled local modification in a managed file and one recovery extension file;
 3. upgrade with `1.0.0`, verify the checker delta (recovery) and the provenance stamp (managed) both
    applied in place where safe and both modifications survived;
-4. roll back with `1.0.0-rc.1`, verify both deltas reverted where safe and modified files remained;
-5. restore rc.1 recovery over stable-written state, verifying preserve-and-report;
+4. roll back with `1.0.0-rc.3`, verify both deltas reverted where safe and modified files remained;
+5. restore rc.3 recovery over stable-written state, verifying preserve-and-report;
 6. re-upgrade with `1.0.0`, restore temporary test files deliberately, and verify idempotence/cleanliness.
 
 Every command uses an immutable exact version. Back up and hash controlled test targets before editing;
@@ -870,7 +897,7 @@ the phase ends with the intended source bytes restored, never with test markers 
 delta per channel with before/after hashes, per-step outcomes, preserved-conflict results, legacy
 checker results captured verbatim (the checker is removed in Phase 8 §4; the record must stand
 without it), and cleanup proof. A
-separate disposable fixture proves rc.1 encountering an unsupported future schema performs zero
+separate disposable fixture proves rc.3 encountering an unsupported future schema performs zero
 writes and reports preservation.
 
 ### Success Criteria
@@ -878,8 +905,8 @@ writes and reports preservation.
 #### Automated Verification
 
 - Live adoption dry-run classifies every existing target and proposes no blind overwrite or deletion.
-- After approved adoption, status and both legacy skill checkers pass at rc.1 and stable boundaries.
-- The exact `rc.1 -> stable -> rc.1 -> stable` cycle applies and reverts the recorded real delta in
+- After approved adoption, status and both legacy skill checkers pass at rc.3 and stable boundaries.
+- The exact `rc.3 -> stable -> rc.3 -> stable` cycle applies and reverts the recorded real delta in
   both channels while preserving controlled managed/recovery modifications.
 - Unsupported future-schema and newer-package-state checks preserve files and produce deterministic
   conflict/status output.
@@ -1122,9 +1149,12 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 - Course-bearing writes, GitHub repository/package creation, package publication, dist-tag promotion,
   package/repository access changes, mirror archiving, and issue closure are external actions with
   explicit human gates.
-- Existing workspace adoption starts with rc.1 dry-run and human review. Never synthesize an installed
+- Existing workspace adoption starts with rc.3 dry-run and human review. Never synthesize an installed
   manifest and then assume the files were package-owned.
-- Keep `1.0.0-rc.1` permanently available as the rollback anchor. Do not reuse or overwrite versions.
+- Keep every published version permanently available. `1.0.0-rc.3` is the operative rollback anchor;
+  rc.1 and rc.2 are retained as immutable history — never promoted, never deleted, and never used as
+  an anchor, since one is inert and both under-deliver the recovery channel. Do not reuse or overwrite
+  versions.
 - If Phase 7 fails, keep the mirror active, leave Lumina's old documented path intact, and fix forward
   in a new rc version. Do not promote or retire based on partial evidence.
 - If the access watchdog cannot prove owner-only state, stop publication/cutover; do not weaken the
@@ -1218,10 +1248,10 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Automated
 
-- [ ] 6.1 Release diff contains exactly the preregistered checker advance plus the managed provenance stamp
-- [ ] 6.2 Registry stable bytes pass the complete Ubuntu and Windows matrix under rc
+- [x] 6.1 Release diff contains exactly the preregistered checker advance plus the managed provenance stamp — Piotr-Miller/ai-toolkit@a93f894, docs/releases/1.0.0.md
+- [x] 6.2 Registry stable bytes pass the complete Ubuntu and Windows matrix under rc — canary run 34061201617, 16/16 on both hosts
 - [ ] 6.3 Latest promotion targets the already-tested immutable stable digest
-- [ ] 6.4 Release evidence records delta provenance, behavior, and before-after hashes
+- [x] 6.4 Release evidence records delta provenance, behavior, and before-after hashes — Piotr-Miller/ai-toolkit@a7935b0, docs/releases/1.0.0.md
 
 #### Manual
 
