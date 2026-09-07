@@ -1277,7 +1277,7 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Automated
 
-- [ ] 7.1 Live adoption dry-run classifies every target without blind mutation
+- [x] 7.1 Live adoption dry-run classifies every target without blind mutation — rc.3 dry-run 2026-09-07: 231 targets (224 adopt, 6 preserve, 1 install), 0 written, 0 removed, manifest absent before and after
 - [ ] 7.2 Rc.1 and stable boundaries pass status and both legacy checks after adoption
 - [ ] 7.3 Exact rc-stable-rc-stable cycle applies and reverts the real delta in both channels safely
 - [ ] 7.4 Managed and recovery local modifications survive every transition and restore
@@ -1286,7 +1286,7 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Manual
 
-- [ ] 7.7 Maintainer approves the live-workspace adoption diff before setup writes
+- [x] 7.7 Maintainer approves the live-workspace adoption diff before setup writes — maintainer approval 2026-09-07, conditioned on the checker prep to rc.3 bytes and the four upstream-advance targets taking official bytes
 - [ ] 7.8 Maintainer accepts transition evidence as sufficient for mirror retirement
 
 ### Phase 8: Cut Over Lumina and Make the Mirror Cold
