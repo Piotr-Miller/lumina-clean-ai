@@ -1215,7 +1215,7 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 - [x] 1.1 Mirror verification confirms content parity with the pointer-only discrepancy recorded — Piotr-Miller/10x-toolkit@75240cb
 - [x] 1.2 Two-channel inventories account for every candidate path with exclusive ownership — Piotr-Miller/ai-toolkit@762c2ed
 - [x] 1.3 Three-way partition has no unresolved ambiguous files; bases plus overlays reconstruct trees byte-for-byte — Piotr-Miller/ai-toolkit@a1f475b
-- [x] 1.4 Package name and authenticated owner read preflight pass without repository credentials — 72d500c
+- [x] 1.4 Package name and authenticated owner read preflight pass without repository credentials — 1181202
 
 #### Manual
 
