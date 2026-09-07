@@ -843,6 +843,22 @@ can proceed; synthetic future-schema fixtures remain the guard for unsupported s
 Exercise the transition on the real maintained workspace, including the pre-manifest adoption case and
 both managed and recovery local modifications. This evidence gates mirror retirement.
 
+**The legacy checker has one known finding, and it stays.** After the workspace was prepared, the
+public `check:skills` is green (36 pairs byte-compared) and the retained local checker reports exactly
+one: `signal 2 · unauthorized-edit` on `.claude/skills/10x-plan-review/SKILL.md`. Its cause is the
+approved upstream-advance migration — the 10x manifest (lesson m5l4, CLI 1.20.0, applied 2026-09-02)
+records the pre-migration bytes `32bf19d6f3c2…`, the workspace now carries the official
+`2561632344…`, and the checker has no way to know the official tree moved. `10x-plan` is silent
+because its manifest entry carries no `SKILL.md` hash; neither skill is in `EXTENDED_SKILLS`, so the
+inverted signal does not apply. The decision is to keep the bytes and document the finding rather than
+silence it: an accepted-local pin would drift `skills-sync-config.ts` away from the package that
+delivers it, and reverting would make the system under test look dirty instead of the one being
+retired. **Discipline at every boundary of the cycle: capture the checker's full output and confirm it
+is the same single file, the same hash pair, and the same cause. Any additional finding is explained
+before the cycle proceeds.** Consequently **7.2 cannot be ticked unconditionally** — its "both legacy
+checks pass" requirement stays unmet until the maintainer accepts this documented exception, and a
+tick without that acceptance would assert a green check that does not exist.
+
 **Every version named below is `1.0.0-rc.3`.** The phase was written before rc.1 turned out inert and
 before rc.1/rc.2 turned out to ship an incomplete recovery channel (Phase 6 above). A cycle anchored on
 either would install a CLI that cannot run, or a recovery channel missing the very checker whose
@@ -1286,7 +1302,7 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Manual
 
-- [x] 7.7 Maintainer approves the live-workspace adoption diff before setup writes — maintainer approval 2026-09-07, conditioned on the checker prep to rc.3 bytes and the four upstream-advance targets taking official bytes
+- [ ] 7.7 Maintainer approves the live-workspace adoption diff before setup writes
 - [ ] 7.8 Maintainer accepts transition evidence as sufficient for mirror retirement
 
 ### Phase 8: Cut Over Lumina and Make the Mirror Cold
