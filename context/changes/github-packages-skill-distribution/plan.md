@@ -872,7 +872,13 @@ the report before real setup.
 
 **Intent**: Prove the exact transition semantics on the environment the mirror previously restored.
 
-**Contract**: Execute:
+**Contract**: Before step 1, bring the delta's own files back to rc.3. The live workspace already
+holds the `1.0.0` bytes of the two recovery checker files (`24551246dc30`, `162079c060d2`) — the
+advance was authored here and imported into the package — so an adoption that preserves them leaves
+step 3 nothing to apply and step 4 nothing to revert, collapsing the recovery half of the proof onto
+the managed provenance stamp alone. That is the version-only exercise Phase 1 §4 pre-registered
+against. Back up and hash both, set them to rc.3's bytes (`1a05a9e959dd`, `c917849e371b`), and adopt
+only then; both are gitignored, so no tracked file moves. Then execute:
 
 1. install/setup `1.0.0-rc.3`, verify status and both legacy checks;
 2. introduce one controlled local modification in a managed file and one recovery extension file;
@@ -884,6 +890,16 @@ the report before real setup.
 
 Every command uses an immutable exact version. Back up and hash controlled test targets before editing;
 the phase ends with the intended source bytes restored, never with test markers left behind.
+
+**Cleanup is not migration**, and the two end differently. Temporary test markers are removed and
+their targets return to the exact bytes recorded before editing. The four `upstream-advance` targets —
+`10x-plan` and `10x-plan-review` in both trees — deliberately do not: `derivation-decisions.json`
+approved `official` for them on 2026-09-04, on the evidence that the official tree grew step 4.5 while
+the workspace-only lines are the older wording of the same passages, with those older bytes recoverable
+from the mirror rollback tag. They finish on the package's bytes, so their final hashes differ from the
+pre-phase baseline by design. The evidence record names which targets are in which set, with before and
+after hashes, so 7.6's cleanliness claim is read against the intended end state rather than against
+"nothing changed".
 
 #### 3. Cross-version and evidence record
 
