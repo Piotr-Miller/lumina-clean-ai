@@ -217,7 +217,14 @@
       "Bash(echo \"exit=$?\")",
       "Bash(podman ps *)",
       "Bash(kill 179577)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(python3 -)",
+      "Bash(git cherry-pick *)",
+      "Bash(gh api *)",
+      "Read(//home/piotrmiller/**)",
+      "Bash(python3 -c ' *)",
+      "Bash(npm dist-tag *)",
+      "Bash(npm config *)"
     ],
     "deny": [
       "Bash(rm -rf *)"
