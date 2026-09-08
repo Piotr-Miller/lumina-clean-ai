@@ -16,7 +16,7 @@ GitHub issue: [#209](https://github.com/Piotr-Miller/lumina-clean-ai/issues/209)
 
 ## Where this stands — 2026-09-08
 
-**The cutover happened.** Phases 1–8 are built and verified; 44 of 48 success
+**The cutover happened.** Phases 1–8 are built and verified; 45 of 48 success
 criteria are ticked. The package — not this repository's git history — is the
 active owner of the five managed skills, and `@piotr-miller/ai-toolkit@1.0.0` is
 the one live recovery path.
@@ -69,13 +69,18 @@ Full record, with paths and bytes, in the private package:
   count going up: inverting the drift comparison at `skills-sync-checker.ts:429`
   turns two behavioural tests red.
 
-### Still open — four, all external or a signature
+### Still open — three, all external or a signature
 
 | Item                                    | State                                                                                                                                                                                                                                                                      |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 6.3 / 6.5 promote `latest` → `1.0.0`    | **waiting on the maintainer's access attestation.** Promotion runs through the `Publish` workflow's `promote-latest` job, which re-verifies the registry bytes and demands the date the package settings page was last checked. That signature is not the agent's to give. |
-| 8.6 mirror cold                         | `Piotr-Miller/10x-toolkit` is not yet archived. Documentation already describes it as cold, so this gap is a live contradiction, not a nicety.                                                                                                                             |
 | 8.7 maintainer approves the final state | last gate before archive                                                                                                                                                                                                                                                   |
+
+The mirror is **already cold**: `Piotr-Miller/10x-toolkit` carries a retirement
+notice above everything else — a stale runbook that still runs is worse than one
+that errors — and is archived read-only as of 2026-09-08, with
+`freeze/2026-09-04-pre-ai-toolkit` verified intact on the remote afterwards. It was
+not deleted: a rollback artifact you have deleted is not a rollback artifact.
 
 ### One defect found, recorded, not fixed here
 
@@ -89,9 +94,7 @@ guard belongs in the next package release.
 
 1. Give the access attestation date, then run `Publish` → `promote-latest` at
    `1.0.0` (6.3 / 6.5).
-2. Archive the mirror read-only, preserving the `freeze/2026-09-04-pre-ai-toolkit`
-   tag (8.6).
-3. Approve, then `/10x-archive` (8.7).
+2. Approve, then `/10x-archive` (8.7).
 
 Follow-up beyond this change:
 [#213](https://github.com/Piotr-Miller/lumina-clean-ai/issues/213) — retire the
