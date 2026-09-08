@@ -1293,27 +1293,27 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Automated
 
-- [x] 7.1 Live adoption dry-run classifies every target without blind mutation — rc.3 dry-run 2026-09-07: 231 targets (224 adopt, 6 preserve, 1 install), 0 written, 0 removed, manifest absent before and after
-- [ ] 7.2 Rc.1 and stable boundaries pass status and both legacy checks after adoption
-- [ ] 7.3 Exact rc-stable-rc-stable cycle applies and reverts the real delta in both channels safely
-- [ ] 7.4 Managed and recovery local modifications survive every transition and restore
-- [ ] 7.5 Unsupported future-schema handling preserves files and produces deterministic output
-- [ ] 7.6 Cleanup hashes and Git status prove no temporary test edits remain
+- [x] 7.1 Live adoption dry-run classifies every target without blind mutation — the 2026-09-07 rc.3 dry-run (231 targets: 224 adopt, 6 preserve, 1 install) predates the checker preparation and did not gate a write. The dry-run the maintainer actually approved is 2026-09-08 after preparation: 231 targets (230 adopt, 1 install), **0 preserve, 0 rejections**, exit 0, nothing written — Piotr-Miller/ai-toolkit docs/releases/live-transition-2026-09-08.md
+- [x] 7.2 Rc.1 and stable boundaries pass status and both legacy checks after adoption — read rc.1 as **rc.3**. Both boundaries: `status` 231 unchanged exit 0; `check:skills` exit 0, 36 pairs; local checker exit 1 with exactly the one accepted finding (`10x-plan-review`, manifest `32bf19d6f3c2…` vs official `2561632344fc…`), maintainer-accepted 2026-09-08 — Piotr-Miller/ai-toolkit docs/releases/live-transition-2026-09-08.md
+- [x] 7.3 Exact rc-stable-rc-stable cycle applies and reverts the real delta in both channels safely — the three pre-registered targets applied and reverted by hash in both channels (recovery `1a05a9e959dd`↔`24551246dc30`, `c917849e371b`↔`162079c060d2`; managed `f62eb1657d97`↔`dadf518eb92c`); `restore` touched 176 recovery targets and no managed file — Piotr-Miller/ai-toolkit docs/releases/live-transition-2026-09-08.md
+- [x] 7.4 Managed and recovery local modifications survive every transition and restore — one marker per channel preserved and byte-unchanged at every step (`57c15cdfae29`, `d820991ea82c`), reported as `edited since it was installed`, exit 1 each time — Piotr-Miller/ai-toolkit docs/releases/live-transition-2026-09-08.md
+- [x] 7.5 Unsupported future-schema handling preserves files and produces deterministic output — disposable fixture forged to `schemaVersion 999`; rc.3 `setup` and `status` both exit 2 naming the schema mismatch, 233-file census byte-identical before and after: zero writes — Piotr-Miller/ai-toolkit docs/releases/live-transition-2026-09-08.md
+- [x] 7.6 Cleanup hashes and Git status prove no temporary test edits remain — both markers removed and targets restored to `809b75d37211` / `83dcea2f40f6`; `grep phase7-test-marker` 0 hits; 208-file skill census identical to the pre-phase baseline; tracked tree carries only the pre-existing `settings.local.json` edit and the untracked `.ai-toolkit/` — Piotr-Miller/ai-toolkit docs/releases/live-transition-2026-09-08.md
 
 #### Manual
 
-- [ ] 7.7 Maintainer approves the live-workspace adoption diff before setup writes
-- [ ] 7.8 Maintainer accepts transition evidence as sufficient for mirror retirement
+- [x] 7.7 Maintainer approves the live-workspace adoption diff before setup writes — approved 2026-09-08 on the 230-adopt/1-install/0-preserve report; `setup` ran after the approval, not before
+- [x] 7.8 Maintainer accepts transition evidence as sufficient for mirror retirement — accepted 2026-09-08 on `Piotr-Miller/ai-toolkit docs/releases/live-transition-2026-09-08.md`, which unblocked Phase 8
 
 ### Phase 8: Cut Over Lumina and Make the Mirror Cold
 
 #### Automated
 
-- [ ] 8.1 Lumina records pinned non-secret configuration without private build or CI coupling
-- [ ] 8.2 Payload-bound tests move to toolkit and fresh public Lumina CI passes without registry auth
-- [ ] 8.3 Live setup, status, retained checker, and Git-cleanliness checks pass after cutover
-- [ ] 8.4 §6 pointer checklist complete and backstop grep finds no live mirror or manual-copy instructions
-- [ ] 8.5 Local-checker removal follow-up is tied to one later successful package release
+- [x] 8.1 Lumina records pinned non-secret configuration without private build or CI coupling — `.ai-toolkit/config.json` tracked (package, version, profile, tools, registry, auth scope; no token, no absolute path); the rest of `.ai-toolkit/` ignored, which also places it outside ESLint and Prettier without a `.prettierignore` entry. `package.json` gains no private dependency — verified 2026-09-08 on the live workspace
+- [x] 8.2 Payload-bound tests move to toolkit and fresh public Lumina CI passes without registry auth — the recovery checker's own 32-test file now runs in the toolkit suite against the **shipped payload bytes** (Piotr-Miller/ai-toolkit@5fcf469, 152→184 tests, mutation-verified at `skills-sync-checker.ts:429`), closing ai-toolkit#2; `skills-public-parity.test.ts` was already hermetic and needed no move. Fresh clone of this branch with **no registry mapping visible** (`NPM_CONFIG_USERCONFIG` pointed at an empty file): `npm ci` 0, `check:skills` 3 skills / 9 pairs 0, `test:unit` 403 passed, `format:check` 0, `typecheck` 0 and `lint` 0 errors **after `astro sync`** — the `astro:*` virtual-module failures before it are a pre-existing fresh-clone property, not a cutover effect, and CI's `npm run build` generates those types anyway
+- [x] 8.3 Live setup, status, retained checker, and Git-cleanliness checks pass after cutover — `setup` and `status` both 231 unchanged, exit 0, and the CLI's own completion signal fired: the `54 installed file(s) are still tracked … complete when this reaches zero` warning is **gone**. Retained checker exits 1 with only the accepted finding. `git status` carries no unexpected tracked change — verified 2026-09-08 on the live workspace
+- [x] 8.4 §6 pointer checklist complete and backstop grep finds no live mirror or manual-copy instructions — `agent-env-setup.md` rewritten (§2.2 credential + pinned setup, §3.5 overlay derivation, §4 exit-code troubleshooting); `AGENTS.md` :43/:110/:111/:112; `.gitignore` comment block + both re-include lists 8→3; `PUBLIC_SKILLS` 8→3; code-reviewer citations line-numbers→headings. Backstop grep leaves only historical framings (three in `agent-env-setup.md`, one in `AGENTS.md`) plus this change's own record; `context/archive/` and `context/team/` untouched
+- [x] 8.5 Local-checker removal follow-up is tied to one later successful package release — [#213](https://github.com/Piotr-Miller/lumina-clean-ai/issues/213), opened 2026-09-08 with an expiry **condition** rather than a date: one release after `1.0.0` passing the CLI's equivalent **positive and negative** checks on both hosts. Recorded in `AGENTS.md` §Commands and `github-issues.md`
 - [ ] 8.6 Mirror is cold and read-only with verified rollback tag intact
 
 #### Manual
