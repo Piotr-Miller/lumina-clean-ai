@@ -1282,12 +1282,12 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 - [x] 6.1 Release diff contains exactly the preregistered checker advance plus the managed provenance stamp — Piotr-Miller/ai-toolkit@a93f894, docs/releases/1.0.0.md
 - [x] 6.2 Registry stable bytes pass the complete Ubuntu and Windows matrix under rc — canary run 34061201617, 16/16 on both hosts
-- [ ] 6.3 Latest promotion targets the already-tested immutable stable digest
+- [x] 6.3 Latest promotion targets the already-tested immutable stable digest — promoted 2026-09-08 via `Publish` → `promote-latest` (run 34268215390), which re-verified the registry bytes before moving the label. Confirmed independently afterwards: `npm pack @piotr-miller/ai-toolkit@latest` yields sha256 `edd3c6110187f94db2486ad90ffba7d50f6de4446bad33e3ecf22c43401543f7`, byte-identical to the `1.0.0` tarball canaried under `rc` (run 34061201617, 16/16 on both hosts). `latest: 1.0.0`, `rc: 1.0.0`
 - [x] 6.4 Release evidence records delta provenance, behavior, and before-after hashes — Piotr-Miller/ai-toolkit@a7935b0, docs/releases/1.0.0.md
 
 #### Manual
 
-- [ ] 6.5 Maintainer approves moving latest to 1.0.0
+- [x] 6.5 Maintainer approves moving latest to 1.0.0 — approved 2026-09-08 after Phase 7 supplied the rollback evidence the promotion was held for. Package-access attestation recorded in the run as **2026-09-06**, the date of the last actual settings-page check, with `docs/releases/evidence/2026-09-06-rc3-package-settings-{top,bottom}.png` as its evidence — the field asks when it was last checked, not when the button was pressed
 
 ### Phase 7: Prove Live Adoption, Upgrade, Rollback, and Re-upgrade
 
@@ -1318,4 +1318,4 @@ owner-only risk; release-time checks remain synchronous and fail closed.
 
 #### Manual
 
-- [ ] 8.7 Maintainer approves final adoption, documentation, and mirror retirement
+- [x] 8.7 Maintainer approves final adoption, documentation, and mirror retirement — approved 2026-09-08, conditional on 6.3 confirming the promoted digest, which it did. PR [#214](https://github.com/Piotr-Miller/lumina-clean-ai/pull/214) green on all four required gates plus `ai-review`

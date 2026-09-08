@@ -16,7 +16,7 @@ GitHub issue: [#209](https://github.com/Piotr-Miller/lumina-clean-ai/issues/209)
 
 ## Where this stands — 2026-09-08
 
-**The cutover happened.** Phases 1–8 are built and verified; 45 of 48 success
+**The cutover is done.** Phases 1–8 are built and verified; all 48 success
 criteria are ticked. The package — not this repository's git history — is the
 active owner of the five managed skills, and `@piotr-miller/ai-toolkit@1.0.0` is
 the one live recovery path.
@@ -69,34 +69,43 @@ Full record, with paths and bytes, in the private package:
   count going up: inverting the drift comparison at `skills-sync-checker.ts:429`
   turns two behavioural tests red.
 
-### Still open — three, all external or a signature
+### Complete — 48 of 48
 
-| Item                                    | State                                                                                                                                                                                                                                                                      |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 6.3 / 6.5 promote `latest` → `1.0.0`    | **waiting on the maintainer's access attestation.** Promotion runs through the `Publish` workflow's `promote-latest` job, which re-verifies the registry bytes and demands the date the package settings page was last checked. That signature is not the agent's to give. |
-| 8.7 maintainer approves the final state | last gate before archive                                                                                                                                                                                                                                                   |
+`latest` was promoted to `1.0.0` on 2026-09-08 through the `Publish` workflow's
+`promote-latest` job, which re-verified the registry bytes before moving the
+label. Checked independently afterwards rather than taken on the run's word:
+`npm pack @piotr-miller/ai-toolkit@latest` yields
+`edd3c6110187f94db2486ad90ffba7d50f6de4446bad33e3ecf22c43401543f7`, byte-identical
+to the `1.0.0` tarball canaried under `rc`. The package-access attestation was
+recorded as **2026-09-06** — the date of the last actual settings-page check,
+which is what the field asks for.
 
-The mirror is **already cold**: `Piotr-Miller/10x-toolkit` carries a retirement
-notice above everything else — a stale runbook that still runs is worse than one
-that errors — and is archived read-only as of 2026-09-08, with
-`freeze/2026-09-04-pre-ai-toolkit` verified intact on the remote afterwards. It was
-not deleted: a rollback artifact you have deleted is not a rollback artifact.
+The mirror is cold: `Piotr-Miller/10x-toolkit` carries a retirement notice above
+everything else — a stale runbook that still runs is worse than one that errors —
+and is archived read-only, with `freeze/2026-09-04-pre-ai-toolkit` verified intact
+on the remote _after_ archiving. It was not deleted: a rollback artifact you have
+deleted is not a rollback artifact.
 
 ### One defect found, recorded, not fixed here
 
-`status` renders an empty version when the `latest` dist-tag does not exist, and
-emits an unrunnable suggestion (`--package=@piotr-miller/ai-toolkit@ --`). The
-check still reports `ok` and the exit code is unaffected, so it blocks nothing.
-Promoting `latest` makes the symptom disappear **without fixing the cause**; the
-guard belongs in the next package release.
+`status` rendered an empty version when the `latest` dist-tag did not exist, and
+emitted an unrunnable suggestion (`--package=@piotr-miller/ai-toolkit@ --`),
+while still labelling the row `ok`.
 
-### To resume
+Promoting `latest` made the symptom disappear — `status` now reads `1.0.0, up to
+date` — and that is precisely the trap. The cause is that a **missing** tag is
+formatted as though it were present; any future unresolvable tag reproduces it.
+So it is filed as [ai-toolkit#3](https://github.com/Piotr-Miller/ai-toolkit/issues/3),
+worded so the promotion does not close it, rather than left as a paragraph in an
+evidence record.
 
-1. Give the access attestation date, then run `Publish` → `promote-latest` at
-   `1.0.0` (6.3 / 6.5).
-2. Approve, then `/10x-archive` (8.7).
+### Follow-ups, outside this change
 
-Follow-up beyond this change:
-[#213](https://github.com/Piotr-Miller/lumina-clean-ai/issues/213) — retire the
-retained local checker, but only after one later package release passes the
-CLI's equivalent positive **and** negative checks on both platforms.
+- [#213](https://github.com/Piotr-Miller/lumina-clean-ai/issues/213) — retire the
+  retained local checker, gated on a **condition** rather than a date: one release
+  after `1.0.0` passing the CLI's equivalent positive **and** negative checks on
+  both hosts. A checker that reports no drift because it looked at nothing passes
+  every positive test.
+- [ai-toolkit#3](https://github.com/Piotr-Miller/ai-toolkit/issues/3) — `status`
+  must not format a missing dist-tag as an empty present one, and must not emit a
+  command that cannot be run.
