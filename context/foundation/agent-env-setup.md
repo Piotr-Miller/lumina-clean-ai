@@ -372,6 +372,15 @@ this workspace's greps in §2.3 passing.
   scope. Note the checker is **retained for one release window only**: it is removed once a later
   package release passes the CLI's equivalent positive and negative tests on both platforms, and
   that removal deletes a copy — its engine already lives in the toolkit.
+- **Five skills vanished after a branch switch or a `git pull`.** Expected, and it
+  will happen again. `code-review`, `documentation`, `learning`, `skill-optimizer`
+  and `typescript-magician` were _tracked_ until the 2026-09-08 cutover. Checking
+  out any commit from before it restores them as tracked files; moving back across
+  the boundary makes git **delete them from the working tree**, because from git's
+  side they are files the target commit does not have. Nothing is lost and nothing
+  is wrong — `status` reports them as `install`, and `setup` puts them back. Do not
+  reach for the mirror, and do not re-track them to make them stick.
+
 - **`setup` exits `2` and says nothing was written.** Environment, not drift. Either the
   credential is missing or unreadable (`setup --check` says which), or `.ai-toolkit/manifest.json`
   was written by a **newer** package than the one you are running — in which case upgrade the
