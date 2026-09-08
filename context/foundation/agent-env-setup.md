@@ -17,8 +17,8 @@ repo onto a new machine, and to re-sync the two skill trees after every `10x get
 
 ## 0. When you need this
 
-- **First clone on a machine** — the skills are simply not there. Restore them from the private
-  mirror (§2.2); no login required.
+- **First clone on a machine** — the skills are simply not there. Install them from the private
+  package (§2.2); needs a one-time npm credential, not an interactive login.
 - **After any `10x get`** — a re-fetch rewrites `.claude/skills/` and silently drops artifacts
   from a previously fetched lesson. The `.agents/` copies do **not** follow automatically.
 - **After hand-editing anything under `.claude/skills/`** — which you should not do (see §5),
@@ -28,7 +28,7 @@ repo onto a new machine, and to re-sync the two skill trees after every `10x get
 
 This is a **public** repository, and the 10x-Workflow course skills are not published (course
 rule, lesson m5l3). They are gitignored local artifacts, not missing files — see
-[`.gitignore`](../../.gitignore) lines 42–55, which carry the same reasoning.
+[`.gitignore`](../../.gitignore)'s skill block, which carries the same reasoning.
 
 A fresh clone gives you only the **tracked** skills; a working environment adds the course
 skills on top. **Do not memorise either count** — the tracked set is whatever `PUBLIC_SKILLS`
@@ -36,32 +36,45 @@ in [`scripts/check-skills-sync.ts`](../../scripts/check-skills-sync.ts) lists, a
 `npm run check:skills` prints it back to you on every run (`… — N allowlisted skill(s)`). This
 file used to restate the number and went stale twice; see the note at the end of this section.
 
-**All of it comes from one place: the private mirror repo
-[`Piotr-Miller/10x-toolkit`](https://github.com/Piotr-Miller/10x-toolkit).** It holds every
-gitignored artifact — both skill trees, the prompts, the CLI manifest, and the full checker:
+**All of it comes from one place: the private package
+[`@piotr-miller/ai-toolkit`](https://github.com/Piotr-Miller/ai-toolkit), pinned in
+[`.ai-toolkit/config.json`](../../.ai-toolkit/config.json).** It ships every gitignored
+artifact — both skill trees, the prompts, the CLI manifest, and the full checker — across two
+channels:
 
-| Absent after `git clone`                                                          | Restored by             |
-| --------------------------------------------------------------------------------- | ----------------------- |
-| every non-allowlisted skill directory in **both** trees (the course skills)       | `node sync.mjs restore` |
-| `.claude/prompts/`, `.claude/config-templates/`, `.claude/.10x-cli-manifest.json` | the same restore        |
-| `scripts/local/` — the **full** sync checker, its config and its tests            | the same restore        |
+| Absent after `git clone`                                                          | Installed by       | Channel    |
+| --------------------------------------------------------------------------------- | ------------------ | ---------- |
+| the five vendored non-course skills, in **both** trees                            | `ai-toolkit setup` | `managed`  |
+| every other non-allowlisted skill directory in **both** trees (the course skills) | the same setup     | `recovery` |
+| `.claude/prompts/`, `.claude/config-templates/`, `.claude/.10x-cli-manifest.json` | the same setup     | `recovery` |
+| `scripts/local/` — the **full** sync checker, its config and its tests            | the same setup     | `recovery` |
 
-**Restore from the mirror; do not rebuild from the CLI.** A `10x sync --all` can re-fetch the
-course skills, but it is _strictly worse_ as a restore path, for three reasons:
+The split matters when something goes wrong: `sync` reinstalls only the managed channel,
+`restore` only the recovery channel, and `setup` does both. Neither ever overwrites a file you
+have edited — a conflict is preserved and reported, and there is no `--force`.
 
-1. **It needs an interactive magic-link login.** The mirror needs only a git clone, so an AI
-   agent can complete a restore unattended — it cannot complete `10x auth`.
+**Install from the package; do not rebuild from the CLI.** A `10x sync --all` can re-fetch the
+course skills, but it is _strictly worse_ as a recovery path, for three reasons:
+
+1. **It needs an interactive magic-link login.** The package needs a user-level npm credential
+   configured once (§2.2), so an AI agent can complete a recovery unattended — it cannot
+   complete `10x auth`.
 2. **It cannot restore the local extensions.** `10x-archive` step 6, the `10x-impl-review`
-   mutation step and `SKILL.user.md` exist in no upstream bundle. The mirror carries them; a
-   fetch would silently give you skills that look right and have had their local behaviour
-   stripped. (This is exactly why §3.1 exists — and why it does **not** apply after a restore.)
-3. **It hands you an unadapted `.agents/` tree.** The mirror snapshots both trees already
-   adapted, so the whole §3 re-sync is unnecessary after a restore.
+   mutation step and `SKILL.user.md` exist in no upstream bundle. The package's recovery payload
+   carries all three; a fetch would silently give you skills that look right and have had their
+   local behaviour stripped. (This is exactly why §3.1 exists — and why it does **not** apply
+   after a package install.)
+3. **It hands you an unadapted `.agents/` tree.** The package ships both trees already adapted,
+   so the whole §3 re-sync is unnecessary after an install.
 
-So: **the CLI is for getting _new or updated_ lessons; the mirror is for getting _this
+So: **the CLI is for getting _new or updated_ lessons; the package is for getting _this
 workspace_ back.** §3's re-sync is what you run after the former, never after the latter.
 
-Without the mirror you still get the public parity check (`npm run check:skills`), which is a
+> **The `10x-toolkit` mirror is cold.** Until 2026-09-08 it was the restore path, and older notes
+> and commit messages still say so. It is archived read-only with its verified rollback tag
+> intact — a historical artifact, not a place to restore from and not a place to snapshot to.
+
+Without the package you still get the public parity check (`npm run check:skills`), which is a
 strict subset: it compares only the tracked skills. `AGENTS.md` §Commands tells you to run the
 full checker after every fetch — and on a clone without a restore, that checker does not exist.
 It is gitignored because it embeds course-skill content in its adaptation allowlists.
@@ -71,12 +84,17 @@ It is gitignored because it embeds course-skill content in its adaptation allowl
 there:
 
 - `10x-impl-review-ci` — the single permitted course-skill exception, in **both** trees,
-  byte-identical, because it powers the public CI reviewer.
-- Registry-sourced non-course skills: `code-review`, `documentation`, `learning`,
-  `skill-optimizer`, `typescript-magician`.
+  byte-identical. `packages/code-reviewer/src/prompts.ts` is a hand-maintained **transcription**
+  of it; CI never reads the skill tree at runtime, which is why the two can drift and why
+  `prompts.test.ts` pins them. It stays tracked so public contributors can reach it.
 - **Repo-owned skills, authored here rather than fetched from any registry:** `gauntlet-loop`
   (on-demand quality loop, never a CI gate) and `run-local-stack` (host-specific recipe for
   running the app locally).
+
+The registry-sourced non-course skills — `code-review`, `documentation`, `learning`,
+`skill-optimizer`, `typescript-magician` — **were** tracked until the 2026-09-08 cutover. They
+are now the package's `managed` channel: still in both trees on a working machine, no longer in
+git. If you are reading an older PR that lists eight tracked skills, that is why.
 
 > ⚠️ **This list is the drift-prone part of this file.** It was written when only the first two
 > groups existed and went stale **twice** without anyone noticing — `gauntlet-loop` arrived in
@@ -91,8 +109,8 @@ there:
 
 Each step says how to tell it worked. Do them in order — later steps assume earlier ones.
 
-**Steps 2.1–2.3 are the whole restore and need no login.** The 10x CLI (2.4) is only required to
-fetch _new or updated_ course content, which a fresh clone does not need.
+**Steps 2.1–2.3 are the whole recovery and need no interactive login.** The 10x CLI (2.4) is only
+required to fetch _new or updated_ course content, which a fresh clone does not need.
 
 ### 2.1 Install dependencies
 
@@ -102,45 +120,57 @@ npm install
 
 ✅ `npm run check:skills` runs at all (it is a `tsx` script and needs `node_modules`).
 
-### 2.2 Restore the local-only artifacts from the private mirror
+### 2.2 Install the local-only artifacts from the private package
 
-Clone the mirror and run its restore. It copies only the gitignored entries into the workspace
-and never deletes anything, so it is safe to re-run:
+**Node 24 is required** (`.nvmrc`); the CLI refuses to run on anything older.
 
-```bash
-git clone git@github.com:Piotr-Miller/10x-toolkit.git
-cd 10x-toolkit
-node sync.mjs status     # what exists on each side, before touching anything
-node sync.mjs restore
+**One-time credential.** The package lives on GitHub Packages and is readable by its owner
+alone. Put a classic PAT with **`read:packages`** in your _user-level_ `~/.npmrc` — never in a
+file inside this repository, a container image, or a CI job:
+
+```
+@piotr-miller:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=<token>
 ```
 
-The workspace is autodetected as the sibling `../LuminaClean_AI`. **If your checkout sits
-anywhere else — a different directory name included — point at it explicitly** rather than
-moving directories:
+Keep that file mode `600`. The package's own `docs/bootstrap-auth.md` carries the long form,
+including how to rotate a leaked token. Nothing in this repository reads or prints the token.
+
+Then install, at the exact pinned version — never a moving dist-tag:
 
 ```bash
-LUMINA_WORKSPACE=/path/to/lumina-clean-ai node sync.mjs restore
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.0 -- ai-toolkit setup --check   # diagnose only, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.0 -- ai-toolkit setup --dry-run # plan, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.0 -- ai-toolkit setup
 ```
 
-> ⚠️ **Keep `10x-toolkit` private.** It exists precisely because this content may not be
-> published. `sync.mjs` already excludes `10x-impl-review-ci` (the public repo owns that one),
-> so a restore never fights git over a tracked file.
+The version to use is the one in [`.ai-toolkit/config.json`](../../.ai-toolkit/config.json).
+`--root <path>` picks a different checkout; `--json` gives machine-readable output.
 
-✅ `node sync.mjs status` reports the same entry/file count on both sides, and — the real
-check — `git status` in the workspace stays **clean**. Every restored path is gitignored; if
-anything shows up as untracked, `.gitignore` and the mirror disagree and you must resolve that
-before committing.
+**Read the dry-run before the real run.** On a fresh clone every target is `install`. On a
+machine that already has the files, they are reported as `adopt` (byte-identical, ownership
+recorded) — and anything you have edited comes back as `preserve`, which is the CLI telling you
+it will not touch your version. `preserve` is reported as drift: **exit code `1`, not `0`**.
+
+Exit codes: `0` clean, `1` drift, `2` environment, `64` usage. Environment beats drift, because
+a run that could not see everything must not report `1` as though it had.
+
+✅ `git status` in the workspace stays **clean** apart from `.ai-toolkit/config.json`, which is
+tracked on purpose. Every installed path is gitignored; if anything else shows up as untracked,
+`.gitignore` and the package's inventory disagree and you must resolve that before committing.
 
 ### 2.3 Verify the restore
 
 ```bash
-npm run check:skills                          # public parity — the tracked skills
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.0 -- ai-toolkit status
+npm run check:skills                          # public parity — the three tracked skills
 npx tsx scripts/local/check-skills-sync.ts    # full check — exists only after 2.2
 ```
 
-✅ Both end `OK: no drift …`, and the public check now adds `(local course environment
-detected …)` because `scripts/local/` is present. Then confirm the three local extensions
-survived — these are the ones no CLI fetch can restore, so they are the point of the mirror:
+✅ `status` reports every target `unchanged` and exits `0`. `check:skills` ends `OK: no drift
+…` and adds `(local course environment detected …)` because `scripts/local/` is present. Then
+confirm the three local extensions survived — these are the ones no CLI fetch can restore, so
+they are the point of installing from the package rather than re-fetching:
 
 ```bash
 grep -l "gh issue close" .claude/skills/10x-archive/SKILL.md
@@ -152,7 +182,7 @@ ls .claude/skills/10x-impl-review/SKILL.user.md
 
 ### 2.4 Install and authenticate the 10x CLI — only to fetch new content
 
-Needed when you want lessons the mirror does not yet have. **Install it first — a fresh machine
+Needed when you want lessons the package does not yet ship. **Install it first — a fresh machine
 has no `10x` binary**, and `10x doctor` on a clean machine just fails with `command not found`
 while explaining nothing. Per the upstream README, either form works:
 
@@ -206,7 +236,8 @@ Use `10x get` for targeted work — a single lesson, artifact, or type:
 > `10x sync --all` is the right tool for a bulk refresh.
 
 > ⚠️ A fetch **overwrites the local extensions** (§3.1) and leaves `.agents/` unadapted. So a
-> fetch — unlike a restore — obliges you to run §3 in full, then re-snapshot the mirror (§3.5).
+> fetch — unlike a package install — obliges you to run §3 in full, then feed the result back
+> into the package (§3.5).
 
 > ⚠️ A plain fetch may append a **course rules block** to `CLAUDE.md`. `AGENTS.md` requires that
 > its content be moved into `AGENTS.md` (the shim is only a pointer). `--no-course-rules`
@@ -217,7 +248,7 @@ Use `10x get` for targeted work — a single lesson, artifact, or type:
 
 ## 3. The re-sync procedure
 
-> **Run this after a CLI fetch (§2.5) — not after a mirror restore (§2.2).** A restore already
+> **Run this after a CLI fetch (§2.5) — not after a package install (§2.2).** An install already
 > delivers both trees adapted and both extensions intact, and §2.3 proves it. Running §3 after a
 > restore is harmless but pointless; skipping it after a fetch leaves Codex on a drifted tree.
 
@@ -229,8 +260,8 @@ same skills, with per-tool references swapped. Codex is used daily here, so a dr
 
 A fetch (`10x get` or `10x sync`) overwrites managed skills, wiping local additions. Two are
 deliberate and must be re-applied **before** you copy, or you will faithfully propagate their
-absence. A third, `10x-impl-review/SKILL.user.md`, is a whole file the mirror carries and no
-bundle recreates — check it still exists:
+absence. A third, `10x-impl-review/SKILL.user.md`, is a whole file the package's recovery
+payload carries and no bundle recreates — check it still exists:
 
 1. **`10x-archive` step 6** — the tracker-sync + `gh issue close` behaviour. Spec:
    `AGENTS.md` §Archive workflow extensions.
@@ -292,26 +323,39 @@ done
 is byte-identical across the trees. **A skill appearing or missing from that list is drift** —
 either an adaptation was skipped, or one was applied where §3.3 says to keep the text.
 
-Then run both checkers from §2.3, and re-snapshot the mirror (§3.5).
+Then run both checkers from §2.3, and carry the result back into the package (§3.5).
 
-### 3.5 Re-snapshot the mirror — the step that makes the next restore work
+### 3.5 Feed the result back into the package — the step that makes the next install work
 
-A fetch or a hand-edit only exists on this machine until the mirror is updated. **`10x-toolkit`
-is the durable copy; the workspace is not.** From the mirror clone:
+A fetch or a hand-edit only exists on this machine until a new package version ships. **The
+package is the durable copy; the workspace is not.** This replaced `node sync.mjs snapshot`,
+and it is deliberately not a one-liner: a snapshot copied whatever the workspace happened to
+hold, while the package records _what is official upstream_ and _what this workspace adds on
+top_, separately, with pinned hashes.
+
+In a clone of [`Piotr-Miller/ai-toolkit`](https://github.com/Piotr-Miller/ai-toolkit):
 
 ```bash
-node sync.mjs snapshot
-git add -A && git commit -m "snapshot: <what changed>" && git push
+node scripts/derive-overlays.mjs partition   --workspace <lumina> --official <extract>
+node scripts/derive-overlays.mjs verify      --workspace <lumina> --official <extract>
+node scripts/derive-overlays.mjs emit        --workspace <lumina> --official <extract>
+node scripts/derive-overlays.mjs reconstruct --workspace <lumina>
+npm run build:payload && npm run check:all
 ```
 
-Other machines then pick it up with `git pull && node sync.mjs restore`.
+`verify` fails when any pinned byte moved — which is the point: an upstream advance has to be
+**decided** in `inventory/derivation-decisions.json` (official, workspace, or a recorded
+overlay), not absorbed silently. `reconstruct` then proves base + overlay reproduces the
+workspace byte-for-byte in both trees. Publishing is a separate, manual decision: the `Publish`
+workflow, `workflow_dispatch` only, `publish-rc` then `promote-latest`.
 
-> ⚠️ **Skipping this is how a restore silently goes stale.** The mirror is the only copy of the
-> local extensions; a fetch that overwrites them and is never re-snapshotted means the next
-> `restore` on any machine hands you the _pre-extension_ skills, and §2.3's three greps are what
-> catch it. Treat snapshot+push as part of the fetch, not as follow-up work.
+> ⚠️ **Skipping this is how an install silently goes stale.** The package is the only copy of
+> the local extensions; a fetch that overwrites them and never reaches a release means the next
+> `setup` on any machine hands you the _pre-extension_ skills, and §2.3's three greps are what
+> catch it. Treat the derivation as part of the fetch, not as follow-up work.
 
-✅ `node sync.mjs status` shows matching entry/file counts on both sides.
+✅ `npm run check:all` is green in the package clone, and a `setup` from the new version leaves
+this workspace's greps in §2.3 passing.
 
 ## 4. Troubleshooting
 
@@ -323,12 +367,20 @@ Other machines then pick it up with `git pull && node sync.mjs restore`.
 - **A hand-edit under `.claude/skills/` vanished.** Expected — the next `10x get` for the same
   lesson overwrites it. If the edit must survive, its spec belongs in `AGENTS.md` (§3.1), not
   in the skill.
-- **The full checker is missing.** You skipped the restore (§2.2) — `scripts/local/` lives only
-  in the mirror. The public check still works and is honest about its narrower scope.
-- **`sync.mjs` says `workspace not found`.** It autodetects the sibling `../LuminaClean_AI`; a
-  differently-named or non-sibling checkout needs `LUMINA_WORKSPACE=<path>`.
-- **A restored skill is missing its local extension.** Someone fetched without re-snapshotting
-  (§3.5). Re-apply from `AGENTS.md` (§3.1), then snapshot and push.
+- **The full checker is missing.** You skipped the install (§2.2) — `scripts/local/` arrives in
+  the package's recovery channel. The public check still works and is honest about its narrower
+  scope. Note the checker is **retained for one release window only**: it is removed once a later
+  package release passes the CLI's equivalent positive and negative tests on both platforms, and
+  that removal deletes a copy — its engine already lives in the toolkit.
+- **`setup` exits `2` and says nothing was written.** Environment, not drift. Either the
+  credential is missing or unreadable (`setup --check` says which), or `.ai-toolkit/manifest.json`
+  was written by a **newer** package than the one you are running — in which case upgrade the
+  toolkit rather than downgrading its state. Either way the run wrote nothing.
+- **`setup` exits `1` with a `preserve` list.** Not a failure: you edited those files and the
+  package refused to overwrite them. Compare each with the packaged version and keep what you
+  want; deleting a file makes the next run reinstall the package's copy. There is no `--force`.
+- **An installed skill is missing its local extension.** Someone fetched without carrying the
+  change back into the package (§3.5). Re-apply from `AGENTS.md` (§3.1), then do the derivation.
 - **Switching the managed profile.** Re-run `10x get <ref> --tool <name>`; the CLI prompts to
   migrate existing artifacts. Verify afterwards with `10x doctor`.
 
@@ -337,16 +389,20 @@ Other machines then pick it up with `git pull && node sync.mjs restore`.
 - Lesson artifacts are **managed by the CLI, not edited by hand**.
 - `.claude/skills/` is the source of truth; `.agents/skills/` is derived.
 - **Never commit a skill that is not on the allowlist**, nor `.claude/prompts/`,
-  `.claude/config-templates/`, the CLI manifest, or `scripts/local/`. Publication is
-  **deny-by-default**: `.gitignore` ignores every skill directory and re-includes only the
-  eight tracked ones (the same set as `PUBLIC_SKILLS` in `scripts/check-skills-sync.ts` and in
-  the mirror's `sync.mjs`). ⚠️ **Do not think of this as "the `10x-*` skills".** That prefix was
+  `.claude/config-templates/`, the CLI manifest, `scripts/local/`, or anything under
+  `.ai-toolkit/` except `config.json`. Publication is **deny-by-default**: `.gitignore` ignores
+  every skill directory and re-includes only the **three** tracked ones (the same set as
+  `PUBLIC_SKILLS` in `scripts/check-skills-sync.ts` — two places now, since the mirror's
+  `sync.mjs` is frozen). ⚠️ **Do not think of this as "the `10x-*` skills".** That prefix was
   the rule until 2026-09-01, and m5l4 walked straight past it: `pack-init`, `setup-cicd` and
   `tf-registry` are course skills carrying no `10x-` prefix, so they sat untracked in this
   public repo, one `git add -A` from publication (PR #207). `.gitignore` enforces the rule, but
   a `git add -f` would defeat it. After a restore, a clean `git status` is the proof it holds.
-- **The mirror is the durable copy, not this workspace.** Anything gitignored here survives only
-  because `10x-toolkit` has it. Snapshot after every fetch or hand-edit (§3.5).
+- **The package is the durable copy, not this workspace.** Anything gitignored here survives only
+  because `@piotr-miller/ai-toolkit` ships it. Carry every fetch or hand-edit back into the
+  package (§3.5) — a workspace-only change is one `rm -rf` from gone.
+- **Always name an exact version.** `ai-toolkit@1.0.0`, never a dist-tag, in evidence, in
+  scripts, and in anything you paste into an issue. A moving tag makes a record unreproducible.
 - The **upstream README is authoritative** for CLI install/usage:
   <https://raw.githubusercontent.com/przeprogramowani/10x-cli/refs/heads/master/README.md>
 
@@ -356,4 +412,7 @@ Other machines then pick it up with `git pull && node sync.mjs restore`.
   checker split; §Archive workflow extensions and §Mutation testing — the two specs from §3.1.
 - [`manual-setup-runbook.md`](./manual-setup-runbook.md) — the same shape for **external
   services**; that file plus this one cover everything a clone cannot reproduce.
-- [`.gitignore`](../../.gitignore) lines 42–55 — what is deliberately unpublished, and why.
+- [`.gitignore`](../../.gitignore) — the skill-directory deny-by-default block and the
+  `.ai-toolkit/` boundary: what is deliberately unpublished, and why.
+- [`.ai-toolkit/config.json`](../../.ai-toolkit/config.json) — the pinned package, profile,
+  tools and version. A record for humans; the CLI does not read it.

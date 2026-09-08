@@ -154,17 +154,19 @@ export function buildJudgePrompt(input: JudgePromptInput): string {
 //
 // TWO DELIBERATE DIVERGENCES FROM THE REFERENCE (both load-bearing):
 //
-// 1. Command execution is REMOVED. The reference (:87 and :95) says to run the
-//    plan's Automated Verification commands. In CI the plan comes from the PR
+// 1. Command execution is REMOVED. The reference says to run the plan's
+//    Automated Verification commands — in its "3. Test coverage" section
+//    (item 4) and again under "Verify the success criteria". In CI the plan comes from the PR
 //    head, so a faithful port is arbitrary code execution in a job holding
 //    OPENROUTER_API_KEY and a pull-requests:write token. Success Criteria is
 //    graded from declared-vs-observable evidence instead, and the instructions
 //    state outright that command results are unavailable — without that, the
 //    model fabricates "I ran lint, it passed".
 //
-// 2. Exclusion semantics are CLARIFIED. The reference contradicts itself: :40
-//    says an implemented item on the exclusions list is not scope creep, while
-//    :104 says substantive changes contradicting the exclusions list are a
+// 2. Exclusion semantics are CLARIFIED. The reference contradicts itself: under
+//    "Cross-reference changed files against planned files" an implemented item
+//    on the exclusions list is not scope creep, while under "Grade each
+//    dimension" substantive changes contradicting the exclusions list are a
 //    Scope Discipline FAIL. Both cannot hold, and this change's whole value
 //    proposition depends on the second reading (plan-review F2). Stated once
 //    here: an exclusion means the work is not REQUIRED to be present; its
@@ -173,7 +175,8 @@ export function buildJudgePrompt(input: JudgePromptInput): string {
 //
 // Anything else that drifts from the reference is a bug, not a decision.
 
-// The reference's central operation (impl-review-instructions.md:35-56).
+// The reference's central operation (impl-review-instructions.md, section
+// "Cross-reference changed files against planned files").
 // Without it the model spot-checks whatever the diff happens to show and never
 // notices planned work that simply is not there — the one class of finding this
 // pass exists to catch. schemas.ts already records the other half of this

@@ -24,16 +24,7 @@ import { checkPublicSkillsParity, renderParityReport } from "./lib/public-skills
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** Skills tracked in the public repo — pairs must stay byte-identical. */
-const PUBLIC_SKILLS = [
-  "10x-impl-review-ci",
-  "code-review",
-  "documentation",
-  "gauntlet-loop",
-  "learning",
-  "run-local-stack",
-  "skill-optimizer",
-  "typescript-magician",
-];
+const PUBLIC_SKILLS = ["10x-impl-review-ci", "gauntlet-loop", "run-local-stack"];
 
 function main(): void {
   const args = process.argv.slice(2);

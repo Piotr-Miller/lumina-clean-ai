@@ -259,7 +259,8 @@ describe("buildImplReviewInstructions", () => {
     expect(instructions).toContain("even when a dimension produced no findings");
   });
 
-  // The reference's central operation (impl-review-instructions.md:35-56): a
+  // The reference's central operation (impl-review-instructions.md, section
+  // "Cross-reference changed files against planned files"): a
   // reviewer that never enumerates the planned changes cannot notice the ones
   // that are simply absent (impl-review-phase-2 F1).
   it("states the exhaustive per-planned-change comparison and suppresses MATCH", () => {
@@ -297,7 +298,8 @@ describe("buildImplReviewInstructions", () => {
     expect(instructions).toContain("Do not invent standards the plan never committed to");
   });
 
-  // The reference (impl-review-instructions.md:87, :95) tells the reviewer to
+  // The reference (impl-review-instructions.md, "3. Test coverage" item 4 and
+  // "Verify the success criteria") tells the reviewer to
   // RUN the plan's verification commands. In CI the plan comes from the PR
   // head, so a faithful port is arbitrary code execution in a job holding the
   // API key and a write token. The port must drop it — and say so, or the

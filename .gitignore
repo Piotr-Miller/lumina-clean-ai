@@ -46,9 +46,10 @@ supabase/.temp/
 # 10x-Workflow course artifacts are LOCAL-ONLY in this public repo (course
 # rule: don't publish the workflow skills; m5l3 explicitly allowlists ONLY
 # 10x-impl-review-ci for public repos — it powers the public CI reviewer).
-# Restore locally from the private 10x-toolkit mirror (`node sync.mjs restore`;
-# see context/foundation/agent-env-setup.md §2.2). The CLI manifest, fetched
-# course prompts and config templates are local CLI state, likewise unpublished.
+# Restore them with `ai-toolkit setup` from the private package
+# @piotr-miller/ai-toolkit (see context/foundation/agent-env-setup.md). The CLI
+# manifest, fetched course prompts and config templates are local CLI state,
+# likewise unpublished.
 #
 # DENY BY DEFAULT: every skill directory is unpublished unless allowlisted
 # below. This replaced a `10x-*` prefix pattern, which silently missed m5l4's
@@ -56,26 +57,18 @@ supabase/.temp/
 # prefix and so sat untracked in a public repo, one `git add -A` from
 # publication. A prefix cannot express "course content"; only an allowlist of
 # what is deliberately public can. Keep this list in lockstep with
-# PUBLIC_SKILLS in scripts/check-skills-sync.ts and in the mirror's sync.mjs —
-# the three describe one set. Adding a skill here publishes it: be deliberate.
+# PUBLIC_SKILLS in scripts/check-skills-sync.ts — the two describe one set.
+# (The mirror's sync.mjs was the third. The mirror is cold since the 2026-09-08
+# cutover: its copy is frozen, not maintained, and is not a place to edit.)
+# Adding a skill here publishes it: be deliberate.
 .claude/skills/*/
 !.claude/skills/10x-impl-review-ci/
-!.claude/skills/code-review/
-!.claude/skills/documentation/
 !.claude/skills/gauntlet-loop/
-!.claude/skills/learning/
 !.claude/skills/run-local-stack/
-!.claude/skills/skill-optimizer/
-!.claude/skills/typescript-magician/
 .agents/skills/*/
 !.agents/skills/10x-impl-review-ci/
-!.agents/skills/code-review/
-!.agents/skills/documentation/
 !.agents/skills/gauntlet-loop/
-!.agents/skills/learning/
 !.agents/skills/run-local-stack/
-!.agents/skills/skill-optimizer/
-!.agents/skills/typescript-magician/
 .claude/prompts/
 .claude/.10x-cli-manifest.json
 .claude/config-templates/
@@ -101,3 +94,13 @@ playwright-report/
 scratchpad/
 # Cached findings from scripts/judge-diagnose.mjs
 packages/code-reviewer/scripts/judge-diagnose-findings.json
+
+# Toolkit consumer state — written by `ai-toolkit setup`, owned by the package,
+# never committed: it records this machine's installed hashes and timestamps.
+# config.json is the deliberate exception — it is the pin itself, and the only
+# part of this directory a reader needs. This ignore rule is also what keeps the
+# directory outside ESLint (eslint.config.js includeIgnoreFile) and Prettier
+# (>= 3 skips gitignored paths), so no .prettierignore entry is needed here and
+# none should be added.
+.ai-toolkit/*
+!.ai-toolkit/config.json
