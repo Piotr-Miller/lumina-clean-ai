@@ -6,9 +6,9 @@
  * exception, plus registry-sourced non-course skills). For those public
  * skills the two managed trees (`.claude/skills` ↔ `.agents/skills`) must
  * stay byte-identical pairs. The richer course-workflow checker (manifest
- * hash baselines, extension sentinels, per-tool adaptation allowlists) lives
- * OUTSIDE the public repo in gitignored `scripts/local/` — its config quotes
- * course-skill content and must not be published.
+ * hash baselines, extension sentinels, per-tool adaptation allowlists) that
+ * lived OUTSIDE the public repo in gitignored `scripts/local/` was retired in
+ * #213; the package's own `ai-toolkit status` covers installed files now.
  *
  * Root and options are injected so every branch is unit-testable on temp-dir
  * fixtures. Findings (drift → exit 1) are distinct from environment errors
