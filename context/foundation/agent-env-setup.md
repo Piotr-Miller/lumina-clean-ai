@@ -39,15 +39,13 @@ file used to restate the number and went stale twice; see the note at the end of
 **All of it comes from one place: the private package
 [`@piotr-miller/ai-toolkit`](https://github.com/Piotr-Miller/ai-toolkit), pinned in
 [`.ai-toolkit/config.json`](../../.ai-toolkit/config.json).** It ships every gitignored
-artifact — both skill trees, the prompts, the CLI manifest, and the full checker — across two
-channels:
+artifact — both skill trees, the prompts and the CLI manifest — across two channels:
 
 | Absent after `git clone`                                                          | Installed by       | Channel    |
 | --------------------------------------------------------------------------------- | ------------------ | ---------- |
 | the five vendored non-course skills, in **both** trees                            | `ai-toolkit setup` | `managed`  |
 | every other non-allowlisted skill directory in **both** trees (the course skills) | the same setup     | `recovery` |
 | `.claude/prompts/`, `.claude/config-templates/`, `.claude/.10x-cli-manifest.json` | the same setup     | `recovery` |
-| `scripts/local/` — the **full** sync checker, its config and its tests            | the same setup     | `recovery` |
 
 The split matters when something goes wrong: `sync` reinstalls only the managed channel,
 `restore` only the recovery channel, and `setup` does both. Neither ever overwrites a file you
@@ -139,9 +137,9 @@ including how to rotate a leaked token. Nothing in this repository reads or prin
 Then install, at the exact pinned version — never a moving dist-tag:
 
 ```bash
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.0 -- ai-toolkit setup --check   # diagnose only, writes nothing
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.0 -- ai-toolkit setup --dry-run # plan, writes nothing
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.0 -- ai-toolkit setup
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.2 -- ai-toolkit setup --check   # diagnose only, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.2 -- ai-toolkit setup --dry-run # plan, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.2 -- ai-toolkit setup
 ```
 
 The version to use is the one in [`.ai-toolkit/config.json`](../../.ai-toolkit/config.json).
@@ -162,14 +160,14 @@ tracked on purpose. Every installed path is gitignored; if anything else shows u
 ### 2.3 Verify the restore
 
 ```bash
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.0 -- ai-toolkit status
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.2 -- ai-toolkit status
 npm run check:skills                          # public parity — the three tracked skills
-npx tsx scripts/local/check-skills-sync.ts    # full check — exists only after 2.2
 ```
 
-✅ `status` reports every target `unchanged` and exits `0`. `check:skills` ends `OK: no drift
-…` and adds `(local course environment detected …)` because `scripts/local/` is present. Then
-confirm the three local extensions survived — these are the ones no CLI fetch can restore, so
+✅ `status` reports every target `unchanged` and exits `0`; it is the check that names an edited
+or missing file, and it exits `2` rather than `0` when it could not see everything (the full
+local checker it replaced was retired in #213 — see §4). `check:skills` ends `OK: no drift …`.
+Then confirm the three local extensions survived — these are the ones no CLI fetch can restore, so
 they are the point of installing from the package rather than re-fetching:
 
 ```bash
@@ -367,11 +365,13 @@ this workspace's greps in §2.3 passing.
 - **A hand-edit under `.claude/skills/` vanished.** Expected — the next `10x get` for the same
   lesson overwrites it. If the edit must survive, its spec belongs in `AGENTS.md` (§3.1), not
   in the skill.
-- **The full checker is missing.** You skipped the install (§2.2) — `scripts/local/` arrives in
-  the package's recovery channel. The public check still works and is honest about its narrower
-  scope. Note the checker is **retained for one release window only**: it is removed once a later
-  package release passes the CLI's equivalent positive and negative tests on both platforms, and
-  that removal deletes a copy — its engine already lives in the toolkit.
+- **`scripts/local/` is still on disk, or `setup` reports it as `remove`.** Expected once. The
+  full local checker was **retired** on 2026-09-09 ([#213](https://github.com/Piotr-Miller/lumina-clean-ai/issues/213)):
+  `ai-toolkit@1.0.1`'s canary ran its signals against the published CLI on both hosts, and
+  `1.0.2` dropped the copy from the payload. A workspace installed from an older pin still holds
+  the four files; the next `setup` removes them as "dropped from the payload, unmodified" (an
+  edited copy is preserved and reported instead). The directory stays gitignored so a stale copy
+  can never be committed. Its engine lives on in the toolkit; nothing was lost.
 - **Five skills vanished after a branch switch or a `git pull`.** Expected, and it
   will happen again. `code-review`, `documentation`, `learning`, `skill-optimizer`
   and `typescript-magician` were _tracked_ until the 2026-09-08 cutover. Checking
@@ -398,7 +398,7 @@ this workspace's greps in §2.3 passing.
 - Lesson artifacts are **managed by the CLI, not edited by hand**.
 - `.claude/skills/` is the source of truth; `.agents/skills/` is derived.
 - **Never commit a skill that is not on the allowlist**, nor `.claude/prompts/`,
-  `.claude/config-templates/`, the CLI manifest, `scripts/local/`, or anything under
+  `.claude/config-templates/`, the CLI manifest, or anything under
   `.ai-toolkit/` except `config.json`. Publication is **deny-by-default**: `.gitignore` ignores
   every skill directory and re-includes only the **three** tracked ones (the same set as
   `PUBLIC_SKILLS` in `scripts/check-skills-sync.ts` — two places now, since the mirror's
@@ -410,7 +410,7 @@ this workspace's greps in §2.3 passing.
 - **The package is the durable copy, not this workspace.** Anything gitignored here survives only
   because `@piotr-miller/ai-toolkit` ships it. Carry every fetch or hand-edit back into the
   package (§3.5) — a workspace-only change is one `rm -rf` from gone.
-- **Always name an exact version.** `ai-toolkit@1.0.0`, never a dist-tag, in evidence, in
+- **Always name an exact version.** `ai-toolkit@1.0.2`, never a dist-tag, in evidence, in
   scripts, and in anything you paste into an issue. A moving tag makes a record unreproducible.
 - The **upstream README is authoritative** for CLI install/usage:
   <https://raw.githubusercontent.com/przeprogramowani/10x-cli/refs/heads/master/README.md>

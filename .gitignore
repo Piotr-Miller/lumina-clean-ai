@@ -72,8 +72,11 @@ supabase/.temp/
 .claude/prompts/
 .claude/.10x-cli-manifest.json
 .claude/config-templates/
-# The full course-workflow sync checker embeds course-skill content in its
-# adaptation allowlists — local-only, next to the skills it validates.
+# The full course-workflow sync checker that used to live here was retired
+# (#213, 2026-09-09; the package stopped shipping it in ai-toolkit@1.0.2). Its
+# adaptation allowlists quoted course-skill content, and a stale copy from an
+# older pin may still exist until the next `ai-toolkit setup` removes it — so
+# the rule stays: nothing under this path is ever publishable.
 scripts/local/
 
 # AI code-review CLI artifacts (review.json, comment.md — may repeat source details)
