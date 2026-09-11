@@ -140,7 +140,10 @@ exercise, the sandbox properties were a **success criterion of the
 experiment, not just of the change**. Closing the experiment therefore needs
 **one more run of the same contract in the target environment** (Claude Code
 on the web, network off, no secrets) before the M5L5 exercise can be called
-complete; the docs change itself does not need to be redone.
+complete; the docs change itself does not need to be redone. This folder is
+archived as the record of the contract and of the fallback run; the sandbox
+run is a **new change** (`/10x-new`) that links back here, because archives
+are immutable.
 
 What would make the mode safe for the team, based on what this run did show:
 
