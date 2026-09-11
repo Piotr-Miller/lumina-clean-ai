@@ -1,10 +1,10 @@
 ---
 change_id: test-plan-stack-refresh
 title: Reconcile test-plan.md §4 Stack with the repo's actual test tooling
-status: implemented
+status: archived
 created: 2026-09-10
 updated: 2026-09-11
-archived_at: null
+archived_at: 2026-09-11T20:28:24Z
 issue: null
 ---
 
