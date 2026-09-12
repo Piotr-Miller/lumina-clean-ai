@@ -3,7 +3,7 @@ change_id: test-plan-stack-refresh-sandbox
 title: Re-run the test-plan §4 delegation contract in the cloud sandbox
 status: new
 created: 2026-09-11
-updated: 2026-09-11
+updated: 2026-09-12
 archived_at: null
 issue: null
 ---
@@ -81,10 +81,24 @@ kosmetycznych, żeby mieć diff.
 | Decision | Setting                                                              |
 | -------- | -------------------------------------------------------------------- |
 | Setup    | `nvm use 24.19.0 && npm ci` — no Supabase, no Docker, no browsers    |
-| Network  | off during the work phase; packages fetched in setup only            |
+| Network  | **`Trusted` for the whole session** — see the deviation note below   |
 | MCP      | none (no `.mcp.json` in the repo; local-profile servers not shipped) |
 | Secrets  | none                                                                 |
 | Branch   | from `master` at or after `4d8762c`; feature branch + PR, or report  |
+
+**Deviation from the contract (decided 2026-09-12, before the run).** The
+`/goal` block says "Sieć: wyłączona w fazie pracy", but Claude Code on the web
+sets network access **per environment**, not per phase (`None` / `Trusted` /
+`Custom` / `Full`), and `npm ci` in setup needs the npm registry. The choice
+was therefore binary: `Trusted` for the whole session, or `None` with no
+`npm ci` at all (and then `npx prettier --check` cannot run). Decision:
+**`Trusted`** — the run keeps the setup the contract asks for, and the
+contract line about the work phase is enforced by the prompt ("no fetch /
+install / `supabase start`") and checked in review, not by the environment.
+The review checklist item "network off in the work phase" is read accordingly:
+_the agent did not use the network in the work phase_, which the session log
+shows, rather than _the environment forbade it_. The `/goal` block itself is
+left unchanged so that both runs are measured against the same text.
 
 ## Phone checks (lesson step 5)
 
