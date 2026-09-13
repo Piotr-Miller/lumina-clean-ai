@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-15 (§3 Phase 3 → complete: silent-stall + watchdog hardening was delivered across several changes — bookkeeping caught up; full rollout now complete)
+> Last updated: 2026-09-13 (§4 Stack: reconciled with the repo 2026-09-11, PR #219, and re-verified with no changes by a cloud-sandbox run 2026-09-13; MSW note reworded; MCP `checked:` dates re-observed. §1–§3 and §5–§7 not reviewed in this pass). Prior: 2026-06-15 (§3 Phase 3 → complete: silent-stall + watchdog hardening was delivered across several changes — bookkeeping caught up; full rollout now complete)
 
 ## 1. Strategy
 
@@ -119,7 +119,7 @@ The classic test base for this project. Versions are the resolved ones from
 | --------------------------- | --------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | unit + integration          | Vitest                                              | 3.2.7            | Configured (`vitest.config.ts`, Node env, `include: tests/**/*.test.ts`). 31 test files in `tests/` (root graph; `packages/code-reviewer` runs its own Vitest 4.x under the `code-reviewer` CI job). `npm run test:unit` excludes `jobs.rls.test.ts`; `npm test` runs it too — that one hits a **real local Supabase** (Docker), not mocks — deliberate, to lock RLS/storage/retention against a real runtime |
 | integration backend         | local Supabase (CLI)                                | 2.111.0 (pinned) | `npx supabase start` + `db reset`; three env vars (`SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`). CI: the `integration` job stands up an ephemeral stack (Docker image cache + one retry) and runs `npm test`; no GitHub secrets, so it also runs on fork PRs                                                                                                                                  |
-| API / network mocking       | signed Replicate-callback stub (no MSW)             | —                | `tests/e2e/helpers/replicate-stub.ts` builds a svix-signed `/callback` so the north-star E2E completes a job with no Replicate account; `tests/replicate-stub.helpers.test.ts` proves the production verifier accepts it. Unit/integration tests still use the real Supabase edge; MSW is not in the lockfile                                                                                                 |
+| API / network mocking       | signed Replicate-callback stub (no MSW)             | —                | `tests/e2e/helpers/replicate-stub.ts` builds a svix-signed `/callback` so the north-star E2E completes a job with no Replicate account; `tests/replicate-stub.helpers.test.ts` proves the production verifier accepts it. Unit/integration tests still use the real Supabase edge; MSW is not installed — it appears in the lockfile only as an optional peer of `@vitest/mocker`                             |
 | e2e                         | Playwright (`@playwright/test`)                     | 1.62.1           | `playwright.config.ts`: five specs + `auth.setup.ts` under `tests/e2e/`, chromium only, storageState auth, webServer = production build on `wrangler dev` (never `astro dev`). CI `e2e` job (PR gate, in `deploy.needs`): ephemeral Supabase + served `enhance` function with the `E2E_ALLOWED_OUTPUT_ORIGIN` seam, chromium cached on the lockfile hash. Run recipe: §6.3                                    |
 | Edge Function static + unit | `deno check` + `deno test`                          | Deno v2.x (CI)   | `supabase/functions/**` is outside the Astro tsc/eslint/Vitest graphs, so these two commands over `supabase/functions/enhance/` are its only static and behavioural coverage; both run in the PR-gating `ci` job. Three `*.test.ts` files sit next to the side-effect-free modules they cover (`index.ts` itself is not importable)                                                                           |
 | mutation (on demand)        | Stryker (`@stryker-mutator/core` + `vitest-runner`) | 9.6.1            | `stryker.config.json` → `vitest.config.stryker.ts` (excludes `jobs.rls.test.ts`); `npm run test:mutation` or a narrowed `--mutate`; a selective quality gate, never in CI — see AGENTS.md "Mutation testing"                                                                                                                                                                                                  |
@@ -131,12 +131,16 @@ The 2026-09-11 refresh was a file-only pass (sources: `package.json`,
 `package-lock.json`, `.github/workflows/ci.yml`, `playwright.config.ts`,
 `stryker.config.json`, the `tests/` listing, AGENTS.md). The repo ships no
 `.mcp.json`, so MCP availability is not observable from files; the MCP
-`checked:` dates below were left as they were.
+`checked:` dates were left as they were. On 2026-09-13 the MCP lines were
+re-checked by observation instead: each tool was called, or looked for, in a
+Claude Code session on that date. What such a session exposes comes from the
+account's connectors, not from this repo, so a different setup may see
+different tools.
 
-- Docs: **Context7** — available in the 2026-06-09 session; not queried for this refresh (versions come from `package-lock.json`); checked: 2026-06-09
-- Search: **Exa.ai** — available in the 2026-06-09 session; not used; checked: 2026-06-09
-- Runtime/browser: **no Playwright MCP exposed** in the 2026-06-09 session; Playwright is now an installed test dependency (`@playwright/test` 1.62.1, row above), not an MCP; MCP status not re-checked; checked: 2026-06-09
-- Provider/platform: **Supabase MCP present but requires interactive auth** in the 2026-06-09 session — not used; the suite exercises Supabase via the pinned CLI (2.111.0); checked: 2026-06-09
+- Docs: **Context7** — available in the 2026-09-13 session (`resolve-library-id` answered for Vitest); versions in the table still come from `package-lock.json`, not from Context7; checked: 2026-09-13
+- Search: **Exa.ai** — available in the 2026-09-13 session (a web search answered); checked: 2026-09-13
+- Runtime/browser: **no Playwright MCP exposed** in the 2026-09-13 session; Playwright is an installed test dependency (`@playwright/test` 1.62.1, row above), not an MCP; checked: 2026-09-13
+- Provider/platform: **no Supabase MCP exposed** in the 2026-09-13 session (on 2026-06-09 it was present but required interactive auth); the suite exercises Supabase via the pinned CLI (2.111.0); checked: 2026-09-13
 
 ## 5. Quality Gates
 
@@ -428,8 +432,8 @@ contributors should respect these unless the underlying assumption changes.
 ## 8. Freshness Ledger
 
 - Strategy (§1–§5) last reviewed: 2026-06-09
-- Stack versions last verified: 2026-06-09
-- AI-native tool references last verified: 2026-06-09
+- Stack versions last verified: 2026-09-13 — every §4 row checked against `package-lock.json`, `ci.yml`, the configs and the `tests/` listing; no drift since the 2026-09-11 reconcile (PR #219). Record: `context/archive/2026-09-11-test-plan-stack-refresh-sandbox/`
+- AI-native tool references last verified: 2026-09-13 — by observing the tools in a Claude Code session (see §4 "Stack grounding tools"); the §4 "(optional) AI-native" row, none by design, is unchanged
 - Rollout state (§3) last advanced: 2026-06-15 — Phase 3 `complete` (silent-stall + watchdog; delivered across `replicate-webhook.test.ts` + `usecloudjob-watchdog-unit` + E2E stall spec + `cloud-live-smoke.md`, reconciled in a bookkeeping pass). **All four phases complete — rollout finished.** Prior: 2026-06-13 Phase 4 `complete` (Playwright E2E gate + `e2e` CI job; `deploy` needs [ci, integration, e2e]).
 
 Refresh (`/10x-test-plan --refresh`) when:
