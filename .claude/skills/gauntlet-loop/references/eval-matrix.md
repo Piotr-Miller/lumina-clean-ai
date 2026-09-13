@@ -360,7 +360,7 @@ empty.
 ### Run 13 — 2026-08-25, Claude Code, §3/§4/§5 from a real loop
 
 The first actual use of this skill: three rounds on the enhance workspace entry state, bar = Let's
-Enhance then Fotor, workbench at `context/changes/gauntlet-enhance-ui/gauntlet/workbench.md`. Rounds 1
+Enhance then Fotor, workbench at `context/archive/2026-08-25-gauntlet-enhance-ui/gauntlet/workbench.md`. Rounds 1
 and 3 went to the bar, round 2 to us after a builder closed the named gap. The product result is in the
 workbench; what matters here is which gate cases the run actually exercised.
 
