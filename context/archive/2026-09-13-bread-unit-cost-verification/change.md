@@ -1,10 +1,10 @@
 ---
 change_id: bread-unit-cost-verification
 title: Verify the Bread per-run cost against live Replicate billing
-status: new
+status: archived
 created: 2026-09-13
 updated: 2026-09-13
-archived_at: null
+archived_at: 2026-09-13T20:05:37Z
 issue: 192
 ---
 
@@ -59,3 +59,41 @@ does not need the unknown original top-up.
 **Needs the owner:** access to the Replicate account (dashboard or token)
 and to production. Neither is available to an agent in this repo, which has
 no Replicate token locally.
+
+## Result (measured 2026-09-13)
+
+**The roadmap estimate holds: Bread costs about \$0.0006 per run.**
+
+| Statistic                | predict_time | Cost per run |
+| ------------------------ | ------------ | ------------ |
+| min                      | 1.071 s      | \$0.00024    |
+| median                   | 2.700 s      | \$0.00061    |
+| mean                     | 2.888 s      | \$0.00065    |
+| max                      | 4.724 s      | \$0.00106    |
+| total, 15 succeeded runs | 43.3 s       | \$0.00975    |
+
+- **Sample.** 15 succeeded and 4 cancelled predictions of the pinned version
+  `057a4e07…`, created 2026-06-18 → 2026-08-31. They come from the first page
+  of `GET /v1/predictions` (up to 100 items), read by the owner with the
+  production account's token on 2026-09-13. Whether older pages exist was not
+  checked.
+- **Method.** `metrics.predict_time` × the published T4 rate of
+  \$0.000225/s (replicate.com/pricing, read 2026-09-13). This is the list
+  price applied to metered time, not a billing ledger. The cross-check against
+  the account's monthly usage (method step 4) was **not done**.
+- **Fresh runs skipped** (method step 2). The pinned version has not changed
+  since the sample, the sample already spans three months of real inputs, and
+  three cap-limited runs could not move the median materially.
+- **Cancelled predictions.** All four have `predict_time: null`, which is
+  consistent with them costing nothing. Billing was not checked to confirm it.
+- **Cold boots.** `predict_time` excludes boot by definition, so this sample
+  cannot show whether boots bill. Per the pricing page they do not for public
+  models. That claim stays unconfirmed.
+
+**Consequence for the roadmap.** At the median, the 50/day cap tops out at
+about \$0.91 a month. If every run were the slowest one observed, it would
+be about \$1.59. The production cap of 3 a day comes to about \$0.05 a
+month. The Monetization conclusion survives: the variable bill is trivial
+and the real bill is fixed platform cost. `roadmap.md` now carries the
+measured figure with sample size and date, and its "verify" annotation is
+gone.
