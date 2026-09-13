@@ -140,9 +140,9 @@ including how to rotate a leaked token. Nothing in this repository reads or prin
 Then install, at the exact pinned version — never a moving dist-tag:
 
 ```bash
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.3.0 -- ai-toolkit setup --check   # diagnose only, writes nothing
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.3.0 -- ai-toolkit setup --dry-run # plan, writes nothing
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.3.0 -- ai-toolkit setup
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.3.1 -- ai-toolkit setup --check   # diagnose only, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.3.1 -- ai-toolkit setup --dry-run # plan, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.3.1 -- ai-toolkit setup
 ```
 
 The version to use is the one in [`.ai-toolkit/config.json`](../../.ai-toolkit/config.json).
@@ -163,7 +163,7 @@ tracked on purpose. Every installed path is gitignored; if anything else shows u
 ### 2.3 Verify the restore
 
 ```bash
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.3.0 -- ai-toolkit status
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.3.1 -- ai-toolkit status
 npm run check:skills                          # public parity — the three tracked skills
 ```
 
@@ -414,7 +414,7 @@ this workspace's greps in §2.3 passing.
 - **The package is the durable copy, not this workspace.** Anything gitignored here survives only
   because `@piotr-miller/ai-toolkit` ships it. Carry every fetch or hand-edit back into the
   package (§3.5) — a workspace-only change is one `rm -rf` from gone.
-- **Always name an exact version.** `ai-toolkit@1.3.0`, never a dist-tag, in evidence, in
+- **Always name an exact version.** `ai-toolkit@1.3.1`, never a dist-tag, in evidence, in
   scripts, and in anything you paste into an issue. A moving tag makes a record unreproducible.
 - The **upstream README is authoritative** for CLI install/usage:
   <https://raw.githubusercontent.com/przeprogramowani/10x-cli/refs/heads/master/README.md>
