@@ -39,17 +39,20 @@ file used to restate the number and went stale twice; see the note at the end of
 **All of it comes from one place: the private package
 [`@piotr-miller/ai-toolkit`](https://github.com/Piotr-Miller/ai-toolkit), pinned in
 [`.ai-toolkit/config.json`](../../.ai-toolkit/config.json).** It ships every gitignored
-artifact — both skill trees, the prompts and the CLI manifest — across two channels:
+artifact — both skill trees, the prompts and the CLI manifest — across three channels:
 
-| Absent after `git clone`                                                          | Installed by       | Channel    |
-| --------------------------------------------------------------------------------- | ------------------ | ---------- |
-| the five vendored non-course skills, in **both** trees                            | `ai-toolkit setup` | `managed`  |
-| every other non-allowlisted skill directory in **both** trees (the course skills) | the same setup     | `recovery` |
-| `.claude/prompts/`, `.claude/config-templates/`, `.claude/.10x-cli-manifest.json` | the same setup     | `recovery` |
+| Absent after `git clone`                                                              | Installed by       | Channel    |
+| ------------------------------------------------------------------------------------- | ------------------ | ---------- |
+| the five vendored non-course skills, in **both** trees                                | `ai-toolkit setup` | `managed`  |
+| every other non-allowlisted skill directory in **both** trees (the course skills)     | the same setup     | `recovery` |
+| `.claude/prompts/`, `.claude/config-templates/`, `.claude/.10x-cli-manifest.json`     | the same setup     | `recovery` |
+| the Millrune `rune-*` skills, in **both** trees (the owner's course-derived workflow) | the same setup     | `rune`     |
 
 The split matters when something goes wrong: `sync` reinstalls only the managed channel,
-`restore` only the recovery channel, and `setup` does both. Neither ever overwrites a file you
-have edited — a conflict is preserved and reported, and there is no `--force`.
+`restore` only the recovery channel, and `setup` does all three (`rune` has no command of its
+own). None of them ever overwrites a file you have edited — a conflict is preserved and reported,
+and there is no `--force`. An ordinary `uninstall` keeps the recovery and rune channels; only
+`uninstall --include-recovery` removes them.
 
 **Install from the package; do not rebuild from the CLI.** A `10x sync --all` can re-fetch the
 course skills, but it is _strictly worse_ as a recovery path, for three reasons:
@@ -137,9 +140,9 @@ including how to rotate a leaked token. Nothing in this repository reads or prin
 Then install, at the exact pinned version — never a moving dist-tag:
 
 ```bash
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.2 -- ai-toolkit setup --check   # diagnose only, writes nothing
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.2 -- ai-toolkit setup --dry-run # plan, writes nothing
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.2 -- ai-toolkit setup
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.2.0 -- ai-toolkit setup --check   # diagnose only, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.2.0 -- ai-toolkit setup --dry-run # plan, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.2.0 -- ai-toolkit setup
 ```
 
 The version to use is the one in [`.ai-toolkit/config.json`](../../.ai-toolkit/config.json).
@@ -160,7 +163,7 @@ tracked on purpose. Every installed path is gitignored; if anything else shows u
 ### 2.3 Verify the restore
 
 ```bash
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.0.2 -- ai-toolkit status
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.2.0 -- ai-toolkit status
 npm run check:skills                          # public parity — the three tracked skills
 ```
 
@@ -174,6 +177,7 @@ they are the point of installing from the package rather than re-fetching:
 grep -l "gh issue close" .claude/skills/10x-archive/SKILL.md
 grep -li stryker .claude/skills/10x-impl-review/SKILL.md
 ls .claude/skills/10x-impl-review/SKILL.user.md
+ls .claude/skills/rune-plan/SKILL.md .agents/skills/rune-archive/SKILL.md   # Millrune arrived in both trees
 ```
 
 **At this point the environment is fully working.** Stop here unless you need new lessons.
@@ -410,7 +414,7 @@ this workspace's greps in §2.3 passing.
 - **The package is the durable copy, not this workspace.** Anything gitignored here survives only
   because `@piotr-miller/ai-toolkit` ships it. Carry every fetch or hand-edit back into the
   package (§3.5) — a workspace-only change is one `rm -rf` from gone.
-- **Always name an exact version.** `ai-toolkit@1.0.2`, never a dist-tag, in evidence, in
+- **Always name an exact version.** `ai-toolkit@1.2.0`, never a dist-tag, in evidence, in
   scripts, and in anything you paste into an issue. A moving tag makes a record unreproducible.
 - The **upstream README is authoritative** for CLI install/usage:
   <https://raw.githubusercontent.com/przeprogramowani/10x-cli/refs/heads/master/README.md>
