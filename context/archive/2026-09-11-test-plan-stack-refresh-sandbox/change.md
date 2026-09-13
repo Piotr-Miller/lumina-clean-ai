@@ -1,10 +1,10 @@
 ---
 change_id: test-plan-stack-refresh-sandbox
 title: Re-run the test-plan §4 delegation contract in the cloud sandbox
-status: implemented
+status: archived
 created: 2026-09-11
 updated: 2026-09-13
-archived_at: null
+archived_at: 2026-09-13T19:10:09Z
 issue: null
 ---
 
