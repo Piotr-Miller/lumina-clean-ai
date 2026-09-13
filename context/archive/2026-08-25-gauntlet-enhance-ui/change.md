@@ -1,10 +1,10 @@
 ---
 change_id: gauntlet-enhance-ui
 title: Raise the enhance workspace against a competitor bar, via a Gauntlet Loop
-status: implemented
+status: archived
 created: 2026-08-25
 updated: 2026-09-13
-archived_at: null
+archived_at: 2026-09-13T21:19:05Z
 issue: null
 ---
 
