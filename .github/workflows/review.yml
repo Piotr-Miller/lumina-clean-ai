@@ -190,6 +190,36 @@ jobs:
           # fixture's payload. Its ai-cr:failed label described planted content,
           # not the PR. Excluding the directory drops those diffs 438,635 B ->
           # 32,444 B and 223,656 B -> 20,751 B: both then fit whole, untruncated.
+          # Fourth exclusion: ALL markdown. The finder is a CODE reviewer, and
+          # glm-4.6 (vars.OPENROUTER_REVIEW_MODEL) does not survive a large prose
+          # diff. Four consecutive failures on 2026-09-20, every one a docs-only
+          # PR, none producing any output at all: 35512300004 (#233), 35524527921
+          # (#234), 35532488915 and 35533002936 (both #236). Three died on
+          # AI_NoObjectGeneratedError at finder step 1-2, the immediate re-roll
+          # re-failing; the fourth burned all five steps on getFileContext, and
+          # #233 spent four of its steps reading context/foundation/agent-env-setup.md
+          # before failing the same way. Prose is NOT deterministically fatal — six
+          # prose PRs passed on 2026-09-13 — it is a size-and-model problem, which
+          # is why excluding it beats raising REVIEW_FINDER_MAX_STEPS: on a diff
+          # touching the synced skill trees a bigger budget only buys more
+          # duplicate reads, since .agents/ and .claude/ carry byte-identical
+          # copies of every skill.
+          #
+          # Done HERE rather than as a `paths-ignore:` on the trigger, deliberately.
+          # This step's SKIP_REVIEW branch makes a docs-only PR skip VISIBLY — green
+          # run, a line in the step summary, and the PR's last ai-cr:* verdict label
+          # left untouched — whereas paths-ignore produces no run at all, which is
+          # indistinguishable from an outage and would deadlock the merge if this
+          # check ever became required. It also fixes MIXED PRs, which paths-ignore
+          # cannot: getFileContext's allowlist is derived from this diff, so once
+          # prose is out the finder cannot spend its budget reading it even when real
+          # code is present. Nothing of value is lost — the finder's `documentation`
+          # criterion (prompts.ts) asks whether non-obvious CODE is explained, it does
+          # not review prose documents as such, and orderDiffForCap already demotes
+          # Markdown behind source once a diff is over cap. The narrower
+          # **/reviews/*.md above is now subsumed but STAYS: it carries its own
+          # rationale and must survive any future narrowing of this blanket rule.
+          #
           # Array, not `${PLAN_PATH:+…}`: an unquoted expansion word-splits a
           # path containing a space into a broken pathspec and fails the step
           # red. The PR controls its own filenames, so that is reachable.
@@ -197,6 +227,7 @@ jobs:
             ':(exclude,glob)**/reviews/*.md'
             ':(exclude,glob)**/results/*.json'
             ':(exclude,glob)**/ground-truth/*'
+            ':(exclude,glob)**/*.md'
           )
           [ -n "$PLAN_PATH" ] && EXCLUDES+=(":(exclude)${PLAN_PATH}")
           git diff "origin/${BASE_REF}...${HEAD_SHA}" -- . "${EXCLUDES[@]}" > "$RUNNER_TEMP/pr.diff"
