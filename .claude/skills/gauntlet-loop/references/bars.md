@@ -132,10 +132,31 @@ criterion — "cloud result is noticeably better than local" (`idea-notes.md`). 
 two engines _is_ the gap the local engine should be closing, and it is a real image a critic can look
 at rather than an opinion about denoising.
 
+> ⚠️ **The bar is not sound on every photo class — verify before you freeze it (2026-09-20).** The
+> success criterion quoted above **is currently false in production**, and `idea-notes.md` now says so.
+> Change `cloud-quality-below-local` (S-17, [#203](https://github.com/Piotr-Miller/lumina-clean-ai/issues/203))
+> confirmed against Bread's stored raw output that **saturated green night scenes come back magenta and
+> blown out from the model itself** — 3 of 3 — while low-chroma scenes (interiors, clean night sky) draw
+> no such complaint. So on the failing class the Bread result is **not** a quality reference, and a round
+> that scores our output against it is measuring the wrong thing. Two consequences for this domain:
+>
+> - **Freeze at the model's own defaults, not the app's.** Bread documents `gamma 1.0` / `strength 0.05`;
+>   the app ships `1.2` / `0.2` (the ceiling) and Auto pins `gamma` to **1.50** on any night photo. A
+>   freeze taken through the app as configured records the model at the worst point of its range.
+> - **The two engines' outputs are not the same size.** Bread caps its long edge at **1536 px** (~1.5 MP);
+>   the local engine returns the source's own dimensions. Any numeric measure across them needs a stated
+>   resampling decision, and identical crops at identical zoom are already required below for the visual
+>   comparison — the same discipline applies to the numbers.
+>
+> Until S-17 settles the model question (keep-and-compensate / swap / drop), treat a Bread freeze as
+> provisional and record which class each reference photo belongs to.
+
 **Freeze the bar once, then never call the cloud again.**
 
 1. Pick 5–8 representative night photos (varied: high shadow noise, colour cast, mixed light, a clipped
-   highlight, a near-black frame).
+   highlight, a near-black frame). ⚠️ **"Colour cast" is the known-failing class** — a saturated green
+   scene will come back magenta from the model, so keep it in the set as a _diagnostic_ if you like, but
+   do not use its Bread output as a quality bar. See the warning above.
 2. Produce their Bread outputs **once** in a controlled environment. Save pairs as
    `<name>.source.jpg` + `<name>.bread.jpg` in `scratchpad/gauntlet/<slug>/reference/` — gitignored,
    hash-pinned in the workbench. **User photos and their cloud outputs are never committed**, and a

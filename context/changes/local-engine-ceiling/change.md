@@ -3,9 +3,62 @@ change_id: local-engine-ceiling
 title: Calibrate the local engine against the frozen cloud bar — the gap is a product feature, so find where the line should sit
 status: new
 created: 2026-08-25
-updated: 2026-08-25
+updated: 2026-09-20
 archived_at: null
 issue: 188
+---
+
+## ⚠️ Superseded in part — read before spending the metered step (2026-09-20)
+
+**Do not run the Bread freeze as specified below.** Change `cloud-quality-below-local`
+(S-17, [#203](https://github.com/Piotr-Miller/lumina-clean-ai/issues/203)) established on
+2026-09-20 that **the reference bar this change is built on is itself defective**, and the
+defect lands on exactly the photo class the reference set asks for. Four consequences, each
+invalidating a specific instruction further down this file:
+
+1. **The bar is faulty on saturated green night scenes.** Bread's returned bytes — opened
+   straight from Supabase Storage with nothing of ours touching them — are **already magenta
+   and already blown out**. Its colour-adaptation network regresses Cb/Cr from scratch with no
+   residual path and no hue constraint, supervised on a corpus with no saturated emissive
+   green; green sits deep in the negative quadrant of both Cb and Cr, so the learned prior
+   lands it across the neutral point as magenta. Three of three such scenes fail.
+   **"What has to exist first" §1 asks for a photo with a colour cast** — that _is_ the failing
+   class. Freezing it captures the fault and enshrines it as the quality reference.
+2. **The freeze would also bake in our own misconfiguration.** Bread's documented defaults are
+   `gamma 1.0` / `strength 0.05`. We ship `1.2` / **`0.2`** — 4× the default and exactly the
+   model ceiling — and Auto pins `gamma` to **1.50** on any night photo, while our zod schema
+   and slider floor it at `1.0`, so the lower half of the model's range has never been
+   reachable. `gamma` scales the illumination map, which is _also_ the fusion weight deciding
+   how much original colour survives — so high gamma maximises blow-out and minimises colour
+   preservation together. A freeze taken through the app as configured today records the model
+   at the worst point of its range, not at its contract.
+3. **The `WINS`-is-a-product-failure inversion is currently backwards on that class.** The rule
+   below — any `WINS` verdict on a night photo means stop and re-read `prd.md` §116 — was sound
+   while Cloud was the better engine. On saturated night scenes **Local beating Cloud is simply
+   true today**, and that is the S-17 regression, not a breach of the funnel. A critic obeying
+   the rule as written would halt a correct measurement and report a product failure that is in
+   fact a known model defect. The inversion still holds for the classes where Cloud is genuinely
+   better (the low-chroma interiors and clean night skies in the S-11 archives drew no colour
+   complaint); it cannot be applied blind across the whole set.
+4. **The SSIM/PSNR referee has an undefined comparison.** Bread caps its output's long edge at
+   **1536 px** (≈ 1.5 MP, both dimensions floored to a multiple of 8, not configurable); the
+   local engine returns the source's own dimensions. A metric between a full-resolution output
+   and a ~1.5 MP bar needs a resampling decision that materially moves the number, and no such
+   decision is made anywhere below. That gap is registered separately as
+   `cloud-result-resolution-gap`.
+
+**Net effect on status: this change is now blocked on S-17's model decision, not only on
+maintainer inputs.** S-17 has Bread-versus-swap-versus-drop open, and one live option moves a
+**44 KB / 258-weight** convolutional network (`vis-opt-group/sci`) into the browser — which
+would change what "the local engine" even is, and would retire "the frozen cloud result" as the
+product's reference. **Sequence: let S-17 decide the model first**; then re-derive the reference
+set and the objective from whatever that decision leaves standing; only then spend the freeze.
+
+Sources: `context/changes/cloud-quality-below-local/frame.md` (cause, confirmed against the
+production artifact) and `.../research.md` §"Bread's colour branch", §"We are operating the model
+outside its documented defaults", §"The alternatives". **Everything below is preserved as written
+on 2026-08-25 and must be read through these four corrections.**
+
 ---
 
 ## Notes

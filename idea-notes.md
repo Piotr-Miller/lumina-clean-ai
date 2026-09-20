@@ -42,7 +42,7 @@ _Signalled as "coming soon" (outside the current MVP):_ UI localization to 7 lan
 
 - ✅ End-to-end cloud flow works: upload JPG → Bread processes → result appears via Realtime push without page refresh
 - ✅ Local engine produces a visible improvement (brighter, less noisy) on a sample night photo
-- ✅ Toggle switches between engines seamlessly — cloud result is noticeably better than local
+- ⚠️ Toggle switches between engines seamlessly — ~~cloud result is noticeably better than local~~. **The toggle works; the quality claim is FALSE in production as of 2026-08-31.** Bread's own output flips saturated green night scenes to magenta and blows out highlights — confirmed 2026-09-20 against the stored raw `result.png`, so the fault is the model's, not our pipeline's. Tracked as roadmap slice **S-17** (`cloud-quality-below-local`, [#203](https://github.com/Piotr-Miller/lumina-clean-ai/issues/203)); the model decision (keep-and-compensate / swap / drop) is open. Low-chroma scenes draw no such complaint, so the failure is saturation-dependent rather than universal.
 - ✅ Unauthenticated users can use the local engine; cloud requires login
 - ✅ Rate limit correctly blocks the 51st cloud request within a UTC day (global cap, all users combined; prod threshold set conservatively to 3)
 - ✅ Deployed and accessible on Cloudflare ~~Pages~~ **Workers** (SSR via `@astrojs/cloudflare`), on the branded domain **luminacleanai.com**
