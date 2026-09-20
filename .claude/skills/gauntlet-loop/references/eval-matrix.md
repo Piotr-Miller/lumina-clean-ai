@@ -446,6 +446,23 @@ working. The label is not.
   relative to the bar rather than a victory over it. Raised by change `local-engine-ceiling`
   (`context/changes/local-engine-ceiling/change.md`, issue #188) and recorded here because that change
   is itself parked — nobody resuming the skill would have found it there.
+- **A fifth arrived 2026-09-20, and it is a safety correction rather than an improvement — so unlike the
+  four above it HAS been applied to `bars.md` §B.** Change `cloud-quality-below-local` (S-17, #203)
+  confirmed against Bread's stored raw output that the model itself returns magenta, blown-out bytes on
+  saturated green night scenes. That makes **domain B's bar defective on a specific, nameable photo
+  class** — and `bars.md` §B's freeze recipe asks for a "colour cast" photo, i.e. it steers the reader
+  straight at it. Recording this one and leaving §B unchanged would have been the wrong call: the four
+  above are objective/method refinements a lead can weigh, whereas this one sends a metered, one-shot
+  freeze at a known fault. §B now carries the warning, the model-defaults point (`gamma 1.0` /
+  `strength 0.05` documented vs `1.2` / `0.2` shipped, Auto pinning 1.50) and the resolution mismatch
+  (Bread caps at 1536 px; Local returns full size). **This edit touches operating instructions and
+  therefore owes a §2 re-measure** — unblocking, since the skill is supervised and on-demand and is
+  never a CI gate, but it is owed.
+- **It also partly inverts the fourth bullet.** "A `WINS` verdict on a night photo is a product failure"
+  holds only where Cloud is genuinely the better engine. On the failing class Local beating Cloud is
+  **simply true today** and is the S-17 regression, not a breach of the funnel — so a critic applying
+  the inversion blind would halt a correct measurement and report a product failure that is really a
+  known model defect. The rule needs the photo class attached to it, not just the verdict.
 - Each of the four touches operating instructions and therefore costs a §2 re-measure. **Recording
   them does not; only applying them does** — which is why the fourth is written down while all four
   stay parked.
