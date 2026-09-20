@@ -1,9 +1,9 @@
 ---
 change_id: cloud-quality-below-local
 title: Cloud AI output is worse than the local engine
-status: new
+status: preparing
 created: 2026-08-31
-updated: 2026-08-31
+updated: 2026-09-20
 archived_at: null
 ---
 
@@ -47,7 +47,17 @@ Two secondary observations worth keeping:
 - In `02`, the AFTER image is **noisier** than the BEFORE. A denoise pass that
   increases noise is failing at its stated job, not merely tuning it badly.
 
-### Candidate causes — NOT yet diagnosed
+### Candidate causes — RESOLVED 2026-09-20
+
+> **Superseded. Kept verbatim below as the original framing** (what was assumed,
+> vs what was found) — see `frame.md` for the investigation.
+>
+> **The cause is Bread's own output.** The stored raw `result.png` for jobs
+> `190832de…` and `3d19146a…` — the pre-post-pass bytes Replicate returned,
+> opened straight from Supabase Storage outside the app — is **already magenta**
+> and **already blown out**, matching screenshots `02` and `01`. Hypothesis 2
+> stands; 1, 3 and 4 are eliminated by measurement. `gamma` > 1 brightens on
+> Bread too (its public model page), so we are not driving it backwards.
 
 Recorded as hypotheses to test, deliberately not as findings. This repository has
 a documented history of writing unverified causes into records
@@ -71,16 +81,24 @@ this note.
    post-pass canvas and the stored file could shift colour without any maths
    error in the pass itself.
 
-**The cheapest discriminator is a flag flip**: `CHROMA_POSTPASS_ENABLED=false`
-on one real job. If the hue flip disappears, hypothesis 1 stands and 2 falls; if
-it survives, the opposite. Do that before writing any code — and note that this
-also means a **rollback is available today** if the post-pass proves to be the
-cause, independent of the full fix.
+~~**The cheapest discriminator is a flag flip**: `CHROMA_POSTPASS_ENABLED=false`
+on one real job.~~ **Not used, and it was neither cheapest nor a discriminator.**
+The flag gates the chroma maths _and_ the canvas/JPEG round-trip together, so a
+negative result would not have separated them. And it was not needed: result
+objects are never reaped (the reaper matches `'%/source.%'` only), so the raw
+`result.png` for all three failing jobs was still in storage — free to open, no
+prediction, no cap slot. The hoped-for consequence is also gone: **no flag of
+ours rolls this back**, because the fault is in the model output.
 
 ### Scope note
 
-The framing to resist: "make Bread better". The reported symptom is that cloud
-loses to local, and the evidence points at a colour transform somewhere in our
-own pipeline, which is a different change from tuning or replacing the model.
-Settle the cause first — `/10x-frame` is the fitting entry point, since the
-observation and its presumed cause ("Bread is bad") arrived fused.
+~~the evidence points at a colour transform somewhere in our own pipeline~~ —
+**disproven 2026-09-20.** Entering through the framing step was right, and it
+paid: the presumed cause was eliminated by measurement. But the conclusion
+inverted. Resisting "make Bread better" was correct **until the cause was
+known**, and the cause is the model, so a swap is now a candidate on evidence
+rather than an assumption — **S-13 is un-parked as an option, not as a
+decision**. What the scope note got right and still holds: this is not a
+parameter-tuning change. Two separable tracks now: the model decision, and an
+independent delivery gap (~1.5 MP lossy JPEG vs Local's full resolution) that is
+entirely ours. Next: `/rune-research`.
