@@ -190,20 +190,31 @@ jobs:
           # fixture's payload. Its ai-cr:failed label described planted content,
           # not the PR. Excluding the directory drops those diffs 438,635 B ->
           # 32,444 B and 223,656 B -> 20,751 B: both then fit whole, untruncated.
-          # Fourth exclusion: ALL markdown. The finder is a CODE reviewer, and
-          # glm-4.6 (vars.OPENROUTER_REVIEW_MODEL) does not survive a large prose
-          # diff. Four consecutive failures on 2026-09-20, every one a docs-only
-          # PR, none producing any output at all: 35512300004 (#233), 35524527921
-          # (#234), 35532488915 and 35533002936 (both #236). Three died on
-          # AI_NoObjectGeneratedError at finder step 1-2, the immediate re-roll
-          # re-failing; the fourth burned all five steps on getFileContext, and
-          # #233 spent four of its steps reading context/foundation/agent-env-setup.md
-          # before failing the same way. Prose is NOT deterministically fatal — six
-          # prose PRs passed on 2026-09-13 — it is a size-and-model problem, which
-          # is why excluding it beats raising REVIEW_FINDER_MAX_STEPS: on a diff
-          # touching the synced skill trees a bigger budget only buys more
-          # duplicate reads, since .agents/ and .claude/ carry byte-identical
-          # copies of every skill.
+          # Fourth exclusion: ALL markdown. This is SCOPE, not a cure — read the
+          # second paragraph before citing it as the fix for a red review.
+          #
+          # What it DOES fix. A docs-only PR no longer reaches the finder at all,
+          # so it skips visibly instead of failing: that covers the four docs-only
+          # runs of 2026-09-20 (35512300004 #233, 35524527921 #234, 35532488915 and
+          # 35533002936 both #236), none of which produced any output. And on a
+          # MIXED PR the finder can no longer spend its step budget reading prose,
+          # because getFileContext's allowlist is derived from this diff —
+          # 35532488915 burned all five steps exactly that way, on the
+          # byte-identical .agents/ and .claude/ copies of the same two skills,
+          # and #233 spent four of its steps inside
+          # context/foundation/agent-env-setup.md.
+          #
+          # What it does NOT fix, measured rather than assumed. The finder fails on
+          # NON-prose diffs too. Run 35534422541 — the PR that added this very line
+          # — handed it a 31-line YAML diff at 2.4k-4.5k tokens, and it still died on
+          # AI_NoObjectGeneratedError, twice. The record is a clean break rather than
+          # a content effect: 20 consecutive successes from 2026-09-08 to 2026-09-13,
+          # then 5 consecutive failures on 2026-09-20 across prose AND code. So the
+          # root cause sits in the finder model (vars.OPENROUTER_REVIEW_MODEL,
+          # currently z-ai/glm-4.6) or its provider, and the lever for that is a
+          # one-command variable swap, not this pathspec. Do NOT raise
+          # REVIEW_FINDER_MAX_STEPS expecting relief either: on a synced-skill-tree
+          # diff a bigger budget only buys more duplicate reads.
           #
           # Done HERE rather than as a `paths-ignore:` on the trigger, deliberately.
           # This step's SKIP_REVIEW branch makes a docs-only PR skip VISIBLY — green
