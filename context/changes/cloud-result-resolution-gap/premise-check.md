@@ -143,3 +143,48 @@ Source files are reaped at 24 h, but **every stored `result.png` is still there 
 are readable at zero cost**. Reading them for all 18 succeeded jobs establishes, for the whole
 production history, which uploads Bread downscaled and which it passed through. That is the cheapest
 remaining evidence in this project and it needs no prediction, no cap slot and no new photo.
+
+## Second measurement — does the proposed Phase 2 fix actually change anything?
+
+The first two findings only said the cited evidence was wrong. This one asks whether the fix is
+worth building at all, and it needs no cloud job: take a genuine 9.83 MP night frame
+(`ab-harness/samples/01-very-dark-iso160000.jpg`, 3840 × 2560, ISO 160000), produce the size Bread
+would return (1536 × 1024, **pixel ratio 0.160** — the paid engine really does hand back a sixth of
+the pixels), and render all three panes into the same box.
+
+| Box (device px) | AFTER | BEFORE today | BEFORE after the fix | Gap today |
+| --------------: | ----: | -----------: | -------------------: | --------- |
+|             800 | 3.006 |        2.979 |                3.006 | **0.9 %** |
+|            1200 | 4.248 |        4.383 |                4.248 | **3.2 %** |
+|            1600 | 4.711 |        5.684 |                4.711 | 20.7 %    |
+|            2000 | 3.856 |        6.853 |                3.856 | 77.7 %    |
+
+The fix closes the gap to **0.0 % at every size**, which is expected: afterwards both panes go
+through literally the same pipeline. The question is what it is closing.
+
+**The asymmetry does not run in the direction the record claims.** At no tested box size is the
+AFTER noisier than the BEFORE. At small boxes they are within 1–3 %, which is invisible. At large
+boxes the **BEFORE** is the noisier one, by up to 78 %, because once the box exceeds 1536 px the
+result is being _upscaled_ (and softened) while the original is still only mildly downsampled.
+
+Practical range: the box is `w-full` capped by `calc(60vh * ratio)`. On a 1080p screen at device
+pixel ratio 1 that is ≈970 device px, where the gap is ~1–3 %. At ratio 2 it is ≈1940, where the gap
+is large but points the other way.
+
+**Limitation.** The AFTER here is a clean resample of the source, not real Bread output, so this
+isolates the _geometry_ and says nothing about Bread's own noise. That is the right separation: the
+fix only ever removes the scaling difference, and it would not hide intrinsic model noise — nor
+should it.
+
+### What this implies for the plan
+
+- **Phase 2 (rescale the BEFORE) does not earn its diff on the stated justification.** The
+  inequality it removes is negligible at ratio 1 and runs opposite to the reported complaint at
+  ratio 2. It remains defensible as a principle — make the comparison exactly fair in both
+  directions — but that is a design preference, not a bug fix, and it carries the resampler risk
+  recorded in the plan.
+- **The crop fix survives** unchanged. It is structural, cheap, and independent of any of this.
+- **The disclosure becomes the primary deliverable**, and it is now better evidenced than when it
+  was written: the measured pixel ratio is **0.160**. Telling the user that the paid engine returned
+  a sixth of the pixels is a plain fact they currently have no way to learn.
+- **The delivery half still sequences after S-17**, unchanged.
