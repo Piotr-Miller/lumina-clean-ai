@@ -3,11 +3,14 @@ change_id: cloud-result-resolution-gap
 title: "Cloud AI returns ~1.5 MP lossy JPEG where Local returns full resolution"
 status: new
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-21
 archived_at: null
+issue: 238
 ---
 
 ## Notes
+
+**Registered 2026-09-21 as roadmap slice S-18, issue [#238](https://github.com/Piotr-Miller/lumina-clean-ai/issues/238), Backlog Handoff `ready`.** The folder had existed since 2026-09-20 with no tracker entry anywhere — S-17's roadmap block twice said the delivery gap should be split out, the split happened, and nothing recorded it.
 
 Split out of `cloud-quality-below-local` (S-17) on 2026-09-20, during that
 change's framing step. It is **separable**: confirmed, entirely ours, and
