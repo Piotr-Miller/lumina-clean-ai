@@ -100,13 +100,46 @@ pixel, which is normal for noisy content. Against a 1536 × 1024 result (1.57 MP
 ≈0.45 bytes per pixel, implausibly low for a frame this grainy. The byte sizes point the same way as
 the grain measurement.
 
-## Wider consequence, worth carrying to S-17
+## Wider consequence, carried to S-17 — confirmed by the maintainer
 
-`frame.md` established that this aurora image has been the **de-facto cloud test photo since
-launch**, and that three jobs sampled from 2026-06-08, 06-13 and 06-18 are the same photo with
-byte-identical results. If those uploads were this same ~0.5 MP file — likely, but **sampled, not
-proven across all 18 stored jobs** — then the production corpus contains little or no evidence of
-Bread's behaviour on a real 8–12 MP phone upload: its resolution, its noise, or its colour at that
-size. **Checking the stored sources is no longer possible** (they are reaped at 24 h), but the
-stored `result.png` dimensions are still readable and would settle it for every job at zero cost.
-That is a cheap, high-value check for whoever next touches S-17.
+**The maintainer confirmed on 2026-09-21 that this aurora image was downloaded from the web at the
+outset and is the same file the project has worked with from the beginning.** So this is no longer
+an inference from sampling: the cloud pipeline's own test photo was a ~0.5 MP web JPEG, already
+compressed and already processed by whoever published it.
+
+And it is not only the aurora. The same grain measurement over the BEFORE pane of **all three** of
+S-17's evidence screenshots:
+
+| Screenshot                                                       | BEFORE grain |
+| ---------------------------------------------------------------- | -----------: |
+| `01` wolf                                                        |        2.159 |
+| `02` aurora                                                      |        2.786 |
+| `03` waterfall                                                   |        2.817 |
+| _a multi-MP original downsampled ~5× into the box would measure_ |       _~0.2_ |
+
+All three are an order of magnitude above the downsample reference. **Every failing trial S-17 rests
+on used a small source rendered near 1:1**, so Bread passed all three through and no production job
+has ever exercised it at a real phone's resolution.
+
+### What that does and does not undermine
+
+- **The colour finding survives.** The hue flip was confirmed by opening Bread's stored raw
+  `result.png` outside the app; a magenta cast is a magenta cast whatever the input size. Bread also
+  resizes internally to ≤1536 before the network sees the image, so a 12 MP upload and a 0.9 MP
+  upload reach the model at comparable scale. The saturation-dependence hypothesis is unaffected.
+- **Every resolution, delivery and noise conclusion does not survive.** "The AFTER is noisier",
+  "the cloud result is ~1.5 MP against the source's 8–12 MP as experienced by our users" and the
+  scaling asymmetry were all read off trials where no downscale occurred. They describe what would
+  happen to a real user's phone photo, which is a genuine latent defect, but **nothing in this
+  project has ever observed it**.
+- **`defaults-experiment.md` inherits the same caveat.** Re-running the aurora at Bread's own
+  defaults measures the model on a small web JPEG. That is still worth doing for the colour
+  question, but the run should use a real camera-resolution night photo as well, or the result
+  carries the same blind spot.
+
+### The free check that settles the rest
+
+Source files are reaped at 24 h, but **every stored `result.png` is still there and its dimensions
+are readable at zero cost**. Reading them for all 18 succeeded jobs establishes, for the whole
+production history, which uploads Bread downscaled and which it passed through. That is the cheapest
+remaining evidence in this project and it needs no prediction, no cap slot and no new photo.
