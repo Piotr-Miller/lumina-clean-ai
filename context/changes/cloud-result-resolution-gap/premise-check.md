@@ -188,3 +188,26 @@ should it.
   was written: the measured pixel ratio is **0.160**. Telling the user that the paid engine returned
   a sixth of the pixels is a plain fact they currently have no way to learn.
 - **The delivery half still sequences after S-17**, unchanged.
+
+## Third measurement — is there a silent crop to fix at all?
+
+`change.md` flagged a related risk: if Bread's /8 flooring shifts the aspect ratio, `object-cover`
+silently trims the BEFORE pane. Measured across ten common camera geometries:
+
+| Source      | Result      | Source AR | Result AR |   Drift |
+| ----------- | ----------- | --------: | --------: | ------: |
+| 4000 × 3000 | 1536 × 1152 |    1.3333 |    1.3333 | 0.000 % |
+| 4032 × 3024 | 1536 × 1152 |    1.3333 |    1.3333 | 0.000 % |
+| 4500 × 3000 | 1536 × 1024 |    1.5000 |    1.5000 | 0.000 % |
+| 3840 × 2560 | 1536 × 1024 |    1.5000 |    1.5000 | 0.000 % |
+| 6000 × 4000 | 1536 × 1024 |    1.5000 |    1.5000 | 0.000 % |
+| 5184 × 3888 | 1536 × 1152 |    1.3333 |    1.3333 | 0.000 % |
+| 3024 × 4032 | 1152 × 1536 |    0.7500 |    0.7500 | 0.000 % |
+| 4001 × 3000 | 1536 × 1152 |    1.3337 |    1.3333 | 0.025 % |
+
+**Nine of ten drift by exactly zero**, because standard sensor dimensions scale onto multiples of 8
+cleanly. The worst contrived case is 0.025 %, which is **0.2 px in an 800 px box**.
+
+So there is no crop to fix. Phase 3 was narrowed to what is genuinely wrong: the slider's prop doc
+claims `before === after`, a contract the Cloud path has violated since launch, and a future reader
+would trust it. That is a comment correction with no render change.

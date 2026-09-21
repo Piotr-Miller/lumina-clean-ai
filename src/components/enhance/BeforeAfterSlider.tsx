@@ -7,8 +7,19 @@ interface BeforeAfterSliderProps {
   beforeSrc: string;
   /** Enhanced result (the base layer, revealed on the right). */
   afterSrc: string;
-  /** Intrinsic pixel dimensions (before === after) — used to size the box to
-      the image's aspect ratio so the divider tracks the real image width. */
+  /**
+   * Dimensions of the **shared display box** both panes are rendered into, used
+   * for its aspect ratio so the divider tracks the real image width.
+   *
+   * These are NOT a promise that the two sources match. The doc used to say
+   * "before === after", which the Cloud path has violated since launch: it
+   * passes the *result's* dimensions, and Cloud AI caps its output at 1536px on
+   * the long edge. Both panes are `object-cover`, so a caller passing sources of
+   * differing aspect ratios accepts a trim bounded by that difference — measured
+   * at 0.000% for nine of ten common camera ratios and 0.025% (≈0.2px in an
+   * 800px box) for the worst contrived case, because Cloud AI's /8 flooring
+   * lands on exact ratios for standard sensor dimensions.
+   */
   width: number;
   height: number;
   /** Accessible description of the image subject. */

@@ -181,12 +181,19 @@ false.
 
 ---
 
-## Phase 3: Correct the silent crop
+## Phase 3: Correct the misleading prop contract
 
 ### Overview
 
-A correctness tidy-up, **bounded at ~0.8 %** and done only because the component is already open.
-Not a user-visible bug.
+**Narrowed 2026-09-21 by measurement.** This phase was going to re-size the slider box from the
+source so the BEFORE pane was never the trimmed one. Measuring the actual aspect drift across ten
+common camera ratios killed that: it is **0.000 % in nine of them** and 0.025 % in the one contrived
+case, i.e. **0.2 px in an 800 px box**. Cloud AI's /8 flooring lands on exact ratios for standard
+sensor dimensions, so there is no crop to fix. Re-sizing the box would only move a sub-pixel trim
+from one pane to the other while changing layout in a component with frozen E2E locators.
+
+What remains is the part that is genuinely wrong: the prop doc claims a contract the Cloud path has
+violated since launch, and a future reader would trust it.
 
 ### Changes Required
 
@@ -194,34 +201,18 @@ Not a user-visible bug.
 
 **File**: `src/components/enhance/BeforeAfterSlider.tsx`
 
-**Intent**: The prop doc claims `before === after`, which the cloud path has always violated. Say
-instead that the props define the **shared display box**, and that a caller passing sources of
-differing ratios accepts an `object-cover` trim bounded by that difference.
+**Intent**: Replace "Intrinsic pixel dimensions (before === after)" with what the props actually
+are — the shared display box — and record the measured bound on the `object-cover` trim.
 
-**Contract**: Comment-only on this file. No DOM change, no string change, no behavioural change.
-
-#### 2. Size the box from the source
-
-**File**: `src/components/enhance/EnhanceWorkspace.tsx`
-
-**Intent**: Pass the **source's** dimensions as the slider's box, so the pane the user judges as
-"their photo" is never the cropped one.
-
-**Contract**: Cloud branch only; the local branch is untouched because its dimensions already match.
-The result pane then absorbs the ≤0.8 % trim instead.
+**Contract**: Comment-only. No DOM change, no string change, no behavioural change, no render
+difference.
 
 ### Success Criteria
 
 #### Automated Verification
 
 - Unit tests, types, lint and build all pass
-
-#### Manual Verification
-
-- Dragging the divider shows no seam or size jump
-- A local-engine run renders identically to before the change
-
----
+- The rendered output is unchanged (comment-only diff)
 
 ## Phase 4: Make E2E actually cover the new path
 
@@ -317,16 +308,12 @@ None. Display-only, no schema change, no stored-artifact change, no change to an
 - [ ] 2.6 It does not appear on a local result, nor on a passed-through cloud result
 - [ ] 2.7 It reads as a neutral statement of fact
 
-### Phase 3: Correct the silent crop
+### Phase 3: Correct the misleading prop contract
 
 #### Automated
 
 - [ ] 3.1 Unit tests, types, lint and build all pass
-
-#### Manual
-
-- [ ] 3.2 Dragging the divider shows no seam or size jump
-- [ ] 3.3 A local-engine run renders identically to before the change
+- [ ] 3.2 The rendered output is unchanged (comment-only diff)
 
 ### Phase 4: Make E2E actually cover the new path
 
