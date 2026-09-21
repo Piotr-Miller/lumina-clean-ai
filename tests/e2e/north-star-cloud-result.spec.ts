@@ -56,6 +56,14 @@ const RUN_ID = `e2e-northstar-${Date.now()}-${Math.random().toString(36).slice(2
 // "model output" must be a real 3-channel JPG, no 1×1 stunt files.
 const FIXTURE_PATH = "tests/e2e/fixtures/night-rgb.jpg";
 
+// The stubbed "model output" is deliberately SMALLER than the upload (64×64 vs
+// 128×128, a pixel ratio of 0.25). Real Cloud AI caps its output at 1536px on
+// the long edge, so a phone photo comes back at a fraction of what was sent —
+// but serving the upload back unchanged, as this suite used to, left source and
+// result dimensions identical and the S-18 resolution disclosure could never
+// fire. A green run would then have proven nothing about it.
+const SMALL_OUTPUT_FIXTURE_PATH = "tests/e2e/fixtures/night-rgb-small.jpg";
+
 // Shared guarded client (helpers/env.ts): hard-fails on missing env AND on a
 // non-local SUPABASE_URL — this suite must never run its admin deletes remotely.
 function adminClient() {
@@ -169,7 +177,7 @@ test.describe("Risks #1+#6: the cloud result renders without refresh", () => {
     // Serve the "model output": the Edge Function will REALLY fetch these
     // bytes from inside its container, upload them as the result object under
     // the user's prefix, and delete the source (the retention contract).
-    fixture = await serveFixture({ filePath: FIXTURE_PATH });
+    fixture = await serveFixture({ filePath: SMALL_OUTPUT_FIXTURE_PATH });
 
     const body = callbackBody({ predictionId, status: "succeeded", output: fixture.url });
     const signed = signCallback({ secret, body });
@@ -214,5 +222,10 @@ test.describe("Risks #1+#6: the cloud result renders without refresh", () => {
     await expect(page.getByRole("button", { name: "Download" })).toBeVisible();
     // The spinner resolved — Risk #1's wording is literally "permanent spinner".
     await expect(page.getByText("Enhancing in the cloud…")).not.toBeVisible();
+
+    // S-18: the result came back smaller than the upload, so the UI must say so
+    // beside Download. Asserted by its rendered text rather than a role, since
+    // it is a plain caption; the numbers come from the two fixtures above.
+    await expect(page.getByText("Uploaded 128×128 · downloading 64×64")).toBeVisible();
   });
 });
