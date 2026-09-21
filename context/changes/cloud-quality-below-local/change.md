@@ -3,7 +3,7 @@ change_id: cloud-quality-below-local
 title: Cloud AI output is worse than the local engine
 status: preparing
 created: 2026-08-31
-updated: 2026-09-20
+updated: 2026-09-21
 archived_at: null
 ---
 
@@ -89,6 +89,34 @@ objects are never reaped (the reaper matches `'%/source.%'` only), so the raw
 `result.png` for all three failing jobs was still in storage — free to open, no
 prediction, no cap slot. The hoped-for consequence is also gone: **no flag of
 ours rolls this back**, because the fault is in the model output.
+
+### ⚠️ Every trial this change rests on used a SMALL source (added 2026-09-21)
+
+Measured while running S-18's Phase 0 gate, and **confirmed by the maintainer**: the aurora photo was
+downloaded from the web at the outset and is the same file the project has worked with from the
+beginning. It is **899 × 600 (0.54 MP), no EXIF**. Bread caps the long edge at 1536, so it passed
+the image through untouched.
+
+The same holds for all three screenshots. High-frequency grain in each BEFORE pane — `01` 2.159,
+`02` 2.786, `03` 2.817 — sits an order of magnitude above the ~0.2 a multi-MP original downsampled
+into that box would leave. So **no production job has ever exercised Bread at a real phone's
+resolution.**
+
+What this does and does not touch:
+
+- **The colour finding stands.** The hue flip was confirmed in Bread's stored raw `result.png`, and
+  Bread resizes internally to ≤1536 anyway, so a 12 MP upload reaches the model at a comparable
+  scale. Saturation-dependence is unaffected.
+- **The "AFTER is noisier" secondary observation does not.** On screenshot `02` the panes measure
+  1.05× on luma grain and **0.82×** on chroma — the AFTER is not noisier. What makes it look worse
+  is the cast, not noise.
+- **`defaults-experiment.md` inherits the caveat**: re-running the aurora measures the model on a
+  small web JPEG. Pair it with a real camera-resolution night photo or the result keeps the blind
+  spot.
+- **Free check available:** sources are reaped, but every stored `result.png` dimension is readable
+  at zero cost and would settle, for all 18 jobs, which uploads Bread downscaled.
+
+Full measurement: `context/changes/cloud-result-resolution-gap/premise-check.md`.
 
 ### Scope note
 

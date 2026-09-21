@@ -1,13 +1,16 @@
 ---
 change_id: cloud-result-resolution-gap
 title: "Cloud AI returns ~1.5 MP lossy JPEG where Local returns full resolution"
-status: new
+status: planned
 created: 2026-09-20
-updated: 2026-09-20
+updated: 2026-09-21
 archived_at: null
+issue: 238
 ---
 
 ## Notes
+
+**Registered 2026-09-21 as roadmap slice S-18, issue [#238](https://github.com/Piotr-Miller/lumina-clean-ai/issues/238), Backlog Handoff `ready`.** The folder had existed since 2026-09-20 with no tracker entry anywhere — S-17's roadmap block twice said the delivery gap should be split out, the split happened, and nothing recorded it.
 
 Split out of `cloud-quality-below-local` (S-17) on 2026-09-20, during that
 change's framing step. It is **separable**: confirmed, entirely ours, and
@@ -35,10 +38,17 @@ Two coupled defects, both on the Cloud path only:
    `object-cover` at `h-full w-full` (`:86-100`). Both land in the same CSS box,
    so the 12 MP original is downsampled ~3× by the browser — which averages its
    grain away and reads as crisp — while the ~1.5 MP result is shown at or near
-   1:1, every noise pixel visible. **This is the whole "the AFTER is noisier than
-   the BEFORE" observation** recorded against S-17's screenshot `02`; no pixel
-   fault is required to produce it. The Local path cannot exhibit it, because its
-   result dimensions equal the source's.
+   1:1, every noise pixel visible.
+
+   ⚠️ **Corrected 2026-09-21.** This was registered as **"the whole 'the AFTER
+   is noisier than the BEFORE' observation … no pixel fault is required"**, and
+   both halves are **measured false** (`premise-check.md`). The cited job had no
+   size mismatch at all — its source was an 899 × 600 web file, which Bread passes
+   through — and on a real 9.83 MP frame the scaling asymmetry never makes the
+   AFTER the noisier pane: 1–3 % at a typical box, and the _opposite_ direction at
+   high device-pixel ratios. The geometry described above is real; what is false
+   is that it explains screenshot `02`. The Local path still cannot exhibit it,
+   because its result dimensions equal the source's.
 
    Related risk to check while here: if Bread's downscale changes the aspect
    ratio at all, `object-cover` silently **crops** the BEFORE pane.
