@@ -153,6 +153,15 @@ export const STRINGS = {
     cloudSingleJobHint:
       "One photo at a time (no queue). Start over cancels this cloud job and deletes the photo you uploaded — if processing already began, it may still count toward today's shared cloud limit.",
     convertFailed: "We couldn't convert this image. Please try another photo.",
+    /**
+     * S-18: Cloud AI caps its output at 1536px on the long edge, so a phone photo
+     * comes back at a fraction of what was uploaded while the Local engine returns
+     * the source's own size. Shown beside Download (it describes the downloaded
+     * file), and only when the drop is real — see `shouldDiscloseResolution`.
+     * Stated as a fact, not an apology. NEW key: no frozen locator moves.
+     */
+    resolutionNote: (sourceWidth: number, sourceHeight: number, resultWidth: number, resultHeight: number) =>
+      `Uploaded ${String(sourceWidth)}×${String(sourceHeight)} · downloading ${String(resultWidth)}×${String(resultHeight)}`,
   },
 
   /** `CloudSignInPrompt.tsx` — the anonymous Cloud gate. */
