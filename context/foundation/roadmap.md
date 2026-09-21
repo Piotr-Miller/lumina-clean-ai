@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-08-31
+updated: 2026-09-21
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -46,7 +46,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-15 | localization                      | (post-MVP i18n) switch the whole UI to one of 7 languages (EN + DE, PL, FR, ES, UKR, ZH), persisted; copy-only, engines unaffected                     | S-01, S-12       | Post-MVP internationalization; extends US-01, US-02 UI           | ready                                                                 |
 | S-16 | atomic-cloud-daily-cap            | (post-MVP correctness) the global daily cap holds under simultaneous submissions — same message, now a hard invariant                                  | S-05, S-07       | FR-014 (re-opens the S-05 obligation)                            | done                                                                  |
 | S-17 | cloud-quality-below-local         | (post-MVP correctness) the Cloud AI result is visibly better than the Local engine again — today it is worse, which inverts the product's core promise | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | ready                                                                 |
-| S-18 | cloud-result-resolution-gap       | (post-MVP quality/UX) the Cloud AI result is delivered and shown at a size that does not make it look worse than the free engine                       | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | ready                                                                 |
+| S-18 | cloud-result-resolution-gap       | (post-MVP quality/UX) the Cloud AI result is delivered and shown at a size that does not make it look worse than the free engine                       | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | planning                                                              |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
 
@@ -326,7 +326,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Not yet decided:** upscaling, requesting a larger output, keeping PNG on the cloud path, sizing the slider from the _source_, matching effective resolution across the two panes, or simply disclosing the output size. That is what planning is for.
 - **Sequencing:** the **presentation half is independent of S-17 and can move now**. Some delivery-half options interact with the model decision (a swap or a browser-side model would change the output size outright), so sequence those after S-17 resolves.
 - **Risk:** Low-medium. Presentation-only fixes are contained to one component and its caller, but `BeforeAfterSlider`'s accessible names and layout are load-bearing for the Playwright specs, so a visual change must run `npm run test:e2e` in the same change.
-- **Status:** ready (registered 2026-09-21; issue #238. Next: `/rune-plan cloud-result-resolution-gap`.)
+- **Status:** planning (registered 2026-09-21, issue #238; planned 2026-09-21 → `context/changes/cloud-result-resolution-gap/plan.md` + `plan-brief.md`. Scoped to the **presentation half only**; the delivery half stays open pending S-17. Next: `/rune-implement cloud-result-resolution-gap phase 0` — Phase 0 is an empirical gate needing the maintainer's own copy of the aurora photo, since that job's stored `source.jpg` was reaped.)
 
 ## Backlog Handoff
 
@@ -348,7 +348,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-15       | localization                      | UI localization: 7-language switcher (EN + DE, PL, FR, ES, UKR, ZH)      | on hold               | `phase:post-mvp`. **Do not start** (user 2026-07-10). Strings already externalized (enhance-ui-refresh). Next: `/10x-new localization` → `/10x-research` → `/10x-plan`. Issue #96.                                                                          |
 | S-16       | atomic-cloud-daily-cap            | Make the global Cloud AI daily cap atomic (FR-014 hard invariant)        | done                  | `phase:post-mvp`. Archived 2026-08-31 → `context/archive/2026-08-26-atomic-cloud-daily-cap/`. Issue #191.                                                                                                                                                   |
 | S-17       | cloud-quality-below-local         | Cloud AI output is worse than the local engine (core-promise regression) | ready                 | `phase:post-mvp`. Live regression on the paid path. **Cause confirmed 2026-09-20** — it is Bread's own output, not our pipeline (`frame.md`). Next: `/rune-research` on the model decision; split the ~1.5 MP delivery gap into its own change. Issue #203. |
-| S-18       | cloud-result-resolution-gap       | Cloud AI returns ~1.5 MP lossy JPEG where Local returns full resolution  | ready                 | Run `/rune-plan cloud-result-resolution-gap`. Presentation half is unblocked; delivery half sequences after S-17. Issue #238.                                                                                                                               |
+| S-18       | cloud-result-resolution-gap       | Cloud AI returns ~1.5 MP lossy JPEG where Local returns full resolution  | planned               | Planned 2026-09-21 → `plan.md` (presentation half only). Presentation half is unblocked; delivery half sequences after S-17. Issue #238.                                                                                                                    |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 
