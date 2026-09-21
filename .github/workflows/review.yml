@@ -190,6 +190,47 @@ jobs:
           # fixture's payload. Its ai-cr:failed label described planted content,
           # not the PR. Excluding the directory drops those diffs 438,635 B ->
           # 32,444 B and 223,656 B -> 20,751 B: both then fit whole, untruncated.
+          # Fourth exclusion: ALL markdown. This is SCOPE, not a cure — read the
+          # second paragraph before citing it as the fix for a red review.
+          #
+          # What it DOES fix. A docs-only PR no longer reaches the finder at all,
+          # so it skips visibly instead of failing: that covers the four docs-only
+          # runs of 2026-09-20 (35512300004 #233, 35524527921 #234, 35532488915 and
+          # 35533002936 both #236), none of which produced any output. And on a
+          # MIXED PR the finder can no longer spend its step budget reading prose,
+          # because getFileContext's allowlist is derived from this diff —
+          # 35532488915 burned all five steps exactly that way, on the
+          # byte-identical .agents/ and .claude/ copies of the same two skills,
+          # and #233 spent four of its steps inside
+          # context/foundation/agent-env-setup.md.
+          #
+          # What it does NOT fix, measured rather than assumed. The finder fails on
+          # NON-prose diffs too. Run 35534422541 — the PR that added this very line
+          # — handed it a 31-line YAML diff at 2.4k-4.5k tokens, and it still died on
+          # AI_NoObjectGeneratedError, twice. The record is a clean break rather than
+          # a content effect: 20 consecutive successes from 2026-09-08 to 2026-09-13,
+          # then 5 consecutive failures on 2026-09-20 across prose AND code. So the
+          # root cause sits in the finder model (vars.OPENROUTER_REVIEW_MODEL,
+          # currently z-ai/glm-4.6) or its provider, and the lever for that is a
+          # one-command variable swap, not this pathspec. Do NOT raise
+          # REVIEW_FINDER_MAX_STEPS expecting relief either: on a synced-skill-tree
+          # diff a bigger budget only buys more duplicate reads.
+          #
+          # Done HERE rather than as a `paths-ignore:` on the trigger, deliberately.
+          # This step's SKIP_REVIEW branch makes a docs-only PR skip VISIBLY — green
+          # run, a line in the step summary, and the PR's last ai-cr:* verdict label
+          # left untouched — whereas paths-ignore produces no run at all, which is
+          # indistinguishable from an outage and would deadlock the merge if this
+          # check ever became required. It also fixes MIXED PRs, which paths-ignore
+          # cannot: getFileContext's allowlist is derived from this diff, so once
+          # prose is out the finder cannot spend its budget reading it even when real
+          # code is present. Nothing of value is lost — the finder's `documentation`
+          # criterion (prompts.ts) asks whether non-obvious CODE is explained, it does
+          # not review prose documents as such, and orderDiffForCap already demotes
+          # Markdown behind source once a diff is over cap. The narrower
+          # **/reviews/*.md above is now subsumed but STAYS: it carries its own
+          # rationale and must survive any future narrowing of this blanket rule.
+          #
           # Array, not `${PLAN_PATH:+…}`: an unquoted expansion word-splits a
           # path containing a space into a broken pathspec and fails the step
           # red. The PR controls its own filenames, so that is reachable.
@@ -197,6 +238,7 @@ jobs:
             ':(exclude,glob)**/reviews/*.md'
             ':(exclude,glob)**/results/*.json'
             ':(exclude,glob)**/ground-truth/*'
+            ':(exclude,glob)**/*.md'
           )
           [ -n "$PLAN_PATH" ] && EXCLUDES+=(":(exclude)${PLAN_PATH}")
           git diff "origin/${BASE_REF}...${HEAD_SHA}" -- . "${EXCLUDES[@]}" > "$RUNNER_TEMP/pr.diff"
