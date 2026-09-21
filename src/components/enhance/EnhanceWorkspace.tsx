@@ -14,6 +14,7 @@ import { useCloudSubmit } from "@/components/hooks/useCloudSubmit";
 import { useDebouncedValue } from "@/components/hooks/useDebouncedValue";
 import { useLocalEnhance } from "@/components/hooks/useLocalEnhance";
 import { BeforeAfterSlider } from "./BeforeAfterSlider";
+import { shouldDiscloseResolution } from "@/lib/engines/result-scaling";
 import { CloudSignInPrompt } from "./CloudSignInPrompt";
 import { DownloadButton } from "./DownloadButton";
 import { EngineToggle } from "./EngineToggle";
@@ -102,6 +103,8 @@ export default function EnhanceWorkspace({
   const [localOverridden, setLocalOverridden] = useState<ReadonlySet<ParamKey>>(new Set());
   const [breadOverridden, setBreadOverridden] = useState<ReadonlySet<ParamKey>>(new Set());
   const [stats, setStats] = useState<LumaStats | null>(null);
+  /** Intrinsic size of the upload, captured from the decode the analyze effect already performs (S-18). */
+  const [sourceDims, setSourceDims] = useState<{ width: number; height: number } | null>(null);
 
   // RGBA → RGB recovery (Phase 2): `converting` disables the button + shows a
   // spinner while the canvas flatten runs; `convertError` surfaces a flatten
@@ -132,6 +135,10 @@ export default function EnhanceWorkspace({
     decodeImage(sourceUrl)
       .then((img) => {
         if (cancelled) return;
+        // S-18: the decode already happened for luma sampling; keeping its
+        // intrinsic dimensions costs no extra decode and no network, and the
+        // resolution disclosure needs them.
+        setSourceDims({ width: img.naturalWidth, height: img.naturalHeight });
         const s = sampleImageLuma(img);
         setStats(s);
         if (autoOnRef.current) {
@@ -251,6 +258,7 @@ export default function EnhanceWorkspace({
     setBreadOverridden(new Set());
     setAutoOn(true);
     setStats(null);
+    setSourceDims(null);
     lastEnhancedRef.current = null;
     // Disarm a pending convert-retry so a fresh upload (null → file) can't
     // inherit it and auto-submit.
@@ -457,12 +465,34 @@ export default function EnhanceWorkspace({
             {engine === "cloud" && isAuthenticated && cloudSubmit.status === "submitted" && (
               <>
                 {cloudResultReady ? (
-                  <div className="flex flex-wrap justify-center gap-3">
-                    <DownloadButton blob={cloudBlob} filename={cloudDownloadName} />
-                    <Button type="button" variant="lcquiet" onClick={handleReset} className="gap-2">
-                      <RotateCcw className="size-4" />
-                      {STRINGS.workspace.startOver}
-                    </Button>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-wrap justify-center gap-3">
+                      <DownloadButton blob={cloudBlob} filename={cloudDownloadName} />
+                      <Button type="button" variant="lcquiet" onClick={handleReset} className="gap-2">
+                        <RotateCcw className="size-4" />
+                        {STRINGS.workspace.startOver}
+                      </Button>
+                    </div>
+                    {/* S-18: Cloud AI caps its output at 1536px on the long edge, so the paid
+                        engine can hand back a fraction of the pixels the free one does. Rendered
+                        OUTSIDE BeforeAfterSlider so no frozen accessible name moves, and only
+                        when the drop is real (a pass-through job and the Local path show nothing). */}
+                    {sourceDims !== null &&
+                      shouldDiscloseResolution({
+                        sourceWidth: sourceDims.width,
+                        sourceHeight: sourceDims.height,
+                        resultWidth: cloudWidth,
+                        resultHeight: cloudHeight,
+                      }) && (
+                        <p className="font-lc-mono text-[11px] tracking-[0.08em] text-[rgba(250,250,252,0.55)]">
+                          {STRINGS.workspace.resolutionNote(
+                            sourceDims.width,
+                            sourceDims.height,
+                            cloudWidth,
+                            cloudHeight,
+                          )}
+                        </p>
+                      )}
                   </div>
                 ) : cloudPhase === "failed" ? (
                   <div className="flex flex-wrap justify-center gap-3">

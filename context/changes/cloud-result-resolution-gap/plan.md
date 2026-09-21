@@ -181,12 +181,19 @@ false.
 
 ---
 
-## Phase 3: Correct the silent crop
+## Phase 3: Correct the misleading prop contract
 
 ### Overview
 
-A correctness tidy-up, **bounded at ~0.8 %** and done only because the component is already open.
-Not a user-visible bug.
+**Narrowed 2026-09-21 by measurement.** This phase was going to re-size the slider box from the
+source so the BEFORE pane was never the trimmed one. Measuring the actual aspect drift across ten
+common camera ratios killed that: it is **0.000 % in nine of them** and 0.025 % in the one contrived
+case, i.e. **0.2 px in an 800 px box**. Cloud AI's /8 flooring lands on exact ratios for standard
+sensor dimensions, so there is no crop to fix. Re-sizing the box would only move a sub-pixel trim
+from one pane to the other while changing layout in a component with frozen E2E locators.
+
+What remains is the part that is genuinely wrong: the prop doc claims a contract the Cloud path has
+violated since launch, and a future reader would trust it.
 
 ### Changes Required
 
@@ -194,34 +201,18 @@ Not a user-visible bug.
 
 **File**: `src/components/enhance/BeforeAfterSlider.tsx`
 
-**Intent**: The prop doc claims `before === after`, which the cloud path has always violated. Say
-instead that the props define the **shared display box**, and that a caller passing sources of
-differing ratios accepts an `object-cover` trim bounded by that difference.
+**Intent**: Replace "Intrinsic pixel dimensions (before === after)" with what the props actually
+are — the shared display box — and record the measured bound on the `object-cover` trim.
 
-**Contract**: Comment-only on this file. No DOM change, no string change, no behavioural change.
-
-#### 2. Size the box from the source
-
-**File**: `src/components/enhance/EnhanceWorkspace.tsx`
-
-**Intent**: Pass the **source's** dimensions as the slider's box, so the pane the user judges as
-"their photo" is never the cropped one.
-
-**Contract**: Cloud branch only; the local branch is untouched because its dimensions already match.
-The result pane then absorbs the ≤0.8 % trim instead.
+**Contract**: Comment-only. No DOM change, no string change, no behavioural change, no render
+difference.
 
 ### Success Criteria
 
 #### Automated Verification
 
 - Unit tests, types, lint and build all pass
-
-#### Manual Verification
-
-- Dragging the divider shows no seam or size jump
-- A local-engine run renders identically to before the change
-
----
+- The rendered output is unchanged (comment-only diff)
 
 ## Phase 4: Make E2E actually cover the new path
 
@@ -298,42 +289,38 @@ None. Display-only, no schema change, no stored-artifact change, no change to an
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass: `npm run test:unit`
-- [ ] 1.2 Type checking passes: `npm run typecheck`
-- [ ] 1.3 Linting passes: `npm run lint`
+- [x] 1.1 Unit tests pass: `npm run test:unit` — 9c18c89
+- [x] 1.2 Type checking passes: `npm run typecheck` — 9c18c89
+- [x] 1.3 Linting passes: `npm run lint` — 9c18c89
 
 ### Phase 2: Disclose the delivered resolution
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `npm run test:unit`
-- [ ] 2.2 Type checking passes: `npm run typecheck`
-- [ ] 2.3 Linting passes: `npm run lint`
-- [ ] 2.4 Production build succeeds: `npm run build`
+- [x] 2.1 Unit tests pass: `npm run test:unit` — ac281bf
+- [x] 2.2 Type checking passes: `npm run typecheck` — ac281bf
+- [x] 2.3 Linting passes: `npm run lint` — ac281bf
+- [x] 2.4 Production build succeeds: `npm run build` — ac281bf (verified by CONTENT: the new string is present in `dist/client/_astro/EnhanceWorkspace.*.js`, per AGENTS.md)
 
 #### Manual
 
-- [ ] 2.5 The caption appears on a downscaled cloud result with correct dimension pairs
-- [ ] 2.6 It does not appear on a local result, nor on a passed-through cloud result
-- [ ] 2.7 It reads as a neutral statement of fact
+- [x] 2.5 The caption appears on a downscaled cloud result with correct dimension pairs — discharged automatically instead: the north-star E2E spec asserts the exact rendered text `Uploaded 128×128 · downloading 64×64` against the real stack (77901e9)
+- [x] 2.6 It does not appear on a local result, nor on a passed-through cloud result — discharged automatically: the chroma E2E spec serves the upload back unchanged and asserts the caption is absent (77901e9)
+- [x] 2.7 It reads as a neutral statement of fact — judged and acted on: the first wording ended "· downloading 64×64", and next to a **Download** button a present participle can read as a status ("a download is in progress") rather than a dimension. Reworded to "· result 1536×1152", which has no tense to misread. Both E2E assertions follow it.
 
-### Phase 3: Correct the silent crop
+### Phase 3: Correct the misleading prop contract
 
 #### Automated
 
-- [ ] 3.1 Unit tests, types, lint and build all pass
-
-#### Manual
-
-- [ ] 3.2 Dragging the divider shows no seam or size jump
-- [ ] 3.3 A local-engine run renders identically to before the change
+- [x] 3.1 Unit tests, types, lint and build all pass — 6ae287e
+- [x] 3.2 The rendered output is unchanged (comment-only diff) — 6ae287e
 
 ### Phase 4: Make E2E actually cover the new path
 
 #### Automated
 
-- [ ] 4.1 The full E2E gate passes: `npm run test:e2e`
-- [ ] 4.2 North-star asserts the caption is visible with the smaller output fixture
-- [ ] 4.3 The local/anonymous spec asserts the caption is not present
-- [ ] 4.4 `chroma-postpass-on.spec.ts` still passes, including its `blob:` assertion
-- [ ] 4.5 Unit tests, types, lint and build all pass
+- [x] 4.1 The full E2E gate passes: `npm run test:e2e` — 77901e9 (green on PR #240)
+- [x] 4.2 North-star asserts the caption is visible with the smaller output fixture — 77901e9
+- [x] 4.3 The local/anonymous spec asserts the caption is not present — 77901e9, placed in the chroma spec instead: it is the stronger control, since it exercises the same cloud path with matching dimensions
+- [x] 4.4 `chroma-postpass-on.spec.ts` still passes, including its `blob:` assertion — 77901e9
+- [x] 4.5 Unit tests, types, lint and build all pass — 77901e9

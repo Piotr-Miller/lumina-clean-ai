@@ -34,7 +34,7 @@ Bread passed through, nothing changes at all.
 | **Rescale the BEFORE**    | **Dropped**                                                  | Measured: the asymmetry is 1–3 % at a typical box and runs the _opposite_ way at high pixel ratios, and it risked regression through resampler quality. | Phase 0  |
 | Primary deliverable       | Disclose both resolutions beside Download                    | Equalising the panes would have _hidden_ the deficit; the user currently has no way to learn they got a sixth of the pixels.                            | Plan     |
 | "Differ" threshold        | `resultPixels < 0.9 × sourcePixels`                          | Catches a real pixel drop, never fires on Bread's /8 flooring, which costs ≲1 % at realistic sizes.                                                     | Plan     |
-| Crop fix                  | Kept, but as a bounded tidy-up                               | The /8 flooring shifts the ratio by at most ~0.8 %, so this is correctness, not a visible bug.                                                          | Phase 0  |
+| Crop fix                  | **Reduced to a doc correction**                              | Measured 0.000 % aspect drift on nine of ten common camera ratios (0.025 %, ≈0.2 px, worst case) — there is no crop to fix, only a wrong prop doc.      | Phase 3  |
 | Where the logic lives     | A pure DOM-free predicate + Vitest `node` tests              | There is **no component-test harness**; this matches the repo's existing env-free-core split.                                                           | Plan     |
 | Cause of the S-17 symptom | Bread's own output, not presentation                         | Phase 0 measured 1.05× luma and 0.82× chroma between the panes, and the cited job had no size mismatch at all.                                          | Phase 0  |
 | Bread's output rule       | 1536 px long edge, both dims floored to /8, not configurable | Measured on the model's own demo pairs; "~1.5 MP" is an average, not a constant.                                                                        | Research |
@@ -58,13 +58,13 @@ predicate says so. Every path degrades to today's behaviour when a number is mis
 
 ## Phases at a Glance
 
-| Phase                       | What it delivers                                        | Key risk                                                                        |
-| --------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| 0. Premise check **(done)** | The measurement that re-scoped this plan                | Already paid off — it removed a phase before any code was written               |
-| 1. Disclosure predicate     | DOM-free module + unit tests on every degenerate case   | A wrong threshold fires the caption on /8 rounding noise                        |
-| 2. Disclose the resolution  | Caption beside Download, cloud-only, conditional        | New string lands in an E2E-load-bearing module (new key only, none edited)      |
-| 3. Correct the silent crop  | Box sized from the source; bounded ≤0.8 % trim moves    | Touching a component whose accessible names are frozen                          |
-| 4. Real E2E coverage        | Smaller output fixture so the path is genuinely covered | Today's fixture is 128×128 echoed back, so a green run currently proves nothing |
+| Phase                        | What it delivers                                                      | Key risk                                                                             |
+| ---------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 0. Premise check **(done)**  | The measurement that re-scoped this plan                              | Already paid off — it removed a phase before any code was written                    |
+| 1. Disclosure predicate      | DOM-free module + unit tests on every degenerate case                 | A wrong threshold fires the caption on /8 rounding noise                             |
+| 2. Disclose the resolution   | Caption beside Download, cloud-only, conditional                      | New string lands in an E2E-load-bearing module (new key only, none edited)           |
+| 3. Correct the prop contract | Comment-only: the doc claims `before === after`, which Cloud violates | None — measured 0.000 % aspect drift on nine of ten camera ratios, so no crop to fix |
+| 4. Real E2E coverage         | Smaller output fixture so the path is genuinely covered               | Today's fixture is 128×128 echoed back, so a green run currently proves nothing      |
 
 **Prerequisites:** none. Phase 0 is complete.
 **Estimated effort:** ~1 session; Phase 4 carries the slowest gate (`npm run test:e2e`).

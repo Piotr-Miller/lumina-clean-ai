@@ -149,6 +149,14 @@ test.describe("Phase 4: flag ON → the real chroma post-pass runs and serves a 
     // Download works end-to-end: clicking the button fires a real browser download
     // whose suggested name is the derived `luminaclean-<base>.jpg` (chroma ON ⇒ JPEG
     // re-encode ⇒ .jpg). The base comes from the uploaded `e2e-chroma-on-…` filename.
+    // S-18 negative control. This spec serves the upload back as the model
+    // output, so source and result dimensions are IDENTICAL and Cloud AI
+    // downscaled nothing. The resolution disclosure must therefore stay absent —
+    // it is gated on a real pixel-count drop, not on being the cloud path. The
+    // north-star spec covers the positive case with a deliberately smaller
+    // output fixture.
+    await expect(page.getByText(/^Uploaded \d+×\d+ · result \d+×\d+$/)).toHaveCount(0);
+
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download" }).click();
     const download = await downloadPromise;
