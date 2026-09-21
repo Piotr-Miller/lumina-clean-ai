@@ -1,10 +1,11 @@
 ---
 change_id: cloud-result-resolution-gap
 title: "Cloud AI returns ~1.5 MP lossy JPEG where Local returns full resolution"
-status: planned
+status: archived
+outcome: completed
 created: 2026-09-20
 updated: 2026-09-21
-archived_at: null
+archived_at: 2026-09-21T22:09:29Z
 issue: 238
 ---
 
