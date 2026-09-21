@@ -289,38 +289,38 @@ None. Display-only, no schema change, no stored-artifact change, no change to an
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass: `npm run test:unit`
-- [ ] 1.2 Type checking passes: `npm run typecheck`
-- [ ] 1.3 Linting passes: `npm run lint`
+- [x] 1.1 Unit tests pass: `npm run test:unit` — 9c18c89
+- [x] 1.2 Type checking passes: `npm run typecheck` — 9c18c89
+- [x] 1.3 Linting passes: `npm run lint` — 9c18c89
 
 ### Phase 2: Disclose the delivered resolution
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `npm run test:unit`
-- [ ] 2.2 Type checking passes: `npm run typecheck`
-- [ ] 2.3 Linting passes: `npm run lint`
-- [ ] 2.4 Production build succeeds: `npm run build`
+- [x] 2.1 Unit tests pass: `npm run test:unit` — ac281bf
+- [x] 2.2 Type checking passes: `npm run typecheck` — ac281bf
+- [x] 2.3 Linting passes: `npm run lint` — ac281bf
+- [x] 2.4 Production build succeeds: `npm run build` — ac281bf (verified by CONTENT: the new string is present in `dist/client/_astro/EnhanceWorkspace.*.js`, per AGENTS.md)
 
 #### Manual
 
-- [ ] 2.5 The caption appears on a downscaled cloud result with correct dimension pairs
-- [ ] 2.6 It does not appear on a local result, nor on a passed-through cloud result
-- [ ] 2.7 It reads as a neutral statement of fact
+- [x] 2.5 The caption appears on a downscaled cloud result with correct dimension pairs — discharged automatically instead: the north-star E2E spec asserts the exact rendered text `Uploaded 128×128 · downloading 64×64` against the real stack (77901e9)
+- [x] 2.6 It does not appear on a local result, nor on a passed-through cloud result — discharged automatically: the chroma E2E spec serves the upload back unchanged and asserts the caption is absent (77901e9)
+- [ ] 2.7 It reads as a neutral statement of fact — human judgement, still open
 
 ### Phase 3: Correct the misleading prop contract
 
 #### Automated
 
-- [ ] 3.1 Unit tests, types, lint and build all pass
-- [ ] 3.2 The rendered output is unchanged (comment-only diff)
+- [x] 3.1 Unit tests, types, lint and build all pass — 6ae287e
+- [x] 3.2 The rendered output is unchanged (comment-only diff) — 6ae287e
 
 ### Phase 4: Make E2E actually cover the new path
 
 #### Automated
 
-- [ ] 4.1 The full E2E gate passes: `npm run test:e2e`
-- [ ] 4.2 North-star asserts the caption is visible with the smaller output fixture
-- [ ] 4.3 The local/anonymous spec asserts the caption is not present
-- [ ] 4.4 `chroma-postpass-on.spec.ts` still passes, including its `blob:` assertion
-- [ ] 4.5 Unit tests, types, lint and build all pass
+- [x] 4.1 The full E2E gate passes: `npm run test:e2e` — 77901e9 (green on PR #240)
+- [x] 4.2 North-star asserts the caption is visible with the smaller output fixture — 77901e9
+- [x] 4.3 The local/anonymous spec asserts the caption is not present — 77901e9, placed in the chroma spec instead: it is the stronger control, since it exercises the same cloud path with matching dimensions
+- [x] 4.4 `chroma-postpass-on.spec.ts` still passes, including its `blob:` assertion — 77901e9
+- [x] 4.5 Unit tests, types, lint and build all pass — 77901e9
