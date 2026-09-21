@@ -38,10 +38,17 @@ Two coupled defects, both on the Cloud path only:
    `object-cover` at `h-full w-full` (`:86-100`). Both land in the same CSS box,
    so the 12 MP original is downsampled ~3× by the browser — which averages its
    grain away and reads as crisp — while the ~1.5 MP result is shown at or near
-   1:1, every noise pixel visible. **This is the whole "the AFTER is noisier than
-   the BEFORE" observation** recorded against S-17's screenshot `02`; no pixel
-   fault is required to produce it. The Local path cannot exhibit it, because its
-   result dimensions equal the source's.
+   1:1, every noise pixel visible.
+
+   ⚠️ **Corrected 2026-09-21.** This was registered as **"the whole 'the AFTER
+   is noisier than the BEFORE' observation … no pixel fault is required"**, and
+   both halves are **measured false** (`premise-check.md`). The cited job had no
+   size mismatch at all — its source was an 899 × 600 web file, which Bread passes
+   through — and on a real 9.83 MP frame the scaling asymmetry never makes the
+   AFTER the noisier pane: 1–3 % at a typical box, and the _opposite_ direction at
+   high device-pixel ratios. The geometry described above is real; what is false
+   is that it explains screenshot `02`. The Local path still cannot exhibit it,
+   because its result dimensions equal the source's.
 
    Related risk to check while here: if Bread's downscale changes the aspect
    ratio at all, `object-cover` silently **crops** the BEFORE pane.
