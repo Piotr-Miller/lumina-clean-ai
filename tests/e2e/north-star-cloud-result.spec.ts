@@ -226,6 +226,6 @@ test.describe("Risks #1+#6: the cloud result renders without refresh", () => {
     // S-18: the result came back smaller than the upload, so the UI must say so
     // beside Download. Asserted by its rendered text rather than a role, since
     // it is a plain caption; the numbers come from the two fixtures above.
-    await expect(page.getByText("Uploaded 128×128 · downloading 64×64")).toBeVisible();
+    await expect(page.getByText("Uploaded 128×128 · result 64×64")).toBeVisible();
   });
 });

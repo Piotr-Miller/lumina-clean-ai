@@ -161,7 +161,7 @@ export const STRINGS = {
      * Stated as a fact, not an apology. NEW key: no frozen locator moves.
      */
     resolutionNote: (sourceWidth: number, sourceHeight: number, resultWidth: number, resultHeight: number) =>
-      `Uploaded ${String(sourceWidth)}×${String(sourceHeight)} · downloading ${String(resultWidth)}×${String(resultHeight)}`,
+      `Uploaded ${String(sourceWidth)}×${String(sourceHeight)} · result ${String(resultWidth)}×${String(resultHeight)}`,
   },
 
   /** `CloudSignInPrompt.tsx` — the anonymous Cloud gate. */

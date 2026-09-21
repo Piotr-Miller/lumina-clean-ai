@@ -155,7 +155,7 @@ test.describe("Phase 4: flag ON → the real chroma post-pass runs and serves a 
     // it is gated on a real pixel-count drop, not on being the cloud path. The
     // north-star spec covers the positive case with a deliberately smaller
     // output fixture.
-    await expect(page.getByText(/^Uploaded \d+×\d+ · downloading \d+×\d+$/)).toHaveCount(0);
+    await expect(page.getByText(/^Uploaded \d+×\d+ · result \d+×\d+$/)).toHaveCount(0);
 
     const downloadPromise = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download" }).click();

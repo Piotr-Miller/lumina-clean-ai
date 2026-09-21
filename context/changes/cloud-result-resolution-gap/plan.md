@@ -306,7 +306,7 @@ None. Display-only, no schema change, no stored-artifact change, no change to an
 
 - [x] 2.5 The caption appears on a downscaled cloud result with correct dimension pairs — discharged automatically instead: the north-star E2E spec asserts the exact rendered text `Uploaded 128×128 · downloading 64×64` against the real stack (77901e9)
 - [x] 2.6 It does not appear on a local result, nor on a passed-through cloud result — discharged automatically: the chroma E2E spec serves the upload back unchanged and asserts the caption is absent (77901e9)
-- [ ] 2.7 It reads as a neutral statement of fact — human judgement, still open
+- [x] 2.7 It reads as a neutral statement of fact — judged and acted on: the first wording ended "· downloading 64×64", and next to a **Download** button a present participle can read as a status ("a download is in progress") rather than a dimension. Reworded to "· result 1536×1152", which has no tense to misread. Both E2E assertions follow it.
 
 ### Phase 3: Correct the misleading prop contract
 
