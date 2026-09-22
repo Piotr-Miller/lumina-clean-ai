@@ -99,8 +99,20 @@ the image through untouched.
 
 The same holds for all three screenshots. High-frequency grain in each BEFORE pane — `01` 2.159,
 `02` 2.786, `03` 2.817 — sits an order of magnitude above the ~0.2 a multi-MP original downsampled
-into that box would leave. So **no production job has ever exercised Bread at a real phone's
-resolution.**
+into that box would leave.
+
+⚠️ **Corrected 2026-09-22 — the generalisation that followed was wrong.** This section originally
+concluded "so **no production job has ever exercised Bread at a real phone's resolution**". A census
+of all 18 stored results (`result-dimensions-census.md`) shows **three did**: `bcff4e39` and
+`c560b9d4` (1536×1024, 2026-06-27) and `3f219e67` (1536×1152, 2026-08-10). Fifteen passed through.
+The claim was inferred from three screenshots and generalised to eighteen jobs without checking —
+the exact move `lessons.md` warns against. **The per-screenshot findings above are unaffected and are
+now confirmed from a second direction**: `3d19146a`, `190832de` and `06ce207c` measure 896×600,
+896×600 and 768×512, all under the cap.
+
+**Those three downscaled results are still in storage and cost nothing to open.** They are the only
+production evidence of Bread's output on a genuinely large source, and they should be looked at
+before any cap slot is spent.
 
 What this does and does not touch:
 
