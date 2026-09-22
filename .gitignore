@@ -95,6 +95,13 @@ playwright-report/
 # Ad-hoc probe/diagnostic scratch space. Durable harnesses are tracked in
 # packages/code-reviewer/scripts/ instead.
 scratchpad/
+
+# Manual test photographs. `licensed/` IS tracked — every file there has its
+# licence and author recorded in test-photos/fetch.sh. `private/` never is: it
+# holds the maintainer's own photos and anything whose provenance cannot be
+# stated. See test-photos/README.md for why that distinction is enforced here.
+test-photos/private/*
+!test-photos/private/.gitkeep
 # Cached findings from scripts/judge-diagnose.mjs
 packages/code-reviewer/scripts/judge-diagnose-findings.json
 
