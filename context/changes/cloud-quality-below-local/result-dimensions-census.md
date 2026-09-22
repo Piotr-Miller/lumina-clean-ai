@@ -82,3 +82,58 @@ maintainer ran it, since production credentials deliberately never entered the a
 > ⚠️ `context/archive/2026-09-20-cloud-result-resolution-gap/premise-check.md` carries the same
 > overstated sentence. The archive is immutable, so it is **not** edited; this document supersedes it
 > on that one point. Everything else in it stands.
+
+---
+
+## Follow-up: the colour fault on the three large-source runs (2026-09-22)
+
+The maintainer opened all three in Storage, plus `190832de` (the aurora) as a **known-bad
+reference** — judging a cast in isolation is unreliable, judging it against a confirmed instance is
+not. Observations, verbatim:
+
+| Job        | Source size | Observation                                                                             |
+| ---------- | ----------- | --------------------------------------------------------------------------------------- |
+| `190832de` | small       | **the fault pattern**: pink-violet cast in the water and foreground, aurora still green |
+| `bcff4e39` | large       | no visible pink-violet cast in the dark areas                                           |
+| `c560b9d4` | large       | no visible pink-violet cast in the dark areas                                           |
+| `3f219e67` | large       | dark palms clean; the pink is in the **bright sky**                                     |
+
+### What this establishes
+
+**The fault is not universal.** Three production runs on genuinely large sources show no
+shadow hue flip. "Bread is broken" is too strong as a statement about the model.
+
+`3f219e67`'s pink sits in the **bright** region while its darks are clean — that is the **inverse**
+of the documented signature, which is luminance-gated the other way (hue survives where the output is
+bright and flips where it is dark or mid-tone, `frame.md` § Narrowing Signals). A pink sky at
+twilight is most likely the real sky. It should not be counted as an instance of the fault.
+
+### What this does NOT establish — the confound
+
+**Size and scene content are not separated here.** The three large-source runs differ from the aurora
+in **both** variables at once: they are bigger _and_ they are not saturated green-dominant night
+scenes. So this cannot decide between:
+
+- **saturation-dependence** — the fault needs a saturated green-dominant scene (the frame's
+  hypothesis), or
+- **size-dependence** — the fault needs a small source. This is not as implausible as it first
+  looks. Bread resizes internally to ≤ 1536, so a ~900 px source reaches the network at roughly its
+  native scale while a 4000 px source is downscaled ~2.6× first, and that downscale **averages
+  shadow chroma noise before the model ever sees it**. The colour-adaptation network's input is
+  materially different in the two cases.
+
+Both remain live. The evidence so far only shows where failures **cluster**: every observed failure
+is saturated green **and** small; every clean run is low-chroma **or** large.
+
+### The one run that separates them
+
+A **saturated green night scene at a genuinely large source**. That is a single experiment, and it is
+the design `defaults-experiment.md` Run A should now carry: the same aurora scene, but a
+full-resolution original rather than the 0.54 MP web copy that every prior trial used.
+
+- Clean → **size**, or the interaction, is doing the work, and the fault may not reach real users at
+  all, which would change the model decision completely.
+- Magenta → **saturation**, confirming the frame's hypothesis on evidence that is finally
+  representative.
+
+Either outcome is decisive, and neither is available from anything already in storage.
