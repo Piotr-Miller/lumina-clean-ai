@@ -50,18 +50,54 @@ For **each** of the two runs, on <https://luminacleanai.com>, signed in:
 
    Then Supabase Dashboard → Storage → `photos` → the `result_path`.
 
-### Run A — the aurora
+### ⚠️ Redesigned 2026-09-22 — the two runs now complete a 2×2, they are not two samples
 
-The same photo behind `references/02-aurora-water-green-to-magenta.png`. Its prior
-runs are `239a4631…` (2026-06-08), `55550cf1…` (06-13), `42520013…` (06-18) — all
-`706.3 KB`, byte-identical, all magenta — and `190832de…` (08-31, gamma 1.16 /
-strength 0.08, `799.69 KB`). Any of those is the baseline to compare against.
+The colour check on the three large-source production results
+(`result-dimensions-census.md`) filled in half the square and exposed a confound in the original
+design. Two variables were moving together the whole time: **scene saturation** and **source size**.
 
-### Run B — the control
+|                           | **saturated green**                                | **low chroma**                                 |
+| ------------------------- | -------------------------------------------------- | ---------------------------------------------- |
+| **small source (≤ 1536)** | **FAILS** — the aurora, all three S-17 screenshots | **Run B**                                      |
+| **large source (> 1536)** | **Run A** — the decisive cell                      | **CLEAN** — `bcff4e39`, `c560b9d4`, `3f219e67` |
 
-A night photo with **no strong green**. This is the control the project has never
-had: all 18 stored results are the same saturated aurora, so nothing in production
-distinguishes "Bread is broken" from "Bread is broken on saturated green".
+Every observed failure is saturated green **and** small. Every clean run is low-chroma **or** large.
+Nothing in production separates the two, so neither hypothesis can be eliminated from what exists.
+
+Size is not the implausible one it first appears. Bread resizes internally to ≤ 1536, so a ~900 px
+source arrives at roughly its native scale while a 4000 px source is downscaled ~2.6× first — and
+that downscale **averages shadow chroma noise before the model ever sees it**. The network's input is
+materially different in the two cases.
+
+### Run A — the aurora at a FULL-RESOLUTION source (the decisive cell)
+
+The same aurora scene as `references/02-aurora-water-green-to-magenta.png`, but **a full-resolution
+original, not the 0.54 MP web copy** that every prior trial used. This is the single run that
+separates saturation from size.
+
+- **Clean** → size, or the interaction, is doing the work. The fault may not reach real users at all,
+  which changes the model decision completely.
+- **Magenta** → saturation, confirming the frame's hypothesis on evidence that is finally
+  representative.
+
+Baselines to compare against, all the **same small** aurora and all magenta: `239a4631` (2026-06-08),
+`55550cf1` (06-13), `42520013` (06-18), and `190832de` (08-31, gamma 1.16 / strength 0.08). Their
+results are 896×600; note that a full-resolution run returns ~1536 px on the long edge, so compare
+at matched scale.
+
+### Run B — a low-chroma night photo at a SMALL source (completes the square)
+
+A night photo with no strong green, **downsized to under 1536 px on the long edge** so it matches the
+failing cell on size while differing on saturation.
+
+⚠️ **The original rationale for this run was wrong and is corrected here.** It read: "all 18 stored
+results are the same saturated aurora, so nothing in production distinguishes 'Bread is broken' from
+'Bread is broken on saturated green'." The census disproved that — **three** of the 18 came from
+large sources and are low-chroma and clean, and the small ones are at least two distinct images
+(896×600 and 768×512). The large + low-chroma cell is therefore already answered, and what Run B
+still adds is the **small + low-chroma** cell.
+
+**Run A is the one that matters. If only one run can be afforded, spend it there.**
 
 ## Results
 
