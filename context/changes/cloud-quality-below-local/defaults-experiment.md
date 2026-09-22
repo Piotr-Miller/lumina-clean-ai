@@ -71,9 +71,21 @@ materially different in the two cases.
 
 ### Run A — the aurora at a FULL-RESOLUTION source (the decisive cell)
 
-The same aurora scene as `references/02-aurora-water-green-to-magenta.png`, but **a full-resolution
-original, not the 0.54 MP web copy** that every prior trial used. This is the single run that
-separates saturation from size.
+A saturated green aurora over dark water, at a **genuinely large source** rather than the 0.54 MP web
+copy every prior trial used. This is the single run that separates saturation from size.
+
+⚠️ **Not the same photo — and deliberately so.** The original aurora was traced on 2026-09-22 to
+<https://capturetheatlas.com/noise-in-photography/>, which is `ALL RIGHTS RESERVED` and serves only
+responsive renditions, so no full-resolution original is offered or ours to take. Use a CC-licensed
+frame instead, following `ab-harness/fetch-samples.sh`'s existing pattern. Recommended:
+`Northern Lights over Kirkjufell seen from Grundarfjörður.jpg` (3840×2560, CC BY-SA 4.0) — same
+geometry as the repo's existing night sample, fjord-side aurora with water in the foreground.
+Candidates and fetch URL: `result-dimensions-census.md` § Provenance.
+
+The cost of the swap is stated there too: a different scene weakens a clean result slightly, to
+"this aurora is fine at full size" rather than "that aurora is fine at full size". Both candidates
+are saturated green with dark water — the class that fails — so it remains by far the strongest run
+available.
 
 - **Clean** → size, or the interaction, is doing the work. The fault may not reach real users at all,
   which changes the model decision completely.

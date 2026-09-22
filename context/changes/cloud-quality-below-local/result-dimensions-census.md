@@ -137,3 +137,59 @@ full-resolution original rather than the 0.54 MP web copy that every prior trial
   representative.
 
 Either outcome is decisive, and neither is available from anything already in storage.
+
+---
+
+## Provenance of the test corpus, established 2026-09-22
+
+The maintainer identified the source of the aurora: **<https://capturetheatlas.com/noise-in-photography/>**,
+an article about noise in photography. Fetching it confirms the article also carries **a wolf shot in
+low light** — S-17's screenshot `01` — so at least two of the three evidence images, and plausibly
+all three, come from that one page.
+
+Three consequences, and the third is the operative one:
+
+1. **It explains every property measured so far.** Web-sized, ~0.5 MP, no EXIF, 3:2, and visibly
+   grainy — an article _about noise_ naturally illustrates itself with noisy frames.
+2. **The images are chosen to show noise**, so they are not typical user photos. That is useful for a
+   denoiser and misleading for "what will a user see".
+3. **The site is `© CAPTURE THE ATLAS … ALL RIGHTS RESERVED`** and serves only responsive renditions.
+   So a higher-resolution original of this exact photo is neither offered nor ours to take, and
+   **Run A must not be built by scraping a larger copy from that page.**
+
+`local-engine-ceiling/change.md` already rejected the archived `ab-harness/samples` on exactly this
+reasoning — "fetched from third-party URLs by a script and their provenance cannot be asserted". The
+objection applies here with more force, since these are all-rights-reserved rather than freely
+licensed.
+
+### Freely licensed replacements for Run A
+
+The repo already has the clean pattern: `ab-harness/fetch-samples.sh` pulls CC-licensed frames from
+Wikimedia Commons and records label, licence and author inline. Candidates matching the failing
+scene class — saturated green aurora, dark water foreground, mountains — all verified present at
+these sizes on 2026-09-22:
+
+| Resolution | Licence      | File                                                                                 |
+| ---------- | ------------ | ------------------------------------------------------------------------------------ |
+| 6000×4000  | CC BY-SA 2.0 | `Northern Lights at Sermilik Fjord, East Greenland.jpg`                              |
+| 3840×2560  | CC BY-SA 4.0 | `Northern Lights over Kirkjufell seen from Grundarfjörður.jpg`                       |
+| 5580×1535  | CC BY-SA 3.0 | `Aurora borealis above Storfjorden and the Lyngen Alps in moonlight, 2012 March.jpg` |
+
+**Recommended: the Kirkjufell frame.** At 3840×2560 it is the same geometry as the repo's existing
+`01-very-dark-iso160000.jpg`, it sits well inside `MAX_FILE_BYTES`, and it is a fjord-side aurora
+with water in the foreground — the closest available analogue to the failing scene.
+
+Fetch it the way `fetch-samples.sh` already does, via the sized-rendition redirect:
+
+```
+https://commons.wikimedia.org/wiki/Special:FilePath/Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg?width=4000
+```
+
+### The cost of the swap, stated honestly
+
+Run A was designed as _the same scene at a larger size_, which isolates size perfectly. Using a
+different aurora reintroduces scene variation, so a clean result would be slightly weaker evidence —
+"this aurora is fine at full size" rather than "that aurora is fine at full size". It is still by far
+the strongest run available, because both candidate scenes are saturated green with dark water, which
+is the class that fails. The alternative — a provenance-unclear scrape — is not worth the marginal
+rigour.
