@@ -12,6 +12,7 @@ This file is the **single source of truth** for AI coding agents working with co
 - **Supabase migrations** — naming format `YYYYMMDDHHmmss_short_description.sql` under `supabase/migrations/`.
 - **Shared types** — entities, DTOs go in `src/types.ts`.
 - **React** — no Next.js directives ("use client" etc.). Extract hooks to `src/components/hooks/`.
+- **Test photographs** — a photo may be committed **only** to `test-photos/licensed/`, and only when its licence and author are recorded in the `FETCH` array of `test-photos/fetch.sh`. Everything else — the maintainer's own photos, and anything whose provenance cannot be stated — goes in `test-photos/private/`, which is gitignored. **This repository is public**, so committing a third-party photo without a licence publishes it. The rule exists because the entire Cloud AI test corpus turned out to come from an `ALL RIGHTS RESERVED` article and nobody noticed for months (`context/changes/cloud-quality-below-local/result-dimensions-census.md` § Provenance). Never move a file from `private/` to `licensed/` to make a commit work.
 - **Skills must not write to `context/archive/`**. Archived changes are immutable; if a resolved target path starts with `context/archive/`, abort with: "This change is archived. Open a new change with `/10x-new` instead."
 
 ## Mutation testing
