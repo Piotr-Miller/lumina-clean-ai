@@ -1,0 +1,65 @@
+# Test photos
+
+Input photographs for **manual** experiments against the real app: Cloud AI runs, Local-engine
+comparisons, parameter tuning, quality checks. These are not automated-test fixtures — those live in
+`tests/e2e/fixtures/` and are deliberately tiny.
+
+## Two folders, one rule
+
+| Folder      | Tracked? | For                                                                        |
+| ----------- | -------- | -------------------------------------------------------------------------- |
+| `licensed/` | **yes**  | Freely licensed photos whose licence and author are recorded in `fetch.sh` |
+| `private/`  | **no**   | Your own photos, and anything whose provenance you cannot state            |
+
+**The rule: a photo may be committed only if its licence and author are written down.** Everything
+else goes in `private/`, which is gitignored.
+
+## Why the rule exists
+
+Every Cloud AI trial in this project's history — all three of S-17's evidence screenshots included —
+used images traced on 2026-09-22 to <https://capturetheatlas.com/noise-in-photography/>, a site whose
+footer reads `ALL RIGHTS RESERVED`. Nobody recorded that at the time, so for months the corpus had no
+stated provenance and nobody could tell whether a larger copy could be obtained. See
+`context/changes/cloud-quality-below-local/result-dimensions-census.md` § Provenance.
+
+`context/changes/local-engine-ceiling/change.md` had already rejected an older sample set for exactly
+this reason: _"fetched from third-party URLs by a script and their provenance cannot be asserted"_.
+This directory is what stops that recurring.
+
+## Adding a photo
+
+**Freely licensed** → add one line to the `FETCH` array in `fetch.sh` and run `bash test-photos/fetch.sh`
+from the repo root. The label carries the scene, why the photo is here, and `LICENCE Author`. Commit
+both the script entry and the fetched file.
+
+**Your own, or anything unclear** → drop it in `private/` and reference it by path from whatever
+document needs it. Never move it into `licensed/`.
+
+Wikimedia Commons sizing uses `Special:FilePath/<file>?width=N`, the encoding-tolerant redirect to a
+sized rendition. Direct `/thumb/` URLs 404 on some filenames. The pattern comes from
+`context/archive/2026-06-18-bread-chroma-postpass/ab-harness/fetch-samples.sh`.
+
+## What `fetch.sh` checks for you
+
+After each download it prints the dimensions and flags two things that would silently waste a run:
+
+- **long edge ≤ 1536** — Cloud AI caps the long edge at 1536 px and floors both dimensions to a
+  multiple of 8, so such a photo is **passed through untouched**. Fifteen of the eighteen stored
+  production jobs were this case, which is why the resolution gap went unobserved for months.
+- **over 25 MB** — `MAX_FILE_BYTES`, so the app rejects the upload.
+
+## Current set
+
+### `licensed/01-aurora-fjord-kirkjufell.jpg`
+
+3840 × 2560 · 9.83 MP · 6.6 MB · CC BY-SA 4.0, Diego Delso · Kirkjufell seen from Grundarfjörður.
+
+A saturated green aurora over dark water with mountains — the scene class that produces the S-17
+green→magenta fault — at a source **well above** the 1536 px cap. Measured green dominance is **+88**
+in the sky against a foreground luma of **18**, so it exercises both halves of the fault's signature:
+saturated chroma, and the dark regions where the hue flip appears.
+
+It exists for **Run A** of `context/changes/cloud-quality-below-local/defaults-experiment.md`, the run
+that separates saturation-dependence from size-dependence. Every prior trial used a ~0.5 MP web copy,
+so that variable has never been moved. The geometry deliberately matches the repo's existing
+`01-very-dark-iso160000.jpg` night sample, which makes the two directly comparable.
