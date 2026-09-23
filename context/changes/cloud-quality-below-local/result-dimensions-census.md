@@ -74,7 +74,7 @@ currently lacks, and it is cheaper than the `defaults-experiment.md` runs.
 
 ## Method
 
-`scratchpad/check-result-dimensions.py` (session-local, not committed): lists jobs with a
+`scripts/prod-result-dimensions.py` (committed 2026-09-23; it ran from a session scratchpad at the time): lists jobs with a
 `result_path` via PostgREST, signs a short-lived URL per object, range-requests the leading bytes,
 and parses the PNG `IHDR` / JPEG `SOF`. Read-only; it performs no writes and prints no secret. The
 maintainer ran it, since production credentials deliberately never entered the agent session.

@@ -111,11 +111,11 @@ end-to-end, and it needs one sentence from the maintainer.
 
 ## What does NOT travel to another machine
 
-- **The two diagnostic scripts** written during the 2026-09-21/22 session live in the session
-  scratchpad under `/tmp` and are gone on another station: `check-result-dimensions.py` (the census of
-  all stored result dimensions) and `fetch-large-results.py`. Their method is documented in
-  `context/changes/cloud-quality-below-local/result-dimensions-census.md` § Method, so they can be
-  rewritten; ask if you want them committed under `scripts/` instead.
+- ~~The two diagnostic scripts live in a `/tmp` scratchpad~~ — **resolved 2026-09-23, they now
+  travel**: `scripts/prod-result-dimensions.py` (the census of every stored result's dimensions) and
+  `scripts/prod-fetch-results.py` (download results by job id). Both are read-only, both take the
+  service-role key from the environment at run time, and the `prod-` prefix is there so the blast
+  radius is visible from the filename.
 - **Production credentials.** They were deliberately never given to the agent session — the
   maintainer ran the scripts locally and pasted the output. Keep it that way.
 - `.env` in a fresh clone points at the **local** stack, not production.
