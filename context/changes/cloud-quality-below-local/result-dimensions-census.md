@@ -98,10 +98,28 @@ not. Observations, verbatim:
 | `c560b9d4` | large       | no visible pink-violet cast in the dark areas                                           |
 | `3f219e67` | large       | dark palms clean; the pink is in the **bright sky**                                     |
 
-### What this establishes
+### ⚠️ Corrected 2026-09-24 — the large-source cell is EMPTY, not clean
 
-**The fault is not universal.** Three production runs on genuinely large sources show no
-shadow hue flip. "Bread is broken" is too strong as a statement about the model.
+This section originally concluded: _"The fault is not universal. Three production runs on genuinely
+large sources show no shadow hue flip."_ **That over-read the evidence.** The raw outputs were pulled
+and measured (`references/README.md`), and none of them can exhibit the fault:
+
+| Job        | Chromatic |     Green |    Magenta | What it can prove                      |
+| ---------- | --------: | --------: | ---------: | -------------------------------------- |
+| `bcff4e39` | **0.0 %** |     0.0 % |      0.0 % | nothing — no colour at all             |
+| `c560b9d4` | **0.0 %** |     0.0 % |      0.0 % | nothing — byte-identical to `bcff4e39` |
+| `3f219e67` |    44.1 % | **0.0 %** |      3.3 % | nothing about a **green** flip         |
+| `190832de` |    65.0 % |    56.2 % | **43.2 %** | the fault, unambiguously               |
+
+`bcff4e39` and `c560b9d4` are the same bytes (sha256 `b20f0cb7…`), so the "three runs" are **two
+distinct images**. Two are near-black frames with no colour whatsoever; the third is a sunset
+silhouette with **zero green**, whose pink sits in the **bright** sky — the inverse of the fault's
+luminance gating.
+
+The fault is a green→magenta flip in darker regions. A scene with no green, or no colour, cannot show
+it at any source size. **So the large-source half of the 2×2 is untested, not clean**, and nothing
+here says the fault is or is not universal. The maintainer's visual report was accurate; the
+inference drawn from it was not.
 
 `3f219e67`'s pink sits in the **bright** region while its darks are clean — that is the **inverse**
 of the documented signature, which is luminance-gated the other way (hue survives where the output is

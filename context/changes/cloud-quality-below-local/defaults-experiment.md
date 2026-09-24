@@ -56,13 +56,12 @@ The colour check on the three large-source production results
 (`result-dimensions-census.md`) filled in half the square and exposed a confound in the original
 design. Two variables were moving together the whole time: **scene saturation** and **source size**.
 
-|                           | **saturated green**                                | **low chroma**                                 |
-| ------------------------- | -------------------------------------------------- | ---------------------------------------------- |
-| **small source (≤ 1536)** | **FAILS** — the aurora, all three S-17 screenshots | **Run B**                                      |
-| **large source (> 1536)** | **Run A** — the decisive cell                      | **CLEAN** — `bcff4e39`, `c560b9d4`, `3f219e67` |
+|                           | **saturated green**                                | **low chroma**                                                                                                                            |
+| ------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **small source (≤ 1536)** | **FAILS** — the aurora, all three S-17 screenshots | **Run B**                                                                                                                                 |
+| **large source (> 1536)** | **Run A** — the decisive cell                      | **EMPTY, not clean** — `bcff4e39`/`c560b9d4` are byte-identical and carry **no colour at all**; `3f219e67` is a sunset with **0 % green** |
 
-Every observed failure is saturated green **and** small. Every clean run is low-chroma **or** large.
-Nothing in production separates the two, so neither hypothesis can be eliminated from what exists.
+Every observed failure is saturated green **and** small. ⚠️ **Corrected 2026-09-24:** the large-source runs were first read as "clean", but measuring their raw outputs (`references/README.md`) shows none of them can exhibit the fault — two are near-black frames with no colour whatsoever, the third is a sunset with zero green. A green→magenta flip needs green. **No run at any source size has ever carried a saturated green scene at a large source**, so that cell is untested rather than clean and neither hypothesis can be eliminated from what exists.
 
 Size is not the implausible one it first appears. Bread resizes internally to ≤ 1536, so a ~900 px
 source arrives at roughly its native scale while a 4000 px source is downscaled ~2.6× first — and
@@ -93,7 +92,7 @@ failing cell on size while differing on saturation.
 ⚠️ **The original rationale for this run was wrong and is corrected here.** It read: "all 18 stored
 results are the same saturated aurora, so nothing in production distinguishes 'Bread is broken' from
 'Bread is broken on saturated green'." The census disproved that — **three** of the 18 came from
-large sources and are low-chroma and clean, and the small ones are at least two distinct images
+large sources (though what they show is untested rather than clean — see above), and the small ones are at least two distinct images
 (896×600 and 768×512). The large + low-chroma cell is therefore already answered, and what Run B
 still adds is the **small + low-chroma** cell.
 
