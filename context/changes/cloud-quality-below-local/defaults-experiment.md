@@ -108,6 +108,34 @@ Fill in as the runs complete. Attach the downloaded `result.png` for each under
 | A   | aurora (as above) | 1.00  | 0.05     |        |             |                |                           |
 | B   | night, non-green  | 1.00  | 0.05     |        |             |                |                           |
 
+### Attempt log
+
+**2026-09-24 — Run A attempted twice, blocked by a Replicate outage. No cap slot spent.**
+
+| Job        | gamma | strength | Reached Replicate | `error_code`   | Outcome                                                 |
+| ---------- | ----- | -------- | ----------------- | -------------- | ------------------------------------------------------- |
+| `0b8bf6c1` | `1`   | `0.05`   | **false**         | `start_failed` | `Signal timed out.` (Deno abort)                        |
+| _(retry)_  | `1`   | `0.05`   | **false**         | `start_failed` | `predictions.create failed (502)`, Cloudflare HTML page |
+
+Three things this establishes, and they are worth keeping even though the run did not happen.
+
+1. **The protocol works.** The persisted row shows `gamma = 1` and `strength = 0.05`, so Auto was
+   genuinely off and the manual values reached the backend. That half of the setup needs no
+   re-verification next time.
+2. **Nothing was spent.** `replicate_prediction_id` is null on both, and the cap's count predicate
+   excludes `failed` rows with a null prediction id — a job that never reached the model cost
+   nothing. All three daily slots remain available.
+3. **The cause is external and confirmed.** Cloudflare's service-status page listed **Replicate as
+   `Degraded`** on 2026-09-24. The failure is at `predictions.create`, which already retries three
+   times internally (`PREDICTION_CREATE_MAX_ATTEMPTS = 3`), so each click was nine attempts under the
+   hood. Retrying during the outage buys nothing.
+
+It also produced the evidence behind change `cloud-error-message-leak`: both failures rendered raw
+internal text to the user, the second an entire Cloudflare HTML document.
+
+**Re-run when Replicate is operational.** The input, the parameters and the judging method are all
+unchanged.
+
 **Judge against the raw stored `result.png`, not the in-app AFTER pane** — the pane
 is post-passed and, per `frame.md`, also displayed at a different effective
 resolution from the BEFORE pane.
