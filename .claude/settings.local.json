@@ -224,8 +224,7 @@
       "Read(//home/piotrmiller/**)",
       "Bash(python3 -c ' *)",
       "Bash(npm dist-tag *)",
-      "Bash(npm config *)",
-      "Bash(grep -v \"^$\")"
+      "Bash(npm config *)"
     ],
     "deny": [
       "Bash(rm -rf *)"
