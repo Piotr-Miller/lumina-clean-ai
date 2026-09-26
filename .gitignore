@@ -114,3 +114,6 @@ packages/code-reviewer/scripts/judge-diagnose-findings.json
 # none should be added.
 .ai-toolkit/*
 !.ai-toolkit/config.json
+
+# Python bytecode (scripts/*.py imported by ad-hoc measurements)
+__pycache__/
