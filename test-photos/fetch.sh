@@ -16,6 +16,8 @@ mkdir -p "$DIR"
 # label (scene · why it is here · LICENCE Author)|filename|url
 FETCH=(
   "aurora-fjord (saturated green aurora over dark water; the class that fails in S-17, at a source LARGER than Cloud AI's 1536px cap · CC BY-SA 4.0 Oliver Degener, uploaded by Chr Grundo)|01-aurora-fjord-kirkjufell.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg?width=3840"
+  "aurora-frozen-lake (saturated green aurora over a pale, near-neutral snow-and-ice lake shore filling ~40% of the frame; tests whether S-17's flip needs neutral ground beside saturated green · CC BY 4.0 Anthony's astro, own work)|02-aurora-frozen-lake-norway.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Aurora_mountain.jpg?width=3840"
+  "aurora-reykjanes (green aurora over a snowy coastal flat with dark lava rocks, the darkest candidate, 3:2 like the failing 896x600 result · CC0 Sean O Riordan, via Flickr)|03-aurora-reykjanes-snow-lava.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Reykjanes_Geopark_Aurora_-_Flickr_-_Seanie2322.jpg?width=3840"
 )
 
 for entry in "${FETCH[@]}"; do

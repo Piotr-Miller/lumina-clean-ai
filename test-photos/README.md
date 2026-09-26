@@ -73,3 +73,38 @@ It exists for **Run A** of `context/changes/cloud-quality-below-local/defaults-e
 that separates saturation-dependence from size-dependence. Every prior trial used a ~0.5 MP web copy,
 so that variable has never been moved. The geometry deliberately matches the repo's existing
 `01-very-dark-iso160000.jpg` night sample, which makes the two directly comparable.
+
+### `licensed/02-aurora-frozen-lake-norway.jpg`
+
+3840 × 2221 · 8.53 MP · 1.6 MB · **CC BY 4.0** (<https://creativecommons.org/licenses/by/4.0/>) ·
+by **Anthony's astro**, own work · _Aurora mountain.jpg_,
+<https://commons.wikimedia.org/wiki/File:Aurora_mountain.jpg>. The file is Wikimedia's 3840 px
+rendition of an 8430 × 4875 stitched panorama, so it is already a resized copy of the original.
+
+A saturated green arc over the pale snow-and-ice shore of a frozen lake in Norway. Its lower 40 %
+is genuinely near-neutral — RGB ≈ 93 / 92 / 82, two thirds of those pixels below saturation 0.18 at
+896 px — which is the scene element the failing S-17 baseline (`190832de`, a Lofoten beach) turned
+magenta and Kirkjufell lacks.
+
+**Attribution note.** The author is credited only by the Commons username **Anthony's astro**, which
+the page gives as the Author with Source _Own work_; the account has since been renamed. Credit that
+name exactly as written. The description (_"aurora pano over a frozen lake in Norway. Shot on a Canon
+R6ii with a 16mm lens"_) names no other photographer.
+
+### `licensed/03-aurora-reykjanes-snow-lava.jpg`
+
+3840 × 2560 · 9.83 MP · 2.8 MB · **CC0** (<https://creativecommons.org/publicdomain/zero/1.0/>) ·
+by **Sean O Riordan**, via Flickr (<https://www.flickr.com/photos/114717511@N02/25941120808/>, Commons
+licence review passed) · _Reykjanes Geopark Aurora_,
+<https://commons.wikimedia.org/wiki/File:Reykjanes_Geopark_Aurora_-_Flickr_-_Seanie2322.jpg>. The
+file is Wikimedia's 3840 px rendition of a 6000 × 4000 original.
+
+A green aurora over a snowy coastal flat with dark lava rocks, the darkest of the candidates (mean
+0.20) and 3:2 like the failing 896 × 600 result. **Its snow is not neutral**: the lower 40 % reads
+yellow-green (RGB ≈ 59 / 62 / 37, mean saturation 0.40, only 7 % of pixels below 0.18), so it tests a
+dark scene with a tinted foreground rather than neutral ground.
+
+Both files exist for the baseline-like-scene runs in
+`context/changes/cloud-quality-below-local/defaults-experiment.md`. The runs use **896 px copies**
+resized with LANCZOS (JPEG q95, no chroma subsampling) and kept in the gitignored `private/` folder;
+those copies are adaptations of the files above and carry the same terms.
