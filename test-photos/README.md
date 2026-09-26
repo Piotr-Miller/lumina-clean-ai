@@ -52,12 +52,22 @@ After each download it prints the dimensions and flags two things that would sil
 
 ### `licensed/01-aurora-fjord-kirkjufell.jpg`
 
-3840 × 2560 · 9.83 MP · 6.6 MB · CC BY-SA 4.0, Diego Delso · Kirkjufell seen from Grundarfjörður.
+3840 × 2560 · 9.83 MP · 6.6 MB · CC BY-SA 4.0 · photo by Oliver Degener, uploaded to
+Wikimedia Commons by Chr Grundo (see note below) · Kirkjufell seen from Grundarfjörður.
 
 A saturated green aurora over dark water with mountains — the scene class that produces the S-17
 green→magenta fault — at a source **well above** the 1536 px cap. Measured green dominance is **+88**
 in the sky against a foreground luma of **18**, so it exercises both halves of the fault's signature:
 saturated chroma, and the dark regions where the hue flip appears.
+
+**Attribution note (corrected 2026-09-26).** This file was first credited to Diego Delso, which was
+wrong. Its Commons page
+(<https://commons.wikimedia.org/wiki/File:Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg>)
+gives the description _"Winning photo from the town's photo competition in 2019. Photo by Oliver
+Degener"_, the Author field **Chr Grundo**, Source _Own work_, dated 26 October 2019, licence
+**CC BY-SA 4.0**. Credit both names as above. The page names a photographer other than the uploader
+while marking the upload _own work_; that gap is recorded here rather than resolved, since the
+licence grant rests on the uploader's claim.
 
 It exists for **Run A** of `context/changes/cloud-quality-below-local/defaults-experiment.md`, the run
 that separates saturation-dependence from size-dependence. Every prior trial used a ~0.5 MP web copy,

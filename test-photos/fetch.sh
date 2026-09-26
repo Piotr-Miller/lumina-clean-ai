@@ -15,7 +15,7 @@ mkdir -p "$DIR"
 
 # label (scene · why it is here · LICENCE Author)|filename|url
 FETCH=(
-  "aurora-fjord (saturated green aurora over dark water; the class that fails in S-17, at a source LARGER than Cloud AI's 1536px cap · CC BY-SA 4.0 Diego Delso)|01-aurora-fjord-kirkjufell.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg?width=3840"
+  "aurora-fjord (saturated green aurora over dark water; the class that fails in S-17, at a source LARGER than Cloud AI's 1536px cap · CC BY-SA 4.0 Oliver Degener, uploaded by Chr Grundo)|01-aurora-fjord-kirkjufell.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg?width=3840"
 )
 
 for entry in "${FETCH[@]}"; do
