@@ -120,10 +120,11 @@ size control proposed there than on Run B.)_
 Fill in as the runs complete. Attach the downloaded `result.png` for each under
 `references/` with a name that states the parameters.
 
-| Run | Source                                          | gamma | strength | Job id     | Result size | Verdict on hue                                    | Verdict on exposure/noise                                                         |
-| --- | ----------------------------------------------- | ----- | -------- | ---------- | ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
-| A   | aurora, **Kirkjufell** — not the baseline scene | 1.00  | 0.05     | `7ea011bd` | 1536×1024   | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.40); painterly texture in the sky, dark corner vignette |
-| B   | night, non-green                                | 1.00  | 0.05     |            |             |                                                   |                                                                                   |
+| Run | Source                                                   | gamma | strength | Job id     | Result size | Verdict on hue                                    | Verdict on exposure/noise                                                         |
+| --- | -------------------------------------------------------- | ----- | -------- | ---------- | ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| A   | aurora, **Kirkjufell** — not the baseline scene          | 1.00  | 0.05     | `7ea011bd` | 1536×1024   | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.40); painterly texture in the sky, dark corner vignette |
+| C   | Kirkjufell **downsized to 896×597** (size control for A) | 1.00  | 0.05     | `04e57d16` | 896×592     | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.44); same texture as A at smaller scale                 |
+| B   | night, non-green                                         | 1.00  | 0.05     |            |             |                                                   |                                                                                   |
 
 ### Run A — measured 2026-09-26
 
@@ -187,6 +188,40 @@ these parameters**:
 - **clean** → size alone does not trigger it on this scene at these parameters. That does not rule
   size out for other scenes or for the shipped parameters, and leaves the baseline's failure
   unexplained between parameters and scene composition.
+
+### Run C — measured 2026-09-26
+
+The size control proposed above. Source `test-photos/private/01-aurora-fjord-kirkjufell-896.jpg`: the
+Run A file resized with LANCZOS to 896×597 (JPEG q95, no chroma subsampling; sha256 `72cb7590…`),
+kept in the gitignored `private/` folder. Auto off, gamma `1.00`, strength `0.05` as set in the panel
+— the persisted job row was **not** re-checked for this run. Raw `result.png` pulled with
+`scripts/prod-fetch-results.py` (sha256 `88dcf148…`); it is **not** added to `references/`, since it
+adds nothing visual that `08` does not already show. The model returned 896×592, cropping five rows.
+
+Same script, same command shape, measured together with the Run A and baseline rows above:
+
+| Image                    | Chromatic |  Green |   Magenta | Magenta in dark (V < 0.35) | Magenta in mid (0.35–0.65) |
+| ------------------------ | --------: | -----: | --------: | -------------------------: | -------------------------: |
+| Source, 896 px           |    66.6 % | 93.6 % |     0.0 % |                      0.0 % |                      0.0 % |
+| **Run C `04e57d16` raw** |    71.7 % | 86.0 % | **0.0 %** |                  **0.0 %** |                  **0.0 %** |
+| Run A `7ea011bd` raw     |    77.9 % | 85.8 % |     0.0 % |                      0.0 % |                      0.0 % |
+| Baseline `190832de` raw  |    86.8 % | 57.6 % |    39.8 % |                     69.7 % |                     44.2 % |
+
+**Reading — for this photograph at gamma 1.00 / strength 0.05 only:** reducing the source to the
+failing cell's size did **not** produce the flip. Size alone does not trigger it here. Run A and Run C
+are near-identical on every band.
+
+**What is left.** Between this pair and the failing baseline, two variables still differ: the
+**parameters** (1.00/0.05 here vs 1.16/0.08, which came from Auto) and the **scene**. Neither is
+eliminated, and size is not ruled out for other scenes or for the shipped parameters.
+
+**The next control holds scene and size fixed and moves only the parameters:** the same 896 px
+Kirkjufell file with the parameters production actually sends. The sliders step by 0.05, so the
+baseline's 1.16 / 0.08 cannot be set by hand; the representative choice is **Auto on**, recording
+the values the panel shows. For this photograph at those values: **magenta** → the shipped
+parameters are enough to trigger the flip on this scene; **clean** → parameters are not it here
+either, which leaves scene composition as the remaining suspect — still a hypothesis until a scene
+like the baseline's (neutral foreground beside saturated green) is run.
 
 ### Attempt log
 
