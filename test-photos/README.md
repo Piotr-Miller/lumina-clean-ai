@@ -50,6 +50,12 @@ After each download it prints the dimensions and flags two things that would sil
 
 ## Current set
 
+S-17 candidate collection (2026-09-26): three additional original-resolution phone JPEGs
+(`04`–`06`) are downloaded and registered in `fetch.sh`. Authors, licences, source links,
+camera metadata, SHA-256 hashes and the wider 18-candidate pool are recorded in
+[photo-candidates.md](../context/changes/cloud-quality-below-local/photo-candidates.md).
+The pool is not yet an accepted benchmark; the 6/12 split is unset.
+
 ### `licensed/01-aurora-fjord-kirkjufell.jpg`
 
 3840 × 2560 · 9.83 MP · 6.6 MB · CC BY-SA 4.0 · photo by Oliver Degener, uploaded to

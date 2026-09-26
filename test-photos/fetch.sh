@@ -18,6 +18,9 @@ FETCH=(
   "aurora-fjord (saturated green aurora over dark water; the class that fails in S-17, at a source LARGER than Cloud AI's 1536px cap · CC BY-SA 4.0 Oliver Degener, uploaded by Chr Grundo)|01-aurora-fjord-kirkjufell.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg?width=3840"
   "aurora-frozen-lake (saturated green aurora over a pale, near-neutral snow-and-ice lake shore filling ~40% of the frame; tests whether S-17's flip needs neutral ground beside saturated green · CC BY 4.0 Anthony's astro, own work)|02-aurora-frozen-lake-norway.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Aurora_mountain.jpg?width=3840"
   "aurora-reykjanes (green aurora over a snowy coastal flat with dark lava rocks, the darkest candidate, 3:2 like the failing 896x600 result · CC0 Sean O Riordan, via Flickr)|03-aurora-reykjanes-snow-lava.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Reykjanes_Geopark_Aurora_-_Flickr_-_Seanie2322.jpg?width=3840"
+  "night facade, bright highlights and dark fence · CC BY-SA 4.0 56BeachyL|04-phone-whitehouse-iphone13pro.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/WhiteHouseNight.jpg"
+  "saturated neon, lettering and dark surroundings · CC BY 2.0 edenpictures (Eden, Janine and Jim)|05-phone-walgreens-pixel7.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Walgreens_Neon%2C_New_Orleans_at_night%2C_April_2023.jpg"
+  "rain, streetlamp and foliage, Expert RAW JPEG export · CC BY 4.0 Justauser13|06-phone-rain-galaxys24ultra.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Rain_at_night_captured_from_Expert_RAW%2C_Samsung_Galaxy_S24_Ultra.jpg"
 )
 
 for entry in "${FETCH[@]}"; do
