@@ -18,8 +18,8 @@ together, so it is not attributed to gamma alone. Evidence and limits:
 
 **Done since the last refresh:**
 
-- The **S-17 quality bar was agreed** with the maintainer on 2026-09-26 — but it exists **only in that
-  conversation**, not in the repo (step 1).
+- The **S-17 quality bar was agreed** with the maintainer on 2026-09-26 — now recorded in
+  `context/changes/cloud-quality-below-local/quality-bar.md`.
 - The **benchmark is frozen** (#265): `s17-v1`, 18 inputs in `test-photos/licensed/`, **6 tuning / 12
   validation**, including faces, dark non-aurora landscapes and full-size phone JPEGs. All three
   previously used auroras sit in tuning. Manifest `test-photos/s17-benchmark.json`, hashes
@@ -43,13 +43,8 @@ Tools:
 
 ## Steps
 
-1. **Record the agreed quality bar in the repo** (e.g. `context/changes/cloud-quality-below-local/`).
-   Its substance: two separate success conditions (Auto improves legibility while keeping the night
-   character; Cloud is noticeably better than Local); V ≥ 0.90 and any-channel-255 shares as
-   diagnostics, not limits; a frozen aurora regression test with an accepted reference and
-   tolerances; blind A/B on identical inputs, each engine on its own Auto, real in-app Local,
-   matched display size, original alongside; pass = **≥ 8 clear Cloud wins of 12, ≤ 1 moderate
-   loss, 0 severe regressions**; Auto can pass while Cloud's advantage stays unconfirmed.
+1. ~~**Record the agreed quality bar in the repo.**~~ Done 2026-09-27:
+   `context/changes/cloud-quality-below-local/quality-bar.md`.
 
 2. **Plan S-17** with `/rune-plan` on `cloud-quality-below-local`. Open items the plan must settle
    first:
