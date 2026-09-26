@@ -1,13 +1,45 @@
 ---
 change_id: cloud-quality-below-local
-title: Cloud AI output is worse than the local engine
+title: Calibrate Cloud Auto exposure and verify quality against Local
 status: preparing
 created: 2026-08-31
-updated: 2026-09-21
+updated: 2026-09-26
 archived_at: null
 ---
 
 ## Notes
+
+### Decision — 2026-09-26
+
+**Keep Bread for now. Reframe S-17 around Auto overexposure and a representative
+Cloud/Local quality check.** Do not start a model migration from the three
+2026-08-31 screenshots. The success criterion (Cloud noticeably better than Local)
+remains unverified; keeping the current model is a decision about the next work,
+not proof that the criterion passes.
+
+The original observations and diagnosis below are preserved as a history of the
+investigation, **not current findings**. `defaults-experiment.md` § The baseline's
+own input shows that 98.1% of magenta pixels in the byte-reproduced aurora result
+were already magenta in its source; none were green. The other two source images
+also contain violet/magenta shadows, and a Python approximation of the Local
+engine shows comparable magenta on them. Only the aurora source is byte-proven as
+the submitted input, and Local was approximated rather than run in a browser.
+These limits rule out a claim that all colour behaviour is solved, but the
+green→magenta model-fault diagnosis does not survive the available evidence.
+
+The reproducible quality defect is **overexposure at Auto's setting** on a
+licensed aurora photo. At the same 896 px input, direct Bread runs changed from
+`gamma 1.00` / `strength 0.05` to Auto's `1.50` / `0.12156862745098`: pixels with
+V ≥ 0.90 rose from 21.3% to 77.6%, and pixels with any channel clipped rose
+from 4.9% to 49.7%. Both controls changed, so the evidence incriminates that
+Auto setting as a whole, not gamma alone. The next implementation should
+calibrate the recommendation using photos whose provenance and publication
+rights are recorded, then compare Bread and Local on the same representative
+inputs at matched display scale. Define acceptance criteria before tuning.
+
+The model decision is **retain, subject to that quality check**. A swap or drop
+needs new evidence that the calibrated Bread path cannot meet the product bar.
+The Cloud resolution/delivery gap remains a separate parked item after S-18.
 
 Reported by the user 2026-08-31 after hands-on trials on production: the Bread
 (Cloud AI) results came out **markedly worse than the local Canvas engine**. This
@@ -32,7 +64,7 @@ Three before/after screenshots taken on prod, saved under `references/`:
 Parameters in each run (Auto ON): gamma `1.50` / strength `0.12`; gamma `1.16` /
 `0.08`; gamma `1.24` / `0.09`.
 
-### What the evidence shows
+### Original reading of the evidence — superseded 2026-09-26
 
 The shared signature is a **hue shift to the complement — green → magenta** —
 present in all three, across three different gamma values and three different
@@ -47,17 +79,18 @@ Two secondary observations worth keeping:
 - In `02`, the AFTER image is **noisier** than the BEFORE. A denoise pass that
   increases noise is failing at its stated job, not merely tuning it badly.
 
-### Candidate causes — RESOLVED 2026-09-20
+### Candidate causes — 2026-09-20 diagnosis superseded 2026-09-26
 
 > **Superseded. Kept verbatim below as the original framing** (what was assumed,
 > vs what was found) — see `frame.md` for the investigation.
 >
-> **The cause is Bread's own output.** The stored raw `result.png` for jobs
+> **Historical diagnosis, now withdrawn:** The stored raw `result.png` for jobs
 > `190832de…` and `3d19146a…` — the pre-post-pass bytes Replicate returned,
 > opened straight from Supabase Storage outside the app — is **already magenta**
-> and **already blown out**, matching screenshots `02` and `01`. Hypothesis 2
-> stands; 1, 3 and 4 are eliminated by measurement. `gamma` > 1 brightens on
-> Bread too (its public model page), so we are not driving it backwards.
+> and **already blown out**, matching screenshots `02` and `01`. This established
+> where the result appeared, but did not compare it to the source. The later
+> source comparison above invalidates the green→magenta inference; the Auto
+> exposure finding remains separate.
 
 Recorded as hypotheses to test, deliberately not as findings. This repository has
 a documented history of writing unverified causes into records
@@ -116,9 +149,9 @@ before any cap slot is spent.
 
 What this does and does not touch:
 
-- **The colour finding stands.** The hue flip was confirmed in Bread's stored raw `result.png`, and
-  Bread resizes internally to ≤1536 anyway, so a 12 MP upload reaches the model at a comparable
-  scale. Saturation-dependence is unaffected.
+- **Corrected 2026-09-26:** magenta in Bread's raw output did not establish a hue flip; the
+  byte-proven input already contains the cast. The earlier saturation-dependence claim is
+  unsupported. Source resolution remains a separate test dimension.
 - **The "AFTER is noisier" secondary observation does not.** On screenshot `02` the panes measure
   1.05× on luma grain and **0.82×** on chroma — the AFTER is not noisier. What makes it look worse
   is the cast, not noise.
@@ -133,12 +166,8 @@ Full measurement: `context/changes/cloud-result-resolution-gap/premise-check.md`
 ### Scope note
 
 ~~the evidence points at a colour transform somewhere in our own pipeline~~ —
-**disproven 2026-09-20.** Entering through the framing step was right, and it
-paid: the presumed cause was eliminated by measurement. But the conclusion
-inverted. Resisting "make Bread better" was correct **until the cause was
-known**, and the cause is the model, so a swap is now a candidate on evidence
-rather than an assumption — **S-13 is un-parked as an option, not as a
-decision**. What the scope note got right and still holds: this is not a
-parameter-tuning change. Two separable tracks now: the model decision, and an
-independent delivery gap (~1.5 MP lossy JPEG vs Local's full resolution) that is
-entirely ours. Next: `/rune-research`.
+**disproven 2026-09-20, then revised again 2026-09-26.** The 2026-09-20
+conclusion that Bread caused a green→magenta flip was wrong because the source
+was not compared. S-17 now addresses the Auto overexposure and quality check
+described in the decision above. Bread stays; S-13 remains a separate,
+benchmark-gated Premium proposal. The Cloud resolution/delivery gap is separate.

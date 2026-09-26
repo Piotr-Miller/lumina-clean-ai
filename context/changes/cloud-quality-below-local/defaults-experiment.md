@@ -399,7 +399,9 @@ and the waterfall (`03`) come from the same article, but their sources have not 
 whether they carry the same input cast is open. It also says nothing about the separate
 **blow-out** at Auto's gamma 1.50 (§ Direct runs, Reading 2), which is a real output defect. The
 statement in `idea-notes.md` that Bread's own output flips green to magenta and "the fault is the
-model's" is contradicted for `190832de` and is left for the maintainer to amend.
+model's" is contradicted for `190832de` and is left for the maintainer to amend. _(Amended 2026-09-26: `idea-notes.md`, `change.md`, the
+roadmap and issue #203 now keep Bread and reframe S-17 as Auto calibration plus a Cloud/Local quality
+check.)_
 
 ### All three evidence sources, and the Local engine on them — 2026-09-26
 
