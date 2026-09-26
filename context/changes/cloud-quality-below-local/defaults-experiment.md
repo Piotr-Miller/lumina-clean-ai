@@ -26,7 +26,8 @@ mis-driving the model. See § Run A — measured.
 Replicate's schema for `mingcv/bread` (verified 2026-09-20): `gamma` **default 1.0**,
 max 1.5; `strength` **default 0.05**, max 0.2. Ours are `BREAD_GAMMA = 1.2` and
 `BREAD_STRENGTH = 0.2` — the latter is 4× the model default and exactly its ceiling.
-Auto pins gamma to **1.50** on any photo with `p50 < 0.164`, i.e. every night photo.
+Auto pins gamma to **1.50** on any photo with `p50 < 0.164`, i.e. every night photo. _(Overstated —
+the p95 and clipping guards lower or cap it; exact conditions in § Direct runs, Reading 2.)_
 `gamma` scales the illumination map, which is also the weight deciding how much of
 the **original** colour survives the colour net — so the setting we have been
 shipping maximises both blow-out and colour-net authority. The model has never been
@@ -120,11 +121,12 @@ size control proposed there than on Run B.)_
 Fill in as the runs complete. Attach the downloaded `result.png` for each under
 `references/` with a name that states the parameters.
 
-| Run | Source                                                   | gamma | strength | Job id     | Result size | Verdict on hue                                    | Verdict on exposure/noise                                                         |
-| --- | -------------------------------------------------------- | ----- | -------- | ---------- | ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
-| A   | aurora, **Kirkjufell** — not the baseline scene          | 1.00  | 0.05     | `7ea011bd` | 1536×1024   | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.40); painterly texture in the sky, dark corner vignette |
-| C   | Kirkjufell **downsized to 896×597** (size control for A) | 1.00  | 0.05     | `04e57d16` | 896×592     | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.44); same texture as A at smaller scale                 |
-| B   | night, non-green                                         | 1.00  | 0.05     |            |             |                                                   |                                                                                   |
+| Run | Source                                                   | gamma | strength         | Job id                 | Result size | Verdict on hue                                    | Verdict on exposure/noise                                                         |
+| --- | -------------------------------------------------------- | ----- | ---------------- | ---------------------- | ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| A   | aurora, **Kirkjufell** — not the baseline scene          | 1.00  | 0.05             | `7ea011bd`             | 1536×1024   | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.40); painterly texture in the sky, dark corner vignette |
+| C   | Kirkjufell **downsized to 896×597** (size control for A) | 1.00  | 0.05             | `04e57d16`             | 896×592     | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.44); same texture as A at smaller scale                 |
+| D   | Kirkjufell 896×597, **direct call** (see § Direct runs)  | 1.50  | 0.12156862745098 | `n2cbsk05` (Replicate) | 896×592     | **clean — 0.0 % magenta**, bright pixels included | **blown out** — mean 0.76, 77.6 % of pixels V ≥ 0.90, half with a clipped channel |
+| B   | night, non-green                                         | 1.00  | 0.05             |                        |             |                                                   |                                                                                   |
 
 ### Run A — measured 2026-09-26
 
@@ -219,9 +221,72 @@ eliminated, and size is not ruled out for other scenes or for the shipped parame
 Kirkjufell file with the parameters production actually sends. The sliders step by 0.05, so the
 baseline's 1.16 / 0.08 cannot be set by hand; the representative choice is **Auto on**, recording
 the values the panel shows. For this photograph at those values: **magenta** → the shipped
-parameters are enough to trigger the flip on this scene; **clean** → parameters are not it here
-either, which leaves scene composition as the remaining suspect — still a hypothesis until a scene
-like the baseline's (neutral foreground beside saturated green) is run.
+parameters are enough to trigger the flip on this scene; **clean** → Auto's setting does not
+trigger it on this scene. _(Run D came back clean. What that does and does not exclude — it does
+**not** leave the scene as the only suspect — is in § Direct runs, Reading 1.)_
+
+### Direct runs — calibration and Run D, 2026-09-26
+
+Run D was refused by the daily cap (§ Attempt log). Rather than raise the global production cap,
+the remaining runs call the model **directly** with `scripts/spikes/bread-spike.ts`, which uses the
+same pinned version (`057a4e07…`) and `{image, gamma, strength}` input as `src/lib/services/bread.ts`,
+sends a local file as a data URI and keeps the raw output with its sha256. No app, no job row, no cap.
+
+**Calibration — the direct path is byte-equivalent to the app.** Run C repeated directly (Replicate
+prediction `7fbt0ppt…`, gamma 1.0 / strength 0.05, same 896 px file) returned sha256
+`88dcf148a9637fbe63e5c073d76c97f8b769aa695797b248654ba72308561f2a` — **byte-identical** to app job
+`04e57d16` (`cmp` confirms). The model is deterministic and the app uploads the file's raw bytes, so
+a direct result stands in for an app result at the same input and parameters.
+
+**Run D — Auto's parameters at fixed scene and size.** Prediction `n2cbsk05…`, gamma **1.50**,
+strength **0.12156862745098** (Auto's exact values for this file, from job `9c88b99f`), same 896 px
+file. Raw output kept as `references/09-n2cbsk05-direct-gamma1.50-strength0.1216-raw.png`
+(sha256 `d5d91bad…`).
+
+| Image                    | Chromatic |  Green |   Magenta | Magenta in dark | Magenta in mid | Mean RGB | V ≥ 0.90 | Any channel = 255 |
+| ------------------------ | --------: | -----: | --------: | --------------: | -------------: | -------: | -------: | ----------------: |
+| **Run D `n2cbsk05` raw** |    21.1 % | 88.4 % | **0.0 %** |       **0.0 %** |      **0.0 %** |    0.760 |   77.6 % |            49.7 % |
+| Run C raw (app = direct) |    71.7 % | 86.0 % |     0.0 % |           0.0 % |          0.0 % |    0.438 |   21.3 % |             4.9 % |
+| Baseline `190832de` raw  |    86.8 % | 57.6 % |    39.8 % |          69.7 % |         44.2 % |    0.446 |    1.5 % |             0.0 % |
+
+Hue columns from `scripts/measure-hue-shares.py`; the last three columns are over **all** pixels at
+native size (V = max channel). Run D's chromatic share collapses because most of the frame is now
+brighter than the mask's V < 0.90 ceiling, not because colour turned: among the coloured pixels the
+mask excludes as too bright (47.3 % of the frame), magenta is also **0.0 %** and green 91.6 %.
+
+**Reading — for this photograph only.**
+
+1. **No magenta at Auto's parameters for this file either.** On Kirkjufell, the flip appears
+   neither at 1.00 / 0.05 at either size (A, C) nor at Auto's 1.50 / 0.1216 (D). That does **not**
+   leave the scene as the only remaining cause:
+   - the failing baseline ran at **1.16 / 0.08**, which no Kirkjufell run used, so an effect specific
+     to those values is not excluded;
+   - C → D moves gamma **and** strength together, so it tests Auto's setting as a whole, not either
+     parameter alone;
+   - an **interaction** between parameters and scene is not excluded either.
+
+   What it does show: this frame does not flip at the settings tried. The scene remains a candidate,
+   not an isolated cause. The test that bears on it is a scene like the baseline's — neutral ground
+   (snow, pale rock, sand) beside saturated green — under a recorded licence, run through the direct
+   path at **both** 1.00 / 0.05 and 1.16 / 0.08.
+
+2. **A different defect instead: Auto blows this photo out.** At gamma 1.50 over three quarters of
+   the frame sits at V ≥ 0.90, half the pixels clip a channel, and mean saturation halves
+   (0.541 → 0.298). The sky reads as pale green-white. This matches the other half of the S-17
+   complaint ("blows out highlights") and § Why these values' point that the shipped setting
+   maximises blow-out. It is one photograph, and the comparison moves gamma and strength together, so
+   it indicts Auto's setting as a whole rather than one parameter. How many night photos take the
+   same path depends on `baseGamma` (`src/lib/engines/auto-params.ts:107`), which reaches the 1.50
+   clamp only when all of these hold: the median luma `p50` is at or below ~0.164 (target median 0.3;
+   ~0.133 when `shadowRatio > 0.65` and `p95 < 0.65` switch the target to 0.26); if `p95 > 0.85`, the
+   ×0.8 guard lowers that threshold to ~0.105 (the 0.26 target cannot apply there, since it needs
+   `p95 < 0.65`); and `clipRatio ≤ 0.005`, since any more
+   clipping caps gamma at 1.1. A dark frame with a few clipped lights therefore does **not** get 1.50.
+
+**Queue/start delay.** Both direct calls spent minutes between `created_at` and `started_at` before
+a ~1.6 s prediction: 342 s for Run C and 123 s for Run D. That interval covers queueing **and** any
+model start; Replicate's timestamps do not separate the two, so it is not a confirmed cold-boot time.
+Recorded because the app's jobs pass through the same interval.
 
 ### Attempt log
 
@@ -241,7 +306,8 @@ was the third slot. `CLOUD_DAILY_CAP` in production is therefore 3, as documente
 created no row and cost nothing (the handler's fast path rejects before any storage or model work).
 
 Run D's parameters are now known exactly: Auto sets gamma **1.50** and strength **0.12156862745098**
-on this file (the panel shows `0.12`). Re-run after 00:00 UTC with Auto on and those values.
+on this file (the panel shows `0.12`). ~~Re-run after 00:00 UTC with Auto on and those values.~~
+_Superseded the same day: Run D was run through the direct path instead — § Direct runs._
 
 **2026-09-24 — Run A attempted twice, blocked by a Replicate outage. No cap slot spent.**
 
