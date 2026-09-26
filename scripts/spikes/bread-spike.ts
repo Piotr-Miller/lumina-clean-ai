@@ -16,7 +16,22 @@
  *
  * Record the numbers in context/changes/cloud-ai-realtime-result/spike-findings.md.
  * Raw `fetch` only — no dependency added for a throwaway.
+ *
+ * S-17 reuse — a direct model call that bypasses the app, its DB and the daily cap:
+ *   REPLICATE_API_TOKEN=r8_... GAMMA=1.0 STRENGTH=0.05 \
+ *     npx tsx scripts/spikes/bread-spike.ts test-photos/private/<file>.jpg
+ *   - A LOCAL path (anything not http(s)) is sent inline as a data URI. Replicate
+ *     documents data URIs for small files only; keep inputs to a few hundred KB.
+ *   - On success the output's RAW bytes are saved to OUT_DIR (default: the OS temp
+ *     dir, `lumina-bread-direct/`) with their sha256 — never inside the repo.
+ *   - Same pinned version and input shape as production (`src/lib/services/bread.ts`),
+ *     but this is the model alone: no upload, no post-pass, no job row.
  */
+
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { extname, join } from "node:path";
 
 // Pinned version (research §External). Lock/confirm this in spike-findings.md.
 const BREAD_VERSION = "057a4e073829a8c50f2622206f71a8ed25331cd07a520bc264469389c7c11e54";
@@ -33,13 +48,17 @@ async function main(): Promise<void> {
     console.error("Set REPLICATE_API_TOKEN (your Replicate API token) and re-run.");
     process.exit(1);
   }
-  // Pick the first http(s) arg so a stray positional token doesn't become the image.
-  const imageUrl = process.argv.slice(2).find((a) => /^https?:\/\//.test(a)) ?? DEFAULT_IMAGE_URL;
+  // An http(s) arg is passed through; any other arg is a local file, sent as a data URI.
+  const args = process.argv.slice(2);
+  const remote = args.find((a) => /^https?:\/\//.test(a));
+  const localPath = remote ? undefined : args.find((a) => !a.startsWith("-"));
+  const imageUrl = remote ?? (localPath ? toDataUri(localPath) : DEFAULT_IMAGE_URL);
+  const imageLabel = localPath ?? imageUrl;
   // Tune without editing code: GAMMA (≤1.5 brighten) / STRENGTH (≤0.2 denoise).
   const gamma = Number(process.env.GAMMA ?? "1.5");
   const strength = Number(process.env.STRENGTH ?? "0.05");
   console.log(
-    `Bread spike → version ${BREAD_VERSION.slice(0, 12)}…  gamma=${gamma} strength=${strength}  image: ${imageUrl}`,
+    `Bread spike → version ${BREAD_VERSION.slice(0, 12)}…  gamma=${gamma} strength=${strength}  image: ${imageLabel}`,
   );
 
   const wallStart = Date.now();
@@ -85,7 +104,35 @@ async function main(): Promise<void> {
   if (prediction.metrics?.predict_time)
     console.log(`predict_time: ${prediction.metrics.predict_time}s (Replicate metric)`);
   console.log("────────────────────────────────");
+  if (prediction.status === "succeeded" && typeof prediction.output === "string") {
+    await saveOutput(prediction.output, prediction.id, gamma, strength);
+  }
   console.log("→ Open the output URL: is it a usable COLOR enhanced image? Record warm/cold in spike-findings.md.");
+}
+
+function toDataUri(path: string): string {
+  const ext = extname(path).toLowerCase();
+  const mime = ext === ".png" ? "image/png" : ext === ".jpg" || ext === ".jpeg" ? "image/jpeg" : null;
+  if (!mime) {
+    console.error(`unsupported input ${path}: use .jpg, .jpeg or .png`);
+    process.exit(1);
+  }
+  return `data:${mime};base64,${readFileSync(path).toString("base64")}`;
+}
+
+async function saveOutput(url: string, id: string, gamma: number, strength: number): Promise<void> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.error(`output download failed: ${res.status} ${url}`);
+    return;
+  }
+  const bytes = Buffer.from(await res.arrayBuffer());
+  const dir = process.env.OUT_DIR ?? join(tmpdir(), "lumina-bread-direct");
+  mkdirSync(dir, { recursive: true });
+  const dest = join(dir, `${id.slice(0, 8)}-g${gamma}-s${strength}${extname(new URL(url).pathname) || ".png"}`);
+  writeFileSync(dest, bytes);
+  console.log(`saved       : ${dest}  (${(bytes.length / 1024).toFixed(1)} KB)`);
+  console.log(`sha256      : ${createHash("sha256").update(bytes).digest("hex")}`);
 }
 
 interface ReplicatePrediction {
