@@ -120,11 +120,12 @@ size control proposed there than on Run B.)_
 Fill in as the runs complete. Attach the downloaded `result.png` for each under
 `references/` with a name that states the parameters.
 
-| Run | Source                                                   | gamma | strength | Job id     | Result size | Verdict on hue                                    | Verdict on exposure/noise                                                         |
-| --- | -------------------------------------------------------- | ----- | -------- | ---------- | ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
-| A   | aurora, **Kirkjufell** — not the baseline scene          | 1.00  | 0.05     | `7ea011bd` | 1536×1024   | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.40); painterly texture in the sky, dark corner vignette |
-| C   | Kirkjufell **downsized to 896×597** (size control for A) | 1.00  | 0.05     | `04e57d16` | 896×592     | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.44); same texture as A at smaller scale                 |
-| B   | night, non-green                                         | 1.00  | 0.05     |            |             |                                                   |                                                                                   |
+| Run | Source                                                   | gamma | strength         | Job id                 | Result size | Verdict on hue                                    | Verdict on exposure/noise                                                         |
+| --- | -------------------------------------------------------- | ----- | ---------------- | ---------------------- | ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------- |
+| A   | aurora, **Kirkjufell** — not the baseline scene          | 1.00  | 0.05             | `7ea011bd`             | 1536×1024   | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.40); painterly texture in the sky, dark corner vignette |
+| C   | Kirkjufell **downsized to 896×597** (size control for A) | 1.00  | 0.05             | `04e57d16`             | 896×592     | **clean — 0.0 % magenta** in every luminance band | brightened (mean 0.12 → 0.44); same texture as A at smaller scale                 |
+| D   | Kirkjufell 896×597, **direct call** (see § Direct runs)  | 1.50  | 0.12156862745098 | `n2cbsk05` (Replicate) | 896×592     | **clean — 0.0 % magenta**, bright pixels included | **blown out** — mean 0.76, 77.6 % of pixels V ≥ 0.90, half with a clipped channel |
+| B   | night, non-green                                         | 1.00  | 0.05             |                        |             |                                                   |                                                                                   |
 
 ### Run A — measured 2026-09-26
 
@@ -222,6 +223,52 @@ the values the panel shows. For this photograph at those values: **magenta** →
 parameters are enough to trigger the flip on this scene; **clean** → parameters are not it here
 either, which leaves scene composition as the remaining suspect — still a hypothesis until a scene
 like the baseline's (neutral foreground beside saturated green) is run.
+
+### Direct runs — calibration and Run D, 2026-09-26
+
+Run D was refused by the daily cap (§ Attempt log). Rather than raise the global production cap,
+the remaining runs call the model **directly** with `scripts/spikes/bread-spike.ts`, which uses the
+same pinned version (`057a4e07…`) and `{image, gamma, strength}` input as `src/lib/services/bread.ts`,
+sends a local file as a data URI and keeps the raw output with its sha256. No app, no job row, no cap.
+
+**Calibration — the direct path is byte-equivalent to the app.** Run C repeated directly (Replicate
+prediction `7fbt0ppt…`, gamma 1.0 / strength 0.05, same 896 px file) returned sha256
+`88dcf148a9637fbe63e5c073d76c97f8b769aa695797b248654ba72308561f2a` — **byte-identical** to app job
+`04e57d16` (`cmp` confirms). The model is deterministic and the app uploads the file's raw bytes, so
+a direct result stands in for an app result at the same input and parameters.
+
+**Run D — Auto's parameters at fixed scene and size.** Prediction `n2cbsk05…`, gamma **1.50**,
+strength **0.12156862745098** (Auto's exact values for this file, from job `9c88b99f`), same 896 px
+file. Raw output kept as `references/09-n2cbsk05-direct-gamma1.50-strength0.1216-raw.png`
+(sha256 `d5d91bad…`).
+
+| Image                    | Chromatic |  Green |   Magenta | Magenta in dark | Magenta in mid | Mean RGB | V ≥ 0.90 | Any channel = 255 |
+| ------------------------ | --------: | -----: | --------: | --------------: | -------------: | -------: | -------: | ----------------: |
+| **Run D `n2cbsk05` raw** |    21.1 % | 88.4 % | **0.0 %** |       **0.0 %** |      **0.0 %** |    0.760 |   77.6 % |            49.7 % |
+| Run C raw (app = direct) |    71.7 % | 86.0 % |     0.0 % |           0.0 % |          0.0 % |    0.438 |   21.3 % |             4.9 % |
+| Baseline `190832de` raw  |    86.8 % | 57.6 % |    39.8 % |          69.7 % |         44.2 % |    0.446 |    1.5 % |             0.0 % |
+
+Hue columns from `scripts/measure-hue-shares.py`; the last three columns are over **all** pixels at
+native size (V = max channel). Run D's chromatic share collapses because most of the frame is now
+brighter than the mask's V < 0.90 ceiling, not because colour turned: among the coloured pixels the
+mask excludes as too bright (47.3 % of the frame), magenta is also **0.0 %** and green 91.6 %.
+
+**Reading — for this photograph only.**
+
+1. **No magenta at the shipped Auto parameters either.** On Kirkjufell, neither source size (A vs C)
+   nor the parameters production sends (C vs D) produces the flip. Of the three variables separating
+   these runs from the failing baseline, only the **scene** is left. That is still a hypothesis from
+   one photograph: the next test needs a scene like the baseline's — neutral ground (snow, pale rock,
+   sand) beside saturated green — under a recorded licence, run through the direct path.
+2. **A different defect instead: Auto blows this photo out.** At gamma 1.50 over three quarters of
+   the frame sits at V ≥ 0.90, half the pixels clip a channel, and mean saturation halves
+   (0.541 → 0.298). The sky reads as pale green-white. This matches the other half of the S-17
+   complaint ("blows out highlights") and § Why these values' point that the shipped setting
+   maximises blow-out. It is one photograph, but it is the parameter path every night photo takes
+   (Auto pins gamma to 1.50 below `p50 < 0.164`).
+
+**Cold boots.** Both direct calls queued for minutes before a ~1.6 s prediction: 342 s for Run C and
+123 s for Run D, with ~5 min idle between them. Recorded because the app's users hit the same boots.
 
 ### Attempt log
 
