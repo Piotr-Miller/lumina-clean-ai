@@ -26,7 +26,8 @@ mis-driving the model. See § Run A — measured.
 Replicate's schema for `mingcv/bread` (verified 2026-09-20): `gamma` **default 1.0**,
 max 1.5; `strength` **default 0.05**, max 0.2. Ours are `BREAD_GAMMA = 1.2` and
 `BREAD_STRENGTH = 0.2` — the latter is 4× the model default and exactly its ceiling.
-Auto pins gamma to **1.50** on any photo with `p50 < 0.164`, i.e. every night photo.
+Auto pins gamma to **1.50** on any photo with `p50 < 0.164`, i.e. every night photo. _(Overstated —
+the p95 and clipping guards lower or cap it; exact conditions in § Direct runs, Reading 2.)_
 `gamma` scales the illumination map, which is also the weight deciding how much of
 the **original** colour survives the colour net — so the setting we have been
 shipping maximises both blow-out and colour-net authority. The model has never been
@@ -255,20 +256,36 @@ mask excludes as too bright (47.3 % of the frame), magenta is also **0.0 %** and
 
 **Reading — for this photograph only.**
 
-1. **No magenta at the shipped Auto parameters either.** On Kirkjufell, neither source size (A vs C)
-   nor the parameters production sends (C vs D) produces the flip. Of the three variables separating
-   these runs from the failing baseline, only the **scene** is left. That is still a hypothesis from
-   one photograph: the next test needs a scene like the baseline's — neutral ground (snow, pale rock,
-   sand) beside saturated green — under a recorded licence, run through the direct path.
+1. **No magenta at Auto's parameters for this file either.** On Kirkjufell, the flip appears
+   neither at 1.00 / 0.05 at either size (A, C) nor at Auto's 1.50 / 0.1216 (D). That does **not**
+   leave the scene as the only remaining cause:
+   - the failing baseline ran at **1.16 / 0.08**, which no Kirkjufell run used, so an effect specific
+     to those values is not excluded;
+   - C → D moves gamma **and** strength together, so it tests Auto's setting as a whole, not either
+     parameter alone;
+   - an **interaction** between parameters and scene is not excluded either.
+
+   What it does show: this frame does not flip at the settings tried. The scene remains a candidate,
+   not an isolated cause. The test that bears on it is a scene like the baseline's — neutral ground
+   (snow, pale rock, sand) beside saturated green — under a recorded licence, run through the direct
+   path at **both** 1.00 / 0.05 and 1.16 / 0.08.
+
 2. **A different defect instead: Auto blows this photo out.** At gamma 1.50 over three quarters of
    the frame sits at V ≥ 0.90, half the pixels clip a channel, and mean saturation halves
    (0.541 → 0.298). The sky reads as pale green-white. This matches the other half of the S-17
    complaint ("blows out highlights") and § Why these values' point that the shipped setting
-   maximises blow-out. It is one photograph, but it is the parameter path every night photo takes
-   (Auto pins gamma to 1.50 below `p50 < 0.164`).
+   maximises blow-out. It is one photograph, and the comparison moves gamma and strength together, so
+   it indicts Auto's setting as a whole rather than one parameter. How many night photos take the
+   same path depends on `baseGamma` (`src/lib/engines/auto-params.ts:107`), which reaches the 1.50
+   clamp only when all of these hold: the median luma `p50` is at or below ~0.164 (target median 0.3;
+   ~0.133 when `shadowRatio > 0.65` and `p95 < 0.65` switch the target to 0.26); if `p95 > 0.85`, the
+   ×0.8 guard lowers that threshold to ~0.105 (~0.080); and `clipRatio ≤ 0.005`, since any more
+   clipping caps gamma at 1.1. A dark frame with a few clipped lights therefore does **not** get 1.50.
 
-**Cold boots.** Both direct calls queued for minutes before a ~1.6 s prediction: 342 s for Run C and
-123 s for Run D, with ~5 min idle between them. Recorded because the app's users hit the same boots.
+**Queue/start delay.** Both direct calls spent minutes between `created_at` and `started_at` before
+a ~1.6 s prediction: 342 s for Run C and 123 s for Run D. That interval covers queueing **and** any
+model start; Replicate's timestamps do not separate the two, so it is not a confirmed cold-boot time.
+Recorded because the app's jobs pass through the same interval.
 
 ### Attempt log
 
@@ -288,7 +305,8 @@ was the third slot. `CLOUD_DAILY_CAP` in production is therefore 3, as documente
 created no row and cost nothing (the handler's fast path rejects before any storage or model work).
 
 Run D's parameters are now known exactly: Auto sets gamma **1.50** and strength **0.12156862745098**
-on this file (the panel shows `0.12`). Re-run after 00:00 UTC with Auto on and those values.
+on this file (the panel shows `0.12`). ~~Re-run after 00:00 UTC with Auto on and those values.~~
+_Superseded the same day: Run D was run through the direct path instead — § Direct runs._
 
 **2026-09-24 — Run A attempted twice, blocked by a Replicate outage. No cap slot spent.**
 
