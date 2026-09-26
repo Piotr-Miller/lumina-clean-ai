@@ -193,8 +193,8 @@ these parameters**:
 
 The size control proposed above. Source `test-photos/private/01-aurora-fjord-kirkjufell-896.jpg`: the
 Run A file resized with LANCZOS to 896×597 (JPEG q95, no chroma subsampling; sha256 `72cb7590…`),
-kept in the gitignored `private/` folder. Auto off, gamma `1.00`, strength `0.05` as set in the panel
-— the persisted job row was **not** re-checked for this run. Raw `result.png` pulled with
+kept in the gitignored `private/` folder. Auto off, gamma `1.00`, strength `0.05` — confirmed on the
+persisted job row (`gamma = 1`, `strength = 0.05`). Raw `result.png` pulled with
 `scripts/prod-fetch-results.py` (sha256 `88dcf148…`); it is **not** added to `references/`, since it
 adds nothing visual that `08` does not already show. The model returned 896×592, cropping five rows.
 
@@ -224,6 +224,24 @@ either, which leaves scene composition as the remaining suspect — still a hypo
 like the baseline's (neutral foreground beside saturated green) is run.
 
 ### Attempt log
+
+**2026-09-26 — Run D (Auto on, 896 px Kirkjufell) refused by the daily cap. Not run.**
+
+The cap was already full. The day's rows (UTC):
+
+| Job        | Status      | `error_code` | Reached Replicate | gamma | strength           | Created (UTC) |
+| ---------- | ----------- | ------------ | ----------------- | ----- | ------------------ | ------------- |
+| `7ea011bd` | `succeeded` | —            | true              | `1`   | `0.05`             | 11:10:43      |
+| `9c88b99f` | `failed`    | `canceled`   | **true**          | `1.5` | `0.12156862745098` | 12:06:13      |
+| `04e57d16` | `succeeded` | —            | true              | `1`   | `0.05`             | 12:07:21      |
+
+`9c88b99f` is an Auto-on submission of the 896 px file, cancelled with "Start over" a minute before
+Run C. It had already reached Replicate, so it counts — correctly, by the cap's predicate — and it
+was the third slot. `CLOUD_DAILY_CAP` in production is therefore 3, as documented. The refused Run D
+created no row and cost nothing (the handler's fast path rejects before any storage or model work).
+
+Run D's parameters are now known exactly: Auto sets gamma **1.50** and strength **0.12156862745098**
+on this file (the panel shows `0.12`). Re-run after 00:00 UTC with Auto on and those values.
 
 **2026-09-24 — Run A attempted twice, blocked by a Replicate outage. No cap slot spent.**
 
