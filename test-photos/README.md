@@ -50,6 +50,15 @@ After each download it prints the dimensions and flags two things that would sil
 
 ## Current set
 
+**S-17 v1 frozen 2026-09-26:** 18 downloaded inputs, split into 6 tuning and 12 validation
+photos before new engine experiments. Includes three full-size published phone JPEGs,
+five people scenes and three non-aurora night landscapes. See the
+[gallery](s17-gallery.html), [manifest](s17-benchmark.json) and
+[selection/split rationale](../context/changes/cloud-quality-below-local/photo-candidates.md).
+Verify frozen bytes from the repo root with `sha256sum -c test-photos/s17-benchmark.sha256`.
+The manifest contains per-file authors, licence links, sources and limitations; all 18 are
+registered in `fetch.sh`. Do not silently replace frozen files after an upstream change.
+
 ### `licensed/01-aurora-fjord-kirkjufell.jpg`
 
 3840 × 2560 · 9.83 MP · 6.6 MB · CC BY-SA 4.0 · photo by Oliver Degener, uploaded to

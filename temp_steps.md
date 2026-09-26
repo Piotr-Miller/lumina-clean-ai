@@ -23,8 +23,12 @@ Tools that now exist for this work:
   saves the raw output with its sha256. It is byte-equivalent to the app path (calibrated on
   `04e57d16`). Needs your own `REPLICATE_API_TOKEN`; keep it local.
 - `scripts/measure-hue-shares.py` measures hue shares with its method fixed in the docstring.
-- `test-photos/licensed/` has three CC/CC0 aurora scenes (`01`–`03`); `test-photos/private/` holds the
-  three capturetheatlas sources (`ALL RIGHTS RESERVED`, never commit) and the 896 px run copies.
+- `test-photos/licensed/` now holds the frozen **S-17 v1 set: 18 inputs, 6 tuning / 12 validation**,
+  including three full-size published phone JPEGs, faces and dark landscapes. Selection, limitations
+  and split: `context/changes/cloud-quality-below-local/photo-candidates.md`; exact bytes and
+  attribution: `test-photos/s17-benchmark.json`. Verify `test-photos/s17-benchmark.sha256` before runs.
+  The three previously used auroras stay in tuning. `test-photos/private/` holds the capturetheatlas
+  sources (`ALL RIGHTS RESERVED`, never commit) and the 896 px run copies.
 
 ## Steps
 
