@@ -35,7 +35,7 @@ from 4.9% to 49.7%. Both controls changed, so the evidence incriminates that
 Auto setting as a whole, not gamma alone. The next implementation should
 calibrate the recommendation using photos whose provenance and publication
 rights are recorded, then compare Bread and Local on the same representative
-inputs at matched display scale. Define acceptance criteria before tuning.
+inputs at matched display scale. Define acceptance criteria before tuning. _(Done 2026-09-26: `quality-bar.md`.)_
 
 The model decision is **retain, subject to that quality check**. A swap or drop
 needs new evidence that the calibrated Bread path cannot meet the product bar.
