@@ -1,8 +1,8 @@
 # temp_steps.md — immediate next steps
 
-> Refreshed 2026-09-27. **Short-lived by design**: this is the next-few-actions list.
-> `temp_queue.md` holds the wider backlog (and is itself stale — see step 6);
-> `context/foundation/roadmap.md` stays authoritative for what the project is building. Delete this
+> Refreshed 2026-09-27. **Short-lived by design**: this is the next-few-actions list and the **only**
+> such list — `temp_queue.md` was retired on 2026-09-27 (two parallel lists drifted apart).
+> `context/foundation/roadmap.md` stays authoritative for scope, including parked work. Delete this
 > file once the list is empty.
 
 ## Where things stand
@@ -40,6 +40,8 @@ Tools:
 - `scripts/measure-hue-shares.py` — hue shares, method fixed in its docstring.
 - `test-photos/private/` — capturetheatlas sources (`ALL RIGHTS RESERVED`, never commit) and 896 px
   run copies.
+- `scripts/prod-fetch-results.py`, `scripts/prod-result-dimensions.py` — read-only production
+  diagnostics. Production credentials stay with the maintainer: run them locally and paste the output.
 
 ## Steps
 
@@ -62,14 +64,21 @@ Tools:
    `ALL RIGHTS RESERVED` material awaiting a separate review; the rule does not approve them
    retroactively. Decide keep, remove, or assess a specific basis.
 
-4. **Decide on the two parked changes.** `cloud-error-message-leak` has its framing written and can go
+4. **Decide on the three waiting changes.** `developer-feedback` needs one maintainer decision —
+   _can anonymous visitors submit feedback, or signed-in only?_ — then it can be planned and built;
+   the fixed constraints (durable row, the app cannot send email) are in its `change.md`. It is not
+   on the roadmap. `cloud-error-message-leak` has its framing written and can go
    straight to `/rune-plan` (invert `deriveDisplayError`'s default; map the codes with no copy).
    `finder-serialization-outage`: `ai-review` still fails with `AI_NoObjectGeneratedError` on every
    PR, most recently #265 — registration (roadmap entry, issue, `github-issues.md` row) is still
    undone.
 
+   Not listed here because the roadmap already holds them (§ Parked, both sequenced after S-17): the
+   delivery half of S-18 and `local-engine-ceiling` (#188).
+
 5. **Decide what to do with `.claude/settings.local.json`.** It keeps collecting allow-list entries
    from sessions; commit them periodically or leave them local.
 
-6. **Refresh or retire `temp_queue.md`.** Its recommended option A ("Run A settles S-17") is done and
-   did not settle it the way it expected, and option C's evidence is stale.
+6. ~~**Refresh or retire `temp_queue.md`.**~~ Retired 2026-09-27. Its live items moved: B
+   (`developer-feedback`) into step 4; D and E were already in the roadmap's § Parked. Option A (Run
+   A) is done; option C (swap the finder model) is superseded by `finder-serialization-outage`.
