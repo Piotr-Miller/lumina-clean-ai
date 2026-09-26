@@ -224,7 +224,13 @@
       "Read(//home/piotrmiller/**)",
       "Bash(python3 -c ' *)",
       "Bash(npm dist-tag *)",
-      "Bash(npm config *)"
+      "Bash(npm config *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -v \"^$\\\\|remote:\")",
+      "Bash(python3 -c \"import json,sys;[print\\(r['*']\\) for r in json.load\\(sys.stdin\\)['query']['allcategories']]\")",
+      "Bash(python3 -c \"import json,sys;[print\\(r['title']\\) for r in json.load\\(sys.stdin\\)['query']['search']]\")",
+      "Bash(git switch *)",
+      "Bash(python3 -c \"import json;json.load\\(open\\('.claude/settings.local.json'\\)\\)\")"
     ],
     "deny": [
       "Bash(rm -rf *)"

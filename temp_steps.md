@@ -1,61 +1,49 @@
 # temp_steps.md — immediate next steps
 
-> Written 2026-09-24, just before a laptop restart. **Short-lived by design**: this is the
-> next-few-actions list. `temp_queue.md` holds the wider backlog; `context/foundation/roadmap.md`
-> stays authoritative for what the project is building. Delete this file once the list is empty.
+> Rewritten 2026-09-26, replacing the 2026-09-24 list, whose steps are all done or superseded.
+> **Short-lived by design**: this is the next-few-actions list. `temp_queue.md` holds the wider
+> backlog (and is itself stale — see step 5); `context/foundation/roadmap.md` stays authoritative
+> for what the project is building. Delete this file once the list is empty.
 
 ## Where things stand
 
-Everything is merged and deployed. **Zero open PRs.** Master carries the S-18 work, the corrected
-S-17 evidence, `test-photos/`, the two production diagnostics under `scripts/`, and both changes
-opened today.
+Everything is merged. **Zero open PRs** after the one carrying this file.
 
-**Run A did not happen.** It was attempted twice on 2026-09-24 and blocked by a **Replicate outage**
-(Cloudflare's status page listed Replicate as `Degraded`). Both attempts failed at
-`predictions.create`, never reached the model, and therefore **cost nothing and consumed no cap
-slot** — all three daily slots are still available. Full record:
-`context/changes/cloud-quality-below-local/defaults-experiment.md` § Attempt log.
+**S-17 was reframed on 2026-09-26** (#255–#263). The green→magenta diagnosis is withdrawn: the three
+web test photos already carry the cast in their shadows, the byte-proven aurora input explains 98.1 %
+of its output magenta, and a Local-engine approximation shows the same cast. **Bread stays.** S-17 is
+now _calibrate Cloud Auto exposure and verify quality against Local_ — status `ready`, issue #203.
+The confirmed defect is overexposure at Auto's 1.50 / 0.1216 on one licensed photo (77.6 % of pixels
+at V ≥ 0.90); gamma and strength moved together, so it is not attributed to gamma alone. Evidence and
+limits: `context/changes/cloud-quality-below-local/defaults-experiment.md`.
 
-## One thing that will NOT survive a fresh clone
+Tools that now exist for this work:
 
-`context/changes/finder-serialization-outage/change.md` is **untracked**. It exists only on this
-laptop's working tree. It is a well-formed registration for the `ai-review` finder outage (15
-consecutive `AI_NoObjectGeneratedError` failures since 2026-09-20, zero successes), and it is not in
-git, so another machine does not have it.
-
-⚠️ It was also reformatted by a repo-wide `prettier --write context/` on 2026-09-24. Markdown
-formatting only, no content change, and it would have to pass `format:check` before committing
-anyway — but it was edited without asking, so check it reads as intended before committing.
+- `scripts/spikes/bread-spike.ts` calls Bread directly on a local file, **with no daily cap**, and
+  saves the raw output with its sha256. It is byte-equivalent to the app path (calibrated on
+  `04e57d16`). Needs your own `REPLICATE_API_TOKEN`; keep it local.
+- `scripts/measure-hue-shares.py` measures hue shares with its method fixed in the docstring.
+- `test-photos/licensed/` has three CC/CC0 aurora scenes (`01`–`03`); `test-photos/private/` holds the
+  three capturetheatlas sources (`ALL RIGHTS RESERVED`, never commit) and the 896 px run copies.
 
 ## Steps
 
-1. **Re-run Run A when Replicate is Operational.** Check the status page first. Nothing about the
-   setup changed: input `test-photos/licensed/01-aurora-fjord-kirkjufell.jpg`, Auto **off**, gamma
-   `1.00`, strength `0.05`. The persisted row from the failed attempt already proved those values
-   reach the backend, so that half needs no re-verification. Retrying during the outage buys
-   nothing — `predictions.create` already retries three times internally, so each click is nine
-   attempts.
+1. **Define S-17's quality bar before any tuning.** What counts as "not washed out" (e.g. a ceiling
+   on the share of pixels at V ≥ 0.90 or with a clipped channel), and how Cloud is compared with
+   Local (same inputs, matched display scale). `change.md` requires this first.
 
-2. **After a successful run**, pull the raw bytes and hand them over for measurement:
+2. **Plan S-17** with `/rune-plan` on `cloud-quality-below-local`, once step 1 is decided: a bounded
+   Auto calibration plus the representative Cloud/Local quality gate.
 
-   ```
-   SUPABASE_SERVICE_ROLE_KEY='<key>' python3 scripts/prod-fetch-results.py <8-char-job-id>
-   ```
+3. **Review `references/01`–`07`.** AGENTS.md § Evidence images (#258) names them as derivatives of
+   `ALL RIGHTS RESERVED` material awaiting a separate review; the rule does not approve them
+   retroactively. Decide keep, remove, or assess a specific basis.
 
-   Judge the **raw stored `result.png`**, never the in-app AFTER pane, which is post-passed. The
-   comparison baseline is `190832de`: 56.2 % green against 43.2 % magenta.
+4. **Decide on the two parked changes.** `cloud-error-message-leak` has its framing written and can go
+   straight to `/rune-plan` (invert `deriveDisplayError`'s default; map the codes with no copy).
+   `finder-serialization-outage`: `ai-review` still fails with `AI_NoObjectGeneratedError` on every
+   PR, most recently #255 — registration (roadmap entry, issue, `github-issues.md` row) is still
+   undone.
 
-3. **Decide whether to commit `finder-serialization-outage`.** Registering it means a roadmap entry,
-   a GitHub issue and a `github-issues.md` row — the same treatment S-18 got. Leaving it untracked
-   means it does not exist anywhere else.
-
-4. **Decide whether to plan `cloud-error-message-leak`.** The framing is already written into its
-   `change.md`, so it can go straight to `/rune-plan`. The fix is small: invert the default in
-   `deriveDisplayError` so an unknown `error_code` falls back to the generic message instead of the
-   row's raw `error_message`, and map the codes that have no copy — `start_failed`,
-   `internal_error`, `callback_failed`, `replicate_failed`. Most of the wording already exists in
-   `STRINGS.cloudErrors`.
-
-5. **Refresh `temp_queue.md` when convenient.** Its option C ("swap the ai-review finder model") is
-   stale: it says the evidence is one day thin, and it is now 15 consecutive failures over five days
-   with a concrete routing hypothesis recorded in `finder-serialization-outage`.
+5. **Refresh or retire `temp_queue.md`.** Its recommended option A ("Run A settles S-17") is done and
+   did not settle it the way it expected, and option C's evidence is stale.
