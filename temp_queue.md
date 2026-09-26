@@ -33,7 +33,7 @@ low-chroma **or** large. Saturation and size have never been separated. This run
 | **large (> 1536)** | **Run A — decisive**                       | **CLEAN** — `bcff4e39`, `c560b9d4`, `3f219e67` |
 
 **Input is ready and committed:** `test-photos/licensed/01-aurora-fjord-kirkjufell.jpg` — 3840 × 2560,
-CC BY-SA 4.0 Diego Delso. Green dominance +88 in the sky, foreground luma 18, so it exercises both
+CC BY-SA 4.0, photo by Oliver Degener (uploaded by Chr Grundo). Green dominance +88 in the sky, foreground luma 18, so it exercises both
 halves of the fault's signature.
 
 **Protocol** (full version: `context/changes/cloud-quality-below-local/defaults-experiment.md`):
