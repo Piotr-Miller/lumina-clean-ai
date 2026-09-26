@@ -288,6 +288,74 @@ a ~1.6 s prediction: 342 s for Run C and 123 s for Run D. That interval covers q
 model start; Replicate's timestamps do not separate the two, so it is not a confirmed cold-boot time.
 Recorded because the app's jobs pass through the same interval.
 
+### Baseline-like scenes — direct runs, 2026-09-26
+
+Tests the candidate left by Reading 1 above: does the flip need **neutral ground beside saturated
+green**? Two licensed scenes added in `test-photos/` (#259), each resized to 896 px (LANCZOS, JPEG q95,
+kept in `private/`), each run directly at Bread's default **1.00 / 0.05** and at the baseline's
+**1.1612628 / 0.0764706** (rounded from `frame.md`; exact values not needed unless a result sat on
+the boundary — none did). Raw outputs are not added to `references/`; their sha256 are recorded.
+
+| Run | Scene                                | gamma / strength      | Prediction | sha256      |
+| --- | ------------------------------------ | --------------------- | ---------- | ----------- |
+| E   | `02` frozen lake, neutral foreground | 1.00 / 0.05           | `0w0ajdfn` | `03a33bb9…` |
+| F   | `02`                                 | 1.1612628 / 0.0764706 | `zv6mafa4` | `e1754812…` |
+| G   | `03` Reykjanes, yellow-green snow    | 1.00 / 0.05           | `k42azkwa` | `f59e51ea…` |
+| H   | `03`                                 | 1.1612628 / 0.0764706 | `c6evr7dx` | `9dd6bbe6…` |
+
+Whole frame, `scripts/measure-hue-shares.py`:
+
+| Image         | Mean RGB | Chromatic |  Green |   Magenta | Magenta in dark | Magenta in mid |
+| ------------- | -------: | --------: | -----: | --------: | --------------: | -------------: |
+| `02` source   |    0.329 |    46.0 % | 42.0 % |     2.4 % |           3.9 % |          0.6 % |
+| E             |    0.592 |    24.8 % | 55.2 % | **0.1 %** |           0.2 % |          0.3 % |
+| F             |    0.683 |    17.9 % | 52.9 % | **0.1 %** |           0.0 % |          0.3 % |
+| `03` source   |    0.199 |    65.6 % | 95.8 % |     0.0 % |           0.0 % |          0.0 % |
+| G             |    0.419 |    71.9 % | 92.7 % | **0.0 %** |           0.0 % |          0.0 % |
+| H             |    0.509 |    64.8 % | 92.6 % | **0.0 %** |           0.0 % |          0.0 % |
+| Baseline `07` |    0.446 |    86.8 % | 57.6 % |    39.8 % |          69.7 % |         44.2 % |
+
+The **foreground band** — the bottom 40 % of the frame, where the baseline's snow and sand flipped —
+measured the same way (same mask and bands, restricted to those rows):
+
+| Image         | Mean RGB (0–255) |  Green |    Magenta | Red/orange |
+| ------------- | ---------------- | -----: | ---------: | ---------: |
+| `02` source   | 93 / 92 / 82     | 20.5 % |      1.3 % |     75.1 % |
+| E             | 128 / 127 / 113  | 23.2 % |  **0.2 %** |     75.2 % |
+| F             | 141 / 140 / 125  | 24.4 % |  **0.2 %** |     74.3 % |
+| `03` source   | 59 / 62 / 37     | 89.3 % |      0.0 % |     10.6 % |
+| G             | 111 / 114 / 80   | 87.8 % |  **0.0 %** |     12.2 % |
+| H             | 132 / 135 / 100  | 85.3 % |  **0.0 %** |     14.7 % |
+| Baseline `07` | 114 / 95 / 121   | 31.1 % | **66.9 %** |      0.2 % |
+
+**Reading — for these two scenes at these two parameter sets only.**
+
+1. **No flip, including on neutral ground at the baseline's own parameters.** `02`'s near-neutral
+   shore keeps its balance through the model (93/92/82 → 141/140/125); the baseline's equivalent band
+   ends up green-deficient and magenta (114/95/121). `02`'s red/orange share is the brown grass bank,
+   present at the same share in the source. `03` tests a tinted, not neutral, foreground and is clean
+   too. So "neutral ground beside saturated green" is **not sufficient** to trigger the flip, at
+   either parameter set, on these scenes. It is not ruled out as a **necessary** ingredient.
+2. **The baseline parameters alone do not trigger it either** on any scene tried so far (F, H), which
+   narrows the parameter explanation to an interaction with something these inputs lack.
+3. **What every non-failing input has in common, and the baseline's does not: we made it small.**
+   Every "small" source in this document — Runs C, D and E–H — is a LANCZOS reduction of a ≥ 3840 px
+   original, and reducing ~4× averages away shadow chroma noise. That is the very mechanism § Redesigned
+   2026-09-22 proposed for size-dependence. The baseline's input was a **natively** small (~0.5 MP),
+   web-compressed JPEG that kept its noise. So **no run has yet reproduced the baseline's input
+   condition**: C, D and E–H test "small after clean downsampling", not "small and noisy". Run C's
+   "size alone does not trigger it" holds only in that narrower sense.
+
+**What would test it.** Either (a) the baseline's own source — the ~0.5 MP web copy, `ALL RIGHTS
+RESERVED`, so used from `test-photos/private/` only and never committed — run directly at 1.00 / 0.05
+and at its production parameters (at the latter it should reproduce `190832de` byte-identically **if** the file is byte-for-byte the one
+uploaded on 2026-08-31,
+which would also re-confirm determinism), or (b) a licensed scene with **native** chroma noise, or
+noise added back after downsampling. (a) is the more decisive: it holds the scene fixed and moves only
+the parameters on the one input known to fail.
+
+**Queue/start delay:** 207 s on the first call (E); the next three started immediately (0.0 s).
+
 ### Attempt log
 
 **2026-09-26 — Run D (Auto on, 896 px Kirkjufell) refused by the daily cap. Not run.**
