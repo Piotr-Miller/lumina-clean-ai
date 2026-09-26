@@ -401,6 +401,55 @@ whether they carry the same input cast is open. It also says nothing about the s
 statement in `idea-notes.md` that Bread's own output flips green to magenta and "the fault is the
 model's" is contradicted for `190832de` and is left for the maintainer to amend.
 
+### All three evidence sources, and the Local engine on them — 2026-09-26
+
+Follow-up to the section above. The other two S-17 evidence images' sources were found on the
+maintainer's machine under `~/Downloads/Test_Pictures/`, named in the same `FOM_xxxx` pattern as the
+baseline, and copied to `test-photos/private/` (all three are capturetheatlas, `ALL RIGHTS RESERVED`,
+never committed):
+
+| Evidence screenshot      | Source                 | Size    | sha256      |
+| ------------------------ | ---------------------- | ------- | ----------- |
+| `02` aurora (`190832de`) | `FOM_1794.jpg`         | 899×600 | `63f8f951…` |
+| `01` wolf                | `FOM_5207.jpg`         | 899×600 | `e4f0395d…` |
+| `03` waterfall           | `FOM_7505-768x513.jpg` | 768×513 | `cdb85af0…` |
+
+Only `FOM_1794.jpg` is **proven** to be a job's input (byte-identical reproduction above). The wolf
+and waterfall are matched by scene and size (the census records 896×600 and 768×512 small results);
+their Bread outputs were not reproduced.
+
+The Local engine was **emulated in Python**, not run in a browser: `local-engine.ts` applies a canvas
+Gaussian blur and then the per-channel LUT `255 · (i/255)^(1/γ)` from `buildGammaLut`. The LUT is
+reproduced exactly; the blur is Pillow's `GaussianBlur(1.2)` standing in for canvas `blur(1.2px)`,
+close but not byte-identical. γ 1.5 / blur 1.2 are Local's defaults and inside its range
+(γ 1.0–1.8).
+
+| Image                | Source magenta | Source blue | Local γ1.5 magenta | Bread (where known) | Source bottom 40 %, RGB |
+| -------------------- | -------------: | ----------: | -----------------: | ------------------- | ----------------------- |
+| Aurora `FOM_1794`    |         39.2 % |       7.0 % |         **40.9 %** | 39.8 % (`190832de`) | 46 / 42 / 52            |
+| Wolf `FOM_5207`      |         22.1 % |      77.9 % |         **57.5 %** | not reproduced      | 59 / 54 / 94            |
+| Waterfall `FOM_7505` |         39.6 % |      23.0 % |         **42.2 %** | not reproduced      | 55 / 64 / 76            |
+
+**Reading.**
+
+1. **All three sources already carry the cast.** The aurora's and waterfall's dark regions are
+   ~40 % magenta before any processing; the wolf frame is violet-blue throughout (78 % blue, 22 %
+   magenta; road 59 / 54 / 94). The article illustrates noise with high-ISO frames whose shadows
+   carry this tint.
+2. **The Local engine shows the same magenta at its own defaults**: 40.9 % on the aurora, 42.2 % on
+   the waterfall — within ~1–3 pp of the source and of Bread. On the wolf, brightening moves the
+   violet-blue into the magenta band (22 → 57.5 %): per-channel gamma lifts red and green faster
+   than the dominant blue, which rotates the hue toward magenta. Any per-channel brightening does
+   this; it is not specific to Bread.
+3. So the premise that the magenta is **Bread's** — "the fault is the model's", `idea-notes.md` — is
+   not supported on these sources: the Local engine's own processing produces the same cast. Why the
+   cloud result was judged worse than Local in the original report is therefore still open, and a
+   magenta cast unique to the cloud path is not the explanation these measurements support.
+
+**Limits.** Local is emulated, not run. Only one source is byte-proven. Hue in very dark pixels is
+sensitive to JPEG chroma noise; the band means (blue ≥ green in every source's foreground) are the
+steadier evidence. None of this touches the Auto blow-out (§ Direct runs, Reading 2).
+
 ### Attempt log
 
 **2026-09-26 — Run D (Auto on, 896 px Kirkjufell) refused by the daily cap. Not run.**
