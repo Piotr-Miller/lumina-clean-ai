@@ -221,9 +221,9 @@ eliminated, and size is not ruled out for other scenes or for the shipped parame
 Kirkjufell file with the parameters production actually sends. The sliders step by 0.05, so the
 baseline's 1.16 / 0.08 cannot be set by hand; the representative choice is **Auto on**, recording
 the values the panel shows. For this photograph at those values: **magenta** → the shipped
-parameters are enough to trigger the flip on this scene; **clean** → parameters are not it here
-either, which leaves scene composition as the remaining suspect — still a hypothesis until a scene
-like the baseline's (neutral foreground beside saturated green) is run.
+parameters are enough to trigger the flip on this scene; **clean** → Auto's setting does not
+trigger it on this scene. _(Run D came back clean. What that does and does not exclude — it does
+**not** leave the scene as the only suspect — is in § Direct runs, Reading 1.)_
 
 ### Direct runs — calibration and Run D, 2026-09-26
 
@@ -279,7 +279,8 @@ mask excludes as too bright (47.3 % of the frame), magenta is also **0.0 %** and
    same path depends on `baseGamma` (`src/lib/engines/auto-params.ts:107`), which reaches the 1.50
    clamp only when all of these hold: the median luma `p50` is at or below ~0.164 (target median 0.3;
    ~0.133 when `shadowRatio > 0.65` and `p95 < 0.65` switch the target to 0.26); if `p95 > 0.85`, the
-   ×0.8 guard lowers that threshold to ~0.105 (~0.080); and `clipRatio ≤ 0.005`, since any more
+   ×0.8 guard lowers that threshold to ~0.105 (the 0.26 target cannot apply there, since it needs
+   `p95 < 0.65`); and `clipRatio ≤ 0.005`, since any more
    clipping caps gamma at 1.1. A dark frame with a few clipped lights therefore does **not** get 1.50.
 
 **Queue/start delay.** Both direct calls spent minutes between `created_at` and `started_at` before
