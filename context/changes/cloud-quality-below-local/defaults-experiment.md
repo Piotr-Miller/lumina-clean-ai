@@ -66,7 +66,7 @@ design. Two variables were moving together the whole time: **scene saturation** 
 | **small source (≤ 1536)** | **FAILS** — the aurora, all three S-17 screenshots                                                   | **Run B**                                                                                                                                 |
 | **large source (> 1536)** | **Run A** `7ea011bd` — clean, but a different scene at different parameters (see § Run A — measured) | **EMPTY, not clean** — `bcff4e39`/`c560b9d4` are byte-identical and carry **no colour at all**; `3f219e67` is a sunset with **0 % green** |
 
-Every observed failure is saturated green **and** small. ⚠️ **Corrected 2026-09-24:** the large-source runs were first read as "clean", but measuring their raw outputs (`references/README.md`) shows none of them can exhibit the fault — two are near-black frames with no colour whatsoever, the third is a sunset with zero green. A green→magenta flip needs green. **No run at any source size has ever carried a saturated green scene at a large source**, so that cell is untested rather than clean and neither hypothesis can be eliminated from what exists.
+Every observed failure is saturated green **and** small. ⚠️ **Corrected 2026-09-24:** the large-source runs were first read as "clean", but measuring their raw outputs (`references/README.md`) shows none of them can exhibit the fault — two are near-black frames with no colour whatsoever, the third is a sunset with zero green. A green→magenta flip needs green. As of 2026-09-24 no large-source run had carried a saturated green scene, so that cell was untested rather than clean. ⚠️ **Updated 2026-09-26:** Run A (`7ea011bd`) has since filled it — a saturated green aurora at 3840×2560, clean. It is a different scene at different parameters from the failing baselines, so it still does not eliminate either hypothesis; see § Run A — measured.
 
 Size is not the implausible one it first appears. Bread resizes internally to ≤ 1536, so a ~900 px
 source arrives at roughly its native scale while a 4000 px source is downscaled ~2.6× first — and
@@ -85,11 +85,14 @@ apply to it as written. The original text is kept for the record:
 > The same aurora scene as `references/02-aurora-water-green-to-magenta.png`, but **a full-resolution
 > original, not the 0.54 MP web copy** that every prior trial used. This is the single run that
 > separates saturation from size.
+>
+> - **Clean** → size, or the interaction, is doing the work. The fault may not reach real users at
+>   all, which changes the model decision completely.
+> - **Magenta** → saturation, confirming the frame's hypothesis on evidence that is finally
+>   representative.
 
-- **Clean** → size, or the interaction, is doing the work. The fault may not reach real users at all,
-  which changes the model decision completely.
-- **Magenta** → saturation, confirming the frame's hypothesis on evidence that is finally
-  representative.
+_Superseded 2026-09-26: the two readings above assumed a same-scene, same-parameter run and are **not**
+the current conclusion. For what Run A's clean result does and does not show, see § Run A — measured._
 
 Baselines to compare against, all the **same small** aurora and all magenta: `239a4631` (2026-06-08),
 `55550cf1` (06-13), `42520013` (06-18), and `190832de` (08-31, gamma 1.16 / strength 0.08). Their

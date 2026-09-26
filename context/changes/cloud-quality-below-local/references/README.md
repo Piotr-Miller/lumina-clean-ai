@@ -12,10 +12,13 @@ post-pass touches anything.
 >   They are kept as the technical evidence for a live decision, at the smallest size that carries
 >   the finding. They are **not** licensed material and must never be moved into
 >   `test-photos/licensed/`, which `AGENTS.md` licence-gates.
-> - **`08`** is an adaptation of _Northern Lights over Kirkjufell seen from Grundarfjörður_ by
->   **Diego Delso**, <https://commons.wikimedia.org/wiki/File:Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg>,
->   licensed **CC BY-SA 4.0** (<https://creativecommons.org/licenses/by-sa/4.0/>). Changes: the
->   3840 px Wikimedia rendition (`test-photos/licensed/01-aurora-fjord-kirkjufell.jpg`) was processed
+> - **`08`** is an adaptation of _Northern Lights over Kirkjufell seen from Grundarfjörður_, photo by
+>   **Oliver Degener**, uploaded to Wikimedia Commons by **Chr Grundo**,
+>   <https://commons.wikimedia.org/wiki/File:Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg>,
+>   licensed **CC BY-SA 4.0** (<https://creativecommons.org/licenses/by-sa/4.0/>). The Commons page
+>   names both — Oliver Degener in the description, Chr Grundo in the Author field — see
+>   `test-photos/README.md` § Current set. Changes: the full 3840×2560 original
+>   (`test-photos/licensed/01-aurora-fjord-kirkjufell.jpg`) was processed
 >   by the Bread model on Replicate at gamma 1.00 / strength 0.05, which resized it to 1536×1024 and
 >   altered its exposure and colour. As an adaptation, `08` is itself licensed **CC BY-SA 4.0**.
 >
