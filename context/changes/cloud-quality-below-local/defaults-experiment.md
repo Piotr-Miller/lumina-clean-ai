@@ -356,6 +356,51 @@ the parameters on the one input known to fail.
 
 **Queue/start delay:** 207 s on the first call (E); the next three started immediately (0.0 s).
 
+### The baseline's own input — the magenta is already in it, 2026-09-26
+
+The test proposed above: the failing baseline's own source, run directly. Found on the maintainer's
+machine as `~/Downloads/FOM_1794.jpg` (899×600, 90 KB, progressive JPEG, sha256 `63f8f951…`, file
+date 2026-09-21), copied to `test-photos/private/00-baseline-lofoten-capturetheatlas-FOM_1794.jpg`.
+It is the capturetheatlas image, `ALL RIGHTS RESERVED` — private only, never committed.
+
+**It is exactly the input `190832de` received.** Run directly at `190832de`'s exact persisted
+parameters (gamma `1.16126279077347`, strength `0.0764705882352941`, read from the job row), it
+returned sha256 `4a7d6979c763f7abf4a663696f7da93a14fd135e5d7451396beb6b4d025206d5` — byte-identical to
+`references/07` (`cmp` confirms). The 2026-09-21 file date does not matter: the bytes are the ones
+uploaded on 2026-08-31.
+
+| Image                                   | Mean RGB | Magenta |  Green | Magenta in dark | Magenta in mid | Bottom 40 %, RGB |
+| --------------------------------------- | -------: | ------: | -----: | --------------: | -------------: | ---------------- |
+| **Source** `FOM_1794.jpg`               |    0.259 |  39.2 % | 53.4 % |      **59.9 %** |          0.4 % | **46 / 42 / 52** |
+| Bread 1.00 / 0.05 (`ty3xzkyw`)          |    0.394 |  39.1 % | 57.8 % |          75.2 % |         41.4 % | 96 / 79 / 102    |
+| Bread 1.16 / 0.076 (= `190832de`)       |    0.446 |  39.8 % | 57.6 % |          69.7 % |         44.2 % | 114 / 95 / 121   |
+| Plain gamma 2.0 on the source, no model |    0.492 |  43.8 % | 54.7 % |               — |              — | 107 / 98 / 114   |
+
+Pixel correspondence (source cropped to the result's 896×600; a LANCZOS resize gives the same
+answer): of the pixels that are magenta in `190832de`, **98.1 %** were already magenta in the
+source, **0.0 %** were green and 0.6 % were near-neutral. The same holds at 1.00 / 0.05 (98.4 %).
+Those pixels are dark in the source (median V 0.19), which is why the cast is hard to see there.
+
+**Reading — for this image.**
+
+1. **There is no green→magenta flip in `190832de`.** The source's dark regions — the wet beach and rocks of the foreground and the mountains'
+   shadowed flanks — are already purple (bottom band 46 / 42 / 52, blue
+   above green). The model brightens them, and the existing cast becomes obvious. Green stays green.
+2. **The parameters change how visible it is, not whether it is there.** Magenta is 39.1 % at
+   Bread's own defaults and 39.8 % at production's values; the higher gamma only lifts it further.
+3. **A plain gamma curve does the same with no model at all** (43.8 % at gamma 2.0, foreground
+   107 / 98 / 114). Any engine that brightens this frame — the Local engine included, which is also
+   gamma-based — should reveal the same cast. That has not been run through the Local engine itself.
+4. This is consistent with every clean run above: Kirkjufell, the frozen lake and Reykjanes have no
+   purple in their dark regions, so there was nothing to reveal.
+
+**What this does not establish.** It covers one of the three S-17 evidence images. The wolf (`01`)
+and the waterfall (`03`) come from the same article, but their sources have not been measured, so
+whether they carry the same input cast is open. It also says nothing about the separate
+**blow-out** at Auto's gamma 1.50 (§ Direct runs, Reading 2), which is a real output defect. The
+statement in `idea-notes.md` that Bread's own output flips green to magenta and "the fault is the
+model's" is contradicted for `190832de` and is left for the maintainer to amend.
+
 ### Attempt log
 
 **2026-09-26 — Run D (Auto on, 896 px Kirkjufell) refused by the daily cap. Not run.**
