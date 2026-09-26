@@ -3,7 +3,9 @@
 Two kinds of file here. `01`–`03` are **screenshots of the app** taken on production 2026-08-31, the
 original report. `04`–`08` are **raw `result.png` bytes** pulled straight from Supabase Storage
 (`04`–`07` on 2026-09-24, `08` on 2026-09-26) — the model's own output, before the client-side chroma
-post-pass touches anything.
+post-pass touches anything. `09` is the same kind of raw output, saved from a **direct** model call
+(`scripts/spikes/bread-spike.ts`) rather than from Storage; the direct path was checked byte-identical
+to the app's (`../defaults-experiment.md` § Direct runs).
 
 > **Provenance — two sources, two different terms.**
 >
@@ -21,6 +23,10 @@ post-pass touches anything.
 >   (`test-photos/licensed/01-aurora-fjord-kirkjufell.jpg`) was processed
 >   by the Bread model on Replicate at gamma 1.00 / strength 0.05, which resized it to 1536×1024 and
 >   altered its exposure and colour. As an adaptation, `08` is itself licensed **CC BY-SA 4.0**.
+> - **`09`** is an adaptation of the same photograph, same credit and licence. Changes: the original
+>   was resized to 896×597 (LANCZOS) and processed by the Bread model on Replicate at gamma 1.50 /
+>   strength 0.12156862745098, which cropped it to 896×592 and altered its exposure and colour. As an
+>   adaptation, `09` is itself licensed **CC BY-SA 4.0**.
 >
 > For new experiment inputs, use `test-photos/` instead.
 
@@ -71,15 +77,16 @@ different parameters, so it fills the cell without isolating size — see
 
 ## File list
 
-| File                                           | What                                                        |
-| ---------------------------------------------- | ----------------------------------------------------------- |
-| `01-wolf-night-overbright-magenta.png`         | app screenshot, 2026-08-31 — blown out, violet cast         |
-| `02-aurora-water-green-to-magenta.png`         | app screenshot, 2026-08-31 — the headline report            |
-| `03-waterfall-aurora-grass-magenta.png`        | app screenshot, 2026-08-31 — grass magenta, sky cyan        |
-| `04-bcff4e39-large-source-no-colour.png`       | raw output, 1536×1024, large source, no colour              |
-| `05-c560b9d4-large-source-no-colour.png`       | raw output, byte-identical to `04`                          |
-| `06-3f219e67-large-source-sunset-no-green.png` | raw output, 1536×1152, sunset, no green                     |
-| `07-190832de-raw-model-output-magenta.png`     | raw output, 896×600, **the fault in the model's own bytes** |
-| `08-7ea011bd-gamma1.00-strength0.05-raw.png`   | raw output, 1536×1024, Run A, Kirkjufell, **CC BY-SA 4.0**  |
+| File                                                  | What                                                                              |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `01-wolf-night-overbright-magenta.png`                | app screenshot, 2026-08-31 — blown out, violet cast                               |
+| `02-aurora-water-green-to-magenta.png`                | app screenshot, 2026-08-31 — the headline report                                  |
+| `03-waterfall-aurora-grass-magenta.png`               | app screenshot, 2026-08-31 — grass magenta, sky cyan                              |
+| `04-bcff4e39-large-source-no-colour.png`              | raw output, 1536×1024, large source, no colour                                    |
+| `05-c560b9d4-large-source-no-colour.png`              | raw output, byte-identical to `04`                                                |
+| `06-3f219e67-large-source-sunset-no-green.png`        | raw output, 1536×1152, sunset, no green                                           |
+| `07-190832de-raw-model-output-magenta.png`            | raw output, 896×600, **the fault in the model's own bytes**                       |
+| `08-7ea011bd-gamma1.00-strength0.05-raw.png`          | raw output, 1536×1024, Run A, Kirkjufell, **CC BY-SA 4.0**                        |
+| `09-n2cbsk05-direct-gamma1.50-strength0.1216-raw.png` | raw output, 896×592, Run D (direct), Auto params, **blown out**, **CC BY-SA 4.0** |
 
-Pulled with `scripts/prod-fetch-results.py`; measured with `scripts/measure-hue-shares.py`.
+`04`–`08` pulled with `scripts/prod-fetch-results.py`, `09` saved by `scripts/spikes/bread-spike.ts`; measured with `scripts/measure-hue-shares.py`.
