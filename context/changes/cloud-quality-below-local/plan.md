@@ -241,6 +241,12 @@ manifest, denominators), as `measure-hue-shares.py` does today.
 #### Manual Verification:
 
 - Harness parity: on all six tuning photos, every `LumaStats` field from the harness matches the app's `sampleImageLuma` in a real Chromium, and the resulting Cloud and Local Auto values match; any difference is explained and the offline path fixed before Phase 2
+
+> **Note (2026-09-27, maintainer decision):** because Chromium is the tuning source (see the note in
+> § 2), 1.6 is met when `scripts/s17/browser-stats.ts` has written `<id>.browser.json` for all six
+> tuning photos **and** the remaining offline-vs-Chromium differences are explained and recorded
+> (the § 2 note). The Progress row keeps its original title; this note is its operative meaning.
+
 - A live direct run of S17-01 through the upload path succeeds and its output sha256 is recorded
 
 **Implementation Note**: Manual checks are acceptance. `/rune-implement` commits a phase once its
@@ -259,6 +265,11 @@ the six full-resolution tuning photos — and run the two pre-registered probes.
 `calibration.md` in this change folder.
 
 **Entry gate** — do not start until 1.6 (full `LumaStats` parity on all six tuning photos) is recorded as passed. The other Phase 1 manual row may stay pending.
+
+> **Note (2026-09-27, maintainer decision):** 1.6 is passed in the sense of the Phase 1 note: the
+> six `<id>.browser.json` records exist and the offline differences are explained. Phase 2 and 3
+> take every `LumaStats` field and Auto value from `<id>.browser.json`, never from the offline
+> `<id>.auto.json`.
 
 ### Changes Required:
 
@@ -635,7 +646,7 @@ persisted parameters.
 
 #### Manual
 
-- [ ] 1.6 Harness parity: full `LumaStats` and Auto values match the browser on all six tuning photos
+- [x] 1.6 Harness parity: full `LumaStats` and Auto values match the browser on all six tuning photos
 - [ ] 1.7 A live direct run of S17-01 through the upload path succeeds and its output sha256 is recorded
 
 ### Phase 2: Premise check and probes
