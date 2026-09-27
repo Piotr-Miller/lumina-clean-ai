@@ -124,14 +124,19 @@ def manifest_roi(label: str) -> list[float] | None:
     sys.exit(f"error: label {label!r} names {m.group(1)}, which is not in {MANIFEST.name}")
 
 
-def exposure_line(name: str, rgb8: np.ndarray) -> str:
+def exposure_stats(rgb8: np.ndarray) -> tuple[float, float, np.ndarray]:
+    """V>=0.90 share (%), any=255 share (%) and mean RGB (0..1) of an 8-bit RGB region."""
     n = rgb8.shape[0] * rgb8.shape[1]
     v_hi = int((rgb8.max(axis=2) / 255.0 >= 0.90).sum())
     any255 = int((rgb8 == 255).any(axis=2).sum())
-    mean = rgb8.reshape(-1, 3).mean(axis=0) / 255.0
+    return pct(v_hi, n), pct(any255, n), rgb8.reshape(-1, 3).mean(axis=0) / 255.0
+
+
+def exposure_line(name: str, rgb8: np.ndarray) -> str:
+    v_hi, any255, mean = exposure_stats(rgb8)
     return (
-        f"   {name:8s} {rgb8.shape[1]}x{rgb8.shape[0]}   V>=0.90 {pct(v_hi, n):5.1f} %   "
-        f"any=255 {pct(any255, n):5.1f} %   mean RGB {mean[0]:.3f} {mean[1]:.3f} {mean[2]:.3f}"
+        f"   {name:8s} {rgb8.shape[1]}x{rgb8.shape[0]}   V>=0.90 {v_hi:5.1f} %   "
+        f"any=255 {any255:5.1f} %   mean RGB {mean[0]:.3f} {mean[1]:.3f} {mean[2]:.3f}"
     )
 
 

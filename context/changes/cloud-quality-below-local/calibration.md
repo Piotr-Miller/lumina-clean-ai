@@ -221,3 +221,167 @@ on quality, not on acceptance. Diagnostics are in the tuning run log above.
 `edec533050106489b96ea503980ed557149d53e3ea7eda50f5752b53d69a097c`, identical to the 1.7 run
 (`qdvmw9dvn5rga0d0wj2a074f18`). **Reading (per R3): byte reproducibility holds for S17-01 at full
 resolution,** so the Phase 3 regression reference can rely on its sha-first check.
+
+## Phase 3 — pre-registered procedure
+
+Committed **before the first Phase 3 sweep output exists** (plan row 3.1). Entry gate, checked
+2026-09-27: 2.3 premise gate **proceed**, 2.4 EXIF outcome recorded, 2.5 gamma-0.9 **accepted**,
+2.6 flag state **ON**. Tuning photos only: S17-01, 02, 03, 04, 07, 21. Every Phase 3 run is
+appended to the tuning run log above (§ Baseline (R1)), labelled `P3-γ`, `P3-s` or `P3-final`.
+
+### Stop condition
+
+_If no single rule over the existing `LumaStats` fields lands inside every tuning photo's
+acceptable range, stop and report — do not add per-photo constants to make it fit._ Reaching it is
+a finding, not a failure: it is recorded here and in `change.md`, and the maintainer decides what
+follows. It is also reached when any photo's acceptable range is **empty** (P2, P3).
+
+### P1 — Gamma sweep
+
+Strength `0.05`; gamma ∈ {`0.9`, `1.0`, `1.1`, `1.2`, `1.3`, `1.5`} on the six photos. S17-01's
+`0.9` and `1.0` are **reused** from R3 (the `1.0` output is byte-reproducible, R3), so 34 new runs.
+Outputs: `test-photos/private/s17/direct/phase3/gamma/`.
+
+### P2 — Preferred gamma and acceptable range
+
+The maintainer rates every output against its original on the contact sheet
+(`scripts/s17/contact-sheet.py`, original and outputs at the output's size, each labelled with its
+parameters and diagnostics), with the R1 categories: _improvement_ / _no harm_ / _harm_ (kind named).
+As in Phase 2, an agent's draft is not a rating until the maintainer adopts it as their own.
+
+- **Acceptable range** = the swept values rated improvement or no harm. A value **between** two
+  adjacent acceptable swept values counts as acceptable; P5 checks the actual pair.
+- **Preferred** = one swept value the maintainer names.
+- **Non-contiguous** (e.g. 0.9 and 1.2 acceptable, 1.1 harm) → not read; back to the maintainer
+  before fitting.
+- **Acceptable at 0.9, the lowest swept value** → recorded as _open below 0.9_. S-17 does not go
+  below 0.9: the pinned version was probed only there, and there is no output evidence lower. If
+  the preferred value is 0.9, that is a stated limit of the calibration.
+- **Empty range** (every swept gamma is harm) → the stop condition.
+
+### P3 — Strength sweep
+
+At each photo's preferred gamma: strength ∈ {`0.05`, `0.10`, `0.20`} plus the photo's current Auto
+strength (§ R1). `0.05` is reused from P1. An Auto strength equal to a grid value (S17-04: `0.1`) is
+not run twice, so at most 18 new runs. Outputs: `test-photos/private/s17/direct/phase3/strength/`.
+The maintainer marks preferred and acceptable strength with the P2 rules; the range is bounded by
+`0.0`–`0.2` (`PARAM_RANGES.cloud.strength`, the model's contract).
+
+### P4 — Fit
+
+- **Inputs.** The `LumaStats` fields of the tuning source (§ Fixed inputs), and `baseGamma(stats)`,
+  which is an existing function of them and stays unchanged. Nothing else.
+- **Families, simplest first, per output (gamma and strength separately).** F0 a constant;
+  F1 `clamp(a + b·x, lo, hi)` for one input `x`. The simplest family that lands inside every
+  photo's range wins. Nothing beyond F1 is tried without a recorded maintainer decision — that is
+  the stop condition, not an invitation to add terms.
+- **Guards.** The existing highlight guard (`p95 > 0.85`) and clip guard (`clipRatio > 0.005`) may
+  be kept or dropped. **No new threshold** may be introduced whose only effect on the six photos is
+  to change one photo's output: that is a per-photo constant in disguise.
+- **Monotone in darkness.** Darker input never gives a lower gamma or strength: non-increasing in
+  every brightness statistic the rule reads (`mean`, percentiles), non-decreasing in `shadowRatio`
+  and in `baseGamma`.
+- **Choice among fits.** Minimise Σ over the six photos of `((γ − γ_pref) / 0.1)² + ((s − s_pref) / 0.05)²`
+  (the sweep steps). Ties → fewer inputs, then `p50` over other fields.
+- **Bounds.** Gamma ≥ `0.9` (P2), ≤ `1.5`; strength within `0.0`–`0.2`.
+- The fit's arithmetic and each photo's resulting pair are written here, so the choice can be
+  recomputed from the ranges and the tuning source.
+
+### P5 — Final-pair check
+
+The fitted rule's own unrounded (gamma, strength) on each of the six photos: 6 direct runs, no
+further grid. Outputs: `test-photos/private/s17/direct/phase3/final/`. The maintainer rates each
+against its original. **Any harm → not frozen.** The harmful pair is recorded; a refit must exclude
+it and stays under the stop condition.
+
+### P6 — App-path check (post-pass ON)
+
+The flag is ON (§ Post-pass flag state), so users download a post-passed JPEG. Each tuning photo
+is run in the production app, the **downloaded** file rated against its original, and per run are
+recorded: job id, persisted gamma/strength, downloaded file name, format, and whether the post-pass
+was applied (a PNG with the flag ON means a fallback). Any harm → not frozen. The cap stays at 3
+(global, 00:00 UTC reset); six jobs take about two days. The cap is **not** raised for this.
+
+Before Phase 4 the candidate is not deployed, so Auto is switched off and the sliders are set by
+hand. The sliders move in `0.05` steps: each fitted value is set to its nearest slider step, and
+the rounded values are recorded next to the exact ones.
+
+**Fitted gamma below 1.0** (maintainer decision, 2026-09-27). Production rejects gamma < 1.0
+(`photo-job.schema.ts:31` → HTTP 400; slider minimum 1.0), so such a photo cannot be checked in the
+app before Phase 4 ships the lower floor. For those photos only:
+
+- the rule is frozen (P8) on their direct final-pair result plus the app-path check of the photos
+  whose fitted gamma is ≥ 1.0, and the freeze record names the photos still owed an app-path check;
+- their app-path check runs right after the Phase 4 deploy, on the shipped Auto, as an **extra
+  gate before Phase 5** — no validation run starts until it is recorded;
+- any harm there **unfreezes** the rule: the refit returns to P4, and the shipped Auto is reverted
+  or replaced before Phase 5.
+
+### P7 — Floor
+
+If the rule produces gamma < 1.0 on any photo, `PARAM_RANGES.cloud.gamma.min` and the zod minimum
+are set in Phase 4 to the rule's own lower bound, which is never below `0.9`. Otherwise both stay
+`1.0`.
+
+### P8 — Regression reference and freeze
+
+- S17-01's P5 output is the candidate reference. The maintainer accepts it visually and sets its
+  numeric tolerances at acceptance, **for this image only**; `regression-s17-01.json` records the
+  input sha256, the exact parameters, the output sha256, mean RGB, V ≥ 0.90, any-channel-255, hue
+  shares and the tolerances.
+- The rule — formula and coefficients — is written here and committed. That commit's SHA is recorded
+  as the frozen rule before Phase 4 starts. No validation output is opened before that commit.
+
+### Readings fixed now
+
+- A photo whose preferred gamma is the lowest swept value, **and** whose 0.9 output is still rated
+  harm, has an empty range → the stop condition. The sweep is not extended below 0.9 in S-17.
+- If the fitted rule is **F0 in gamma** (one constant for all six), Cloud Auto no longer adapts
+  gamma to the photo. That is a legitimate outcome and is recorded as such, not as a failure to fit.
+- The exposure diagnostics stay diagnostics. No threshold on V ≥ 0.90, any-channel-255 or mean is
+  used to accept, reject or fit anything.
+
+### P1 commands
+
+For the maintainer's shell, from the repository root, with their own token. The first call after
+idle can take over two minutes. A run is retried at most twice; each attempt's log goes to
+`logs/`.
+
+```bash
+export REPLICATE_API_TOKEN=r8_…            # your token; never committed
+sha256sum -c test-photos/s17-benchmark.sha256
+export OUT_DIR=test-photos/private/s17/direct/phase3/gamma
+mkdir -p "$OUT_DIR/logs"
+
+run() {  # run <label> <photo path>  (GAMMA and STRENGTH from the environment)
+  for attempt in 1 2 3; do
+    npx tsx scripts/spikes/bread-spike.ts "$2" > "$OUT_DIR/logs/$1-attempt-$attempt.log" 2>&1 \
+      && grep -q '^run record' "$OUT_DIR/logs/$1-attempt-$attempt.log" && return 0
+    echo "$1: attempt $attempt failed — see $OUT_DIR/logs/$1-attempt-$attempt.log"; sleep 15
+  done
+  return 1
+}
+
+declare -A PHOTO=(
+  [S17-01]=test-photos/licensed/01-aurora-fjord-kirkjufell.jpg
+  [S17-02]=test-photos/licensed/02-aurora-frozen-lake-norway.jpg
+  [S17-03]=test-photos/licensed/03-aurora-reykjanes-snow-lava.jpg
+  [S17-04]=test-photos/licensed/04-phone-whitehouse-iphone13pro.jpg
+  [S17-07]=test-photos/licensed/07-night-portrait.jpg
+  [S17-21]=test-photos/licensed/21-kangchenjunga.jpg
+)
+for id in S17-01 S17-02 S17-03 S17-04 S17-07 S17-21; do
+  for g in 0.9 1.0 1.1 1.2 1.3 1.5; do
+    [ "$id" = S17-01 ] && { [ "$g" = 0.9 ] || [ "$g" = 1.0 ]; } && continue   # reused from R3
+    GAMMA=$g STRENGTH=0.05 run "P3g-$id-g$g" "${PHOTO[$id]}" || echo "UNRESOLVED: $id gamma $g"
+  done
+done
+
+# Contact sheets (S17-01's reused R3 runs come from phase2/; S17-06 there is skipped unopened)
+python3 scripts/s17/contact-sheet.py --name phase3-gamma --markdown \
+  --run test-photos/private/s17/direct/phase2 --run "$OUT_DIR"
+```
+
+The contact-sheet command above also picks up the six R1 baseline outputs in `phase2/` (at their
+Auto strengths). They stay on the sheet as context; only the strength-`0.05` outputs are rated for
+P2.
