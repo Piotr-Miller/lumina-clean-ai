@@ -36,7 +36,10 @@ export interface HarnessMeta {
   filter: string;
 }
 
-/** Written by `auto-values.ts` as `<id>.auto.json`. */
+/**
+ * Written by `auto-values.ts` as `<id>.auto.json` — the offline CROSS-CHECK.
+ * Tuning uses `<id>.browser.json` from `browser-stats.ts` instead.
+ */
 export interface AutoValues {
   id: string;
   input_sha256: string;

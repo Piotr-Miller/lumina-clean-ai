@@ -209,6 +209,14 @@ would show, with the formula executed by importing `computeLumaStats` / `recomme
 recommendation for `local` and `cloud`, and writes one JSON per photo (stats, params, input sha256).
 Requires Pillow + numpy, like `gen_auto_params_fixtures.py`.
 
+> **Note (2026-09-27, maintainer decision at 1.6):** the tuning source is the browser, not this
+> offline path. `scripts/s17/browser-stats.ts` runs the app's own `sampleImageLuma` in headless
+> Chromium and writes `<id>.browser.json`; Phases 2–3 use that. The Python + `tsx` path stays as a
+> cross-check. With JPEG decode-to-scale it matches the browser's Cloud values to two decimals on all
+> six tuning photos. It is still about 0.4 levels brighter (≤ 2 histogram bins; S17-01 Local γ 1.54
+> vs 1.56). Pillow's antialiasing resize had put S17-04 across the clip guard (Cloud γ 1.50 vs
+> 1.10).
+
 #### 3. Exposure diagnostics
 
 **File**: `scripts/measure-hue-shares.py` (or a sibling measuring script, same conventions)
@@ -619,11 +627,11 @@ persisted parameters.
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npm run typecheck`
-- [x] 1.2 Linting passes: `npm run lint`
-- [x] 1.3 Unit tests pass: `npm run test:unit`
-- [x] 1.4 A bogus-token run on S17-01 takes the upload path and fails at authentication with the HTTP status printed
-- [x] 1.5 `sha256sum -c test-photos/s17-benchmark.sha256` passes
+- [x] 1.1 Type checking passes: `npm run typecheck` — 0393b76
+- [x] 1.2 Linting passes: `npm run lint` — 0393b76
+- [x] 1.3 Unit tests pass: `npm run test:unit` — 0393b76
+- [x] 1.4 A bogus-token run on S17-01 takes the upload path and fails at authentication with the HTTP status printed — 0393b76
+- [x] 1.5 `sha256sum -c test-photos/s17-benchmark.sha256` passes — 0393b76
 
 #### Manual
 
