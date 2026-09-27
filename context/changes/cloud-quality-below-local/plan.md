@@ -268,6 +268,14 @@ manifest, denominators), as `measure-hue-shares.py` does today.
 
 - A live direct run of S17-01 through the upload path succeeds and its output sha256 is recorded
 
+> **1.7 result (2026-09-27 20:20 UTC):** a direct run of S17-01 at gamma 1.0 / strength 0.05 used
+> the upload path (`transport: upload`; input sha256 `f9e70296…`, matching the manifest) and
+> succeeded. Prediction `qdvmw9dvn5rga0d0wj2a074f18`, pinned version `057a4e073829…`. Queue/boot took
+> 130.5 s (a cold start), and inference 3.6 s. The output is a PNG, 1536 × 1024, because Bread caps
+> the long edge. Its sha256 is `edec533050106489b96ea503980ed557149d53e3ea7eda50f5752b53d69a097c`.
+> It is stored in `test-photos/private/s17/direct/` (gitignored). No upload-cleanup warning was
+> printed. This run is a harness check, not a tuning or baseline measurement.
+
 **Implementation Note**: Manual checks are acceptance. `/rune-implement` commits a phase once its
 automated verification passes, then asks the human about these; a pending manual check is reported,
 not a blocker for the next phase — **except the rows named in a later phase's Entry gate**, which are
@@ -666,7 +674,7 @@ persisted parameters.
 #### Manual
 
 - [x] 1.6 Harness parity: full `LumaStats` and Auto values match the browser on all six tuning photos
-- [ ] 1.7 A live direct run of S17-01 through the upload path succeeds and its output sha256 is recorded
+- [x] 1.7 A live direct run of S17-01 through the upload path succeeds and its output sha256 is recorded
 - [x] 1.8 S17-04 `clipRatio` and Cloud/Local Auto values confirmed in a visible desktop Chrome tab; refresh the desktop record if the clipping classification changes
 
 ### Phase 2: Premise check and probes
