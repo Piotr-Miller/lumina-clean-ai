@@ -128,11 +128,12 @@ blind. Phase 6 records the verdict everywhere the old state is stated.
 recorded) before any validation output is opened. A reading decided after the result is not a
 reading.
 
-**Harness parity is checked on the full `LumaStats`, not on the parameters.** Matching parameters to
-two decimals can hide a sampling difference that only shows on another photo. The browser's stats
-come from the app's own `sampleImageLuma` run in a real Chromium; the harness's from its offline
-path; every field is compared on all six tuning photos. If they diverge, the offline path is fixed
-first — tuning on mismatched stats tunes a function the product never evaluates.
+**Sampler agreement is checked on the full `LumaStats`, not just the parameters.** Matching parameters
+to two decimals can hide a sampling difference that only shows on another photo. The tuning stats
+come from the app's own `sampleImageLuma` in desktop Chrome 154, using the app's Blob → `new Image()`
+decode path. Compare every field on all six tuning photos with the offline harness and headless
+Chromium; record differences and use the desktop values for tuning. Before model runs, verify
+S17-04 in a visible desktop tab because its `clipRatio` is close to the 0.005 guard.
 
 **Validation runs happen in the app, one photo at a time, Cloud and Local on the same file**, with
 the Download used for both, and nothing tuned in between. The Cloud job id, persisted gamma and
@@ -209,13 +210,24 @@ would show, with the formula executed by importing `computeLumaStats` / `recomme
 recommendation for `local` and `cloud`, and writes one JSON per photo (stats, params, input sha256).
 Requires Pillow + numpy, like `gen_auto_params_fixtures.py`.
 
-> **Note (2026-09-27, maintainer decision at 1.6):** the tuning source is the browser, not this
-> offline path. `scripts/s17/browser-stats.ts` runs the app's own `sampleImageLuma` in headless
-> Chromium and writes `<id>.browser.json`; Phases 2–3 use that. The Python + `tsx` path stays as a
-> cross-check. With JPEG decode-to-scale it matches the browser's Cloud values to two decimals on all
-> six tuning photos. It is still about 0.4 levels brighter (≤ 2 histogram bins; S17-01 Local γ 1.54
-> vs 1.56). Pillow's antialiasing resize had put S17-04 across the clip guard (Cloud γ 1.50 vs
-> 1.10).
+> **Decision (2026-09-27, revised after desktop measurement):** the tuning source is
+> `test-photos/private/s17/harness/desktop-chrome-154.stats.json`, measured with the app's
+> `sampleImageLuma` in desktop Chrome 154 through Blob → `new Image()` → `onload`. Compute Auto
+> values from those stats with the app's `recommendParams`; do not copy values from either harness.
+> The captured file's SHA-256 is `088fc3f14df2b3662d1c739bf646a4160510ad85472738b65e63bbad3c7d5a40`.
+> Re-measure in a visible tab with `npx tsx scripts/s17/desktop-stats.ts`, then open its printed
+> local URL and click **Measure**. The page runs the same sampler and offers the JSON for download,
+> with the user agent and the tab's visibility at start and end. Compare it with the baseline **field
+> by field**, never by file hash (identical numbers hash differently when formatting differs):
+> `npx tsx scripts/s17/desktop-stats.ts --compare <download.json>` exits 2 if any Auto value or any
+> photo's side of the 0.005 clip guard changes. On S17-04 that side decides Cloud 1.10/0.10 vs 1.50/0.11.
+> The Python + `tsx` `<id>.auto.json` records are the closest cross-check; headless Chromium's
+> `<id>.browser.json` records are repeatable diagnostics. Against desktop, offline differs in 18/60
+> `LumaStats` fields and headless in 34/60 (a percentile differs by at least 1 bin, or a mean/ratio
+> by more than 0.001). All six desktop and offline Auto recommendations match; headless differs only
+> on S17-01 Local γ (1.56 vs 1.54). S17-04 `clipRatio` is 0.00568 on desktop, 0.00511 offline and
+> 0.00505 headless, all above the 0.005 guard but close enough to warrant a visible-tab check.
+> The desktop capture was made in a hidden tab; S17-01 Local γ 1.54 agrees with the production panel.
 
 #### 3. Exposure diagnostics
 
@@ -240,12 +252,12 @@ manifest, denominators), as `measure-hue-shares.py` does today.
 
 #### Manual Verification:
 
-- Harness parity: on all six tuning photos, every `LumaStats` field from the harness matches the app's `sampleImageLuma` in a real Chromium, and the resulting Cloud and Local Auto values match; any difference is explained and the offline path fixed before Phase 2
+- Sampler comparison: desktop, offline and headless `LumaStats` are compared on all six tuning photos; differences and resulting Cloud and Local Auto values are recorded, with desktop as the tuning source
 
-> **Note (2026-09-27, maintainer decision):** because Chromium is the tuning source (see the note in
-> § 2), 1.6 is met when `scripts/s17/browser-stats.ts` has written `<id>.browser.json` for all six
-> tuning photos **and** the remaining offline-vs-Chromium differences are explained and recorded
-> (the § 2 note). The Progress row keeps its original title; this note is its operative meaning.
+> **Decision (2026-09-27, revised):** 1.6 is met by the six-photo desktop capture and the
+> documented three-way comparison above. Before Phase 2 model runs, confirm S17-04 `clipRatio`
+> and its Cloud/Local Auto values in a visible desktop Chrome tab. If its clipping classification
+> changes, refresh the desktop record and recompute all six recommendations before tuning.
 
 - A live direct run of S17-01 through the upload path succeeds and its output sha256 is recorded
 
@@ -264,12 +276,12 @@ No product code. Re-measure the defect where the product actually operates — c
 the six full-resolution tuning photos — and run the two pre-registered probes. Results go to a new
 `calibration.md` in this change folder.
 
-**Entry gate** — do not start until 1.6 (full `LumaStats` parity on all six tuning photos) is recorded as passed. The other Phase 1 manual row may stay pending.
+**Entry gate** — do not start model runs until 1.6 (three-way `LumaStats` comparison) and 1.8
+(visible-tab S17-04 check) are recorded as passed. The other Phase 1 manual row may stay pending.
 
-> **Note (2026-09-27, maintainer decision):** 1.6 is passed in the sense of the Phase 1 note: the
-> six `<id>.browser.json` records exist and the offline differences are explained. Phase 2 and 3
-> take every `LumaStats` field and Auto value from `<id>.browser.json`, never from the offline
-> `<id>.auto.json`.
+> **Decision (2026-09-27, revised):** Phase 2 and 3 use the desktop Chrome `LumaStats` in
+> `desktop-chrome-154.stats.json` and compute Auto values with the app's `recommendParams`.
+> The offline and headless records remain cross-checks; neither supplies tuning values.
 
 ### Changes Required:
 
@@ -648,6 +660,7 @@ persisted parameters.
 
 - [x] 1.6 Harness parity: full `LumaStats` and Auto values match the browser on all six tuning photos
 - [ ] 1.7 A live direct run of S17-01 through the upload path succeeds and its output sha256 is recorded
+- [ ] 1.8 S17-04 `clipRatio` and Cloud/Local Auto values confirmed in a visible desktop Chrome tab; refresh the desktop record if the clipping classification changes
 
 ### Phase 2: Premise check and probes
 

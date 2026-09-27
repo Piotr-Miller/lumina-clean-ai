@@ -1,14 +1,14 @@
 /**
- * S-17 Auto values from the app's `sampleImageLuma` in a real Chromium — the
- * AUTHORITATIVE source of tuning stats (maintainer decision, 2026-09-27).
+ * S-17 Auto values from the app's `sampleImageLuma` in headless Chromium — a
+ * repeatable diagnostic, not the tuning source (decision revised 2026-09-27).
  *
- * `<id>.browser.json` (full `LumaStats` + the Local and Cloud recommendations) is
- * what Phase 2–3 tune on. The offline path (`decode-inputs.py` + `auto-values.ts`)
- * is kept as a cross-check: with JPEG decode-to-scale it matches the browser's
- * Cloud values to two decimals on all six tuning photos, but Chromium stays about
- * 0.4 levels darker (≤ 2 histogram bins), so the offline record is never the input
- * to tuning. Headless Chromium is not proven identical to a desktop Chrome with
- * GPU raster; the app panel's two-decimal values are the check for that.
+ * `<id>.browser.json` stores full `LumaStats` and the Local and Cloud recommendations.
+ * Phase 2–3 tune from desktop Chrome 154 stats in
+ * `test-photos/private/s17/harness/desktop-chrome-154.stats.json`, applying the
+ * app's `recommendParams`. The offline path (`decode-inputs.py` + `auto-values.ts`)
+ * is the closer cross-check: 18/60 differing fields against desktop, versus 34/60
+ * for this headless path. The desktop capture used a hidden tab, so S17-04 needs
+ * a visible-tab check before model runs (plan Phase 1 note).
  *
  * Loads each photo the way `EnhanceWorkspace` does (a Blob object URL decoded by
  * `new Image()`), runs the app's own `sampleImageLuma` from
@@ -23,8 +23,8 @@
  * difference never withholds it. Exit status of the cross-check:
  *   0  every percentile identical, |Δ| ≤ 0.001 on mean and the three ratios, and
  *      the recommendations equal to two decimals;
- *   2  a difference beyond that — it is printed per field; explain it or fix the
- *      offline path before tuning on it;
+ *   2  a difference beyond that, printed per field; investigate it before using
+ *      this record as a diagnostic;
  *   1  the check could not run (missing offline record, browser or decode failure).
  * These thresholds decide what this tool REPORTS; accepting parity is the
  * maintainer's call, recorded against plan row 1.6.
