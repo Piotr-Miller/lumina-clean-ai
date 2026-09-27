@@ -150,16 +150,16 @@ are over the whole frame; for these six photos the manifest ROI is the whole fra
 give the same numbers. Originals, for reference: V ≥ 0.90 is 2.3 % (S17-01), 0.4 % (02), 0.9 %
 (03), 7.7 % (04), 4.7 % (07) and 0.3 % (21).
 
-| Run                             | Photo  | Gamma / strength | Output (px) | Output sha256   | V ≥ 0.90 | Any = 255 | Mean RGB          | Maintainer rating |
-| ------------------------------- | ------ | ---------------- | ----------- | --------------- | -------: | --------: | ----------------- | ----------------- |
-| R1 `gtgcyj2jvhrgc0d0wjst5eygmw` | S17-01 | 1.5 / 0.1216     | 1536 × 1024 | `32df5342bd76…` |   77.1 % |    55.7 % | 0.727 0.879 0.615 | _pending_         |
-| R1 `67nd84tvrnrgc0d0wjtvaqx2c8` | S17-02 | 1.0504 / 0.0588  | 1536 × 888  | `0736b27796cc…` |    3.6 % |     0.0 % | 0.629 0.646 0.599 | _pending_         |
-| R1 `m2pqem43pdrgc0d0wjtt27zv3m` | S17-03 | 1.1881 / 0.0804  | 1536 × 1024 | `0de383cdadeb…` |    2.4 % |     0.0 % | 0.548 0.576 0.425 | _pending_         |
-| R1 `573pb9njdsrgc0d0wjtt8m4dhc` | S17-04 | 1.1 / 0.1        | 1536 × 1152 | `cb4dac062e29…` |    9.2 % |     0.9 % | 0.503 0.487 0.457 | _pending_         |
-| R1 `n4q8teq03nrge0d0wjts7sdds0` | S17-07 | 1.5 / 0.1824     | 1536 × 1024 | `795aee82def0…` |   66.6 % |    20.4 % | 0.865 0.825 0.706 | _pending_         |
-| R1 `v4skbbrkjxrga0d0wjv8kjh90c` | S17-21 | 1.5 / 0.1510     | 1528 × 1016 | `f62d81862ce6…` |   83.4 % |    26.8 % | 0.872 0.865 0.894 | _pending_         |
-| R3 `55r485b78nrga0d0wjvaaw9rrg` | S17-01 | 0.9 / 0.05       | 1536 × 1024 | `1cd590253d0f…` |    7.0 % |     2.2 % | 0.262 0.513 0.261 | —                 |
-| R3 `fs4wfw4m8srg80d0wjvadn47v8` | S17-01 | 1.0 / 0.05       | 1536 × 1024 | `edec53305010…` |   15.2 % |     2.8 % | 0.323 0.584 0.306 | —                 |
+| Run                             | Photo  | Gamma / strength | Output (px) | Output sha256   | V ≥ 0.90 | Any = 255 | Mean RGB          | Maintainer rating             |
+| ------------------------------- | ------ | ---------------- | ----------- | --------------- | -------: | --------: | ----------------- | ----------------------------- |
+| R1 `gtgcyj2jvhrgc0d0wjst5eygmw` | S17-01 | 1.5 / 0.1216     | 1536 × 1024 | `32df5342bd76…` |   77.1 % |    55.7 % | 0.727 0.879 0.615 | harm: washed out              |
+| R1 `67nd84tvrnrgc0d0wjtvaqx2c8` | S17-02 | 1.0504 / 0.0588  | 1536 × 888  | `0736b27796cc…` |    3.6 % |     0.0 % | 0.629 0.646 0.599 | harm: washed out              |
+| R1 `m2pqem43pdrgc0d0wjtt27zv3m` | S17-03 | 1.1881 / 0.0804  | 1536 × 1024 | `0de383cdadeb…` |    2.4 % |     0.0 % | 0.548 0.576 0.425 | harm: washed out              |
+| R1 `573pb9njdsrgc0d0wjtt8m4dhc` | S17-04 | 1.1 / 0.1        | 1536 × 1152 | `cb4dac062e29…` |    9.2 % |     0.9 % | 0.503 0.487 0.457 | harm: washed out              |
+| R1 `n4q8teq03nrge0d0wjts7sdds0` | S17-07 | 1.5 / 0.1824     | 1536 × 1024 | `795aee82def0…` |   66.6 % |    20.4 % | 0.865 0.825 0.706 | harm: washed out, lost detail |
+| R1 `v4skbbrkjxrga0d0wjv8kjh90c` | S17-21 | 1.5 / 0.1510     | 1528 × 1016 | `f62d81862ce6…` |   83.4 % |    26.8 % | 0.872 0.865 0.894 | harm: washed out, lost detail |
+| R3 `55r485b78nrga0d0wjvaaw9rrg` | S17-01 | 0.9 / 0.05       | 1536 × 1024 | `1cd590253d0f…` |    7.0 % |     2.2 % | 0.262 0.513 0.261 | —                             |
+| R3 `fs4wfw4m8srg80d0wjvadn47v8` | S17-01 | 1.0 / 0.05       | 1536 × 1024 | `edec53305010…` |   15.2 % |     2.8 % | 0.323 0.584 0.306 | —                             |
 
 Parameters above are rounded for display; the exact values sent are in § R1 and in each run
 record. The full sha256 of every output is in its run record.
@@ -168,9 +168,30 @@ record. The full sha256 of every output is in its run record.
 like the others. Its input is 6016 × 4000. Not investigated; it does not affect the premise
 reading.
 
-**Premise gate outcome:** _pending the maintainer's ratings._ They rate from the private sheet
-`test-photos/private/s17/sheets/phase2-baseline/index.html`. The sheet shows the ICC-corrected
-original, resized to the output's size (LANCZOS), beside the output. It shows no diagnostics.
+**Maintainer ratings (2026-09-27).** The maintainer reviewed all six pairs personally on the
+private sheet `test-photos/private/s17/sheets/phase2-baseline/index.html`, at matched size. They
+adopted the wording an agent had drafted as their own rating. The agent's draft alone was not
+accepted as a rating.
+
+| Photo  | Rating                        | Visible problem                                                         |
+| ------ | ----------------------------- | ----------------------------------------------------------------------- |
+| S17-01 | harm: washed out              | Sky and aurora lose structure; the night landscape turns almost white.  |
+| S17-02 | harm: washed out              | The dark sky turns light grey; the aurora loses contrast.               |
+| S17-03 | harm: washed out              | Sky and shore are too bright; the night character of the scene is gone. |
+| S17-04 | harm: washed out              | The black sky turns grey, though the building was already legible.      |
+| S17-07 | harm: washed out, lost detail | Faces, neon signs and the pavement are burnt out.                       |
+| S17-21 | harm: washed out, lost detail | The sky is almost white; mountains and lights lose legibility.          |
+
+**Premise gate outcome (R1): PROCEED.** All six outputs are rated as washed-out harm, so the
+calibration premise holds at full resolution and Phase 3 may start once its entry gate is met.
+These ratings judge the **raw** Bread output. The downloaded app result (post-pass ON, see § Post-pass
+flag state) is still checked in Phase 3's app-path check.
+
+**Observation, not a reading.** The harm is not confined to the photos where Auto reached gamma
+1.5. S17-02 (gamma 1.05) and S17-04 (gamma 1.1) were also washed out, although their V ≥ 0.90
+shares stayed low (3.6 % and 9.2 %): the grey-sky harm shows in the mean, not in clipping. R3's
+S17-01 run at gamma 1.0 still reached 15.2 % V ≥ 0.90. This is why the gamma-0.9 arm and the
+strength sweep matter in Phase 3. No reading is changed by this note.
 
 ### EXIF probe (R2)
 
