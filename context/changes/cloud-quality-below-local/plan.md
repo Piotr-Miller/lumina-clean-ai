@@ -613,17 +613,17 @@ persisted parameters.
 
 #### Manual
 
-- [ ] 0.4 Maintainer confirms the corrected wording
+- [x] 0.4 Maintainer confirms the corrected wording
 
 ### Phase 1: Measurement harness
 
 #### Automated
 
-- [ ] 1.1 Type checking passes: `npm run typecheck`
-- [ ] 1.2 Linting passes: `npm run lint`
-- [ ] 1.3 Unit tests pass: `npm run test:unit`
-- [ ] 1.4 A bogus-token run on S17-01 takes the upload path and fails at authentication with the HTTP status printed
-- [ ] 1.5 `sha256sum -c test-photos/s17-benchmark.sha256` passes
+- [x] 1.1 Type checking passes: `npm run typecheck`
+- [x] 1.2 Linting passes: `npm run lint`
+- [x] 1.3 Unit tests pass: `npm run test:unit`
+- [x] 1.4 A bogus-token run on S17-01 takes the upload path and fails at authentication with the HTTP status printed
+- [x] 1.5 `sha256sum -c test-photos/s17-benchmark.sha256` passes
 
 #### Manual
 
