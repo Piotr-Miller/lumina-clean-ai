@@ -1,5 +1,14 @@
 /**
- * S-17 harness parity — the app's `sampleImageLuma` in a real Chromium (plan 1.6).
+ * S-17 Auto values from the app's `sampleImageLuma` in a real Chromium — the
+ * AUTHORITATIVE source of tuning stats (maintainer decision, 2026-09-27).
+ *
+ * `<id>.browser.json` (full `LumaStats` + the Local and Cloud recommendations) is
+ * what Phase 2–3 tune on. The offline path (`decode-inputs.py` + `auto-values.ts`)
+ * is kept as a cross-check: with JPEG decode-to-scale it matches the browser's
+ * Cloud values to two decimals on all six tuning photos, but Chromium stays about
+ * 0.4 levels darker (≤ 2 histogram bins), so the offline record is never the input
+ * to tuning. Headless Chromium is not proven identical to a desktop Chrome with
+ * GPU raster; the app panel's two-decimal values are the check for that.
  *
  * Loads each photo the way `EnhanceWorkspace` does (a Blob object URL decoded by
  * `new Image()`), runs the app's own `sampleImageLuma` from
@@ -10,7 +19,8 @@
  *   npx tsx scripts/s17/browser-stats.ts                 # the six tuning photos
  *   npx tsx scripts/s17/browser-stats.ts S17-01 S17-06   # named ids
  *
- * Writes `<id>.browser.json` next to the offline record. Exit status:
+ * Writes `<id>.browser.json` next to the offline record — before comparing, so a
+ * difference never withholds it. Exit status of the cross-check:
  *   0  every percentile identical, |Δ| ≤ 0.001 on mean and the three ratios, and
  *      the recommendations equal to two decimals;
  *   2  a difference beyond that — it is printed per field; explain it or fix the
