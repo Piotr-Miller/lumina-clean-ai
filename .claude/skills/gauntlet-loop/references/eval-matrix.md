@@ -446,23 +446,24 @@ working. The label is not.
   relative to the bar rather than a victory over it. Raised by change `local-engine-ceiling`
   (`context/changes/local-engine-ceiling/change.md`, issue #188) and recorded here because that change
   is itself parked — nobody resuming the skill would have found it there.
-- **A fifth arrived 2026-09-20, and it is a safety correction rather than an improvement — so unlike the
-  four above it HAS been applied to `bars.md` §B.** Change `cloud-quality-below-local` (S-17, #203)
-  confirmed against Bread's stored raw output that the model itself returns magenta, blown-out bytes on
-  saturated green night scenes. That makes **domain B's bar defective on a specific, nameable photo
-  class** — and `bars.md` §B's freeze recipe asks for a "colour cast" photo, i.e. it steers the reader
-  straight at it. Recording this one and leaving §B unchanged would have been the wrong call: the four
-  above are objective/method refinements a lead can weigh, whereas this one sends a metered, one-shot
-  freeze at a known fault. §B now carries the warning, the model-defaults point (`gamma 1.0` /
-  `strength 0.05` documented vs `1.2` / `0.2` shipped, Auto pinning 1.50) and the resolution mismatch
-  (Bread caps at 1536 px; Local returns full size). **This edit touches operating instructions and
-  therefore owes a §2 re-measure** — unblocking, since the skill is supervised and on-demand and is
-  never a CI gate, but it is owed.
-- **It also partly inverts the fourth bullet.** "A `WINS` verdict on a night photo is a product failure"
-  holds only where Cloud is genuinely the better engine. On the failing class Local beating Cloud is
-  **simply true today** and is the S-17 regression, not a breach of the funnel — so a critic applying
-  the inversion blind would halt a correct measurement and report a product failure that is really a
-  known model defect. The rule needs the photo class attached to it, not just the verdict.
+- **A fifth arrived 2026-09-20, and it prompted a correction to `bars.md` §B.** The initial S-17
+  report attributed magenta output on saturated green night scenes to Bread. Later source comparison
+  withdrew that diagnosis: the one byte-reproduced aurora job had 98.1 % of its output's magenta
+  pixels already magenta in the source; the wolf and waterfall sources match by scene and size, but
+  their Bread outputs were not reproduced. Local was emulated in Python, not run in the app. The
+  reported model-fault diagnosis is **unsupported on these sources**; neither the input nor either
+  engine should be assigned a cast without comparing that source with both outputs. Separately, direct
+  runs on one aurora photo showed Auto overexposing a dark frame. §B now warns readers to inspect each
+  proposed Bread reference before freezing it, records the model-defaults point (`gamma 1.0` /
+  `strength 0.05` documented vs `1.2` / `0.2` shipped, Auto reaching 1.50 on some dark frames), and
+  notes the resolution mismatch (Bread caps at 1536 px; Local returns full size). **This edit touches
+  operating instructions and therefore owes a §2 re-measure** — unblocking, since the skill is
+  supervised and on-demand and is never a CI gate, but it is owed.
+- **The fourth bullet needs a per-photo qualification.** Its claim that a Local `WINS` verdict is a
+  product failure assumes Cloud was visually accepted as the better output on that photo. S-17 has
+  not established that across representative night photos. A Local win can expose a Cloud quality
+  problem, but the cause must be measured from the source and both engine outputs before assigning it
+  to Bread, Auto, or Local.
 - Each of the four touches operating instructions and therefore costs a §2 re-measure. **Recording
   them does not; only applying them does** — which is why the fourth is written down while all four
   stay parked.
