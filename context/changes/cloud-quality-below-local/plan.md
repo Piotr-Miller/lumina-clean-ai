@@ -607,9 +607,9 @@ persisted parameters.
 
 #### Automated
 
-- [x] 0.1 `npm run check:skills` passes
-- [x] 0.2 `cmp` of the two `bars.md` copies reports no difference
-- [x] 0.3 `npm run format:check` passes
+- [x] 0.1 `npm run check:skills` passes — ca47817
+- [x] 0.2 `cmp` of the two `bars.md` copies reports no difference — ca47817
+- [x] 0.3 `npm run format:check` passes — ca47817
 
 #### Manual
 

@@ -139,11 +139,14 @@ at rather than an opinion about denoising.
 > Local **only on a photo where that output was visually accepted**. What is known today
 > (`context/changes/cloud-quality-below-local/defaults-experiment.md`):
 >
-> - **No green → magenta model fault.** The 2026-09-20 diagnosis that Bread turns saturated green night
->   scenes magenta is **withdrawn**. The three web test photos behind it already carry a violet/magenta
->   cast in their shadows: 98.1 % of the magenta pixels in the byte-reproduced aurora result were
->   magenta in its source, and a Python emulation of the Local engine shows a comparable cast on all
->   three. A cast in a Bread output belongs to the input until shown otherwise.
+> - **The reported green → magenta model-fault diagnosis is unsupported on these sources.** The
+>   2026-09-20 diagnosis that Bread turns saturated green night scenes magenta is **withdrawn**. The
+>   three web test photos behind it already carry a violet/magenta cast in their shadows. On the one
+>   byte-reproduced job (the aurora), 98.1 % of the magenta pixels in the result were magenta in its
+>   source; the other two sources are matched by scene and size only, and their Bread outputs were not
+>   reproduced. A Python emulation of the Local engine shows a comparable cast on all three. This does
+>   not rule out a cast the model adds on other photos: compare each source with **both** engines'
+>   outputs before assigning a cast to the input or to either engine.
 > - **Auto can overexpose — on dark frames, not on every night photo.** On one licensed aurora photo,
 >   Auto's `gamma 1.50` / `strength 0.12` put 77.6 % of pixels at V ≥ 0.90, against 21.3 % at `1.00` /
 >   `0.05`; both settings moved together, so gamma alone is not isolated. The cloud branch of
@@ -169,10 +172,11 @@ at rather than an opinion about denoising.
 **Freeze the bar once, then never call the cloud again.**
 
 1. Pick 5–8 representative night photos (varied: high shadow noise, colour cast, mixed light, a clipped
-   highlight, a near-black frame). ⚠️ **Check a colour-cast photo's source before blaming either
-   engine** — a cast already in the input survives both, so measure the source first. Use a Bread
-   output as a bar only after looking at it: an overexposed or cast result is a _diagnostic_, not a
-   quality bar. See the warning above.
+   highlight, a near-black frame). ⚠️ **Compare a colour-cast photo's source with both engines'
+   outputs before assigning the cast** — a cast already in the input can survive both, and one the
+   source lacks is a finding about the engine that added it. Use a Bread output as a bar only after
+   looking at it: an overexposed or cast result is a _diagnostic_, not a quality bar. See the warning
+   above.
 2. Produce their Bread outputs **once** in a controlled environment. Save pairs as
    `<name>.source.jpg` + `<name>.bread.jpg` in `scratchpad/gauntlet/<slug>/reference/` — gitignored,
    hash-pinned in the workbench. **User photos and their cloud outputs are never committed**, and a
