@@ -183,7 +183,8 @@ like the stored bytes, and not upright like the displayed photo.
 
 **Reading (per R2): Bread ignores EXIF orientation.** As pre-registered, a separate change must be
 registered via `/rune-new` and recorded in `change.md`, and Phase 5 waits until that fix is in
-production. **That change is not registered yet** (plan row 2.4 stays open until it is).
+production. **Registered 2026-09-27 as `cloud-exif-orientation`**
+(`context/changes/cloud-exif-orientation/`) and recorded in `change.md`.
 
 Consequence outside S-17, inferred from the direct run and not yet observed in the app: the Cloud
 upload `PUT`s the original bytes (`cloud-upload.client.ts:87-91`). A phone photo stored with

@@ -163,6 +163,15 @@ What this does and does not touch:
 
 Full measurement: `context/changes/cloud-result-resolution-gap/premise-check.md`.
 
+### Phase 2 finding — Bread ignores EXIF orientation (2026-09-27)
+
+The pre-registered EXIF probe (`calibration.md` § EXIF probe) found that Bread ignores EXIF
+orientation. S17-06 (EXIF 6, displays portrait) came back landscape with its content sideways. As
+pre-registered, this is a separate change: **`cloud-exif-orientation`**
+(`context/changes/cloud-exif-orientation/`, registered 2026-09-27). **S-17 Phase 5 waits until that
+fix is in production.** Production is very likely affected today (the Cloud upload sends the
+original bytes), but this has not yet been observed in the app.
+
 ### Scope note
 
 ~~the evidence points at a colour transform somewhere in our own pipeline~~ —

@@ -684,15 +684,15 @@ persisted parameters.
 
 #### Automated
 
-- [ ] 2.1 `calibration.md` pre-registered readings committed before the baseline table is filled
-- [ ] 2.2 `npx prettier --check context/changes/cloud-quality-below-local/` passes
+- [x] 2.1 `calibration.md` pre-registered readings committed before the baseline table is filled — no-diff
+- [x] 2.2 `npx prettier --check context/changes/cloud-quality-below-local/` passes — no-diff
 
 #### Manual
 
 - [ ] 2.3 Premise gate: baseline ratings recorded and gate outcome written
-- [ ] 2.4 EXIF probe outcome recorded; separate change registered if Bread ignores EXIF
-- [ ] 2.5 Gamma-0.9 probe outcome recorded
-- [ ] 2.6 Post-pass flag state recorded from the served page
+- [x] 2.4 EXIF probe outcome recorded; separate change registered if Bread ignores EXIF
+- [x] 2.5 Gamma-0.9 probe outcome recorded
+- [x] 2.6 Post-pass flag state recorded from the served page
 
 ### Phase 3: Tune Cloud Auto and freeze the regression reference
 
