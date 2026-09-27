@@ -255,7 +255,10 @@ manifest, denominators), as `measure-hue-shares.py` does today.
 - Sampler comparison: desktop, offline and headless `LumaStats` are compared on all six tuning photos; differences and resulting Cloud and Local Auto values are recorded, with desktop as the tuning source
 
 > **Decision (2026-09-27, revised):** 1.6 is met by the six-photo desktop capture and the
-> documented three-way comparison above. Before Phase 2 model runs, confirm S17-04 `clipRatio`
+> documented three-way comparison above. **The Progress row's title (“full `LumaStats` and Auto values
+> match the browser on all six”) is superseded:** exact parity was not reached. Offline differs in
+> 18/60 fields and headless in 34/60. Its `[x]` confirms this revised criterion, not the title,
+> which stays unchanged because Progress titles are immutable. Before Phase 2 model runs, confirm S17-04 `clipRatio`
 > and its Cloud/Local Auto values in a visible desktop Chrome tab. If its clipping classification
 > changes, refresh the desktop record and recompute all six recommendations before tuning.
 >

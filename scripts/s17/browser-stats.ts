@@ -29,6 +29,7 @@
  * These thresholds decide what this tool REPORTS; accepting parity is the
  * maintainer's call, recorded against plan row 1.6.
  */
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -88,6 +89,19 @@ async function main(): Promise<void> {
     }
   }
 
+  // Hash the bytes that will actually be served: a record stamped with the manifest
+  // sha256 must come from those exact bytes, not from whatever the offline run saw.
+  const photoBytes = new Map<string, Buffer>();
+  for (const e of entries) {
+    const bytes = readFileSync(join(REPO, e.path));
+    const actual = createHash("sha256").update(bytes).digest("hex");
+    if (actual !== e.sha256) {
+      console.error(`${e.id}: ${e.path} has sha256 ${actual}, the manifest says ${e.sha256}.`);
+      process.exit(1);
+    }
+    photoBytes.set(e.id, bytes);
+  }
+
   const modules: Record<string, string> = {
     "/auto-params": transpile("src/lib/engines/auto-params.ts"),
     "/auto-params.client": transpile("src/lib/engines/auto-params.client.ts"),
@@ -108,7 +122,8 @@ window.harnessReady = true;
       if (path in modules) return route.fulfill({ contentType: "text/javascript", body: modules[path] });
       const photo = /^\/photo\/(S17-\d+)$/.exec(path);
       const entry = photo ? entries.find((e) => e.id === photo[1]) : undefined;
-      if (entry) return route.fulfill({ contentType: "image/jpeg", body: readFileSync(join(REPO, entry.path)) });
+      const bytes = entry ? photoBytes.get(entry.id) : undefined;
+      if (bytes) return route.fulfill({ contentType: "image/jpeg", body: bytes });
       return route.fulfill({ status: 404, body: "not found" });
     });
     await page.goto(`${ORIGIN}/`);

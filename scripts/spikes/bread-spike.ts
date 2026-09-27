@@ -88,6 +88,21 @@ async function main(): Promise<void> {
   console.log(`transport   : ${input.transport}${input.uploadedFileId ? ` (file ${input.uploadedFileId})` : ""}`);
   if (input.inputSha256) console.log(`input sha256: ${input.inputSha256}`);
 
+  try {
+    await runPrediction(input, imageLabel, gamma, strength, token);
+  } finally {
+    // Best effort, and only after the output is saved: a failed cleanup must never cost a paid result.
+    await deleteUpload(input, token);
+  }
+}
+
+async function runPrediction(
+  input: ImageInput,
+  imageLabel: string,
+  gamma: number,
+  strength: number,
+  token: string,
+): Promise<void> {
   const wallStart = Date.now();
 
   // Create the prediction (Bread inputs: gamma ≤ 1.5 brighten, strength ≤ 0.2 denoise).
@@ -101,8 +116,8 @@ async function main(): Promise<void> {
   });
   if (!createRes.ok) {
     console.error(`create failed: ${createRes.status} ${await createRes.text()}`);
-    await deleteUpload(input, token);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   let prediction = (await createRes.json()) as ReplicatePrediction;
   console.log(`created prediction ${prediction.id} (status: ${prediction.status})`);
@@ -132,7 +147,6 @@ async function main(): Promise<void> {
   if (prediction.metrics?.predict_time)
     console.log(`predict_time: ${prediction.metrics.predict_time}s (Replicate metric)`);
   console.log("────────────────────────────────");
-  await deleteUpload(input, token);
   if (prediction.status === "succeeded" && typeof prediction.output === "string") {
     await saveOutput(prediction.output, prediction, { gamma, strength, imageLabel, input });
   }
@@ -184,14 +198,17 @@ async function localInput(path: string, token: string): Promise<ImageInput> {
 /** Best effort: an uploaded input is not needed once the prediction is terminal. */
 async function deleteUpload(input: ImageInput, token: string): Promise<void> {
   if (!input.uploadedFileId) return;
-  const res = await fetch(`${FILES_API}/${input.uploadedFileId}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    console.warn(
-      `warn: could not delete uploaded file ${input.uploadedFileId} (HTTP ${res.status}); it stays in your Replicate account until it expires.`,
-    );
+  const consequence = "it stays in your Replicate account until it expires.";
+  try {
+    const res = await fetch(`${FILES_API}/${input.uploadedFileId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      console.warn(`warn: could not delete uploaded file ${input.uploadedFileId} (HTTP ${res.status}); ${consequence}`);
+    }
+  } catch (error) {
+    console.warn(`warn: could not delete uploaded file ${input.uploadedFileId} (${String(error)}); ${consequence}`);
   }
 }
 
