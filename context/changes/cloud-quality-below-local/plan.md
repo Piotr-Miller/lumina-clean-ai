@@ -258,6 +258,13 @@ manifest, denominators), as `measure-hue-shares.py` does today.
 > documented three-way comparison above. Before Phase 2 model runs, confirm S17-04 `clipRatio`
 > and its Cloud/Local Auto values in a visible desktop Chrome tab. If its clipping classification
 > changes, refresh the desktop record and recompute all six recommendations before tuning.
+>
+> **1.8 result (2026-09-27 20:15 UTC):** the maintainer re-measured all six photos with
+> `scripts/s17/desktop-stats.ts` in a visible tab of desktop Chrome 154 (visibility `visible` at start
+> and end). `--compare` exited 0, and every `LumaStats` field is identical to the baseline at full
+> precision. S17-04 `clipRatio` is still 0.00568, above the guard, so Cloud Auto stays 1.10 / 0.10.
+> The hidden-tab baseline `088fc3f1…` stays the tuning source; the visible-tab download
+> (sha256 `650f3b69…`) is evidence only.
 
 - A live direct run of S17-01 through the upload path succeeds and its output sha256 is recorded
 
@@ -660,7 +667,7 @@ persisted parameters.
 
 - [x] 1.6 Harness parity: full `LumaStats` and Auto values match the browser on all six tuning photos
 - [ ] 1.7 A live direct run of S17-01 through the upload path succeeds and its output sha256 is recorded
-- [ ] 1.8 S17-04 `clipRatio` and Cloud/Local Auto values confirmed in a visible desktop Chrome tab; refresh the desktop record if the clipping classification changes
+- [x] 1.8 S17-04 `clipRatio` and Cloud/Local Auto values confirmed in a visible desktop Chrome tab; refresh the desktop record if the clipping classification changes
 
 ### Phase 2: Premise check and probes
 
