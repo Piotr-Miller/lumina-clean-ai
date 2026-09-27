@@ -138,21 +138,64 @@ GAMMA=1.0 STRENGTH=0.05 npx tsx scripts/spikes/bread-spike.ts test-photos/licens
 
 Filled in after the runs, by later commits than the one that adds this file.
 
+**Run batch (2026-09-27, 21:11–21:13 UTC).** All nine runs went through the upload path on the
+pinned version and succeeded. The maintainer checked every output's sha256 against its run
+record. Seven runs needed a retry after a transient HTTP 429 (rate limit); none exceeded the limit
+of two retries. Outputs and run records are in `test-photos/private/s17/direct/phase2/`.
+
 ### Baseline (R1) — tuning run log
 
-The tuning run log lists tuning ids only (plan row 3.3). Phase 3 sweeps append here.
+The tuning run log lists tuning ids only (plan row 3.3). Phase 3 sweeps append here. Diagnostics
+are over the whole frame; for these six photos the manifest ROI is the whole frame, so both regions
+give the same numbers. Originals, for reference: V ≥ 0.90 is 2.3 % (S17-01), 0.4 % (02), 0.9 %
+(03), 7.7 % (04), 4.7 % (07) and 0.3 % (21).
 
-| Photo | Auto gamma / strength | Output sha256 | V ≥ 0.90 | Any = 255 | Mean RGB | Maintainer rating |
-| ----- | --------------------- | ------------- | -------- | --------- | -------- | ----------------- |
+| Run                             | Photo  | Gamma / strength | Output (px) | Output sha256   | V ≥ 0.90 | Any = 255 | Mean RGB          | Maintainer rating |
+| ------------------------------- | ------ | ---------------- | ----------- | --------------- | -------: | --------: | ----------------- | ----------------- |
+| R1 `gtgcyj2jvhrgc0d0wjst5eygmw` | S17-01 | 1.5 / 0.1216     | 1536 × 1024 | `32df5342bd76…` |   77.1 % |    55.7 % | 0.727 0.879 0.615 | _pending_         |
+| R1 `67nd84tvrnrgc0d0wjtvaqx2c8` | S17-02 | 1.0504 / 0.0588  | 1536 × 888  | `0736b27796cc…` |    3.6 % |     0.0 % | 0.629 0.646 0.599 | _pending_         |
+| R1 `m2pqem43pdrgc0d0wjtt27zv3m` | S17-03 | 1.1881 / 0.0804  | 1536 × 1024 | `0de383cdadeb…` |    2.4 % |     0.0 % | 0.548 0.576 0.425 | _pending_         |
+| R1 `573pb9njdsrgc0d0wjtt8m4dhc` | S17-04 | 1.1 / 0.1        | 1536 × 1152 | `cb4dac062e29…` |    9.2 % |     0.9 % | 0.503 0.487 0.457 | _pending_         |
+| R1 `n4q8teq03nrge0d0wjts7sdds0` | S17-07 | 1.5 / 0.1824     | 1536 × 1024 | `795aee82def0…` |   66.6 % |    20.4 % | 0.865 0.825 0.706 | _pending_         |
+| R1 `v4skbbrkjxrga0d0wjv8kjh90c` | S17-21 | 1.5 / 0.1510     | 1528 × 1016 | `f62d81862ce6…` |   83.4 % |    26.8 % | 0.872 0.865 0.894 | _pending_         |
+| R3 `55r485b78nrga0d0wjvaaw9rrg` | S17-01 | 0.9 / 0.05       | 1536 × 1024 | `1cd590253d0f…` |    7.0 % |     2.2 % | 0.262 0.513 0.261 | —                 |
+| R3 `fs4wfw4m8srg80d0wjvadn47v8` | S17-01 | 1.0 / 0.05       | 1536 × 1024 | `edec53305010…` |   15.2 % |     2.8 % | 0.323 0.584 0.306 | —                 |
 
-**Premise gate outcome:** _pending._
+Parameters above are rounded for display; the exact values sent are in § R1 and in each run
+record. The full sha256 of every output is in its run record.
+
+**Unexplained, recorded as observed:** S17-21's output is 1528 × 1016, not 1536 on the long edge
+like the others. Its input is 6016 × 4000. Not investigated; it does not affect the premise
+reading.
+
+**Premise gate outcome:** _pending the maintainer's ratings._ They rate from the private sheet
+`test-photos/private/s17/sheets/phase2-baseline/index.html`. The sheet shows the ICC-corrected
+original, resized to the output's size (LANCZOS), beside the output. It shows no diagnostics.
 
 ### EXIF probe (R2)
 
-Not part of the tuning run log.
+Not part of the tuning run log. Orientation only; not rated, not measured for tuning.
 
-_Pending._
+Run `ebme649xrsrgc0d0wjv857kkrw`, S17-06 at gamma 1 / strength 0.05. The output is **1536 × 1152,
+landscape**, while the photo displays as a portrait 4284 × 5712 (stored 5712 × 4284, EXIF
+orientation 6). A thumbnail comparison shows that the output's content lies on its side, exactly
+like the stored bytes, and not upright like the displayed photo.
+
+**Reading (per R2): Bread ignores EXIF orientation.** As pre-registered, a separate change must be
+registered via `/rune-new` and recorded in `change.md`, and Phase 5 waits until that fix is in
+production. **That change is not registered yet** (plan row 2.4 stays open until it is).
+
+Consequence outside S-17, inferred from the direct run and not yet observed in the app: the Cloud
+upload `PUT`s the original bytes (`cloud-upload.client.ts:87-91`). A phone photo stored with
+orientation 6 or 8 therefore very likely comes back from Cloud AI rotated 90° in production today.
 
 ### Gamma-0.9 probe (R3)
 
-_Pending._
+**Gamma 0.9: accepted.** Prediction `55r485b78nrga0d0wjvaaw9rrg` succeeded with a 1536 × 1024
+image. **Reading (per R3): the Phase 3 gamma sweep includes 0.9.** The floor is chosen in Phase 3
+on quality, not on acceptance. Diagnostics are in the tuning run log above.
+
+**Gamma 1.0 reproducibility: byte-exact.** Prediction `fs4wfw4m8srg80d0wjvadn47v8` returned sha256
+`edec533050106489b96ea503980ed557149d53e3ea7eda50f5752b53d69a097c`, identical to the 1.7 run
+(`qdvmw9dvn5rga0d0wj2a074f18`). **Reading (per R3): byte reproducibility holds for S17-01 at full
+resolution,** so the Phase 3 regression reference can rely on its sha-first check.
