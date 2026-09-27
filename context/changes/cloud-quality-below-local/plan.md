@@ -698,14 +698,14 @@ persisted parameters.
 
 #### Automated
 
-- [ ] 3.1 Procedure and stop condition committed before the first sweep output
+- [x] 3.1 Procedure and stop condition committed before the first sweep output
 - [ ] 3.2 `regression-s17-01.json` parses and its input sha256 matches the manifest
-- [ ] 3.3 Tuning run log names tuning ids only (EXIF probe section excluded)
+- [x] 3.3 Tuning run log names tuning ids only (EXIF probe section excluded)
 
 #### Manual
 
 - [ ] 3.4 Preferred and acceptable values marked for all six tuning photos
-- [ ] 3.5 Fitted rule inside every acceptable range, or stop condition recorded
+- [x] 3.5 Fitted rule inside every acceptable range, or stop condition recorded
 - [ ] 3.6 Final-pair check: fitted parameters run on all six photos, none rated harm
 - [ ] 3.7 S17-01 reference accepted and tolerances set
 - [ ] 3.8 Frozen rule and commit sha recorded before Phase 4

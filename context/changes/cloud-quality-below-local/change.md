@@ -3,7 +3,7 @@ change_id: cloud-quality-below-local
 title: Calibrate Cloud Auto exposure and verify quality against Local
 status: implementing
 created: 2026-08-31
-updated: 2026-09-27
+updated: 2026-09-28
 archived_at: null
 ---
 
@@ -171,6 +171,15 @@ pre-registered, this is a separate change: **`cloud-exif-orientation`**
 (`context/changes/cloud-exif-orientation/`, registered 2026-09-27). **S-17 Phase 5 waits until that
 fix is in production.** Production is very likely affected today (the Cloud upload sends the
 original bytes), but this has not yet been observed in the app.
+
+### Phase 3 stop — no Cloud Auto setting in range avoids wash-out (2026-09-28)
+
+The Phase 3 gamma sweep (`calibration.md` § Phase 3 — results) ran gamma 0.9–1.5 at strength 0.05
+on the six tuning photos. The maintainer rated **every** value harm (washed out) on **five of six**
+photos, 0.9 included; only S17-07 was improved, at 0.9. That empty acceptable range is the
+pre-registered **stop condition**. No strength sweep was run, no rule was fitted, and Phases 4–6
+do not start from this state. Not measured: gamma below 0.9, other strengths, and the post-passed
+download. **Next step is the maintainer's decision.**
 
 ### Scope note
 
