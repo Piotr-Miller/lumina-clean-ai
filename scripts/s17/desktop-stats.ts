@@ -16,11 +16,11 @@
  * It prints every LumaStats field against the baseline (percentiles in 1/255
  * bins), each photo's clip-guard side (clipRatio > 0.005) and the Local and
  * Cloud Auto values from the app's recommendParams. Exit status:
- *   0  no Auto value changes at display precision and no clip-guard side changes;
+ *   0  no Auto value changes (compared unrounded) and no clip-guard side changes;
  *   2  at least one does — refresh the baseline and recompute before tuning;
  *   1  the comparison could not run (missing file, unexpected shape).
- * The baseline's own SHA-256 is checked against BASELINE_SHA256 (recorded in the
- * plan) and a mismatch is reported, since it means the tuning source changed.
+ * The default baseline's own SHA-256 must equal BASELINE_SHA256 (recorded in the
+ * plan); a mismatch exits 1 before comparing, since the tuning source changed.
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -62,16 +62,41 @@ function readStats(path: string): Record<string, LumaStats> {
   return raw.stats ?? (raw as unknown as Record<string, LumaStats>);
 }
 
-function autoLine(s: LumaStats): string {
+interface Auto {
+  cloudGamma: number;
+  cloudStrength: number;
+  localGamma: number;
+  localBlur: number;
+}
+
+function auto(s: LumaStats): Auto {
   const c = recommendParams(s, "cloud");
   const l = recommendParams(s, "local");
-  return `cloud ${c.gamma.toFixed(2)}/${c.strength.toFixed(2)}  local ${l.gamma.toFixed(2)}/${l.blur.toFixed(1)}`;
+  return { cloudGamma: c.gamma, cloudStrength: c.strength, localGamma: l.gamma, localBlur: l.blur };
+}
+
+/** Rounded for display only — the exit decision compares the numbers themselves. */
+function autoLine(a: Auto): string {
+  return `cloud ${a.cloudGamma.toFixed(2)}/${a.cloudStrength.toFixed(2)}  local ${a.localGamma.toFixed(2)}/${a.localBlur.toFixed(1)}`;
+}
+
+function sameAuto(a: Auto, b: Auto): boolean {
+  return (Object.keys(a) as (keyof Auto)[]).every((k) => a[k] === b[k]);
 }
 
 function compare(downloadPath: string, baselinePath: string): never {
+  if (!existsSync(baselinePath)) {
+    console.error(`no such baseline: ${baselinePath}`);
+    process.exit(1);
+  }
   const baselineHash = createHash("sha256").update(readFileSync(baselinePath)).digest("hex");
   if (baselinePath === BASELINE && baselineHash !== BASELINE_SHA256) {
-    console.log(`⚠ baseline ${baselinePath} has sha256 ${baselineHash}, not the recorded ${BASELINE_SHA256}.`);
+    // The default baseline IS the tuning source; comparing against a substitute proves nothing.
+    console.error(
+      `baseline ${baselinePath} has sha256 ${baselineHash}, not the ${BASELINE_SHA256} recorded in the plan. ` +
+        "The tuning source changed — restore it, or record the new one in the plan and BASELINE_SHA256 first.",
+    );
+    process.exit(1);
   }
   const base = readStats(baselinePath);
   const next = readStats(downloadPath);
@@ -83,18 +108,19 @@ function compare(downloadPath: string, baselinePath: string): never {
       console.error(`${id}: missing from ${downloadPath}`);
       process.exit(1);
     }
-    const autoA = autoLine(a);
-    const autoB = autoLine(b);
+    const autoA = auto(a);
+    const autoB = auto(b);
     const sideA = a.clipRatio > CLIP_GUARD;
     const sideB = b.clipRatio > CLIP_GUARD;
-    const flip = autoA !== autoB || sideA !== sideB;
+    const flip = !sameAuto(autoA, autoB) || sideA !== sideB;
     if (flip) changed = true;
-    console.log(`${id}  ${flip ? "CHANGED" : "same Auto"}`);
+    const hidden = flip && sideA === sideB && autoLine(autoA) === autoLine(autoB);
+    console.log(`${id}  ${flip ? "CHANGED" : "same Auto"}${hidden ? " (below display precision)" : ""}`);
     console.log(
-      `   baseline ${autoA}   clipRatio ${a.clipRatio.toFixed(5)} ${sideA ? ">" : "≤"} ${String(CLIP_GUARD)}`,
+      `   baseline ${autoLine(autoA)}   clipRatio ${a.clipRatio.toFixed(5)} ${sideA ? ">" : "≤"} ${String(CLIP_GUARD)}`,
     );
     console.log(
-      `   new      ${autoB}   clipRatio ${b.clipRatio.toFixed(5)} ${sideB ? ">" : "≤"} ${String(CLIP_GUARD)}`,
+      `   new      ${autoLine(autoB)}   clipRatio ${b.clipRatio.toFixed(5)} ${sideB ? ">" : "≤"} ${String(CLIP_GUARD)}`,
     );
     for (const f of FIELDS) {
       const d = b[f] - a[f];
