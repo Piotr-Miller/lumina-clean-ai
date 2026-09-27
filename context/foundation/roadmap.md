@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-09-21
+updated: 2026-09-27
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -45,7 +45,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-12 | adaptive-enhancement-parameters   | (post-MVP UX/quality) tune Local or Bread in a right-side panel, start from Auto recommendations, and override any slider manually        | S-01, S-04       | Post-MVP enhancement control; extends US-01, US-02               | done                                                                  |
 | S-15 | localization                      | (post-MVP i18n) switch the whole UI to one of 7 languages (EN + DE, PL, FR, ES, UKR, ZH), persisted; copy-only, engines unaffected        | S-01, S-12       | Post-MVP internationalization; extends US-01, US-02 UI           | ready                                                                 |
 | S-16 | atomic-cloud-daily-cap            | (post-MVP correctness) the global daily cap holds under simultaneous submissions — same message, now a hard invariant                     | S-05, S-07       | FR-014 (re-opens the S-05 obligation)                            | done                                                                  |
-| S-17 | cloud-quality-below-local         | (post-MVP quality) Auto avoids overexposure on night photos; compare the retained Bread path with Local on representative inputs          | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | ready                                                                 |
+| S-17 | cloud-quality-below-local         | (post-MVP quality) Auto avoids overexposure on night photos; compare the retained Bread path with Local on representative inputs          | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | in-progress                                                           |
 | S-18 | cloud-result-resolution-gap       | (post-MVP quality/UX) the Cloud AI result is delivered and shown at a size that does not make it look worse than the free engine          | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | done                                                                  |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
@@ -310,7 +310,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Confirmed defect:** direct Bread runs on one licensed 896 px aurora photo changed from `gamma 1.00` / `strength 0.05` to Auto's `1.50` / `0.12156862745098`; the share of pixels at V ≥ 0.90 rose from 21.3% to 77.6%, and channel clipping from 4.9% to 49.7%. Both controls moved, so this isolates the Auto setting as a whole, not gamma alone. The earlier "AFTER is noisier" claim was also disproven by S-18's measurements.
 - **Decision and scope:** retain Bread. Calibrate Auto's recommendation and check Bread versus Local on the same representative, rights-cleared night photos at matched display scale. Define a quality bar before tuning. Reopen the model decision only if the calibrated path fails that bar; no swap or drop is justified by the current three screenshots. S-13 stays a separate benchmark-gated Premium proposal. The Cloud output-size/delivery gap stays separate after S-18.
 - **Risk:** Auto can overexpose dark scenes on the paid path, and the broader Cloud-over-Local quality claim remains unverified. The new evidence covers one byte-proven input and one direct Auto comparison, so do not generalize it to all low-light photos.
-- **Status:** ready (decision recorded 2026-09-26 in `context/changes/cloud-quality-below-local/change.md`; next: plan a bounded Auto calibration and representative quality gate.)
+- **Status:** in-progress
 
 ### S-18: Cloud AI returns ~1.5 MP lossy JPEG where Local returns full resolution
 
