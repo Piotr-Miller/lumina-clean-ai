@@ -37,8 +37,8 @@ export interface HarnessMeta {
 }
 
 /**
- * Written by `auto-values.ts` as `<id>.auto.json` — the offline CROSS-CHECK.
- * Tuning uses `<id>.browser.json` from `browser-stats.ts` instead.
+ * Written by `auto-values.ts` as `<id>.auto.json` — the offline cross-check.
+ * Tuning uses desktop Chrome stats from `desktop-chrome-154.stats.json`.
  */
 export interface AutoValues {
   id: string;

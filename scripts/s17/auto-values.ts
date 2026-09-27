@@ -11,9 +11,9 @@
  *   npx tsx scripts/s17/auto-values.ts S17-01 S17-04    # named ids
  *   HARNESS_DIR=<dir> npx tsx scripts/s17/auto-values.ts
  *
- * These are a CROSS-CHECK, not the tuning input: `scripts/s17/browser-stats.ts`
- * runs the app's `sampleImageLuma` in Chromium, and its `<id>.browser.json` is the
- * authoritative record (maintainer decision 2026-09-27, plan Phase 1 note).
+ * These are a cross-check, not the tuning input. The tuning source is the app's
+ * `sampleImageLuma` measured in desktop Chrome 154, stored in
+ * `desktop-chrome-154.stats.json` (plan Phase 1 decision, revised 2026-09-27).
  */
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
