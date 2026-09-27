@@ -689,7 +689,7 @@ persisted parameters.
 
 #### Manual
 
-- [ ] 2.3 Premise gate: baseline ratings recorded and gate outcome written
+- [x] 2.3 Premise gate: baseline ratings recorded and gate outcome written
 - [x] 2.4 EXIF probe outcome recorded; separate change registered if Bread ignores EXIF
 - [x] 2.5 Gamma-0.9 probe outcome recorded
 - [x] 2.6 Post-pass flag state recorded from the served page
