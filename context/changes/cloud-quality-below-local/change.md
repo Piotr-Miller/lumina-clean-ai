@@ -274,6 +274,21 @@ What follows from it:
   change tied to S-13), the candidate models, and the roadmap and issue #203 updates. All are
   open, and none has been decided here.
 
+### Closure — 2026-09-28
+
+**Result:** The Bread calibration series has ended. Within the range tested, it produced no basis
+for a reliable Cloud Auto rule. Option B was chosen: a model comparison on `s17-v1`, with Bread at
+low gamma and weak denoise as one candidate. Phases 4–6 will not be carried out in this change.
+
+The range tested was gamma 0.5–1.5 at strength 0.05, plus gamma 0.5 at strength 0.0 on two
+photos, all on the six tuning photos. The trials show the limits of that range. They do not show
+that every future calibration is impossible.
+
+The comparison continues as the new change **`cloud-model-comparison`**, on the basic Cloud path.
+It keeps the `s17-v1` benchmark and its twelve unopened validation photos as the holdout. The
+candidate models and the comparison protocol are decided in that change. S-13 stays a separate
+Premium proposal. `cloud-exif-orientation` stays a separate change.
+
 ### Scope note
 
 ~~the evidence points at a colour transform somewhere in our own pipeline~~ —
