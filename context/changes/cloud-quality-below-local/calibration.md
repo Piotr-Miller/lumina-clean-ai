@@ -478,3 +478,82 @@ formula over the existing statistics could fix. Three things are **not** establi
 
 What follows is the maintainer's decision, recorded in `change.md` when made. Phases 4–6 of the
 plan assume a fitted rule and do not start from this state.
+
+## Phase 3 amendment — gamma below 0.9 (pre-registered 2026-09-28)
+
+Maintainer decision A, 2026-09-28 (`change.md` § Decision — 2026-09-28). Committed **before any
+output below 0.9 exists**. It supersedes, for exactly the two values below, the line in § Readings
+fixed now that says the sweep is not extended below 0.9. Everything else in the Phase 3 procedure
+stands.
+
+### A1 — Runs
+
+Strength `0.05`; gamma ∈ {`0.5`, `0.7`} on the six tuning photos (S17-01, 02, 03, 04, 07, 21):
+12 new direct runs, appended to the tuning run log labelled `P3-γlow`. Outputs:
+`test-photos/private/s17/direct/phase3/gamma-low/`. The existing ratings at `0.9`–`1.5` are not
+re-rated.
+
+**Acceptance of the value by the model** (as R3). The pinned version has output evidence only down
+to `0.9`:
+
+- _The prediction succeeds with an image_ → the output is rated (A2).
+- _Rejected as invalid input (HTTP 422, or a create-time validation error naming `gamma`)_ → that
+  value is not available; it is recorded, not rated, and the reading (A3) uses the values that
+  remain.
+- An infrastructure failure (network, 5xx, 429, timeout) is not a reading: retry up to twice and
+  log it.
+
+### A2 — Rating
+
+The maintainer rates each output against its original on the contact sheet, in the R1 categories.
+An agent's draft is not a rating until the maintainer adopts it. The basis is the original, **not**
+the `0.9` output:
+
+- the night character, the colours and the detail are kept, **and**
+- the result gives a useful gain in legibility.
+
+**Acceptable here means rated _improvement_ in the R1 sense.** "Less washed out than 0.9" is not
+enough. A darker result that is merely not worse than 0.9, or _no harm_ without a useful gain, is
+not acceptable for this amendment.
+
+### A3 — Reading
+
+For each photo, its acceptable values are the ones among {`0.5`, `0.7`, `0.9`} rated acceptable
+(S17-07's `0.9` rating, _improvement_, stands).
+
+- **Any photo with no acceptable value → stop.** Calibration ends here; the maintainer returns to
+  the B/C decision (`change.md`). Nothing is fitted and no strength is swept.
+- **All six photos have at least one acceptable value →** the P2 rules apply to the widened grid
+  (preferred value named by the maintainer, non-contiguous → back to the maintainer, a value between
+  two adjacent acceptable swept values counts as acceptable). Phase 3 resumes at **P3 (strength
+  sweep)** at each photo's preferred gamma.
+- **Acceptable at `0.5`, the lowest value** → recorded as _open below 0.5_. S-17 does not go lower.
+
+Resuming P3 is **not** evidence that Auto can set gamma per photo. The P4 stop condition — one rule
+over the existing `LumaStats` fields inside every photo's range — is untouched and still decides.
+
+### A4 — Consequences for later rows if Phase 3 resumes
+
+- **P4 bounds:** gamma ≥ the lowest value with output evidence that was run here (`0.5`, or `0.7`
+  if `0.5` was rejected), instead of `0.9`.
+- **P7 floor:** the Phase 4 floor (`PARAM_RANGES.cloud.gamma.min` and the zod minimum in
+  `photo-job.schema.ts`) is the rule's own lower bound, never below that same value. The slider
+  range widens with it (plan Phase 4 § 2).
+- **P6:** photos whose fitted gamma is below 1.0 follow the existing sub-1.0 app-path rule.
+
+### A5 — Commands
+
+As § P1 commands (same `run()` helper and `PHOTO` map), with:
+
+```bash
+export OUT_DIR=test-photos/private/s17/direct/phase3/gamma-low
+mkdir -p "$OUT_DIR/logs"
+for id in S17-01 S17-02 S17-03 S17-04 S17-07 S17-21; do
+  for g in 0.5 0.7; do
+    GAMMA=$g STRENGTH=0.05 run "P3glow-$id-g$g" "${PHOTO[$id]}" || echo "UNRESOLVED: $id gamma $g"
+  done
+done
+
+python3 scripts/s17/contact-sheet.py --name phase3-gamma-low --markdown \
+  --run test-photos/private/s17/direct/phase3/gamma --run "$OUT_DIR"
+```

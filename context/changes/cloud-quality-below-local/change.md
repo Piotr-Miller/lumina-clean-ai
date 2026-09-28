@@ -181,6 +181,25 @@ pre-registered **stop condition**. No strength sweep was run, no rule was fitted
 do not start from this state. Not measured: gamma below 0.9, other strengths, and the post-passed
 download. **Next step is the maintainer's decision.**
 
+### Decision — 2026-09-28
+
+**Option A.** Maintainer's wording: _Wybieram wariant A: dodatkową próbę gamma 0.5 i 0.7 przy
+strength 0.05 na sześciu zdjęciach tuningowych, z zasadami oceny zapisanymi przed uruchomieniami.
+Fazy 4–6 pozostają wstrzymane do oceny wyników._
+
+Why: across the sweep every step up in gamma brightened every photo, and nothing below 0.9 has
+been run. That makes a lower value the obvious next test. It does not promise an improvement.
+
+The evaluation rules are pre-registered in `calibration.md` § Phase 3 amendment. A result must be
+acceptable against the original, not just less washed out than 0.9. If **any** tuning photo still
+has no acceptable value, calibration stops and the decision returns to B/C. If all six do, the
+strength sweep resumes. That still does not show that gamma can be set automatically.
+
+- **B** (the stop as evidence against Bread; reopens S-13) comes next if A fails.
+- **C** (exposure compensation after Bread) needs its own check first. Darkening may fix the
+  brightness, but it cannot recover detail or colour Bread already lost.
+- `cloud-exif-orientation` is planned in parallel. It does not depend on A/B/C and gates Phase 5.
+
 ### Scope note
 
 ~~the evidence points at a colour transform somewhere in our own pipeline~~ —
