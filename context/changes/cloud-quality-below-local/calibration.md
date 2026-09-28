@@ -624,3 +624,63 @@ start. The decision returns to the maintainer (B/C, `change.md`).
   shows no gain from the tested Bread settings (gamma 0.5–1.5 at strength 0.05). It does not show
   that S17-02 cannot benefit from any other processing.
 - Not measured, as before: other strengths, and the post-passed download.
+
+## Strength-0 probe (pre-registered 2026-09-28)
+
+A separate scope extension after the second stop, by maintainer decision on 2026-09-28. It is
+**not** a resumption of Phase 3. Both stops (§ Phase 3 — results, § Phase 3 amendment — results)
+stay valid, and Phases 4–6 remain on hold. Committed **before any strength-0 output exists**.
+
+**Hypothesis under test.** The smoothing harm at gamma 0.5 on S17-02 and S17-21 comes from Bread's
+denoise weight (strength 0.05), not from the gamma lift.
+
+### S1 — Runs
+
+Gamma `0.5`, strength `0.0` on **S17-02 and S17-21 only**: 2 direct runs, appended to the tuning
+run log labelled `S0`. Outputs: `test-photos/private/s17/direct/strength0/`.
+
+- _The prediction succeeds with an image_ → rated (S2). Strength 0.0 is inside the model's contract
+  (`PARAM_RANGES.cloud.strength`, 0.0–0.2), but it has not been run before.
+- _Rejected as invalid input_ → recorded, not rated; the probe ends without a reading.
+- An infrastructure failure (network, 5xx, 429, timeout) is not a reading: retry up to twice.
+
+Not known and not measured here: whether strength 0.0 disables Bread's denoising entirely.
+
+### S2 — Rating
+
+Three images per photo at the same scale: the original, the gamma-0.5 / strength-0.05 output
+(`P3-γlow`), and the new strength-0.0 output. The maintainer rates two things **separately**; an
+agent's draft is not a rating until the maintainer adopts it:
+
+- **Texture** against the original: _kept_ / _smoothed_ (where).
+- **Overall** against the original, in the R1 categories: _improvement_ / _no harm_ / _harm_ (kind
+  named), with A2's basis. The night character, colours and detail are kept, **and** there is a
+  useful gain in legibility.
+
+The disappearance of smoothing alone is **not** an improvement.
+
+### S3 — Reading, per photo
+
+- **harm** → the evidence for B (reopening the model comparison) gets stronger.
+- **no harm** → no advantage for Cloud is shown. It does not count toward B, and it does not count
+  against B.
+- **improvement** → a basis for **considering** new scope (e.g. a lower-denoise Cloud setting).
+  It is only that: two photos do not settle S17-04, and they do not resume automatic calibration.
+
+This probe does not gate B. B may be chosen as a product decision without it. C is deferred:
+correcting brightness does not restore lost texture.
+
+### S4 — Commands
+
+As § P1 commands (same `run()` helper and `PHOTO` map), with:
+
+```bash
+export OUT_DIR=test-photos/private/s17/direct/strength0
+mkdir -p "$OUT_DIR/logs"
+for id in S17-02 S17-21; do
+  GAMMA=0.5 STRENGTH=0.0 run "S0-$id" "${PHOTO[$id]}" || echo "UNRESOLVED: $id"
+done
+
+python3 scripts/s17/contact-sheet.py --name strength0 \
+  --run test-photos/private/s17/direct/phase3/gamma-low --run "$OUT_DIR" S17-02 S17-21
+```
