@@ -242,6 +242,38 @@ The result supports the view that strength 0.05 contributes to the texture loss.
 that strength 0 turns denoising off. S17-04 is unresolved, both stops stand, and Phases 4–6 remain
 on hold. **Next step: the maintainer's decision — B, the new scope, or both.**
 
+### Decision — B (2026-09-28)
+
+Maintainer's wording: _Decyzja: B. Zamykamy serię eksperymentów kalibracyjnych S-17 i wybieramy
+porównanie modeli na s17-v1. Bread z niską gammą i słabym odszumianiem pozostaje kandydatem;
+osobnego zakresu Cloud nie wdrażamy. Fazy 4–6 obecnego planu pozostają wstrzymane. Wyniki
+tuningowe służą do przygotowania kandydatów, a ocena ich uogólnienia wymaga zachowania oddzielnego
+holdoutu._
+
+This decides the direction of further work. It does **not** claim that another model has already
+proven better.
+
+Why:
+
+- Across the three probes, Bread gave a gain on **four of six** tuning photos, two of them small:
+  S17-01 and S17-03 at 0.5 / 0.05, S17-07 at 0.5–0.9, and S17-21 at 0.5 / 0.0. That is enough to
+  keep Bread in the comparison.
+- There is still no basis for a reliable Auto rule. The best setting differs from photo to photo,
+  S17-04 needed no correction, and S17-02 is harmed even at strength 0.
+
+What follows from it:
+
+- The calibration experiments are closed. Cloud Auto is not recalibrated, and the lower-denoise
+  Cloud setting is **not** shipped as separate scope. It stays a hypothesis, tested as one
+  candidate in the comparison.
+- Phases 4–6 of `plan.md` remain on hold.
+- **Holdout.** Every result so far comes from the six tuning photos and is used only to prepare
+  candidates. The twelve validation photos of `s17-v1` stay unopened for every model. Judging how
+  well a candidate generalises requires that separate holdout.
+- Still needed before the comparison is planned: which change carries it (S-17 reframed, or a new
+  change tied to S-13), the candidate models, and the roadmap and issue #203 updates. All are
+  open, and none has been decided here.
+
 ### Scope note
 
 ~~the evidence points at a colour transform somewhere in our own pipeline~~ —
