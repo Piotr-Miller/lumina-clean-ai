@@ -334,7 +334,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Phase:** `phase:post-mvp`
 - **Outcome:** the basic Cloud path's model is chosen from a comparison on the frozen `s17-v1` benchmark, judged against the agreed quality bar on a holdout no candidate was tuned on.
 - **Change ID:** cloud-model-comparison
-- **GitHub issue:** not created yet
+- **GitHub issue:** [#271](https://github.com/Piotr-Miller/lumina-clean-ai/issues/271)
 - **PRD refs:** MVP Success Criteria ("cloud result is noticeably better than local"); the two-engine Strategy toggle (S-01, S-04)
 - **Prerequisites:** S-17 (closed 2026-09-28 with decision B). In-app runs of phone photos also need `cloud-exif-orientation` in production.
 - **Scope:** candidates for the **basic** Cloud path. Bread at low gamma and weak denoise is one candidate. The lower-denoise Cloud setting is a hypothesis to test here, not scope to ship. Candidates are prepared on the six tuning photos only; the twelve validation photos stay unopened until the comparison runs. Quality bar: `context/archive/2026-08-31-cloud-quality-below-local/quality-bar.md`.
@@ -364,7 +364,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-16       | atomic-cloud-daily-cap            | Make the global Cloud AI daily cap atomic (FR-014 hard invariant)       | done                  | `phase:post-mvp`. Archived 2026-08-31 → `context/archive/2026-08-26-atomic-cloud-daily-cap/`. Issue #191.                                                                                                                        |
 | S-17       | cloud-quality-below-local         | Calibrate Cloud Auto exposure and verify quality against Local          | done                  | Archived 2026-09-28 → `context/archive/2026-08-31-cloud-quality-below-local/`. Issue #203.                                                                                                                                       |
 | S-18       | cloud-result-resolution-gap       | Cloud AI returns ~1.5 MP lossy JPEG where Local returns full resolution | done                  | Archived 2026-09-21 → `context/archive/2026-09-20-cloud-result-resolution-gap/`. Presentation half only; delivery half Parked pending S-19. Issue #238.                                                                          |
-| S-19       | cloud-model-comparison            | Compare Cloud AI model candidates on the s17-v1 benchmark               | no                    | `phase:post-mvp`. Decision B of S-17 (2026-09-28). Change folder exists. Next: `/10x-research cloud-model-comparison`. No issue yet.                                                                                             |
+| S-19       | cloud-model-comparison            | Compare Cloud AI model candidates on the s17-v1 benchmark               | no                    | `phase:post-mvp`. Decision B of S-17 (2026-09-28). Change folder exists. Next: `/10x-research cloud-model-comparison`. Issue #271.                                                                                               |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 
