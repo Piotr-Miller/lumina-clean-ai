@@ -129,7 +129,7 @@ repo. They can be deleted manually at any time.
 | S-14       | [#61](https://github.com/Piotr-Miller/lumina-clean-ai/issues/61)   | `premium-max-tier`                  | proposed | `roadmap` `slice` `status:proposed` `phase:post-mvp`    |
 | S-15       | [#96](https://github.com/Piotr-Miller/lumina-clean-ai/issues/96)   | `localization`                      | ready    | `roadmap` `slice` `status:ready` `phase:post-mvp`       |
 | S-16       | [#191](https://github.com/Piotr-Miller/lumina-clean-ai/issues/191) | `atomic-cloud-daily-cap`            | done     | `bug` `status:ready`                                    |
-| S-17       | [#203](https://github.com/Piotr-Miller/lumina-clean-ai/issues/203) | `cloud-quality-below-local`         | ready    | `bug` `status:proposed` `phase:post-mvp`                |
+| S-17       | [#203](https://github.com/Piotr-Miller/lumina-clean-ai/issues/203) | `cloud-quality-below-local`         | done     | `bug` `status:proposed` `phase:post-mvp`                |
 | S-18       | [#238](https://github.com/Piotr-Miller/lumina-clean-ai/issues/238) | `cloud-result-resolution-gap`       | done     | `bug` `roadmap` `slice` `status:ready` `phase:post-mvp` |
 | — (change) | [#182](https://github.com/Piotr-Miller/lumina-clean-ai/issues/182) | `developer-feedback`                | proposed | `enhancement` `status:proposed` `phase:post-mvp`        |
 | — (change) | [#188](https://github.com/Piotr-Miller/lumina-clean-ai/issues/188) | `local-engine-ceiling`              | proposed | `enhancement` `status:proposed` `phase:post-mvp`        |

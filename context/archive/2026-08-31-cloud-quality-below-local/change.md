@@ -1,10 +1,11 @@
 ---
 change_id: cloud-quality-below-local
 title: Calibrate Cloud Auto exposure and verify quality against Local
-status: implementing
+status: archived
+outcome: completed
 created: 2026-08-31
 updated: 2026-09-28
-archived_at: null
+archived_at: 2026-09-28T18:47:39Z
 ---
 
 ## Notes
