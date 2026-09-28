@@ -206,6 +206,8 @@ give the same numbers. Originals, for reference: V ≥ 0.90 is 2.3 % (S17-01), 0
 | P3-γlow `jsp45s4q09rgc0d0x4gsr6jwdm` | S17-07 | 0.7 / 0.05       | 1536 × 1024 | `54a111f52d5c…` |    5.7 % |     3.9 % | 0.297 0.222 0.153 | improvement                   |
 | P3-γlow `2exhgv88gsrgc0d0x4hbsbzg78` | S17-21 | 0.5 / 0.05       | 1528 × 1016 | `9ab77678db25…` |    0.2 % |     0.0 % | 0.203 0.196 0.307 | harm: washed out, smoothing   |
 | P3-γlow `hjzsb81x49rg80d0x4h983zz6c` | S17-21 | 0.7 / 0.05       | 1528 × 1016 | `c0f2a60c28d7…` |    0.3 % |     0.1 % | 0.286 0.278 0.427 | harm: washed out, cast        |
+| S0 `4rv5crz67srga0d0x52bn22gmm`      | S17-02 | 0.5 / 0.0        | 1536 × 888  | `7ff439bbd1f5…` |    0.5 % |     0.0 % | 0.398 0.416 0.369 | harm: smoothing (mild)        |
+| S0 `g639rw240xrge0d0x53s0f7mfc`      | S17-21 | 0.5 / 0.0        | 1528 × 1016 | `225d3acc4ff4…` |    0.2 % |     0.0 % | 0.211 0.204 0.316 | improvement (small)           |
 
 Parameters above are rounded for display; the exact values sent are in § R1 and in each run
 record. The full sha256 of every output is in its run record.
@@ -684,3 +686,46 @@ done
 python3 scripts/s17/contact-sheet.py --name strength0 \
   --run test-photos/private/s17/direct/phase3/gamma-low --run "$OUT_DIR" S17-02 S17-21
 ```
+
+## Strength-0 probe — results
+
+### S1 — Runs (2026-09-28, ≈ 18:29 UTC)
+
+The pinned version accepted strength 0.0, and both predictions succeeded on the first attempt. The
+first one waited 146 s for the model to start. Rows are labelled `S0` in the tuning run log. The
+contact sheet `test-photos/private/s17/sheets/strength0/` shows the original with 0.5/0.05,
+0.7/0.05 and 0.5/0.0. Separate 1:1 crops (original | 0.05 | 0.0) of the shore and grass (S17-02)
+and of the ridges and the forested valley (S17-21) were made for the texture rating; they are not
+kept.
+
+### S2 — Maintainer ratings (2026-09-28)
+
+An agent drafted the ratings. The maintainer viewed the full images on the sheet and both 1:1
+crops per photo, and agreed with the draft's categories. The wording below was drafted by a model;
+the maintainer confirmed it as their own rating.
+
+| Photo  | Texture vs the original                                                                                                                                                                       | Overall vs the original                                                                                                                                                                                                                                                              |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| S17-02 | **Smoothed.** The fine texture of the grass and the shore still merges into soft patches. Better than at 0.05, but thin blades and ground unevenness are less separated than in the original. | **Harm: excessive smoothing, mild.** The brightening gives no useful gain in legibility that would balance the loss of texture.                                                                                                                                                      |
+| S17-21 | **Kept**, at the rated scale. The texture of the forested slopes and the thin branches stay close to the original. The blur seen at 0.05 clearly recedes.                                     | **Improvement, small.** The surface of the forested slopes and the layout of the valley are easier to read in the lower part of the frame. The lights keep their character and the scene still looks like night. A lifted, slightly hazy tone remains on the far ridges and the sky. |
+
+S17-21 is rated _improvement_ because it reveals legible terrain texture that was lost in shadow in
+the original. Reversing the smoothing seen at 0.05 would not by itself have been enough for that
+rating.
+
+**Observation outside the pre-registered rules — not a reading.** Mean edge energy, with the
+original resized to the output size: S17-02 original 15.02, 0.05 10.29, 0.0 11.60; S17-21 original
+6.94, 0.05 4.18, 0.0 6.71. The measure does not separate texture from noise.
+
+### S3 — Reading
+
+- **S17-02: harm** → the evidence for B gets stronger.
+- **S17-21: improvement** → a basis for **considering** new scope, a lower-denoise Cloud setting.
+  It is a basis only.
+
+On the hypothesis: S17-21 supports the view that strength 0.05 contributes to the texture loss. It
+does not show that strength 0.0 turns off all of Bread's denoising, and on S17-02 smoothing remains
+at 0.0.
+
+Unchanged: S17-04 is unresolved, both stops stand, calibration stays halted, and Phases 4–6 remain
+on hold. The next step is the maintainer's decision: B, the new scope, or both.

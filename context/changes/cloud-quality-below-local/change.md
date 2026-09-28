@@ -229,6 +229,19 @@ The probe is **not a precondition for B**. B, a renewed model comparison, can be
 product decision without proving that Bread fails at every setting. C stays deferred: brightness
 correction does not restore lost texture. Both stops stand, and Phases 4–6 remain on hold.
 
+### Strength-0 probe — result (2026-09-28)
+
+Gamma 0.5 with strength 0.0 (`calibration.md` § Strength-0 probe — results), by the maintainer's
+ratings:
+
+- **S17-02: harm.** Mild smoothing remains, with no useful gain. This strengthens B.
+- **S17-21: improvement, small.** Texture is kept, and terrain lost in shadow becomes legible.
+  This is a basis for considering a lower-denoise Cloud setting as new scope.
+
+The result supports the view that strength 0.05 contributes to the texture loss. It does not show
+that strength 0 turns denoising off. S17-04 is unresolved, both stops stand, and Phases 4–6 remain
+on hold. **Next step: the maintainer's decision — B, the new scope, or both.**
+
 ### Scope note
 
 ~~the evidence points at a colour transform somewhere in our own pipeline~~ —
