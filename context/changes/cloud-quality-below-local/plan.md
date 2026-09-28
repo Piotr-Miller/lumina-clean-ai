@@ -365,6 +365,8 @@ Bread output is what users receive, and the app-path check is skipped.
 Direct runs on the six tuning photos only. The maintainer chooses acceptable results, one rule over
 the existing stats is fitted inside them, and the S17-01 reference is accepted and frozen.
 
+**Amendment 2026-09-28 (maintainer decision A).** The sweep stopped at its stop condition with gamma ≥ 0.9. One extension is added: gamma 0.5 and 0.7 at strength 0.05 on the six tuning photos (12 runs). Its rules are pre-registered in `calibration.md` § Phase 3 amendment and committed before the runs. The floor in item 7 and in Phase 4 § 2 may then go below 0.9, but never below the lowest value with output evidence.
+
 **Entry gate** — do not start until 2.3 (premise gate: proceed), 2.4 (EXIF outcome) and 2.5 (gamma-0.9 outcome) are recorded, and 2.6 (the flag state) is written.
 
 ### Changes Required:
