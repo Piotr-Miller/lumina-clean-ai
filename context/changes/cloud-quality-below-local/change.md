@@ -213,6 +213,22 @@ A lower gamma helps some photos (S17-01, S17-03 at 0.5; S17-07 across 0.5–0.9)
 from any tested setting. Leaving such photos untouched is a hypothesis for a later stage, not a
 result. **Next step is the maintainer's B/C decision.**
 
+### Decision — strength-0 probe (2026-09-28)
+
+Before B: one probe at gamma 0.5 and strength 0.0 on S17-02 and S17-21 (2 runs). It tests one
+specific hypothesis: the smoothing harm comes from the denoise weight. Its rules are pre-registered
+in `calibration.md` § Strength-0 probe. Texture and overall gain are rated separately. The
+disappearance of smoothing alone is not an improvement.
+
+- **Harm** → stronger grounds for B.
+- **No harm** → no Cloud advantage shown.
+- **Improvement** → grounds to consider new scope. It does not resume calibration or settle
+  S17-04.
+
+The probe is **not a precondition for B**. B, a renewed model comparison, can be chosen as a
+product decision without proving that Bread fails at every setting. C stays deferred: brightness
+correction does not restore lost texture. Both stops stand, and Phases 4–6 remain on hold.
+
 ### Scope note
 
 ~~the evidence points at a colour transform somewhere in our own pipeline~~ —
