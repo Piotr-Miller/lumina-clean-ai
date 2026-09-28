@@ -200,6 +200,19 @@ strength sweep resumes. That still does not show that gamma can be set automatic
   brightness, but it cannot recover detail or colour Bread already lost.
 - `cloud-exif-orientation` is planned in parallel. It does not depend on A/B/C and gates Phase 5.
 
+### Phase 3 amendment — stop again (2026-09-28)
+
+The pre-registered probe at gamma 0.5 and 0.7 (strength 0.05) ran on all six tuning photos, and the
+model accepted both values. By the maintainer's ratings, **S17-02, S17-04 and S17-21 have no
+acceptable value**, 0.9 included (`calibration.md` § Phase 3 amendment — results). Under A3 that
+is the stop. **Calibration of Cloud Auto within Bread's gamma ends here**, with no strength sweep
+and no fitted rule. Phases 4–6 remain on hold.
+
+A lower gamma helps some photos (S17-01, S17-03 at 0.5; S17-07 across 0.5–0.9). On others, even
+0.5 veils or smooths the scene. Photos that need little brightening (S17-02, S17-04) gain nothing
+from any tested setting. Leaving such photos untouched is a hypothesis for a later stage, not a
+result. **Next step is the maintainer's B/C decision.**
+
 ### Scope note
 
 ~~the evidence points at a colour transform somewhere in our own pipeline~~ —

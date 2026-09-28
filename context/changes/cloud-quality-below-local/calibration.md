@@ -150,50 +150,62 @@ are over the whole frame; for these six photos the manifest ROI is the whole fra
 give the same numbers. Originals, for reference: V ≥ 0.90 is 2.3 % (S17-01), 0.4 % (02), 0.9 %
 (03), 7.7 % (04), 4.7 % (07) and 0.3 % (21).
 
-| Run                               | Photo  | Gamma / strength | Output (px) | Output sha256   | V ≥ 0.90 | Any = 255 | Mean RGB          | Maintainer rating             |
-| --------------------------------- | ------ | ---------------- | ----------- | --------------- | -------: | --------: | ----------------- | ----------------------------- |
-| R1 `gtgcyj2jvhrgc0d0wjst5eygmw`   | S17-01 | 1.5 / 0.1216     | 1536 × 1024 | `32df5342bd76…` |   77.1 % |    55.7 % | 0.727 0.879 0.615 | harm: washed out              |
-| R1 `67nd84tvrnrgc0d0wjtvaqx2c8`   | S17-02 | 1.0504 / 0.0588  | 1536 × 888  | `0736b27796cc…` |    3.6 % |     0.0 % | 0.629 0.646 0.599 | harm: washed out              |
-| R1 `m2pqem43pdrgc0d0wjtt27zv3m`   | S17-03 | 1.1881 / 0.0804  | 1536 × 1024 | `0de383cdadeb…` |    2.4 % |     0.0 % | 0.548 0.576 0.425 | harm: washed out              |
-| R1 `573pb9njdsrgc0d0wjtt8m4dhc`   | S17-04 | 1.1 / 0.1        | 1536 × 1152 | `cb4dac062e29…` |    9.2 % |     0.9 % | 0.503 0.487 0.457 | harm: washed out              |
-| R1 `n4q8teq03nrge0d0wjts7sdds0`   | S17-07 | 1.5 / 0.1824     | 1536 × 1024 | `795aee82def0…` |   66.6 % |    20.4 % | 0.865 0.825 0.706 | harm: washed out, lost detail |
-| R1 `v4skbbrkjxrga0d0wjv8kjh90c`   | S17-21 | 1.5 / 0.1510     | 1528 × 1016 | `f62d81862ce6…` |   83.4 % |    26.8 % | 0.872 0.865 0.894 | harm: washed out, lost detail |
-| R3 `55r485b78nrga0d0wjvaaw9rrg`   | S17-01 | 0.9 / 0.05       | 1536 × 1024 | `1cd590253d0f…` |    7.0 % |     2.2 % | 0.262 0.513 0.261 | —                             |
-| R3 `fs4wfw4m8srg80d0wjvadn47v8`   | S17-01 | 1.0 / 0.05       | 1536 × 1024 | `edec53305010…` |   15.2 % |     2.8 % | 0.323 0.584 0.306 | —                             |
-| P3-γ `7gdwtxqtfdrge0d0wkesg4w3ew` | S17-01 | 1.1 / 0.05       | 1536 × 1024 | `3d995cf0aac6…` |   31.1 % |     8.1 % | 0.398 0.659 0.357 | harm: washed out              |
-| P3-γ `f1qz149695rg80d0wkh9b2nhtr` | S17-01 | 1.2 / 0.05       | 1536 × 1024 | `9867e7caa639…` |   44.2 % |    18.4 % | 0.481 0.729 0.415 | harm: washed out              |
-| P3-γ `y359x6vmd1rg80d0wkh9cavk58` | S17-01 | 1.3 / 0.05       | 1536 × 1024 | `a460a64cf3be…` |   57.0 % |    32.0 % | 0.569 0.787 0.476 | harm: washed out              |
-| P3-γ `9d904wp0j5rge0d0wkhbmwan98` | S17-01 | 1.5 / 0.05       | 1536 × 1024 | `20fa39c38111…` |   76.8 % |    54.3 % | 0.716 0.877 0.595 | harm: washed out              |
-| P3-γ `4h8wvk0aj5rgc0d0wkhr5eg0fg` | S17-02 | 0.9 / 0.05       | 1536 × 888  | `3efd3aa1dfb1…` |    2.2 % |     0.0 % | 0.545 0.563 0.516 | harm: washed out              |
-| P3-γ `vwmq8etjnnrga0d0wkhvmhntew` | S17-02 | 1 / 0.05         | 1536 × 888  | `7310f6114d6c…` |    3.0 % |     0.0 % | 0.599 0.616 0.570 | harm: washed out              |
-| P3-γ `9xvxy1csj1rgc0d0wkhrh9z92m` | S17-02 | 1.1 / 0.05       | 1536 × 888  | `4cfe9186dcb9…` |    4.5 % |     0.0 % | 0.657 0.673 0.626 | harm: washed out              |
-| P3-γ `b31n6bq0csrgc0d0wkhv2q8p1m` | S17-02 | 1.2 / 0.05       | 1536 × 888  | `ae9d894a388d…` |   17.0 % |     0.0 % | 0.706 0.721 0.672 | harm: washed out              |
-| P3-γ `s0x4ae997srgc0d0wkjbachtvw` | S17-02 | 1.3 / 0.05       | 1536 × 888  | `4aef29e39fc7…` |   30.5 % |     0.0 % | 0.741 0.755 0.704 | harm: washed out              |
-| P3-γ `qy63sz3hanrgc0d0wkjam7jh3m` | S17-02 | 1.5 / 0.05       | 1536 × 888  | `07c50a8911ee…` |   51.7 % |     0.0 % | 0.794 0.806 0.754 | harm: washed out              |
-| P3-γ `7ywaz5dsjdrge0d0wkja66n0cg` | S17-03 | 0.9 / 0.05       | 1536 × 1024 | `0f221b0a157d…` |    0.2 % |     0.0 % | 0.388 0.418 0.280 | harm: washed out              |
-| P3-γ `mxv380g209rge0d0wkjsnqyfjc` | S17-03 | 1 / 0.05         | 1536 × 1024 | `b56f56052a83…` |    0.4 % |     0.0 % | 0.435 0.466 0.321 | harm: washed out              |
-| P3-γ `wqk7v9tehhrgc0d0wkjvdymds4` | S17-03 | 1.1 / 0.05       | 1536 × 1024 | `a3bc45f6bd82…` |    0.5 % |     0.0 % | 0.491 0.521 0.371 | harm: washed out              |
-| P3-γ `7kw54wcq3srga0d0wkjtm86qt8` | S17-03 | 1.2 / 0.05       | 1536 × 1024 | `ef3f1a714e9e…` |    2.5 % |     0.0 % | 0.554 0.582 0.430 | harm: washed out              |
-| P3-γ `ryvz0eq17drga0d0wkjvkr44xg` | S17-03 | 1.3 / 0.05       | 1536 × 1024 | `4b51d1059683…` |    9.9 % |     0.0 % | 0.620 0.644 0.492 | harm: washed out              |
-| P3-γ `20769cscgdrga0d0wkk8taea3m` | S17-03 | 1.5 / 0.05       | 1536 × 1024 | `ea3a3f653a3d…` |   34.9 % |     0.0 % | 0.734 0.757 0.606 | harm: washed out              |
-| P3-γ `g45qwxbms5rgc0d0wkk869cmbc` | S17-04 | 0.9 / 0.05       | 1536 × 1152 | `a84f66a5e5b5…` |    8.4 % |     0.8 % | 0.394 0.379 0.353 | harm: washed out              |
-| P3-γ `rpc63sdv4xrge0d0wkkan2jrjr` | S17-04 | 1 / 0.05         | 1536 × 1152 | `37dfe7bec649…` |    8.7 % |     0.8 % | 0.442 0.427 0.398 | harm: washed out              |
-| P3-γ `vnjzw7r0qhrgc0d0wkkt67st5c` | S17-04 | 1.1 / 0.05       | 1536 × 1152 | `f003db8d7909…` |    9.0 % |     0.8 % | 0.499 0.483 0.453 | harm: washed out              |
-| P3-γ `pq18qyt96hrge0d0wkkszryy7w` | S17-04 | 1.2 / 0.05       | 1536 × 1152 | `9b726967ed7f…` |   10.2 % |     0.9 % | 0.567 0.551 0.518 | harm: washed out              |
-| P3-γ `hh2s0f4pcdrgc0d0wkkvkpcmmg` | S17-04 | 1.3 / 0.05       | 1536 × 1152 | `4f286735a2c8…` |   37.5 % |     0.9 % | 0.632 0.615 0.582 | harm: washed out              |
-| P3-γ `jhg1ehyzy9rgc0d0wkksfmkacw` | S17-04 | 1.5 / 0.05       | 1536 × 1152 | `96f38ddf84fc…` |   50.5 % |     1.0 % | 0.704 0.688 0.653 | harm: washed out              |
-| P3-γ `x5jw1p975hrge0d0wkm897fy58` | S17-07 | 0.9 / 0.05       | 1536 × 1024 | `ab2118ce7729…` |    7.1 % |     4.7 % | 0.398 0.318 0.236 | improvement                   |
-| P3-γ `601y1mbkehrga0d0wkm93b1a9m` | S17-07 | 1 / 0.05         | 1536 × 1024 | `a7d81ea9be7d…` |    8.6 % |     5.3 % | 0.462 0.382 0.294 | harm: washed out              |
-| P3-γ `efc85axvk9rga0d0wkmbttn6bw` | S17-07 | 1.1 / 0.05       | 1536 × 1024 | `d38f2a407233…` |   11.5 % |     5.9 % | 0.536 0.457 0.363 | harm: washed out              |
-| P3-γ `wntpd68469rgc0d0wkmshc9d00` | S17-07 | 1.2 / 0.05       | 1536 × 1024 | `d877f4cfa3d4…` |   19.7 % |     7.3 % | 0.620 0.544 0.444 | harm: washed out              |
-| P3-γ `eydtbq2h1nrg80d0wkmsmtwzd4` | S17-07 | 1.3 / 0.05       | 1536 × 1024 | `96bb9fe9159e…` |   35.9 % |     9.3 % | 0.711 0.641 0.523 | harm: washed out              |
-| P3-γ `vxb0cwwqr5rg80d0wkmrpjfvwg` | S17-07 | 1.5 / 0.05       | 1536 × 1024 | `d15555d4498b…` |   65.2 % |    16.0 % | 0.858 0.814 0.672 | harm: washed out              |
-| P3-γ `ke92maf6z5rga0d0wkmtd0tjmm` | S17-21 | 0.9 / 0.05       | 1528 × 1016 | `13137e0ec6a0…` |    0.8 % |     0.1 % | 0.409 0.403 0.577 | harm: washed out              |
-| P3-γ `kysppe247hrg80d0wkn91xbt64` | S17-21 | 1 / 0.05         | 1528 × 1016 | `08dbac8af2be…` |    0.8 % |     0.1 % | 0.489 0.491 0.634 | harm: washed out              |
-| P3-γ `8qbdwacj99rga0d0wkn8m67ssm` | S17-21 | 1.1 / 0.05       | 1528 × 1016 | `6777cff0dbab…` |   21.0 % |     0.1 % | 0.592 0.593 0.701 | harm: washed out              |
-| P3-γ `hcgpa4q4w5rgc0d0wknb3xz3hr` | S17-21 | 1.2 / 0.05       | 1528 × 1016 | `9546923a99d0…` |   52.8 % |     0.3 % | 0.704 0.696 0.771 | harm: washed out              |
-| P3-γ `mg73y7hs5xrgc0d0wknt8ssy1g` | S17-21 | 1.3 / 0.05       | 1528 × 1016 | `3401831de8e6…` |   66.4 % |     0.6 % | 0.777 0.766 0.820 | harm: washed out              |
-| P3-γ `ttrfv8ccahrg80d0wknskg7anm` | S17-21 | 1.5 / 0.05       | 1528 × 1016 | `05a421c413b3…` |   83.1 % |    21.3 % | 0.865 0.858 0.890 | harm: washed out              |
+| Run                                  | Photo  | Gamma / strength | Output (px) | Output sha256   | V ≥ 0.90 | Any = 255 | Mean RGB          | Maintainer rating             |
+| ------------------------------------ | ------ | ---------------- | ----------- | --------------- | -------: | --------: | ----------------- | ----------------------------- |
+| R1 `gtgcyj2jvhrgc0d0wjst5eygmw`      | S17-01 | 1.5 / 0.1216     | 1536 × 1024 | `32df5342bd76…` |   77.1 % |    55.7 % | 0.727 0.879 0.615 | harm: washed out              |
+| R1 `67nd84tvrnrgc0d0wjtvaqx2c8`      | S17-02 | 1.0504 / 0.0588  | 1536 × 888  | `0736b27796cc…` |    3.6 % |     0.0 % | 0.629 0.646 0.599 | harm: washed out              |
+| R1 `m2pqem43pdrgc0d0wjtt27zv3m`      | S17-03 | 1.1881 / 0.0804  | 1536 × 1024 | `0de383cdadeb…` |    2.4 % |     0.0 % | 0.548 0.576 0.425 | harm: washed out              |
+| R1 `573pb9njdsrgc0d0wjtt8m4dhc`      | S17-04 | 1.1 / 0.1        | 1536 × 1152 | `cb4dac062e29…` |    9.2 % |     0.9 % | 0.503 0.487 0.457 | harm: washed out              |
+| R1 `n4q8teq03nrge0d0wjts7sdds0`      | S17-07 | 1.5 / 0.1824     | 1536 × 1024 | `795aee82def0…` |   66.6 % |    20.4 % | 0.865 0.825 0.706 | harm: washed out, lost detail |
+| R1 `v4skbbrkjxrga0d0wjv8kjh90c`      | S17-21 | 1.5 / 0.1510     | 1528 × 1016 | `f62d81862ce6…` |   83.4 % |    26.8 % | 0.872 0.865 0.894 | harm: washed out, lost detail |
+| R3 `55r485b78nrga0d0wjvaaw9rrg`      | S17-01 | 0.9 / 0.05       | 1536 × 1024 | `1cd590253d0f…` |    7.0 % |     2.2 % | 0.262 0.513 0.261 | —                             |
+| R3 `fs4wfw4m8srg80d0wjvadn47v8`      | S17-01 | 1.0 / 0.05       | 1536 × 1024 | `edec53305010…` |   15.2 % |     2.8 % | 0.323 0.584 0.306 | —                             |
+| P3-γ `7gdwtxqtfdrge0d0wkesg4w3ew`    | S17-01 | 1.1 / 0.05       | 1536 × 1024 | `3d995cf0aac6…` |   31.1 % |     8.1 % | 0.398 0.659 0.357 | harm: washed out              |
+| P3-γ `f1qz149695rg80d0wkh9b2nhtr`    | S17-01 | 1.2 / 0.05       | 1536 × 1024 | `9867e7caa639…` |   44.2 % |    18.4 % | 0.481 0.729 0.415 | harm: washed out              |
+| P3-γ `y359x6vmd1rg80d0wkh9cavk58`    | S17-01 | 1.3 / 0.05       | 1536 × 1024 | `a460a64cf3be…` |   57.0 % |    32.0 % | 0.569 0.787 0.476 | harm: washed out              |
+| P3-γ `9d904wp0j5rge0d0wkhbmwan98`    | S17-01 | 1.5 / 0.05       | 1536 × 1024 | `20fa39c38111…` |   76.8 % |    54.3 % | 0.716 0.877 0.595 | harm: washed out              |
+| P3-γ `4h8wvk0aj5rgc0d0wkhr5eg0fg`    | S17-02 | 0.9 / 0.05       | 1536 × 888  | `3efd3aa1dfb1…` |    2.2 % |     0.0 % | 0.545 0.563 0.516 | harm: washed out              |
+| P3-γ `vwmq8etjnnrga0d0wkhvmhntew`    | S17-02 | 1 / 0.05         | 1536 × 888  | `7310f6114d6c…` |    3.0 % |     0.0 % | 0.599 0.616 0.570 | harm: washed out              |
+| P3-γ `9xvxy1csj1rgc0d0wkhrh9z92m`    | S17-02 | 1.1 / 0.05       | 1536 × 888  | `4cfe9186dcb9…` |    4.5 % |     0.0 % | 0.657 0.673 0.626 | harm: washed out              |
+| P3-γ `b31n6bq0csrgc0d0wkhv2q8p1m`    | S17-02 | 1.2 / 0.05       | 1536 × 888  | `ae9d894a388d…` |   17.0 % |     0.0 % | 0.706 0.721 0.672 | harm: washed out              |
+| P3-γ `s0x4ae997srgc0d0wkjbachtvw`    | S17-02 | 1.3 / 0.05       | 1536 × 888  | `4aef29e39fc7…` |   30.5 % |     0.0 % | 0.741 0.755 0.704 | harm: washed out              |
+| P3-γ `qy63sz3hanrgc0d0wkjam7jh3m`    | S17-02 | 1.5 / 0.05       | 1536 × 888  | `07c50a8911ee…` |   51.7 % |     0.0 % | 0.794 0.806 0.754 | harm: washed out              |
+| P3-γ `7ywaz5dsjdrge0d0wkja66n0cg`    | S17-03 | 0.9 / 0.05       | 1536 × 1024 | `0f221b0a157d…` |    0.2 % |     0.0 % | 0.388 0.418 0.280 | harm: washed out              |
+| P3-γ `mxv380g209rge0d0wkjsnqyfjc`    | S17-03 | 1 / 0.05         | 1536 × 1024 | `b56f56052a83…` |    0.4 % |     0.0 % | 0.435 0.466 0.321 | harm: washed out              |
+| P3-γ `wqk7v9tehhrgc0d0wkjvdymds4`    | S17-03 | 1.1 / 0.05       | 1536 × 1024 | `a3bc45f6bd82…` |    0.5 % |     0.0 % | 0.491 0.521 0.371 | harm: washed out              |
+| P3-γ `7kw54wcq3srga0d0wkjtm86qt8`    | S17-03 | 1.2 / 0.05       | 1536 × 1024 | `ef3f1a714e9e…` |    2.5 % |     0.0 % | 0.554 0.582 0.430 | harm: washed out              |
+| P3-γ `ryvz0eq17drga0d0wkjvkr44xg`    | S17-03 | 1.3 / 0.05       | 1536 × 1024 | `4b51d1059683…` |    9.9 % |     0.0 % | 0.620 0.644 0.492 | harm: washed out              |
+| P3-γ `20769cscgdrga0d0wkk8taea3m`    | S17-03 | 1.5 / 0.05       | 1536 × 1024 | `ea3a3f653a3d…` |   34.9 % |     0.0 % | 0.734 0.757 0.606 | harm: washed out              |
+| P3-γ `g45qwxbms5rgc0d0wkk869cmbc`    | S17-04 | 0.9 / 0.05       | 1536 × 1152 | `a84f66a5e5b5…` |    8.4 % |     0.8 % | 0.394 0.379 0.353 | harm: washed out              |
+| P3-γ `rpc63sdv4xrge0d0wkkan2jrjr`    | S17-04 | 1 / 0.05         | 1536 × 1152 | `37dfe7bec649…` |    8.7 % |     0.8 % | 0.442 0.427 0.398 | harm: washed out              |
+| P3-γ `vnjzw7r0qhrgc0d0wkkt67st5c`    | S17-04 | 1.1 / 0.05       | 1536 × 1152 | `f003db8d7909…` |    9.0 % |     0.8 % | 0.499 0.483 0.453 | harm: washed out              |
+| P3-γ `pq18qyt96hrge0d0wkkszryy7w`    | S17-04 | 1.2 / 0.05       | 1536 × 1152 | `9b726967ed7f…` |   10.2 % |     0.9 % | 0.567 0.551 0.518 | harm: washed out              |
+| P3-γ `hh2s0f4pcdrgc0d0wkkvkpcmmg`    | S17-04 | 1.3 / 0.05       | 1536 × 1152 | `4f286735a2c8…` |   37.5 % |     0.9 % | 0.632 0.615 0.582 | harm: washed out              |
+| P3-γ `jhg1ehyzy9rgc0d0wkksfmkacw`    | S17-04 | 1.5 / 0.05       | 1536 × 1152 | `96f38ddf84fc…` |   50.5 % |     1.0 % | 0.704 0.688 0.653 | harm: washed out              |
+| P3-γ `x5jw1p975hrge0d0wkm897fy58`    | S17-07 | 0.9 / 0.05       | 1536 × 1024 | `ab2118ce7729…` |    7.1 % |     4.7 % | 0.398 0.318 0.236 | improvement                   |
+| P3-γ `601y1mbkehrga0d0wkm93b1a9m`    | S17-07 | 1 / 0.05         | 1536 × 1024 | `a7d81ea9be7d…` |    8.6 % |     5.3 % | 0.462 0.382 0.294 | harm: washed out              |
+| P3-γ `efc85axvk9rga0d0wkmbttn6bw`    | S17-07 | 1.1 / 0.05       | 1536 × 1024 | `d38f2a407233…` |   11.5 % |     5.9 % | 0.536 0.457 0.363 | harm: washed out              |
+| P3-γ `wntpd68469rgc0d0wkmshc9d00`    | S17-07 | 1.2 / 0.05       | 1536 × 1024 | `d877f4cfa3d4…` |   19.7 % |     7.3 % | 0.620 0.544 0.444 | harm: washed out              |
+| P3-γ `eydtbq2h1nrg80d0wkmsmtwzd4`    | S17-07 | 1.3 / 0.05       | 1536 × 1024 | `96bb9fe9159e…` |   35.9 % |     9.3 % | 0.711 0.641 0.523 | harm: washed out              |
+| P3-γ `vxb0cwwqr5rg80d0wkmrpjfvwg`    | S17-07 | 1.5 / 0.05       | 1536 × 1024 | `d15555d4498b…` |   65.2 % |    16.0 % | 0.858 0.814 0.672 | harm: washed out              |
+| P3-γ `ke92maf6z5rga0d0wkmtd0tjmm`    | S17-21 | 0.9 / 0.05       | 1528 × 1016 | `13137e0ec6a0…` |    0.8 % |     0.1 % | 0.409 0.403 0.577 | harm: washed out              |
+| P3-γ `kysppe247hrg80d0wkn91xbt64`    | S17-21 | 1 / 0.05         | 1528 × 1016 | `08dbac8af2be…` |    0.8 % |     0.1 % | 0.489 0.491 0.634 | harm: washed out              |
+| P3-γ `8qbdwacj99rga0d0wkn8m67ssm`    | S17-21 | 1.1 / 0.05       | 1528 × 1016 | `6777cff0dbab…` |   21.0 % |     0.1 % | 0.592 0.593 0.701 | harm: washed out              |
+| P3-γ `hcgpa4q4w5rgc0d0wknb3xz3hr`    | S17-21 | 1.2 / 0.05       | 1528 × 1016 | `9546923a99d0…` |   52.8 % |     0.3 % | 0.704 0.696 0.771 | harm: washed out              |
+| P3-γ `mg73y7hs5xrgc0d0wknt8ssy1g`    | S17-21 | 1.3 / 0.05       | 1528 × 1016 | `3401831de8e6…` |   66.4 % |     0.6 % | 0.777 0.766 0.820 | harm: washed out              |
+| P3-γ `ttrfv8ccahrg80d0wknskg7anm`    | S17-21 | 1.5 / 0.05       | 1528 × 1016 | `05a421c413b3…` |   83.1 % |    21.3 % | 0.865 0.858 0.890 | harm: washed out              |
+| P3-γlow `tee2vzw6jdrga0d0x4e9jc8n2w` | S17-01 | 0.5 / 0.05       | 1536 × 1024 | `73fbb97874eb…` |    2.6 % |     1.1 % | 0.116 0.322 0.125 | improvement                   |
+| P3-γlow `2n9nv7n2d1rgc0d0x4fa98jbc0` | S17-01 | 0.7 / 0.05       | 1536 × 1024 | `e5c052b5e404…` |    3.4 % |     1.4 % | 0.173 0.401 0.182 | harm: washed out, smoothing   |
+| P3-γlow `pe6tt7zzehrgc0d0x4f8vgsk04` | S17-02 | 0.5 / 0.05       | 1536 × 888  | `b0d72b26eb27…` |    0.4 % |     0.0 % | 0.393 0.411 0.364 | harm: smoothing, washed out   |
+| P3-γlow `m59b94tw09rga0d0x4ft2axps0` | S17-02 | 0.7 / 0.05       | 1536 × 888  | `403c72f401b3…` |    1.1 % |     0.0 % | 0.457 0.475 0.428 | harm: washed out, smoothing   |
+| P3-γlow `vx1qcydszhrg80d0x4ftdckk0c` | S17-03 | 0.5 / 0.05       | 1536 × 1024 | `e82e6841839d…` |    0.1 % |     0.0 % | 0.263 0.293 0.174 | improvement (small)           |
+| P3-γlow `xv8r0t0r65rge0d0x4g875qvq8` | S17-03 | 0.7 / 0.05       | 1536 × 1024 | `20c96c766f0f…` |    0.2 % |     0.0 % | 0.314 0.344 0.217 | harm: washed out              |
+| P3-γlow `qg34r4bp85rgc0d0x4gbwbgkj8` | S17-04 | 0.5 / 0.05       | 1536 × 1152 | `925bbe49ff4a…` |    7.5 % |     0.7 % | 0.270 0.258 0.237 | no harm                       |
+| P3-γlow `wjtgs4prgsrga0d0x4g9c85g0c` | S17-04 | 0.7 / 0.05       | 1536 × 1152 | `3078b2be4996…` |    7.9 % |     0.7 % | 0.320 0.307 0.283 | harm: washed out              |
+| P3-γlow `97zqt51qzhrge0d0x4gtftz7aw` | S17-07 | 0.5 / 0.05       | 1536 × 1024 | `73904bcfd3d7…` |    5.1 % |     3.2 % | 0.225 0.159 0.102 | improvement                   |
+| P3-γlow `jsp45s4q09rgc0d0x4gsr6jwdm` | S17-07 | 0.7 / 0.05       | 1536 × 1024 | `54a111f52d5c…` |    5.7 % |     3.9 % | 0.297 0.222 0.153 | improvement                   |
+| P3-γlow `2exhgv88gsrgc0d0x4hbsbzg78` | S17-21 | 0.5 / 0.05       | 1528 × 1016 | `9ab77678db25…` |    0.2 % |     0.0 % | 0.203 0.196 0.307 | harm: washed out, smoothing   |
+| P3-γlow `hjzsb81x49rg80d0x4h983zz6c` | S17-21 | 0.7 / 0.05       | 1528 × 1016 | `c0f2a60c28d7…` |    0.3 % |     0.1 % | 0.286 0.278 0.427 | harm: washed out, cast        |
 
 Parameters above are rounded for display; the exact values sent are in § R1 and in each run
 record. The full sha256 of every output is in its run record.
@@ -557,3 +569,58 @@ done
 python3 scripts/s17/contact-sheet.py --name phase3-gamma-low --markdown \
   --run test-photos/private/s17/direct/phase3/gamma --run "$OUT_DIR"
 ```
+
+## Phase 3 amendment — results
+
+### A1 — Runs (2026-09-28, ≈ 17:44 UTC)
+
+The pinned version accepted both values: all 12 predictions succeeded through the upload path,
+with none rejected as invalid input. Nine needed one retry after HTTP 429. Replicate throttles the
+account to 6 creates a minute while the credit is under $5; that is infrastructure, not a reading.
+No run exceeded two retries. Rows are labelled `P3-γlow` in the tuning run log. The contact sheet
+`test-photos/private/s17/sheets/phase3-gamma-low/` also shows the phase 2 and phase 3 outputs for
+context. S17-06 in `phase2/` was skipped without being opened.
+
+### A2 — Maintainer ratings (2026-09-28)
+
+An agent drafted ratings from reduced 420 px previews. The maintainer then rated from the sheet
+itself, at the comparison images' resolution, and corrected that draft on S17-02, S17-04 and
+S17-21. The corrected wording was drafted by a model. The maintainer reviewed the images, agreed
+with every rating below and adopted them as their own. The basis is the original, per A2.
+
+| Photo  | Gamma 0.5                                                                                                                                                                                       | Gamma 0.7                                                                                                                              |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| S17-01 | **improvement.** The bench, clothing and vegetation are more legible and the night character is kept. Smoothing is visible, but the gain stays useful.                                          | **harm: washed out, excessive smoothing.** The raised sky background weakens the aurora's contrast; slope and vegetation lose texture. |
+| S17-02 | **harm: excessive smoothing, washed out.** The shore's texture is smoothed, the sky brightens and the aurora loses contrast. The original already shows the significant detail; no useful gain. | **harm: washed out, excessive smoothing.** A clear grey veil over the sky and flatter contrast, with the same loss of texture.         |
+| S17-03 | **improvement, small.** A less grainy sky and more legible water, with the rocks' structure and the night character kept. The gain comes mainly from denoising, not from brightening.           | **harm: washed out.** The brighter sky background weakens the separation of aurora and clouds; the scene loses depth.                  |
+| S17-04 | **no harm.** The lawn is revealed only slightly and the facade was already legible. A softer sky is no basis for _improvement_.                                                                 | **harm: washed out.** The grey sky starts to dominate, although the main subject did not need brightening.                             |
+| S17-07 | **improvement.** Face, clothing and pavement gain legibility; the neon light and the night character stay.                                                                                      | **improvement.** A larger gain in the shadows, still without harm outweighing it.                                                      |
+| S17-21 | **harm: washed out, excessive smoothing.** The valley is brighter, but a clear tonal veil appears; the ridges lose separation and the terrain its texture.                                      | **harm: washed out, unnatural cast.** A stronger blue-violet glow and haze flatten the mountains and the night scene.                  |
+
+### A3 — Reading: stop
+
+Acceptable values per photo, from {0.5, 0.7, 0.9} (the 0.9 ratings of § Phase 3 — results stand):
+
+| Photo  | Acceptable                                  |
+| ------ | ------------------------------------------- |
+| S17-01 | 0.5                                         |
+| S17-02 | **none**                                    |
+| S17-03 | 0.5                                         |
+| S17-04 | **none** (0.5 is _no harm_, excluded by A2) |
+| S17-07 | 0.5, 0.7, 0.9                               |
+| S17-21 | **none**                                    |
+
+**Three photos have no acceptable value, so the pre-registered stop applies.** Calibration ends.
+No strength sweep is run, no rule is fitted, nothing is extended below 0.5, and Phases 4–6 do not
+start. The decision returns to the maintainer (B/C, `change.md`).
+
+**What this does and does not show.**
+
+- A lower gamma removes the wash-out on some photos (S17-01, 03 at 0.5), but not on all. On
+  S17-02 and S17-21, even 0.5 veils and smooths the scene.
+- On S17-02 and S17-04 the original needed little or no brightening. For such photos no tested
+  Bread setting gives a useful gain.
+- Leaving such a photo unchanged is a plausible hypothesis for a later stage. This experiment only
+  shows no gain from the tested Bread settings (gamma 0.5–1.5 at strength 0.05). It does not show
+  that S17-02 cannot benefit from any other processing.
+- Not measured, as before: other strengths, and the post-passed download.
