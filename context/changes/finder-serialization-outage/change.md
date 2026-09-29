@@ -1,9 +1,9 @@
 ---
 change_id: finder-serialization-outage
 title: The ai-review finder stopped returning parseable output on 2026-09-20 — find out whether the incumbent is recoverable before paying for a replacement
-status: new
+status: implementing
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-29
 archived_at: null
 ---
 
@@ -48,6 +48,13 @@ current break is the same class, a provider pin or a `require_parameters` settin
 
 So the order is: establish whether this is the model or the route, and only then shop.
 
+> **Correction (2026-09-28, `frame.md`).** Neither cheap lever is available. `require_parameters:
+true` has been the production default since 2026-08-24 (`packages/code-reviewer/src/config.ts`)
+> and was in force for every failing run. OpenRouter Logs show Venice served `glm-4.6` on both
+> sides of the break, and it is the only endpoint advertising `structured_outputs`, so pinning it is
+> the status quo. Pinning any other provider means giving up schema enforcement. The failure is also
+> constant, not intermittent: 35/35 finder runs from 2026-09-20 to 2026-09-28.
+
 ### What the last cycle says about shopping, if it comes to that
 
 `context/archive/2026-08-10-finder-tool-loop-evals/decision.md` kept `glm-4.6` and declined
@@ -72,6 +79,36 @@ exists at all, at a 100% rate rather than 8.3%. **Schema reliability under repea
 outweigh recall in this cycle**, and a candidate's failures should be attributed to the model
 or to OpenRouter routing separately — otherwise a usable cheap model gets rejected for
 someone else's fault.
+
+### Owner decision (2026-09-28, after `frame.md`)
+
+**Direction: keep `glm-4.6`, carry the output format in the prompt, and parse on our side.**
+`frame.md` (Probe Results) is the evidence: Venice, the only endpoint OpenRouter routes `json_schema`
+to for this model, no longer applies `response_format`. A model swap stays the **fallback**, taken
+only if the gate below fails. A report to OpenRouter/Venice is prepared in parallel. It is not a
+dependency.
+
+Conditions the plan must meet:
+
+1. **The finalization is a separate request with neither `tools` nor `response_format`.** Verify it
+   on the request the SDK actually sends, not on the settings. The probe saw the last step come back
+   as a tool call although `prepareFinalStep` had set `activeTools: []`. Whether the SDK still sent
+   the tools is unverified, which is why "configured tool-less" is not evidence of "sent tool-less".
+2. **The tool-less finalization must cope with tool results in the history.** Either rewrite the
+   earlier tool calls and results as plain text, or verify that both Z.AI and Venice accept
+   tool-role messages in a request that declares no tools.
+3. **Strict validation after the parse.** Stripping a wrapper such as a markdown code fence is
+   allowed. Filling in missing data, or turning a failure into an empty findings list, is not. Allow
+   at most one format-repair attempt, then an explicit error.
+4. **Z.AI (first-party) is the first endpoint to test.** A request that Z.AI accepts proves the
+   endpoint is available, not that the finder is reliable on it.
+5. **A regression gate covering quality and cost:** repeats on PR #269's diff, a no-findings case,
+   and a live scratch PR. It measures the validation pass rate, how often repair is needed, finding
+   quality, cost and latency.
+
+**Correction to "no eval cycle is needed"** (Why the cheapest question comes first): that held only
+for a routing-only fix. This change alters the prompt and the finalization, and probably the
+provider, so a **bounded regression evaluation** is required. A full new-model comparison is not.
 
 ### Not in scope
 
