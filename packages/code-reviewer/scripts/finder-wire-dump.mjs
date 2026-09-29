@@ -176,7 +176,7 @@ function strictCheck(text) {
 // instead of silently ignoring it. Nothing else in the request changes.
 const REASONING_OFF = flag("--reasoning") === "off";
 // `--stage main` runs the 5 prompt-format calls; `--stage history` the 2+2.
-// Unset runs both (the run 1/2 protocol).
+// Unset runs both (the run 1/2 protocol), history only after >= 4/5 valid main calls.
 const STAGE = flag("--stage");
 // Cumulative spend limit in USD; a call is skipped when the worst case seen in
 // run 2 ($0.047) could push the running total past it.
@@ -266,6 +266,9 @@ async function live() {
   };
 
   // 1. The main probe: tool-less, no response_format, format in the prompt. 5 repeats.
+  // Counted so the automatic history stage below runs only after a passing main
+  // result (Amendment A2: "only if it passes 4/5"; impl-review F2).
+  let validMain = 0;
   if (STAGE === undefined || STAGE === "main") {
     for (let r = 1; r <= 5; r += 1) {
       if (!withinBudget(`prompt-format #${String(r)}`)) break;
@@ -275,7 +278,7 @@ async function live() {
           { role: "user", content: user },
         ],
       });
-      record("prompt-format", r, result);
+      if (record("prompt-format", r, result)?.valid === true) validMain += 1;
       // A2 control: call 1 decides whether the series continues.
       if (REASONING_OFF && r === 1) {
         const reason = result.error
@@ -294,6 +297,17 @@ async function live() {
     }
   }
   if (STAGE === "main") return;
+  // Without --stage the history calls ride on the main result, so a failed main
+  // series must not spend four more paid calls on a condition A2 leaves
+  // unmeasured. `--stage history` stays the explicit, separately authorized way
+  // to run them regardless.
+  if (STAGE === undefined && validMain < 4) {
+    console.log(
+      `HISTORY SKIPPED — main result ${String(validMain)}/5 valid, below the 4/5 that A2 requires; ` +
+        "run --stage history explicitly if a separate authorization covers it",
+    );
+    return;
+  }
 
   // 2. Condition 2: the same finalization after one getFileContext round trip,
   //    the history carried (a) as tool-role messages, (b) as plain text. The

@@ -236,7 +236,7 @@ measurement. Write the gate thresholds before any Phase 4 measurement.
 
 #### Automated Verification:
 
-- The wire table in `probe-phase0.md` was produced by the script (not written by hand): `node scripts/finder-wire-dump.mjs`
+- The wire table in `probe-phase0.md` was produced by the script (not written by hand): `npx tsx scripts/finder-wire-dump.mjs` (from `packages/code-reviewer`; plain `node` cannot load the script's `../src/*.ts` imports — impl-review F1, 2026-09-29)
 - `gate.md` holds the Pre-registration with all five gates and the baseline value: `grep -c "^- G[1-5]" context/changes/finder-serialization-outage/gate.md` = 5
 
 #### Manual Verification:
@@ -675,9 +675,9 @@ change are not comparable (Phase 5.3).
 
 #### Automated
 
-- [x] 1.1 `describeFinderStep` tests with provider and `finishReason`
-- [x] 1.2 `formatRejectedOutputLine` tests (cap, escaping, no text)
-- [x] 1.3 Lint and typecheck of `packages/code-reviewer`
+- [x] 1.1 `describeFinderStep` tests with provider and `finishReason` — 2e2ae19
+- [x] 1.2 `formatRejectedOutputLine` tests (cap, escaping, no text) — 2e2ae19
+- [x] 1.3 Lint and typecheck of `packages/code-reviewer` — 2e2ae19
 
 #### Manual
 
