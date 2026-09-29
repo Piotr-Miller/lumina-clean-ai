@@ -368,7 +368,29 @@ export interface FinderStepInfo {
    * table and goes stale; this is the figure the provider billed.
    */
   cost?: number;
+  /**
+   * The upstream OpenRouter routed the step to (e.g. `novita`, `venice`).
+   * Present only when the provider reported it: the 2026-09-20 outage could
+   * not be attributed to an endpoint from the run log because nothing
+   * recorded which one served each step (change `finder-serialization-outage`).
+   */
+  provider?: string;
+  /** How the step's generation ended, as the SDK reports it (`stop`, `tool-calls`, `length`, …). */
+  finishReason: string;
 }
+
+/**
+ * The serving upstream out of the provider's metadata bag, narrowed with the
+ * same discipline as `asStepCost` below. A missing, empty or non-string value
+ * is `undefined` — never `""` or `"unknown"`, which would read as a real slug.
+ */
+export const asStepProvider = (metadata: ProviderMetadata | undefined): string | undefined => {
+  const openrouter: unknown = metadata?.openrouter;
+  if (typeof openrouter !== "object" || openrouter === null) return undefined;
+  if (!("provider" in openrouter)) return undefined;
+  const provider: unknown = openrouter.provider;
+  return typeof provider === "string" && provider !== "" ? provider : undefined;
+};
 
 /**
  * Exact per-step cost out of the provider's metadata bag.
@@ -405,6 +427,7 @@ const asFileContextTarget = (input: unknown): { path: string; startLine?: number
 /** Extract the small per-step description from the SDK's step result. */
 export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
   const cost = asStepCost(step.providerMetadata);
+  const provider = asStepProvider(step.providerMetadata);
   return {
     fileContextCalls: step.toolCalls.flatMap((call) => {
       if (call.toolName !== "getFileContext") return [];
@@ -417,9 +440,11 @@ export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
       outputTokens: step.usage.outputTokens,
       totalTokens: step.usage.totalTokens,
     },
-    // Key absent rather than undefined-valued when the provider reported
+    // Keys absent rather than undefined-valued when the provider reported
     // nothing, matching the finderTelemetry convention below.
     ...(cost === undefined ? {} : { cost }),
+    ...(provider === undefined ? {} : { provider }),
+    finishReason: step.finishReason,
   };
 }
 

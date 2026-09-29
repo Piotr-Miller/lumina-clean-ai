@@ -109,8 +109,68 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
       ? "no getFileContext call"
       : info.fileContextCalls.map((call) => `getFileContext ${logSafePath(call.path)}${formatRange(call)}`).join(", ");
   const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} total=${tokenCount(info.usage.totalTokens)}`;
-  return `finder step ${String(index)}: ${calls} (${usage})`;
+  // The provider slug comes from the response, not from us — escaped like the
+  // path for the same reason. `?` when OpenRouter did not report one.
+  const route = `provider=${info.provider === undefined ? "?" : logSafePath(info.provider)} finish=${logSafePath(info.finishReason)}`;
+  return `finder step ${String(index)}: ${calls} (${usage}) ${route}`;
 };
+
+/** How much of a rejected model output reaches the log. */
+export const REJECTED_OUTPUT_CAP_CHARS = 2_000;
+export const REJECTED_OUTPUT_TRUNCATION_MARKER = "[...rejected output truncated at 2,000 chars]";
+
+// Visible escapes rather than logSafePath's "?": the rejected text is usually
+// multi-line JSON, and the reader needs to see where the lines broke. Either
+// way no control character reaches the log, so the untrusted text cannot
+// forge or restyle log lines.
+const escapeControl = (text: string): string =>
+  text.replace(/\p{Cc}/gu, (char) => {
+    if (char === "\n") return "\\n";
+    if (char === "\r") return "\\r";
+    if (char === "\t") return "\\t";
+    return `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`;
+  });
+
+const stringField = (error: object, key: string): string | undefined =>
+  key in error && typeof (error as Record<string, unknown>)[key] === "string"
+    ? ((error as Record<string, unknown>)[key] as string)
+    : undefined;
+
+/**
+ * The text a model produced and the pipeline rejected, as one stderr line —
+ * so an outage can be attributed from the run log alone (change
+ * `finder-serialization-outage`: 35 failed runs logged only "could not parse
+ * the response", never what the model had sent).
+ *
+ * Reads any error carrying a string `text` (`NoObjectGeneratedError` today),
+ * plus its `finishReason` and `provider` where present. `undefined` when the
+ * error carries no text — an abort or an auth error never produced output.
+ * An empty text is still reported: "the model sent nothing" is a finding.
+ *
+ * Labelled by the error's class, not by pass: the pipeline rethrows the raw
+ * error, and a `NoObjectGeneratedError` can come from the finder or the judge.
+ *
+ * The text is untrusted model output and the log is public: capped at
+ * REJECTED_OUTPUT_CAP_CHARS and control characters escaped. It goes to stderr
+ * only — never into comment.md or the step summary.
+ */
+export function formatRejectedOutputLine(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const text = stringField(error, "text");
+  if (text === undefined) return undefined;
+  const provider = stringField(error, "provider");
+  const finish = stringField(error, "finishReason");
+  let shown = text;
+  if (text.length > REJECTED_OUTPUT_CAP_CHARS) {
+    // Never end on half a surrogate pair.
+    shown = text.slice(0, REJECTED_OUTPUT_CAP_CHARS).replace(/[\uD800-\uDBFF]$/u, "");
+    shown += REJECTED_OUTPUT_TRUNCATION_MARKER;
+  }
+  const route = `provider=${provider === undefined || provider === "" ? "?" : escapeControl(provider)}, finish=${
+    finish === undefined ? "?" : escapeControl(finish)
+  }`;
+  return `rejected output (${escapeControl(errorLabel(error))}, ${route}, ${String(text.length)} chars): ${escapeControl(shown)}`;
+}
 
 // One stderr line for the whole third pass — in an Actions log this is the
 // only live evidence that the pass ran and what it cost. Cost is printed only
@@ -309,6 +369,10 @@ export async function runReviewCli(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     io.logError(message);
+    // stderr only: the rejected text is untrusted, so it stays out of the
+    // step summary below as well as out of comment.md.
+    const rejected = formatRejectedOutputLine(error);
+    if (rejected !== undefined) io.logError(rejected);
     const summaryPath = env.GITHUB_STEP_SUMMARY;
     if (summaryPath) io.appendFile(summaryPath, `\n## AI review failed\n\n${message}\n`);
     return 1;

@@ -55,6 +55,28 @@ public endpoint list for `z-ai/glm-4.6`: `z-ai`, `novita`, `deepinfra`, `venice`
 **Admission to production:** only endpoints that pass **all of G1–G4**. If none does, Phase 5 does not
 start: the finding goes into `change.md` and the owner decides on the fallback (a model swap).
 
+### Amendment G-A1 (2026-09-29, from plan-review F4, before any Phase 4 call)
+
+The 3× threshold and the G4 denominator are **unchanged**. This records context the verdict needs.
+
+- **Endpoint prices.** The G4 baseline was served by Venice (fp4). Per-token prices for `z-ai/glm-4.6`,
+  read 2026-09-29 from `https://openrouter.ai/api/v1/models/z-ai/glm-4.6/endpoints` (USD per million
+  tokens, prompt / completion; all four list `reasoning` as supported):
+
+  | Endpoint  | Quant | Prompt | Completion | vs Venice (prompt / completion) |
+  | --------- | ----- | ------ | ---------- | ------------------------------- |
+  | venice    | fp4   | 0.43   | 1.75       | 1.00× / 1.00×                   |
+  | deepinfra | fp4   | 0.50   | 2.00       | 1.16× / 1.14×                   |
+  | novita    | bf16  | 0.55   | 2.20       | 1.28× / 1.26×                   |
+  | z-ai      | fp4   | 0.60   | 2.20       | 1.40× / 1.26×                   |
+
+  Re-read the list immediately before the first Phase 4 call and note any change here, dated.
+
+- **A G4-only failure is an owner decision, not an automatic fallback.** An endpoint that passes G1–G3
+  and fails only G4 is reported to the owner with its measured median, its price ratio above, and the
+  fallback's known cost ratio (57.6× in the last cycle). It is not admitted to production without that
+  decision, and it does not by itself trigger a model swap.
+
 ## Results
 
 _Phase 4. Not measured yet._

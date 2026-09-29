@@ -22,7 +22,7 @@ only if the pre-registered gate in Phase 4 fails.
   that step still carries the assistant `tool_calls` and the `tool`-role results, though. This is the likely
   reason the probe's fifth step came back as a tool call with no tools declared (`frame.md`, Probe Results).
   That is inferred from static reading and not yet observed on the wire. Phase 0 observes it.
-- **The finder's envelope repair fills in data** (`src/output-repair.ts:279-291`): it adds a placeholder
+- **The finder's envelope repair fills in data** (`src/output-repair.ts:49-94`): it adds a placeholder
   summary to a bare array and maps `warning`→`major` and `observation`→`minor`. Owner condition 3 forbids
   both, and the user decided (2026-09-29) that only the wrapper may be stripped.
 - **Routing is shared.** `DEFAULT_PROVIDER_ROUTING = { require_parameters: true }` (`src/config.ts:105`) serves
@@ -43,15 +43,15 @@ only if the pre-registered gate in Phase 4 fails.
 
 ## Definitions
 
-| Term                          | Decided meaning                                                                                                                                                                                             | Origin                                                        | On degenerate data                                                                                                                                            | Verified by                                              |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Valid finder output           | Text that, after only the wrapper is removed, `JSON.parse`s and passes the **unchanged strict** `reviewResultSchema`                                                                                        | user (condition 3, 2026-09-29 answer)                         | A bare array, `path` instead of `file`, `severity: "WARNING"`, or a missing `summary` is **invalid**, never rescued on our side                               | Phase 2 parser tests                                     |
-| Wrapper                       | A markdown code fence around the object, or prose before or after exactly the object that `extractJsonObject` finds (first balanced top-level `{…}`)                                                        | user (condition 3: "a wrapper such as a markdown code fence") | Prose containing an example `{…}` before the real object → the first object is taken → strict validation fails → repair. There is no second guess on our side | Phase 2 parser tests                                     |
-| Filling in data               | Any change beyond removing the wrapper: a synthesized summary, renamed fields, mapped or lowercased enum values, dropped or added findings                                                                  | user                                                          | Every such case goes to the model repair and never to code                                                                                                    | Phase 2 parser tests (a negative test per former repair) |
-| No findings                   | The model explicitly returns `{"summary": "…", "findings": []}`                                                                                                                                             | user (condition 3: a failure is never an empty list)          | Prose such as "No issues found." without JSON is a **failure** → repair → `FinderOutputError`, never `findings: []`                                           | Phase 2 parser test and the Phase 4 no-findings case     |
-| Format repair                 | **One** extra request, with no tools and no `response_format`, carrying the rejected text and the validation errors and asking for the corrected object. At most one per finder pass                        | user (condition 3)                                            | The repair also returns prose → `FinderOutputError`                                                                                                           | Phase 2 test                                             |
-| Explicit error                | `FinderOutputError`, not retried by `withOneRetry`. Its message names the provider, the `finish_reason` and the validation error, and the CLI prints the rejected text (capped, control characters escaped) | user (2026-09-29 answer: terminal)                            | 429, 5xx and timeouts are **still** retried once                                                                                                              | Phase 2 retry test and the Phase 1 CLI test              |
-| Endpoint that passed the gate | An OpenRouter provider slug for `z-ai/glm-4.6` that met every Phase 4 threshold, measured pinned (`only: [slug]`, `allow_fallbacks: false`)                                                                 | user (routing decision 2026-09-29)                            | An endpoint not measured does not go on the list, even if it looks equivalent                                                                                 | Phase 4 `gate.md`, Phase 5 config test                   |
+| Term                          | Decided meaning                                                                                                                                                                                                                                                                                                                                                       | Origin                                                        | On degenerate data                                                                                                                                            | Verified by                                              |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Valid finder output           | Text that, after only the wrapper is removed, `JSON.parse`s and passes the **unchanged strict** `reviewResultSchema`                                                                                                                                                                                                                                                  | user (condition 3, 2026-09-29 answer)                         | A bare array, `path` instead of `file`, `severity: "WARNING"`, or a missing `summary` is **invalid**, never rescued on our side                               | Phase 2 parser tests                                     |
+| Wrapper                       | A markdown code fence around the object, or prose before or after exactly the object that `extractJsonObject` finds (first balanced top-level `{…}`)                                                                                                                                                                                                                  | user (condition 3: "a wrapper such as a markdown code fence") | Prose containing an example `{…}` before the real object → the first object is taken → strict validation fails → repair. There is no second guess on our side | Phase 2 parser tests                                     |
+| Filling in data               | Any change beyond removing the wrapper: a synthesized summary, renamed fields, mapped or lowercased enum values, dropped or added findings                                                                                                                                                                                                                            | user                                                          | Every such case goes to the model repair and never to code                                                                                                    | Phase 2 parser tests (a negative test per former repair) |
+| No findings                   | The model explicitly returns `{"summary": "…", "findings": []}`                                                                                                                                                                                                                                                                                                       | user (condition 3: a failure is never an empty list)          | Prose such as "No issues found." without JSON (no `{` in the text) is a **failure** → `FinderOutputError` **without a repair**, never `findings: []`          | Phase 2 parser test and the Phase 4 no-findings case     |
+| Format repair                 | **One** extra request, with no tools and no `response_format`, carrying **only** the rejected text and the validation error (no diff, no transcript), whose prompt asks for a format conversion and forbids adding, removing or changing findings. At most one per finder pass. Not attempted when the text contains no `{` or the finalization ended `finish=length` | user (condition 3; plan-review F1, 2026-09-29)                | The repair also returns prose → `FinderOutputError`. No `{`, or `finish=length` → `FinderOutputError` with `repaired: false`, zero repair requests            | Phase 2 test                                             |
+| Explicit error                | `FinderOutputError`, not retried by `withOneRetry`. Its message names the provider, the `finish_reason` and the validation error, and the CLI prints the rejected text (capped, control characters escaped)                                                                                                                                                           | user (2026-09-29 answer: terminal)                            | 429, 5xx and timeouts are **still** retried once                                                                                                              | Phase 2 retry test and the Phase 1 CLI test              |
+| Endpoint that passed the gate | An OpenRouter provider slug for `z-ai/glm-4.6` that met every Phase 4 threshold, measured pinned (`only: [slug]`, `allow_fallbacks: false`)                                                                                                                                                                                                                           | user (routing decision 2026-09-29)                            | An endpoint not measured does not go on the list, even if it looks equivalent                                                                                 | Phase 4 `gate.md`, Phase 5 config test                   |
 
 ## Desired End State
 
@@ -76,7 +76,7 @@ only if the pre-registered gate in Phase 4 fails.
   `@openrouter/ai-sdk-provider/dist/index.js:3649`.
 - The serving upstream is available as `providerMetadata.openrouter.provider`: `@openrouter/ai-sdk-provider/dist/index.js:3843`.
 - The provider settings support `order`, `only`, `ignore` and `allow_fallbacks` (`@openrouter/ai-sdk-provider/dist/index.d.ts:213-233`).
-- `extractJsonObject` (`src/output-repair.ts:341`) is already a correct wrapper-stripper (it respects strings
+- `extractJsonObject` (`src/output-repair.ts:134`) is already a correct wrapper-stripper (it respects strings
   and escapes and never returns a partial slice). The judge uses it and it stays.
 
 ## What We're NOT Doing
@@ -241,7 +241,7 @@ measurement. Write the gate thresholds before any Phase 4 measurement.
 
 #### Manual Verification:
 
-- The live Z.AI probe result is written down with the pre-registered clause verdict (GO / STOP) — owner acceptance
+- The live probe verdict is written down and accepted by the owner: conditional GO on Novita's A2 (4/5 with reasoning disabled); Z.AI unavailable (429), no verdict
 - The owner accepts the thresholds in `gate.md` before Phase 4
 
 **Implementation Note**: STOP from item 2 ends implementation after Phase 1. The following phases are not started without an owner decision.
@@ -313,7 +313,9 @@ we validate it strictly, allow one repair at most, and otherwise raise an explic
 `z.toJSONSchema(reviewResultSchema)`; the `severity` and `category` enum values spelled out; an explicit
 `findings: []` when there is nothing to report; no prose around it). Add `buildFinalizationPrompt(unit,
 transcript)`: the review unit and the gathering transcript as plain text, with `getFileContext` results in a
-`<file-context path="…">` fence. Add `buildFormatRepairPrompt(rejectedText, validationError)`.
+`<file-context path="…">` fence. Add `buildFormatRepairPrompt(rejectedText, validationError)`: a format conversion only. It carries the rejected text
+(fenced as untrusted) and the validation error, **not** the diff or the transcript, and instructs the model to
+re-emit the same findings in the schema without adding, removing or changing any (plan-review F1).
 
 **Contract**: The loop's instructions (`buildInstructions`) stay **unchanged**. The pre-registered sentence
 about comments rationalising a defect (`prompts.ts:75`) is not touched. The finalization prompt carries the same
@@ -341,7 +343,10 @@ becomes history, and the new one points to `frame.md`.
 `prepareFinalStep`. After the loop, `review()` builds the plain-text transcript from `result.steps` (the
 assistant text, each tool call as a line, each result in a fence) and makes the finalization call via
 `generateText` on the same model with **no** `tools` and **no** `output`. Then it runs `parseFinderOutput`. On
-failure it makes one repair call, parses again, and otherwise throws `FinderOutputError`. `normalizeFindings`
+failure it makes one repair call, parses again, and otherwise throws `FinderOutputError`. **No repair** when the
+rejected text contains no `{` or the finalization ended `finish=length`: those throw `FinderOutputError` with
+`repaired: false` straight away, so a prose or truncated answer can never become `findings: []` or a completed
+list (plan-review F1). `normalizeFindings`
 works as today on the valid result.
 
 **Contract**:
@@ -355,6 +360,13 @@ works as today on the valid result.
   documentation in `ReviewerOptions`, `PipelineInput` and in `evals/finder-provider.ts` (`repairs`) says so.
 - The finalization and repair calls report steps through the same `options.onStepEnd`.
 - One `AbortSignal` for the whole `review()` (`timeoutMs` combined with `abortSignal`), shared by all requests.
+- **Amendment A3 (2026-09-29, owner, from Phase 0 run 2 vs A2):** every finder request — each gathering-loop
+  step, the finalization and the format repair — carries `reasoning: {"enabled": false}` in the request body
+  (set once on the model as `extraBody: { reasoning: { enabled: false } }`, so it cannot be forgotten on one call.
+  Not the provider's typed `reasoning` setting: its type requires `max_tokens` or `effort`
+  (`@openrouter/ai-sdk-provider/dist/index.d.ts:388-395`), and `effort: "none"` is a different request from the
+  one A2 measured. `extraBody` is spread last into the body (`dist/index.js:3648`); wire test 2.1 pins it). Without
+  it glm-4.6 spent the whole 16,384-token budget on reasoning in 7/9 calls (Novita 1/5); with it, 4/5.
 - Without a `source` (tool-less reviewer) there is no loop: one finalization call straight on the prompt, with
   the same parser and repair.
 
@@ -400,8 +412,9 @@ never more on a format failure).
 #### Automated Verification:
 
 - Wire test: the finalization body has no `tools`/`tool_choice`/`response_format`/`role:"tool"`/`tool_calls`: `npm test -- reviewer`
+- Wire test (A3): **every** captured request body — loop steps, finalization and repair — carries `reasoning: {"enabled": false}` and `provider.require_parameters: true`: `npm test -- reviewer`
 - Parser tests: fence → valid; prose around the object → valid; bare array → invalid; `path` without `file` → invalid; `severity:"WARNING"` → invalid; missing `summary` → invalid; `"No issues found."` → invalid (never `findings: []`); `{"summary":"…","findings":[]}` → valid with an empty list; an example `{}` before the real object → invalid (goes to repair): `npm test -- output-repair`
-- Repair: a first invalid response + a valid repair → result, `onOutputRepair` called once; invalid + invalid → `FinderOutputError` with `repaired: true`, exactly 1 repair request: `npm test -- reviewer`
+- Repair: a first invalid response + a valid repair → result, `onOutputRepair` called once; invalid + invalid → `FinderOutputError` with `repaired: true`, exactly 1 repair request; `"No issues found."` (no `{`) and a `finish=length` response → `FinderOutputError` with `repaired: false` and **zero** repair requests; the repair request body contains the rejected text and not the diff: `npm test -- reviewer`
 - Retry: `FinderOutputError` is not retried by `withOneRetry` (exactly 1 pass); 429 is still retried: `npm test -- retry pipeline`
 - Telemetry: `finderTelemetry.steps` and `cost` include the finalization and the repair: `npm test -- pipeline`
 - Eval adapter: provider slugs and cost presence are recorded per step on success and error,
@@ -430,14 +443,21 @@ one endpoint at a time and production can run only on the measured ones.
 
 **File**: `packages/code-reviewer/src/config.ts`
 
-**Intent**: Add `DEFAULT_FINDER_PROVIDERS: readonly string[]` (initially `["z-ai"]`, the Phase 0 result;
-Phase 5 sets the final list) and `resolveFinderProviderRouting()` → `{ order, only, allow_fallbacks: true,
+**Intent**: Add `DEFAULT_FINDER_PROVIDERS: readonly string[]` (initially `["novita"]`, a **provisional
+Phase 0 probe result** — Novita passed only the A2 probe, 4/5 with reasoning disabled, and holds **no** G1–G4
+status; the value exists so local runs in Phases 2–3 do not default to Z.AI, which returned only 429s in
+Phase 0. Phase 5 replaces it) and `resolveFinderProviderRouting()` → `{ order, only, allow_fallbacks: true,
 require_parameters: true }`, with the env override `OPENROUTER_FINDER_PROVIDERS` (a comma-separated list;
 empty or malformed → the default, never unfiltered routing). `DEFAULT_PROVIDER_ROUTING` and its comment stay
 for the judge and impl-review, and the comment says the finder has its own.
 
-**Contract**: `require_parameters: true` now filters only on `tools` support, since there is no
+**Contract**: `require_parameters: true` now filters on `tools` and `reasoning` support, since there is no
 `response_format`. An explicit `providerRouting` in `ReviewerOptions` (campaign tooling) still wins.
+**Amendment A3 (2026-09-29, owner):** `require_parameters: true` stays on the finder's routing
+unconditionally. It is what refuses an endpoint that cannot honour `reasoning: {"enabled": false}` instead of
+letting it reason to the token cap, so `OPENROUTER_REQUIRE_PARAMETERS=false` no longer removes it from the
+finder (it still does for the judge and impl-review). This supersedes the Wiring contract below where the two
+disagree.
 
 #### 2. Wiring
 
@@ -448,13 +468,14 @@ The tests pin the literal `DEFAULT_FINDER_PROVIDERS` (the same pattern as `DEFAU
 and that the judge still gets `DEFAULT_PROVIDER_ROUTING`.
 
 **Contract**: `OPENROUTER_REQUIRE_PARAMETERS=false` still turns off `require_parameters` for the judge. For the
-finder it turns off only that one field, and `only` stays.
+finder it turns off only that one field, and `only` stays. _(Superseded by Amendment A3 above: the finder keeps
+`require_parameters: true` regardless of this variable.)_
 
 ### Success Criteria:
 
 #### Automated Verification:
 
-- Tests: default finder routing = `{order:["z-ai"], only:["z-ai"], allow_fallbacks:true, require_parameters:true}`; `OPENROUTER_FINDER_PROVIDERS="novita"` → `only:["novita"]`; `""` and `" , "` → the default; the judge unchanged: `npm test -- provider-routing config`
+- Tests: default finder routing = `{order:["novita"], only:["novita"], allow_fallbacks:true, require_parameters:true}` (provisional); `OPENROUTER_FINDER_PROVIDERS="deepinfra"` → `only:["deepinfra"]`; `""` and `" , "` → the default; `OPENROUTER_REQUIRE_PARAMETERS=false` leaves the finder's `require_parameters: true` in place (A3); the judge unchanged: `npm test -- provider-routing config`
 - `npm test`, `npm run lint`, `npm run typecheck` in `packages/code-reviewer`
 
 #### Manual Verification:
@@ -498,7 +519,17 @@ written after the fact and does not edit the Pre-registration.
 
 **Contract**: Every endpoint gets a verdict PASS/FAIL for each of G1–G4. Only endpoints that pass **all four**
 go into Phase 5's production list. **If no endpoint passes**: stop, record the finding in `change.md`, and the
-owner decides on the fallback (model swap).
+owner decides on the fallback (model swap). A failure on **G4 alone** does not trigger the fallback
+automatically: it goes to the owner together with the endpoint's per-token prices and the fallback's known cost
+ratio (57.6× last cycle), because the G4 baseline was priced at Venice fp4 rates (plan-review F4, gate.md
+Amendment G-A1).
+**Amendment A3 (2026-09-29, owner):** the gate measures the production request shape — `reasoning:
+{"enabled": false}` and `require_parameters: true` on every finder request — with each endpoint pinned in turn
+(Z.AI, Novita, DeepInfra, Venice). Every request records `reasoning_tokens`; a request that returns reasoning
+tokens or reasoning text means the parameter did not take effect, and that attempt counts as failed for G1–G4.
+An endpoint that refuses the request under `require_parameters` is recorded as "cannot honour the production
+shape" and does not pass. Phase 0's Novita result is not a gate result: which pinned endpoints pass the whole
+gate is decided here.
 
 ### Success Criteria:
 
@@ -507,8 +538,10 @@ owner decides on the fallback (model swap).
 - The JSONL files exist for **each candidate endpoint** × {#269 ×10, clean-change ×5}, with one
   record per attempt; the gate table reports every candidate's G1–G4 verdict.
 - From `packages/code-reviewer`, repeat for each candidate slug:
-  `OPENROUTER_FINDER_PROVIDERS="<slug>" npm run eval -- --env-file .env --no-cache --repeat 3 --filter-providers baseline-glm-4.6`.
-  Confirm that the 12 promptfoo rows have per-step provider metadata matching `<slug>`; a missing or
+  `OPENROUTER_FINDER_PROVIDERS="<slug>" npm run eval -- --env-file .env --no-cache --repeat 3 --filter-providers baseline-glm-4.6 --filter-pattern "^(Finds the material|React 16->19|Cross-hunk contract|Defect-free mechanical rename)"`.
+  The filter keeps the four archived cases; `promptfooconfig.yaml` now also has two hardening cases (#143) that
+  are not in the archived baseline and would make 18 rows. Each endpoint must yield **exactly 12** rows; any other
+  count is a failed run, not a gate result. Hardening cases, if run, are diagnostic only. Confirm that the 12 promptfoo rows have per-step provider metadata matching `<slug>`; a missing or
   mismatched slug is a failed gate, not an unmeasured success.
 
 #### Manual Verification:
@@ -532,8 +565,10 @@ corrected in one commit.
 
 **File**: `packages/code-reviewer/src/config.ts`, `src/config.test.ts`
 
-**Intent**: Set `DEFAULT_FINDER_PROVIDERS` to the list from `gate.md` (in order of the gate result, Z.AI first
-if it passed), with a comment pointing at `gate.md`.
+**Intent**: Replace the provisional `["novita"]` with **only** the endpoints that passed the full G1–G4 gate in
+Phase 4, each measured pinned on its own (in order of the gate result, Z.AI first if it passed), with a comment
+pointing at `gate.md`. Novita stays on the list only if it passes the gate itself; its Phase 0 probe result
+does not count. If no endpoint passed, Phase 5 does not run: STOP, per Phase 4's contract.
 
 **Contract**: The literal is pinned by the test. Changing it requires a measurement (the comment says so).
 
@@ -552,6 +587,8 @@ so the finder really runs. The whole review goes green, and the log has step lin
   re-roll a format error (one model repair, then an explicit error); the judge does as before.
 - `src/config.ts`, the `DEFAULT_PROVIDER_ROUTING` comment ("every STRUCTURED model call").
 - `src/reviewer.ts`, the `ReviewerOptions.providerRouting` doc.
+- `src/output-repair.ts`, the `repairParsedJudgeOutput` doc ("the same discipline as the finder's", `:169`): the
+  finder repair it points to is removed in Phase 2.
 - `evals/README.md`: the meaning of `repairs` and a note that the metrics before and after this change are not comparable.
 - The headers of `scripts/fabrication-probe.mjs` and `scripts/finder-distribution.mjs`: measurements taken
   before this change used `json_schema` on Venice.
@@ -591,7 +628,7 @@ so the finder really runs. The whole review goes green, and the log has step lin
 
 ### Manual Testing Steps:
 
-1. Phase 0: a live Z.AI probe with prompt-carried format, 5 repeats + 2×2 on the history.
+1. Phase 0 (done 2026-09-29, `probe-phase0.md`): the live probe with prompt-carried format, 5 repeats + 2×2 on the history. Z.AI returned HTTP 429 on every call (no verdict); Novita as registered 1/5 (reasoning ran to the token cap); Novita A2 with reasoning disabled 4/5 main and 4/4 history.
 2. A local CLI run on PR #269 (setup as in `frame.md`).
 3. The Phase 4 gate per `gate.md`.
 4. The live scratch PR.
@@ -626,21 +663,21 @@ change are not comparable (Phase 5.3).
 
 #### Automated
 
-- [x] 0.1 The wire table in `probe-phase0.md` was produced by the script
-- [x] 0.2 `gate.md` holds the Pre-registration with all five gates and the baseline
+- [x] 0.1 The wire table in `probe-phase0.md` was produced by the script — 6e37867
+- [x] 0.2 `gate.md` holds the Pre-registration with all five gates and the baseline — 6e37867
 
 #### Manual
 
-- [ ] 0.3 The live Z.AI probe result with the GO / STOP verdict
-- [ ] 0.4 The owner accepts the thresholds in `gate.md`
+- [x] 0.3 Conditional GO on Novita's A2 (4/5, reasoning disabled); Z.AI 429, no verdict
+- [x] 0.4 The owner accepts the thresholds in `gate.md`
 
 ### Phase 1: A failure that can be attributed from the log
 
 #### Automated
 
-- [ ] 1.1 `describeFinderStep` tests with provider and `finishReason`
-- [ ] 1.2 `formatRejectedOutputLine` tests (cap, escaping, no text)
-- [ ] 1.3 Lint and typecheck of `packages/code-reviewer`
+- [x] 1.1 `describeFinderStep` tests with provider and `finishReason`
+- [x] 1.2 `formatRejectedOutputLine` tests (cap, escaping, no text)
+- [x] 1.3 Lint and typecheck of `packages/code-reviewer`
 
 #### Manual
 
@@ -650,7 +687,7 @@ change are not comparable (Phase 5.3).
 
 #### Automated
 
-- [ ] 2.1 Wire test: a tool-less finalization with no `response_format` and no tool-role messages
+- [ ] 2.1 Wire test: a tool-less finalization with no `response_format` and no tool-role messages; `reasoning` disabled on every request (A3)
 - [ ] 2.2 Parser tests for every row of Definitions
 - [ ] 2.3 Repair tests: one repair, then `FinderOutputError`
 - [ ] 2.4 Retry tests: `FinderOutputError` terminal, 429 retried

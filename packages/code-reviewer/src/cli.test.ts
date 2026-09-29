@@ -1,8 +1,16 @@
 import { join } from "node:path";
 
+import { NoObjectGeneratedError } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
-import { runReviewCli, type CliEnv, type CliIo } from "./cli.js";
+import {
+  formatRejectedOutputLine,
+  REJECTED_OUTPUT_CAP_CHARS,
+  REJECTED_OUTPUT_TRUNCATION_MARKER,
+  runReviewCli,
+  type CliEnv,
+  type CliIo,
+} from "./cli.js";
 import type { PipelineInput } from "./pipeline.js";
 import { CRITERIA } from "./scorecard.js";
 import type { ImplGrades, PipelineResult, Scores } from "./schemas.js";
@@ -366,8 +374,10 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         fileContextCalls: [{ path: "src/a.ts", startLine: 10, endLine: 80 }],
         toolCalls: 1,
         usage: { inputTokens: 100, outputTokens: 10, totalTokens: 110 },
+        provider: "Novita",
+        finishReason: "tool-calls",
       });
-      input.onFinderStep?.({ fileContextCalls: [], toolCalls: 0, usage: {} });
+      input.onFinderStep?.({ fileContextCalls: [], toolCalls: 0, usage: {}, finishReason: "stop" });
       input.onFinderStep?.({
         fileContextCalls: [
           { path: "src/a.ts", startLine: 5 },
@@ -375,14 +385,17 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         ],
         toolCalls: 2,
         usage: { totalTokens: 50 },
+        provider: "Z.AI",
+        finishReason: "length",
       });
       return Promise.resolve(pipelineResult());
     });
     expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
     expect(io.errors).toEqual([
-      "finder step 1: getFileContext src/a.ts:10-80 (tokens in=100 out=10 total=110)",
-      "finder step 2: no getFileContext call (tokens in=? out=? total=?)",
-      "finder step 3: getFileContext src/a.ts:5-end, getFileContext src/a.ts:1-8 (tokens in=? out=? total=50)",
+      "finder step 1: getFileContext src/a.ts:10-80 (tokens in=100 out=10 total=110) provider=Novita finish=tool-calls",
+      // No provider reported → "?", never a guessed slug.
+      "finder step 2: no getFileContext call (tokens in=? out=? total=?) provider=? finish=stop",
+      "finder step 3: getFileContext src/a.ts:5-end, getFileContext src/a.ts:1-8 (tokens in=? out=? total=50) provider=Z.AI finish=length",
     ]);
   });
 
@@ -395,12 +408,14 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         fileContextCalls: [{ path: "src/a.ts\n\u001b[31mfinder step 99: forged\u007f" }],
         toolCalls: 1,
         usage: { totalTokens: 10 },
+        provider: "evil\nfinder step 98: forged",
+        finishReason: "stop",
       });
       return Promise.resolve(pipelineResult());
     });
     expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
     expect(io.errors).toEqual([
-      "finder step 1: getFileContext src/a.ts??[31mfinder step 99: forged? (tokens in=? out=? total=10)",
+      "finder step 1: getFileContext src/a.ts??[31mfinder step 99: forged? (tokens in=? out=? total=10) provider=evil?finder step 98: forged finish=stop",
     ]);
   });
 
@@ -561,5 +576,116 @@ describe("runReviewCli cost summary line (criterion 4.8)", () => {
     const io = fakeIo();
     await runReviewCli([], {}, io, okPipeline(pipelineResult()));
     expect(costLine(io)).toBeUndefined();
+  });
+});
+
+// The SDK's own error class, built the way generateText/ToolLoopAgent build it
+// when a structured output fails to parse — the shape every post-2026-09-20
+// finder failure took.
+const noObject = (text: string | undefined, finishReason: "stop" | "length" = "stop"): NoObjectGeneratedError =>
+  new NoObjectGeneratedError({
+    message: "No object generated: could not parse the response.",
+    text,
+    response: { id: "r", timestamp: new Date(0), modelId: "z-ai/glm-4.6" },
+    usage: {
+      inputTokens: undefined,
+      inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
+      outputTokens: undefined,
+      outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
+      totalTokens: undefined,
+    },
+    finishReason,
+  });
+
+describe("formatRejectedOutputLine", () => {
+  it("names the error class, the finish reason and the length, and shows the text", () => {
+    expect(formatRejectedOutputLine(noObject('Here is my review: {"summary": "x"}'))).toBe(
+      'rejected output (AI_NoObjectGeneratedError, provider=?, finish=stop, 35 chars): Here is my review: {"summary": "x"}',
+    );
+  });
+
+  it("reads provider and finishReason off any error that carries them (the Phase 2 finder error)", () => {
+    const error = Object.assign(new Error("format"), {
+      name: "FinderOutputError",
+      text: "prose",
+      provider: "Novita",
+      finishReason: "length",
+    });
+    expect(formatRejectedOutputLine(error)).toBe(
+      "rejected output (FinderOutputError, provider=Novita, finish=length, 5 chars): prose",
+    );
+  });
+
+  it("caps the text at REJECTED_OUTPUT_CAP_CHARS with a visible marker, reporting the full length", () => {
+    const line = formatRejectedOutputLine(noObject("a".repeat(REJECTED_OUTPUT_CAP_CHARS + 500))) ?? "";
+    expect(line).toContain(`${String(REJECTED_OUTPUT_CAP_CHARS + 500)} chars): `);
+    expect(line.endsWith(`${"a".repeat(REJECTED_OUTPUT_CAP_CHARS)}${REJECTED_OUTPUT_TRUNCATION_MARKER}`)).toBe(true);
+    expect(line).not.toContain("a".repeat(REJECTED_OUTPUT_CAP_CHARS + 1));
+  });
+
+  it("leaves a text of exactly the cap uncut and unmarked", () => {
+    const line = formatRejectedOutputLine(noObject("b".repeat(REJECTED_OUTPUT_CAP_CHARS))) ?? "";
+    expect(line).not.toContain(REJECTED_OUTPUT_TRUNCATION_MARKER);
+    expect(line.endsWith("b".repeat(REJECTED_OUTPUT_CAP_CHARS))).toBe(true);
+  });
+
+  it("never ends the cut on half a surrogate pair", () => {
+    const text = `${"c".repeat(REJECTED_OUTPUT_CAP_CHARS - 1)}😀tail`;
+    const line = formatRejectedOutputLine(noObject(text)) ?? "";
+    expect(line.endsWith(`${"c".repeat(REJECTED_OUTPUT_CAP_CHARS - 1)}${REJECTED_OUTPUT_TRUNCATION_MARKER}`)).toBe(
+      true,
+    );
+  });
+
+  it("escapes newlines and ANSI/control characters so the untrusted text cannot forge log lines", () => {
+    const line =
+      formatRejectedOutputLine(noObject('{\n  "a": 1\r\n}\t\u001b[31mfinder step 9: forged\u007f\u0085')) ?? "";
+    expect(line).not.toMatch(/\p{Cc}/u);
+    expect(line).toContain('{\\n  "a": 1\\r\\n}\\t\\u001b[31mfinder step 9: forged\\u007f\\u0085');
+  });
+
+  it("escapes control characters in the provider and finish fields too", () => {
+    const error = Object.assign(new Error("x"), { text: "t", provider: "a\nb", finishReason: "s\u001b" });
+    expect(formatRejectedOutputLine(error)).toBe(
+      "rejected output (Error, provider=a\\nb, finish=s\\u001b, 1 chars): t",
+    );
+  });
+
+  it("still reports an empty text — 'the model sent nothing' is a finding", () => {
+    expect(formatRejectedOutputLine(noObject("", "length"))).toBe(
+      "rejected output (AI_NoObjectGeneratedError, provider=?, finish=length, 0 chars): ",
+    );
+  });
+
+  it.each([
+    ["an error without text (abort, auth)", new Error("401 Unauthorized")],
+    ["a NoObjectGeneratedError whose text is undefined", noObject(undefined)],
+    ["a DOMException timeout", new DOMException("timed out", "TimeoutError")],
+    ["a non-object throw", "boom"],
+    ["null", null],
+    ["a non-string text field", Object.assign(new Error("x"), { text: 42 })],
+  ])("returns undefined for %s", (_label, error) => {
+    expect(formatRejectedOutputLine(error)).toBeUndefined();
+  });
+});
+
+describe("runReviewCli rejected-output line", () => {
+  it("prints the rejected text on stderr after the message, and keeps it out of the step summary", async () => {
+    const io = fakeIo();
+    const failing = vi.fn().mockRejectedValue(noObject('I found no issues.\n{"findings": []}'));
+    const code = await runReviewCli([], { GITHUB_STEP_SUMMARY: "summary.md" }, io, failing);
+    expect(code).toBe(1);
+    expect(io.errors).toEqual([
+      "No object generated: could not parse the response.",
+      'rejected output (AI_NoObjectGeneratedError, provider=?, finish=stop, 35 chars): I found no issues.\\n{"findings": []}',
+    ]);
+    expect(io.appended.get("summary.md")).not.toContain("I found no issues");
+    expect(io.files.size).toBe(0);
+  });
+
+  it("adds no line for a failure that carried no model output", async () => {
+    const io = fakeIo();
+    expect(await runReviewCli([], {}, io, vi.fn().mockRejectedValue(new Error("provider exploded")))).toBe(1);
+    expect(io.errors).toEqual(["provider exploded"]);
   });
 });
