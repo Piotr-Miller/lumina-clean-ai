@@ -142,23 +142,34 @@ const stringField = (error: object, key: string): string | undefined =>
  * `finder-serialization-outage`: 35 failed runs logged only "could not parse
  * the response", never what the model had sent).
  *
- * Reads any error carrying a string `text` (`NoObjectGeneratedError` today),
- * plus its `finishReason` and `provider` where present. `undefined` when the
- * error carries no text — an abort or an auth error never produced output.
- * An empty text is still reported: "the model sent nothing" is a finding.
+ * Reads any error carrying a string `text` — the finder's `FinderOutputError`,
+ * the judge's `NoObjectGeneratedError` — plus its `finishReason` and `provider`
+ * where present. `undefined` when the error carries no text — an abort or an
+ * auth error never produced output. An empty text is still reported: "the
+ * model sent nothing" is a finding.
+ *
+ * `fallbackProvider` is the upstream of the last request the CLI observed. It
+ * fills in only when the error carries no provider of its own: the SDK's
+ * `NoObjectGeneratedError` has no provider field, and its `response.body` is
+ * left empty unless the call opts into `include.responseBody` (ai@7.0.52,
+ * index.js:5896), so without it the one line meant to attribute a judge
+ * failure would always read `provider=?`. The last observed request is the
+ * one that produced the rejected text: a pass throws right after its own last
+ * step, so no other request can come between them.
  *
  * Labelled by the error's class, not by pass: the pipeline rethrows the raw
- * error, and a `NoObjectGeneratedError` can come from the finder or the judge.
+ * error, and the class is what the log can state without guessing.
  *
  * The text is untrusted model output and the log is public: capped at
  * REJECTED_OUTPUT_CAP_CHARS and control characters escaped. It goes to stderr
  * only — never into comment.md or the step summary.
  */
-export function formatRejectedOutputLine(error: unknown): string | undefined {
+export function formatRejectedOutputLine(error: unknown, fallbackProvider?: string): string | undefined {
   if (typeof error !== "object" || error === null) return undefined;
   const text = stringField(error, "text");
   if (text === undefined) return undefined;
-  const provider = stringField(error, "provider");
+  const own = stringField(error, "provider");
+  const provider = own === undefined || own === "" ? fallbackProvider : own;
   const finish = stringField(error, "finishReason");
   let shown = text;
   if (text.length > REJECTED_OUTPUT_CAP_CHARS) {
@@ -255,6 +266,10 @@ export async function runReviewCli(
   io: CliIo,
   pipeline: typeof runReviewPipeline = runReviewPipeline,
 ): Promise<0 | 1> {
+  // The upstream of the most recent observed request, for the rejected-output
+  // line (see formatRejectedOutputLine). Reset on every observation, so a
+  // request without a reported provider never inherits an older one's.
+  let lastObservedProvider: string | undefined;
   try {
     const args = parseArgs(argv);
     const diff = args.diffFile === undefined ? io.readStdin() : io.readFile(args.diffFile);
@@ -290,6 +305,7 @@ export async function runReviewCli(
           finderMaxSteps,
           onFinderStep: (info) => {
             stepIndex += 1;
+            lastObservedProvider = info.provider;
             io.logError(formatFinderStepLine(stepIndex, info));
           },
         };
@@ -345,7 +361,12 @@ export async function runReviewCli(
       // A repaired run is otherwise indistinguishable from a clean one; this
       // line is how persistent model drift stays visible in the Actions log.
       onOutputRepair: ({ reason }) => {
-        io.logError(`finder output repaired after strict-parse failure: ${reason}`);
+        io.logError(`finder format repair requested after strict-parse failure: ${reason}`);
+      },
+      // Silent on purpose: it only remembers the judge's upstream, so a judge
+      // parse failure can name its endpoint in the rejected-output line.
+      onJudgeStep: (info) => {
+        lastObservedProvider = info.provider;
       },
       onJudgeOutputRepair: ({ reason }) => {
         io.logError(`judge output repaired after strict-parse failure: ${reason}`);
@@ -371,7 +392,7 @@ export async function runReviewCli(
     io.logError(message);
     // stderr only: the rejected text is untrusted, so it stays out of the
     // step summary below as well as out of comment.md.
-    const rejected = formatRejectedOutputLine(error);
+    const rejected = formatRejectedOutputLine(error, lastObservedProvider);
     if (rejected !== undefined) io.logError(rejected);
     const summaryPath = env.GITHUB_STEP_SUMMARY;
     if (summaryPath) io.appendFile(summaryPath, `\n## AI review failed\n\n${message}\n`);

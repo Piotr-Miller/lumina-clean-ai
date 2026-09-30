@@ -681,21 +681,21 @@ change are not comparable (Phase 5.3).
 
 #### Manual
 
-- [ ] 1.4 A local CLI run shows `provider=` and `finish=` in every step line
+- [x] 1.4 A local CLI run shows `provider=` and `finish=` in every step line
 
 ### Phase 2: Two-stage finder with its own parser
 
 #### Automated
 
-- [ ] 2.1 Wire test: a tool-less finalization with no `response_format` and no tool-role messages; `reasoning` disabled on every request (A3)
-- [ ] 2.2 Parser tests for every row of Definitions
-- [ ] 2.3 Repair tests: one repair, then `FinderOutputError`
-- [ ] 2.4 Retry tests: `FinderOutputError` terminal, 429 retried
-- [ ] 2.5 Telemetry test: the finalization and the repair counted
-- [ ] 2.6 Timeout test: one budget for the whole `review()`
-- [ ] 2.7 The whole package: test, lint, typecheck
-- [ ] 2.8 Repo formatting `npm run format:check`
-- [ ] 2.9 Eval adapter test: per-step providers, finalization prompt, format-repair count
+- [x] 2.1 Wire test: a tool-less finalization with no `response_format` and no tool-role messages; `reasoning` disabled on every request (A3)
+- [x] 2.2 Parser tests for every row of Definitions
+- [x] 2.3 Repair tests: one repair, then `FinderOutputError`
+- [x] 2.4 Retry tests: `FinderOutputError` terminal, 429 retried
+- [x] 2.5 Telemetry test: the finalization and the repair counted
+- [x] 2.6 Timeout test: one budget for the whole `review()`
+- [x] 2.7 The whole package: test, lint, typecheck
+- [x] 2.8 Repo formatting `npm run format:check`
+- [x] 2.9 Eval adapter test: per-step providers, finalization prompt, format-repair count
 
 #### Manual
 

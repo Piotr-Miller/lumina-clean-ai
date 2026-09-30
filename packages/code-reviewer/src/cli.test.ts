@@ -657,6 +657,23 @@ describe("formatRejectedOutputLine", () => {
     );
   });
 
+  // T1 (follow-ups/review-fixes.md): the SDK's error carries no provider, so
+  // the upstream of the last observed request fills in — and only then.
+  it("fills the provider from the last observed request when the error carries none", () => {
+    expect(formatRejectedOutputLine(noObject("x"), "Venice")).toBe(
+      "rejected output (AI_NoObjectGeneratedError, provider=Venice, finish=stop, 1 chars): x",
+    );
+  });
+
+  it("prefers the error's own provider over the fallback", () => {
+    const error = Object.assign(new Error("f"), { name: "FinderOutputError", text: "p", provider: "Novita" });
+    expect(formatRejectedOutputLine(error, "Venice")).toContain("provider=Novita,");
+  });
+
+  it("escapes control characters in the fallback provider too", () => {
+    expect(formatRejectedOutputLine(noObject("x"), "a\u001bb")).toContain("provider=a\\u001bb,");
+  });
+
   it.each([
     ["an error without text (abort, auth)", new Error("401 Unauthorized")],
     ["a NoObjectGeneratedError whose text is undefined", noObject(undefined)],
@@ -681,6 +698,29 @@ describe("runReviewCli rejected-output line", () => {
     ]);
     expect(io.appended.get("summary.md")).not.toContain("I found no issues");
     expect(io.files.size).toBe(0);
+  });
+
+  it("attributes a judge parse failure to the judge step's provider, reported via onJudgeStep", async () => {
+    const io = fakeIo();
+    const failing = vi.fn((input: PipelineInput) => {
+      input.onJudgeStep?.({ provider: "Venice", finishReason: "stop" });
+      return Promise.reject(noObject("{bad"));
+    });
+    expect(await runReviewCli([], {}, io, failing as never)).toBe(1);
+    expect(io.errors.at(-1)).toBe(
+      "rejected output (AI_NoObjectGeneratedError, provider=Venice, finish=stop, 4 chars): {bad",
+    );
+  });
+
+  it("keeps provider=? when the last observed request reported none, never an older request's slug", async () => {
+    const io = fakeIo();
+    const failing = vi.fn((input: PipelineInput) => {
+      input.onJudgeStep?.({ provider: "Venice", finishReason: "stop" });
+      input.onJudgeStep?.({ finishReason: "stop" }); // malformed or absent metadata
+      return Promise.reject(noObject("{bad"));
+    });
+    await runReviewCli([], {}, io, failing);
+    expect(io.errors.at(-1)).toContain("provider=?,");
   });
 
   it("adds no line for a failure that carried no model output", async () => {

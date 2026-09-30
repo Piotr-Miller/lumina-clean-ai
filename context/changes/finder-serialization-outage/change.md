@@ -3,7 +3,7 @@ change_id: finder-serialization-outage
 title: The ai-review finder stopped returning parseable output on 2026-09-20 — find out whether the incumbent is recoverable before paying for a replacement
 status: implementing
 created: 2026-09-24
-updated: 2026-09-29
+updated: 2026-09-30
 archived_at: null
 ---
 

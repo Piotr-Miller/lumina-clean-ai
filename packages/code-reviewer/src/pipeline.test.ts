@@ -23,9 +23,11 @@ import {
   runReviewPipeline,
   type FinderStepInfo,
 } from "./pipeline.js";
+import { openRouterStub, VALID_REVIEW_TEXT } from "./openrouter-stub.js";
+import { FinderOutputError } from "./output-repair.js";
 import { type JudgePromptInput } from "./prompts.js";
 import { RATE_LIMIT_DELAY_MS, TRANSIENT_DELAY_MS } from "./retry.js";
-import type { ReviewerOptions } from "./reviewer.js";
+import { createReviewer, type ReviewerOptions } from "./reviewer.js";
 import { CRITERIA } from "./scorecard.js";
 import type {
   Finding,
@@ -391,6 +393,28 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     expect(onRetry).not.toHaveBeenCalled();
   });
 
+  it("fails fast on the finder's FinderOutputError: one pass, no retry, no judge", async () => {
+    const formatError = new FinderOutputError({ text: "prose", validationError: "v", repaired: true });
+    const finder = vi.fn().mockRejectedValue(formatError);
+    const judge = vi.fn();
+    const onRetry = vi.fn();
+    await expect(runReviewPipeline({ diff: SMALL_DIFF, onRetry, deps: { finder, judge } })).rejects.toBe(formatError);
+    expect(finder).toHaveBeenCalledTimes(1);
+    expect(onRetry).not.toHaveBeenCalled();
+    expect(judge).not.toHaveBeenCalled();
+  });
+
+  it("still retries a rate-limited finder pass once (429)", async () => {
+    const { calls, sleep } = recordingSleep();
+    const finder = vi.fn().mockRejectedValueOnce(apiError(429)).mockResolvedValueOnce({ summary: "s", findings: [] });
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: { finder, judge: () => Promise.resolve(judgeResult()), retrySleep: sleep },
+    });
+    expect(finder).toHaveBeenCalledTimes(2);
+    expectInJitterRange(calls.at(0), RATE_LIMIT_DELAY_MS);
+  });
+
   it("fails fast on a non-retryable finder error (single attempt)", async () => {
     const authError = apiError(401);
     const finder = vi.fn().mockRejectedValue(authError);
@@ -725,6 +749,27 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
       totalTokens: 96,
       cost: 0.03,
     });
+  });
+
+  it("reports each judge step's provider and finish through onJudgeStep, absent when unreported", async () => {
+    const seen: unknown[] = [];
+    const judgeStep = (providerMetadata: unknown): StepResult<ToolSet> =>
+      ({ toolCalls: [], usage: {}, providerMetadata, finishReason: "stop" }) as unknown as StepResult<ToolSet>;
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      onJudgeStep: (info) => seen.push(info),
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        createJudge: (options) => ({
+          judge: () => {
+            options.onStepEnd?.(judgeStep({ openrouter: { provider: "Venice" } }));
+            options.onStepEnd?.(judgeStep({ openrouter: { provider: 7 } }));
+            return Promise.resolve(judgeResult());
+          },
+        }),
+      },
+    });
+    expect(seen).toEqual([{ provider: "Venice", finishReason: "stop" }, { finishReason: "stop" }]);
   });
 
   it("omits judgeTelemetry entirely for an injected judge that never constructs", async () => {
@@ -1257,5 +1302,59 @@ describe("finder unit carries no truncation channel (r5 note reverted)", () => {
     });
     expect(sink.unit).toEqual({ kind: "diff", diff: SMALL_DIFF });
     expect(result.diffTruncated).toBe(false);
+  });
+});
+
+// The finalization and the format repair are provider requests of their own,
+// so telemetry must count them — otherwise finderTelemetry.cost understates
+// the pass by exactly the requests the two-stage design added, and the G4 cost
+// gate measures something false (change finder-serialization-outage).
+describe("finder telemetry covers the finalization and the repair (real reviewer, stubbed wire)", () => {
+  const runWithStub = async (
+    responses: Parameters<typeof openRouterStub>[0],
+    extra: { source?: () => string } = {},
+  ) => {
+    const stub = openRouterStub(responses);
+    const steps: FinderStepInfo[] = [];
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      ...extra,
+      onFinderStep: (info) => steps.push(info),
+      deps: {
+        createFinder: (options) => createReviewer({ ...options, apiKey: "test-key", fetch: stub.fetch }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    return { result, steps, requests: stub.bodies.length };
+  };
+
+  it("tool-less: the finalization and the repair are two steps, both priced", async () => {
+    const { result, steps, requests } = await runWithStub([
+      { content: '{"summary": 1}', finish: "stop", provider: "Novita", cost: 0.001 },
+      { content: VALID_REVIEW_TEXT, finish: "stop", provider: "Novita", cost: 0.002 },
+    ]);
+    expect(requests).toBe(2);
+    expect(result.finderTelemetry?.steps).toBe(2);
+    expect(result.finderTelemetry?.cost).toBeCloseTo(0.003, 10);
+    expect(steps.map((step) => step.provider)).toEqual(["Novita", "Novita"]);
+  });
+
+  it("with a source: every loop step, the finalization and the repair are counted", async () => {
+    const { result, requests } = await runWithStub(
+      [
+        {
+          toolCalls: [{ id: "c1", name: "getFileContext", arguments: { path: "src/a.ts" } }],
+          finish: "tool_calls",
+          cost: 0.001,
+        },
+        { content: "draft", finish: "stop", cost: 0.001 },
+        { content: '{"summary": 1}', finish: "stop", cost: 0.001 },
+        { content: VALID_REVIEW_TEXT, finish: "stop", cost: 0.001 },
+      ],
+      { source: () => "ctx" },
+    );
+    expect(requests).toBe(4);
+    expect(result.finderTelemetry).toMatchObject({ steps: 4, toolCalls: 1 });
+    expect(result.finderTelemetry?.cost).toBeCloseTo(0.004, 10);
   });
 });
