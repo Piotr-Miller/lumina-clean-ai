@@ -687,26 +687,26 @@ change are not comparable (Phase 5.3).
 
 #### Automated
 
-- [x] 2.1 Wire test: a tool-less finalization with no `response_format` and no tool-role messages; `reasoning` disabled on every request (A3)
-- [x] 2.2 Parser tests for every row of Definitions
-- [x] 2.3 Repair tests: one repair, then `FinderOutputError`
-- [x] 2.4 Retry tests: `FinderOutputError` terminal, 429 retried
-- [x] 2.5 Telemetry test: the finalization and the repair counted
-- [x] 2.6 Timeout test: one budget for the whole `review()`
-- [x] 2.7 The whole package: test, lint, typecheck
-- [x] 2.8 Repo formatting `npm run format:check`
-- [x] 2.9 Eval adapter test: per-step providers, finalization prompt, format-repair count
+- [x] 2.1 Wire test: a tool-less finalization with no `response_format` and no tool-role messages; `reasoning` disabled on every request (A3) — 802a1e0
+- [x] 2.2 Parser tests for every row of Definitions — 802a1e0
+- [x] 2.3 Repair tests: one repair, then `FinderOutputError` — 802a1e0
+- [x] 2.4 Retry tests: `FinderOutputError` terminal, 429 retried — 802a1e0
+- [x] 2.5 Telemetry test: the finalization and the repair counted — 802a1e0
+- [x] 2.6 Timeout test: one budget for the whole `review()` — 802a1e0
+- [x] 2.7 The whole package: test, lint, typecheck — 802a1e0
+- [x] 2.8 Repo formatting `npm run format:check` — 802a1e0
+- [x] 2.9 Eval adapter test: per-step providers, finalization prompt, format-repair count — 802a1e0
 
 #### Manual
 
-- [ ] 2.10 A local CLI run on PR #269's diff: a valid review or a legible `FinderOutputError`
+- [x] 2.10 A local CLI run on PR #269's diff: a valid review or a legible `FinderOutputError` — 3 przebiegi, 3 poprawne review (0/5/8 uwag), 1 naprawa zgodna z warunkiem 3, dowody w `/tmp/finder-269-BSnvQ4/finder-captures/`, rozrzut liczby uwag przekazany do G1/G2.
 
 ### Phase 3: The finder's own routing
 
 #### Automated
 
-- [ ] 3.1 Finder routing tests (default, env, malformed, judge unchanged)
-- [ ] 3.2 The whole package: test, lint, typecheck
+- [x] 3.1 Finder routing tests (default, env, malformed, judge unchanged)
+- [x] 3.2 The whole package: test, lint, typecheck
 
 ### Phase 4: Regression gate
 

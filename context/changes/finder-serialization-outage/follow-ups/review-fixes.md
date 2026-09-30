@@ -28,3 +28,16 @@ Deferred items from phase reviews and acceptance, to fold into a later phase.
       carries the provider of the request whose text it rejects. Tests: `cli.test.ts` (fallback present → slug,
       own provider wins, control characters escaped; end-to-end via `onJudgeStep` with a provider and with absent
       metadata → `provider=?`) and `pipeline.test.ts` (`onJudgeStep` narrows a malformed slug to absent).
+
+## From Phase 2 manual acceptance (2026-09-30)
+
+- [ ] **T2 — log the gathering stage's model text in CI, with a fixed length cap.** The first PR #269 run
+      returned a valid review with `findings: []`, but its stage 1 text was not saved. We therefore cannot tell
+      whether the gathering stage found nothing or the finalization dropped its notes. Two later runs on the same
+      diff produced 5 and 8 findings; their stage 1 and finalization texts are in
+      `/tmp/finder-269-BSnvQ4/finder-captures/`. Add a permanent, bounded log line for each gathering step's
+      model text, including the original character count and an explicit truncation marker. Escape control
+      characters because model output is untrusted and CI logs are public. The log must make an empty stage 1
+      response distinguishable from a nonempty one, and let a future empty `findings` result be attributed to
+      stage 1 or finalization without a temporary runner. Keep the full text out of `comment.md` and the step
+      summary.

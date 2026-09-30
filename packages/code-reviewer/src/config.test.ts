@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  DEFAULT_FINDER_PROVIDERS,
   DEFAULT_IMPL_REVIEW_MODEL,
   DEFAULT_JUDGE_MODEL,
   DEFAULT_MODEL,
@@ -146,5 +147,15 @@ describe("resolveConfig", () => {
     expect(config.model).toBe("env/legacy");
     expect(config.reviewModel).toBe("env/legacy");
     expect(config.judgeModel).toBe("env/judge");
+  });
+});
+
+describe("DEFAULT_FINDER_PROVIDERS", () => {
+  // Pinned like DEFAULT_MODEL: this list decides where every production finder
+  // request may go. PROVISIONAL (a Phase 0 probe result, no gate status) until
+  // Phase 5 of `finder-serialization-outage` replaces it with the endpoints
+  // that passed gate.md — change it only alongside a measurement.
+  it("is the provisional Phase 0 list", () => {
+    expect(DEFAULT_FINDER_PROVIDERS).toEqual(["novita"]);
   });
 });

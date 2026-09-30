@@ -2,7 +2,7 @@ import { createOpenRouter, type OpenRouterChatSettings } from "@openrouter/ai-sd
 import { generateText, isStepCount, tool, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 import { z } from "zod";
 
-import { MAX_OUTPUT_TOKENS, resolveConfig, resolveProviderRouting } from "./config.js";
+import { MAX_OUTPUT_TOKENS, resolveConfig, resolveFinderProviderRouting } from "./config.js";
 import { normalizeFindings } from "./findings.js";
 import { FinderOutputError, parseFinderOutput } from "./output-repair.js";
 import {
@@ -89,14 +89,16 @@ export interface ReviewerOptions {
    */
   projectContext?: string;
   /**
-   * OpenRouter provider routing (order / fallbacks / require_parameters /
-   * quantizations) for every request of the review.
+   * OpenRouter provider routing (order / only / fallbacks /
+   * require_parameters / quantizations) for every request of the review.
    *
-   * Omitted → DEFAULT_PROVIDER_ROUTING (`require_parameters: true`), which
-   * keeps this strict-schema call on endpoints that actually enforce the
-   * schema. Campaign tooling passes its OWN pin here to make provider-scoped
-   * claims (fabrication amendment A1) and must keep overriding the default —
-   * that pin is for measurement comparability, not production routing.
+   * Omitted → resolveFinderProviderRouting(): only the endpoints in
+   * DEFAULT_FINDER_PROVIDERS (or OPENROUTER_FINDER_PROVIDERS), with
+   * `require_parameters: true` so an endpoint that cannot honour `tools` or
+   * `reasoning: {enabled: false}` is refused. Campaign tooling passes its OWN
+   * pin here to make provider-scoped claims (fabrication amendment A1) and
+   * must keep overriding the default — that pin is for measurement
+   * comparability, not production routing, and replaces the default whole.
    */
   providerRouting?: OpenRouterChatSettings["provider"];
 }
@@ -265,12 +267,10 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // `effort: "none"` is a different request from the one A2 measured.
     // `extraBody` is spread last into the body; the wire test pins it.
     extraBody: { reasoning: { enabled: false } },
-    // An explicit pin (campaign tooling) wins; otherwise the default applies,
-    // and only OPENROUTER_REQUIRE_PARAMETERS=false removes it.
-    ...(() => {
-      const routing = options.providerRouting ?? resolveProviderRouting();
-      return routing ? { provider: routing } : {};
-    })(),
+    // An explicit pin (campaign tooling) wins; otherwise the finder's own
+    // routing applies. OPENROUTER_REQUIRE_PARAMETERS=false does not reach it
+    // (Amendment A3; see resolveFinderProviderRouting).
+    provider: options.providerRouting ?? resolveFinderProviderRouting(),
   });
 
   // The gathering loop. Used only when a source is set: without one there is

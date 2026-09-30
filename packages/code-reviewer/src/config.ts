@@ -76,7 +76,10 @@ export const MAX_OUTPUT_TOKENS = 16_384;
 export const IMPL_REVIEW_MAX_OUTPUT_TOKENS = 32_768;
 
 /**
- * Provider routing for every STRUCTURED model call in the pipeline.
+ * Provider routing for the judge and the implementation review — the two
+ * passes that still send a strict `json_schema`. The finder has its own
+ * routing (DEFAULT_FINDER_PROVIDERS / resolveFinderProviderRouting below): it
+ * sends no `response_format` since change `finder-serialization-outage`.
  *
  * THE FAILURE THIS PREVENTS: structured-output support on OpenRouter is a
  * property of the ENDPOINT, not the model — the same model id is served by
@@ -111,6 +114,72 @@ export const DEFAULT_PROVIDER_ROUTING = { require_parameters: true } as const;
  */
 export function resolveProviderRouting(): { require_parameters: true } | undefined {
   return process.env.OPENROUTER_REQUIRE_PARAMETERS === "false" ? undefined : DEFAULT_PROVIDER_ROUTING;
+}
+
+/**
+ * The OpenRouter endpoints the finder may be routed to, in preference order.
+ *
+ * PROVISIONAL. `novita` is a Phase 0 PROBE result, not a gate result: it
+ * passed only Amendment A2 (4/5 strictly valid with reasoning disabled,
+ * probe-phase0.md) and holds no G1–G4 status. It exists so local runs do not
+ * default to Z.AI, which returned nothing but HTTP 429 in Phase 0. Phase 5 of
+ * change `finder-serialization-outage` replaces it with exactly the endpoints
+ * that passed the gate (gate.md). Changing it requires a measurement; the
+ * literal is pinned in config.test.ts.
+ */
+export const DEFAULT_FINDER_PROVIDERS: readonly string[] = ["novita"];
+
+/** The shape of the finder's routing preference, as sent in `provider`. */
+export interface FinderProviderRouting {
+  order: string[];
+  only: string[];
+  allow_fallbacks: true;
+  require_parameters: true;
+}
+
+// An OpenRouter provider slug: `novita`, `z-ai`, `deepinfra/fp8`. Lowercase
+// only, so a typo such as `Novita` is rejected loudly rather than guessed at.
+const PROVIDER_SLUG = /^[a-z0-9][a-z0-9._/-]*$/u;
+
+/**
+ * The finder's routing: only the listed endpoints, tried in order, with
+ * fallbacks allowed WITHIN that list and nowhere else.
+ *
+ * `OPENROUTER_FINDER_PROVIDERS` (comma-separated slugs) overrides the list, so
+ * the Phase 4 gate can pin one endpoint at a time. An unset or blank value
+ * (`""`, `" , "`) uses the default. A value with ANY malformed entry also uses
+ * the default — never unfiltered routing, and never a partial list — and says
+ * so on stderr, because a gate run that meant to pin one endpoint would
+ * otherwise measure another without a word.
+ *
+ * `require_parameters: true` is unconditional here (Amendment A3). With no
+ * `response_format`, it now filters on `tools` and `reasoning` support, and it
+ * is what refuses an endpoint that cannot honour `reasoning: {enabled: false}`
+ * instead of letting it reason to the token cap. `OPENROUTER_REQUIRE_PARAMETERS
+ * =false` therefore does NOT reach the finder; it still applies to the judge
+ * and the implementation review.
+ */
+export function resolveFinderProviderRouting(): FinderProviderRouting {
+  const providers = parseFinderProviders(process.env.OPENROUTER_FINDER_PROVIDERS);
+  return { order: [...providers], only: [...providers], allow_fallbacks: true, require_parameters: true };
+}
+
+function parseFinderProviders(raw: string | undefined): readonly string[] {
+  const entries = (raw ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== "");
+  if (entries.length === 0) return DEFAULT_FINDER_PROVIDERS;
+  const malformed = entries.filter((entry) => !PROVIDER_SLUG.test(entry));
+  if (malformed.length > 0) {
+    console.warn(
+      `OPENROUTER_FINDER_PROVIDERS is malformed (${malformed.map((entry) => JSON.stringify(entry)).join(", ")} ` +
+        `is not a lowercase OpenRouter provider slug); the finder routes to the default ` +
+        `[${DEFAULT_FINDER_PROVIDERS.join(", ")}] instead, NOT to the endpoints you listed.`,
+    );
+    return DEFAULT_FINDER_PROVIDERS;
+  }
+  return [...new Set(entries)];
 }
 
 export interface ModelOverrides {
