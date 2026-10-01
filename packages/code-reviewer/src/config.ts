@@ -147,7 +147,8 @@ const PROVIDER_SLUG = /^[a-z0-9][a-z0-9._/-]*$/u;
  *
  * `OPENROUTER_FINDER_PROVIDERS` (comma-separated slugs) overrides the list, so
  * the Phase 4 gate can pin one endpoint at a time. An unset or blank value
- * (`""`, `" , "`) uses the default. A value with ANY malformed entry also uses
+ * (`""`, `" , "`) uses the default. A value with ANY malformed entry — an empty
+ * one in an otherwise populated list (`novita,,deepinfra`) included — also uses
  * the default — never unfiltered routing, and never a partial list — and says
  * so on stderr, because a gate run that meant to pin one endpoint would
  * otherwise measure another without a word.
@@ -165,11 +166,11 @@ export function resolveFinderProviderRouting(): FinderProviderRouting {
 }
 
 function parseFinderProviders(raw: string | undefined): readonly string[] {
-  const entries = (raw ?? "")
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry !== "");
-  if (entries.length === 0) return DEFAULT_FINDER_PROVIDERS;
+  const entries = (raw ?? "").split(",").map((entry) => entry.trim());
+  if (entries.every((entry) => entry === "")) return DEFAULT_FINDER_PROVIDERS;
+  // From here the list is populated, so an empty entry (`novita,,deepinfra`,
+  // `novita,`) is a typo, not padding: it fails the slug check and is reported
+  // as `""` rather than silently dropped into a shorter list.
   const malformed = entries.filter((entry) => !PROVIDER_SLUG.test(entry));
   if (malformed.length > 0) {
     console.warn(

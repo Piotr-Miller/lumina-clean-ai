@@ -103,7 +103,7 @@ describe("resolveFinderProviderRouting", () => {
   });
 
   // Blank is "not set", not "route anywhere": the default must win.
-  it.each(["", " , ", ",", "   "])("a blank value %o uses the default, silently", (value) => {
+  it.each([undefined, "", " , ", ",", "   "])("an unset or blank value %o uses the default, silently", (value) => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     vi.stubEnv("OPENROUTER_FINDER_PROVIDERS", value);
     expect(resolveFinderProviderRouting()).toEqual(FINDER_DEFAULT);
@@ -113,7 +113,7 @@ describe("resolveFinderProviderRouting", () => {
 
   // A malformed entry must never yield unfiltered routing or a partial list, and a
   // gate run that meant to pin an endpoint must not measure the default in silence.
-  it.each(["Novita", "deepinfra,Bad Slug", "*", "novita;venice", "-z-ai"])(
+  it.each(["Novita", "deepinfra,Bad Slug", "*", "novita;venice", "-z-ai", "novita,,deepinfra", "novita,", " , novita"])(
     "a malformed value %o uses the default and says so",
     (value) => {
       const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -126,6 +126,16 @@ describe("resolveFinderProviderRouting", () => {
       warn.mockRestore();
     },
   );
+
+  // Impl-review F1 (p3): an empty entry in a populated list is a typo, and
+  // dropping it would route a gate run to a shorter list than the one meant.
+  it.each(["novita,,deepinfra", "novita,"])('an empty entry in %o is named as "" in the warning', (value) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.stubEnv("OPENROUTER_FINDER_PROVIDERS", value);
+    expect(resolveFinderProviderRouting()).toEqual(FINDER_DEFAULT);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('(""');
+    warn.mockRestore();
+  });
 
   // Amendment A3: require_parameters is what refuses an endpoint that cannot
   // honour `reasoning: {enabled: false}`, so the judge's escape hatch must not reach it.
