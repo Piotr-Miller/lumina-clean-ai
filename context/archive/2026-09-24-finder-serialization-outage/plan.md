@@ -552,63 +552,57 @@ gate is decided here.
 
 ---
 
-## Phase 5: Production routing, live PR, the record
+## Phase 5: Close-out
+
+_Replaced 2026-10-02 (owner)._ The original Phase 5, "Production routing, live PR, the record", required at least
+one endpoint that passed G1–G4. Phase 4 admitted none (`gate.md`, 4.3/4.4), so its contract applies: there is no
+production list, `config.ts` keeps the provisional `["novita"]`, and **G5 was never run**. The replacement model is
+a new change, `finder-model-swap`, not a phase of this plan.
 
 ### Overview
 
-The production list = the endpoints that passed. The live scratch PR closes G5. Pointers to the old facts are
-corrected in one commit.
+Record where the change stopped, correct the one stale record on this branch that describes the outage itself,
+and verify the package. Nothing is merged to `master`.
 
 ### Changes Required:
 
-#### 1. The endpoint list
+#### 1. The `review.yml` comment
 
-**File**: `packages/code-reviewer/src/config.ts`, `src/config.test.ts`
+**File**: `.github/workflows/review.yml`, the finder comment above `EXCLUDES`
 
-**Intent**: Replace the provisional `["novita"]` with **only** the endpoints that passed the full G1–G4 gate in
-Phase 4, each measured pinned on its own (in order of the gate result, Z.AI first if it passed), with a comment
-pointing at `gate.md`. Novita stays on the list only if it passes the gate itself; its Phase 0 probe result
-does not count. If no endpoint passed, Phase 5 does not run: STOP, per Phase 4's contract.
+**Intent**: Replace "20 consecutive successes … then 5 consecutive failures on 2026-09-20" with the measured
+record from `frame.md`: 17/17 successes up to 2026-09-13, then 35/35 failures from 2026-09-20. State that every
+green `review.yml` run since the break is the `SKIP_REVIEW` branch on a docs-only PR, a skipped step rather than
+a pass. Replace "a one-command variable swap" with the cause found (Venice ignores `response_format`) and a pointer
+to `finder-model-swap`. The JSONL exclusion is already there (`5d72458`) and is not touched.
 
-**Contract**: The literal is pinned by the test. Changing it requires a measurement (the comment says so).
+#### 2. The result in `change.md`
 
-#### 2. Live scratch PR (G5)
+**File**: `context/changes/finder-serialization-outage/change.md`
 
-**Intent**: A same-repo, non-draft, human-authored PR with a small code change (the `review.yml` conditions),
-so the finder really runs. The whole review goes green, and the log has step lines with `provider=` from the list.
+**Intent**: A dated result: the cause removed in code (Phases 1–3), no endpoint admitted, the path taken (model
+swap, in `finder-model-swap`), the code not merged and the interim deployment an open owner decision, T2 moved to
+the successor. Correct the paragraph that proposed `require_parameters` as the fix.
 
-**Contract**: The run number and outcome go into `gate.md` (G5). The PR is closed without a merge.
+#### Moved out of this change
 
-#### 3. Stale pointers (lesson "writing a fact into its canonical home")
-
-**Files** (grep for the old wording: `schema mismatches re-roll`, `re-roll`, `require_parameters`, `repairReviewResultShape`, `envelope repair`, `intermittent`):
-
-- `AGENTS.md`, the CI → AI Code Review paragraph: "schema mismatches re-roll immediately" → the finder does not
-  re-roll a format error (one model repair, then an explicit error); the judge does as before.
-- `src/config.ts`, the `DEFAULT_PROVIDER_ROUTING` comment ("every STRUCTURED model call").
-- `src/reviewer.ts`, the `ReviewerOptions.providerRouting` doc.
-- `src/output-repair.ts`, the `repairParsedJudgeOutput` doc ("the same discipline as the finder's", `:169`): the
-  finder repair it points to is removed in Phase 2.
-- `evals/README.md`: the meaning of `repairs` and a note that the metrics before and after this change are not comparable.
-- The headers of `scripts/fabrication-probe.mjs` and `scripts/finder-distribution.mjs`: measurements taken
-  before this change used `json_schema` on Venice.
-- `temp_steps.md`: the note "intermittent, not constant" (already refuted in `frame.md`).
-- `change.md`: the status and the gate result.
-
-**Contract**: The implementer runs the grep with the old wording and lists every hit in the commit. The archive
-(`context/archive/…`) is not edited.
+- **G5, the live scratch PR** (old 5.3): there is no admitted endpoint to probe. It moves to `finder-model-swap`.
+- **The report to OpenRouter/Venice** (old 5.4): moves to `finder-model-swap` with the rest of the owner's
+  decisions.
+- **The other stale pointers** of the old Phase 5.3 (`AGENTS.md` "re-roll immediately", the `config.ts` /
+  `reviewer.ts` / `output-repair.ts` docs, `evals/README.md`, the script headers): they describe the finder that
+  will ship. They are rewritten with the change that merges Phases 1–3, not here.
 
 ### Success Criteria:
 
 #### Automated Verification:
 
 - `npm test`, `npm run lint`, `npm run typecheck` in `packages/code-reviewer`; `npm run format:check` in the root
-- No stale wording: `grep -rn "re-roll immediately\|repairReviewResultShape\|tolerantReviewOutput" AGENTS.md packages/code-reviewer --include=*.ts --include=*.md --include=*.mjs | grep -v node_modules` returns only history entries marked as such (or nothing)
+- `grep -n "5 consecutive failures\|one-command variable swap" .github/workflows/review.yml` returns nothing
 
 #### Manual Verification:
 
-- The live scratch PR is green with a real finder output (G5) — the owner confirms the run
-- The owner's decision on the report to OpenRouter/Venice (a parallel step, not a blocker)
+- None. G5 did not pass and is not claimed; it moves to `finder-model-swap`.
 
 ---
 
@@ -644,7 +638,7 @@ saw 1,701–1,920 tokens on a trivial request), and `MAX_OUTPUT_TOKENS` = 16,384
 
 There is no data migration. Rollback = revert the Phase 2–5 commits. `ai-review` is advisory, so a failed
 deployment blocks nothing, but it does go back to the "no review" state. Measurements from before and after this
-change are not comparable (Phase 5.3).
+change are not comparable (`evals/README.md` note: see Phase 5, "Moved out of this change").
 
 ## References
 
@@ -705,29 +699,29 @@ change are not comparable (Phase 5.3).
 
 #### Automated
 
-- [x] 3.1 Finder routing tests (default, env, malformed, judge unchanged)
-- [x] 3.2 The whole package: test, lint, typecheck
+- [x] 3.1 Finder routing tests (default, env, malformed, judge unchanged) — e5be9ff
+- [x] 3.2 The whole package: test, lint, typecheck — e5be9ff
 
 ### Phase 4: Regression gate
 
 #### Automated
 
-- [ ] 4.1 JSONL files for every candidate × {#269 ×10, clean-change ×5}
-- [ ] 4.2 Pinned promptfoo rows for every candidate endpoint
+- [x] 4.1 JSONL files for every candidate × {#269 ×10, clean-change ×5} — 3219a1c
+- [x] 4.2 Pinned promptfoo rows for every candidate endpoint — 3219a1c
 
 #### Manual
 
-- [ ] 4.3 The owner's hand-read of all distinct #269 findings per endpoint (G3)
-- [ ] 4.4 The owner accepts the list of endpoints that passed
+- [x] 4.3 The owner's hand-read of all distinct #269 findings per endpoint (G3)
+- [x] 4.4 The owner accepts the list of endpoints that passed
 
-### Phase 5: Production routing, live PR, the record
+### Phase 5: Close-out
 
 #### Automated
 
-- [ ] 5.1 The whole package: test, lint, typecheck; `format:check` in the root
-- [ ] 5.2 No stale wording (grep)
+- [x] 5.1 The whole package: test, lint, typecheck; `format:check` in the root — 3b08702
+- [x] 5.2 The `review.yml` comment states the 17/17 → 35/35 record and the `SKIP_REVIEW` branch — 3b08702
 
-#### Manual
+#### Moved out
 
-- [ ] 5.3 The live scratch PR is green with a real finder output (G5)
-- [ ] 5.4 The owner's decision on the report to OpenRouter/Venice
+- 5.3 The live scratch PR (G5) — not run; moved to `finder-model-swap`
+- 5.4 The owner's decision on the report to OpenRouter/Venice — moved to `finder-model-swap`

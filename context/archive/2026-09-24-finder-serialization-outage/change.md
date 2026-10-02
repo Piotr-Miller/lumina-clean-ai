@@ -1,10 +1,11 @@
 ---
 change_id: finder-serialization-outage
 title: The ai-review finder stopped returning parseable output on 2026-09-20 — find out whether the incumbent is recoverable before paying for a replacement
-status: implementing
+status: archived
+outcome: completed
 created: 2026-09-24
-updated: 2026-09-30
-archived_at: null
+updated: 2026-10-02
+archived_at: 2026-10-02T21:13:08Z
 ---
 
 ## Notes
@@ -42,9 +43,11 @@ behaviour on OpenRouter, or to OpenRouter's routing for it. That is where this c
 The instinct is to pick a replacement model. That skips a cheaper possibility nobody has
 tested: **the incumbent may be recoverable.** The `finder-tool-loop-evals` probe already hit
 `structured_outputs not supported in your workspace` on `claude-haiku-4.5` — an OpenRouter
-**routing** error, not a model failure, which did not recur across 12 matrix rows. If the
-current break is the same class, a provider pin or a `require_parameters` setting restores
-`glm-4.6` at **no cost increase at all**, and no eval cycle is needed.
+**routing** error, not a model failure, which did not recur across 12 matrix rows. The
+hypothesis at opening was that, if the current break were the same class, a provider pin or a
+`require_parameters` setting would restore `glm-4.6` at no cost increase. **`frame.md` refuted
+it** (correction below): `require_parameters: true` was already in force for every failing run,
+so it cannot be the fix, and pinning Venice is the failing route itself.
 
 So the order is: establish whether this is the model or the route, and only then shop.
 
@@ -115,3 +118,46 @@ provider, so a **bounded regression evaluation** is required. A full new-model c
 Making `ai-review` required, changing what the finder reviews, and the `REVIEW_FINDER_MAX_STEPS`
 budget — the last cycle established that a bigger budget only buys duplicate reads on a
 synced-tree diff. Keeping the check advisory is the owner's standing decision (2026-09-24).
+
+### Phase 4 result: no endpoint passes the gate (2026-10-02)
+
+The regression gate (`gate.md`) measured `z-ai/glm-4.6` with the prompt-carried format on all four
+OpenRouter endpoints. **None meets the whole of G1–G4.**
+
+- **z-ai:** fails G2 (2/5, HTTP 429) and G3 (stale closure 2/3).
+- **deepinfra:** fails G1 (5/10, HTTP 429) and G2 (4/5).
+- **venice:** fails G2 (3/5) and G3 (2/3).
+- **novita:** passes every automated gate, including A3 with both reasoning channels re-measured (Supplement
+  A3-F1). It fails G3's hand-read: 10 of its 50 distinct #269 findings are rejected as not real defects,
+  and the other 40 are unresolved.
+
+The format fix itself works: across all four endpoints, every finalization that answered parsed strictly,
+after at most one repair. What fails is availability (the 429s) and review quality (false or unproven
+findings), not serialization.
+
+**Owner decision (4.3 / 4.4, 2026-10-02):** the admitted list is empty, Phase 5 does not start, and the path
+chosen is the **model swap fallback**. This does not approve any particular replacement. A replacement is
+measured before it is admitted. Phase 4 spent $1.538486 of the $2.30 limit.
+
+**Reservation, from the owner:** G3's hand-read clause ("every distinct finding must identify a real defect
+in #269's diff") **has no baseline**. The archived glm-4.6 cycle never applied it to #269, so no measured
+configuration has ever met it. **Before any replacement is measured, the clause must be redefined as a
+pre-registered, measurable threshold.** For example: a stated maximum share of rejected findings, who reads
+them, and how unresolved rows count. Measuring a candidate against the current clause would test it against
+a bar no configuration has been shown to clear.
+
+### Result (2026-10-02)
+
+- **The cause is removed in code.** Venice ignores `response_format`. Phases 1–3 take it out of the
+  finder: the format is carried in the prompt, a tool-less finalization is parsed and strictly validated
+  on our side, with at most one repair. Nothing in that path depends on the model or on an endpoint
+  honouring `response_format`, so it carries over to a replacement model. Measured on `glm-4.6` only:
+  G1 10/10 on z-ai, novita and venice, including Venice, the endpoint that caused the outage (`gate.md`).
+- **No `glm-4.6` endpoint was admitted** (`gate.md`, 4.3 / 4.4). The path taken is the **model swap**,
+  in the successor change **`finder-model-swap`**. Phase 5 was reduced to this close-out; G5, the live
+  scratch PR, was **not run** and moves to the successor.
+- **The code is NOT merged to `master`.** Production still runs the pre-change finder, which fails on
+  every non-docs PR. Whether to deploy Phases 1–3 in the interim (with the provisional `["novita"]`
+  routing, which did not pass G3) is an **open decision for the owner**.
+- **Follow-up T2** (a bounded log of the stage-1 text in CI) moves to `finder-model-swap`, together with
+  the report to OpenRouter/Venice (old 5.4).
