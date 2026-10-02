@@ -4,7 +4,11 @@ import { APICallError } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import FinderProvider, { resolveFixtureRoot, type FinderTelemetry } from "./finder-provider.js";
+import FinderProvider, {
+  asOpenRouterReasoningTokens,
+  resolveFixtureRoot,
+  type FinderTelemetry,
+} from "./finder-provider.js";
 
 // The adapter builds the real reviewer; only the model is replaced, so the
 // finalization, the repair and the step telemetry all run for real.
@@ -100,6 +104,8 @@ describe("FinderProvider metadata and prompt", () => {
     expect(metadata.stepProviders).toEqual(["Novita"]);
     expect(metadata.stepCostReported).toEqual([true]);
     expect(metadata.stepReasoningTokens).toEqual([null]);
+    expect(metadata.stepReasoningTextChars).toEqual([0]);
+    expect(metadata.reasoningLeak).toBe(false);
     expect(metadata.repairs).toBe(0);
     const prompt = JSON.parse(promptOf(response)) as { role: string; content: string }[];
     expect(prompt.map((message) => message.role)).toEqual(["system", "user"]);
@@ -139,6 +145,41 @@ describe("FinderProvider metadata and prompt", () => {
     expect(metadata.stepReasoningTokens).toEqual([30]);
   });
 
+  // A3 rejects reasoning tokens OR reasoning text (impl-review-phase-4 F1): a
+  // response can carry reasoning text while reporting zero or no tokens.
+  it.each([
+    ["zero", { total: 40, text: 40, reasoning: 0 }],
+    ["absent", { total: 40, text: 40, reasoning: undefined }],
+  ])("flags reasoning TEXT as a leak when the token count is %s", async (_label, outputTokens) => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi.fn().mockResolvedValue({
+        ...generation(VALID, priced("Novita", 0.002)),
+        content: [
+          { type: "reasoning" as const, text: "Let me think about the diff first." },
+          { type: "text" as const, text: VALID },
+        ],
+        usage: { inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 }, outputTokens },
+      }),
+    });
+    const metadata = metadataOf(await call(provider()));
+    expect(metadata.stepReasoningTextChars).toEqual(["Let me think about the diff first.".length]);
+    expect(metadata.reasoningLeak).toBe(true);
+  });
+
+  it("flags OpenRouter's own reasoning-token count when the SDK usage reports none", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi.fn().mockResolvedValue(
+        generation(VALID, {
+          openrouter: { provider: "Novita", usage: { cost: 0.002, completionTokensDetails: { reasoningTokens: 12 } } },
+        }),
+      ),
+    });
+    const metadata = metadataOf(await call(provider()));
+    expect(metadata.stepReasoningTokens).toEqual([null]);
+    expect(metadata.stepOpenRouterReasoningTokens).toEqual([12]);
+    expect(metadata.reasoningLeak).toBe(true);
+  });
+
   it("before finalization: actualPrompt says so and shows the loop prompt under its own name", async () => {
     currentModel = new MockLanguageModelV3({
       doGenerate: vi
@@ -169,5 +210,22 @@ describe("FinderProvider metadata and prompt", () => {
     expect(prompt.loopPrompt?.[0]?.content).toContain("getFileContext");
     expect(promptOf(response)).not.toContain("OUTPUT FORMAT");
     expect(metadataOf(response).stepProviders).toEqual([]);
+  });
+});
+
+describe("asOpenRouterReasoningTokens", () => {
+  it.each([
+    ["absent metadata", undefined],
+    ["no usage", { openrouter: { provider: "Novita" } }],
+    ["no details", { openrouter: { usage: { cost: 1 } } }],
+    ["a non-number", { openrouter: { usage: { completionTokensDetails: { reasoningTokens: "5" } } } }],
+  ])("returns null for %s, never a fabricated 0", (_label, metadata) => {
+    expect(asOpenRouterReasoningTokens(metadata)).toBeNull();
+  });
+
+  it("returns the reported count, including an explicit 0", () => {
+    expect(
+      asOpenRouterReasoningTokens({ openrouter: { usage: { completionTokensDetails: { reasoningTokens: 0 } } } }),
+    ).toBe(0);
   });
 });

@@ -91,19 +91,55 @@ export interface FinderTelemetry {
    */
   stepCostReported: boolean[];
   /**
-   * Reasoning tokens each observed request reported, in the same order; `null`
-   * where the request reported none. Every finder request is sent with
-   * reasoning disabled (Amendment A3), so any positive entry means the
-   * parameter did not take effect on that request, and the gate fails the
-   * attempt rather than letting a reasoning run pass as the measured shape.
+   * Reasoning tokens each observed request reported through the SDK's usage,
+   * in the same order; `null` where the request reported none. Every finder
+   * request is sent with reasoning disabled (Amendment A3), so any positive
+   * entry means the parameter did not take effect on that request.
    */
   stepReasoningTokens: (number | null)[];
+  /**
+   * The same count as OpenRouter reported it in its own usage block
+   * (`completion_tokens_details.reasoning_tokens`), in the same order; `null`
+   * where absent or malformed. A second channel, not a duplicate: the gate
+   * runner (`scripts/finder-gate.mjs`) reads both, and so does this adapter.
+   */
+  stepOpenRouterReasoningTokens: (number | null)[];
+  /**
+   * Length of the reasoning TEXT each request returned, in the same order; 0
+   * when none. A3 rejects reasoning tokens OR reasoning text, and a response
+   * can carry text while reporting zero or no reasoning tokens — a token-only
+   * check would record it as clean (impl-review-phase-4 F1).
+   */
+  stepReasoningTextChars: number[];
+  /**
+   * True when ANY request reported reasoning on ANY channel above. The gate
+   * fails such an attempt: it did not run the measured request shape.
+   */
+  reasoningLeak: boolean;
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
   /** Provider-reported spend, summed across steps; absent when unreported. */
   cost?: number;
 }
+
+/**
+ * OpenRouter's own reasoning-token count out of the provider metadata bag,
+ * narrowed hop by hop with the same discipline as `asStepCost`: the bag is
+ * typed `Record<string, JSONObject>` and promises no shape. Absent or
+ * non-finite → `null`, never a fabricated 0.
+ */
+export const asOpenRouterReasoningTokens = (metadata: unknown): number | null => {
+  if (typeof metadata !== "object" || metadata === null || !("openrouter" in metadata)) return null;
+  const openrouter: unknown = metadata.openrouter;
+  if (typeof openrouter !== "object" || openrouter === null || !("usage" in openrouter)) return null;
+  const usage: unknown = openrouter.usage;
+  if (typeof usage !== "object" || usage === null || !("completionTokensDetails" in usage)) return null;
+  const details: unknown = usage.completionTokensDetails;
+  if (typeof details !== "object" || details === null || !("reasoningTokens" in details)) return null;
+  const tokens: unknown = details.reasoningTokens;
+  return typeof tokens === "number" && Number.isFinite(tokens) ? tokens : null;
+};
 
 const sum = (a: number | undefined, b: number | undefined): number | undefined => (b === undefined ? a : (a ?? 0) + b);
 
@@ -148,6 +184,9 @@ export default class FinderProvider implements ApiProvider {
       stepProviders: [],
       stepCostReported: [],
       stepReasoningTokens: [],
+      stepOpenRouterReasoningTokens: [],
+      stepReasoningTextChars: [],
+      reasoningLeak: false,
     };
 
     // Tool-enablement is PER CASE (a var), not per model (provider config):
@@ -248,7 +287,15 @@ export default class FinderProvider implements ApiProvider {
           telemetry.cost = sum(telemetry.cost, info.cost);
           telemetry.stepProviders.push(info.provider ?? null);
           telemetry.stepCostReported.push(info.cost !== undefined);
-          telemetry.stepReasoningTokens.push(step.usage.outputTokenDetails.reasoningTokens ?? null);
+          const sdkReasoning = step.usage.outputTokenDetails.reasoningTokens ?? null;
+          const openRouterReasoning = asOpenRouterReasoningTokens(step.providerMetadata);
+          const reasoningTextChars = step.reasoningText?.length ?? 0;
+          telemetry.stepReasoningTokens.push(sdkReasoning);
+          telemetry.stepOpenRouterReasoningTokens.push(openRouterReasoning);
+          telemetry.stepReasoningTextChars.push(reasoningTextChars);
+          if ((sdkReasoning ?? 0) > 0 || (openRouterReasoning ?? 0) > 0 || reasoningTextChars > 0) {
+            telemetry.reasoningLeak = true;
+          }
         },
         onOutputRepair: () => {
           telemetry.repairs += 1;

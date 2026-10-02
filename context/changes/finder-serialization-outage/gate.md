@@ -138,7 +138,13 @@ No endpoint failed on G4 alone, so G-A1's owner-decision clause is not triggered
 
 - **Serving provider:** every request of every attempt reported the pinned endpoint's name: `Z.AI`,
   `Novita`, `DeepInfra`, `Venice` across G1, G2 and all 48 promptfoo rows. No attempt was invalidated.
-- **Reasoning (A3):** zero reasoning tokens and no reasoning text on every request, on all four endpoints.
+- **Reasoning (A3), corrected 2026-10-02 (impl-review-phase-4 F1):** for **G1 and G2**, the gate runner checked
+  both A3 channels on every request — reasoning tokens (the SDK's and OpenRouter's count) and the reasoning
+  text — and found none on any of the four endpoints. For the **promptfoo rows** as measured, the adapter
+  recorded **only the SDK's reasoning-token count**. That count was 0 on every request, but reasoning text
+  was not checked, so A3 was not established for those 48 rows. The original responses did not survive, so
+  this cannot be checked after the fact. Novita's 12 rows were re-measured with the corrected adapter (see
+  "Supplement A3-F1" below). The other three endpoints fail other gates and were not re-measured.
 - **Repair rate (signal, not a gate):** z-ai 0 and novita 0 format repairs (G1, G2, promptfoo). deepinfra 2
   in G1 plus 2 in promptfoo (both cross-hunk rows). venice 3 in G1. Every repair succeeded. No attempt
   ended in `FinderOutputError`.
@@ -189,3 +195,36 @@ reached a model and so cost nothing. The promptfoo grader (48 `llm-rubric` calls
 `google/gemini-3.1-pro-preview`) is the rest of the counter delta: **$0.276199**. On z-ai it was read
 directly as $0.073666. Telemetry and counter agree wherever a delta covered finder requests alone: z-ai G1
 was $0.429646 by both.
+
+### Supplement A3-F1 (2026-10-02): Novita's fixture rows re-measured with both A3 channels
+
+**Why.** impl-review-phase-4 F1: the promptfoo adapter recorded reasoning tokens but not reasoning text,
+so G3 and G4 for the fixture rows did not establish A3. Novita's admission depends on that G3/G4 result.
+Owner decision (2026-10-02, FIX): fix the adapter, then establish the evidence for Novita only, with a hard
+$0.20 limit on this step inside G-A3's $2.30.
+
+**Did the original responses survive?** No. The adapter returned to promptfoo only the review JSON and its
+metadata, so neither the `-o` export nor `~/.promptfoo/promptfoo.db` ever held a reasoning text. The only
+non-zero `reasoning` figures in that store belong to the grader (Gemini), not to the finder.
+
+**Re-measurement.** The same command as the original, `OPENROUTER_FINDER_PROVIDERS=novita`, `-j 1`, the
+four archived cases, 3 repeats, with the corrected adapter. Every row now carries the SDK's reasoning
+tokens, OpenRouter's reasoning tokens, the reasoning-text length per request and `reasoningLeak`. The
+records are in `gate-novita-promptfoo-a3.jsonl`. The original `gate-novita-promptfoo.jsonl` is kept
+unchanged.
+
+- **12 rows, 12 passed.** Every request was served by `Novita`, and no format repair was needed.
+- **A3: no leak.** All three channels were 0 on every one of the 22 requests, and `reasoningLeak: false`
+  on every row.
+- **G3 still PASS.** `issue_recall` 3/3 on the JS loop. On React, `issue_recall`, `review_fails`,
+  `flaw_stale_closure`, `flaw_lost_cleanup` and `flaw_unsafe_html` were each 3/3. `no_false_alarms` 3/3
+  on the clean case. Diagnostic: cross-hunk `tool_required` and `flaw_cross_hunk_contract` 3/3.
+- **G4 still PASS.** Median $0.00169488 (1.69× the archived median), maximum $0.00636790, every request
+  priced.
+
+**Spend.** The OpenRouter key counter went from $52.49339654 to $52.58922727: **$0.095831** for this step,
+made up of finder telemetry $0.032829 and the grader $0.063002. That is within the $0.20 limit. Phase 4 in
+total: **$1.538486** of G-A3's $2.30.
+
+**Novita's automated G1–G4 verdict stands**, now with A3 established on its fixture rows too. Admission
+still depends on 4.3 (hand-read) and 4.4 (the list).
