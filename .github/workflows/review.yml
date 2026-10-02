@@ -231,6 +231,15 @@ jobs:
           # **/reviews/*.md above is now subsumed but STAYS: it carries its own
           # rationale and must survive any future narrowing of this blanket rule.
           #
+          # Fifth exclusion: JSONL records, the same class as results/*.json —
+          # one machine-written line per attempt or row, read with a script,
+          # never line by line. finder-serialization-outage's Phase 4 committed
+          # twelve gate-<endpoint>-<case>.jsonl files, 243,296 B in total, which
+          # is more than twice the 100 KB window. They sit under context/, which
+          # sorts before packages/, so the window would have closed on them
+          # before the gate runner's own source. No JSONL file in the
+          # repository is hand-written or reviewable code.
+          #
           # Array, not `${PLAN_PATH:+…}`: an unquoted expansion word-splits a
           # path containing a space into a broken pathspec and fails the step
           # red. The PR controls its own filenames, so that is reachable.
@@ -239,6 +248,7 @@ jobs:
             ':(exclude,glob)**/results/*.json'
             ':(exclude,glob)**/ground-truth/*'
             ':(exclude,glob)**/*.md'
+            ':(exclude,glob)**/*.jsonl'
           )
           [ -n "$PLAN_PATH" ] && EXCLUDES+=(":(exclude)${PLAN_PATH}")
           git diff "origin/${BASE_REF}...${HEAD_SHA}" -- . "${EXCLUDES[@]}" > "$RUNNER_TEMP/pr.diff"
