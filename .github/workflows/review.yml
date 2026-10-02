@@ -208,11 +208,15 @@ jobs:
           # NON-prose diffs too. Run 35534422541 — the PR that added this very line
           # — handed it a 31-line YAML diff at 2.4k-4.5k tokens, and it still died on
           # AI_NoObjectGeneratedError, twice. The record is a clean break rather than
-          # a content effect: 20 consecutive successes from 2026-09-08 to 2026-09-13,
-          # then 5 consecutive failures on 2026-09-20 across prose AND code. So the
-          # root cause sits in the finder model (vars.OPENROUTER_REVIEW_MODEL,
-          # currently z-ai/glm-4.6) or its provider, and the lever for that is a
-          # one-command variable swap, not this pathspec. Do NOT raise
+          # a content effect: the finder succeeded in 17 of 17 runs up to 2026-09-13,
+          # then failed in 35 of 35 from 2026-09-20, across prose AND code. Every
+          # green run of this workflow since the break is the SKIP_REVIEW branch on
+          # a docs-only PR: a skipped step, not a pass. The cause sits outside this
+          # pathspec: Venice, the only endpoint serving z-ai/glm-4.6 with
+          # structured outputs, stopped applying response_format (frame.md in
+          # context/archive/2026-09-24-finder-serialization-outage/). That change
+          # took response_format out of the finder; its gate admitted no glm-4.6
+          # endpoint, so the model swap continues in finder-model-swap. Do NOT raise
           # REVIEW_FINDER_MAX_STEPS expecting relief either: on a synced-skill-tree
           # diff a bigger budget only buys more duplicate reads.
           #
