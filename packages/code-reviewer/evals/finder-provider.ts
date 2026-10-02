@@ -90,6 +90,14 @@ export interface FinderTelemetry {
    * attempt would understate its cost rather than fail visibly.
    */
   stepCostReported: boolean[];
+  /**
+   * Reasoning tokens each observed request reported, in the same order; `null`
+   * where the request reported none. Every finder request is sent with
+   * reasoning disabled (Amendment A3), so any positive entry means the
+   * parameter did not take effect on that request, and the gate fails the
+   * attempt rather than letting a reasoning run pass as the measured shape.
+   */
+  stepReasoningTokens: (number | null)[];
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
@@ -139,6 +147,7 @@ export default class FinderProvider implements ApiProvider {
       repairs: 0,
       stepProviders: [],
       stepCostReported: [],
+      stepReasoningTokens: [],
     };
 
     // Tool-enablement is PER CASE (a var), not per model (provider config):
@@ -239,6 +248,7 @@ export default class FinderProvider implements ApiProvider {
           telemetry.cost = sum(telemetry.cost, info.cost);
           telemetry.stepProviders.push(info.provider ?? null);
           telemetry.stepCostReported.push(info.cost !== undefined);
+          telemetry.stepReasoningTokens.push(step.usage.outputTokenDetails.reasoningTokens ?? null);
         },
         onOutputRepair: () => {
           telemetry.repairs += 1;

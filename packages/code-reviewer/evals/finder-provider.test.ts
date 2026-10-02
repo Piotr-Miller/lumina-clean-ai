@@ -99,6 +99,7 @@ describe("FinderProvider metadata and prompt", () => {
     const metadata = metadataOf(response);
     expect(metadata.stepProviders).toEqual(["Novita"]);
     expect(metadata.stepCostReported).toEqual([true]);
+    expect(metadata.stepReasoningTokens).toEqual([null]);
     expect(metadata.repairs).toBe(0);
     const prompt = JSON.parse(promptOf(response)) as { role: string; content: string }[];
     expect(prompt.map((message) => message.role)).toEqual(["system", "user"]);
@@ -119,8 +120,23 @@ describe("FinderProvider metadata and prompt", () => {
     expect(metadata.steps).toBe(2);
     expect(metadata.stepProviders).toEqual(["Novita", null]);
     expect(metadata.stepCostReported).toEqual([true, false]);
+    expect(metadata.stepReasoningTokens).toEqual([null, null]);
     expect(metadata.repairs).toBe(1);
     expect(promptOf(response)).toContain("OUTPUT FORMAT");
+  });
+
+  it("records each request's reasoning tokens, so a reasoning run cannot pass as reasoning-off (A3)", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi.fn().mockResolvedValue({
+        ...generation(VALID, priced("Novita", 0.002)),
+        usage: {
+          inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+          outputTokens: { total: 40, text: 10, reasoning: 30 },
+        },
+      }),
+    });
+    const metadata = metadataOf(await call(provider()));
+    expect(metadata.stepReasoningTokens).toEqual([30]);
   });
 
   it("before finalization: actualPrompt says so and shows the loop prompt under its own name", async () => {
