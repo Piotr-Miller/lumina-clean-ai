@@ -2,7 +2,7 @@
 
 > Plan: `plan.md` Phase 4; thresholds: `gate.md` (G3: "every distinct finding must identify a real defect in
 > #269's diff; a rejected hand-read fails G3"). Source data: `gate-<endpoint>-pr269.jsonl` (full finding text
-> per attempt). **Nothing here is a verdict.** The deduplication was done by a read-only analysis agent,
+> per attempt). **Only the Novita table carries verdicts (4.3, 2026-10-02); the other tables are material only.** The deduplication was done by a read-only analysis agent,
 > which grouped findings by claimed defect and location and did not judge whether they are correct. The
 > owner marks each row true or false. Attempt IDs are short forms: `03` = `<endpoint>-pr269-03`.
 >
@@ -77,61 +77,61 @@ Grouping calls the agent marked as uncertain, for the owner to split or merge:
 ## Novita (`novita`) — 82 findings in 10 attempts → 50 distinct
 
 Per-attempt counts: 9, 9, 8, 6, 8, 9, 8, 6, 10, 9 (sum 82). Novita passed G1, G2, G3's automated part and G4,
-so **this hand-read decides its G3** and with it Novita's admission. "Same as (Z.AI)" points to a Z.AI row
+so **this hand-read decides its G3** and with it Novita's admission. **Decided 2026-10-02: G3 FAIL**; see the decision below the table. "Same as (Z.AI)" points to a Z.AI row
 above whose verdict can be reused. 16 rows match exactly, 3 partially (N10, N16, N39), and 31 need a fresh read.
 
 | #   | File:line(s)                             | Claimed defect (neutral paraphrase)                                                                                              | Severities        | Attempts       | Count | Same as (Z.AI) | Owner: real? |
 | --- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------- | ----- | -------------- | ------------ |
-| N1  | scripts/measure-hue-shares.py:114–123    | `manifest_roi` reads and parses the manifest JSON from disk again on every call.                                                 | minor, nit        | 01–10          | 10    | D1             |              |
-| N2  | scripts/measure-hue-shares.py:118–123    | A missing or malformed manifest gives a raw traceback instead of a clear `sys.exit` message.                                     | minor             | 10             | 1     | —              |              |
-| N3  | scripts/measure-hue-shares.py:118–130    | A zero-pixel (degenerate) ROI gives a NaN mean RGB, and nothing guards against it.                                               | minor             | 02, 08         | 2     | —              |              |
-| N4  | scripts/s17/auto-values.ts:1             | `export const prerender = false` is missing (both attempts concede that the file is a CLI script).                               | nit               | 02, 10         | 2     | D4             |              |
-| N5  | scripts/s17/auto-values.ts:1–67          | The new harness scripts have no tests.                                                                                           | nit               | 05             | 1     | —              |              |
-| N6  | scripts/s17/auto-values.ts:38–39         | The alpha channel of the `.rgba` buffer is never checked to be 255.                                                              | nit               | 01             | 1     | —              |              |
-| N7  | scripts/s17/browser-stats.ts:1–30        | The JSDoc cites "plan Phase 1 note" and "row 1.6" without linking the plan.                                                      | nit               | 09             | 1     | —              |              |
-| N8  | scripts/s17/browser-stats.ts:52–56       | `transpileModule` skips type-checking, and no comment says so.                                                                   | nit               | 03             | 1     | —              |              |
-| N9  | scripts/s17/browser-stats.ts:78          | The `S17-\d+` route regex is looser than the `\d{2}` id format.                                                                  | nit               | 05             | 1     | D9             |              |
-| N10 | scripts/s17/browser-stats.ts:84–86       | The inline page uses nested backtick interpolation and has no `<html><body>`, which is fragile.                                  | nit               | 10             | 1     | D10 (partial)  |              |
-| N11 | scripts/s17/browser-stats.ts:104–107     | The photo route uses an O(n) `entries.find`, which is inconsistent with the `photoBytes` Map.                                    | nit               | 02             | 1     | —              |              |
-| N12 | scripts/s17/browser-stats.ts:155–161     | NaN or Infinity from `page.evaluate` becomes null in JSON, and the `BrowserSample` cast hides it.                                | minor             | 01             | 1     | —              |              |
-| N13 | scripts/s17/browser-stats.ts:204         | `process.exit(worst)` runs synchronously after `void main()`, so a rejected `main()` still exits 0.                              | minor             | 06             | 1     | —              |              |
-| N14 | scripts/s17/contact-sheet.py:38          | `ImageOps` is imported and never used.                                                                                           | nit               | 04             | 1     | —              |              |
-| N15 | scripts/s17/contact-sheet.py:52–71       | Loading sibling scripts through importlib is fragile: tooling cannot follow it and import-time side effects run.                 | nit               | 01, 02, 03, 10 | 4     | D11            |              |
-| N16 | scripts/s17/contact-sheet.py:54–57       | Loading at module top level means a broken dependency crashes even `--help` and blocks unit tests.                               | minor             | 06, 09         | 2     | D11 (partial)  |              |
-| N17 | scripts/s17/contact-sheet.py:57–85       | The caption goes into `<figcaption>` without HTML escaping, so run-record data can inject markup.                                | major, minor      | 06, 07         | 2     | D12            |              |
-| N18 | scripts/s17/contact-sheet.py:100–101     | `sorted(sizes)` is shown in the HTML as a raw Python tuple.                                                                      | nit               | 07             | 1     | —              |              |
-| N19 | scripts/s17/contact-sheet.py:108–111     | With `--markdown`, the exposure stats are computed twice for each output.                                                        | minor             | 07             | 1     | —              |              |
-| N20 | scripts/s17/contact-sheet.py:112         | All output images are decoded and held in memory at once.                                                                        | nit               | 08             | 1     | D13            |              |
-| N21 | scripts/s17/contact-sheet.py:126–139     | Re-attaching the ICC profile after `exif_transpose` depends on `to_srgb` internals, so it may not apply or may break silently.   | minor             | 01, 09         | 2     | —              |              |
-| N22 | scripts/s17/contact-sheet.py:130–131     | The image from `Image.open` in `original_rgb` is never closed.                                                                   | nit               | 06             | 1     | D17            |              |
-| N23 | scripts/s17/contact-sheet.py:155         | The resized copy of `original` is saved but not assigned, so later code that uses `original` would get the full-size image.      | minor             | 05             | 1     | —              |              |
-| N24 | scripts/s17/decode-inputs.py:1–197       | The re-implemented decode, orient, downscale and sample pipeline has no fixture tests.                                           | nit               | 04             | 1     | —              |              |
-| N25 | scripts/s17/decode-inputs.py:83–95       | Rounding is round-half-up while Canvas rounds to even, and the docstring does not mention it.                                    | nit               | 07             | 1     | —              |              |
-| N26 | scripts/s17/decode-inputs.py:89–99       | The output of `profileToProfile` is never checked to be RGB mode.                                                                | minor             | 03             | 1     | —              |              |
-| N27 | scripts/s17/decode-inputs.py:94–95       | `to_srgb` converts to RGB before applying the ICC profile, which reads backwards.                                                | nit               | 06             | 1     | —              |              |
-| N28 | scripts/s17/decode-inputs.py:99–107      | Re-attaching `icc_profile` after `exif_transpose` is dead code, because `convert("RGB")` drops `info`.                           | minor             | 02             | 1     | —              |              |
-| N29 | scripts/s17/decode-inputs.py:117–118     | The `--filter` flag shadows the Python builtin `filter`.                                                                         | nit               | 01             | 1     | —              |              |
-| N30 | scripts/s17/desktop-stats.ts:82–108      | The `never` return type on `compare` is misleading or does not hold.                                                             | nit, minor, major | 03, 05, 06, 08 | 4     | D21            |              |
-| N31 | scripts/s17/desktop-stats.ts:88–178      | Module-level manifest, photo, SHA and transpile work makes `--compare` or an import do needless I/O and crash on missing photos. | minor, nit        | 02, 07, 08, 09 | 4     | D29            |              |
-| N32 | scripts/s17/desktop-stats.ts:89, 259–273 | The localhost server has no token or auth, so any local process can fetch the licensed photos and the source.                    | minor             | 09, 10         | 2     | D31            |              |
-| N33 | scripts/s17/desktop-stats.ts:104–130     | `base[id]` is not null-checked (the download entry is), so a missing baseline id throws an opaque TypeError.                     | minor             | 03, 04         | 2     | D25            |              |
-| N34 | scripts/s17/desktop-stats.ts:107         | An empty `entries` list makes `compare` exit 0 having compared nothing.                                                          | minor             | 09             | 1     | D28            |              |
-| N35 | scripts/s17/desktop-stats.ts:156–170     | `--baseline` with no value silently falls back to the default baseline.                                                          | minor             | 07             | 1     | —              |              |
-| N36 | scripts/s17/desktop-stats.ts:259–273     | The server does not check the `Host` header.                                                                                     | nit               | 10             | 1     | —              |              |
-| N37 | scripts/s17/desktop-stats.ts:261–275     | There is no CORS or Origin check, so a page from another origin could read the photos and the JS.                                | minor             | 01, 05         | 2     | —              |              |
-| N38 | scripts/s17/desktop-stats.ts:261–275     | The photo route regex `S17-\d+` is looser than `\d{2}` (the same claim as N9, in a second file).                                 | nit               | 05             | 1     | —              |              |
-| N39 | scripts/s17/desktop-stats.ts:263–275     | The server is never closed and keep-alive stays on, so the process does not exit by itself.                                      | nit, major        | 01, 06         | 2     | D33 (partial)  |              |
-| N40 | scripts/s17/harness.ts:12–14             | `import.meta.dirname` needs a recent Node, and the version floor is not documented.                                              | nit               | 04, 09         | 2     | —              |              |
-| N41 | scripts/s17/harness.ts:53–55             | `readManifest` does not cache the parsed manifest (the attempt says this is fine today).                                         | nit               | 02             | 1     | —              |              |
-| N42 | scripts/s17/harness.ts:53–55             | `readManifest` has no error handling, so a missing or malformed manifest gives a raw Node error.                                 | nit, minor        | 03, 10         | 2     | —              |              |
-| N43 | scripts/s17/harness.ts:55                | The parsed manifest is cast with no runtime shape validation.                                                                    | nit               | 07             | 1     | D35            |              |
-| N44 | scripts/spikes/bread-spike.ts:88–90      | Reading the whole file and wrapping it in a Blob doubles memory for large inputs, and nothing documents this.                    | nit               | 09             | 1     | —              |              |
-| N45 | scripts/spikes/bread-spike.ts:111–117    | `process.exitCode = 1; return` does not guarantee termination the way `process.exit(1)` did.                                     | minor             | 04, 09         | 2     | D38            |              |
-| N46 | scripts/spikes/bread-spike.ts:113–115    | A failed output download in `saveOutput` returns without setting the exit code, so the run exits 0.                              | minor             | 03             | 1     | —              |              |
-| N47 | scripts/spikes/bread-spike.ts:114–117    | The early-return-plus-`finally` control flow is subtle or undocumented.                                                          | nit, minor        | 01, 06, 10     | 3     | D39            |              |
-| N48 | scripts/spikes/bread-spike.ts:114–116    | After a failed create, `finally` still deletes an upload that no prediction used (the attempt calls this harmless).              | minor             | 02             | 1     | —              |              |
-| N49 | scripts/spikes/bread-spike.ts:119–125    | The prediction poll loop has no wall-clock timeout.                                                                              | minor             | 08             | 1     | D40            |              |
-| N50 | scripts/spikes/bread-spike.ts:244–253    | The sidecar stores the raw remote input URL, which could leak a token or address.                                                | major             | 05             | 1     | —              |              |
+| N1  | scripts/measure-hue-shares.py:114–123    | `manifest_roi` reads and parses the manifest JSON from disk again on every call.                                                 | minor, nit        | 01–10          | 10    | D1             | unresolved   |
+| N2  | scripts/measure-hue-shares.py:118–123    | A missing or malformed manifest gives a raw traceback instead of a clear `sys.exit` message.                                     | minor             | 10             | 1     | —              | unresolved   |
+| N3  | scripts/measure-hue-shares.py:118–130    | A zero-pixel (degenerate) ROI gives a NaN mean RGB, and nothing guards against it.                                               | minor             | 02, 08         | 2     | —              | unresolved   |
+| N4  | scripts/s17/auto-values.ts:1             | `export const prerender = false` is missing (both attempts concede that the file is a CLI script).                               | nit               | 02, 10         | 2     | D4             | rejected     |
+| N5  | scripts/s17/auto-values.ts:1–67          | The new harness scripts have no tests.                                                                                           | nit               | 05             | 1     | —              | unresolved   |
+| N6  | scripts/s17/auto-values.ts:38–39         | The alpha channel of the `.rgba` buffer is never checked to be 255.                                                              | nit               | 01             | 1     | —              | unresolved   |
+| N7  | scripts/s17/browser-stats.ts:1–30        | The JSDoc cites "plan Phase 1 note" and "row 1.6" without linking the plan.                                                      | nit               | 09             | 1     | —              | unresolved   |
+| N8  | scripts/s17/browser-stats.ts:52–56       | `transpileModule` skips type-checking, and no comment says so.                                                                   | nit               | 03             | 1     | —              | unresolved   |
+| N9  | scripts/s17/browser-stats.ts:78          | The `S17-\d+` route regex is looser than the `\d{2}` id format.                                                                  | nit               | 05             | 1     | D9             | unresolved   |
+| N10 | scripts/s17/browser-stats.ts:84–86       | The inline page uses nested backtick interpolation and has no `<html><body>`, which is fragile.                                  | nit               | 10             | 1     | D10 (partial)  | unresolved   |
+| N11 | scripts/s17/browser-stats.ts:104–107     | The photo route uses an O(n) `entries.find`, which is inconsistent with the `photoBytes` Map.                                    | nit               | 02             | 1     | —              | unresolved   |
+| N12 | scripts/s17/browser-stats.ts:155–161     | NaN or Infinity from `page.evaluate` becomes null in JSON, and the `BrowserSample` cast hides it.                                | minor             | 01             | 1     | —              | unresolved   |
+| N13 | scripts/s17/browser-stats.ts:204         | `process.exit(worst)` runs synchronously after `void main()`, so a rejected `main()` still exits 0.                              | minor             | 06             | 1     | —              | rejected     |
+| N14 | scripts/s17/contact-sheet.py:38          | `ImageOps` is imported and never used.                                                                                           | nit               | 04             | 1     | —              | unresolved   |
+| N15 | scripts/s17/contact-sheet.py:52–71       | Loading sibling scripts through importlib is fragile: tooling cannot follow it and import-time side effects run.                 | nit               | 01, 02, 03, 10 | 4     | D11            | unresolved   |
+| N16 | scripts/s17/contact-sheet.py:54–57       | Loading at module top level means a broken dependency crashes even `--help` and blocks unit tests.                               | minor             | 06, 09         | 2     | D11 (partial)  | unresolved   |
+| N17 | scripts/s17/contact-sheet.py:57–85       | The caption goes into `<figcaption>` without HTML escaping, so run-record data can inject markup.                                | major, minor      | 06, 07         | 2     | D12            | unresolved   |
+| N18 | scripts/s17/contact-sheet.py:100–101     | `sorted(sizes)` is shown in the HTML as a raw Python tuple.                                                                      | nit               | 07             | 1     | —              | unresolved   |
+| N19 | scripts/s17/contact-sheet.py:108–111     | With `--markdown`, the exposure stats are computed twice for each output.                                                        | minor             | 07             | 1     | —              | unresolved   |
+| N20 | scripts/s17/contact-sheet.py:112         | All output images are decoded and held in memory at once.                                                                        | nit               | 08             | 1     | D13            | unresolved   |
+| N21 | scripts/s17/contact-sheet.py:126–139     | Re-attaching the ICC profile after `exif_transpose` depends on `to_srgb` internals, so it may not apply or may break silently.   | minor             | 01, 09         | 2     | —              | unresolved   |
+| N22 | scripts/s17/contact-sheet.py:130–131     | The image from `Image.open` in `original_rgb` is never closed.                                                                   | nit               | 06             | 1     | D17            | unresolved   |
+| N23 | scripts/s17/contact-sheet.py:155         | The resized copy of `original` is saved but not assigned, so later code that uses `original` would get the full-size image.      | minor             | 05             | 1     | —              | rejected     |
+| N24 | scripts/s17/decode-inputs.py:1–197       | The re-implemented decode, orient, downscale and sample pipeline has no fixture tests.                                           | nit               | 04             | 1     | —              | unresolved   |
+| N25 | scripts/s17/decode-inputs.py:83–95       | Rounding is round-half-up while Canvas rounds to even, and the docstring does not mention it.                                    | nit               | 07             | 1     | —              | unresolved   |
+| N26 | scripts/s17/decode-inputs.py:89–99       | The output of `profileToProfile` is never checked to be RGB mode.                                                                | minor             | 03             | 1     | —              | rejected     |
+| N27 | scripts/s17/decode-inputs.py:94–95       | `to_srgb` converts to RGB before applying the ICC profile, which reads backwards.                                                | nit               | 06             | 1     | —              | unresolved   |
+| N28 | scripts/s17/decode-inputs.py:99–107      | Re-attaching `icc_profile` after `exif_transpose` is dead code, because `convert("RGB")` drops `info`.                           | minor             | 02             | 1     | —              | unresolved   |
+| N29 | scripts/s17/decode-inputs.py:117–118     | The `--filter` flag shadows the Python builtin `filter`.                                                                         | nit               | 01             | 1     | —              | rejected     |
+| N30 | scripts/s17/desktop-stats.ts:82–108      | The `never` return type on `compare` is misleading or does not hold.                                                             | nit, minor, major | 03, 05, 06, 08 | 4     | D21            | rejected     |
+| N31 | scripts/s17/desktop-stats.ts:88–178      | Module-level manifest, photo, SHA and transpile work makes `--compare` or an import do needless I/O and crash on missing photos. | minor, nit        | 02, 07, 08, 09 | 4     | D29            | unresolved   |
+| N32 | scripts/s17/desktop-stats.ts:89, 259–273 | The localhost server has no token or auth, so any local process can fetch the licensed photos and the source.                    | minor             | 09, 10         | 2     | D31            | unresolved   |
+| N33 | scripts/s17/desktop-stats.ts:104–130     | `base[id]` is not null-checked (the download entry is), so a missing baseline id throws an opaque TypeError.                     | minor             | 03, 04         | 2     | D25            | unresolved   |
+| N34 | scripts/s17/desktop-stats.ts:107         | An empty `entries` list makes `compare` exit 0 having compared nothing.                                                          | minor             | 09             | 1     | D28            | unresolved   |
+| N35 | scripts/s17/desktop-stats.ts:156–170     | `--baseline` with no value silently falls back to the default baseline.                                                          | minor             | 07             | 1     | —              | unresolved   |
+| N36 | scripts/s17/desktop-stats.ts:259–273     | The server does not check the `Host` header.                                                                                     | nit               | 10             | 1     | —              | unresolved   |
+| N37 | scripts/s17/desktop-stats.ts:261–275     | There is no CORS or Origin check, so a page from another origin could read the photos and the JS.                                | minor             | 01, 05         | 2     | —              | rejected     |
+| N38 | scripts/s17/desktop-stats.ts:261–275     | The photo route regex `S17-\d+` is looser than `\d{2}` (the same claim as N9, in a second file).                                 | nit               | 05             | 1     | —              | unresolved   |
+| N39 | scripts/s17/desktop-stats.ts:263–275     | The server is never closed and keep-alive stays on, so the process does not exit by itself.                                      | nit, major        | 01, 06         | 2     | D33 (partial)  | rejected     |
+| N40 | scripts/s17/harness.ts:12–14             | `import.meta.dirname` needs a recent Node, and the version floor is not documented.                                              | nit               | 04, 09         | 2     | —              | unresolved   |
+| N41 | scripts/s17/harness.ts:53–55             | `readManifest` does not cache the parsed manifest (the attempt says this is fine today).                                         | nit               | 02             | 1     | —              | unresolved   |
+| N42 | scripts/s17/harness.ts:53–55             | `readManifest` has no error handling, so a missing or malformed manifest gives a raw Node error.                                 | nit, minor        | 03, 10         | 2     | —              | unresolved   |
+| N43 | scripts/s17/harness.ts:55                | The parsed manifest is cast with no runtime shape validation.                                                                    | nit               | 07             | 1     | D35            | unresolved   |
+| N44 | scripts/spikes/bread-spike.ts:88–90      | Reading the whole file and wrapping it in a Blob doubles memory for large inputs, and nothing documents this.                    | nit               | 09             | 1     | —              | unresolved   |
+| N45 | scripts/spikes/bread-spike.ts:111–117    | `process.exitCode = 1; return` does not guarantee termination the way `process.exit(1)` did.                                     | minor             | 04, 09         | 2     | D38            | rejected     |
+| N46 | scripts/spikes/bread-spike.ts:113–115    | A failed output download in `saveOutput` returns without setting the exit code, so the run exits 0.                              | minor             | 03             | 1     | —              | unresolved   |
+| N47 | scripts/spikes/bread-spike.ts:114–117    | The early-return-plus-`finally` control flow is subtle or undocumented.                                                          | nit, minor        | 01, 06, 10     | 3     | D39            | unresolved   |
+| N48 | scripts/spikes/bread-spike.ts:114–116    | After a failed create, `finally` still deletes an upload that no prediction used (the attempt calls this harmless).              | minor             | 02             | 1     | —              | rejected     |
+| N49 | scripts/spikes/bread-spike.ts:119–125    | The prediction poll loop has no wall-clock timeout.                                                                              | minor             | 08             | 1     | D40            | unresolved   |
+| N50 | scripts/spikes/bread-spike.ts:244–253    | The sidecar stores the raw remote input URL, which could leak a token or address.                                                | major             | 05             | 1     | —              | unresolved   |
 
 Grouping calls the agent marked as uncertain:
 
@@ -145,6 +145,37 @@ Grouping calls the agent marked as uncertain:
 - N35 (`--baseline` with no value) is the same class as D30 (`--compare` with no value) but a different
   flag, so it is not mapped.
 - N9 and N38 are the same regex claim in two files, kept apart by location.
+
+### Hand-read decision for Novita (4.3), 2026-10-02
+
+**Who read what.** An agent read N1–N50 against `fca2778`, the revision #269 was measured on. Its
+recommendation went to the owner, who adopted it on 2026-10-02 and **personally confirmed N4 and N13**
+that day. Claude also checked N13, N26, N29, N30 and N46 against `fca2778`, with the same result as the
+agent. Every other row carries the agent's assessment only.
+
+**Rejected: the claimed defect is not real.** 10 rows:
+
+| #   | Why it is not a defect                                                                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| N4  | `export const prerender = false` applies to Astro routes. `auto-values.ts` is a CLI script. (The owner confirmed this.)                                       |
+| N13 | `process.exit(worst)` sits inside `main()` (line 201), after the awaited work. It does not run synchronously after `void main()`. (The owner confirmed this.) |
+| N23 | The original is kept at full resolution on purpose, for diagnostics. Only the saved copy is downscaled.                                                       |
+| N26 | The conversion sets `outputMode="RGB"` explicitly (`decode-inputs.py:114`).                                                                                   |
+| N29 | argparse stores `--filter` as `args.filter`. It does not shadow the builtin `filter`.                                                                         |
+| N30 | `compare(): never` ends in `process.exit(...)` on every path (line 136), so the type is correct.                                                              |
+| N37 | Without CORS headers, a page on another origin cannot read the responses. The missing headers are the protection.                                             |
+| N39 | The server is meant to run until it is stopped by hand. That is its purpose, not a defect.                                                                    |
+| N45 | `exitCode = 1; return` lets the `finally` cleanup run, which `process.exit(1)` would skip.                                                                    |
+| N48 | Deleting an upload that no prediction used is correct cleanup.                                                                                                |
+
+**Unresolved: the other 40 rows.** They mix suggestions, missing defensive checks and unproven threats.
+None of them is recorded as a real defect. The agent called N31, N35 and N46 accurate. For N46 the code
+agrees: `saveOutput` returns without an error code after a failed download. The owner has not confirmed
+any of the three, so they stay unresolved.
+
+**G3 verdict: FAIL.** G3 requires every distinct finding to identify a real defect in #269's diff. One
+rejected row is enough to fail it, and there are ten. The owner did not lower the threshold after seeing
+the results.
 
 ## DeepInfra (`deepinfra`) — 26 findings in 5 answered attempts → 25 distinct
 

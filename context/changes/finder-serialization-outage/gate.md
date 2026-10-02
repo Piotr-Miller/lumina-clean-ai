@@ -123,15 +123,17 @@ the four archived cases filtered: exactly 12 rows per endpoint.
 
 ### Verdicts
 
-| Endpoint  | G1 (#269, ≥ 9/10)          | G2 (clean, 5/5 with `[]`)          | G3 automated (fixtures)              | G3 hand-read (4.3)  | G4 (median ≤ $0.00301653) | Overall                       |
-| --------- | -------------------------- | ---------------------------------- | ------------------------------------ | ------------------- | ------------------------- | ----------------------------- |
-| z-ai      | **PASS** 10/10             | **FAIL** 2/5 (3 × HTTP 429)        | **FAIL** — `flaw_stale_closure` 2/3  | material only       | **PASS** $0.00180328      | **FAIL** (G2, G3)             |
-| novita    | **PASS** 10/10             | **PASS** 5/5                       | **PASS** — every required metric 3/3 | **pending (owner)** | **PASS** $0.00162580      | **pending** G3 hand-read, 4.4 |
-| deepinfra | **FAIL** 5/10 (5 × 429)    | **FAIL** 4/5 (attempt 04: 1 minor) | **PASS** — every required metric 3/3 | material only       | **PASS** $0.00121460      | **FAIL** (G1, G2)             |
-| venice    | **PASS** 10/10 (3 repairs) | **FAIL** 3/5 (01, 02: 1 each)      | **FAIL** — `flaw_stale_closure` 2/3  | material only       | **PASS** $0.00078374      | **FAIL** (G2, G3)             |
+| Endpoint  | G1 (#269, ≥ 9/10)          | G2 (clean, 5/5 with `[]`)          | G3 automated (fixtures)              | G3 hand-read (4.3)     | G4 (median ≤ $0.00301653) | Overall                 |
+| --------- | -------------------------- | ---------------------------------- | ------------------------------------ | ---------------------- | ------------------------- | ----------------------- |
+| z-ai      | **PASS** 10/10             | **FAIL** 2/5 (3 × HTTP 429)        | **FAIL** — `flaw_stale_closure` 2/3  | material only          | **PASS** $0.00180328      | **FAIL** (G2, G3)       |
+| novita    | **PASS** 10/10             | **PASS** 5/5                       | **PASS** — every required metric 3/3 | **FAIL** (10 rejected) | **PASS** $0.00162580      | **FAIL** (G3 hand-read) |
+| deepinfra | **FAIL** 5/10 (5 × 429)    | **FAIL** 4/5 (attempt 04: 1 minor) | **PASS** — every required metric 3/3 | material only          | **PASS** $0.00121460      | **FAIL** (G1, G2)       |
+| venice    | **PASS** 10/10 (3 repairs) | **FAIL** 3/5 (01, 02: 1 each)      | **FAIL** — `flaw_stale_closure` 2/3  | material only          | **PASS** $0.00078374      | **FAIL** (G2, G3)       |
 
-**Only Novita can enter production.** It passed every automated part of G1–G4, and its admission now
-depends on the owner's hand-read of its #269 findings (4.3) and the owner's acceptance of the list (4.4).
+**No endpoint is admitted.** Novita passed every automated part of G1–G4. It fails G3's hand-read
+(4.3, 2026-10-02): 10 of its 50 distinct claimed defects are rejected as not real defects, and the other 40
+are unresolved. The admitted list is empty (4.4) and Phase 5 does not start. See "Owner decision 4.3 / 4.4"
+below.
 No endpoint failed on G4 alone, so G-A1's owner-decision clause is not triggered.
 
 ### Detail
@@ -228,3 +230,24 @@ total: **$1.538486** of G-A3's $2.30.
 
 **Novita's automated G1–G4 verdict stands**, now with A3 established on its fixture rows too. Admission
 still depends on 4.3 (hand-read) and 4.4 (the list).
+
+### Owner decision 4.3 / 4.4 (2026-10-02)
+
+The owner adopted an agent's recommendation on 2026-10-02, with three reservations. They are recorded here
+as the owner gave them.
+
+- **4.3, G3 hand-read for Novita: FAIL.** An agent read N1–N50 against `fca2778`, and the owner personally
+  confirmed **N4** and **N13** on **2026-10-02**. Rejected: N4, N13, N23, N26, N29, N30, N37, N39, N45 and
+  N48. The other 40 rows are **unresolved**, which does not mean real. `hand-read-269.md` (the Novita
+  section) gives one reason per rejected row and the limits of the read. G3 requires every distinct finding
+  to be a real defect, so one rejected row is enough to fail it.
+- **4.4, the endpoint list: empty.** None of the four measured endpoints meets the whole of G1–G4. Z.AI,
+  DeepInfra and Venice fail the automated gates; Novita fails the G3 hand-read. Phase 5 as written does
+  not start.
+- **The path chosen is a model swap.** A replacement must be measured before it is admitted. Choosing this
+  path does **not** approve any particular model.
+- **No threshold was lowered after the results were seen.**
+- **Reservation for the next measurement:** G3's hand-read clause has no baseline. The archived glm-4.6
+  cycle never applied it to #269, so "every distinct finding is a real defect" has never been met by any
+  measured configuration. Before any replacement is measured, the clause must be defined as a
+  pre-registered, measurable threshold (`change.md`).
