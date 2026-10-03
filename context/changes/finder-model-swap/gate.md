@@ -483,3 +483,8 @@ hashed, is `hand-read-openai.json`.
 - **Classification:** not started at this record. The agent's pre-sort goes to `hand-read-269-presort.md`
   (separate from the approved table); the owner approves every row; unresolved counts as rejected (§4 G3).
   The classification is written after this record is committed and pushed.
+- **Pushed:** commit `docs(finder-model-swap): approve, freeze and draw the hand-read table (p3)` (`6dc009d`)
+  to `origin/feat/finder-model-swap`; GitHub push time **2026-10-03T14:52:39Z**
+  (`GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-model-swap`: `push`,
+  `5672fdc` → `6dc009d`). The draw re-run from the recorded sha and seed after the push gives the same
+  order (plan row 3.1). Recorded before any classification.

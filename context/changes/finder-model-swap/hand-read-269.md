@@ -78,11 +78,12 @@
 - **D9** — D9 and D10 overlap on 'missing baseline entry'; could be one row 'malformed or missing baseline input is not handled as the documented controlled failure'.
 - **D10** — See D9.
 
-## Next steps (owner, §6 order)
+## Status of the §6 steps
 
-1. Approve or change the merges and splits above (1:1 rows need no action).
-2. The agent updates `hand-read-openai.json` to the approved table → `node scripts/hand-read-sample.mjs freeze
-context/changes/finder-model-swap/hand-read-openai.json` → sha256 into `gate.md`.
-3. Seed (32 bytes from `/dev/urandom`, hex) written into `gate.md`, then `draw`; N < 40 means every row is in
-   the sample and the limit is floor(0.05 × N).
-4. Pre-sort and the owner's classification of every row against `fca2778` (unresolved counts as rejected).
+1. **Done 2026-10-03** — the owner approved the merges and splits above without changes (1:1 rows needed no
+   action).
+2. **Done 2026-10-03** — `freeze` → sha256 → seed → `draw`, recorded in `gate.md` § Hand-read in that order;
+   committed and pushed (GitHub push time 2026-10-03T14:52:39Z) before any classification.
+3. **Next** — the agent's pre-sort of every row against `fca2778` is in `hand-read-269-presort.md`, separate
+   from this table; the owner approves or changes every classification (unresolved counts as rejected), and
+   the approved classification is then recorded here and in `gate.md`.
