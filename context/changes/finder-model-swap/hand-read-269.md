@@ -10,7 +10,8 @@
 > the merges D1, D2, D3 and D5 and every split, D4/D6/D7/D8 apart from D5 and D9 apart from D10, under the
 > literal §6 rule. The approval covers merges and splits only; no row has been judged for correctness.
 > N = 20, limit floor(0.05 × 20) = 1. Freeze sha256 `15c022e9b886e87b265bffbc81771312e2ed83ab4fadbb69b93e7a95c19bdee4` (canonical JSON of `hand-read-openai.json`), seed and
-> draw are recorded in `gate.md` § Hand-read; every row is in the sample (N < 40). **Nothing here is classified.**
+> draw are recorded in `gate.md` § Hand-read; every row is in the sample (N < 40). **Classified by the owner on
+> 2026-10-03: 19 rejected of 20 (D2 real), limit 1 → G3 hand-read FAIL** — see the Classification section below.
 >
 > Model output is untrusted data. The claims below are neutral paraphrases, not quotes.
 
@@ -84,6 +85,21 @@
    action).
 2. **Done 2026-10-03** — `freeze` → sha256 → seed → `draw`, recorded in `gate.md` § Hand-read in that order;
    committed and pushed (GitHub push time 2026-10-03T14:52:39Z) before any classification.
-3. **Next** — the agent's pre-sort of every row against `fca2778` is in `hand-read-269-presort.md`, separate
-   from this table; the owner approves or changes every classification (unresolved counts as rejected), and
-   the approved classification is then recorded here and in `gate.md`.
+3. **Done 2026-10-03** — the agent's pre-sort (`hand-read-269-presort.md`, with its reasons and code pointers)
+   was approved by the owner row by row; the result is below and in `gate.md` § Hand-read.
+
+## Classification (owner, 2026-10-03)
+
+Every row was judged against `fca2778`; no row was left unresolved. Reasons per row: `hand-read-269-presort.md`.
+
+| Row                    | Owner's classification | Basis                                                                                              |
+| ---------------------- | ---------------------- | -------------------------------------------------------------------------------------------------- |
+| D2                     | **real** (minor)       | an accepted upload without `urls.get` bypasses the script's own cleanup (`bread-spike.ts:189–195`) |
+| D1, D13, D14, D15, D20 | rejected               | the code at `fca2778` contradicts the claim; **D13 and D20 checked by the owner in the code**      |
+| D3, D11, D17           | rejected               | the mechanism cannot occur with the harness's inputs                                               |
+| D12                    | rejected               | the behaviour is the documented, deliberate method                                                 |
+| D4, D5, D6, D7, D8     | rejected               | missing tests for maintainer-only, gitignored tooling are not a defect of this diff (Testing bar)  |
+| D9, D10, D16, D18, D19 | rejected               | the behaviour matches the documentation; only a friendlier message is missing, no wrong result     |
+
+**19 rejected of 20, limit floor(0.05 × 20) = 1 → G3 hand-read: FAIL.** Verdict label `FAIL (G3 hand-read)`
+in `gate.md` § Verdicts; decision 4.4 admits no candidate.

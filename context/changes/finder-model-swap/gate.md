@@ -411,11 +411,11 @@ are `not measured (stopped after G2 FAIL)`; nothing more was spent on this candi
 Every candidate has exactly one label (§5). Measured in the registered order; each stopped at its first
 decisive failure.
 
-| #   | Candidate            | G2 (clean × 5, `[]`)               | G3 fixtures (12 rows)                                 | G4 (median ≤ $0.00301653)     | G1 (#269 × 10, ≥ 9/10)               | Verdict (Phase 2)                                                  |
-| --- | -------------------- | ---------------------------------- | ----------------------------------------------------- | ----------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
-| 1   | `openai/gpt-6-luna`  | **PASS** 5/5                       | **PASS** every required metric 3/3                    | **PASS** $0.00018176 (0.060×) | **PASS** 10/10, 0 repairs            | **PASS (automated G1–G4)** → hand-read (§6, Phase 3), decision 4.4 |
-| 2   | `qwen/qwen3.8-flash` | **PASS** 5/5                       | **FAIL** `flaw_stale_closure` 1/3, `issue_recall` 2/3 | PASS $0.00068266 (0.226×)     | not measured (stopped after G3 FAIL) | **FAIL (G3)**                                                      |
-| 3   | `minimax/minimax-m3` | **FAIL** 0/1 — 2 nits on the probe | not measured (stopped after G2 FAIL)                  | not measured                  | not measured (stopped after G2 FAIL) | **FAIL (G2)**                                                      |
+| #   | Candidate            | G2 (clean × 5, `[]`)               | G3 fixtures (12 rows)                                 | G4 (median ≤ $0.00301653)     | G1 (#269 × 10, ≥ 9/10)               | Verdict (Phase 2)                                                                                  |
+| --- | -------------------- | ---------------------------------- | ----------------------------------------------------- | ----------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| 1   | `openai/gpt-6-luna`  | **PASS** 5/5                       | **PASS** every required metric 3/3                    | **PASS** $0.00018176 (0.060×) | **PASS** 10/10, 0 repairs            | **FAIL (G3 hand-read)** — automated G1–G4 PASS; hand-read 19 rejected of 20, limit 1 (§ Hand-read) |
+| 2   | `qwen/qwen3.8-flash` | **PASS** 5/5                       | **FAIL** `flaw_stale_closure` 1/3, `issue_recall` 2/3 | PASS $0.00068266 (0.226×)     | not measured (stopped after G3 FAIL) | **FAIL (G3)**                                                                                      |
+| 3   | `minimax/minimax-m3` | **FAIL** 0/1 — 2 nits on the probe | not measured (stopped after G2 FAIL)                  | not measured                  | not measured (stopped after G2 FAIL) | **FAIL (G2)**                                                                                      |
 
 A3 held on every request of every attempt and row of all three candidates (both channels, and reasoning
 text); the pinned provider name was reported on every request (`OpenAI` ×74, `Alibaba` ×73, `Minimax` ×2); no
@@ -423,7 +423,16 @@ attempt or row was invalidated; no 429, no timeout, no `FinderOutputError`; prod
 (0 retries in all series); no grader error, so Amendment A1's re-grade was not needed. No `paused (G4 only)`
 and no $1.60 stop occurred, so the owner was not asked mid-measurement.
 
-**Comparison (Phase 2 §3): not applicable** — exactly one candidate passed the automated G1–G4.
+**Comparison (Phase 2 §3): not applicable** — exactly one candidate passed the automated G1–G4, and it failed
+the hand-read.
+
+### Decision 4.4 (owner, 2026-10-03)
+
+- **Admitted candidates: none.** `openai/gpt-6-luna` — `FAIL (G3 hand-read)`; `qwen/qwen3.8-flash` — `FAIL (G3)`;
+  `minimax/minimax-m3` — `FAIL (G2)`.
+- Per §5: **we stay without a finder until a separate owner decision; the thresholds do not change.**
+- **Phase 4 does not start.** The plan's close-out for this case (record, `npm test`, no production change)
+  is not started at this record either — the owner asked that nothing further be begun.
 
 ### Run notes (added 2026-10-03, impl-review-phase-2 F5)
 
@@ -480,9 +489,18 @@ hashed, is `hand-read-openai.json`.
 - **Draw** (2026-10-03T14:50:53Z): `node scripts/hand-read-sample.mjs draw context/changes/finder-model-swap/hand-read-openai.json --sha 15c022e9b886e87b265bffbc81771312e2ed83ab4fadbb69b93e7a95c19bdee4 --seed fb94370b2d90d2f261f912e6189f7160cccf830d67fe2dfc0ad2eba9553b73ad`
   → `N=20 sample=20 limit=1 rejected`; sample order (rank by `sha256(seed + ":" + id)` ascending):
   D15, D2, D18, D13, D9, D4, D11, D14, D3, D19, D17, D5, D20, D1, D10, D6, D8, D16, D12, D7.
-- **Classification:** not started at this record. The agent's pre-sort goes to `hand-read-269-presort.md`
-  (separate from the approved table); the owner approves every row; unresolved counts as rejected (§4 G3).
-  The classification is written after this record is committed and pushed.
+- **Classification** (owner, 2026-10-03, after the push below): the agent pre-sorted every row against
+  `fca2778` in `hand-read-269-presort.md` (one-sentence reason and code pointer per row; the three
+  decode-geometry rows also re-run with Pillow in `hand-read-269-checks.py`); the owner approved every row as
+  proposed and **checked D13 and D20 personally in the code** (`contact-sheet.py:208–211`,
+  `bread-spike.ts:117–121`). No row was left unresolved. **Real: 1** — D2 (minor). **Rejected: 19** — D1,
+  D13, D14, D15, D20 (the code contradicts the claim); D3, D11, D17 (the mechanism cannot occur with the
+  harness's inputs); D12 (documented, deliberate method); D4–D8 (owner: the Testing bar asks for
+  risk-weighted coverage, and maintainer-only tooling with gitignored outputs is not risky user-facing
+  behaviour, so missing tests are not a defect of this diff); D9, D10, D16, D18, D19 (owner: the behaviour
+  matches the documentation — exit 1, or what the help text says — only a friendlier message is missing, no
+  wrong result). **19 rejected of 20 against the limit of 1 → G3 hand-read: FAIL.** Verdict label (§5):
+  **`FAIL (G3 hand-read)`**. The threshold was not changed after seeing the result.
 - **Pushed:** commit `docs(finder-model-swap): approve, freeze and draw the hand-read table (p3)` (`6dc009d`)
   to `origin/feat/finder-model-swap`; GitHub push time **2026-10-03T14:52:39Z**
   (`GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-model-swap`: `push`,
