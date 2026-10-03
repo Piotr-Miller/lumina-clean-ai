@@ -5,6 +5,8 @@ status: archived
 outcome: completed
 created: 2026-10-02
 updated: 2026-10-03
+archive_commit: 6a3639b
+sync: none
 archived_at: 2026-10-03T17:04:00Z
 ---
 
