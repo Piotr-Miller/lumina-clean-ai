@@ -214,3 +214,52 @@ _End of Pre-registration._
 - **Pushed:** commit `adffc68` to `origin/feat/finder-model-swap`; GitHub push time **2026-10-03T09:00:20Z**
   (`GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-model-swap`: `push`,
   `87ba5da` → `adffc68`). Recorded before any price re-read or paid call.
+
+## Amendments
+
+Protocol changes after the seal (§9): each dated, hashed over its own bytes (from its `###` heading to its
+`_End of …_` line), committed and pushed to `origin` before the measurement it affects. The seal check covers
+the Pre-registration section only; nothing here edits it.
+
+### A1 — grader errors (2026-10-03)
+
+Decided by the owner on 2026-10-03 in the triage of `reviews/impl-review-phase-1-7b49836.md` (F3 and F5),
+before any paid call in this change. Applies to the promptfoo rows (G3/G4).
+
+A grader error is not a candidate failure. Rows marked grader error keep everything the finder produced
+(provider and A3 checks, FinderOutputError, cost for G4). Their stored finder output is re-graded once by the
+same grader with no new finder call. If re-grading is not possible with the tooling, or fails again, the run is
+a failed run (not a gate result) and measurement stops for an owner decision before any further spend. A
+finder call is never re-run for a grader error.
+
+A timeout-triggered retry is reported next to G4 and in the ledger as possibly under-costed telemetry; it does
+not by itself fail G4.
+
+**Tooling (Phase 1, commit `fix(finder-model-swap): resolve impl-review F1–F4 (p1)`): re-grading IS possible
+without a finder call.**
+
+- A grader error is a row whose finder succeeded (no `response.error`) and whose grading has no component
+  results, was aborted, or carries a component tagged `metadata.graderError` — promptfoo 0.122.0's own mark
+  for a grader transport or parse failure (`graderFail` in its source). `scripts/promptfoo-gate-rows.mjs`
+  prints such rows as `GRADER-ERROR` and the run as a failed run; G4 and the provider/A3 results are still
+  printed.
+- `scripts/promptfoo-regrade-config.mjs` writes `evals/<slug>.regrade.json`: one test per grader-error row,
+  the stored output as `providerOutput` (promptfoo then skips the provider — `echo`, never called), only the
+  assertions whose grading errored, the matrix config's own `defaultTest` (the same grader). Run:
+  `npx promptfoo eval -c evals/<slug>.regrade.json -j 1 --no-cache -o <regrade.json>`.
+- `promptfoo-gate-rows.mjs --regrade <regrade.json>`: only the errored metrics come from the re-grade; a
+  grader error again, a re-grade of a row that was not a grader error, a row re-graded twice, or a
+  grader-error row left un-re-graded keeps the run a failed run. Merged rows carry `regraded: true` and
+  `regradeOf: <original row id>`; both exports are kept in the scratch directory, the merged rows are the
+  gate's JSONL, and the Results section names every re-graded row.
+- Metrics graded from provider telemetry (`tool_calls`, `tool_required`) cannot be re-graded from a stored
+  output (a `providerOutput` row carries no metadata) and are left out of a whole-grading re-grade
+  (`notRegradable`); they are diagnostic, never required.
+- The re-grade's grader spend counts toward the $2.00 (§7) and goes into the ledger.
+
+_End of A1._
+
+- **sha256 of A1:** `dc423199b14269d15267fb3522083378d9e8dc274973636b233667d12f5ebb9c`
+- **Hashed at:** 2026-10-03T10:02:04Z
+- **Command:** `sed -n '/^### A1 — grader errors (2026-10-03)$/,/^_End of A1\._$/p' gate.md | sha256sum`
+- **Pushed:** recorded below after the push to `origin`.
