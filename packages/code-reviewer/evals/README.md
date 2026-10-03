@@ -78,6 +78,32 @@ npm run eval:view
 
 In the viewer, the row-detail dialog shows **"Prompt"** (the config's raw `{{diff}}` template, never rendered — templating is disabled) and **"Actual Prompt Sent"** (what the provider actually sent). Only the latter is the real prompt; it is where you can see the tool-enabled instruction variant on tool-enabled cases.
 
+## Re-grading a grader-error row (gate.md Amendment A1)
+
+A grader error — the `llm-rubric` provider erroring or answering unparsably (promptfoo tags the component
+`metadata.graderError`), or the grading never producing component results — is **not a candidate failure**.
+`scripts/promptfoo-gate-rows.mjs` reports such rows as `GRADER-ERROR` and the run as a failed run, not a
+gate result. The stored finder output of those rows is then re-graded **once**, by the same grader, with
+**no finder call**: promptfoo skips the provider for a test that carries `providerOutput`, and the generated
+config keeps only the assertions whose grading errored.
+
+```powershell
+# 1. Which rows errored, and the config that re-grades their stored output (free):
+node scripts/promptfoo-gate-rows.mjs --export <run.json> --expected-provider <name> --out <rows.jsonl>
+node scripts/promptfoo-regrade-config.mjs --export <run.json> --out evals/<slug>.regrade.json
+# 2. The re-grade itself (paid: grader only; the `echo` provider is never called):
+npx promptfoo eval -c evals/<slug>.regrade.json -j 1 --no-cache -o <regrade.json>
+# 3. The merged gate result — only the errored metrics come from the re-grade:
+node scripts/promptfoo-gate-rows.mjs --export <run.json> --regrade <regrade.json> --expected-provider <name> --out <rows.jsonl>
+```
+
+Metrics graded from provider telemetry (`tool_calls`, `tool_required`) cannot be re-graded from a stored
+output — a `providerOutput` row carries no metadata — so a whole-grading re-grade leaves them out and lists
+them under `notRegradable`; they are diagnostic, never required. The generated config must sit next to `promptfooconfig.yaml` (its `file://` references resolve against the
+config's directory); `evals/*.regrade.json` is gitignored. A grader error **again**, a re-grade of a row that
+was not a grader error, or a row re-graded twice, is refused and the run stays a failed run for an owner
+decision. The merged rows carry `regraded: true` and `regradeOf: <original row id>`.
+
 ## Exporting a decision snapshot
 
 Run results live in promptfoo's local SQLite history (`~/.promptfoo`), which stays out of the repo. To make a comparison citable, export it into the change folder (never under `packages/`):

@@ -12,8 +12,8 @@ import {
   classify,
   evaluateAttempt,
   parseGateArgs,
+  readSeries,
   reasoningTokensOf,
-  recordedClashes,
   runAttempt,
 } from "./finder-gate-core.mjs";
 
@@ -104,43 +104,92 @@ describe("parseGateArgs", () => {
   });
 });
 
-describe("recordedClashes", () => {
-  const file = `${JSON.stringify({ attempt: 1 })}\n`;
-
-  it("lets the series continue from the next attempt", () => {
-    expect(recordedClashes(file, 2)).toEqual([]);
+// A series file as the runner writes it: a `started` line before each paid
+// call, an attempt record after it, every line carrying the series identity.
+const IDENTITY = { model: "openai/gpt-6-luna", endpoint: "openai", case: "clean", n: 5 };
+const startedLine = (attempt, identity = IDENTITY) => JSON.stringify({ kind: "started", ...identity, attempt });
+const recordLine = (attempt, identity = IDENTITY) => JSON.stringify({ kind: "attempt", ...identity, attempt });
+const file = (...lines) => lines.map((line) => `${line}\n`).join("");
+const completed = (...attempts) => file(...attempts.flatMap((a) => [startedLine(a), recordLine(a)]));
+const writable = (overrides) =>
+  assertSeriesWritable({
+    append: true,
+    start: 2,
+    existingText: completed(1),
+    out: "o",
+    model: IDENTITY.model,
+    endpoint: IDENTITY.endpoint,
+    caseName: IDENTITY.case,
+    n: IDENTITY.n,
+    ...overrides,
   });
 
-  it("names an attempt that is already recorded, so it is never re-run", () => {
-    expect(recordedClashes(file, 1)).toEqual([1]);
+describe("readSeries", () => {
+  it("pairs started lines with records, and lists the attempt that never finished", () => {
+    const series = readSeries(file(startedLine(1), recordLine(1), startedLine(2)));
+    expect(series.attempts).toEqual([
+      { attempt: 1, started: true, completed: true },
+      { attempt: 2, started: true, completed: false },
+    ]);
+    expect(series.maxAttempt).toBe(2);
+    expect(series.interrupted).toEqual([2]);
+    expect(series.identities).toEqual([IDENTITY]);
+  });
+
+  it("refuses a corrupt line rather than continuing blind", () => {
+    expect(() => readSeries(file(recordLine(1), "{not json"))).toThrow(/corrupt/u);
+    expect(() => readSeries(file(JSON.stringify({ kind: "attempt" })))).toThrow(/no attempt number/u);
   });
 });
 
 describe("assertSeriesWritable", () => {
-  const recorded = `${JSON.stringify({ attempt: 1 })}\n`;
-
   it("starts a fresh series in a missing or empty file", () => {
-    expect(() => assertSeriesWritable({ append: false, start: 1, existingText: undefined, out: "o" })).not.toThrow();
-    expect(() => assertSeriesWritable({ append: false, start: 1, existingText: "", out: "o" })).not.toThrow();
+    expect(() => writable({ append: false, start: 1, existingText: undefined })).not.toThrow();
+    expect(() => writable({ append: false, start: 1, existingText: "" })).not.toThrow();
   });
 
   it("refuses to overwrite a recorded series — repeating --through 1 would re-run the A3 probe", () => {
-    expect(() => assertSeriesWritable({ append: false, start: 1, existingText: recorded, out: "o" })).toThrow(
-      /never overwrite/u,
-    );
+    expect(() => writable({ append: false, start: 1 })).toThrow(/never overwrite/u);
   });
 
-  it("continues past the recorded attempts, and refuses to re-run one", () => {
-    expect(() => assertSeriesWritable({ append: true, start: 2, existingText: recorded, out: "o" })).not.toThrow();
-    expect(() => assertSeriesWritable({ append: true, start: 1, existingText: recorded, out: "o" })).toThrow(
-      /refusing to re-run/u,
-    );
+  it("continues past the recorded attempts, returning the recorded state", () => {
+    expect(writable({ start: 2 })).toMatchObject({ maxAttempt: 1, interrupted: [] });
+    expect(() => writable({ start: 4, existingText: completed(1, 2, 3) })).not.toThrow();
   });
 
-  it("refuses --append onto a file that does not exist", () => {
-    expect(() => assertSeriesWritable({ append: true, start: 2, existingText: undefined, out: "o" })).toThrow(
-      /does not exist/u,
+  it("refuses to re-run a recorded attempt", () => {
+    expect(() => writable({ start: 1 })).toThrow(/already recorded.*refusing to re-run/u);
+  });
+
+  it("refuses --append onto a file that does not exist, or an empty one", () => {
+    expect(() => writable({ existingText: undefined })).toThrow(/does not exist/u);
+    expect(() => writable({ existingText: "" })).toThrow(/is empty/u);
+  });
+
+  // impl-review-phase-1 F1: the four ways a continuation could add, skip or
+  // repeat a G2 attempt.
+  it("refuses a sixth attempt: --n 6 does not match the n the series was recorded with", () => {
+    expect(() => writable({ n: 6 })).toThrow(/different series.*"n":5.*refusing to mix/u);
+  });
+
+  it("refuses a gap: --start 3 after attempt 1 would leave attempt 2 unrecorded forever", () => {
+    expect(() => writable({ start: 3 })).toThrow(/attempt 2 is unrecorded.*must start at 2, not 3/u);
+  });
+
+  it.each([
+    ["model", { model: "qwen/qwen3.8-flash" }],
+    ["endpoint", { endpoint: "alibaba" }],
+    ["case", { caseName: "269" }],
+  ])("refuses to mix series: a different %s than the file records", (_label, overrides) => {
+    expect(() => writable(overrides)).toThrow(/different series/u);
+  });
+
+  it("an interrupted attempt counts as failed: the continuation starts after it and never re-runs it", () => {
+    const interrupted = file(startedLine(1), recordLine(1), startedLine(2));
+    expect(() => writable({ start: 2, existingText: interrupted })).toThrow(
+      /attempt 2 started and never finished.*never re-run.*--start 3/u,
     );
+    expect(writable({ start: 3, existingText: interrupted })).toMatchObject({ interrupted: [2], maxAttempt: 2 });
   });
 });
 

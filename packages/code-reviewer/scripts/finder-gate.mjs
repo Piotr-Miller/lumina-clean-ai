@@ -39,7 +39,12 @@
 // reported spend has reached the limit; the attempts not run are recorded as
 // `not-run (budget)` in the summary, never silently dropped. `--through <k>`
 // stops after attempt k and leaves the rest unrecorded (the A3 probe is G2
-// attempt 01). `--start k --append` runs exactly the attempts not yet recorded.
+// attempt 01). `--start k --append` continues the series at exactly
+// max(recorded) + 1, and only with the same model, endpoint, case and n: every
+// line carries all four. A `started` line goes into the file BEFORE each paid
+// call, so an attempt the process did not survive is visible as started and
+// never finished — it counts as failed and is never re-run (impl-review-phase-1
+// F1).
 import { appendFileSync, existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 
 import {
@@ -89,11 +94,33 @@ const source = createDiffScopedSourceForDiff({
 });
 if (source === undefined) throw new Error("the diff declares no post-change paths; the tool could serve nothing");
 
-assertSeriesWritable({ append, start, existingText: existsSync(out) ? readFileSync(out, "utf8") : undefined, out });
+const series = assertSeriesWritable({
+  append,
+  start,
+  existingText: existsSync(out) ? readFileSync(out, "utf8") : undefined,
+  out,
+  model,
+  endpoint,
+  caseName,
+  n,
+});
 if (!append) writeFileSync(out, "");
+for (const attempt of series.interrupted) {
+  console.log(`attempt ${String(attempt)}: started and never finished in an earlier run — counts as failed`);
+}
 let seriesSpend = 0;
 let seriesRetries = 0;
-const summary = { model, endpoint, case: caseName, n, start, through, outcomes: {}, notRun: 0 };
+const summary = {
+  model,
+  endpoint,
+  case: caseName,
+  n,
+  start,
+  through,
+  outcomes: {},
+  notRun: 0,
+  interruptedBefore: series.interrupted,
+};
 
 for (let i = start; i <= through; i += 1) {
   const id = `${endpoint}-${caseName}-${String(i).padStart(2, "0")}`;
@@ -129,6 +156,12 @@ for (let i = start; i <= through; i += 1) {
   });
 
   const started = Date.now();
+  // Written before the call: if the process dies during the attempt, the file
+  // still shows the attempt was started, and a continuation refuses to re-run it.
+  appendFileSync(
+    out,
+    `${JSON.stringify({ kind: "started", id, model, endpoint, case: caseName, n, attempt: i, at: new Date(started).toISOString() })}\n`,
+  );
   const { result, error, retries } = await runAttempt(() =>
     reviewer.review({ kind: "diff", diff }, { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS }),
   );
@@ -148,11 +181,13 @@ for (let i = start; i <= through; i += 1) {
   for (const finding of findings) bySeverity[finding.severity] = (bySeverity[finding.severity] ?? 0) + 1;
 
   const record = {
+    kind: "attempt",
     id,
     model,
     endpoint,
     expectedProvider: expectedName,
     case: caseName,
+    n,
     attempt: i,
     at: new Date(started).toISOString(),
     outcome,

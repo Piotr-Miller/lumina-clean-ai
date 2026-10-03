@@ -87,35 +87,101 @@ export function parseGateArgs(args) {
 }
 
 /**
- * Attempt numbers of an existing series file that `start` would collide with.
- * A non-empty result means the run must refuse: a recorded attempt is never
- * re-run.
+ * What makes two JSONL lines belong to the same series. Every line — the
+ * `started` marker and the attempt record — carries all four, so a
+ * continuation can be checked against what was actually recorded rather than
+ * against what the caller claims (impl-review-phase-1 F1: without `n` in the
+ * file, `--n 6 --append` after a `--n 5` probe ran a sixth G2 attempt).
  */
-export function recordedClashes(fileText, start) {
-  return fileText
-    .split("\n")
-    .filter((line) => line !== "")
-    .map((line) => JSON.parse(line).attempt)
-    .filter((attempt) => attempt >= start);
+export const seriesIdentity = ({ model, endpoint, caseName, n }) => ({ model, endpoint, case: caseName, n });
+
+const identityKey = (identity) => JSON.stringify(seriesIdentity({ ...identity, caseName: identity.case }));
+
+/**
+ * Reads a series file: one JSON object per line, either a `started` marker
+ * (written BEFORE the paid call) or an attempt record (written after it). An
+ * attempt with a marker and no record was interrupted — the process died
+ * mid-attempt, after money may have been spent — and counts as a failed
+ * attempt that is never re-run. Throws on a line it cannot parse: a corrupt
+ * series must not be continued blind.
+ */
+export function readSeries(fileText) {
+  const lines = fileText.split("\n").filter((line) => line !== "");
+  const attempts = new Map();
+  const identities = new Set();
+  lines.forEach((line, index) => {
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      throw new Error(`line ${String(index + 1)} is not JSON; refusing to continue a corrupt series`);
+    }
+    if (!Number.isSafeInteger(entry.attempt) || entry.attempt < 1) {
+      throw new Error(`line ${String(index + 1)} has no attempt number; refusing to continue a corrupt series`);
+    }
+    identities.add(identityKey(entry));
+    const state = attempts.get(entry.attempt) ?? { attempt: entry.attempt, started: false, completed: false };
+    if (entry.kind === "started") state.started = true;
+    else state.completed = true;
+    attempts.set(entry.attempt, state);
+  });
+  const sorted = [...attempts.values()].sort((a, b) => a.attempt - b.attempt);
+  return {
+    lineCount: lines.length,
+    identities: [...identities].map((key) => JSON.parse(key)),
+    attempts: sorted,
+    maxAttempt: sorted.length === 0 ? 0 : sorted[sorted.length - 1].attempt,
+    interrupted: sorted.filter((a) => a.started && !a.completed).map((a) => a.attempt),
+  };
 }
 
 /**
- * Throws unless the series file may be written: a fresh series (no
- * `--append`) only into a missing or empty file — otherwise repeating, say,
- * `--through 1` would silently overwrite and re-run the A3 probe — and a
- * continuation only past the attempts already recorded.
+ * Throws unless the series file may be written, and returns the recorded
+ * series state (empty for a fresh one) so the runner can report interrupted
+ * attempts. A fresh series (no `--append`) goes only into a missing or empty
+ * file — otherwise repeating, say, `--through 1` would silently overwrite and
+ * re-run the A3 probe. A continuation must (1) be the same series: identical
+ * model, endpoint, case AND n in every recorded line, so `--n 6` cannot add a
+ * sixth attempt to a `--n 5` series and two series cannot share a file; and
+ * (2) start exactly at max(recorded) + 1: lower would re-run a recorded or
+ * interrupted attempt, higher would leave a gap no later run could fill.
  */
-export function assertSeriesWritable({ append, start, existingText, out }) {
+export function assertSeriesWritable({ append, start, existingText, out, model, endpoint, caseName, n }) {
+  const empty = { lineCount: 0, identities: [], attempts: [], maxAttempt: 0, interrupted: [] };
   if (!append) {
     if (existingText !== undefined && existingText !== "") {
       throw new Error(`${out} already holds a series; continue it with --start <k> --append, never overwrite it`);
     }
-    return;
+    return empty;
   }
   if (existingText === undefined) throw new Error(`--append needs an existing series file, ${out} does not exist`);
-  const clash = recordedClashes(existingText, start);
-  if (clash.length > 0)
-    throw new Error(`attempts ${clash.join(", ")} already recorded in ${out}; refusing to re-run them`);
+  const series = readSeries(existingText);
+  if (series.lineCount === 0) throw new Error(`${out} is empty; start the series without --append`);
+
+  const expected = seriesIdentity({ model, endpoint, caseName, n });
+  const foreign = series.identities.filter((identity) => JSON.stringify(identity) !== JSON.stringify(expected));
+  if (foreign.length > 0) {
+    throw new Error(
+      `${out} records a different series ${JSON.stringify(foreign[0])}, not ${JSON.stringify(expected)}; refusing to mix series`,
+    );
+  }
+
+  const next = series.maxAttempt + 1;
+  if (start < next) {
+    const interrupted = series.interrupted.filter((attempt) => attempt >= start);
+    const recorded = series.attempts.map((a) => a.attempt).filter((attempt) => attempt >= start);
+    const detail =
+      interrupted.length > 0
+        ? `attempt ${interrupted.join(", ")} started and never finished — it counts as failed and is never re-run`
+        : `attempts ${recorded.join(", ")} already recorded`;
+    throw new Error(`${detail} in ${out}; refusing to re-run; continue with --start ${String(next)}`);
+  }
+  if (start > next) {
+    throw new Error(
+      `attempt ${String(next)} is unrecorded in ${out}; a continuation must start at ${String(next)}, not ${String(start)}`,
+    );
+  }
+  return series;
 }
 
 export function reasoningTokensOf(step) {
