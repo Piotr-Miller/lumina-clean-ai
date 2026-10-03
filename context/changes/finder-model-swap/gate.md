@@ -78,7 +78,8 @@ G3's hand-read clause, which is replaced by the owner's 2026-10-02 threshold.
   0.00122489, 0.00146976, 0.00158216). A row with incomplete cost telemetry fails G4, never omitted. Median and
   max latency are reported.
 - **G1 — reliability, #269.** #269 × 10 with the inputs of §3: **≥ 9/10 attempts** end with a valid object
-  (≤ 1 repair). Every `FinderOutputError`, timeout and API error — **a 429 included** — counts against it.
+  (≤ 1 repair). Every `FinderOutputError`, timeout and API error that persists after the production retry
+  (below) — **a 429 included** — counts against it.
   The repair rate is reported, not gated.
 - **G3 — hand-read** (owner, 2026-10-02), only for candidates that passed G1–G4 automated:
   - Frame: the distinct findings of the candidate's valid G1 attempts (§6). **N** = rows in the
@@ -98,8 +99,17 @@ row).
 **Provider check on every request:** the reported provider name must equal §1's expected name. A missing or
 different name **invalidates** the attempt or row (it cannot pass).
 
-**Attempts are never re-run.** A 429, a timeout, a `FinderOutputError` and a refusal under
-`require_parameters` are failed attempts, never skipped ones.
+**Retries as in production** (owner, 2026-10-03, at approval; replaces the predecessor's "attempts are never
+re-run"). One gate attempt is one production pass, including production's single transient retry: exactly
+the behaviour of `withOneRetry`/`isRetryableError` in `packages/code-reviewer/src/retry.ts` (HTTP 429, 5xx or
+timeout; one retry; the same header-aware delay). A failure that persists after that retry fails the attempt.
+`FinderOutputError` is never retried (as in production). Every retry is recorded in the attempt's record and
+counted in its cost and latency; the retry count is reported per gate as a signal, not gated. No other re-run
+exists. This applies to G1, G2 and the promptfoo rows. This is stricter than nothing and no looser than
+production; the predecessor's verdicts (z-ai, deepinfra) are not re-judged.
+
+A failure after that retry, a `FinderOutputError` and a refusal under `require_parameters` are failed
+attempts, never skipped ones.
 
 ### 5. Measuring order and stop rule
 
@@ -108,7 +118,7 @@ by the owner 2026-10-03. Per candidate:
 
 1. **G2-01 alone — the A3 probe** (`--through 1`). An A3 leak or a refusal of the shape → the candidate ends:
    `cannot honour the production shape (A3)`. A provider-name mismatch → the candidate stops, `provider name
-mismatch — owner decision`. A 429 or any other failure on G2-01 is a G2 failure (G2 needs 5/5) →
+mismatch — owner decision`. A 429 that persists after the production retry, or any other failure on G2-01, is a G2 failure (G2 needs 5/5) →
    `FAIL (G2)`. Nothing more is spent on that candidate.
 2. **G2-02..05** (`--start 2 --append`, the same invocation). < 5/5 → `FAIL (G2)`, stop.
 3. **G3/G4 fixtures** (12 rows). G3 fail → `FAIL (G3)`, stop. **G4 failing alone** (G3 pass) →
@@ -134,7 +144,8 @@ uptime, observed 429s). No recommendation is binding; the hand-read still decide
   separate rows; different claims at one location → separate rows; contradictory wordings → **split, never
   merged**. The agent dedups **blind** (no correctness judgement); each row carries its contributing attempt
   IDs and a one-sentence grouping reason; uncertain decisions are flagged.
-- **The owner approves the dedup table** (merges and splits; 1:1 rows need no action).
+- **The owner approves the dedup table** (merges and splits; 1:1 rows need no action). The owner approves
+  merges and splits only, before any correctness judgement of the rows.
 - **Freeze order:** approved table → `hand-read-sample.mjs freeze` → its sha256 written here → seed written
   here → `draw`. The seed is 32 bytes from `/dev/urandom` (hex), taken at the moment of drawing and written
   before the draw.
@@ -192,3 +203,11 @@ pushed to `origin`; GitHub's push time (repository activity API) is recorded in 
 re-read and T0. The seal is never recomputed.
 
 _End of Pre-registration._
+
+## Pre-registration seal
+
+- **Approved by the owner:** 2026-10-03, with two edits made before this seal (§6: merges and splits approved
+  before any correctness judgement; §4/§5: retries as in production).
+- **sha256 of the Pre-registration section:** `f6dc0fb0c3048859d2fbcafb0ea8accd5a97b152f8050edf92cfdcf83240e34e`
+- **Hashed at:** 2026-10-03T08:31:05Z
+- **Command:** `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum`

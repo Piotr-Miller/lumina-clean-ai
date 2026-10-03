@@ -159,6 +159,21 @@ Triage of `reviews/plan-review.md` (verdict REVISE), before any paid call. `plan
 - **F7 (re-review) — amendments** go into `## Amendments` after the seal, each dated, with its own sha256 and
   pushed before the measurement it affects; the seal check covers only the Pre-registration section.
 
+### Owner decision (2026-10-03): Pre-registration approved
+
+The owner approved `gate.md`'s Pre-registration on 2026-10-03 with two edits made **before the seal**:
+
+- §6: the owner approves merges and splits only, before any correctness judgement of the rows.
+- **Retries as in production** (replaces "attempts are never re-run"): one gate attempt is one production pass,
+  including the single transient retry of `withOneRetry`/`isRetryableError` (`src/retry.ts`: 429, 5xx or timeout;
+  one retry; the same header-aware delay). A failure persisting after it fails the attempt; `FinderOutputError` is
+  never retried. Retries are recorded and counted in cost and latency, reported per gate, not gated. Applies to
+  G1, G2 and the promptfoo rows. The predecessor's verdicts (z-ai, deepinfra) are not re-judged. Neither the gate
+  runner nor the promptfoo adapter did this, so it joins Phase 1's scope with hermetic tests.
+
+Accepted knowingly by the owner: the N ≤ 19 → limit 0 consequence; MiniMax, measured last, may end
+`not measured (budget)`; the order G2 → G3/G4 → G1 differs from the predecessor's gate.
+
 ### Constraints carried over
 
 - **`anthropic/claude-sonnet-5` was rejected at 57.6×** the matched-baseline production cost per review
