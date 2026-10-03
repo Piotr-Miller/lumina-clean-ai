@@ -459,3 +459,27 @@ excess over the finder total is 0.211113696 − 0.07846170 = **$0.13265200**, th
 Two consequences: (1) the final counter was settled, not lagging — nothing was still to land; (2) no
 unrecorded paid call hit the key during the measurement window (the key's `usage_daily` equals T as well).
 Per series the deltas interleave because of the lag (row 4 carries luna's whole grader with G1; row 8 carries part of qwen's grader with minimax's probe), so only the totals reconcile — and they do, exactly.
+
+### Hand-read — `openai/gpt-6-luna` (Phase 3, §6)
+
+Written in §6's order — approved table → `freeze` → sha256 here → seed here → `draw` — and each step carries
+the UTC time it was written. The approved table is `hand-read-269.md`; its machine copy, the file that is
+hashed, is `hand-read-openai.json`.
+
+- **Table approved by the owner:** 2026-10-03, without changes: the merges D1, D2, D3 and D5 and every split
+  (D4/D6/D7/D8 apart from D5, D9 apart from D10) under the literal §6 rule (the same defect in another file,
+  or a different claim at one location → a separate row). The approval covers merges and splits only; no row
+  was judged for correctness. **N = 20**, limit **floor(0.05 × 20) = 1** rejected; N < 40, so every row is
+  judged (the draw only orders them).
+- **Freeze:** `node scripts/hand-read-sample.mjs freeze context/changes/finder-model-swap/hand-read-openai.json`
+  (from `packages/code-reviewer`) → **sha256 `15c022e9b886e87b265bffbc81771312e2ed83ab4fadbb69b93e7a95c19bdee4`** (canonical JSON: keys sorted at every level, no
+  whitespace). First computed 2026-10-03T14:45:50Z, recorded here 2026-10-03T14:50:53Z. The committed file's own bytes:
+  sha256 `e5793a9d6bb250026faed5931d025c8e5a9c21200119b81f3789c89cfbf98384`.
+- **Seed:** `fb94370b2d90d2f261f912e6189f7160cccf830d67fe2dfc0ad2eba9553b73ad` — 32 bytes from `/dev/urandom` (`head -c 32 /dev/urandom | od -An -tx1`), taken
+  2026-10-03T14:50:53Z, written here before the draw.
+- **Draw** (2026-10-03T14:50:53Z): `node scripts/hand-read-sample.mjs draw context/changes/finder-model-swap/hand-read-openai.json --sha 15c022e9b886e87b265bffbc81771312e2ed83ab4fadbb69b93e7a95c19bdee4 --seed fb94370b2d90d2f261f912e6189f7160cccf830d67fe2dfc0ad2eba9553b73ad`
+  → `N=20 sample=20 limit=1 rejected`; sample order (rank by `sha256(seed + ":" + id)` ascending):
+  D15, D2, D18, D13, D9, D4, D11, D14, D3, D19, D17, D5, D20, D1, D10, D6, D8, D16, D12, D7.
+- **Classification:** not started at this record. The agent's pre-sort goes to `hand-read-269-presort.md`
+  (separate from the approved table); the owner approves every row; unresolved counts as rejected (§4 G3).
+  The classification is written after this record is committed and pushed.
