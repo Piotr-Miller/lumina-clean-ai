@@ -266,3 +266,176 @@ _End of A1._
   GitHub push time **2026-10-03T10:47:40Z**
   (`GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-model-swap`: `push`,
   `adffc68` → `2330494`). Recorded before any price re-read or paid call of Phase 2.
+
+## Results
+
+Phase 2 (plan.md), measured with `packages/code-reviewer/scripts/finder-gate.mjs` (G2, G1) and promptfoo
+(G3/G4), each candidate pinned through `OPENROUTER_FINDER_PROVIDERS=<slug>`, under the sealed Pre-registration
+and Amendment A1. Raw records, one JSONL line per attempt (plus its `started` marker) or row, are in this
+folder: `gate-<slug>-clean.jsonl`, `gate-<slug>-promptfoo.jsonl`, `gate-<slug>-pr269.jsonl`. This section
+never edits the Pre-registration; it is appended as the measurement proceeds.
+
+### Pre-flight (2026-10-03, before any paid call)
+
+- `origin/feat/finder-model-swap` = `02bd092` = local `HEAD`; the sealed commit `adffc68` and the A1 commit
+  `2330494` are its ancestors.
+- Pre-registration sha256 recomputed: `f6dc0fb0c3048859d2fbcafb0ea8accd5a97b152f8050edf92cfdcf83240e34e`
+  (matches the seal). A1 sha256 recomputed: `dc423199b14269d15267fb3522083378d9e8dc274973636b233667d12f5ebb9c`
+  (matches). GitHub push times in this file: seal 2026-10-03T09:00:20Z, A1 2026-10-03T10:47:40Z — both before
+  the price re-read below.
+- Inputs (§3) re-verified: `pr269.diff` 65,455 B sha256 `1e4ec088…550f`; `rules.md` 2,929 B sha256
+  `34d5fcac…b48f`; worktree `HEAD` `fca2778742ec0bc02a84f42b23bf639fc32c7ad1`, clean; `clean-change.diff`
+  sha256 `8b326f6d…08cd`, last changed in `e8ebb66`.
+
+### Price re-read and T0 (2026-10-03T11:55:58Z)
+
+`GET https://openrouter.ai/api/v1/models/<id>/endpoints` and `GET /api/v1/models`, unauthenticated, raw JSON in
+the session scratch directory. No price changed against §1, every pinned endpoint lists `tools` and
+`reasoning`, and no model has `reasoning.mandatory: true`, so no stop condition applies.
+
+| Candidate            | Pinned endpoint (tag)     | `provider_name` | Prompt / completion (USD/M) | Cache read | `tools` / `reasoning` | `reasoning.mandatory`                    | Uptime 1 d |
+| -------------------- | ------------------------- | --------------- | --------------------------- | ---------- | --------------------- | ---------------------------------------- | ---------- |
+| `openai/gpt-6-luna`  | `openai`                  | `OpenAI`        | 0.10 / 0.50 (unchanged)     | 0.01       | yes / yes             | false (default on, efforts incl. `none`) | 99.99%     |
+| `qwen/qwen3.8-flash` | `alibaba` (only endpoint) | `Alibaba`       | 0.15 / 0.47 (unchanged)     | 0.016      | yes / yes             | false (default on)                       | 99.86%     |
+| `minimax/minimax-m3` | `minimax/fp8`             | `Minimax`       | 0.30 / 1.20 (unchanged)     | 0.06       | yes / yes             | false                                    | 99.54%     |
+
+Note for the one-off report (§1): `openai/flex` (0.05 / 0.25) and `openai/fast` (0.20 / 1.00) also report
+`provider_name: OpenAI`, as recorded at registration.
+
+**T0 = $52.59943383** (`GET /api/v1/key`, `usage`, read 2026-10-03T11:55:58Z; `limit: null`). Budget
+ceiling for this change: counter ≤ T0 + 2.00 = **$54.59943383**; stop-and-ask at T0 + 1.60 = $54.19943383.
+
+### Ledger
+
+Counter read before and after every series; T = counter − T0. `--max-spend` per series = min(1.60 − T,
+2.00 − T − A_max) (§7). Telemetry = the series' own per-request cost sum.
+
+| #   | Series                                       | Counter before          | Counter after            | Δ counter   | Telemetry                                                                    | T after                                                      | Note                                                                                                                                               |
+| --- | -------------------------------------------- | ----------------------- | ------------------------ | ----------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | luna G2-01 (A3 probe), `--max-spend 1.60`    | 52.59943383 (11:55:58Z) | 52.59943383 (11:58:49Z)  | 0.00000000  | 0.00050248                                                                   | 0.00050248 (telemetry)                                       | counter not yet updated after the series (lag); T carried as max(counter, telemetry)                                                               |
+| 2   | luna G2-02..05, `--max-spend 1.59`           | 52.59943383             | 52.59943383 (12:00:55Z)  | 0.00000000  | 0.00040657                                                                   | 0.00090905 (telemetry)                                       | counter still unchanged                                                                                                                            |
+| 3   | luna promptfoo (12 rows, finder + grader)    | 52.59943383             | 52.601065505 (12:04:29Z) | 0.001631675 | 0.00330753 (finder rows only; grader 11,329 tokens, not priced in telemetry) | ≥ 0.00421658 (telemetry, grader excluded)                    | counter still lagging telemetry; promptfoo started with 2.00 − T ≥ 0.140 (§7)                                                                      |
+| 4   | luna G1 (#269 × 10), `--max-spend 1.50`      | 52.601065505            | 52.72550066 (12:13:10Z)  | 0.124435155 | 0.05596225                                                                   | **0.12606683 (counter)**                                     | counter caught up: counter − finder telemetry so far ($0.06017883) = $0.06588800 ≈ the 12 grader calls (11,329 tokens on `gemini-3.1-pro-preview`) |
+| 5   | qwen G2-01 (A3 probe), `--max-spend 1.47`    | 52.72550066             | 52.72550066 (12:38:23Z)  | 0.00000000  | 0.00152655                                                                   | 0.12759338 (counter + telemetry)                             | counter not yet updated                                                                                                                            |
+| 6   | qwen G2-02..05, `--max-spend 1.47`           | 52.72550066             | 52.727027212 (13:31:01Z) | 0.001526552 | 0.00419268                                                                   | 0.13178606 (telemetry-carried; counter 0.12752338)           | counter lags the series by ≈ $0.0042                                                                                                               |
+| 7   | qwen promptfoo (12 rows, finder + grader)    | 52.727027212            | 52.736070376 (13:47:58Z) | 0.009043164 | 0.00960474 (finder rows; grader 12727 tokens)                                | ≥ 0.1413908 (telemetry, grader excluded); counter 0.13663655 | started with 2.00 − T ≥ 0.142 (§7); G3 FAIL ends the candidate, no G1 spent                                                                        |
+| 8   | minimax G2-01 (A3 probe), `--max-spend 1.45` | 52.736070376            | 52.754488626 (13:49:05Z) | 0.01841825  | 0.00295890                                                                   | 0.155054796 (counter)                                        | G2 FAIL on the probe ends the candidate; nothing more spent                                                                                        |
+| —   | final re-read                                | —                       | 52.810547526 (13:51:04Z) | —           | —                                                                            | **0.211113696 (counter)**                                    | the counter trails the series by minutes; re-read again at commit time, see Spend                                                                  |
+
+### Candidate 1 — `openai/gpt-6-luna` @ `openai`
+
+**G2 (clean × 5, tool-enabled): PASS — 5/5 valid, `findings: []` on every attempt.** `gate-openai-clean.jsonl`
+(2026-10-03T11:58:45Z–12:00:55Z): attempt 01 run alone as the A3 probe (`--through 1`), 02–05 as
+`--start 2 --append`. Every attempt: 2 requests, both `provider: OpenAI`, `finishReason: stop`, 0 reasoning
+tokens on both channels and 0 reasoning text chars on every request (A3 holds), 0 `getFileContext` calls,
+0 repairs, 0 retries, cost complete. Costs $0.000502, $0.000114, $0.000126, $0.000055, $0.000112 (series
+$0.000909); latency 3.6 s, 2.9 s, 2.7 s, 2.5 s, 2.9 s.
+
+**One-off cost report (§1, not a gate rule), G2-01's two requests against the base-tier list price
+0.10 / 0.50 per M:** request 1 — 1,726 in / 24 out, reported cost $0.000227675 vs $0.000184600 at list
+(**1.233×**); request 2 — 2,071 in / 32 out, $0.000274800 vs $0.000223100 (**1.232×**). With the output
+side at list price, the billed input would be ≈ 2,157 and 2,588 tokens, i.e. **≈ 1.25× the SDK's reported
+input token count on both requests**. The pinned endpoint reported `OpenAI`; the name cannot tell the base
+tier from `openai/flex` (0.5×) or `openai/fast` (2×), and neither of those ratios matches. The likeliest
+reading is a native-vs-normalized token-count difference (OpenRouter bills native tokens; the SDK reports
+the normalized count), not a tier change; the generation ids were not recorded, so it is not resolved here.
+Reported to the owner; G4 uses the reported `cost` as is.
+
+**G3 (12 fixture rows, pinned, `-j 1`, `--no-cache`, grader `google/gemini-3.1-pro-preview`): PASS.**
+`gate-openai-promptfoo.jsonl` from the export of 2026-10-03T12:02:47Z–12:04:29Z (12 rows, 0 errors). Every
+required metric 3/3: js-loop `issue_recall`; React `issue_recall`, `review_fails`, `flaw_stale_closure`,
+`flaw_lost_cleanup`, `flaw_unsafe_html`; clean `no_false_alarms`. Diagnostic cross-hunk `tool_required` 3/3
+and `flaw_cross_hunk_contract` 3/3 (1–2 `getFileContext` calls per row, the contract file delivered). Every
+request of every row reported `OpenAI`; 0 reasoning tokens on both channels and 0 reasoning text on all 22
+requests (A3 holds); 0 retries, 0 repairs, 0 finder errors, 0 grader errors (A1 not triggered).
+
+**G4: PASS — median $0.00018176 (0.060× the ceiling $0.00301653), max $0.00080244** (a cross-hunk row with 3
+steps); every row's cost complete. Latency median 3.4 s, max 6.8 s. Finder cost of the 12 rows $0.00330753.
+
+**G1 (#269 × 10, inputs of §3): PASS — 10/10 attempts end with a valid object, 0 repairs.**
+`gate-openai-pr269.jsonl` (2026-10-03T12:06:13Z–12:08:39Z). Every request of every attempt reported `OpenAI`
+(42 requests in all); 0 reasoning tokens on both channels and 0 reasoning text on every request (A3 holds);
+0 retries, no 429, no timeout, no `FinderOutputError`; every request priced. Requests per attempt 2–6
+(`getFileContext` calls 0–6; attempts 03 and 10 made none). Cost per attempt: $0.012821, $0.004836,
+$0.003113, $0.004779, $0.004788, $0.004411, $0.005650, $0.003993, $0.008430, $0.003141 — **median $0.0047835,
+max $0.012821**, series $0.055962. Latency **median 13.0 s, max 24.0 s** (7.98–24.01 s). Findings per attempt
+5, 1, 3, 5, 4, 3, 4, 3, 6, 4 (38 in all, majors on 7 of 10 attempts; no empty review). Hand-read material:
+the `findings` of all ten attempts in the JSONL (dedup in Phase 3).
+
+**Verdict (automated G1–G4): PASS** — G2 5/5, G3 every required metric 3/3, G4 median 0.060× ceiling, G1
+10/10. The §5 hand-read (Phase 3) and the owner's decision 4.4 decide admission.
+
+### Candidate 2 — `qwen/qwen3.8-flash` @ `alibaba`
+
+**G2 (clean × 5, tool-enabled): PASS — 5/5 valid, `findings: []` on every attempt.** `gate-alibaba-clean.jsonl`
+(2026-10-03T12:37:58Z–13:31:01Z; attempt 01 alone as the A3 probe, 02–05 as `--start 2 --append`). Every
+attempt: 6 requests, all `provider: Alibaba`, 0 reasoning tokens on both channels and 0 reasoning text on all
+30 requests (A3 holds), 0 repairs, 0 retries, cost complete. Costs $0.001527, $0.001494, $0.000695,
+$0.001190, $0.000814 (series $0.005719); latency 23.7 s, 13.9 s, 13.0 s, 33.7 s, 14.4 s. **Signal, not a
+gate:** every attempt made 5 `getFileContext` calls — the whole step budget — on a one-file rename, then
+finalized with an empty, correct review.
+
+**G3 (12 fixture rows, pinned, `-j 1`, `--no-cache`, grader `google/gemini-3.1-pro-preview`): FAIL.**
+`gate-alibaba-promptfoo.jsonl` from the export of 2026-10-03T13:43:23Z–13:47:58Z (12 rows, 0 errors, 0
+grader errors — A1 not triggered). React: `flaw_stale_closure` **1/3** and `issue_recall` **2/3** — repeats
+testIdx 4 and 5 reported the XSS and the lost cleanup but not the empty dependency array (testIdx 4 reported a
+possible `TypeError` on `filter` instead; testIdx 5 returned two findings only); `review_fails`,
+`flaw_lost_cleanup`, `flaw_unsafe_html` 3/3. js-loop `issue_recall` 3/3; clean `no_false_alarms` 3/3;
+diagnostic cross-hunk `tool_required` 3/3 and `flaw_cross_hunk_contract` 3/3 (5–6 `getFileContext` calls per
+row; the three clean rows also made 5 calls each). Every request of every row reported `Alibaba`; 0 reasoning
+on both channels on all 43 requests (A3 holds); 0 retries; 1 format repair (React testIdx 5, successful).
+
+**G4: PASS — median $0.00068266 (0.226× the ceiling), max $0.00162549**; every row's cost complete. Latency
+median 15.3 s, max 34.9 s. Finder cost of the 12 rows $0.00960474; grader 12,727 tokens.
+
+**Verdict: `FAIL (G3)`** — the first decisive failure (§5 step 3); G1 is `not measured (stopped after G3
+FAIL)` and nothing more was spent on this candidate. G4 passing does not change it (the G4-only pause applies
+only when G3 passes).
+
+### Candidate 3 — `minimax/minimax-m3` @ `minimax`
+
+**G2-01 (the A3 probe, run alone): the shape is honoured, the gate is failed.** `gate-minimax-clean.jsonl`
+(2026-10-03T13:48:40Z–13:49:05Z): `valid`, 2 requests, both `provider: Minimax` (so no provider mismatch),
+0 reasoning tokens on both channels and 0 reasoning text (A3 holds), 0 `getFileContext` calls, 0 repairs, 0
+retries, cost $0.002959 (complete), latency 24.7 s — and **2 findings on the defect-free rename**, both `nit`
+on `src/lib/format-bytes.ts:4`: (documentation) the new JSDoc "stops short of documenting the function's other
+load-bearing, invisible contracts"; (testing) "no test pins" the base-10 unit choice. §4: any finding, `minor`
+or `nit` included, fails G2; §5 step 1: any failure on G2-01 is a G2 failure, G2 needs 5/5.
+
+**Verdict: `FAIL (G2)`** — attempts 02–05 were not run (`unrecorded: 4` in the series summary), G3/G4 and G1
+are `not measured (stopped after G2 FAIL)`; nothing more was spent on this candidate.
+
+### Verdicts
+
+Every candidate has exactly one label (§5). Measured in the registered order; each stopped at its first
+decisive failure.
+
+| #   | Candidate            | G2 (clean × 5, `[]`)               | G3 fixtures (12 rows)                                 | G4 (median ≤ $0.00301653)     | G1 (#269 × 10, ≥ 9/10)               | Verdict (Phase 2)                                                  |
+| --- | -------------------- | ---------------------------------- | ----------------------------------------------------- | ----------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
+| 1   | `openai/gpt-6-luna`  | **PASS** 5/5                       | **PASS** every required metric 3/3                    | **PASS** $0.00018176 (0.060×) | **PASS** 10/10, 0 repairs            | **PASS (automated G1–G4)** → hand-read (§6, Phase 3), decision 4.4 |
+| 2   | `qwen/qwen3.8-flash` | **PASS** 5/5                       | **FAIL** `flaw_stale_closure` 1/3, `issue_recall` 2/3 | PASS $0.00068266 (0.226×)     | not measured (stopped after G3 FAIL) | **FAIL (G3)**                                                      |
+| 3   | `minimax/minimax-m3` | **FAIL** 0/1 — 2 nits on the probe | not measured (stopped after G2 FAIL)                  | not measured                  | not measured (stopped after G2 FAIL) | **FAIL (G2)**                                                      |
+
+A3 held on every request of every attempt and row of all three candidates (both channels, and reasoning
+text); the pinned provider name was reported on every request (`OpenAI` ×74, `Alibaba` ×73, `Minimax` ×2); no
+attempt or row was invalidated; no 429, no timeout, no `FinderOutputError`; production's retry never fired
+(0 retries in all series); no grader error, so Amendment A1's re-grade was not needed. No `paused (G4 only)`
+and no $1.60 stop occurred, so the owner was not asked mid-measurement.
+
+**Comparison (Phase 2 §3): not applicable** — exactly one candidate passed the automated G1–G4.
+
+### Spend
+
+Counter T0 = $52.59943383 (11:55:58Z). The key's usage counter trails each series by minutes (it read
+unchanged right after the first two series and caught up later), so the ledger carries T as the larger of the
+counter and the finder telemetry, and the counter — the authority (§7) — is re-read at the end. **Counter at
+the final re-read: $52.810547526 (13:51:04Z, unchanged at 13:51:52Z) → T = $0.2111137.** Ceiling $54.59943383 (T0 + 2.00) was never
+approached; the $1.60 stop was never reached.
+
+Finder telemetry (per-request `cost`, every request priced): luna G2 $0.00090905 + promptfoo rows $0.00330753 +
+G1 $0.05596225 = **$0.06017883**; qwen G2 $0.00571923 + promptfoo rows $0.00960474 = **$0.01532397**; minimax
+G2-01 **$0.00295890**. Finder total **$0.07846170**. The grader (`google/gemini-3.1-pro-preview`, 24
+`llm-rubric` calls, 24,056 tokens) is not priced in the telemetry; it is the difference between the counter
+delta and the finder total — see the final row of the ledger. Where a counter delta covered finder requests
+alone it matched the telemetry (row 4: $0.12443516 counter for G1 $0.05596225 plus the catch-up of the
+earlier rows).

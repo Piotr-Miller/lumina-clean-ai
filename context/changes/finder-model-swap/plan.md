@@ -591,10 +591,10 @@ as an emergency override is possible but needs a separate owner decision.
 
 #### Automated
 
-- [x] 1.1 Package tests pass
-- [x] 1.2 Package typecheck and lint pass
-- [x] 1.3 Repo format check passes
-- [x] 1.4 The runner refuses to start without --model
+- [x] 1.1 Package tests pass — 7b49836
+- [x] 1.2 Package typecheck and lint pass — 7b49836
+- [x] 1.3 Repo format check passes — 7b49836
+- [x] 1.4 The runner refuses to start without --model — 7b49836
 
 #### Manual
 
@@ -604,9 +604,9 @@ as an emergency override is possible but needs a separate owner decision.
 
 #### Automated
 
-- [ ] 2.1 One JSONL line per attempt run; not-run attempts listed
-- [ ] 2.2 Every promptfoo run has exactly 12 rows or is recorded as failed
-- [ ] 2.3 The counter never exceeded T0 + 2.00
+- [x] 2.1 One JSONL line per attempt run; not-run attempts listed
+- [x] 2.2 Every promptfoo run has exactly 12 rows or is recorded as failed
+- [x] 2.3 The counter never exceeded T0 + 2.00
 
 #### Manual
 
