@@ -1,12 +1,18 @@
 # temp_steps.md — immediate next steps
 
-> Refreshed 2026-09-28 (after #269–#271). **Short-lived by design**: this is the next-few-actions
+> Refreshed 2026-09-28 (after #269–#273); finder-serialization-outage status updated 2026-09-29. **Short-lived by design**: this is the next-few-actions
 > list and the **only** such list. `context/foundation/roadmap.md` stays authoritative for scope,
 > including parked work. Delete this file once the list is empty.
 
 ## Where things stand
 
-Everything is merged. **Zero open PRs** after the one carrying this file.
+Everything is merged. **Zero open PRs** after the one carrying this file. Only `master` exists,
+locally and on `origin`: all merged branches were deleted on 2026-09-28, and one worktree was removed.
+
+**Test-corpus provenance restored** (#273). The census section `§ Provenance of the test corpus`
+had been left on an unmerged branch. It is now in
+`context/archive/2026-08-31-cloud-quality-below-local/result-dimensions-census.md` as a documented
+exception to archive immutability, and AGENTS.md links to it.
 
 **S-17 is closed** (2026-09-28, #269, issue #203 closed; archive commit `00088d3` on master). It is
 archived at `context/archive/2026-08-31-cloud-quality-below-local/`.
@@ -71,9 +77,26 @@ Tools (still valid for S-19):
      feedback, or only signed-in users?_ After that it can be planned. Its constraints are in its
      `change.md`. It is not on the roadmap.
    - **`cloud-error-message-leak`** has its framing written and can go straight to `/rune-plan`.
-   - **`finder-serialization-outage`**: `ai-review` failed with `AI_NoObjectGeneratedError` on #269
-     but passed on #270, so it is intermittent, not constant. Registration (roadmap entry, issue,
-     `github-issues.md` row) is still undone.
+   - **`finder-serialization-outage`** — **in implementation** on branch
+     `feat/finder-serialization-outage` (not pushed yet). State on 2026-09-29:
+     - Phases 0–1 are committed and accepted: `6e37867` (p0), `2e2ae19` (p1: `provider=`/`finish=` on
+       each step line, the rejected model text on stderr). Impl-review findings F1 and F2 were fixed in
+       `271bee2` (`reviews/impl-review-2e2ae19.md`).
+     - **Uncommitted, and meant to be:** 1.4 ticked in `plan.md` Progress, and the new
+       `follow-ups/review-fixes.md` holding **T1**: the `rejected output` line prints `provider=?`,
+       because `NoObjectGeneratedError` carries no provider. Both are recorded as the workflow's own
+       edits, so the Phase 2 commit takes them in. Do not commit them by hand.
+     - Next steps:
+       1. You: run `/rune-implement finder-serialization-outage phase 2`.
+       2. Agent, Phase 2: the two-stage finder (a gathering loop, then a tool-less finalization with
+          no `response_format`), a strict parser, at most one format repair, `FinderOutputError`,
+          and `reasoning: {enabled: false}` on every request (A3).
+       3. Agent, T1 in Phase 2: check first whether the SDK fills in `error.response.body`. If it
+          does not, take the provider from the last observed step. Add tests for a provider that is
+          present, malformed and absent, then tick T1.
+       4. Then Phases 3–5: the finder's own routing, the paid regression gate (`gate.md`, owner
+          acceptance), and a live scratch PR.
+     - Registration (roadmap entry, issue, `github-issues.md` row) is still undone.
 
 5. **Decide what to do with `.claude/settings.local.json`.** It keeps collecting allow-list entries
    from sessions; commit them periodically or leave them local.

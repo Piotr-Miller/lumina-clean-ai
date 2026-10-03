@@ -230,7 +230,14 @@
       "Bash(python3 -c \"import json,sys;[print\\(r['*']\\) for r in json.load\\(sys.stdin\\)['query']['allcategories']]\")",
       "Bash(python3 -c \"import json,sys;[print\\(r['title']\\) for r in json.load\\(sys.stdin\\)['query']['search']]\")",
       "Bash(git switch *)",
-      "Bash(python3 -c \"import json;json.load\\(open\\('.claude/settings.local.json'\\)\\)\")"
+      "Bash(python3 -c \"import json;json.load\\(open\\('.claude/settings.local.json'\\)\\)\")",
+      "Bash(bash -n test-photos/fetch.sh)",
+      "Bash(pkill -f \"chrome-serve-1/serve.py\")",
+      "Bash(pkill -f \"scripts/s17/desktop-stats.ts\")",
+      "Bash(git cherry *)",
+      "Bash(curl *)",
+      "Bash(sed -i 's/\\(`src\\\\/output-repair.ts:48-81`\\)/\\(`src\\\\/output-repair.ts:49-94`\\)/' context/changes/finder-serialization-outage/plan.md)",
+      "Bash(S=/tmp/claude-1000/-home-piotrmiller-Source-lumina-clean-ai/02645d50-521e-4e54-939d-7c4d6acf1896/scratchpad/fms-phase2; KEY=$\\(grep -E '^OPENROUTER_API_KEY=' /home/piotrmiller/Source/lumina-clean-ai/packages/code-reviewer/.env | head -1 | cut -d= -f2- | tr -d '\"'\"'\"' \\\\r'\\); curl -s -H \"Authorization: Bearer $KEY\" https://openrouter.ai/api/v1/key -o $S/key-final-3.json -w \"key http %{http_code} at $\\(date -u +%Y-%m-%dT%H:%M:%SZ\\)\\\\n\"; jq -r '.data.usage' $S/key-final-3.json | awk '{printf \"counter %s; T = %.8f; remaining to 2.00 = %.8f\\\\n\", $1, $1-52.59943383, 2.00-\\($1-52.59943383\\)}'; echo \"--- working tree:\"; git -C /home/piotrmiller/Source/lumina-clean-ai status --short)"
     ],
     "deny": [
       "Bash(rm -rf *)"
