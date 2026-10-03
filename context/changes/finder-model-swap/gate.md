@@ -211,3 +211,6 @@ _End of Pre-registration._
 - **sha256 of the Pre-registration section:** `f6dc0fb0c3048859d2fbcafb0ea8accd5a97b152f8050edf92cfdcf83240e34e`
 - **Hashed at:** 2026-10-03T08:31:05Z
 - **Command:** `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum`
+- **Pushed:** commit `adffc68` to `origin/feat/finder-model-swap`; GitHub push time **2026-10-03T09:00:20Z**
+  (`GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-model-swap`: `push`,
+  `87ba5da` → `adffc68`). Recorded before any price re-read or paid call.

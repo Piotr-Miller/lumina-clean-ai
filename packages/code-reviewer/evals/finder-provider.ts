@@ -16,12 +16,33 @@ import {
   type Lens,
   type ReviewUnit,
   type SourceProvider,
+  withOneRetry,
 } from "../src/index.js";
 
 interface FinderProviderConfig {
   lens?: unknown;
   model?: unknown;
 }
+
+/** Test seams for the production retry's wait; promptfoo passes none, so the real delay applies. */
+export interface FinderProviderDeps {
+  retrySleep?: (ms: number) => Promise<void>;
+  random?: () => number;
+}
+
+/** One production retry that happened inside a row (see `FinderTelemetry.retries`). */
+export interface FinderRetry {
+  /** `APICallError-<status>`, `timeout`, or the error's name — never its message. */
+  error: string;
+  delayMs: number;
+}
+
+const retryClass = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) return typeof error;
+  if ("statusCode" in error && typeof error.statusCode === "number") return `APICallError-${String(error.statusCode)}`;
+  if ("name" in error && error.name === "TimeoutError") return "timeout";
+  return "name" in error && typeof error.name === "string" ? error.name : "unknown";
+};
 
 /** Fixture roots are authored relative to THIS directory, not the cwd promptfoo happens to run in. */
 const EVALS_DIR = dirname(fileURLToPath(import.meta.url));
@@ -116,6 +137,13 @@ export interface FinderTelemetry {
    * fails such an attempt: it did not run the measured request shape.
    */
   reasoningLeak: boolean;
+  /**
+   * Production's single transient retry, when it fired (gate.md §4, change
+   * `finder-model-swap`): one entry with the error class and the wait. The
+   * per-step arrays above then cover the requests of BOTH tries, so cost and
+   * the provider/A3 checks include the retry.
+   */
+  retries: FinderRetry[];
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
@@ -147,8 +175,10 @@ export default class FinderProvider implements ApiProvider {
   private readonly providerId: string;
   private readonly model: string;
   private readonly lens: Lens;
+  private readonly deps: FinderProviderDeps;
 
-  constructor(options: ProviderOptions) {
+  constructor(options: ProviderOptions, deps: FinderProviderDeps = {}) {
+    this.deps = deps;
     const config = (options.config ?? {}) as FinderProviderConfig;
     if (typeof config.model !== "string" || config.model.length === 0) {
       throw new Error("finder-provider requires a non-empty config.model");
@@ -187,6 +217,7 @@ export default class FinderProvider implements ApiProvider {
       stepOpenRouterReasoningTokens: [],
       stepReasoningTextChars: [],
       reasoningLeak: false,
+      retries: [],
     };
 
     // Tool-enablement is PER CASE (a var), not per model (provider config):
@@ -268,8 +299,10 @@ export default class FinderProvider implements ApiProvider {
     });
 
     try {
-      // Deliberately one pipeline attempt: repeated --no-cache runs should
-      // expose format failures instead of hiding them behind pipeline retries.
+      // One row = one production pass, including the pipeline's single
+      // transient retry (429, 5xx, timeout; owner decision 2026-10-03, gate.md
+      // §4). Format failures stay exposed: FinderOutputError is never retried,
+      // so repeated --no-cache runs still show them.
       const reviewer = createReviewer({
         model: this.model,
         lens: this.lens,
@@ -304,7 +337,11 @@ export default class FinderProvider implements ApiProvider {
           finalizationPrompt = prompt;
         },
       });
-      const result = await reviewer.review(unit, { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS });
+      const result = await withOneRetry(() => reviewer.review(unit, { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS }), {
+        sleep: this.deps.retrySleep,
+        random: this.deps.random,
+        onRetry: (error, delayMs) => telemetry.retries.push({ error: retryClass(error), delayMs }),
+      });
       return { output: JSON.stringify(result), prompt: actualPrompt(), ...report() };
     } catch (error) {
       // Telemetry rides the error path too: a row that died after burning four

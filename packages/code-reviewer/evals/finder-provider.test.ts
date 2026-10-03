@@ -186,8 +186,9 @@ describe("FinderProvider metadata and prompt", () => {
         .fn()
         .mockRejectedValue(new APICallError({ message: "HTTP 429", url: "u", requestBodyValues: {}, statusCode: 429 })),
     });
-    // Tool-enabled, so the gathering loop runs first — and fails there.
-    const response = await provider().callApi("", {
+    // Tool-enabled, so the gathering loop runs first — and fails there, on
+    // both tries of the production retry.
+    const response = await retrying().callApi("", {
       vars: {
         diff: [
           "diff --git a/src/lib/format-bytes.ts b/src/lib/format-bytes.ts",
@@ -210,6 +211,64 @@ describe("FinderProvider metadata and prompt", () => {
     expect(prompt.loopPrompt?.[0]?.content).toContain("getFileContext");
     expect(promptOf(response)).not.toContain("OUTPUT FORMAT");
     expect(metadataOf(response).stepProviders).toEqual([]);
+  });
+});
+
+// --- Retries as in production (change finder-model-swap, gate.md §4) ---
+
+const http429 = () => new APICallError({ message: "HTTP 429", url: "u", requestBodyValues: {}, statusCode: 429 });
+const noWait = vi.fn<(ms: number) => Promise<void>>(() => Promise.resolve());
+function retrying(): FinderProvider {
+  return new FinderProvider({ id: "glm", config: { model: "z-ai/glm-4.6" } }, { retrySleep: noWait, random: () => 0 });
+}
+
+describe("FinderProvider production retry", () => {
+  beforeEach(() => {
+    noWait.mockClear();
+  });
+
+  it("429 → one retry → success is a passing row that records retry=1 and the production delay", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockRejectedValueOnce(http429())
+      .mockResolvedValueOnce(generation(VALID, priced("Novita", 0.002)));
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const response = await call(retrying());
+    expect(response.error).toBeUndefined();
+    const metadata = metadataOf(response);
+    expect(metadata.retries).toEqual([{ error: "APICallError-429", delayMs: 10_000 }]);
+    expect(noWait).toHaveBeenCalledWith(10_000);
+    expect(doGenerate).toHaveBeenCalledTimes(2);
+    expect(metadata.stepProviders).toEqual(["Novita"]);
+  });
+
+  it("429 twice is a failed row: the error persisted past the one retry", async () => {
+    const doGenerate = vi.fn().mockRejectedValue(http429());
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const response = await call(retrying());
+    expect(response.error).toContain("HTTP 429");
+    expect(metadataOf(response).retries).toHaveLength(1);
+    expect(doGenerate).toHaveBeenCalledTimes(2);
+  });
+
+  it("never retries a FinderOutputError, so format failures stay exposed", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockResolvedValueOnce(generation('{"summary": 1}', priced("Novita", 0.001)))
+      .mockResolvedValueOnce(generation('{"summary": 2}', priced("Novita", 0.001)));
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const response = await call(retrying());
+    expect(response.error).toContain("Finder output rejected");
+    expect(metadataOf(response).retries).toEqual([]);
+    expect(noWait).not.toHaveBeenCalled();
+    expect(doGenerate).toHaveBeenCalledTimes(2); // finalization + its one format repair, no re-roll
+  });
+
+  it("a row without a retry reports an empty list, never an absent field", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi.fn().mockResolvedValue(generation(VALID, priced("Novita", 0.002))),
+    });
+    expect(metadataOf(await call(retrying())).retries).toEqual([]);
   });
 });
 

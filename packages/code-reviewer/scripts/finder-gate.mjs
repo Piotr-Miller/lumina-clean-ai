@@ -1,18 +1,25 @@
-// Phase 4 gate runner for change `finder-serialization-outage` (plan.md,
-// Phase 4; thresholds in context/changes/finder-serialization-outage/gate.md).
+// Gate runner for change `finder-model-swap` (plan.md, Phases 1–2; the sealed
+// protocol is context/changes/finder-model-swap/gate.md). First written for
+// `finder-serialization-outage`, whose gate measured `z-ai/glm-4.6` endpoints.
 //
 // PAID. Runs the production finder (`createReviewer`, two stages, reasoning
-// off, the finder's own routing) N times on one diff, pinned to ONE endpoint
-// through OPENROUTER_FINDER_PROVIDERS, exactly as the gate prescribes. Writes
-// one JSONL line per ATTEMPT — never per successful row — so every 429,
-// timeout and FinderOutputError counts against G1 (lesson "a guard metric that
-// only exists on success cannot detect failure"). Nothing is retried: one
-// attempt = one `review()` call.
+// off, the finder's own routing) on one diff, pinned to ONE endpoint through
+// OPENROUTER_FINDER_PROVIDERS, exactly as the gate prescribes. Writes one JSONL
+// line per ATTEMPT — never per successful row — so every 429, timeout and
+// FinderOutputError counts against the gate (lesson "a guard metric that only
+// exists on success cannot detect failure").
+//
+// Retries as in production (gate.md §4, owner 2026-10-03): one attempt is one
+// production pass, including production's single transient retry —
+// `withOneRetry` from src/retry.ts (429, 5xx or timeout; one retry; the same
+// header-aware delay). FinderOutputError is never retried. Every retry is in
+// the attempt's record (`retries`), and the requests of both tries stay in
+// `requests`, so cost, latency, provider and A3 checks cover the retry too. No
+// other re-run exists.
 //
 // Each attempt is checked, request by request, for:
 //   - the serving provider: every request must report the pinned endpoint's
-//     name; a missing or different name INVALIDATES the attempt (gate.md,
-//     "A request served by another provider invalidates the attempt");
+//     name; a missing or different name INVALIDATES the attempt;
 //   - reasoning (Amendment A3): any reasoning token or reasoning text means
 //     `reasoning: {enabled: false}` did not take effect, and the attempt fails;
 //   - cost: a request without a provider-reported cost leaves the attempt's
@@ -23,59 +30,47 @@
 // owner's hand-read (G3).
 //
 // Usage (from packages/code-reviewer):
-//   npx tsx --env-file=.env scripts/finder-gate.mjs --endpoint z-ai --case pr269 \
-//     --diff <pr269.diff> --rules <rules.md> --source-root <worktree at fca2778> \
-//     --n 10 --out <gate-z-ai-pr269.jsonl> [--max-spend 0.40]
+//   npx tsx --env-file=.env scripts/finder-gate.mjs --model <id> --endpoint <slug> \
+//     --case <name> --diff <diff> --rules <rules.md> --source-root <dir> \
+//     --n <total> --out <series.jsonl> [--max-spend <usd>] [--through <k>] \
+//     [--start <k> --append]
 //
 // `--max-spend` stops the series BEFORE an attempt once the series' own
 // reported spend has reached the limit; the attempts not run are recorded as
-// `not-run (budget)` in the summary, never silently dropped; `--start k --append`
-// runs exactly those attempts later.
-import { appendFileSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+// `not-run (budget)` in the summary, never silently dropped. `--through <k>`
+// stops after attempt k and leaves the rest unrecorded (the A3 probe is G2
+// attempt 01). `--start k --append` runs exactly the attempts not yet recorded.
+import { appendFileSync, existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 
-import { resolveFinderProviderRouting } from "../src/config.ts";
-import { DEFAULT_FINDER_MAX_STEPS } from "../src/cli.ts";
-import { FinderOutputError } from "../src/output-repair.ts";
-import { DEFAULT_FINDER_TIMEOUT_MS, describeFinderStep } from "../src/pipeline.ts";
-import { createReviewer } from "../src/reviewer.ts";
-import { createDiffScopedSourceForDiff } from "../src/source-provider.ts";
+import {
+  assertSeriesWritable,
+  classify,
+  evaluateAttempt,
+  parseGateArgs,
+  reasoningTokensOf,
+  runAttempt,
+} from "./finder-gate-core.mjs";
 
-// The routing slug and the name OpenRouter reports as the serving provider
-// differ in notation (`z-ai` is served as `Z.AI`; observed in the Phase 2
-// captures). Exact match against this table, nothing looser: an unknown slug
-// is a usage error, not a guess.
-export const ENDPOINT_NAMES = { "z-ai": "Z.AI", novita: "Novita", deepinfra: "DeepInfra", venice: "Venice" };
+// The command line is checked before the reviewer's module graph loads, so a
+// bad invocation fails fast and names the flag.
+let opts;
+try {
+  opts = parseGateArgs(process.argv.slice(2));
+} catch (error) {
+  console.error(`finder-gate: ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(2);
+}
 
-const MODEL = "z-ai/glm-4.6";
+const { resolveFinderProviderRouting } = await import("../src/config.ts");
+const { DEFAULT_FINDER_MAX_STEPS } = await import("../src/cli.ts");
+const { FinderOutputError } = await import("../src/output-repair.ts");
+const { DEFAULT_FINDER_TIMEOUT_MS, describeFinderStep } = await import("../src/pipeline.ts");
+const { createReviewer } = await import("../src/reviewer.ts");
+const { createDiffScopedSourceForDiff } = await import("../src/source-provider.ts");
 
-const args = process.argv.slice(2);
-const flag = (name) => {
-  const i = args.indexOf(name);
-  return i === -1 ? undefined : args[i + 1];
-};
-const required = (name) => {
-  const value = flag(name);
-  if (value === undefined) throw new Error(`missing ${name}`);
-  return value;
-};
-
-const endpoint = required("--endpoint");
-const expectedName = ENDPOINT_NAMES[endpoint];
-if (expectedName === undefined) throw new Error(`unknown endpoint slug ${JSON.stringify(endpoint)}`);
-const caseName = required("--case");
-const diff = readFileSync(required("--diff"), "utf8");
-const rules = readFileSync(required("--rules"), "utf8");
-const sourceRoot = required("--source-root");
-const n = Number(required("--n"));
-if (!Number.isSafeInteger(n) || n < 1) throw new Error("--n must be a positive integer");
-const out = required("--out");
-const maxSpend = flag("--max-spend") === undefined ? Infinity : Number(flag("--max-spend"));
-// `--start <k> --append` CONTINUES a series that `--max-spend` cut short: it
-// runs attempts k..n and appends to the same file. It never re-runs an
-// attempt that already has a record — continuation, not a retry.
-const start = flag("--start") === undefined ? 1 : Number(flag("--start"));
-if (!Number.isSafeInteger(start) || start < 1 || start > n) throw new Error("--start must be in 1..n");
-const append = args.includes("--append");
+const { model, endpoint, expectedName, caseName, n, out, maxSpend, start, through, append } = opts;
+const diff = readFileSync(opts.diffPath, "utf8");
+const rules = readFileSync(opts.rulesPath, "utf8");
 
 // Pin through the production mechanism, then confirm the routing it produced:
 // a malformed value would silently fall back to the default list.
@@ -87,42 +82,20 @@ if (JSON.stringify(routing.only) !== JSON.stringify([endpoint]) || routing.requi
 
 const source = createDiffScopedSourceForDiff({
   diff,
-  root: sourceRoot,
+  root: opts.sourceRoot,
   readFile: (path) => readFileSync(path, "utf8"),
   realpath: (path) => realpathSync(path),
   isRegularFile: (path) => statSync(path).isFile(),
 });
 if (source === undefined) throw new Error("the diff declares no post-change paths; the tool could serve nothing");
 
-const reasoningTokensOf = (step) => {
-  const sdk = step.usage?.outputTokenDetails?.reasoningTokens;
-  const raw = step.providerMetadata?.openrouter?.usage?.completionTokensDetails?.reasoningTokens;
-  return { sdk: typeof sdk === "number" ? sdk : null, openrouter: typeof raw === "number" ? raw : null };
-};
-
-const classify = (error) => {
-  if (error instanceof FinderOutputError) return "FinderOutputError";
-  if (error?.name === "TimeoutError" || error?.cause?.name === "TimeoutError") return "timeout";
-  const status = error?.statusCode;
-  return typeof status === "number" ? `APICallError-${String(status)}` : `error-${error?.name ?? typeof error}`;
-};
-
-if (append) {
-  const done = readFileSync(out, "utf8")
-    .split("\n")
-    .filter((line) => line !== "")
-    .map((line) => JSON.parse(line).attempt);
-  const clash = done.filter((attempt) => attempt >= start);
-  if (clash.length > 0)
-    throw new Error(`attempts ${clash.join(", ")} already recorded in ${out}; refusing to re-run them`);
-} else {
-  if (start !== 1) throw new Error("--start without --append would discard the earlier attempts");
-  writeFileSync(out, "");
-}
+assertSeriesWritable({ append, start, existingText: existsSync(out) ? readFileSync(out, "utf8") : undefined, out });
+if (!append) writeFileSync(out, "");
 let seriesSpend = 0;
-const summary = { endpoint, case: caseName, n, outcomes: {}, notRun: 0 };
+let seriesRetries = 0;
+const summary = { model, endpoint, case: caseName, n, start, through, outcomes: {}, notRun: 0 };
 
-for (let i = start; i <= n; i += 1) {
+for (let i = start; i <= through; i += 1) {
   const id = `${endpoint}-${caseName}-${String(i).padStart(2, "0")}`;
   if (seriesSpend >= maxSpend) {
     summary.notRun += 1;
@@ -132,7 +105,7 @@ for (let i = start; i <= n; i += 1) {
   const requests = [];
   let repairs = 0;
   const reviewer = createReviewer({
-    model: MODEL,
+    model,
     projectContext: rules,
     source,
     maxSteps: DEFAULT_FINDER_MAX_STEPS,
@@ -156,37 +129,27 @@ for (let i = start; i <= n; i += 1) {
   });
 
   const started = Date.now();
-  let outcome;
-  let result;
-  let error;
-  try {
-    result = await reviewer.review({ kind: "diff", diff }, { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS });
-    outcome = repairs === 0 ? "valid" : "valid-after-repair";
-  } catch (caught) {
-    error = caught;
-    outcome = classify(caught);
-  }
-  const latencyMs = Date.now() - started;
-
-  const providerMismatch = requests.filter((r) => r.provider !== expectedName).map((r) => r.provider);
-  const reasoningLeak = requests.some(
-    (r) => (r.reasoningTokens.sdk ?? 0) > 0 || (r.reasoningTokens.openrouter ?? 0) > 0 || r.reasoningTextChars > 0,
+  const { result, error, retries } = await runAttempt(() =>
+    reviewer.review({ kind: "diff", diff }, { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS }),
   );
-  const cost = requests.reduce((total, r) => total + (r.cost ?? 0), 0);
-  const costComplete = requests.length > 0 && requests.every((r) => r.cost !== null);
+  const latencyMs = Date.now() - started;
+  const outcome = error === undefined ? (repairs === 0 ? "valid" : "valid-after-repair") : classify(error);
+
+  const { providerMismatch, invalidated, reasoningLeak, cost, costComplete, g1Pass } = evaluateAttempt({
+    requests,
+    outcome,
+    expectedName,
+  });
   seriesSpend += cost;
+  seriesRetries += retries.length;
 
   const findings = result?.findings ?? [];
   const bySeverity = {};
   for (const finding of findings) bySeverity[finding.severity] = (bySeverity[finding.severity] ?? 0) + 1;
 
-  // An attempt passes G1 only when it produced a valid object, every request
-  // was served by the pinned endpoint, and reasoning stayed off.
-  const invalidated = providerMismatch.length > 0;
-  const g1Pass = !invalidated && !reasoningLeak && (outcome === "valid" || outcome === "valid-after-repair");
-
   const record = {
     id,
+    model,
     endpoint,
     expectedProvider: expectedName,
     case: caseName,
@@ -198,6 +161,8 @@ for (let i = start; i <= n; i += 1) {
     providerMismatch,
     reasoningLeak,
     repairs,
+    retried: retries.length > 0,
+    retries,
     requests,
     cost,
     costComplete,
@@ -227,12 +192,15 @@ for (let i = start; i <= n; i += 1) {
   summary.outcomes[outcome] = (summary.outcomes[outcome] ?? 0) + 1;
   console.log(
     `${id}: ${outcome}${invalidated ? " INVALIDATED" : ""}${reasoningLeak ? " REASONING" : ""} ` +
-      `requests=${String(requests.length)} providers=${requests.map((r) => r.provider ?? "?").join(",")} ` +
+      `retries=${String(retries.length)} requests=${String(requests.length)} ` +
+      `providers=${requests.map((r) => r.provider ?? "?").join(",")} ` +
       `findings=${result === undefined ? "-" : String(findings.length)} cost=$${cost.toFixed(6)}` +
       `${costComplete ? "" : " (cost incomplete)"} ${String(latencyMs)}ms` +
       `${error === undefined ? "" : ` :: ${(error instanceof Error ? error.message : String(error)).slice(0, 160)}`}`,
   );
 }
 
+summary.unrecorded = n - through;
 summary.seriesSpend = seriesSpend;
+summary.seriesRetries = seriesRetries;
 console.log(`SUMMARY ${JSON.stringify(summary)}`);

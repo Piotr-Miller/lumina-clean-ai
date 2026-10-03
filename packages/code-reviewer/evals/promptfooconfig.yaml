@@ -16,12 +16,12 @@ prompts:
     label: production-finder-prompt
 
 # qwen3-coder-flash and gpt-5.4-mini were dropped after the 2026-08-10 run:
-# their failures are STRUCTURAL, not quality. qwen has no `structured_outputs`
-# support, degrades to `json_object`, and Alibaba then rejects a prompt that
-# lacks the literal word "json"; OpenAI strict structured outputs demands every
-# property appear in `required`, while startLine/endLine are `.optional()` for
-# Anthropic compatibility (schemas.ts). Neither ever reached a model, so keeping
-# them would only add known-dead error rows to the decision snapshot.
+# their failures were STRUCTURAL, not quality — Alibaba rejected the
+# `json_object` fallback, OpenAI strict structured outputs rejected the optional
+# startLine/endLine. Both walls came from `response_format`, which the finder no
+# longer sends (change `finder-serialization-outage`: the format is carried in
+# the prompt and parsed locally, reviewer.ts). OpenAI and Alibaba models are
+# therefore measurable again; see the `candidate-*` providers below.
 providers:
   # Production baseline first: every comparison is anchored to what runs today.
   - id: file://./finder-provider.ts
@@ -49,10 +49,8 @@ providers:
   # paying for the whole matrix again; the earlier providers stay registered so
   # the comparison remains reproducible.
   #
-  # OpenAI's GPT-5.6 tier is deliberately absent despite topping the coding
-  # boards: strict structured outputs demands every property appear in
-  # `required`, and startLine/endLine are `.optional()` for Anthropic
-  # compatibility (schemas.ts) — the same wall gpt-5.4-mini hit.
+  # (OpenAI's GPT-5.6 tier was absent from this round for the strict
+  # structured-output wall noted above, which no longer exists.)
   - id: file://./finder-provider.ts
     label: cheap-deepseek-v4-flash
     config:
@@ -61,6 +59,22 @@ providers:
     label: mid-glm-5.2
     config:
       model: z-ai/glm-5.2
+  # Change `finder-model-swap` (gate: context/changes/finder-model-swap/gate.md):
+  # the three owner-decided candidates, each measured PINNED to one endpoint via
+  # OPENROUTER_FINDER_PROVIDERS (openai / alibaba / minimax) and only on the four
+  # archived cases. Run one at a time with --filter-providers.
+  - id: file://./finder-provider.ts
+    label: candidate-gpt-6-luna
+    config:
+      model: openai/gpt-6-luna
+  - id: file://./finder-provider.ts
+    label: candidate-qwen3.8-flash
+    config:
+      model: qwen/qwen3.8-flash
+  - id: file://./finder-provider.ts
+    label: candidate-minimax-m3
+    config:
+      model: minimax/minimax-m3
 
 defaultTest:
   vars:

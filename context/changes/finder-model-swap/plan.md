@@ -585,16 +585,16 @@ as an emergency override is possible but needs a separate owner decision.
 #### Manual
 
 - [x] 0.5 The owner approves the Pre-registration before Phase 2
-- [ ] 0.6 Seal sha256 matches, the commit is on origin and GitHub's push time is recorded before any paid call
+- [x] 0.6 Seal sha256 matches, the commit is on origin and GitHub's push time is recorded before any paid call
 
 ### Phase 1: Gate tooling (no network)
 
 #### Automated
 
-- [ ] 1.1 Package tests pass
-- [ ] 1.2 Package typecheck and lint pass
-- [ ] 1.3 Repo format check passes
-- [ ] 1.4 The runner refuses to start without --model
+- [x] 1.1 Package tests pass
+- [x] 1.2 Package typecheck and lint pass
+- [x] 1.3 Repo format check passes
+- [x] 1.4 The runner refuses to start without --model
 
 #### Manual
 
