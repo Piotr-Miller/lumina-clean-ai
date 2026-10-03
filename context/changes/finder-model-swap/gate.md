@@ -262,4 +262,7 @@ _End of A1._
 - **sha256 of A1:** `dc423199b14269d15267fb3522083378d9e8dc274973636b233667d12f5ebb9c`
 - **Hashed at:** 2026-10-03T10:02:04Z
 - **Command:** `sed -n '/^### A1 — grader errors (2026-10-03)$/,/^_End of A1\._$/p' gate.md | sha256sum`
-- **Pushed:** recorded below after the push to `origin`.
+- **Pushed:** commit `docs(finder-model-swap): amendment A1 — grader errors (p1)` to `origin/feat/finder-model-swap`;
+  GitHub push time **2026-10-03T10:47:40Z**
+  (`GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-model-swap`: `push`,
+  `adffc68` → `2330494`). Recorded before any price re-read or paid call of Phase 2.
