@@ -510,6 +510,12 @@ so a separate scratch PR would pay for it twice.
 - A G5 that is `not measured (budget)` or not green blocks the merge until the owner decides.
 - The run must show finder = the admitted model, read from `models.finder` in the run's `review.json` (`pipeline.ts:634`, uploaded
   as the `ai-review-output` artifact), not inferred from provider names; any other model fails G5. Spend is read from the counter and added to the ledger.
+- **Owner addition (2026-10-03, after Phase 2's one-off cost report):** G5 records the OpenRouter generation
+  id (`gen-…`) of **every** finder request — loop steps, finalization and repair — in the run's telemetry
+  (`finderTelemetry` / the finder step log), so the billing of each request (native vs. normalized token
+  counts; luna's G2-01 requests cost 1.23× the base-tier list price on the SDK's token counts, `gate.md`
+  Results) can be checked afterwards through the free `GET /api/v1/generation?id=<gen-id>` without any
+  further spend. Phase 2's measurement did not record the ids; this makes the gap closable at G5.
 
 #### 4. Merge
 
@@ -604,28 +610,30 @@ as an emergency override is possible but needs a separate owner decision.
 
 #### Automated
 
-- [x] 2.1 One JSONL line per attempt run; not-run attempts listed
-- [x] 2.2 Every promptfoo run has exactly 12 rows or is recorded as failed
-- [x] 2.3 The counter never exceeded T0 + 2.00
+- [x] 2.1 One JSONL line per attempt run; not-run attempts listed — d978976
+- [x] 2.2 Every promptfoo run has exactly 12 rows or is recorded as failed — d978976
+- [x] 2.3 The counter never exceeded T0 + 2.00 — d978976
 
 #### Manual
 
-- [ ] 2.4 Owner confirms each $1.60 stop or G4-only pause
-- [ ] 2.5 Every candidate has exactly one verdict label
+- [x] 2.4 Owner confirms each $1.60 stop or G4-only pause
+- [x] 2.5 Every candidate has exactly one verdict label
 
 ### Phase 3: Hand-read and decision 4.4 (only for automated passers)
 
 #### Automated
 
-- [ ] 3.1 The recorded sample reproduces from the recorded sha and seed
+- [x] 3.1 The recorded sample reproduces from the recorded sha and seed — 6dc009d (re-drawn after the push: same order)
 
 #### Manual
 
-- [ ] 3.2 Owner approved the merge table before the seed was written
-- [ ] 3.3 Owner approved every sampled classification
-- [ ] 3.4 Owner records decision 4.4
+- [x] 3.2 Owner approved the merge table before the seed was written — 2026-10-03, `gate.md` § Hand-read (approval recorded 14:50:53Z, seed written after it)
+- [x] 3.3 Owner approved every sampled classification — 2026-10-03, every one of the 20 rows (`hand-read-269-presort.md`, Owner/Date columns; D13 and D20 checked by the owner in the code)
+- [x] 3.4 Owner records decision 4.4 — 2026-10-03: none admitted, no finder until a separate owner decision, thresholds unchanged (`gate.md` § Decision 4.4)
 
 ### Phase 4: Production (only after 4.4 admits a candidate)
+
+_Not executed — decision 4.4 (2026-10-03) admitted no candidate; the rows below stay unticked on purpose (owner, 2026-10-03). The checks named in 4.1 were still run at close-out and passed: `change.md` § Close-out._
 
 #### Automated
 

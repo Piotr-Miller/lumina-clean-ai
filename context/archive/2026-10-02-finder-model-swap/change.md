@@ -1,10 +1,11 @@
 ---
 change_id: finder-model-swap
 title: "Replace the ai-review finder model through a pre-registered quality and cost gate"
-status: implementing
+status: archived
+outcome: completed
 created: 2026-10-02
 updated: 2026-10-03
-archived_at: null
+archived_at: 2026-10-03T17:04:00Z
 ---
 
 ## Notes
@@ -174,6 +175,46 @@ The owner approved `gate.md`'s Pre-registration on 2026-10-03 with two edits mad
 Accepted knowingly by the owner: the N ≤ 19 → limit 0 consequence; MiniMax, measured last, may end
 `not measured (budget)`; the order G2 → G3/G4 → G1 differs from the predecessor's gate.
 
+### Owner decision (2026-10-03): 4.4 — no candidate admitted
+
+Recorded after the Phase 3 hand-read (`gate.md` § Hand-read, § Decision 4.4). Every candidate has exactly one
+§5 label: `openai/gpt-6-luna` **`FAIL (G3 hand-read)`** (automated G1–G4 passed; the owner rejected 19 of its
+20 distinct #269 findings against a limit of 1 — the code contradicts five of them, five are missing tests for
+maintainer-only tooling, five are missing friendlier messages with no wrong result, three cannot occur, one is
+the documented method; D2 is the one real, minor defect), `qwen/qwen3.8-flash` `FAIL (G3)`,
+`minimax/minimax-m3` `FAIL (G2)`.
+
+- **Admitted: none. We stay without a finder until a separate owner decision. The threshold does not change.**
+- **Phase 4 does not start**; the plan's close-out (record, `npm test`, no production change) is the next step
+  and was not begun at the owner's request.
+
+### Owner decision (2026-10-03): the branch does not go to `master`
+
+`feat/finder-model-swap` is **not merged in its current form.** On `master` the repository variable
+`vars.OPENROUTER_REVIEW_MODEL` is `z-ai/glm-4.6` (read 2026-10-03 through the Actions variables API), while
+this branch's code routes the finder to `["novita"]` (`packages/code-reviewer/src/config.ts:130`,
+`DEFAULT_FINDER_PROVIDERS`, inherited from the predecessor's Phases 1–3). A merge would therefore put Novita
+into production — the endpoint that failed the predecessor's G3 hand-read. **No PR, no merge.** Both branches,
+`feat/finder-serialization-outage` and `feat/finder-model-swap`, stay on `origin` as the base of the next
+change.
+
+### Close-out (2026-10-03) — plan Phase 3 §4, no candidate admitted
+
+- **Result.** `openai/gpt-6-luna` **`FAIL (G3 hand-read)`** (automated G1–G4 passed; 19 of 20 distinct #269
+  findings rejected against a limit of 1); `qwen/qwen3.8-flash` **`FAIL (G3)`**; `minimax/minimax-m3`
+  **`FAIL (G2)`**. Spent **$0.2111 of $2.00** (counter T = $0.211113696, settled and reconciled to the cent
+  with finder telemetry plus the grader at list price; `gate.md` § Spend).
+- **Decision 4.4 (owner, 2026-10-03): none admitted. No finder until a separate owner decision; the
+  threshold does not change.**
+- **Checks at close-out** (`packages/code-reviewer`): `npm test` — 25 files, 821 tests passed; `npm run lint`
+  — clean; `npm run typecheck` — clean. Repository root: `npm run format:check` — passed ("All matched files use Prettier code style!").
+- **Seals re-verified** with the commands recorded in `gate.md`: Pre-registration
+  `f6dc0fb0c3048859d2fbcafb0ea8accd5a97b152f8050edf92cfdcf83240e34e` ✓, A1
+  `dc423199b14269d15267fb3522083378d9e8dc274973636b233667d12f5ebb9c` ✓.
+- **Phase 4 (production: routing, merge, G5, T2, deletion of `OPENROUTER_REVIEW_MODEL`) was not executed**
+  because of decision 4.4; its Progress rows stay unticked on purpose. The branch is pushed to `origin`
+  without a PR (decision above).
+
 ### Constraints carried over
 
 - **`anthropic/claude-sonnet-5` was rejected at 57.6×** the matched-baseline production cost per review
@@ -197,3 +238,5 @@ Accepted knowingly by the owner: the N ≤ 19 → limit 0 consequence; MiniMax, 
   text is outside the repo). Done; any reply is tracked outside this change.
 - **Interim deployment of Phases 1–3** to `master` — open, the owner's decision (recorded in the
   predecessor's Result).
+- **Closed 2026-10-03:** T2, G5 and the interim deployment are not done in this change — decision 4.4
+  admitted no candidate and the branch does not merge (decision above); they carry to the next change.
