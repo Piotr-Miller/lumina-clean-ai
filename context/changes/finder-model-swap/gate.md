@@ -310,17 +310,19 @@ ceiling for this change: counter ≤ T0 + 2.00 = **$54.59943383**; stop-and-ask 
 Counter read before and after every series; T = counter − T0. `--max-spend` per series = min(1.60 − T,
 2.00 − T − A_max) (§7). Telemetry = the series' own per-request cost sum.
 
-| #   | Series                                       | Counter before          | Counter after            | Δ counter   | Telemetry                                                                    | T after                                                      | Note                                                                                                                                               |
-| --- | -------------------------------------------- | ----------------------- | ------------------------ | ----------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | luna G2-01 (A3 probe), `--max-spend 1.60`    | 52.59943383 (11:55:58Z) | 52.59943383 (11:58:49Z)  | 0.00000000  | 0.00050248                                                                   | 0.00050248 (telemetry)                                       | counter not yet updated after the series (lag); T carried as max(counter, telemetry)                                                               |
-| 2   | luna G2-02..05, `--max-spend 1.59`           | 52.59943383             | 52.59943383 (12:00:55Z)  | 0.00000000  | 0.00040657                                                                   | 0.00090905 (telemetry)                                       | counter still unchanged                                                                                                                            |
-| 3   | luna promptfoo (12 rows, finder + grader)    | 52.59943383             | 52.601065505 (12:04:29Z) | 0.001631675 | 0.00330753 (finder rows only; grader 11,329 tokens, not priced in telemetry) | ≥ 0.00421658 (telemetry, grader excluded)                    | counter still lagging telemetry; promptfoo started with 2.00 − T ≥ 0.140 (§7)                                                                      |
-| 4   | luna G1 (#269 × 10), `--max-spend 1.50`      | 52.601065505            | 52.72550066 (12:13:10Z)  | 0.124435155 | 0.05596225                                                                   | **0.12606683 (counter)**                                     | counter caught up: counter − finder telemetry so far ($0.06017883) = $0.06588800 ≈ the 12 grader calls (11,329 tokens on `gemini-3.1-pro-preview`) |
-| 5   | qwen G2-01 (A3 probe), `--max-spend 1.47`    | 52.72550066             | 52.72550066 (12:38:23Z)  | 0.00000000  | 0.00152655                                                                   | 0.12759338 (counter + telemetry)                             | counter not yet updated                                                                                                                            |
-| 6   | qwen G2-02..05, `--max-spend 1.47`           | 52.72550066             | 52.727027212 (13:31:01Z) | 0.001526552 | 0.00419268                                                                   | 0.13178606 (telemetry-carried; counter 0.12752338)           | counter lags the series by ≈ $0.0042                                                                                                               |
-| 7   | qwen promptfoo (12 rows, finder + grader)    | 52.727027212            | 52.736070376 (13:47:58Z) | 0.009043164 | 0.00960474 (finder rows; grader 12727 tokens)                                | ≥ 0.1413908 (telemetry, grader excluded); counter 0.13663655 | started with 2.00 − T ≥ 0.142 (§7); G3 FAIL ends the candidate, no G1 spent                                                                        |
-| 8   | minimax G2-01 (A3 probe), `--max-spend 1.45` | 52.736070376            | 52.754488626 (13:49:05Z) | 0.01841825  | 0.00295890                                                                   | 0.155054796 (counter)                                        | G2 FAIL on the probe ends the candidate; nothing more spent                                                                                        |
-| —   | final re-read                                | —                       | 52.810547526 (13:51:04Z) | —           | —                                                                            | **0.211113696 (counter)**                                    | the counter trails the series by minutes; re-read again at commit time, see Spend                                                                  |
+| #   | Series                                       | Counter before          | Counter after                                                  | Δ counter   | Telemetry (finder)                                                       | T (§7, counter)                                                              | T carried                      | Note                                                                                                                                                                                                                  |
+| --- | -------------------------------------------- | ----------------------- | -------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | luna G2-01 (A3 probe), `--max-spend 1.60`    | 52.59943383 (11:55:58Z) | 52.59943383 (11:58:49Z)                                        | 0.00000000  | 0.00050248                                                               | 0.00000000                                                                   | 0.00050248                     | counter not yet updated after the series (lag); T carried = max(counter, finder telemetry)                                                                                                                            |
+| 2   | luna G2-02..05, `--max-spend 1.59`           | 52.59943383             | 52.59943383 (12:00:55Z)                                        | 0.00000000  | 0.00040657                                                               | 0.00000000                                                                   | 0.00090905                     | counter still unchanged                                                                                                                                                                                               |
+| 3   | luna promptfoo (12 rows, finder + grader)    | 52.59943383             | 52.601065505 (12:04:29Z)                                       | 0.001631675 | 0.00330753 (finder rows; grader 11,329 tokens = $0.065888 at list price) | 0.001631675                                                                  | ≥ 0.00421658 (grader excluded) | counter still lagging; promptfoo started with 2.00 − T ≥ 0.140 (§7)                                                                                                                                                   |
+| 4   | luna G1 (#269 × 10), `--max-spend 1.50`      | 52.601065505            | 52.72550066 (12:13:10Z)                                        | 0.124435155 | 0.05596225                                                               | 0.12606683                                                                   | 0.12606683                     | counter caught up: counter − finder telemetry so far ($0.06017883) = $0.06588800 = the 12 grader calls at list price (11,329 tokens × $2 / $12 per M = $0.065888; "≈" (corrected 2026-10-03, impl-review-phase-2 F2)) |
+| 5   | qwen G2-01 (A3 probe), `--max-spend 1.47`    | 52.72550066             | 52.72550066 (12:38:23Z)                                        | 0.00000000  | 0.00152655                                                               | 0.12606683                                                                   | 0.12759338                     | counter not yet updated                                                                                                                                                                                               |
+| 6   | qwen G2-02..05, `--max-spend 1.47`           | 52.72550066             | 52.727027212 (13:31:01Z)                                       | 0.001526552 | 0.00419268                                                               | 0.12759338 ((corrected 2026-10-03, impl-review-phase-2 F2), from 0.12752338) | 0.13178606                     | Δ counter equals G2-01's telemetry exactly: the counter trails by one series (≈ $0.0042 behind)                                                                                                                       |
+| 7   | qwen promptfoo (12 rows, finder + grader)    | 52.727027212            | 52.736070376 (13:47:58Z)                                       | 0.009043164 | 0.00960474 (finder rows; grader 12,727 tokens = $0.066764 at list price) | 0.13663655                                                                   | ≥ 0.1413908 (grader excluded)  | started with 2.00 − T ≥ 0.142 (§7); G3 FAIL ends the candidate, no G1 spent                                                                                                                                           |
+| 8   | minimax G2-01 (A3 probe), `--max-spend 1.45` | 52.736070376            | 52.754488626 (13:49:05Z)                                       | 0.01841825  | 0.00295890                                                               | 0.155054796                                                                  | 0.155054796 (counter governs)  | G2 FAIL on the probe ends the candidate; nothing more spent                                                                                                                                                           |
+| —   | final re-read                                | —                       | 52.810547526 (13:51:04Z; unchanged at 13:51:52Z and 13:53:30Z) | —           | —                                                                        | **0.211113696**                                                              | —                              | settled: reconciles exactly with the finder total plus the grader at list price (see Spend; (corrected 2026-10-03, impl-review-phase-2 F2) — earlier wording: "re-read again at commit time")                         |
+
+_Table restructured 2026-10-03 (impl-review-phase-2 F2): the `T (§7, counter)` column was added and the earlier single "T after" column, which mixed counter and telemetry figures, became "T carried"; no value changed other than row 6's transposed digit._
 
 ### Candidate 1 — `openai/gpt-6-luna` @ `openai`
 
@@ -329,7 +331,7 @@ Counter read before and after every series; T = counter − T0. `--max-spend` pe
 `--start 2 --append`. Every attempt: 2 requests, both `provider: OpenAI`, `finishReason: stop`, 0 reasoning
 tokens on both channels and 0 reasoning text chars on every request (A3 holds), 0 `getFileContext` calls,
 0 repairs, 0 retries, cost complete. Costs $0.000502, $0.000114, $0.000126, $0.000055, $0.000112 (series
-$0.000909); latency 3.6 s, 2.9 s, 2.7 s, 2.5 s, 2.9 s.
+$0.000909); latency 3.6 s, 2.9 s, 2.7 s, 2.5 s, 2.9 s. Series summaries (runner `SUMMARY`, added 2026-10-03, impl-review-phase-2 F1): G2-01 `{"model":"openai/gpt-6-luna","endpoint":"openai","case":"clean","n":5,"start":1,"through":1,"outcomes":{"valid":1},"notRun":0,"interruptedBefore":[],"unrecorded":4,"seriesSpend":0.0005024750000000001,"seriesRetries":0}`; G2-02..05 `{"model":"openai/gpt-6-luna","endpoint":"openai","case":"clean","n":5,"start":2,"through":5,"outcomes":{"valid":4},"notRun":0,"interruptedBefore":[],"unrecorded":0,"seriesSpend":0.00040657,"seriesRetries":0}`.
 
 **One-off cost report (§1, not a gate rule), G2-01's two requests against the base-tier list price
 0.10 / 0.50 per M:** request 1 — 1,726 in / 24 out, reported cost $0.000227675 vs $0.000184600 at list
@@ -339,7 +341,7 @@ input token count on both requests**. The pinned endpoint reported `OpenAI`; the
 tier from `openai/flex` (0.5×) or `openai/fast` (2×), and neither of those ratios matches. The likeliest
 reading is a native-vs-normalized token-count difference (OpenRouter bills native tokens; the SDK reports
 the normalized count), not a tier change; the generation ids were not recorded, so it is not resolved here.
-Reported to the owner; G4 uses the reported `cost` as is.
+Reported to the owner; G4 uses the reported `cost` as is. Across all 52 luna requests of Phase 2 the reported cost over the base-tier list price ranges 0.108×–1.233× (median 0.229×): only G2-01's two requests sit at 1.23×, every later request is far below list, consistent with cache-read pricing ($0.01 per M) — so the 1.23× is specific to the first, uncached requests (added 2026-10-03, impl-review-phase-2 F6).
 
 **G3 (12 fixture rows, pinned, `-j 1`, `--no-cache`, grader `google/gemini-3.1-pro-preview`): PASS.**
 `gate-openai-promptfoo.jsonl` from the export of 2026-10-03T12:02:47Z–12:04:29Z (12 rows, 0 errors). Every
@@ -357,10 +359,10 @@ steps); every row's cost complete. Latency median 3.4 s, max 6.8 s. Finder cost 
 (42 requests in all); 0 reasoning tokens on both channels and 0 reasoning text on every request (A3 holds);
 0 retries, no 429, no timeout, no `FinderOutputError`; every request priced. Requests per attempt 2–6
 (`getFileContext` calls 0–6; attempts 03 and 10 made none). Cost per attempt: $0.012821, $0.004836,
-$0.003113, $0.004779, $0.004788, $0.004411, $0.005650, $0.003993, $0.008430, $0.003141 — **median $0.0047835,
+$0.003113, $0.004779, $0.004788, $0.004411, $0.005650, $0.003993, $0.008430, $0.003141 — **median $0.004783445 (corrected 2026-10-03, impl-review-phase-2 F4), from $0.0047835),
 max $0.012821**, series $0.055962. Latency **median 13.0 s, max 24.0 s** (7.98–24.01 s). Findings per attempt
 5, 1, 3, 5, 4, 3, 4, 3, 6, 4 (38 in all, majors on 7 of 10 attempts; no empty review). Hand-read material:
-the `findings` of all ten attempts in the JSONL (dedup in Phase 3).
+the `findings` of all ten attempts in the JSONL (dedup in Phase 3). Series summary (runner `SUMMARY`, added 2026-10-03, impl-review-phase-2 F1): `{"model":"openai/gpt-6-luna","endpoint":"openai","case":"pr269","n":10,"start":1,"through":10,"outcomes":{"valid":10},"notRun":0,"interruptedBefore":[],"unrecorded":0,"seriesSpend":0.055962254999999995,"seriesRetries":0}`.
 
 **Verdict (automated G1–G4): PASS** — G2 5/5, G3 every required metric 3/3, G4 median 0.060× ceiling, G1
 10/10. The §5 hand-read (Phase 3) and the owner's decision 4.4 decide admission.
@@ -372,8 +374,7 @@ the `findings` of all ten attempts in the JSONL (dedup in Phase 3).
 attempt: 6 requests, all `provider: Alibaba`, 0 reasoning tokens on both channels and 0 reasoning text on all
 30 requests (A3 holds), 0 repairs, 0 retries, cost complete. Costs $0.001527, $0.001494, $0.000695,
 $0.001190, $0.000814 (series $0.005719); latency 23.7 s, 13.9 s, 13.0 s, 33.7 s, 14.4 s. **Signal, not a
-gate:** every attempt made 5 `getFileContext` calls — the whole step budget — on a one-file rename, then
-finalized with an empty, correct review.
+gate:** every attempt made 5 tool calls — the whole step budget — on a one-file rename, then finalized with an empty, correct review; on attempts 03 and 04 the fifth call carried no parseable `getFileContext` path, so 4 file-context requests are recorded there (corrected 2026-10-03, impl-review-phase-2 F4). Series summaries (runner `SUMMARY`, added 2026-10-03, impl-review-phase-2 F1): G2-01 `{"model":"qwen/qwen3.8-flash","endpoint":"alibaba","case":"clean","n":5,"start":1,"through":1,"outcomes":{"valid":1},"notRun":0,"interruptedBefore":[],"unrecorded":4,"seriesSpend":0.001526552,"seriesRetries":0}`; G2-02..05 `{"model":"qwen/qwen3.8-flash","endpoint":"alibaba","case":"clean","n":5,"start":2,"through":5,"outcomes":{"valid":4},"notRun":0,"interruptedBefore":[],"unrecorded":0,"seriesSpend":0.004192678,"seriesRetries":0}`.
 
 **G3 (12 fixture rows, pinned, `-j 1`, `--no-cache`, grader `google/gemini-3.1-pro-preview`): FAIL.**
 `gate-alibaba-promptfoo.jsonl` from the export of 2026-10-03T13:43:23Z–13:47:58Z (12 rows, 0 errors, 0
@@ -383,7 +384,7 @@ possible `TypeError` on `filter` instead; testIdx 5 returned two findings only);
 `flaw_lost_cleanup`, `flaw_unsafe_html` 3/3. js-loop `issue_recall` 3/3; clean `no_false_alarms` 3/3;
 diagnostic cross-hunk `tool_required` 3/3 and `flaw_cross_hunk_contract` 3/3 (5–6 `getFileContext` calls per
 row; the three clean rows also made 5 calls each). Every request of every row reported `Alibaba`; 0 reasoning
-on both channels on all 43 requests (A3 holds); 0 retries; 1 format repair (React testIdx 5, successful).
+on both channels on all 43 requests (A3 holds); 0 retries; 1 format repair (React testIdx 5, successful). Diagnostic: each cross-hunk row also made 1–3 refused `getFileContext` requests (a directory path `src/lib/engines`, repeats of an already-delivered path, out-of-diff paths such as `src/components/UploadPanel.tsx`); luna's cross-hunk rows made none (added 2026-10-03, impl-review-phase-2 F6).
 
 **G4: PASS — median $0.00068266 (0.226× the ceiling), max $0.00162549**; every row's cost complete. Latency
 median 15.3 s, max 34.9 s. Finder cost of the 12 rows $0.00960474; grader 12,727 tokens.
@@ -400,7 +401,7 @@ only when G3 passes).
 retries, cost $0.002959 (complete), latency 24.7 s — and **2 findings on the defect-free rename**, both `nit`
 on `src/lib/format-bytes.ts:4`: (documentation) the new JSDoc "stops short of documenting the function's other
 load-bearing, invisible contracts"; (testing) "no test pins" the base-10 unit choice. §4: any finding, `minor`
-or `nit` included, fails G2; §5 step 1: any failure on G2-01 is a G2 failure, G2 needs 5/5.
+or `nit` included, fails G2; §5 step 1: any failure on G2-01 is a G2 failure, G2 needs 5/5. Series summary (runner `SUMMARY`, added 2026-10-03, impl-review-phase-2 F1): `{"model":"minimax/minimax-m3","endpoint":"minimax","case":"clean","n":5,"start":1,"through":1,"outcomes":{"valid":1},"notRun":0,"interruptedBefore":[],"unrecorded":4,"seriesSpend":0.0029589,"seriesRetries":0}`.
 
 **Verdict: `FAIL (G2)`** — attempts 02–05 were not run (`unrecorded: 4` in the series summary), G3/G4 and G1
 are `not measured (stopped after G2 FAIL)`; nothing more was spent on this candidate.
@@ -424,18 +425,37 @@ and no $1.60 stop occurred, so the owner was not asked mid-measurement.
 
 **Comparison (Phase 2 §3): not applicable** — exactly one candidate passed the automated G1–G4.
 
+### Run notes (added 2026-10-03, impl-review-phase-2 F5)
+
+- The promptfoo commands carried output-only additions beyond the registered line: `--no-progress-bar
+--no-table` and the environment `PROMPTFOO_DISABLE_TELEMETRY=1`, `PROMPTFOO_DISABLE_UPDATE=1`. They change
+  what is printed and whether promptfoo phones home, not what is measured.
+- Luna's G1 series ran as a background process so that a tool timeout could not interrupt an attempt (an
+  interrupted attempt counts as failed and is never re-run, Phase 1 F1). The other series ran in the
+  foreground.
+- A 52-minute gap separates qwen's G2-01 (12:37:59Z) from G2-02 (13:29:46Z): session latency, not a
+  measurement step. The counter was unchanged across it (52.72550066 at 12:38:23Z) and the 13:31:01Z read
+  reconciles exactly with the two series, so nothing was spent in the gap.
+
 ### Spend
 
-Counter T0 = $52.59943383 (11:55:58Z). The key's usage counter trails each series by minutes (it read
-unchanged right after the first two series and caught up later), so the ledger carries T as the larger of the
-counter and the finder telemetry, and the counter — the authority (§7) — is re-read at the end. **Counter at
-the final re-read: $52.810547526 (13:51:04Z, unchanged at 13:51:52Z) → T = $0.2111137.** Ceiling $54.59943383 (T0 + 2.00) was never
-approached; the $1.60 stop was never reached.
+Counter T0 = $52.59943383 (11:55:58Z). The key's usage counter trails each series by minutes: it read
+unchanged right after the first two series and after qwen's probe, and ledger row 6's Δ equals the previous
+series' telemetry exactly (the cleanest evidence of the one-series lag; (corrected 2026-10-03, impl-review-phase-2 F2) — the earlier
+text cited row 4). The ledger therefore carries T as the larger of the counter and the finder telemetry, and
+the counter — the authority (§7) — was re-read at the end. **Counter at the final re-read: $52.810547526
+(13:51:04Z, unchanged at 13:51:52Z and 13:53:30Z) → T = $0.211113696.** Ceiling $54.59943383 (T0 + 2.00) was
+never approached; the $1.60 stop was never reached.
 
 Finder telemetry (per-request `cost`, every request priced): luna G2 $0.00090905 + promptfoo rows $0.00330753 +
 G1 $0.05596225 = **$0.06017883**; qwen G2 $0.00571923 + promptfoo rows $0.00960474 = **$0.01532397**; minimax
-G2-01 **$0.00295890**. Finder total **$0.07846170**. The grader (`google/gemini-3.1-pro-preview`, 24
-`llm-rubric` calls, 24,056 tokens) is not priced in the telemetry; it is the difference between the counter
-delta and the finder total — see the final row of the ledger. Where a counter delta covered finder requests
-alone it matched the telemetry (row 4: $0.12443516 counter for G1 $0.05596225 plus the catch-up of the
-earlier rows).
+G2-01 **$0.00295890**. Finder total **$0.07846170**.
+
+**Reconciliation ((corrected 2026-10-03, impl-review-phase-2 F2); the earlier text said "≈ the grader"):** the grader
+(`google/gemini-3.1-pro-preview`, 24 `llm-rubric` calls) is not priced in the telemetry. At its list price in
+`models.json` ($2 / $12 per M prompt / completion) its 24,056 tokens cost 7,006 × 2e-6 + 4,323 × 12e-6 =
+$0.065888 (luna) and 8,596 × 2e-6 + 4,131 × 12e-6 = $0.066764 (qwen), **$0.132652 in all** — and the counter's
+excess over the finder total is 0.211113696 − 0.07846170 = **$0.13265200**, the same figure to eight decimals.
+Two consequences: (1) the final counter was settled, not lagging — nothing was still to land; (2) no
+unrecorded paid call hit the key during the measurement window (the key's `usage_daily` equals T as well).
+Per series the deltas interleave because of the lag (row 4 carries luna's whole grader with G1; row 8 carries part of qwen's grader with minimax's probe), so only the totals reconcile — and they do, exactly.
