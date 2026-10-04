@@ -213,7 +213,8 @@ As frozen in `## Inputs freeze` above, unchanged.
     the last code line before the next column-0 statement (a line starting with a letter, `$`, `_` or `@`).
   - **Other file types:** no units.
   - The Phase 3 unit-span check still runs against this grammar, in both directions.
-- **No source root** (R8; the unusable root added by the owner 2026-10-04, impl-review phase 1 F1): `--source-root`
+- **No source root** (R8; the unusable root added by the owner 2026-10-04, impl-review phase 1 F1; the narrowed
+  rule below approved by the owner 2026-10-04 instead of the literal "every finding refused"): `--source-root`
   absent, the diff declares no post-change path, **or the root is unusable**: at least one finding cites a file of
   the diff and the reader refuses every such finding (root missing, unreadable, or not the PR's checkout).
   - Off-diff findings do not count: the allowlist refuses them by design, each stays
@@ -255,7 +256,11 @@ Every gate is evaluated **per arm**. A gate that applies "on each PR series" is 
   - **A1 (grader errors)** from `finder-model-swap` applies verbatim: its sha256 is
     `dc423199b14269d15267fb3522083378d9e8dc274973636b233667d12f5ebb9c` and its re-grade tooling is unchanged.
 - **G4: finder cost, unchanged.** Median finder-only cost of the 12 rows **≤ $0.00301653**. A row with
-  incomplete cost fails G4. The verifier cost of the rows is reported, not gated.
+  incomplete cost fails G4. The verifier cost of the rows is reported; its amount is not gated.
+- **Verifier cost completeness on the fixture rows** (R3; owner, 2026-10-04): a verifier that was called and
+  left a request without a reported cost fails the fixture result as a **cost failure, like G4** — label
+  `FAIL (cost)`. It is **not** a G3f quality failure and can never trigger MAIN. A verifier that was not called
+  (nothing to send) is complete.
 - **G1: reliability.** **≥ 9/10 valid attempts on each PR series** (#269 × 10, #240 × 10) over the whole
   pipeline, finder → verifier → judge _(plan-chosen term (1); the owner confirms it at the seal)_. An attempt is
   valid when all of the following hold:
@@ -297,9 +302,9 @@ Every gate is evaluated **per arm**. A gate that applies "on each PR series" is 
   `FinderOutputError`, or a verifier or judge output error after its one repair is a **failed** attempt, never
   a skipped one.
 - **Quality gates:** G2, G3f, R4 (FAIL) and G3h (#269 or #240) _(plan-chosen term (4))_. If CONTROL fails a
-  quality gate, MAIN may start, subject to §7. G1, G4, G4b, the timeout clause, an A3 leak and a provider
-  mismatch are **not** quality gates: CONTROL then ends `FAIL (Gx)`, the owner decides, and MAIN does not start
-  by itself.
+  quality gate, MAIN may start, subject to §7. G1, G4, G4b, an incomplete verifier cost on the fixture rows
+  (`FAIL (cost)`), the timeout clause, an A3 leak and a provider mismatch are **not** quality gates: CONTROL then
+  ends `FAIL (Gx)` or `FAIL (cost)`, the owner decides, and MAIN does not start by itself.
 - **Publication** (R5): only `confirmed` findings that pass the quote check are published.
   - **Quote check:** after normalisation, the quote must have ≥ 10 non-whitespace characters _(plan-chosen term
     (3))_ and be a substring of a block assigned to the finding (`quoteMatch: "exact"`). Normalisation converts
@@ -324,6 +329,8 @@ The same order applies to each arm:
 3. **Fixtures (G3f / G4).**
    - G3f fails → `FAIL (G3f)`.
    - **G4 fails alone** (G3f passes) → `paused (G4 only) — owner` (archived G-A1).
+   - **An incomplete verifier cost** on any row → `FAIL (cost)`: a cost failure like G4, never a G3f quality
+     failure, so it never triggers MAIN; the owner decides (owner, 2026-10-04).
 4. **#269 × 10** (`--stages finder,verifier,judge`).
 5. **#240 × 10** (the same).
 6. **R4 matches and guard.**
@@ -332,7 +339,7 @@ The same order applies to each arm:
 The verdict is a conjunction: the first decisive failure ends the arm. A measurement error (below) is a failed
 run, never a gate result.
 
-**Verdict labels** (each arm that runs gets exactly one): `PASS`, `FAIL (Gx)`, `NOT PROVEN (R4)`,
+**Verdict labels** (each arm that runs gets exactly one): `PASS`, `FAIL (Gx)`, `FAIL (cost)`, `NOT PROVEN (R4)`,
 `not measured (stopped after Gx FAIL)`, `not measured (budget)`, `cannot honour the request shape (A3)`,
 `paused (G4 only) — owner`, `failed run — measurement error`.
 

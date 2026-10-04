@@ -38,7 +38,8 @@
 // the finder's does), A3 on its requests (a leak fails the row), and its cost
 // completeness — "not called, nothing sent" is complete, "called, no priced
 // request" is not (owner, Phase 1 interpretation 6), and an incomplete verifier
-// cost fails the result. A row whose verification did not run
+// cost fails the result as a COST failure (`FAIL (cost)`, like G4), never a
+// G3f quality failure, so it cannot trigger MAIN. A row whose verification did not run
 // (`verification.status` other than `verified` / `no-findings`, e.g.
 // `skipped-no-source`) is a MEASUREMENT ERROR: the run is a failed run, never a
 // gate result (gate.md §5). G4 stays finder-only; the verifier's cost is
@@ -361,6 +362,13 @@ export function summarizeRows(rows, extraProblems = []) {
           cost: verifierRows.reduce((total, r) => total + r.verifier.verifierCost, 0),
           medianCost: median(verifierRows.map((r) => r.verifier.verifierCost)),
         };
+  // An incomplete verifier cost is a COST failure, like G4 — never a G3f
+  // quality failure, so it can never trigger MAIN: the arm ends `FAIL (cost)`
+  // and the owner decides (owner, 2026-10-04; gate.md §4–§5, R3).
+  if (verifier !== null) {
+    verifier.failure =
+      verifier.incompleteCost === 0 ? null : { label: "FAIL (cost)", kind: "cost", triggersMain: false };
+  }
   const base = {
     rowCount: rows.length,
     retryCount,
@@ -496,8 +504,14 @@ function main(args) {
     const v = summary.verifier;
     console.log(
       `verifier: called on ${String(v.called)}/${String(v.rows)} row(s), cost $${v.cost.toFixed(8)} ` +
-        `(median $${v.medianCost.toFixed(8)} per row), incomplete verifier cost ${String(v.incompleteCost)}` +
-        `${v.incompleteCost > 0 ? " — FAILS the result" : ""} (G4 above is finder-only)`,
+        `(median $${v.medianCost.toFixed(8)} per row), incomplete verifier cost ${String(v.incompleteCost)} ` +
+        `(G4 above is finder-only)`,
+    );
+  }
+  if (summary.verifier?.failure) {
+    console.log(
+      `VERIFIER COST: ${summary.verifier.failure.label} — a cost failure like G4, NOT a G3f quality failure; ` +
+        "it cannot trigger MAIN, and the owner decides",
     );
   }
   if (summary.measurementErrorRows.length > 0) {

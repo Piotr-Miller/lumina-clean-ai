@@ -582,6 +582,17 @@ describe("verifier rows", () => {
     expect(summary.pass).toBe(false);
   });
 
+  // Owner, 2026-10-04: a cost failure like G4, never a G3f quality failure, so
+  // it can never trigger MAIN — the arm ends FAIL (cost) and the owner decides.
+  it("labels an incomplete verifier cost FAIL (cost), not a quality failure: G3 still passes, MAIN is not triggered", () => {
+    const rows = verifierRun();
+    rows[2] = withVerifier(rows[2], { verifier: { requests: [{ provider: "OpenAI", cost: null }] } });
+    const summary = summarizeRows(checkV(rows));
+    expect(summary.g3.pass).toBe(true);
+    expect(summary.verifier.failure).toEqual({ label: "FAIL (cost)", kind: "cost", triggersMain: false });
+    expect(summarizeRows(checkV(verifierRun())).verifier.failure).toBeNull();
+  });
+
   it("a verifier that was never called (nothing to send) is cost-complete", () => {
     const checks = verifierChecksOf(
       withVerifier(rawRow("clean"), {

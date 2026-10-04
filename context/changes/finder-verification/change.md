@@ -154,3 +154,18 @@ Decided after Phase 1 (`2c4ae34`), before its impl review. No paid calls.
 6. **Logging.** The stderr verification summary line and `verifier=(not run)` on the cost line: approved. For
    Phase 2, the incomplete-cost rule treats "verifier not called (nothing sent)" as complete and "verifier
    called, cost missing" as incomplete.
+
+### Owner decisions (2026-10-04): after Phase 2
+
+Reviewed with the ai-toolkit session at `fa5afaa`. No paid calls.
+
+1. **2.3 confirmed.** In the G2 path the finder has one `withOneRetry` and `runVerificationPass` one for the
+   verifier, with nothing wrapping either. `assertSeriesWritable` refuses an overwrite, a foreign series identity,
+   and a re-run of a recorded or interrupted attempt (an interrupted attempt counts as failed).
+2. **Narrowed F1 rule approved** instead of the literal one. "Every finding source-refused" is evaluated over the
+   findings that cite a file of the diff (at least one required). Off-diff findings are refused by the allowlist
+   by design and reported by `offDiffFindingPaths`. The Definitions row "No source root" and `gate.md` §3 say so.
+3. **An incomplete verifier cost fails the fixture result**, as R3 applies it. It is a **cost failure like G4**,
+   labelled `FAIL (cost)`, **not** a G3f quality failure, so it can never trigger MAIN: CONTROL ends
+   `FAIL (cost)` and the owner decides. Recorded in `gate.md` §4–§5 and in the Definitions rows "Incomplete cost"
+   and "Quality gate"; `promptfoo-gate-rows.mjs` labels it that way.
