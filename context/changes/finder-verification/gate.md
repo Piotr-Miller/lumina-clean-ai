@@ -257,8 +257,15 @@ As frozen in `## Inputs freeze` above, unchanged.
     `review-budget` (largest attempt 21,392 excerpt chars of 60,000).
   - **D13 check:** finding 5.2 cites `build_photo` at `contact-sheet.py:140–141`; `main`'s guard at 208–211 **is
     delivered** with it (block `195-226`, by the E3 caller rule).
-  - **Sent to the owner before the seal** (plan Phase 3 §1: fewer than 10 rows fully served). The owner may
-    change `EXCERPT_LIMITS` now (code change, tests, re-run of both checks and the hashes); after the seal, never.
+  - **Owner decision (2026-10-04): `EXCERPT_LIMITS` stay as they are; 9 of 20 accepted knowingly.** Sent to the
+    owner under plan Phase 3 §1 (fewer than 10 rows fully served). Reasons: no finding reached a limit (max 125
+    lines / 7,054 chars per finding, 21,392 per review); the result comes from the window rules, not the limits;
+    and adding rules tuned on #269's known rows would fit the verifier to known findings.
+  - **Accepted with it: D2, the one real #269 finding, is only partly served.** Seven of its eight findings
+    cite `localInput` (`bread-spike.ts` 178–196) and receive none of `deleteUpload` (198–213), its counterpart.
+    The eighth (4.2) cites `deleteUpload` itself (200–202) and receives 199–213 but not `localInput`'s upload
+    path (189–195) or line 198. No D2 finding is delivered all of its evidence, so the verifier may refuse to
+    confirm it, and **G3h on #269 may see N = 0** (which fails G3h for #269 by §4).
 - **Unit-span check** (`unit-span-check.mjs` → `unit-span-check.json`, run 2026-10-04; TypeScript 5.9.3 and
   Python `ast`, both directions): **zero mismatches** over 19 files and 56 units — #269 at `fca2778` (8 files,
   37 units: 3 Python, 5 TS), #240 at `54d3557` (7 files, 8 units), and the four fixture trees (4 files, 11
