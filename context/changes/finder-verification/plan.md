@@ -1119,13 +1119,13 @@ verifier keys are optional, so old review.json readers are unaffected.
 
 #### Automated
 
-- [ ] 3.1 Policy backcheck and unit-span check run (zero mismatches) and their summaries are in gate.md
-- [ ] 3.2 Prompt hashes reproduce
-- [ ] 3.3 Pre-registration has no unfilled placeholder
+- [x] 3.1 Policy backcheck and unit-span check run (zero mismatches) and their summaries are in gate.md
+- [x] 3.2 Prompt hashes reproduce
+- [x] 3.3 Pre-registration has no unfilled placeholder
 
 #### Manual
 
-- [ ] 3.4 Owner writes the #240 known-defect list (or records it empty)
+- [x] 3.4 Owner writes the #240 known-defect list (or records it empty)
 - [ ] 3.5 Owner reviews the backcheck, confirms the six plan-chosen terms and approves the Pre-registration
 - [ ] 3.6 Seal matches, pushed, push time recorded before any paid call
 

@@ -146,8 +146,8 @@ Both slugs are listed, so no owner stop is needed. The prices equal the planning
 ## Pre-registration
 
 **UNSEALED DRAFT.** Written on 2026-10-04 in Phase 0, before any verifier prompt or verifier code existed. Phase 3
-fills in the values marked _(Phase 3)_: the prompt and module hashes, the measured excerpt figures, the
-recomputed budget and the owner's #240 defect list. The owner then approves the section, and it is sealed
+filled in (2026-10-04, pre-seal) the prompt and module hashes, the measured excerpt figures, the recomputed budget
+and the owner's #240 defect list (empty). The owner then approves the section, and it is sealed
 (Phase 3 §4). The Results section, appended later, never edits this section. A protocol change after the seal
 goes into `## Amendments` (§9).
 
@@ -169,12 +169,25 @@ goes into `## Amendments` (§9).
   are not measured.
 - **MAIN is sealed with CONTROL:** its model, routing, prompt and limits are sealed together with CONTROL's, so
   nothing about MAIN is tuned on #240 (R9). CONTROL's labels never change MAIN's prompt or configuration.
-- **Hashes** _(Phase 3)_:
-  - sha256 of the output of `buildVerifierInstructions()`;
-  - sha256 of `buildVerifierPrompt` rendered on the fixed sample (two #269 findings at `fca2778`), printed by
-    `scripts/verifier-prompt-hash.mjs`;
-  - sha256 of `src/excerpts.ts`, `src/verifier.ts` and `src/prompts.ts`;
-  - the `EXCERPT_LIMITS` values.
+- **Hashes** (Phase 3, 2026-10-04; printed by `packages/code-reviewer/scripts/verifier-prompt-hash.mjs`,
+  content hashes only, reproduced twice byte for byte):
+  - `buildVerifierInstructions()` output (2,786 chars):
+    `c27d78e65136f706920463f514a84cd92dc2e6b0e2cbd471001c0859362f6fc1`;
+  - `buildVerifierPrompt` on the fixed sample — the first two raw findings of attempt 1 of `finder-model-swap`'s
+    #269 series (`F1 scripts/s17/decode-inputs.py:144-151`, `F2 scripts/spikes/bread-spike.ts:178-182`), merged
+    and numbered as the pipeline does, excerpts planned against `fca2778` (6 blocks, 13,665 chars):
+    `9f1093c77bb749358d79d01a60831808c22636953d71e01bdbe9d8d05b6a2e9c`;
+  - `src/excerpts.ts`: `8dfdda7ebeebafe6436793662b81d14997924fe4e3a94465469213ac6e336714`;
+  - `src/verifier.ts`: `aa8bf887bd31e05534828aea7435bfa5fdc4f97331a56f8a2ed39a559fc25b42`;
+  - `src/prompts.ts`: `a045da98d0c6038b5a45c9d7734741eef2a627641e59f34ab0bd5f0740470311`;
+  - `EXCERPT_LIMITS` _(plan-chosen term (5))_: `headerMaxLines` 40, `longUnitLines` 80, `longUnitContext` 30,
+    `snapIdentifiers` 2, `fallbackWindow` 25, `maxCitedSpan` 60, `callerSites` 2, `callerContext` 20,
+    `crossFileIdentifiers` 2, `crossFileLines` 40, `perFindingLines` 220, `perFindingChars` 16,000,
+    `perReviewChars` 60,000, `maxFindings` 25; sha256 of their JSON
+    `757f349278913e43ae9d8e84466400ae28577419a45d7e3c70e92ba8313eb060`.
+- **Measured verifier input per #269 attempt** (instructions + rendered prompt, the 10 attempts of
+  `finder-model-swap`): median 23,428 chars, max 27,818, min 9,384 (`backcheck-269-policy.json`
+  `summary.perAttempt`).
 
 ### 2. Request shape under test
 
@@ -198,7 +211,7 @@ goes into `## Amendments` (§9).
 
 As frozen in `## Inputs freeze` above, unchanged.
 
-- **Excerpt policy** (R6, without E5): `plan.md` Phase 1 §2, with the `EXCERPT_LIMITS` values _(Phase 3)_.
+- **Excerpt policy** (R6, without E5): `plan.md` Phase 1 §2, with the `EXCERPT_LIMITS` values in §1.
 - **E2 unit grammar, as implemented** (`findTopLevelUnits`; aligned 2026-10-04, impl-review phase 1 F6):
   - **Python:** a column-0 `def` / `async def` / `class` that is not inside a triple-quoted string, ending at the
     last code line (not blank, not a comment) before the next column-0 statement. A column-0 line inside a
@@ -224,10 +237,34 @@ As frozen in `## Inputs freeze` above, unchanged.
   - CI (`--require-verification`): exit 1 after the finder, before any verifier call. Locally:
     `skipped-no-source` with `verification.detail` naming the refusal. In the gate runner, which always sets
     `requireVerification`, that abort is a measurement error (§5), never a model failure.
-- **Policy backcheck on #269** (`backcheck-269-policy.json`) _(Phase 3)_: rows fully served, partly served and
-  unverifiable, compared with research §7's 10 of 20; the D13 check; per-attempt input size.
-- **Unit-span check** (`unit-span-check.json`, TS/JS and Python, both directions) _(Phase 3)_: zero mismatches
-  are required before the seal.
+- **Policy backcheck on #269** (`backcheck-269-policy.mjs` → `backcheck-269-policy.json`, run 2026-10-04): the
+  implemented `planExcerpts` with the limits in §1, run attempt by attempt on the 38 raw #269 findings at
+  `fca2778` through the real reader, against `backcheck-269.py`'s evidence lines (ported verbatim). A row counts
+  as served by its best contributing finding.
+  - **Rows (20): 9 fully served** (D1, D4, D6, D7, D9, D13, D14, D15, D20), **8 partly** (D2, D3, D10, D11, D12,
+    D16, D18, D19), **2 not served** (D8, D17), **1 with no line evidence** (D5: directory-level testing claim,
+    `no-locator`). Research §7 projected **10 of 20**: the implemented policy serves **one row fewer**. Of the 9,
+    **4** (D9, D13, D14, D20) need nothing outside the code; the other 5 also rest on non-line evidence (the PR
+    file list, Pillow's source, an experiment).
+  - **Why rows are partly or not served** (no grammar fault; see the unit-span check below): evidence in another
+    file that no backticked identifier names (D3 `bread-spike.ts:233`, D18, D19 `harness.ts:43–51`); evidence
+    outside every window the rules open (D2 `bread-spike.ts:189–198`, D10 `desktop-stats.ts:56–62`, D11, D12
+    `measure-hue-shares.py:143–144`, D16 line 170, the last line of the previous unit); a file-level `testing`
+    citation that gets the header only (D8, finding 9.6); an imports-line citation whose ±25 window misses the
+    sampler (D17, finding 9.2).
+  - **Findings (38):** 12 full, 21 partly, 2 not served, 3 `no-locator` (the directory-level claims). Per finding:
+    at most 125 lines and 7,054 chars, well under the 220 / 16,000 limits; no `excerpt-over-limit` and no
+    `review-budget` (largest attempt 21,392 excerpt chars of 60,000).
+  - **D13 check:** finding 5.2 cites `build_photo` at `contact-sheet.py:140–141`; `main`'s guard at 208–211 **is
+    delivered** with it (block `195-226`, by the E3 caller rule).
+  - **Sent to the owner before the seal** (plan Phase 3 §1: fewer than 10 rows fully served). The owner may
+    change `EXCERPT_LIMITS` now (code change, tests, re-run of both checks and the hashes); after the seal, never.
+- **Unit-span check** (`unit-span-check.mjs` → `unit-span-check.json`, run 2026-10-04; TypeScript 5.9.3 and
+  Python `ast`, both directions): **zero mismatches** over 19 files and 56 units — #269 at `fca2778` (8 files,
+  37 units: 3 Python, 5 TS), #240 at `54d3557` (7 files, 8 units), and the four fixture trees (4 files, 11
+  units). #247 was not read. A probe outside the frozen inputs confirmed that the check does detect a divergence
+  (`const f = function () {…}` and a decorated class are not E2 units); neither form occurs in any frozen input,
+  so `excerpts.ts` was not changed.
 
 ### 4. Gates
 
@@ -293,7 +330,12 @@ Every gate is evaluated **per arm**. A gate that applies "on each PR series" is 
     matches and **the owner approves them**.
   - **Not raised:** a K the finder never raised is reported as "not raised — no evidence about the verifier".
   - **NOT PROVEN:** if no K was raised, or the list is empty, the guard is **`NOT PROVEN`**, which can never be
-    PASS. The arm cannot be admitted on it, MAIN does not start by itself, and the owner decides.
+    PASS. With a **non-empty** list and no K raised, the arm cannot be admitted on it, MAIN does not start by
+    itself, and the owner decides.
+  - **Empty list** (pre-registered rule, owner decision 2026-10-04; the list below **is** empty): R4 is
+    reported as `NOT PROVEN` **for information only**. It does **not** by itself block admission or stop the
+    arm when every other gate passes. Recall preservation then rests on the fixtures' required metrics, 3/3 on
+    **published** findings (G3f), and #240 is stated as **no evidence about recall** (R4).
   - **Informational:** whole-pipeline detection (K published in x of **all** the series' attempts, valid or
     not; impl-review phase 2 F7). `recall-guard.mjs` refuses duplicate attempt ids or numbers, a file that is not
     one PR series, and a pre-verification finding of any attempt without a match entry.
@@ -372,8 +414,11 @@ pushed before the re-run, and the re-run is a fresh series. The void series' spe
 **After CONTROL:**
 
 - `PASS` (every gate, and R4 `PASS`) → decision 4.4.
+- **Every other gate passes and R4 is `NOT PROVEN` only because the #240 list is empty** (owner, 2026-10-04) →
+  the arm's label is `PASS`, the record states "R4 NOT PROVEN (empty K list) — information only; #240 is no
+  evidence about recall; recall rests on G3f", and it goes to decision 4.4.
 - A quality-gate `FAIL` → MAIN may start, subject to §7.
-- `NOT PROVEN (R4)`, or a FAIL that is not a quality gate → stop; the owner decides.
+- `NOT PROVEN (R4)` with a non-empty list, or a FAIL that is not a quality gate → stop; the owner decides.
 
 **If no arm passes,** production stays unchanged and `ai-review` stays off on `master`. Thresholds never change
 automatically.
@@ -418,26 +463,45 @@ This is the archived §6 of `finder-model-swap`, applied **per PR**:
   `--append` the spend already recorded in the file counts against it (F2). A continuation therefore passes
   recorded spend + min(1.60 − T, 2.00 − T − A_max), with T read after the earlier invocation.
 - **G5** runs only if 2.00 − T ≥ $0.50.
-- **Pessimistic per-series table** _(Phase 3: recomputed with the measured excerpt sizes)_. Planning figures,
-  with prices from 2026-10-03 and re-read 2026-10-04:
-  - luna $0.10 / $0.50 per M tokens, sonnet-5 $2.00 / $10.00, fresh prefix × 1.16;
-  - judge $0.017–0.033 per attempt; grader ≈ $0.0056 per row.
+- **Pessimistic per-series table** (Phase 3, 2026-10-04: recomputed with the measured excerpt sizes). Prices
+  from 2026-10-03, re-read 2026-10-04: luna $0.10 / $0.50 per M tokens, sonnet-5 $2.00 / $10.00, fresh prefix
+  × 1.16; grader ≈ $0.0056 per row. Inputs and assumptions:
+  - **Verifier input per #269 attempt** (§1): median 23,428 chars, max 27,818. Tokens: est. = median ÷ 3.5
+    chars/token ≈ 6,694; pessimistic = max ÷ 3.0 ≈ 9,273, plus one format repair (≈ 1,000 tokens: the re-sent
+    output and the repair instructions).
+  - **Verifier output:** est. 60 tokens × 4 findings = 240; pessimistic 120 × 6 = 720, doubled by the repair
+    = 1,440.
+  - **Finder #269** (`finder-model-swap`): median $0.004783, max $0.012821. **Judge:** $0.017104 (#132, the only
+    measured point) est., $0.033 pessimistic.
+  - **#240:** no finder output exists, so nothing about its excerpts can be measured; it is budgeted at **#269's
+    figures**, not scaled down.
+  - **Fixture rows:** verifier est. 1,700 input / 150 output tokens per row, pessimistic 5,000 / 1,440; finder
+    median $0.00018176, max $0.00080244; grader est. $0.0056, pessimistic $0.0070 per row.
+  - **G2:** finder median $0.000114, max $0.000502 (`finder-model-swap`, 0 findings in 5/5). Est.: no verifier
+    call. Pessimistic: the verifier is called on every attempt at the fixture-row pessimistic cost.
+  - Estimates are rounded to the cent, pessimistic figures **up** to the cent.
 
   | Series                                        | CONTROL est. / pessimistic (P) | MAIN est. / pessimistic (P) |
   | --------------------------------------------- | ------------------------------ | --------------------------- |
-  | G2 clean × 5 (finder + verifier)              | $0.003 / $0.02                 | $0.003 / $0.02              |
-  | Fixtures 12 rows (finder + verifier + grader) | $0.08 / $0.12                  | $0.28 / $0.40               |
-  | #269 × 10 (finder + verifier + judge)         | $0.27 / $0.49                  | $0.58 / $0.91               |
-  | #240 × 10 (finder + verifier + judge)         | $0.23 / $0.42                  | $0.47 / $0.79               |
-  | **Arm total**                                 | **$0.58 / $1.05**              | **$1.33 / $2.12**           |
+  | G2 clean × 5 (finder + verifier)              | $0.001 / $0.01                 | $0.001 / $0.14              |
+  | Fixtures 12 rows (finder + verifier + grader) | $0.07 / $0.11                  | $0.13 / $0.41               |
+  | #269 × 10 (finder + verifier + judge)         | $0.23 / $0.48                  | $0.40 / $0.85               |
+  | #240 × 10 (finder + verifier + judge)         | $0.23 / $0.48                  | $0.40 / $0.85               |
+  | **Arm total**                                 | **$0.53 / $1.08**              | **$0.93 / $2.25**           |
   | G5 (finder + verifier + judge + impl review)  | ≤ $0.50 cap                    | ≤ $0.50 cap                 |
 
-- **A_max per attempt** _(Phase 3: recomputed from the recomputed table by the rule below)_: 2 × the pessimistic
-  per-attempt cost (the series' P / 10), rounded up to the cent, floored at $0.02. Planning values from the table
-  above: CONTROL #269 $0.10, #240 $0.09; MAIN #269 $0.19, #240 $0.16. (The earlier MAIN figures $0.23 / $0.20 did
-  not follow the rule; impl-review phase 0, F1.)
-- **Stated plainly:** if CONTROL spends its estimate, MAIN's first PR series alone takes T past $1.60. MAIN cannot
-  be completed within $2.00 with G5 reserved, so running MAIN in full needs an owner decision at that point (R2).
+  Per #269 attempt: CONTROL est. $0.0228 / P $0.0477 (verifier $0.0009 / $0.0019); MAIN est. $0.0398 / P $0.0841
+  (verifier $0.0179 / $0.0382). Planning figures (Phase 0 draft) for comparison: CONTROL $0.58 / $1.05, MAIN
+  $1.33 / $2.12.
+
+- **A_max per attempt** (Phase 3, recomputed by the rule): 2 × the pessimistic per-attempt cost (the series' P /
+  10), rounded up to the cent, floored at $0.02. **CONTROL #269 $0.10, #240 $0.10; MAIN #269 $0.17, #240
+  $0.17.** (Planning values were CONTROL $0.10 / $0.09, MAIN $0.19 / $0.16; #240 now carries #269's figures.)
+- **Stated plainly:** if CONTROL spends its estimate (T ≈ $0.53), MAIN's G2 and fixtures can start (T + P ≤
+  $1.60), and so can **MAIN's first PR series** (T ≈ $0.66 after MAIN's fixtures at estimate; + $0.85 = $1.51).
+  **MAIN's second PR series cannot start** without an owner decision (T ≈ $1.06; + $0.85 = $1.91 > $1.60). If
+  CONTROL spends its pessimistic P ($1.08), MAIN cannot start any PR series. MAIN cannot be completed within
+  $2.00 with G5 reserved, so running MAIN in full needs an owner decision at that point (R2).
 
 ### 8. Production phase and G5
 
@@ -496,13 +560,42 @@ dated, carries its own sha256, and is committed and pushed to `origin` **before*
 
 ### #240 known defects (owner)
 
-_(Phase 3: written by the owner before the seal.)_ Each defect K1…Kn has the following:
+**K list: empty (owner, 2026-10-04).** Basis: no known defect; no later commit fixes #240's files and no issue
+reports one; a code read of `src/` at `54d3557` with the ai-toolkit session found only two comment inaccuracies
+(`result-scaling.ts` 4–7, "passes through untouched" despite /8 flooring; `BeforeAfterSlider.tsx` trim bound,
+false only under the separately tracked `cloud-exif-orientation` bug), neither a defect.
 
-- a file;
-- a line range at `54d3557`;
-- a one-sentence defect;
-- a **detection criterion**: which file and lines a finding must cite, and what claim it must make.
-
-An empty list is allowed; R4 is then `NOT PROVEN` by rule.
+- **Consequence** (§4 R4, §5): R4 is reported as `NOT PROVEN` for information only and does not by itself block
+  admission or stop the arm when every other gate passes. Recall preservation rests on G3f's required metrics,
+  3/3 on published findings, and #240 is **no evidence about recall** (R4).
+- **Sources offered, not judged** (research §5; plan Phase 3 §2), all under
+  `context/archive/2026-09-20-cloud-result-resolution-gap/`: `premise-check.md` (the premise notes),
+  `change.md`, `plan.md` and `plan-brief.md`; and the three in-PR fixes on #240's branch, `6ae287e` ("correct the
+  slider's prop contract; there is no crop to fix"), `77901e9` ("make E2E actually exercise the resolution
+  disclosure") and `54d3557` ("reword the resolution caption so it cannot read as a status").
 
 _End of Pre-registration._
+
+## Pre-registration seal
+
+**Not sealed.** Prepared 2026-10-04 (Phase 3, pre-seal). The owner confirms each plan-chosen term below, one by
+one, with its date; then approves the section; only then is the hash taken (§10). Nothing here is part of the
+hashed section.
+
+### Plan-chosen terms (the owner confirms each one)
+
+1. G1 scoped to the whole pipeline (finder → verifier → judge; §4 G1). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
+2. A timeout followed by a successful retry counts against R3 (§4 G4b). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
+3. The 10-character quote floor (§4 Publication). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
+4. The list of quality gates that can trigger MAIN: G2, G3f, R4 (FAIL), G3h (§4). — Confirmed: \_\_\_\_ (date:
+   \_\_\_\_)
+5. The `EXCERPT_LIMITS` values (§1). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
+6. The whitespace-collapsed second quote comparison (`quoteMatch: "whitespace"`; token order must still match;
+   §4 Publication). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
+
+### Approval and hash
+
+- Owner approval: \_\_\_\_ (date: \_\_\_\_; edits made before the seal: \_\_\_\_)
+- sha256 of `## Pre-registration` … `_End of Pre-registration._`: _not computed_
+- UTC time taken: _not taken_
+- Push time (GitHub activity API): _not recorded_
