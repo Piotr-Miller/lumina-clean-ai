@@ -600,24 +600,31 @@ _End of Pre-registration._
 
 ## Pre-registration seal
 
-**Not sealed.** Prepared 2026-10-04 (Phase 3, pre-seal). The owner confirms each plan-chosen term below, one by
-one, with its date; then approves the section; only then is the hash taken (§10). Nothing here is part of the
-hashed section.
+**Sealed 2026-10-04.** The owner confirmed the six plan-chosen terms one by one and approved the section; the hash
+below was then taken by §10 and is never recomputed. Nothing here is part of the hashed section. The section's own
+opening line ("UNSEALED DRAFT") is part of the hashed bytes and stays as written; this record, not that line,
+states the seal.
 
 ### Plan-chosen terms (the owner confirms each one)
 
-1. G1 scoped to the whole pipeline (finder → verifier → judge; §4 G1). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
-2. A timeout followed by a successful retry counts against R3 (§4 G4b). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
-3. The 10-character quote floor (§4 Publication). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
-4. The list of quality gates that can trigger MAIN: G2, G3f, R4 (FAIL), G3h (§4). — Confirmed: \_\_\_\_ (date:
-   \_\_\_\_)
-5. The `EXCERPT_LIMITS` values (§1). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
+1. G1 scoped to the whole pipeline (finder → verifier → judge; §4 G1). — Confirmed: owner (date: 2026-10-04)
+2. A timeout followed by a successful retry counts against R3 (§4 G4b). — Confirmed: owner (date: 2026-10-04)
+3. The 10-character quote floor (§4 Publication). — Confirmed: owner (date: 2026-10-04)
+4. The list of quality gates that can trigger MAIN: G2, G3f, R4 (FAIL), G3h (§4). — Confirmed: owner (date:
+   2026-10-04)
+5. The `EXCERPT_LIMITS` values (§1). — Confirmed: owner (date: 2026-10-04)
 6. The whitespace-collapsed second quote comparison (`quoteMatch: "whitespace"`; token order must still match;
-   §4 Publication). — Confirmed: \_\_\_\_ (date: \_\_\_\_)
+   §4 Publication). — Confirmed: owner (date: 2026-10-04)
 
 ### Approval and hash
 
-- Owner approval: \_\_\_\_ (date: \_\_\_\_; edits made before the seal: \_\_\_\_)
-- sha256 of `## Pre-registration` … `_End of Pre-registration._`: _not computed_
-- UTC time taken: _not taken_
-- Push time (GitHub activity API): _not recorded_
+- Owner approval: approved by the owner (date: 2026-10-04; edits made before the seal: none beyond those already
+  committed through `58fd4ec`, which the ai-toolkit session checked before the approval: 1086/1086 package
+  tests, every `verifier-prompt-hash.mjs` output present in §1, unit-span check 19 files / 56 units / 0
+  mismatches). The section's bytes at the seal equal its bytes at `58fd4ec`.
+- Also confirmed by the owner on 2026-10-04 (outside the hashed section; already stated in §5 at `58fd4ec`): a
+  connection failure with no HTTP status is a measurement error (impl-review a8844a6 F2, fail-safe).
+- sha256 of `## Pre-registration` … `_End of Pre-registration._`: **`8616eda6a217c8570a2f3cba957fc2a3dfcfd5b7223c2d3b3426f08baff0c375`**, computed as
+  `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum`.
+- UTC time taken: **2026-10-04T20:59:17Z**.
+- Push time (GitHub activity API): _recorded in a follow-up commit after the seal commit is pushed_

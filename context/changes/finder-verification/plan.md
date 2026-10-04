@@ -1131,7 +1131,7 @@ verifier keys are optional, so old review.json readers are unaffected.
 #### Manual
 
 - [x] 3.4 Owner writes the #240 known-defect list (or records it empty)
-- [ ] 3.5 Owner reviews the backcheck, confirms the six plan-chosen terms and approves the Pre-registration
+- [x] 3.5 Owner reviews the backcheck, confirms the six plan-chosen terms and approves the Pre-registration
 - [ ] 3.6 Seal matches, pushed, push time recorded before any paid call
 
 ### Phase 4: Measurement — CONTROL (paid)
