@@ -93,9 +93,29 @@ const isGraderErrorComponent = (component) => component?.metadata?.graderError =
  * output at all is a finder failure too, never a free pass.
  */
 export function finderErrorOf(raw) {
+  const failure = rowFailureOf(raw);
+  return failure?.pass === "finder" ? failure.error : null;
+}
+
+/**
+ * The verifier's own failure on a verifier row (an output error, or a 429 /
+ * timeout after its retry), or null. The adapter tags the failing pass as
+ * `metadata.failedPass` (impl-review phase 2 F6), so a verifier failure is no
+ * longer reported as a finder error.
+ */
+export function verifierErrorOf(raw) {
+  const failure = rowFailureOf(raw);
+  return failure?.pass === "verifier" ? failure.error : null;
+}
+
+/** The row's failure and the pass it came from; an untagged failure is the finder's. */
+function rowFailureOf(raw) {
   const response = raw?.response;
-  if (typeof response?.error === "string" && response.error.length > 0) return response.error;
-  if (response?.output === undefined || response?.output === null) return "no finder output recorded";
+  const pass = response?.metadata?.failedPass === "verifier" ? "verifier" : "finder";
+  if (typeof response?.error === "string" && response.error.length > 0) return { pass, error: response.error };
+  if (response?.output === undefined || response?.output === null) {
+    return { pass, error: `no ${pass === "verifier" ? "verified" : "finder"} output recorded` };
+  }
   return null;
 }
 
@@ -108,7 +128,7 @@ export function finderErrorOf(raw) {
  * errored or returned something unparsable) is one error per component.
  */
 export function graderErrorsOf(raw) {
-  if (finderErrorOf(raw) !== null) return [];
+  if (rowFailureOf(raw) !== null) return [];
   const components = componentsOf(raw);
   if (components === null || components.length === 0) {
     const aborted = raw?.failureReason === 2 && typeof raw?.error === "string";
@@ -172,15 +192,23 @@ export function checkRow(raw, expectedProvider, expectedVerifierProvider) {
   const graderErrors = graderErrorsOf(raw);
   const regradeOf = raw?.testCase?.metadata?.regradeOf;
   const finderError = finderErrorOf(raw);
+  const verifierError = verifierErrorOf(raw);
   const v = expectedVerifierProvider === undefined ? null : verifierChecksOf(raw, expectedVerifierProvider);
   // A row whose verification did not run is a measurement error — unless the
-  // finder already failed, in which case there was nothing to verify.
+  // finder already failed (nothing to verify) or the verifier itself failed
+  // (a failed row, not a tooling failure).
   const measurementError =
-    v === null || finderError !== null || v.verificationStatus === "verified" || v.verificationStatus === "no-findings"
+    v === null ||
+    finderError !== null ||
+    verifierError !== null ||
+    v.verificationStatus === "verified" ||
+    v.verificationStatus === "no-findings"
       ? null
       : `verification status ${JSON.stringify(v.verificationStatus)}`;
   const verifierInvalidated = v !== null && v.verifierMismatch.length > 0;
-  const verifierLeak = v !== null && finderError === null && v.verifierLeak;
+  // Evaluated whenever the verifier sent a request — even when a later one
+  // failed (impl-review phase 2 F6) — and on any row the finder completed.
+  const verifierLeak = v !== null && (finderError === null || v.verifierProviders.length > 0) && v.verifierLeak;
   return {
     id: typeof raw?.id === "string" ? raw.id : null,
     testIdx: Number.isInteger(raw?.testIdx) ? raw.testIdx : null,
@@ -188,6 +216,7 @@ export function checkRow(raw, expectedProvider, expectedVerifierProvider) {
     description,
     provider: raw?.provider?.label ?? raw?.provider?.id ?? null,
     finderError,
+    verifierError,
     // promptfoo's row-level verdict text: the grader's reason on an assertion
     // failure, the finder's error on a provider error. Information only.
     rowError: typeof raw?.error === "string" ? raw.error : null,
@@ -248,8 +277,8 @@ export function mergeRegrade(rows, regradeRows) {
       problems.push(`re-grade row for ${id}, which is not a grader-error row of this export`);
       continue;
     }
-    if (rr.finderError !== null) {
-      problems.push(`re-grade row for ${id} has no stored output to grade: ${rr.finderError}`);
+    if (rr.finderError !== null || (rr.verifierError ?? null) !== null) {
+      problems.push(`re-grade row for ${id} has no stored output to grade: ${rr.finderError ?? rr.verifierError}`);
       continue;
     }
     if (rr.description !== original.description) {
@@ -335,6 +364,9 @@ export function summarizeRows(rows, extraProblems = []) {
   const finderErrorRows = rows
     .filter((r) => r.finderError !== null)
     .map((r) => ({ ...rowRef(r), error: r.finderError }));
+  const verifierErrorRows = rows
+    .filter((r) => (r.verifierError ?? null) !== null)
+    .map((r) => ({ ...rowRef(r), error: r.verifierError }));
   const graderErrorRows = rows
     .filter((r) => r.graderError)
     .map((r) => ({ ...rowRef(r), id: r.id, errors: r.graderErrors }));
@@ -377,6 +409,7 @@ export function summarizeRows(rows, extraProblems = []) {
     invalidatedRows,
     leakRows,
     finderErrorRows,
+    verifierErrorRows,
     graderErrorRows,
     regradedRows,
     measurementErrorRows,
@@ -417,7 +450,12 @@ export function summarizeRows(rows, extraProblems = []) {
     };
   }
 
-  const rowOk = (r) => r.finderError === null && !r.invalidated && !r.reasoningLeak && !r.graderError;
+  const rowOk = (r) =>
+    r.finderError === null &&
+    (r.verifierError ?? null) === null &&
+    !r.invalidated &&
+    !r.reasoningLeak &&
+    !r.graderError;
   const g3 = { pass: true, cases: {} };
   for (const c of CASES) {
     const caseRows = rows.filter((r) => r.case === c.key);
@@ -445,6 +483,21 @@ export function summarizeRows(rows, extraProblems = []) {
   };
 }
 
+/**
+ * Verifier rows checked as finder-only would skip the verifier's provider, A3,
+ * cost and status checks without a word (impl-review phase 2 F5). Returns the
+ * usage error when any raw row carries `metadata.verifier` and
+ * `--expected-verifier-provider` is absent; null otherwise.
+ */
+export function missingVerifierFlagError(rawRows, expectedVerifierProvider) {
+  if (expectedVerifierProvider !== undefined) return null;
+  const verifierRows = rawRows.filter((raw) => raw?.response?.metadata?.verifier !== undefined).length;
+  return verifierRows === 0
+    ? null
+    : `${String(verifierRows)} row(s) carry metadata.verifier, but --expected-verifier-provider is absent; ` +
+        "their verifier provider, A3, cost and status checks would be skipped — pass the flag";
+}
+
 /** The export's rows: `results.results` in promptfoo's `-o` JSON. */
 export function exportRows(exportJson) {
   const rows = exportJson?.results?.results;
@@ -452,7 +505,7 @@ export function exportRows(exportJson) {
   return rows;
 }
 
-function main(args) {
+export function main(args) {
   const flag = (name) => {
     const i = args.indexOf(name);
     return i === -1 ? undefined : args[i + 1];
@@ -469,13 +522,18 @@ function main(args) {
     );
     return 2;
   }
-  const readExport = (path) =>
-    exportRows(JSON.parse(readFileSync(path, "utf8"))).map((raw) =>
-      checkRow(raw, expectedProvider, expectedVerifierProvider),
-    );
-  let rows = readExport(exportPath);
+  const rawRowsOf = (path) => exportRows(JSON.parse(readFileSync(path, "utf8")));
+  const rawRows = rawRowsOf(exportPath);
+  const regradeRawRows = regradePath === undefined ? [] : rawRowsOf(regradePath);
+  const flagError = missingVerifierFlagError([...rawRows, ...regradeRawRows], expectedVerifierProvider);
+  if (flagError !== null) {
+    console.error(`usage: ${flagError}`);
+    return 2;
+  }
+  const check = (raws) => raws.map((raw) => checkRow(raw, expectedProvider, expectedVerifierProvider));
+  let rows = check(rawRows);
   let problems = [];
-  if (regradePath !== undefined) ({ rows, problems } = mergeRegrade(rows, readExport(regradePath)));
+  if (regradePath !== undefined) ({ rows, problems } = mergeRegrade(rows, check(regradeRawRows)));
   writeFileSync(out, rows.map((row) => JSON.stringify(row)).join("\n") + (rows.length > 0 ? "\n" : ""));
   const summary = summarizeRows(rows, problems);
 
@@ -524,6 +582,9 @@ function main(args) {
     console.log(`A3 LEAK rows (reasoning on a request, fails on its own): ${JSON.stringify(summary.leakRows)}`);
   }
   if (summary.finderErrorRows.length > 0) console.log(`finder-error rows: ${JSON.stringify(summary.finderErrorRows)}`);
+  if (summary.verifierErrorRows.length > 0) {
+    console.log(`verifier-error rows (fail on their own): ${JSON.stringify(summary.verifierErrorRows)}`);
+  }
   if (summary.graderErrorRows.length > 0) console.log(`GRADER-ERROR rows: ${JSON.stringify(summary.graderErrorRows)}`);
   if (summary.regradedRows.length > 0)
     console.log(`re-graded rows (once, Amendment A1): ${JSON.stringify(summary.regradedRows)}`);

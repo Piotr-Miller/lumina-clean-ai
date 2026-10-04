@@ -421,9 +421,15 @@ export default class FinderProvider implements ApiProvider {
         // so a quote carrying the planted line would satisfy it by construction.
         ...(verifierTelemetry === undefined ? {} : { verifier: verifierTelemetry }),
         ...(verification === undefined ? {} : { verification }),
+        // The pass that failed, on the error path only (impl-review phase 2
+        // F6): a verifier failure must not read as a finder error.
+        ...(failedPass === undefined ? {} : { failedPass }),
       },
     });
 
+    // Which pass is running, for `metadata.failedPass` on the error path.
+    let stage: "finder" | "verifier" = "finder";
+    let failedPass: "finder" | "verifier" | undefined;
     try {
       // One row = one production pass, including the pipeline's single
       // transient retry (429, 5xx, timeout; owner decision 2026-10-03, gate.md
@@ -471,6 +477,7 @@ export default class FinderProvider implements ApiProvider {
       if (verifierTelemetry === undefined) {
         return { output: JSON.stringify(result), prompt: actualPrompt(), ...report() };
       }
+      stage = "verifier";
       const published = await this.verify(
         result,
         reader,
@@ -491,6 +498,7 @@ export default class FinderProvider implements ApiProvider {
       // Telemetry rides the error path too: a row that died after burning four
       // tool-loop steps cost real money, and "how far did it get" is the whole
       // question for a model that fails structured output.
+      failedPass = stage;
       return {
         error: error instanceof Error ? error.message : String(error),
         prompt: actualPrompt(),

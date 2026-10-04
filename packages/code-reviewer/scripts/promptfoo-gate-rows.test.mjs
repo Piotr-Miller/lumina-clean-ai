@@ -1,7 +1,11 @@
 // Hermetic tests for the promptfoo → gate-rows script (change
 // `finder-model-swap`, Phase 1 §3; impl-review-phase-1 F2–F5): a synthetic
 // export shaped like promptfoo 0.122's `-o` JSON, no network.
-import { describe, expect, it } from "vitest";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { describe, expect, it, vi } from "vitest";
 
 import {
   CASES,
@@ -10,9 +14,12 @@ import {
   exportRows,
   finderErrorOf,
   graderErrorsOf,
+  main,
   mergeRegrade,
+  missingVerifierFlagError,
   summarizeRows,
   verifierChecksOf,
+  verifierErrorOf,
 } from "./promptfoo-gate-rows.mjs";
 
 const DESCRIPTIONS = {
@@ -613,5 +620,74 @@ describe("verifier rows", () => {
     const row = checkRow(rawRow("clean"), "OpenAI");
     expect(row.verifier).toBeNull();
     expect(row.measurementError).toBeNull();
+  });
+});
+
+// --- impl-review phase 2 (owner triage 2026-10-04) ---
+
+describe("F5 — a verifier export without --expected-verifier-provider is refused", () => {
+  it("names the flag when any row carries metadata.verifier", () => {
+    expect(missingVerifierFlagError(verifierRun(), undefined)).toMatch(/--expected-verifier-provider/u);
+    expect(missingVerifierFlagError(verifierRun(), "OpenAI")).toBeNull();
+    expect(missingVerifierFlagError(fullRun(), undefined)).toBeNull();
+  });
+
+  it("main exits 2 on a verifier export checked without the flag, writing nothing", () => {
+    const dir = mkdtempSync(join(tmpdir(), "gate-rows-"));
+    const exportPath = join(dir, "export.json");
+    writeFileSync(exportPath, JSON.stringify({ results: { results: verifierRun() } }));
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const code = main(["--export", exportPath, "--expected-provider", "OpenAI", "--out", join(dir, "rows.jsonl")]);
+      expect(code).toBe(2);
+      expect(error.mock.calls.flat().join(" ")).toMatch(/--expected-verifier-provider/u);
+    } finally {
+      error.mockRestore();
+      log.mockRestore();
+    }
+  });
+});
+
+describe("F6 — a verifier failure is labelled as the verifier's, and its leak is still evaluated", () => {
+  const verifierFailure = (row, verifier = {}) => {
+    const failed = withVerifier(row, { verification: undefined, verifier });
+    return {
+      ...failed,
+      success: false,
+      failureReason: 2,
+      error: "Verifier output error",
+      gradingResult: undefined,
+      response: { error: "Verifier output error", metadata: { ...failed.response.metadata, failedPass: "verifier" } },
+    };
+  };
+
+  it("a verifier error is a verifier-error row, not a finder error and not a measurement error", () => {
+    const rows = verifierRun();
+    rows[0] = verifierFailure(rows[0]);
+    const row = checkRow(rows[0], "OpenAI", "OpenAI");
+    expect(row.finderError).toBeNull();
+    expect(row.verifierError).toBe("Verifier output error");
+    expect(verifierErrorOf(rows[0])).toBe("Verifier output error");
+    expect(finderErrorOf(rows[0])).toBeNull();
+    expect(row.measurementError).toBeNull();
+    const summary = summarizeRows(checkV(rows));
+    expect(summary.finderErrorRows).toEqual([]);
+    expect(summary.verifierErrorRows).toEqual([{ testIdx: 1, case: "js-loop", error: "Verifier output error" }]);
+    expect(summary.g3.cases["js-loop"].failed).toEqual(["issue_recall"]);
+    expect(summary.pass).toBe(false);
+  });
+
+  it("an A3 leak on a verifier request that later failed still reaches leakRows", () => {
+    const rows = verifierRun();
+    rows[0] = verifierFailure(rows[0], { reasoningLeak: true });
+    const summary = summarizeRows(checkV(rows));
+    expect(summary.leakRows).toEqual([{ testIdx: 1, case: "js-loop", reported: true }]);
+  });
+
+  it("an untagged error stays the finder's", () => {
+    const row = checkRow(realProviderError(verifierRun()[0]), "OpenAI", "OpenAI");
+    expect(row.finderError).not.toBeNull();
+    expect(row.verifierError).toBeNull();
   });
 });

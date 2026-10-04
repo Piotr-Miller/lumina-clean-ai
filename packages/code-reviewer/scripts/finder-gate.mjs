@@ -34,28 +34,35 @@
 //   npx tsx --env-file=.env scripts/finder-gate.mjs --stages <finder,verifier[,judge]> \
 //     --model <id> --endpoint <slug> --verifier-model <id> --verifier-endpoint <slug> \
 //     --case <name> --diff <diff> --rules <rules.md> --source-root <dir> \
-//     --n <total> --out <series.jsonl> [--max-spend <usd>] [--through <k>] \
+//     --n <total> --out <series.jsonl> --max-spend <usd> [--through <k>] \
 //     [--start <k> --append]
 //
-// `--max-spend` stops the series BEFORE an attempt once the series' own
-// reported spend — every finder, verifier and judge request — has reached the
-// limit; the attempts not run are recorded as `not-run (budget)` in the
-// summary, never silently dropped. `--through <k>` stops after attempt k and
-// leaves the rest unrecorded (the A3 probe is G2 attempt 01). `--start k
-// --append` continues the series at exactly max(recorded) + 1, and only with
-// the same stages, models, endpoints, case and n: every line carries all of
-// them. A `started` line goes into the file BEFORE each paid call, so an attempt
-// the process did not survive is visible as started and never finished — it
-// counts as failed and is never re-run (impl-review-phase-1 F1).
+// `--max-spend` is REQUIRED (impl-review phase 2 F8) and caps the WHOLE series:
+// it stops the series BEFORE an attempt once the series' reported spend — every
+// finder, verifier and judge request, including the attempts an earlier
+// invocation recorded in the file (F2) — has reached the limit; the attempts
+// not run are recorded as `not-run (budget)` in the summary, never silently
+// dropped. The first measurement error stops the series (F3): the remaining
+// attempts are `not-run (measurement error)`. `--through <k>` stops after
+// attempt k and leaves the rest unrecorded (the A3 probe is G2 attempt 01).
+// `--start k --append` continues the series at exactly max(recorded) + 1, and
+// only with the same stages, models, endpoints, case, n and inputs (the sha256
+// of the diff and the rules, and the source root's git tree; F4): every line
+// carries all of them. A `started` line goes into the file BEFORE each paid
+// call, so an attempt the process did not survive is visible as started and
+// never finished — it counts as failed, with incomplete cost, and is never
+// re-run (impl-review-phase-1 F1). The SUMMARY's `gates` is the verdict of the
+// whole series, never of one invocation (F2).
+import { execFileSync } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 
 import {
   assertSeriesWritable,
-  evaluateAttempt,
   parseGateArgs,
   runGateAttempt,
-  summarizeSeries,
-  verificationCounts,
+  runSeries,
+  seriesIdentity,
+  sha256Hex,
 } from "./finder-gate-core.mjs";
 
 // The command line is checked before the reviewer's module graph loads, so a
@@ -98,6 +105,23 @@ const {
 const diff = readFileSync(opts.diffPath, "utf8");
 const rules = readFileSync(opts.rulesPath, "utf8");
 
+const git = (cwd, ...args) => execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8" }).trim();
+/**
+ * The git tree of the source root at HEAD — the committed bytes the finder's
+ * source and the verifier's reader can serve (impl-review phase 2 F4). The
+ * TREE, not the commit: a fixture root such as `evals/fixtures/clean-change`
+ * sits inside this repository, whose HEAD moves with every unrelated commit
+ * while the fixture stays byte-identical. Uncommitted changes under the root
+ * would make the tree a false description of what is served, so they refuse.
+ */
+function sourceRootTreeOf(root) {
+  const dirty = git(root, "status", "--porcelain", "--untracked-files=all", "--", ".");
+  if (dirty !== "") {
+    throw new Error(`--source-root ${root} has uncommitted changes; the series could not pin its inputs:\n${dirty}`);
+  }
+  return git(root, "rev-parse", `HEAD:${git(root, "rev-parse", "--show-prefix")}`);
+}
+
 // Pin through the production mechanism, then confirm the routing it produced:
 // a malformed value would silently fall back to the default list.
 process.env.OPENROUTER_FINDER_PROVIDERS = endpoint;
@@ -128,6 +152,7 @@ const api = {
   capDiff: pipeline.capDiff,
   orderDiffForCap: pipeline.orderDiffForCap,
   capProjectContext: pipeline.capProjectContext,
+  resolveTimeouts: pipeline.resolveTimeouts,
   createReviewer,
   createVerifier,
   createJudge,
@@ -139,6 +164,11 @@ const timeouts = {
   verifierTimeoutMs: pipeline.DEFAULT_VERIFIER_TIMEOUT_MS,
 };
 
+const inputs = {
+  diffSha256: sha256Hex(diff),
+  rulesSha256: sha256Hex(rules),
+  sourceRootTree: sourceRootTreeOf(opts.sourceRoot),
+};
 const series = assertSeriesWritable({
   append,
   start,
@@ -151,23 +181,13 @@ const series = assertSeriesWritable({
   verifierEndpoint,
   caseName,
   n,
+  inputs,
 });
 if (!append) writeFileSync(out, "");
-for (const attempt of series.interrupted) {
-  console.log(`attempt ${String(attempt)}: started and never finished in an earlier run — counts as failed`);
-}
-const identity = { stages, model, endpoint, verifierModel, verifierEndpoint, case: caseName, n };
-let seriesSpend = 0;
-let seriesRetries = 0;
-const evaluations = [];
-const summary = {
-  ...identity,
-  start,
-  through,
-  outcomes: {},
-  notRun: 0,
-  interruptedBefore: series.interrupted,
-};
+const identity = seriesIdentity({ stages, model, endpoint, verifierModel, verifierEndpoint, caseName, n, inputs });
+// The commit the source root was checked out at, on every line for the record.
+// The identity pins the source TREE, not the commit (see sourceRootTreeOf).
+const sourceRootHead = git(opts.sourceRoot, "rev-parse", "HEAD");
 
 const errorDetail = (error) => ({
   message: error instanceof Error ? error.message : String(error),
@@ -182,91 +202,30 @@ const errorDetail = (error) => ({
     : {}),
 });
 
-for (let i = start; i <= through; i += 1) {
-  const id = `${endpoint}-${verifierEndpoint}-${caseName}-${String(i).padStart(2, "0")}`;
-  if (seriesSpend >= maxSpend) {
-    summary.notRun += 1;
-    console.log(`${id}: not-run (budget: series spend $${seriesSpend.toFixed(6)} >= $${String(maxSpend)})`);
-    continue;
-  }
-  const started = Date.now();
-  // Written before the call: if the process dies during the attempt, the file
-  // still shows the attempt was started, and a continuation refuses to re-run it.
-  appendFileSync(
-    out,
-    `${JSON.stringify({ kind: "started", id, ...identity, attempt: i, at: new Date(started).toISOString() })}\n`,
-  );
-  const attempt = await runGateAttempt({
-    stages,
-    api,
-    diff,
-    rules,
-    source,
-    reader,
-    finderModel: model,
-    verifierModel,
-    finderMaxSteps: DEFAULT_FINDER_MAX_STEPS,
-    timeouts,
-  });
-  const wallMs = Date.now() - started;
-  const evaluation = evaluateAttempt({
-    attempt,
-    expected: { finder: expectedName, verifier: expectedVerifierName },
-  });
-  evaluations.push(evaluation);
-  seriesSpend += evaluation.cost.total;
-  seriesRetries += attempt.retries.length;
-
-  const { result, error } = attempt;
-  const record = {
-    kind: "attempt",
-    id,
-    ...identity,
-    expectedProvider: { finder: expectedName, verifier: expectedVerifierName },
-    attempt: i,
-    at: new Date(started).toISOString(),
-    ...evaluation,
-    wallMs,
-    repairs: attempt.repairs,
-    retried: attempt.retries.length > 0,
-    retries: attempt.retries,
-    calls: attempt.calls,
-    requests: attempt.requests,
-    preVerificationFindingCount: result?.preVerificationFindingCount ?? null,
-    findingCount: result === undefined ? null : result.published.length,
-    ...(result === undefined
-      ? {}
-      : {
-          // `findings` = the PUBLISHED findings; the verification record holds
-          // every pre-verification finding with its state (R4 matches on those).
-          findings: result.published,
-          verification: { ...result.verification, counts: verificationCounts(result.verification) },
-          summary: result.summary,
-          ...(result.verdict === undefined ? {} : { verdict: result.verdict, verdictReason: result.verdictReason }),
-        }),
-    ...(error === undefined ? {} : { error: { class: evaluation.outcome, ...errorDetail(error) } }),
-  };
-  appendFileSync(out, `${JSON.stringify(record)}\n`);
-  summary.outcomes[evaluation.outcome] = (summary.outcomes[evaluation.outcome] ?? 0) + 1;
-  const providers = (pass) =>
-    attempt.requests
-      .filter((r) => r.pass === pass)
-      .map((r) => r.provider ?? "?")
-      .join(",");
-  console.log(
-    `${id}: ${evaluation.outcome}${evaluation.measurementError === null ? "" : ` (${evaluation.measurementError})`}` +
-      `${evaluation.invalidated ? " INVALIDATED" : ""}${evaluation.reasoningLeak ? " REASONING" : ""} ` +
-      `retries=${String(attempt.retries.length)} requests=${String(attempt.requests.length)} ` +
-      `finder=${providers("finder")} verifier=${providers("verifier") || "(not called)"}` +
-      `${stages.endsWith("judge") ? ` judge=${providers("judge")}` : ""} ` +
-      `findings=${result === undefined ? "-" : `${String(result.published.length)}/${String(result.preVerificationFindingCount)}`} ` +
-      `cost=$${evaluation.cost.total.toFixed(6)}${evaluation.costComplete ? "" : " (cost incomplete)"} ${String(wallMs)}ms` +
-      `${error === undefined ? "" : ` :: ${(error instanceof Error ? error.message : String(error)).slice(0, 160)}`}`,
-  );
-}
-
-summary.unrecorded = n - through;
-summary.seriesSpend = seriesSpend;
-summary.seriesRetries = seriesRetries;
-summary.gates = summarizeSeries(evaluations);
+const summary = await runSeries({
+  identity,
+  idPrefix: `${endpoint}-${verifierEndpoint}-${caseName}`,
+  start,
+  through,
+  maxSpend,
+  series,
+  expected: { finder: expectedName, verifier: expectedVerifierName },
+  hasJudge: stages.endsWith("judge"),
+  runAttempt: () =>
+    runGateAttempt({
+      stages,
+      api,
+      diff,
+      rules,
+      source,
+      reader,
+      finderModel: model,
+      verifierModel,
+      finderMaxSteps: DEFAULT_FINDER_MAX_STEPS,
+      timeouts,
+    }),
+  appendLine: (line) => appendFileSync(out, `${JSON.stringify({ ...line, sourceRootHead })}\n`),
+  log: (line) => console.log(line),
+  errorDetail,
+});
 console.log(`SUMMARY ${JSON.stringify(summary)}`);

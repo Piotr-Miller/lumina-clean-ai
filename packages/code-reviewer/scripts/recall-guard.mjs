@@ -12,14 +12,17 @@
 //
 // The matches are proposed by the agent and APPROVED BY THE OWNER before this
 // runs; the script only does the arithmetic. It refuses a matches table that
-// leaves a pre-verification finding of a valid attempt without an entry, or
-// that names a defect, an attempt or a finding it does not know: a silently
-// unmatched finding would read as "not raised".
+// leaves a pre-verification finding of ANY recorded attempt without an entry,
+// or that names a defect, an attempt or a finding it does not know: a silently
+// unmatched finding would read as "not raised". It refuses a series file that
+// is not ONE PR series (stages finder,verifier,judge; one identity) or that
+// records an attempt id or number twice, which would count an attempt twice
+// (impl-review phase 2 F7).
 //
 // Verdict: `PASS`, `FAIL` (a raised defect under its majority), or
 // `NOT PROVEN` — no defect listed, or none raised. NOT PROVEN can never be PASS
-// (owner, 2026-10-04). Whole-pipeline detection (published in x of the series'
-// attempts) is reported for information.
+// (owner, 2026-10-04). Whole-pipeline detection — K published in x of ALL the
+// series' attempts, valid or not — is reported for information.
 //
 // Usage (from packages/code-reviewer):
 //   node scripts/recall-guard.mjs <defects.json> <matches.json> <series.jsonl>
@@ -53,6 +56,51 @@ export function attemptsOf(seriesText) {
     .filter((entry) => entry.kind === "attempt");
 }
 
+/** The stage set of a PR series (plan.md Phase 2 §1); G2 runs `finder,verifier`. */
+export const PR_SERIES_STAGES = "finder,verifier,judge";
+
+// The series-identity fields every runner line carries (finder-gate-core.mjs,
+// seriesIdentity).
+const IDENTITY_FIELDS = [
+  "stages",
+  "model",
+  "endpoint",
+  "verifierModel",
+  "verifierEndpoint",
+  "case",
+  "n",
+  "diffSha256",
+  "rulesSha256",
+  "sourceRootTree",
+];
+const identityOf = (record) => JSON.stringify(IDENTITY_FIELDS.map((field) => record[field] ?? null));
+
+/**
+ * Throws unless the records are ONE PR series with each attempt recorded once
+ * (impl-review phase 2 F7): a duplicate id would be counted twice in k, and a
+ * G2 file or a mix of series is not the #240 series the guard is about.
+ */
+export function assertOnePrSeries(attempts) {
+  const ids = new Set();
+  const numbers = new Set();
+  for (const record of attempts) {
+    if (typeof record.id !== "string" || record.id === "") throw new Error("an attempt record has no id");
+    if (ids.has(record.id)) throw new Error(`attempt id ${record.id} is recorded twice; refusing to count it twice`);
+    ids.add(record.id);
+    if (numbers.has(record.attempt)) {
+      throw new Error(`attempt ${String(record.attempt)} is recorded twice; refusing to count it twice`);
+    }
+    numbers.add(record.attempt);
+    if (record.stages !== PR_SERIES_STAGES) {
+      throw new Error(
+        `${record.id} has stages ${JSON.stringify(record.stages ?? null)}, not ${PR_SERIES_STAGES}: not a PR series`,
+      );
+    }
+  }
+  const identities = new Set(attempts.map(identityOf));
+  if (identities.size > 1) throw new Error("the records belong to more than one series; refusing to mix them");
+}
+
 /** Pre-verification finding ids of an attempt, and the published ones. */
 function findingsOf(record) {
   const verdicts = Array.isArray(record.verification?.verdicts) ? record.verification.verdicts : [];
@@ -79,6 +127,7 @@ export function evaluateRecall({ defects, matches, attempts }) {
     throw new Error("matches must be an object keyed by attempt id");
   }
 
+  assertOnePrSeries(attempts);
   const valid = attempts.filter(isValid);
   const byId = new Map(attempts.map((record) => [record.id, record]));
   for (const [attemptId, perFinding] of Object.entries(matches)) {
@@ -95,7 +144,9 @@ export function evaluateRecall({ defects, matches, attempts }) {
       }
     }
   }
-  for (const record of valid) {
+  // Every recorded attempt, valid or not: detection is reported over all of
+  // them, so an invalid attempt's findings need their match entries too.
+  for (const record of attempts) {
     for (const findingId of findingsOf(record).pre) {
       if (!Array.isArray(matches[record.id]?.[findingId])) {
         throw new Error(
@@ -105,16 +156,16 @@ export function evaluateRecall({ defects, matches, attempts }) {
     }
   }
 
+  // K raised / published in one attempt (plan-review 3rd run F5).
+  const stateIn = (record, id) => {
+    const { pre, published } = findingsOf(record);
+    const matched = pre.filter((findingId) => matches[record.id]?.[findingId]?.includes(id) === true);
+    return { raised: matched.length > 0, published: matched.some((findingId) => published.has(findingId)) };
+  };
   const perDefect = defects.map(({ id }) => {
-    let k = 0;
-    let p = 0;
-    for (const record of valid) {
-      const { pre, published } = findingsOf(record);
-      const matched = pre.filter((findingId) => matches[record.id][findingId].includes(id));
-      if (matched.length === 0) continue;
-      k += 1;
-      if (matched.some((findingId) => published.has(findingId))) p += 1;
-    }
+    const inValid = valid.map((record) => stateIn(record, id)).filter((state) => state.raised);
+    const k = inValid.length;
+    const p = inValid.filter((state) => state.published).length;
     const raised = k > 0;
     return {
       id,
@@ -122,8 +173,13 @@ export function evaluateRecall({ defects, matches, attempts }) {
       p,
       required: raised ? required(k) : null,
       pass: raised ? p >= required(k) : null,
-      // Whole-pipeline detection: published in x of the series' attempts.
-      detection: { x: p, of: attempts.length },
+      // Informational (F7): K published in x of ALL the series' attempts,
+      // valid or not — numerator and denominator over the same set.
+      detection: {
+        x: attempts.filter((record) => stateIn(record, id).published).length,
+        of: attempts.length,
+        over: "all attempts",
+      },
       note: raised ? null : "not raised — no evidence about the verifier",
     };
   });
@@ -156,9 +212,9 @@ function main(args) {
   for (const d of result.perDefect) {
     console.log(
       d.k === 0
-        ? `${d.id}: k=0 — ${d.note}; detection ${String(d.detection.x)}/${String(d.detection.of)}`
-        : `${d.id}: raised k=${String(d.k)}, published p=${String(d.p)}, needs ${String(d.required)} → ` +
-            `${d.pass ? "PASS" : "FAIL"}; detection ${String(d.detection.x)}/${String(d.detection.of)}`,
+        ? `${d.id}: k=0 — ${d.note}; detection (published, all attempts) ${String(d.detection.x)}/${String(d.detection.of)}`
+        : `${d.id}: raised k=${String(d.k)}, published p=${String(d.p)} (valid attempts), needs ${String(d.required)} → ` +
+            `${d.pass ? "PASS" : "FAIL"}; detection (published, all attempts) ${String(d.detection.x)}/${String(d.detection.of)}`,
     );
   }
   if (result.perDefect.length === 0) console.log("no known defect listed — the guard cannot be PASS");

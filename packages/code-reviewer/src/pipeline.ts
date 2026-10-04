@@ -102,8 +102,10 @@ export interface PipelineTimeouts {
 }
 
 // Same guard style as reviewer.ts's maxSteps: a zero, negative, fractional,
-// or non-finite budget would silently disable the bound.
-function resolveTimeouts(overrides: PipelineTimeouts = {}): Required<PipelineTimeouts> {
+// or non-finite budget would silently disable the bound. Exported for the gate
+// runner's G2 path, which must resolve the finder's timeout exactly as the
+// pipeline does (finder-verification impl-review phase 2 F9).
+export function resolveTimeouts(overrides: PipelineTimeouts = {}): Required<PipelineTimeouts> {
   const finderTimeoutMs = overrides.finderTimeoutMs ?? DEFAULT_FINDER_TIMEOUT_MS;
   const judgeTimeoutMs = overrides.judgeTimeoutMs ?? DEFAULT_JUDGE_TIMEOUT_MS;
   const implReviewTimeoutMs = overrides.implReviewTimeoutMs ?? DEFAULT_IMPL_REVIEW_TIMEOUT_MS;

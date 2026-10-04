@@ -274,7 +274,13 @@ Every gate is evaluated **per arm**. A gate that applies "on each PR series" is 
 
 - **G4b: whole-review cost and timeouts** (R3), per PR series:
   - the median total review cost per attempt (every finder, verifier and judge request) is **≤ $0.063**;
-  - any request with no reported cost fails G4b (it is never omitted from the median);
+  - any request with no reported cost fails G4b (it is never omitted from the median). **A call of any pass that
+    hit its timeout counts as a request with no reported cost**, even when its retry succeeded: a timed-out
+    request emits no step, so its cost is never reported. Every request record carries `timedOut` (impl-review
+    phase 2 F1, owner 2026-10-04). An interrupted attempt is cost-incomplete too. G4b is not a quality gate;
+  - G1, G4b and the timeout clause are computed over **every attempt in the series file**, across invocations:
+    on `--append` the runner rebuilds them from the recorded attempts, so its SUMMARY `gates` is the series
+    verdict (impl-review phase 2 F2);
   - **0 verifier timeouts and 0 judge timeouts** in the 10 attempts. A timeout that was followed by a successful
     retry still counts _(plan-chosen term (2))_.
 - **R13: judge latency.** Per attempt, the median and max are reported, not gated.
@@ -288,7 +294,9 @@ Every gate is evaluated **per arm**. A gate that applies "on each PR series" is 
   - **Not raised:** a K the finder never raised is reported as "not raised — no evidence about the verifier".
   - **NOT PROVEN:** if no K was raised, or the list is empty, the guard is **`NOT PROVEN`**, which can never be
     PASS. The arm cannot be admitted on it, MAIN does not start by itself, and the owner decides.
-  - **Informational:** whole-pipeline detection (K published in x of 10 attempts).
+  - **Informational:** whole-pipeline detection (K published in x of **all** the series' attempts, valid or
+    not; impl-review phase 2 F7). `recall-guard.mjs` refuses duplicate attempt ids or numbers, a file that is not
+    one PR series, and a pre-verification finding of any attempt without a match entry.
 - **G3h: hand-read, per PR** (#269 and #240 separately; both must pass):
   - **N** = the number of distinct published findings in the owner-approved table.
   - **Limit:** floor(0.05 × N); N ≤ 19 → 0; **N = 0 → G3 FAIL** for that PR.
@@ -300,7 +308,7 @@ Every gate is evaluated **per arm**. A gate that applies "on each PR series" is 
 - **Retries:** as in production. One attempt is one `runReviewPipeline` pass, including production's single
   transient retry per pass, with no outer retry. A 429, 5xx or timeout that persists after that retry, a
   `FinderOutputError`, or a verifier or judge output error after its one repair is a **failed** attempt, never
-  a skipped one.
+  a skipped one. An attempt started and never finished (interrupted) is a failed attempt with incomplete cost.
 - **Quality gates:** G2, G3f, R4 (FAIL) and G3h (#269 or #240) _(plan-chosen term (4))_. If CONTROL fails a
   quality gate, MAIN may start, subject to §7. G1, G4, G4b, an incomplete verifier cost on the fixture rows
   (`FAIL (cost)`), the timeout clause, an A3 leak and a provider mismatch are **not** quality gates: CONTROL then
@@ -345,15 +353,20 @@ run, never a gate result.
 
 **Measurement error / tooling failure.** These are results not produced by the model through the provider:
 
-- an input hash mismatch;
+- an input hash mismatch (the runner refuses a continuation whose diff or rules sha256, or source-root git tree,
+  differs from the series file's; uncommitted changes under the source root refuse to start; impl-review phase 2
+  F4);
 - a runner crash;
 - a grader error (A1 applies);
-- an OpenRouter account error (401, or 402 for credits);
+- an OpenRouter account error (401, or 402 for credits) — the runner classifies it as a measurement error,
+  never as a model failure (impl-review phase 2 F3);
 - a row or attempt whose verification did not run (`skipped-no-source`, or any status other than `verified` or
   `no-findings`), including an attempt aborted because the source root is unusable (§3, No source root);
 - a bug in this change's code found in a record.
 
-When one occurs, the series is a **failed run**: measurement stops, the fix goes in as a dated, hashed amendment
+When one occurs, the series is a **failed run**: measurement stops — the runner records the failing attempt,
+leaves every remaining attempt `not-run (measurement error)`, and runs nothing on a continuation of a series that
+recorded one (impl-review phase 2 F3) — the fix goes in as a dated, hashed amendment
 pushed before the re-run, and the re-run is a fresh series. The void series' spend still counts.
 
 **After CONTROL:**
@@ -401,6 +414,9 @@ This is the archived §6 of `finder-model-swap`, applied **per PR**:
   carried forward is max(counter, telemetry).
 - **Before every series:** the projected pessimistic cost is P (table below). The series starts only if
   T + P ≤ $1.60; otherwise stop and ask. Inside the series, `--max-spend` = min(1.60 − T, 2.00 − T − A_max).
+- **`--max-spend` is required** (no unlimited default; impl-review phase 2 F8) and caps the **whole series**: on
+  `--append` the spend already recorded in the file counts against it (F2). A continuation therefore passes
+  recorded spend + min(1.60 − T, 2.00 − T − A_max), with T read after the earlier invocation.
 - **G5** runs only if 2.00 − T ≥ $0.50.
 - **Pessimistic per-series table** _(Phase 3: recomputed with the measured excerpt sizes)_. Planning figures,
   with prices from 2026-10-03 and re-read 2026-10-04:

@@ -2,12 +2,16 @@
 // Phase 2 §3): synthetic series records, no network.
 import { describe, expect, it } from "vitest";
 
-import { attemptsOf, evaluateRecall, required } from "./recall-guard.mjs";
+import { attemptsOf, evaluateRecall, PR_SERIES_STAGES, required } from "./recall-guard.mjs";
 
 /** One valid attempt: `pre` = pre-verification ids, `published` = the ids that survived verification. */
 const attempt = (n, pre, published = pre, overrides = {}) => ({
   kind: "attempt",
   id: `a${String(n)}`,
+  attempt: n,
+  stages: PR_SERIES_STAGES,
+  case: "240",
+  n: 10,
   g1Pass: true,
   measurementError: null,
   verification: { status: pre.length === 0 ? "no-findings" : "verified", verdicts: pre.map((id) => ({ id })) },
@@ -53,7 +57,7 @@ describe("the majority rule floor(k/2) + 1", () => {
       pass: null,
       note: "not raised — no evidence about the verifier",
     });
-    expect(k1(result).detection).toEqual({ x: 2, of: 10 });
+    expect(k1(result).detection).toEqual({ x: 2, of: 10, over: "all attempts" });
   });
 
   it("FAIL when one raised defect misses its majority", () => {
@@ -95,10 +99,14 @@ describe("matching (plan-review 3rd run F5)", () => {
       attempt(2, ["F1"], [], { g1Pass: false }),
       attempt(3, ["F1"], [], { measurementError: 'verification status "skipped-no-source"' }),
     ];
-    const result = evaluateRecall({ defects: DEFECTS, attempts, matches: { a1: { F1: ["K1"] } } });
+    const result = evaluateRecall({
+      defects: DEFECTS,
+      attempts,
+      matches: { a1: { F1: ["K1"] }, a2: { F1: ["K1"] }, a3: { F1: ["K1"] } },
+    });
     expect(k1(result)).toMatchObject({ k: 1, p: 1 });
     expect(result.valid).toBe(1);
-    expect(k1(result).detection).toEqual({ x: 1, of: 3 });
+    expect(k1(result).detection).toEqual({ x: 1, of: 3, over: "all attempts" });
   });
 
   it.each([
@@ -126,5 +134,42 @@ describe("attemptsOf", () => {
   it("keeps attempt records and skips the started markers", () => {
     const text = [JSON.stringify({ kind: "started", attempt: 1 }), JSON.stringify(attempt(1, []))].join("\n");
     expect(attemptsOf(`${text}\n`).map((r) => r.id)).toEqual(["a1"]);
+  });
+});
+
+// impl-review phase 2 F7.
+describe("series integrity and detection over all attempts", () => {
+  it("refuses a duplicate attempt id — it would be counted twice in k", () => {
+    const attempts = [attempt(1, ["F1"]), { ...attempt(2, ["F1"]), id: "a1" }];
+    expect(() => evaluateRecall({ defects: DEFECTS, attempts, matches: { a1: { F1: ["K1"] } } })).toThrow(
+      /attempt id a1 is recorded twice/u,
+    );
+  });
+
+  it("refuses a duplicate attempt number", () => {
+    const attempts = [attempt(1, []), { ...attempt(2, []), attempt: 1 }];
+    expect(() => evaluateRecall({ defects: DEFECTS, attempts, matches: {} })).toThrow(/attempt 1 is recorded twice/u);
+  });
+
+  it("refuses a G2 series (stages finder,verifier): not a PR series", () => {
+    const attempts = [attempt(1, [], [], { stages: "finder,verifier" })];
+    expect(() => evaluateRecall({ defects: DEFECTS, attempts, matches: {} })).toThrow(/not a PR series/u);
+  });
+
+  it("refuses records of two different series", () => {
+    const attempts = [attempt(1, []), attempt(2, [], [], { case: "269" })];
+    expect(() => evaluateRecall({ defects: DEFECTS, attempts, matches: {} })).toThrow(/more than one series/u);
+  });
+
+  it("counts detection over ALL attempts: a publish inside an invalid attempt counts in x", () => {
+    const attempts = [attempt(1, ["F1"], ["F1"]), attempt(2, ["F1"], ["F1"], { g1Pass: false })];
+    const result = evaluateRecall({ defects: DEFECTS, attempts, matches: { a1: { F1: ["K1"] }, a2: { F1: ["K1"] } } });
+    expect(k1(result)).toMatchObject({ k: 1, p: 1 });
+    expect(k1(result).detection).toEqual({ x: 2, of: 2, over: "all attempts" });
+  });
+
+  it("an invalid attempt's findings need their match entries too", () => {
+    const attempts = [attempt(1, ["F1"], [], { g1Pass: false })];
+    expect(() => evaluateRecall({ defects: DEFECTS, attempts, matches: {} })).toThrow(/a1\/F1 has no owner-approved/u);
   });
 });

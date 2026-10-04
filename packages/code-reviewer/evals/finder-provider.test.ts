@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
 
 import { APICallError } from "ai";
@@ -346,6 +347,16 @@ interface VerifierRowMetadata {
   verifier: { called: boolean; requests: { provider: string | null; cost: number | null }[]; reasoningLeak: boolean };
   verification: { status: string; finderSummary: string; publishedIds: string[]; verdicts: { quote?: string }[] };
 }
+/** review-result.schema.json compiled by promptfoo's own ajv (the one its is-json assertion uses). */
+const schemaValidator = (): ((value: unknown) => boolean) => {
+  const requireFromPromptfoo = createRequire(createRequire(import.meta.url).resolve("promptfoo"));
+  const ajvModule = requireFromPromptfoo("ajv") as { default?: unknown };
+  const Ajv = (ajvModule.default ?? ajvModule) as new (options: object) => {
+    compile: (schema: object) => (value: unknown) => boolean;
+  };
+  const schema = JSON.parse(readFileSync(resolve(import.meta.dirname, "review-result.schema.json"), "utf8")) as object;
+  return new Ajv({ strictSchema: true }).compile(schema);
+};
 const rowMetadata = (response: Awaited<ReturnType<typeof callRow>>) =>
   response.metadata as unknown as VerifierRowMetadata;
 
@@ -401,7 +412,9 @@ describe("FinderProvider verifier rows — graded output is {summary, findings: 
     expect(doGenerate).toHaveBeenCalledTimes(1);
   });
 
-  it("the published output satisfies review-result.schema.json (schema_validity), keys included", async () => {
+  // impl-review phase 2 F9: a real validator — promptfoo's own ajv 8, as its
+  // is-json assertion runs it — not a key-name check.
+  it("the published output validates against review-result.schema.json (schema_validity)", async () => {
     currentModel = new MockLanguageModelV3({
       doGenerate: vi
         .fn()
@@ -409,20 +422,15 @@ describe("FinderProvider verifier rows — graded output is {summary, findings: 
         .mockResolvedValueOnce(generation(verdicts("confirmed"), priced("OpenAI", 0.0005))),
     });
     const response = await callRow(verifying());
-    const schema = JSON.parse(readFileSync(resolve(import.meta.dirname, "review-result.schema.json"), "utf8")) as {
-      required: string[];
-      properties: Record<string, unknown> & { findings: { items: { required: string[]; properties: object } } };
-    };
-    const output = JSON.parse(String(response.output)) as Record<string, unknown> & {
-      findings: Record<string, unknown>[];
-    };
-    // additionalProperties: false at both levels — exactly what promptfoo's is-json enforces.
-    expect(Object.keys(output).every((key) => key in schema.properties)).toBe(true);
-    expect(schema.required.every((key) => key in output)).toBe(true);
-    for (const finding of output.findings) {
-      expect(Object.keys(finding).every((key) => key in schema.properties.findings.items.properties)).toBe(true);
-      expect(schema.properties.findings.items.required.every((key) => key in finding)).toBe(true);
-    }
+    const validate = schemaValidator();
+    const output: unknown = JSON.parse(String(response.output));
+    expect(validate(output)).toBe(true);
+    expect((output as { findings: unknown[] }).findings).toHaveLength(1);
+    // The validator is real: a published finding that kept its code-assigned
+    // id, or a severity outside the enum, is refused.
+    const finding = (output as { findings: Record<string, unknown>[] }).findings[0];
+    expect(validate({ ...(output as object), findings: [{ ...finding, id: "F1" }] })).toBe(false);
+    expect(validate({ ...(output as object), findings: [{ ...finding, severity: "huge" }] })).toBe(false);
   });
 
   it("records the verifier's provider and cost per request, separately from the finder's G4 cost", async () => {
@@ -485,5 +493,39 @@ describe("FinderProvider verifier rows — graded output is {summary, findings: 
     expect(() => new FinderProvider({ config: { model: "m", verifier: { model: "v", providers: [] } } })).toThrow(
       /verifier.providers/u,
     );
+  });
+});
+
+// impl-review phase 2 F6: the failing pass is tagged, so the rows script can
+// tell a verifier failure from a finder failure.
+describe("FinderProvider verifier rows — metadata.failedPass", () => {
+  it("a verifier 429 that persisted past its retry is tagged failedPass: verifier", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("one finding", [OFF_BY_ONE]), priced("OpenAI", 0.001)))
+        .mockRejectedValue(http429()),
+    });
+    const response = await callRow(verifying());
+    expect(response.error).toContain("HTTP 429");
+    expect((response.metadata as { failedPass?: string }).failedPass).toBe("verifier");
+  });
+
+  it("a finder failure is tagged failedPass: finder", async () => {
+    currentModel = new MockLanguageModelV3({ doGenerate: vi.fn().mockRejectedValue(http429()) });
+    const response = await callRow(verifying());
+    expect((response.metadata as { failedPass?: string }).failedPass).toBe("finder");
+  });
+
+  it("a passing row carries no failedPass", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("one finding", [OFF_BY_ONE]), priced("OpenAI", 0.001)))
+        .mockResolvedValueOnce(generation(verdicts("confirmed"), priced("OpenAI", 0.0005))),
+    });
+    const response = await callRow(verifying());
+    expect(response.error).toBeUndefined();
+    expect(response.metadata).not.toHaveProperty("failedPass");
   });
 });

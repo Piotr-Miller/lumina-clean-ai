@@ -10,6 +10,7 @@ import {
   capDiff,
   capProjectContext,
   orderDiffForCap,
+  resolveTimeouts,
   runReviewPipeline,
   runVerificationPass,
 } from "../src/pipeline.ts";
@@ -27,7 +28,10 @@ import {
   parseGateArgs,
   readSeries,
   reasoningTokensOf,
+  recordedEvaluations,
   runGateAttempt,
+  runSeries,
+  sha256Hex,
   summarizeSeries,
 } from "./finder-gate-core.mjs";
 
@@ -105,6 +109,8 @@ describe("parseGateArgs", () => {
     "5",
     "--out",
     "o",
+    "--max-spend",
+    "0.2",
   ];
   const without = (name) => {
     const i = base.indexOf(name);
@@ -139,6 +145,15 @@ describe("parseGateArgs", () => {
 
   it.each(["--verifier-model", "--verifier-endpoint"])("requires %s", (name) => {
     expect(() => parseGateArgs(without(name))).toThrow(`missing ${name}`);
+  });
+
+  // impl-review phase 2 F8: no unlimited default for a paid series.
+  it("requires --max-spend: a paid series never starts without a cap", () => {
+    expect(() => parseGateArgs(without("--max-spend"))).toThrow("missing --max-spend");
+  });
+
+  it.each(["-1", "abc", "", "Infinity"])("refuses --max-spend %j", (value) => {
+    expect(() => parseGateArgs([...without("--max-spend"), "--max-spend", value])).toThrow(/--max-spend/u);
   });
 
   it("requires --model: there is no default model to fall back to", () => {
@@ -180,6 +195,14 @@ const IDENTITY = {
   verifierEndpoint: "openai",
   case: "clean",
   n: 5,
+  diffSha256: "d".repeat(64),
+  rulesSha256: "r".repeat(64),
+  sourceRootTree: "t".repeat(40),
+};
+const INPUTS = {
+  diffSha256: IDENTITY.diffSha256,
+  rulesSha256: IDENTITY.rulesSha256,
+  sourceRootTree: IDENTITY.sourceRootTree,
 };
 const startedLine = (attempt, identity = IDENTITY) => JSON.stringify({ kind: "started", ...identity, attempt });
 const recordLine = (attempt, identity = IDENTITY) => JSON.stringify({ kind: "attempt", ...identity, attempt });
@@ -198,6 +221,7 @@ const writable = (overrides) =>
     verifierEndpoint: IDENTITY.verifierEndpoint,
     caseName: IDENTITY.case,
     n: IDENTITY.n,
+    inputs: INPUTS,
     ...overrides,
   });
 
@@ -260,6 +284,10 @@ describe("assertSeriesWritable", () => {
     ["verifier model (a CONTROL series continued as MAIN)", { verifierModel: "anthropic/claude-sonnet-5" }],
     ["verifier endpoint", { verifierEndpoint: "anthropic" }],
     ["stage set", { stages: "finder,verifier,judge" }],
+    // impl-review phase 2 F4: the inputs are part of the series.
+    ["diff (input hash mismatch)", { inputs: { ...INPUTS, diffSha256: "e".repeat(64) } }],
+    ["rules file", { inputs: { ...INPUTS, rulesSha256: "s".repeat(64) } }],
+    ["source tree", { inputs: { ...INPUTS, sourceRootTree: "u".repeat(40) } }],
   ])("refuses to mix series: a different %s than the file records", (_label, overrides) => {
     expect(() => writable(overrides)).toThrow(/different series/u);
   });
@@ -480,6 +508,7 @@ describe("describeRequest", () => {
       outputTokens: 2,
       reasoningTokens: { sdk: 0, openrouter: null },
       reasoningTextChars: 0,
+      timedOut: false,
     });
     expect(describeRequest("judge", { providerMetadata: { openrouter: { provider: "" } } })).toMatchObject({
       provider: null,
@@ -539,6 +568,7 @@ function fakeApi({ findings = [FINDING], verdict = "confirmed", judgeFailures = 
     capDiff,
     orderDiffForCap,
     capProjectContext,
+    resolveTimeouts,
     assignFindingIds,
     mergeFindings,
     createReviewer: (options) => ({
@@ -661,5 +691,201 @@ describe("runGateAttempt", () => {
     expect(attempt.result.published).toEqual([]);
     expect(attempt.result.verification.status).toBe("verified");
     expect(evaluateAttempt({ attempt, expected: EXPECTED }).g1Pass).toBe(true);
+  });
+});
+
+// --- impl-review phase 2 (owner triage 2026-10-04) ---
+
+describe("F1 — a timeout leaves the cost incomplete, and its requests say so", () => {
+  it("a finder timeout followed by a priced, successful retry is cost-INCOMPLETE", () => {
+    const result = evaluate([request(), request({ pass: "verifier" })], {
+      calls: [
+        { pass: "finder", outcome: "timeout", ms: 300_000 },
+        { pass: "finder", outcome: "ok", ms: 900 },
+        ...okCalls("verifier"),
+      ],
+    });
+    expect(result.costComplete).toBe(false);
+  });
+
+  it("a retried judge timeout is cost-incomplete, and the timed-out call's requests carry timedOut: true", async () => {
+    // The timed-out judge call emits one step before the abort, as a finder
+    // loop or a repair would.
+    let judgeCalls = 0;
+    const api = fakeApi();
+    const attempt = await attemptWith({
+      ...api,
+      createJudge: (options) => ({
+        judge: async () => {
+          judgeCalls += 1;
+          options.onStepEnd?.(step("Anthropic", 0.02));
+          if (judgeCalls === 1) throw new DOMException("t", "TimeoutError");
+          return judgeResult();
+        },
+      }),
+    });
+    const judgeRequests = attempt.requests.filter((r) => r.pass === "judge");
+    expect(judgeRequests.map((r) => r.timedOut)).toEqual([true, false]);
+    expect(attempt.requests.filter((r) => r.pass !== "judge").every((r) => r.timedOut === false)).toBe(true);
+    const evaluation = evaluateAttempt({ attempt, expected: EXPECTED });
+    expect(evaluation.costComplete).toBe(false);
+    expect(summarizeSeries([evaluation]).g4b.pass).toBe(false);
+  });
+});
+
+describe("F3 — an OpenRouter account error is a measurement error", () => {
+  it.each([401, 402])("HTTP %i is a measurement error, never a model failure", (status) => {
+    const evaluation = evaluate([], {
+      result: undefined,
+      error: http(status),
+      calls: [{ pass: "finder", outcome: `APICallError-${String(status)}`, ms: 5 }],
+    });
+    expect(evaluation.outcome).toBe("measurement-error");
+    expect(evaluation.measurementError).toBe(`OpenRouter account error (HTTP ${String(status)})`);
+    expect(evaluation.g1Pass).toBe(false);
+  });
+
+  it("HTTP 403 stays a model/provider failure", () => {
+    const evaluation = evaluate([], { result: undefined, error: http(403), calls: [] });
+    expect(evaluation.measurementError).toBeNull();
+  });
+});
+
+// A recorded attempt line as runSeries writes it: identity + evaluation.
+const completedWith = (...attempts) => file(...attempts.flatMap((a) => [startedLine(a), recordedLine(a)]));
+const recordedLine = (attempt, evaluation = {}) =>
+  JSON.stringify({
+    kind: "attempt",
+    ...IDENTITY,
+    attempt,
+    outcome: "valid",
+    measurementError: null,
+    g1Pass: true,
+    cost: { finder: 0.01, verifier: 0.01, judge: 0.02, total: 0.04 },
+    costComplete: true,
+    timeouts: { verifier: 0, judge: 0 },
+    latencyMs: { judge: 1000 },
+    ...evaluation,
+  });
+const okAttempt = (cost = 0.03) => ({
+  requests: [request({ cost }), request({ pass: "verifier", cost: 0 })],
+  calls: okCalls("finder", "verifier"),
+  retries: [],
+  repairs: { finder: 0, verifier: 0, judge: 0 },
+  result: { ...verified, preVerificationFindingCount: 0 },
+});
+const seriesRun = async ({ existing = "", start = 1, through = 5, maxSpend = 1, attempts }) => {
+  const lines = [];
+  const log = [];
+  const queue = [...attempts];
+  const series = readSeries(existing);
+  const summary = await runSeries({
+    identity: IDENTITY,
+    idPrefix: "openai-openai-clean",
+    start,
+    through,
+    maxSpend,
+    series,
+    expected: EXPECTED,
+    hasJudge: false,
+    runAttempt: async () => queue.shift(),
+    appendLine: (line) => lines.push(line),
+    log: (line) => log.push(line),
+  });
+  return { summary, lines, log };
+};
+
+describe("F2 — the SUMMARY is the series verdict, and --max-spend caps the series", () => {
+  it("a continuation's gates include the attempts an earlier invocation recorded", async () => {
+    const existing = file(
+      startedLine(1),
+      recordedLine(1, { costComplete: false, timeouts: { verifier: 0, judge: 1 } }),
+    );
+    const { summary } = await seriesRun({ existing, start: 2, through: 2, attempts: [okAttempt()] });
+    expect(summary.recordedBefore).toBe(1);
+    expect(summary.gates).toMatchObject({ scope: "series", attempts: 2, valid: 2 });
+    expect(summary.gates.g4b).toMatchObject({ pass: false, incompleteCost: 1 });
+    expect(summary.gates.timeouts).toMatchObject({ judge: 1, pass: false });
+    expect(summary.seriesSpend).toBeCloseTo(0.07, 10);
+  });
+
+  it("the recorded spend counts against --max-spend: a continuation at the cap runs nothing", async () => {
+    const existing = completedWith(1);
+    const { summary, lines } = await seriesRun({ existing, start: 2, through: 3, maxSpend: 0.04, attempts: [] });
+    expect(summary.notRun).toEqual({ budget: 2, measurementError: 0 });
+    expect(lines).toEqual([]);
+  });
+
+  it("an interrupted attempt counts as a FAILED attempt with INCOMPLETE cost", async () => {
+    const existing = file(startedLine(1), recordedLine(1), startedLine(2));
+    const { summary } = await seriesRun({ existing, start: 3, through: 3, attempts: [okAttempt()] });
+    expect(summary.interruptedBefore).toEqual([2]);
+    expect(summary.gates).toMatchObject({ attempts: 3, valid: 2 });
+    expect(summary.gates.g4b).toMatchObject({ pass: false, incompleteCost: 1 });
+  });
+
+  it("recordedEvaluations reads a record without a cost fail-closed", () => {
+    const { evaluations } = recordedEvaluations(readSeries(file(recordLine(1))));
+    expect(evaluations[0]).toMatchObject({ g1Pass: false, costComplete: false, cost: { total: 0 } });
+  });
+});
+
+describe("F3 — the first measurement error stops the series", () => {
+  it("records the failing attempt, then leaves every remaining attempt not-run (measurement error)", async () => {
+    const accountError = { ...okAttempt(), result: undefined, requests: [], error: http(402) };
+    const { summary, lines, log } = await seriesRun({ through: 3, attempts: [accountError, okAttempt(), okAttempt()] });
+    expect(lines.filter((l) => l.kind === "attempt").map((l) => l.outcome)).toEqual(["measurement-error"]);
+    expect(lines.filter((l) => l.kind === "started")).toHaveLength(1);
+    expect(summary.notRun).toEqual({ budget: 0, measurementError: 2 });
+    expect(summary.stoppedBy).toBe("OpenRouter account error (HTTP 402)");
+    expect(log.filter((l) => l.includes("not-run (measurement error"))).toHaveLength(2);
+  });
+
+  it("a continuation of a series that already recorded a measurement error runs nothing", async () => {
+    const existing = file(
+      startedLine(1),
+      recordedLine(1, { outcome: "measurement-error", measurementError: "verification status null", g1Pass: false }),
+    );
+    const { summary, lines } = await seriesRun({ existing, start: 2, through: 2, attempts: [okAttempt()] });
+    expect(lines).toEqual([]);
+    expect(summary.notRun.measurementError).toBe(1);
+  });
+});
+
+describe("F4 — inputs are hashed as read", () => {
+  it("sha256Hex is the hex sha256 of the UTF-8 text", () => {
+    expect(sha256Hex("")).toBe("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+  });
+});
+
+describe("F9 — the G2 path's finder request equals runReviewPipeline's", () => {
+  it("same finder options and the same review request for the same input", async () => {
+    const captured = { pipeline: [], g2: [] };
+    const capturing = (target) => {
+      const api = fakeApi({ findings: [] });
+      return {
+        ...api,
+        createReviewer: (options) => ({
+          review: async (...args) => {
+            const { onStepEnd: _s, onOutputRepair: _r, ...rest } = options;
+            target.push({ options: rest, args });
+            options.onStepEnd?.(step("OpenAI"));
+            return { summary: "s", findings: [] };
+          },
+        }),
+      };
+    };
+    const source = { fake: "source" };
+    const longRules = "r".repeat(12_000);
+    for (const [stages, target] of [
+      ["finder,verifier,judge", captured.pipeline],
+      ["finder,verifier", captured.g2],
+    ]) {
+      await attemptWith(capturing(target), { stages, source, rules: longRules, finderMaxSteps: 5, timeouts: {} });
+    }
+    expect(captured.g2).toHaveLength(1);
+    expect(captured.g2[0]).toEqual(captured.pipeline[0]);
+    expect(captured.g2[0].options.projectContext.length).toBeLessThan(longRules.length);
+    expect(captured.g2[0].args[1].timeoutMs).toBeGreaterThan(0);
   });
 });

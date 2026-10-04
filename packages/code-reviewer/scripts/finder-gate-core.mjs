@@ -14,6 +14,8 @@
 // stripping, no relative `.js` imports), so the runner can reject a bad
 // command line before it loads the reviewer. The pipeline functions an attempt
 // needs are INJECTED (`api`), which is also what lets the tests run hermetically.
+import { createHash } from "node:crypto";
+
 import { withOneRetry } from "../src/retry.ts";
 
 // The routing slug and the name OpenRouter reports as the serving provider
@@ -81,8 +83,14 @@ export function parseGateArgs(args) {
   const n = Number(required("--n"));
   if (!Number.isSafeInteger(n) || n < 1) throw new Error("--n must be a positive integer");
   const out = required("--out");
-  const maxSpend = flag("--max-spend") === undefined ? Infinity : Number(flag("--max-spend"));
-  if (Number.isNaN(maxSpend) || maxSpend < 0) throw new Error("--max-spend must be a non-negative number");
+  // Required (impl-review phase 2 F8): a paid series never starts without a
+  // cap, and there is no unlimited default to fall back to. The cap covers the
+  // WHOLE series: on a continuation the spend already recorded in the file
+  // counts against it (F2).
+  const maxSpend = Number(required("--max-spend"));
+  if (flag("--max-spend").trim() === "" || !Number.isFinite(maxSpend) || maxSpend < 0) {
+    throw new Error("--max-spend must be a non-negative number of USD");
+  }
   // `--start <k> --append` CONTINUES a series: it runs attempts k..n (or
   // k..through) and appends to the same file. It never re-runs an attempt that
   // already has a record — continuation, not a retry.
@@ -127,8 +135,14 @@ export function parseGateArgs(args) {
  * file, `--n 6 --append` after a `--n 5` probe ran a sixth G2 attempt). The
  * stages and the verifier are part of it, so a CONTROL series can never be
  * continued as a MAIN one.
+ *
+ * So are the INPUTS (impl-review phase 2 F4): the sha256 of the diff and of the
+ * rules as read, and the git tree of the source root (`inputs.sourceRootTree`,
+ * see sourceRootTreeOf in finder-gate.mjs). A continuation fed a different diff,
+ * rules file or source tree is a different series — the "input hash mismatch"
+ * measurement error of gate.md §5 — and is refused.
  */
-export const seriesIdentity = ({ stages, model, endpoint, verifierModel, verifierEndpoint, caseName, n }) => ({
+export const seriesIdentity = ({ stages, model, endpoint, verifierModel, verifierEndpoint, caseName, n, inputs }) => ({
   stages,
   model,
   endpoint,
@@ -136,9 +150,22 @@ export const seriesIdentity = ({ stages, model, endpoint, verifierModel, verifie
   verifierEndpoint,
   case: caseName,
   n,
+  diffSha256: inputs?.diffSha256 ?? null,
+  rulesSha256: inputs?.rulesSha256 ?? null,
+  sourceRootTree: inputs?.sourceRootTree ?? null,
 });
 
-const identityKey = (identity) => JSON.stringify(seriesIdentity({ ...identity, caseName: identity.case }));
+const identityKey = (entry) =>
+  JSON.stringify(
+    seriesIdentity({
+      ...entry,
+      caseName: entry.case,
+      inputs: { diffSha256: entry.diffSha256, rulesSha256: entry.rulesSha256, sourceRootTree: entry.sourceRootTree },
+    }),
+  );
+
+/** sha256 (hex) of a text as the runner read it — the bytes the model is sent. */
+export const sha256Hex = (text) => createHash("sha256").update(text, "utf8").digest("hex");
 
 /**
  * Reads a series file: one JSON object per line, either a `started` marker
@@ -152,6 +179,7 @@ export function readSeries(fileText) {
   const lines = fileText.split("\n").filter((line) => line !== "");
   const attempts = new Map();
   const identities = new Set();
+  const records = [];
   lines.forEach((line, index) => {
     let entry;
     try {
@@ -165,7 +193,15 @@ export function readSeries(fileText) {
     identities.add(identityKey(entry));
     const state = attempts.get(entry.attempt) ?? { attempt: entry.attempt, started: false, completed: false };
     if (entry.kind === "started") state.started = true;
-    else state.completed = true;
+    else {
+      if (state.completed) {
+        throw new Error(
+          `line ${String(index + 1)} records attempt ${String(entry.attempt)} a second time; refusing to continue a corrupt series`,
+        );
+      }
+      state.completed = true;
+      records.push(entry);
+    }
     attempts.set(entry.attempt, state);
   });
   const sorted = [...attempts.values()].sort((a, b) => a.attempt - b.attempt);
@@ -173,9 +209,54 @@ export function readSeries(fileText) {
     lineCount: lines.length,
     identities: [...identities].map((key) => JSON.parse(key)),
     attempts: sorted,
+    records: records.sort((a, b) => a.attempt - b.attempt),
     maxAttempt: sorted.length === 0 ? 0 : sorted[sorted.length - 1].attempt,
     interrupted: sorted.filter((a) => a.started && !a.completed).map((a) => a.attempt),
   };
+}
+
+/**
+ * The evaluations a continuation inherits from the file (impl-review phase 2
+ * F2): the SUMMARY is the verdict of the WHOLE series, not of one invocation.
+ * Each recorded attempt contributes the evaluation it was recorded with; each
+ * interrupted attempt counts as a FAILED attempt with INCOMPLETE cost (money
+ * may have been spent and nothing reported it). `spend` is the reported spend of
+ * the recorded attempts, which the series' `--max-spend` already covers.
+ */
+export function recordedEvaluations(series) {
+  const noCost = () => ({ finder: 0, verifier: 0, judge: 0, total: 0 });
+  const noTimeouts = () => ({ verifier: 0, judge: 0 });
+  const evaluations = [];
+  for (const record of series.records ?? []) {
+    // A record missing a field it should carry is read fail-closed: no cost →
+    // incomplete, never free; no g1Pass → not valid.
+    const hasCost = typeof record.cost?.total === "number";
+    evaluations.push({
+      attempt: record.attempt,
+      outcome: record.outcome ?? "unknown",
+      measurementError: record.measurementError ?? null,
+      g1Pass: record.g1Pass === true,
+      cost: hasCost ? record.cost : noCost(),
+      costComplete: hasCost && record.costComplete === true,
+      timeouts: record.timeouts ?? noTimeouts(),
+      latencyMs: record.latencyMs ?? {},
+    });
+  }
+  for (const attempt of series.interrupted ?? []) {
+    evaluations.push({
+      attempt,
+      outcome: "interrupted",
+      measurementError: null,
+      g1Pass: false,
+      cost: noCost(),
+      costComplete: false,
+      timeouts: noTimeouts(),
+      latencyMs: {},
+    });
+  }
+  evaluations.sort((a, b) => a.attempt - b.attempt);
+  const spend = evaluations.reduce((t, e) => t + (e.cost?.total ?? 0), 0);
+  return { evaluations, spend };
 }
 
 /**
@@ -184,7 +265,8 @@ export function readSeries(fileText) {
  * attempts. A fresh series (no `--append`) goes only into a missing or empty
  * file — otherwise repeating, say, `--through 1` would silently overwrite and
  * re-run the A3 probe. A continuation must (1) be the same series: identical
- * model, endpoint, case AND n in every recorded line, so `--n 6` cannot add a
+ * stages, models, endpoints, case, n AND inputs (diff, rules, source tree) in
+ * every recorded line, so `--n 6` cannot add a
  * sixth attempt to a `--n 5` series and two series cannot share a file; and
  * (2) start exactly at max(recorded) + 1: lower would re-run a recorded or
  * interrupted attempt, higher would leave a gap no later run could fill.
@@ -201,8 +283,9 @@ export function assertSeriesWritable({
   verifierEndpoint,
   caseName,
   n,
+  inputs,
 }) {
-  const empty = { lineCount: 0, identities: [], attempts: [], maxAttempt: 0, interrupted: [] };
+  const empty = { lineCount: 0, identities: [], attempts: [], records: [], maxAttempt: 0, interrupted: [] };
   if (!append) {
     if (existingText !== undefined && existingText !== "") {
       throw new Error(`${out} already holds a series; continue it with --start <k> --append, never overwrite it`);
@@ -213,7 +296,7 @@ export function assertSeriesWritable({
   const series = readSeries(existingText);
   if (series.lineCount === 0) throw new Error(`${out} is empty; start the series without --append`);
 
-  const expected = seriesIdentity({ stages, model, endpoint, verifierModel, verifierEndpoint, caseName, n });
+  const expected = seriesIdentity({ stages, model, endpoint, verifierModel, verifierEndpoint, caseName, n, inputs });
   const foreign = series.identities.filter((identity) => JSON.stringify(identity) !== JSON.stringify(expected));
   if (foreign.length > 0) {
     throw new Error(
@@ -273,8 +356,20 @@ export function describeRequest(pass, step) {
     outputTokens: typeof step?.usage?.outputTokens === "number" ? step.usage.outputTokens : null,
     reasoningTokens: reasoningTokensOf(step ?? {}),
     reasoningTextChars: typeof step?.reasoningText === "string" ? step.reasoningText.length : 0,
+    // Set from the call log once the call ends (runGateAttempt): true for every
+    // request of a call that hit its timeout (impl-review phase 2 F1).
+    timedOut: false,
   };
 }
+
+// An OpenRouter account error (401: key, 402: credits) is not produced by the
+// model through the provider: gate.md §5 lists it as a MEASUREMENT ERROR
+// (impl-review phase 2 F3), never a model failure counted against G1.
+export const ACCOUNT_ERROR_STATUSES = [401, 402];
+const accountErrorStatus = (error) => {
+  const status = error?.statusCode ?? error?.cause?.statusCode;
+  return ACCOUNT_ERROR_STATUSES.includes(status) ? status : undefined;
+};
 
 // The abort `runVerificationPass` throws under `requireVerification` when there
 // is no usable source (R8; impl-review phase 1 F1). Matched by its message: the
@@ -331,12 +426,19 @@ export async function runGateAttempt({
     return {
       [method]: async (...args) => {
         const started = Date.now();
+        // Calls inside one attempt run one after another, so the requests
+        // recorded from here on belong to this call.
+        const firstRequest = requests.length;
         try {
           const value = await built[method](...args);
           calls.push({ pass, outcome: "ok", ms: Date.now() - started });
           return value;
         } catch (error) {
-          calls.push({ pass, outcome: classify(error), ms: Date.now() - started });
+          const outcome = classify(error);
+          calls.push({ pass, outcome, ms: Date.now() - started });
+          if (outcome === "timeout") {
+            for (const r of requests.slice(firstRequest)) if (r.pass === pass) r.timedOut = true;
+          }
           throw error;
         }
       },
@@ -380,7 +482,10 @@ export async function runGateAttempt({
       };
     }
     // `finder,verifier` (G2): the finder exactly as the pipeline builds and
-    // calls it, then the pipeline's own verification pass.
+    // calls it, then the pipeline's own verification pass. A test pins that the
+    // finder's options and request equal runReviewPipeline's for the same
+    // input (impl-review phase 2 F9), timeouts resolved the same way.
+    const resolved = api.resolveTimeouts(timeouts);
     const finder = createFinder({
       model: finderModel,
       projectContext: api.capProjectContext(rules),
@@ -389,7 +494,7 @@ export async function runGateAttempt({
     });
     const { diff: capped } = api.capDiff(api.orderDiffForCap(diff));
     const review = await withOneRetry(
-      () => finder.review({ kind: "diff", diff: capped }, { timeoutMs: timeouts.finderTimeoutMs }),
+      () => finder.review({ kind: "diff", diff: capped }, { timeoutMs: resolved.finderTimeoutMs }),
       { sleep, onRetry: onRetry("finder") },
     );
     const preVerification = api.assignFindingIds(api.mergeFindings(review.findings));
@@ -399,7 +504,7 @@ export async function runGateAttempt({
       requireVerification: true,
       model: verifierModel,
       createVerifier,
-      timeoutMs: timeouts.verifierTimeoutMs,
+      timeoutMs: resolved.verifierTimeoutMs,
       onRetry: onRetry("verifier"),
       sleep,
     });
@@ -433,14 +538,17 @@ const sumBy = (items, pass, field) => items.filter((x) => x.pass === pass).reduc
  * - REPORTED ONLY for the judge: its providers and any reasoning. The judge is
  *   production's, unchanged and unpinned.
  * - Cost is complete when every request reported one AND every pass that was
- *   CALLED produced at least one request. A verifier that was never called
- *   (nothing to send) is complete; one that was called and left no priced
- *   request is not (owner, Phase 1 interpretation 6).
+ *   CALLED produced at least one request AND no call of any pass hit its
+ *   timeout. A verifier that was never called (nothing to send) is complete;
+ *   one that was called and left no priced request is not (owner, Phase 1
+ *   interpretation 6). A timed-out request emits no step, so its cost is never
+ *   reported — a timeout followed by a successful retry would otherwise leave a
+ *   complete-looking, under-reported cost (impl-review phase 2 F1).
  * - A timeout is any verifier or judge CALL that hit its timeout, including one
  *   followed by a successful retry (R3).
- * - A verification status other than `verified` / `no-findings`, or the abort
- *   for an unusable source, is a MEASUREMENT ERROR: never a valid attempt and
- *   never a model failure.
+ * - A verification status other than `verified` / `no-findings`, the abort
+ *   for an unusable source, or an OpenRouter account error (401/402) is a
+ *   MEASUREMENT ERROR: never a valid attempt and never a model failure.
  */
 export function evaluateAttempt({ attempt, expected }) {
   const { requests, calls, error, result, repairs } = attempt;
@@ -464,7 +572,8 @@ export function evaluateAttempt({ attempt, expected }) {
   const costComplete =
     requests.length > 0 &&
     requests.every((r) => r.cost !== null) &&
-    calledPasses.every((pass) => requests.some((r) => r.pass === pass));
+    calledPasses.every((pass) => requests.some((r) => r.pass === pass)) &&
+    !calls.some((c) => c.outcome === "timeout");
   const timeouts = {
     verifier: calls.filter((c) => c.pass === "verifier" && c.outcome === "timeout").length,
     judge: calls.filter((c) => c.pass === "judge" && c.outcome === "timeout").length,
@@ -478,7 +587,9 @@ export function evaluateAttempt({ attempt, expected }) {
     error !== undefined
       ? isVerificationAbort(error)
         ? "verification aborted: no usable source"
-        : null
+        : accountErrorStatus(error) !== undefined
+          ? `OpenRouter account error (HTTP ${String(accountErrorStatus(error))})`
+          : null
       : status === "verified" || status === "no-findings"
         ? null
         : `verification status ${JSON.stringify(status ?? null)}`;
@@ -534,8 +645,9 @@ const median = (values) => {
 };
 
 /**
- * The series summary over the evaluated attempts that ran (plan.md Phase 2
- * §1): G1 (valid attempts), G4b (median total cost per attempt; any incomplete
+ * The series summary over EVERY attempt of the series — those recorded by an
+ * earlier invocation (recordedEvaluations) and those run now (impl-review
+ * phase 2 F2) — (plan.md Phase 2 §1): G1 (valid attempts), G4b (median total cost per attempt; any incomplete
  * cost fails it), the verifier and judge timeout counts (any one fails R3's
  * clause), measurement errors, and the judge latency median and max (R13,
  * reported, not gated).
@@ -563,4 +675,138 @@ export function summarizeSeries(evaluations) {
     judgeLatencyMs:
       judgeLatencies.length === 0 ? null : { median: median(judgeLatencies), max: Math.max(...judgeLatencies) },
   };
+}
+
+const defaultErrorDetail = (error) => ({ message: error instanceof Error ? error.message : String(error) });
+
+/**
+ * Runs attempts `start..through` of a series and returns the SUMMARY (plan.md
+ * Phase 2 §1). Moved out of finder-gate.mjs so the series rules are tested:
+ *
+ * - **The series, not the invocation** (impl-review phase 2 F2): a
+ *   continuation starts from the evaluations and the spend already recorded in
+ *   the file (recordedEvaluations), so `gates` is the series verdict and
+ *   `--max-spend` caps the whole series. Interrupted attempts count as failed
+ *   with incomplete cost.
+ * - **Budget**: before each attempt, a series spend at or over `maxSpend` →
+ *   `not-run (budget)`.
+ * - **Measurement errors stop the series** (impl-review phase 2 F3; gate.md
+ *   §5): after the first one — or at once, when the file already records one —
+ *   every remaining attempt is `not-run (measurement error)`. The series is a
+ *   failed run, re-run fresh after a fix; nothing more is spent on it.
+ *
+ * Every line carries `identity` (seriesIdentity, inputs included). A `started`
+ * line is written BEFORE each paid call, so an attempt the process did not
+ * survive stays visible as interrupted.
+ */
+export async function runSeries({
+  identity,
+  idPrefix,
+  start,
+  through,
+  maxSpend,
+  series,
+  expected,
+  hasJudge,
+  runAttempt,
+  appendLine,
+  log,
+  errorDetail = defaultErrorDetail,
+  now = () => Date.now(),
+}) {
+  const recorded = recordedEvaluations(series);
+  const evaluations = [...recorded.evaluations];
+  let seriesSpend = recorded.spend;
+  let seriesRetries = 0;
+  let stoppedBy = evaluations.find((e) => e.measurementError !== null)?.measurementError ?? null;
+  const summary = {
+    ...identity,
+    start,
+    through,
+    outcomes: {},
+    notRun: { budget: 0, measurementError: 0 },
+    recordedBefore: recorded.evaluations.length,
+    interruptedBefore: series.interrupted ?? [],
+  };
+  for (const attempt of summary.interruptedBefore) {
+    log(`attempt ${String(attempt)}: started and never finished in an earlier run — counts as failed`);
+  }
+
+  for (let i = start; i <= through; i += 1) {
+    const id = `${idPrefix}-${String(i).padStart(2, "0")}`;
+    if (stoppedBy !== null) {
+      summary.notRun.measurementError += 1;
+      log(`${id}: not-run (measurement error: ${stoppedBy})`);
+      continue;
+    }
+    if (seriesSpend >= maxSpend) {
+      summary.notRun.budget += 1;
+      log(`${id}: not-run (budget: series spend $${seriesSpend.toFixed(6)} >= $${String(maxSpend)})`);
+      continue;
+    }
+    const started = now();
+    appendLine({ kind: "started", id, ...identity, attempt: i, at: new Date(started).toISOString() });
+    const attempt = await runAttempt();
+    const wallMs = now() - started;
+    const evaluation = evaluateAttempt({ attempt, expected });
+    evaluations.push({ attempt: i, ...evaluation });
+    seriesSpend += evaluation.cost.total;
+    seriesRetries += attempt.retries.length;
+    if (evaluation.measurementError !== null) stoppedBy = evaluation.measurementError;
+
+    const { result, error } = attempt;
+    appendLine({
+      kind: "attempt",
+      id,
+      ...identity,
+      expectedProvider: expected,
+      attempt: i,
+      at: new Date(started).toISOString(),
+      ...evaluation,
+      wallMs,
+      repairs: attempt.repairs,
+      retried: attempt.retries.length > 0,
+      retries: attempt.retries,
+      calls: attempt.calls,
+      requests: attempt.requests,
+      preVerificationFindingCount: result?.preVerificationFindingCount ?? null,
+      findingCount: result === undefined ? null : result.published.length,
+      ...(result === undefined
+        ? {}
+        : {
+            // `findings` = the PUBLISHED findings; the verification record holds
+            // every pre-verification finding with its state (R4 matches on those).
+            findings: result.published,
+            verification: { ...result.verification, counts: verificationCounts(result.verification) },
+            summary: result.summary,
+            ...(result.verdict === undefined ? {} : { verdict: result.verdict, verdictReason: result.verdictReason }),
+          }),
+      ...(error === undefined ? {} : { error: { class: evaluation.outcome, ...errorDetail(error) } }),
+    });
+    summary.outcomes[evaluation.outcome] = (summary.outcomes[evaluation.outcome] ?? 0) + 1;
+    const providers = (pass) =>
+      attempt.requests
+        .filter((r) => r.pass === pass)
+        .map((r) => r.provider ?? "?")
+        .join(",");
+    log(
+      `${id}: ${evaluation.outcome}${evaluation.measurementError === null ? "" : ` (${evaluation.measurementError})`}` +
+        `${evaluation.invalidated ? " INVALIDATED" : ""}${evaluation.reasoningLeak ? " REASONING" : ""} ` +
+        `retries=${String(attempt.retries.length)} requests=${String(attempt.requests.length)} ` +
+        `finder=${providers("finder")} verifier=${providers("verifier") || "(not called)"}` +
+        `${hasJudge ? ` judge=${providers("judge")}` : ""} ` +
+        `findings=${result === undefined ? "-" : `${String(result.published.length)}/${String(result.preVerificationFindingCount)}`} ` +
+        `cost=$${evaluation.cost.total.toFixed(6)}${evaluation.costComplete ? "" : " (cost incomplete)"} ${String(wallMs)}ms` +
+        `${error === undefined ? "" : ` :: ${(error instanceof Error ? error.message : String(error)).slice(0, 160)}`}`,
+    );
+  }
+
+  summary.unrecorded = identity.n - through;
+  summary.seriesSpend = seriesSpend;
+  summary.seriesRetries = seriesRetries;
+  summary.stoppedBy = stoppedBy;
+  // The verdict of the whole series: recorded attempts, interrupted ones and
+  // this invocation's (F2). A measurement error makes it a failed run.
+  summary.gates = { scope: "series", ...summarizeSeries(evaluations) };
+  return summary;
 }
