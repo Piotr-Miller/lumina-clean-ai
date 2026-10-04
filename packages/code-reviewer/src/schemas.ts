@@ -234,22 +234,35 @@ export type VerificationRecord = Finding & {
 };
 
 /**
- * What the verification pass did. `verified`: the verifier ran and only
- * `confirmed` findings with a checked quote were published. `no-findings`: the
- * finder found nothing, so nothing was sent. `skipped-no-source`: no source
- * root (or a diff with no post-change path), so findings were published
- * UNVERIFIED — allowed locally, an abort in CI (R8).
+ * What the verification pass did. `verified`: the pass planned excerpts and
+ * only `confirmed` findings with a checked quote were published. `no-findings`:
+ * the finder found nothing, so nothing was sent. `skipped-no-source`: no usable
+ * source — no source root, a diff with no post-change path, or a root that
+ * refused every finding — so findings were published UNVERIFIED: allowed
+ * locally, an abort in CI (R8).
  */
-export interface VerificationBlock {
-  status: "verified" | "no-findings" | "skipped-no-source";
-  /** The verifier model; present only when it ran. */
-  model?: string;
-  verdicts: VerificationRecord[];
-  /** Ids the verifier answered that were never sent — recorded and ignored. */
-  unknownVerdictIds: string[];
-  /** Size of what the verifier was shown; present only when it ran. */
-  excerpts?: { blocks: number; lines: number; chars: number };
-}
+export type VerificationBlock =
+  | {
+      status: "verified";
+      /** The verifier model; present only when a request was sent (impl-review phase 1 F5). */
+      model?: string;
+      verdicts: VerificationRecord[];
+      /** Ids the verifier answered that were never sent — recorded and ignored. */
+      unknownVerdictIds: string[];
+      /** Size of what the verifier was shown. */
+      excerpts: { blocks: number; lines: number; chars: number };
+    }
+  | { status: "no-findings"; verdicts: VerificationRecord[]; unknownVerdictIds: string[] }
+  | {
+      status: "skipped-no-source";
+      verdicts: VerificationRecord[];
+      unknownVerdictIds: string[];
+      /**
+       * Why the source was unusable, when a root was given and refused every
+       * finding (impl-review phase 1 F1); absent for a missing root or path.
+       */
+      detail?: string;
+    };
 
 /** Verifier spend, accumulated across both attempts of a retried pass. */
 export interface VerifierTelemetry {

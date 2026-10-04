@@ -144,6 +144,53 @@ describe("findTopLevelUnits — E2's grammar", () => {
     ]);
   });
 
+  // impl-review phase 1 F6: a column-0 line inside a triple-quoted string is
+  // string content, not the next statement.
+  it("does not end a Python def on a column-0 line inside a triple-quoted string", () => {
+    const lines = [
+      "def usage():",
+      '    text = """',
+      "Usage: run [options]",
+      "  --all  everything",
+      '"""',
+      "    return text",
+      "",
+      "def main():",
+      "    pass",
+    ];
+    expect(findTopLevelUnits("scripts/u.py", lines)).toEqual([
+      { name: "usage", start: 1, end: 6 },
+      { name: "main", start: 8, end: 9 },
+    ]);
+  });
+
+  it("does not start a Python unit on a `def` line inside a module-level string", () => {
+    const lines = ['DOC = """', "def not_a_unit():", '"""', "def real():", "    pass"];
+    expect(findTopLevelUnits("scripts/doc.py", lines)).toEqual([{ name: "real", start: 4, end: 5 }]);
+  });
+
+  // impl-review phase 1 F6: an expression-bodied arrow with no `;` has no
+  // closing line, and must not run on into the next top-level statement.
+  it("ends a JS arrow const without `;` before the next top-level statement", () => {
+    const lines = [
+      "const inc = (a) => a + 1",
+      "",
+      "// config",
+      "export const CONFIG = {",
+      "  retries: 2,",
+      "};",
+      "export const twice = (a) =>",
+      "  inc(inc(a))",
+      "export function last() {",
+      "}",
+    ];
+    expect(findTopLevelUnits("src/c.ts", lines)).toEqual([
+      { name: "inc", start: 1, end: 1 },
+      { name: "twice", start: 7, end: 8 },
+      { name: "last", start: 9, end: 10 },
+    ]);
+  });
+
   it("gives other file types no units", () => {
     expect(findTopLevelUnits("README.md", ["function x() {", "}"])).toEqual([]);
   });
@@ -276,6 +323,29 @@ describe("planExcerpts — E3 callers and E4 cross-file", () => {
     ]);
     expect(spans(result, "F1")).toEqual(["src/user.ts:1-4", "src/helper.ts:1-40"]);
   });
+
+  it("takes at most the first two cross-file identifiers (E4)", () => {
+    const unit = (name: string) => [`export function ${name}() {`, "  return 1;", "}"].join("\n");
+    const user = ["// header", "export function run() {", "  one(); two(); three();", "}"].join("\n");
+    const result = plan(
+      { "src/user.ts": user, "src/one.ts": unit("one"), "src/two.ts": unit("two"), "src/three.ts": unit("three") },
+      [finding({ id: "F1", file: "src/user.ts", startLine: 3, description: "`three` then `one` then `two` fail" })],
+    );
+    // Order of appearance in the description, capped at two: `three`, `one`.
+    expect(spans(result, "F1")).toEqual(["src/user.ts:1-4", "src/three.ts:1-3", "src/one.ts:1-3"]);
+  });
+
+  // Owner interpretation 2 (2026-10-04): a unit snapped by name is included
+  // whole — even over 80 lines — and its same-file callers (E3) come with it.
+  it("includes a unit snapped by name whole, over 80 lines, with its E3 callers", () => {
+    const body = filler(3, 100).map((line) => `  ${line}`);
+    const file = ['import x from "x";', "function big() {", ...body, "}", "function caller() {", "  big();", "}"].join(
+      "\n",
+    );
+    const result = plan({ "src/a.ts": file }, [finding({ id: "F1", description: "`big` never returns" })]);
+    // Header 1, `big` 2-103 whole, `caller` 104-106 (first line plus its call site).
+    expect(spans(result, "F1")).toEqual(["src/a.ts:1-106"]);
+  });
 });
 
 describe("planExcerpts — limits, merging and refusals", () => {
@@ -287,6 +357,33 @@ describe("planExcerpts — limits, merging and refusals", () => {
     });
     expect(result.perFinding.F1).toMatchObject({ unverifiable: "excerpt-over-limit" });
     expect(result.blocks).toEqual([]);
+  });
+
+  it("marks a finding over the sealed 16,000-character limit excerpt-over-limit, though under the line limit", () => {
+    const wide = "x".repeat(400);
+    const file = ["// h", "function f() {", ...Array.from({ length: 50 }, () => `  ${wide}`), "}"].join("\n");
+    const result = plan({ "src/a.ts": file }, [finding({ id: "F1", startLine: 3 })]);
+    expect(result.perFinding.F1).toMatchObject({ unverifiable: "excerpt-over-limit" });
+    expect((result.perFinding.F1 as { detail: string }).detail).toMatch(
+      /^53 lines \/ \d+ chars .* 220 lines \/ 16000 chars$/,
+    );
+    expect(result.blocks).toEqual([]);
+  });
+
+  // impl-review phase 1 F4: past the cap, the reason is `review-budget`
+  // whatever the finding's own size.
+  it("marks a finding past the 25-finding cap review-budget even when it is also over its own limit", () => {
+    const small = "// h\nfunction f() {\n}";
+    const big = Array.from({ length: 300 }, (_, index) => `// ${String(index + 1)}`).join("\n");
+    const findings = [finding({ id: "F1", startLine: 2 }), finding({ id: "F2", file: "src/b.ts", startLine: 150 })];
+    const limits = { ...EXCERPT_LIMITS, perFindingLines: 60 };
+    const files = { "src/a.ts": small, "src/b.ts": big };
+    // Under the cap F2 is over its own limit …
+    expect(plan(files, findings, limits).perFinding.F2).toMatchObject({ unverifiable: "excerpt-over-limit" });
+    // … past it, the cap decides.
+    const capped = plan(files, findings, { ...limits, maxFindings: 1 });
+    expect(capped.perFinding.F1).toHaveProperty("blockIds");
+    expect(capped.perFinding.F2).toMatchObject({ unverifiable: "review-budget" });
   });
 
   it("merges overlapping findings in one file into one block that both list (D2)", () => {

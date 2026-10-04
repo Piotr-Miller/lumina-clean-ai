@@ -1436,7 +1436,8 @@ describe("runReviewPipeline — verification between finder and judge", () => {
       ["F2", "refuted"],
       ["F3", "confirmed"],
     ]);
-    expect(result.verification.excerpts?.blocks).toBeGreaterThan(0);
+    if (result.verification.status !== "verified") throw new Error("expected a verified pass");
+    expect(result.verification.excerpts.blocks).toBeGreaterThan(0);
   });
 
   it("runs the verifier after the finder and before the judge", async () => {
@@ -1513,6 +1514,68 @@ describe("runReviewPipeline — verification between finder and judge", () => {
     expect(result.offDiffFindingPaths).toEqual(["packages/fixturepkg/x.ts"]);
   });
 
+  // impl-review phase 1 F1: a root that refuses every finding citing a diff
+  // file (missing, unreadable, wrong checkout) is no source, never `verified`.
+  const brokenReader = () =>
+    readDiffScoped({
+      allowedPaths: new Set(Object.keys(FILES)),
+      root: "/nonexistent",
+      realpath: () => {
+        throw new Error("ENOENT");
+      },
+      isRegularFile: () => true,
+      readFile: () => {
+        throw new Error("ENOENT");
+      },
+    });
+
+  it("in CI, aborts before the verifier and the judge when the root refuses every finding (F1)", async () => {
+    const judge = vi.fn(() => Promise.resolve(judgeResult()));
+    const verifier = vi.fn();
+    await expect(
+      runReviewPipeline({
+        diff: TWO_FILE_DIFF,
+        reader: brokenReader(),
+        requireVerification: true,
+        deps: { finder: finderWith(threeFindings), verifier, judge },
+      }),
+    ).rejects.toThrow(/the source is unusable: the source root refused all 3 finding\(s\) citing a file of the diff/);
+    expect(verifier).not.toHaveBeenCalled();
+    expect(judge).not.toHaveBeenCalled();
+  });
+
+  it("locally, publishes the findings unverified as skipped-no-source when the root refuses every finding (F1)", async () => {
+    const judge = vi.fn(() => Promise.resolve(judgeResult()));
+    const verifier = vi.fn();
+    const result = await runReviewPipeline({
+      diff: TWO_FILE_DIFF,
+      reader: brokenReader(),
+      deps: { finder: finderWith(threeFindings), verifier, judge },
+    });
+    expect(verifier).not.toHaveBeenCalled();
+    expect(result.findings.map((f) => f.id)).toEqual(["F1", "F2", "F3"]);
+    expect(result.verification).toMatchObject({
+      status: "skipped-no-source",
+      detail: expect.stringContaining("the source root refused all 3 finding(s)") as unknown,
+    });
+    expect(judge).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a review whose only finding is off-diff verified: the allowlist refusal is by design (F1)", async () => {
+    await expect(
+      runReviewPipeline({
+        diff: TWO_FILE_DIFF,
+        reader: reader(),
+        requireVerification: true,
+        deps: {
+          finder: finderWith([finding({ file: "packages/fixturepkg/x.ts", startLine: 1 })]),
+          verifier: vi.fn(),
+          judge: () => Promise.resolve(judgeResult()),
+        },
+      }),
+    ).resolves.toMatchObject({ verification: { status: "verified" }, findings: [] });
+  });
+
   it("retries a timed-out verifier once, then fails the review as a technical failure", async () => {
     const timeout = new DOMException("budget", "TimeoutError");
     const verifier = vi.fn(() => Promise.reject(timeout));
@@ -1558,7 +1621,7 @@ describe("runReviewPipeline — verification between finder and judge", () => {
       },
     });
     expect(built).toEqual(["anthropic/claude-sonnet-5"]);
-    expect(result.verification.model).toBe("anthropic/claude-sonnet-5");
+    expect(result.verification).toMatchObject({ model: "anthropic/claude-sonnet-5" });
     expect(result.models).toEqual({ finder: DEFAULT_MODEL, judge: DEFAULT_JUDGE_MODEL });
     expect(result.verifierTelemetry).toEqual({
       attempts: 1,
@@ -1613,5 +1676,11 @@ describe("runVerificationPass — the one code path production and the gate shar
     expect(verifier).not.toHaveBeenCalled();
     expect(result.published).toEqual([]);
     expect(result.verification.verdicts[0]).toMatchObject({ state: "unverifiable", reasonCode: "source-refused" });
+    // impl-review phase 1 F5: nothing was sent, so no model is named; the
+    // excerpt size is still recorded.
+    expect(result.verification.status).toBe("verified");
+    expect(result.verification).not.toHaveProperty("model");
+    expect(result.verification).toHaveProperty("excerpts", { blocks: 0, lines: 0, chars: 0 });
+    expect(result.verifierTelemetry).toBeUndefined();
   });
 });

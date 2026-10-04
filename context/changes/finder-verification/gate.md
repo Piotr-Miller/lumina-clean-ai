@@ -199,6 +199,30 @@ goes into `## Amendments` (§9).
 As frozen in `## Inputs freeze` above, unchanged.
 
 - **Excerpt policy** (R6, without E5): `plan.md` Phase 1 §2, with the `EXCERPT_LIMITS` values _(Phase 3)_.
+- **E2 unit grammar, as implemented** (`findTopLevelUnits`; aligned 2026-10-04, impl-review phase 1 F6):
+  - **Python:** a column-0 `def` / `async def` / `class` that is not inside a triple-quoted string, ending at the
+    last code line (not blank, not a comment) before the next column-0 statement. A column-0 line inside a
+    triple-quoted string is string content, neither a statement nor a unit start. Decorators are not part of
+    the unit.
+  - **TS/JS/TSX/JSX/MJS:** a column-0 `[export ][default ][async ]function[*] name`,
+    `[export ][default ]class name`, or `[export ](const|let) name[: Type] = [async ](…) =>` (also `name =>`,
+    and a parameter list spanning lines). A unit ends at the first following column-0 closing line matching
+    `^\}[)\];]*;?\s*$` (`}`, `};`, `});`); `}: Props) {` does not end one. A unit whose first line is complete
+    (balanced braces ending in `}`, or no `{` and ending in `;`) is one line. A unit with no closing line ends at
+    the last non-blank line before the next unit start. An arrow whose first line opens no block also ends at
+    the last code line before the next column-0 statement (a line starting with a letter, `$`, `_` or `@`).
+  - **Other file types:** no units.
+  - The Phase 3 unit-span check still runs against this grammar, in both directions.
+- **No source root** (R8; the unusable root added by the owner 2026-10-04, impl-review phase 1 F1): `--source-root`
+  absent, the diff declares no post-change path, **or the root is unusable**: at least one finding cites a file of
+  the diff and the reader refuses every such finding (root missing, unreadable, or not the PR's checkout).
+  - Off-diff findings do not count: the allowlist refuses them by design, each stays
+    `unverifiable: source-refused`, and `offDiffFindingPaths` reports them.
+  - A readable root at the wrong commit is not caught by this rule; CI's checkout of the PR head and the gate's
+    frozen source-root commit (`## Inputs freeze`) cover it.
+  - CI (`--require-verification`): exit 1 after the finder, before any verifier call. Locally:
+    `skipped-no-source` with `verification.detail` naming the refusal. In the gate runner, which always sets
+    `requireVerification`, that abort is a measurement error (§5), never a model failure.
 - **Policy backcheck on #269** (`backcheck-269-policy.json`) _(Phase 3)_: rows fully served, partly served and
   unverifiable, compared with research §7's 10 of 20; the D13 check; per-attempt input size.
 - **Unit-span check** (`unit-span-check.json`, TS/JS and Python, both directions) _(Phase 3)_: zero mismatches
@@ -319,7 +343,7 @@ run, never a gate result.
 - a grader error (A1 applies);
 - an OpenRouter account error (401, or 402 for credits);
 - a row or attempt whose verification did not run (`skipped-no-source`, or any status other than `verified` or
-  `no-findings`);
+  `no-findings`), including an attempt aborted because the source root is unusable (§3, No source root);
 - a bug in this change's code found in a record.
 
 When one occurs, the series is a **failed run**: measurement stops, the fix goes in as a dated, hashed amendment

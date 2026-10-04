@@ -763,9 +763,10 @@ export interface VerificationPassResult {
  * (plan-review F4):
  *
  * 1. zero findings → no call (`no-findings`);
- * 2. no reader → R8: `requireVerification` throws (CI must not publish
- *    unverified findings), otherwise the findings pass through as
- *    `skipped-no-source` and the caller says so;
+ * 2. no reader, or a reader that refuses every finding → R8:
+ *    `requireVerification` throws (CI must not publish unverified findings),
+ *    otherwise the findings pass through as `skipped-no-source` and the caller
+ *    says so;
  * 3. otherwise plan the excerpts, call the verifier (one transient retry, as
  *    every pass), and let `applyVerdicts` decide publication in code.
  *
@@ -793,6 +794,37 @@ export async function runVerificationPass(input: VerificationPassInput): Promise
   }
 
   const plan = planExcerpts({ findings, read: input.reader, diffPaths: input.reader.paths });
+  // A root that refuses every finding it should serve — missing, unreadable,
+  // not the PR's checkout — is no source either (impl-review phase 1 F1):
+  // treating it as `verified` would withhold everything and let the judge pass
+  // an empty list. Only findings citing a file of the diff count. An off-diff
+  // finding is refused by the allowlist by design, stays a per-finding
+  // `source-refused`, and is reported through `offDiffFindingPaths`.
+  const diffPaths = input.reader.paths;
+  const allowlisted = findings.filter((finding) => diffPaths.includes(finding.file));
+  const refusalOf = (id: string): string | undefined => {
+    const entry = Object.hasOwn(plan.perFinding, id) ? plan.perFinding[id] : undefined;
+    return entry !== undefined && "unverifiable" in entry && entry.unverifiable === "source-refused"
+      ? entry.detail
+      : undefined;
+  };
+  const refusals = allowlisted.map((finding) => refusalOf(finding.id));
+  if (refusals.length > 0 && refusals.every((reason) => reason !== undefined)) {
+    const detail =
+      `the source root refused all ${String(allowlisted.length)} finding(s) citing a file of the diff ` +
+      `(first refusal: ${refusals[0]})`;
+    if (input.requireVerification === true) {
+      throw new Error(
+        `Verification is required (--require-verification) but the source is unusable: ${detail}. The root is ` +
+          `missing, unreadable, or not the PR's checkout. Aborting instead of publishing the findings unverified ` +
+          `or withholding them all.`,
+      );
+    }
+    return {
+      published: findings,
+      verification: { status: "skipped-no-source", verdicts: [], unknownVerdictIds: [], detail },
+    };
+  }
   const sent = findings.filter((finding) => "blockIds" in (plan.perFinding[finding.id] ?? {}));
 
   const requests: VerifierTelemetry["requests"] = [];
@@ -853,7 +885,7 @@ export async function runVerificationPass(input: VerificationPassInput): Promise
     published: applied.published,
     verification: {
       status: "verified",
-      model: input.model,
+      ...(sent.length > 0 ? { model: input.model } : {}),
       verdicts: applied.records,
       unknownVerdictIds: applied.unknownVerdictIds,
       excerpts: plan.telemetry,

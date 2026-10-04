@@ -809,6 +809,23 @@ describe("runReviewCli verification (R8)", () => {
     );
   });
 
+  it("names a root that refused every finding as unusable (impl-review phase 1 F1)", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const refused = pipelineResult({
+      ...unverified,
+      verification: {
+        status: "skipped-no-source",
+        verdicts: [],
+        unknownVerdictIds: [],
+        detail: "the source root refused all 1 finding(s) citing a file of the diff",
+      },
+    });
+    await runReviewCli(["--source-root", "root"], {}, io, okPipeline(refused));
+    const warning = io.errors.find((line) => line.startsWith("WARNING:"));
+    expect(warning).toContain("--source-root root is unusable: the source root refused all 1 finding(s)");
+    expect(warning).toContain("1 finding(s) are published UNVERIFIED");
+  });
+
   it("logs what verification did, with the per-state breakdown", async () => {
     const io = fakeIo({ readStdin: () => DIFF });
     const verified = pipelineResult({
@@ -818,6 +835,7 @@ describe("runReviewCli verification (R8)", () => {
         status: "verified",
         model: "openai/gpt-6-luna",
         unknownVerdictIds: [],
+        excerpts: { blocks: 1, lines: 3, chars: 30 },
         verdicts: [
           {
             id: "F1",

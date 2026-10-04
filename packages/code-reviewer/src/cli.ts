@@ -263,7 +263,9 @@ const formatVerificationLine = (result: PipelineResult, args: CliArgs): string |
     const missing =
       args.sourceRoot === undefined
         ? "no --source-root was given"
-        : `the diff declares no post-change path under --source-root ${logSafePath(args.sourceRoot)}`;
+        : verification.detail === undefined
+          ? `the diff declares no post-change path under --source-root ${logSafePath(args.sourceRoot)}`
+          : `--source-root ${logSafePath(args.sourceRoot)} is unusable: ${logSafePath(verification.detail)}`;
     return (
       `WARNING: verification skipped — ${missing}, so the verifier had no code to read. ` +
       `${String(result.findings.length)} finding(s) are published UNVERIFIED; in CI, --require-verification makes this an error.`
@@ -277,7 +279,7 @@ const formatVerificationLine = (result: PipelineResult, args: CliArgs): string |
   const breakdown = [...counts].map(([key, value]) => `${key}=${String(value)}`).join(" ");
   return (
     `verification: ${String(result.findings.length)} of ${String(result.preVerificationFindingCount)} finding(s) ` +
-    `published (model=${logSafePath(verification.model ?? "?")}; ${breakdown})`
+    `published (model=${logSafePath(verification.model ?? "(not called)")}; ${breakdown})`
   );
 };
 

@@ -146,12 +146,18 @@ function confirmsArrow(lines: readonly string[], index: number, match: RegExpExe
   return false;
 }
 
-function jsUnitStart(lines: readonly string[], index: number): string | undefined {
+interface JsUnitStart {
+  name: string;
+  /** A `const`/`let` arrow, whose body may end without a closing line. */
+  arrow: boolean;
+}
+
+function jsUnitStart(lines: readonly string[], index: number): JsUnitStart | undefined {
   const line = lines[index];
   const fn = JS_FUNCTION.exec(line) ?? JS_CLASS.exec(line);
-  if (fn) return fn[1];
+  if (fn) return { name: fn[1], arrow: false };
   const arrow = JS_CONST.exec(line);
-  if (arrow && confirmsArrow(lines, index, arrow)) return arrow[1];
+  if (arrow && confirmsArrow(lines, index, arrow)) return { name: arrow[1], arrow: true };
   return undefined;
 }
 
@@ -160,15 +166,31 @@ const lastNonBlankBefore = (lines: readonly string[], from: number, before: numb
   return from;
 };
 
+// A column-0 line that begins a new top-level statement (`export`, `const`,
+// `type`, a call, a decorator). Inside a unit's body such lines are indented.
+const JS_STATEMENT = /^[A-Za-z_$@]/;
+const isJsComment = (line: string): boolean => /^\s*(?:\/\/|\/\*|\*)/.test(line);
+
+/** The last line before `before` that is neither blank nor a comment; `from` when none. */
+const lastCodeBefore = (lines: readonly string[], from: number, before: number): number => {
+  for (let j = before - 1; j > from; j -= 1) if (lines[j].trim() !== "" && !isJsComment(lines[j])) return j;
+  return from;
+};
+
 function jsUnits(lines: readonly string[]): TopLevelUnit[] {
   const units: TopLevelUnit[] = [];
   let i = 0;
   while (i < lines.length) {
-    const name = jsUnitStart(lines, i);
-    if (name === undefined) {
+    const start = jsUnitStart(lines, i);
+    if (start === undefined) {
       i += 1;
       continue;
     }
+    const { name } = start;
+    // An arrow whose first line opens no block (`=> a + 1`, `=>` then an
+    // indented expression, or a multi-line parameter list) may end without a
+    // closing line; a block body opened on the first line keeps the `}` rule.
+    const expressionArrow = start.arrow && count(lines[i], "{") <= count(lines[i], "}");
     const first = lines[i].trimEnd();
     let end: number | undefined;
     // One-line units: `function f() { return 1; }`, `const f = (a) => a + 1;`.
@@ -181,6 +203,10 @@ function jsUnits(lines: readonly string[]): TopLevelUnit[] {
     while (end === undefined && j < lines.length) {
       if (JS_CLOSE.test(lines[j])) end = j;
       else if (jsUnitStart(lines, j) !== undefined) end = lastNonBlankBefore(lines, i, j);
+      // An arrow with an expression body and no `;` has no closing line: it
+      // ends before the next top-level statement instead of absorbing it
+      // (impl-review phase 1 F6).
+      else if (expressionArrow && JS_STATEMENT.test(lines[j])) end = lastCodeBefore(lines, i, j);
       else j += 1;
     }
     end ??= lastNonBlankBefore(lines, i, lines.length);
@@ -195,13 +221,53 @@ function jsUnits(lines: readonly string[]): TopLevelUnit[] {
 const isPyStatement = (line: string): boolean => /^[^\s#)\]}]/.test(line);
 const isPyCode = (line: string): boolean => line.trim() !== "" && !/^\s*#/.test(line);
 
+/**
+ * For each line, whether it begins inside a triple-quoted string. Such a line
+ * is string content even at column 0, so it neither starts a unit nor ends one
+ * (impl-review phase 1 F6). A small scanner: comments, one-line strings with
+ * backslash escapes, and `"""` / `'''` strings with any prefix.
+ */
+function pyStringContinuations(lines: readonly string[]): boolean[] {
+  const inside: boolean[] = [];
+  let open: string | undefined;
+  for (const line of lines) {
+    inside.push(open !== undefined);
+    let k = 0;
+    while (k < line.length) {
+      if (open !== undefined) {
+        if (line[k] === "\\") k += 2;
+        else if (line.startsWith(open, k)) {
+          k += 3;
+          open = undefined;
+        } else k += 1;
+        continue;
+      }
+      const char = line[k];
+      if (char === "#") break;
+      if (char === '"' || char === "'") {
+        const triple = char.repeat(3);
+        if (line.startsWith(triple, k)) {
+          open = triple;
+          k += 3;
+          continue;
+        }
+        k += 1;
+        while (k < line.length && line[k] !== char) k += line[k] === "\\" ? 2 : 1;
+      }
+      k += 1;
+    }
+  }
+  return inside;
+}
+
 function pythonUnits(lines: readonly string[]): TopLevelUnit[] {
   const units: TopLevelUnit[] = [];
+  const inString = pyStringContinuations(lines);
   for (let i = 0; i < lines.length; i += 1) {
-    const match = PY_UNIT.exec(lines[i]);
+    const match = inString[i] ? null : PY_UNIT.exec(lines[i]);
     if (!match) continue;
     let next = i + 1;
-    while (next < lines.length && !isPyStatement(lines[next])) next += 1;
+    while (next < lines.length && (inString[next] || !isPyStatement(lines[next]))) next += 1;
     let end = next - 1;
     while (end > i && !isPyCode(lines[end])) end -= 1;
     units.push({ name: match.groups?.def ?? match.groups?.cls ?? "", start: i + 1, end: end + 1 });
@@ -506,6 +572,15 @@ export function planExcerpts(input: PlanExcerptsInput): ExcerptPlan {
       ranges: new Map([...planned.byPath].map(([path, ranges]) => [path, mergeRanges(ranges)])),
       cited: new Map([[finding.file, planned.cited]]),
     };
+    // The 25-finding cap comes first: past it, every finding is `review-budget`,
+    // whatever its own size (impl-review phase 1 F4).
+    if (admitted.length >= limits.maxFindings) {
+      perFinding[finding.id] = {
+        unverifiable: "review-budget",
+        detail: `at most ${String(limits.maxFindings)} findings are verified per review`,
+      };
+      continue;
+    }
     const own = buildBlocks([candidate], views);
     const lines = own.reduce((sum, block) => sum + block.endLine - block.startLine + 1, 0);
     const chars = renderedChars(own);
@@ -515,13 +590,6 @@ export function planExcerpts(input: PlanExcerptsInput): ExcerptPlan {
         detail: `${String(lines)} lines / ${String(chars)} chars against the per-finding limits of ${String(
           limits.perFindingLines,
         )} lines / ${String(limits.perFindingChars)} chars`,
-      };
-      continue;
-    }
-    if (admitted.length >= limits.maxFindings) {
-      perFinding[finding.id] = {
-        unverifiable: "review-budget",
-        detail: `at most ${String(limits.maxFindings)} findings are verified per review`,
       };
       continue;
     }
