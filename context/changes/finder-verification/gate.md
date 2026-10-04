@@ -627,4 +627,11 @@ states the seal.
 - sha256 of `## Pre-registration` … `_End of Pre-registration._`: **`8616eda6a217c8570a2f3cba957fc2a3dfcfd5b7223c2d3b3426f08baff0c375`**, computed as
   `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum`.
 - UTC time taken: **2026-10-04T20:59:17Z**.
-- Push time (GitHub activity API): _recorded in a follow-up commit after the seal commit is pushed_
+- **Seal commit:** `9c85aa27f418c6d8cb669b1bedddbb333799fa02`
+  (`docs(finder-verification): seal the pre-registration (p3)`), on `origin/feat/finder-verification`; its
+  committed `gate.md` reproduces the sha256 above. The SHA is rewritten by Phase 8's rebase; the annotated tag
+  `finder-verification/seal` that Phase 8 §2 requires is not created yet.
+- **GitHub push time: 2026-10-04T20:59:42Z.** Source:
+  `GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-verification`, event `push`,
+  `58fd4ec..9c85aa2`, actor `Piotr-Miller`. `git ls-remote` showed `9c85aa2` as the branch head. Recorded before
+  any price re-read, T0 or paid call.
