@@ -138,8 +138,10 @@ Both slugs are listed, so no owner stop is needed. The prices equal the planning
   nothing (exit 1). No verifier code, schema or prompt existed in the working tree before this push.
 - **Pre-commit reformat:** the hook (`prettier --write` on `*.json`) reformatted `backcheck-269-results.json`,
   changing whitespace only. Its parsed JSON equals the carried blob `2216bcb`; the committed blob is `0173c31`.
-- **Rebase protection:** Phase 8 §2 pushes the tag `finder-verification/freeze` on this commit before any
-  rebase (plan-review 3rd run F3).
+- **Rebase protection:** annotated tag **`finder-verification/freeze`** (tag object
+  `4dcb1ccc72d46571a1b4d87736178c0e452494f8`) on `c3b2f1cf84299fda8821e816f095e42016ea4276`, pushed to `origin`
+  on 2026-10-04 (impl-review phase 0, F2; plan-review 3rd run F3). `git ls-remote --tags origin
+'finder-verification/*'` shows it peeled to `c3b2f1c`. Phase 8 §2 only confirms that it still exists.
 
 ## Pre-registration
 
@@ -383,8 +385,10 @@ This is the archived §6 of `finder-model-swap`, applied **per PR**:
   | **Arm total**                                 | **$0.58 / $1.05**              | **$1.33 / $2.12**           |
   | G5 (finder + verifier + judge + impl review)  | ≤ $0.50 cap                    | ≤ $0.50 cap                 |
 
-- **A_max per attempt** (2 × pessimistic, floored at $0.02): CONTROL #269 $0.10, #240 $0.09; MAIN #269 $0.23,
-  #240 $0.20.
+- **A_max per attempt** _(Phase 3: recomputed from the recomputed table by the rule below)_: 2 × the pessimistic
+  per-attempt cost (the series' P / 10), rounded up to the cent, floored at $0.02. Planning values from the table
+  above: CONTROL #269 $0.10, #240 $0.09; MAIN #269 $0.19, #240 $0.16. (The earlier MAIN figures $0.23 / $0.20 did
+  not follow the rule; impl-review phase 0, F1.)
 - **Stated plainly:** if CONTROL spends its estimate, MAIN's first PR series alone takes T past $1.60. MAIN cannot
   be completed within $2.00 with G5 reserved, so running MAIN in full needs an owner decision at that point (R2).
 

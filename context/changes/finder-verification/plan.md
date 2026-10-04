@@ -685,8 +685,9 @@ three in-PR fixes) without judging them.
 | **Arm total**                                 | **$0.58 / $1.05**              | **$1.33 / $2.12**           |
 | G5 (finder + verifier + judge + impl review)  | ≤ $0.50 cap                    | ≤ $0.50 cap                 |
 
-A_max per attempt (2 × pessimistic, floor $0.02): CONTROL #269 $0.10, #240 $0.09; MAIN #269 $0.23,
-#240 $0.20. **Stated plainly in `gate.md`:** if CONTROL spends its estimate, MAIN's first PR series alone
+A_max per attempt: 2 × the pessimistic per-attempt cost (the series' P / 10), rounded up to the cent, floor
+$0.02, **recomputed in this phase from the recomputed table** by that rule; no extra factor applies to MAIN
+(impl-review phase 0, F1). Planning values: CONTROL #269 $0.10, #240 $0.09; MAIN #269 $0.19, #240 $0.16. **Stated plainly in `gate.md`:** if CONTROL spends its estimate, MAIN's first PR series alone
   takes T past $1.60. MAIN cannot be completed within $2.00 with G5 reserved, so running MAIN in full needs
 an owner decision at that point (R2).
 
@@ -949,9 +950,10 @@ change's own PR, and merge.
 **Intent**: Turn the review back on together with the deployment of the gated finder (owner, 2026-10-04:
 "usunięcie linii `false &&` przed G5").
 
-**Precondition (plan-review 3rd run F3)**: before the rebase, push annotated tags on the commits `gate.md`
-cites as timing evidence: `finder-verification/freeze` (the Phase 0 freeze commit),
-`finder-verification/seal` (the Phase 3 seal commit) and one per amendment (`finder-verification/amendment-<n>`).
+**Precondition (plan-review 3rd run F3)**: before the rebase, annotated tags must exist on `origin` on the
+commits `gate.md` cites as timing evidence: `finder-verification/freeze` (the Phase 0 freeze commit; **already
+pushed 2026-10-04**, impl-review phase 0 F2, so this phase only confirms it), `finder-verification/seal` (the
+Phase 3 seal commit) and one per amendment (`finder-verification/amendment-<n>`).
 The rebase force-pushes the branch and the rebase-merge rewrites the SHAs again, so without the tags no ref
 reaches those commits. The tag names are recorded in `gate.md` next to the SHAs and push times they protect,
 and `git ls-remote --tags origin 'finder-verification/*'` shows each on its recorded SHA before the rebase starts.
@@ -1073,7 +1075,7 @@ verifier keys are optional, so old review.json readers are unaffected.
 
 #### Manual
 
-- [ ] 0.6 Freeze commit on origin with GitHub push time recorded
+- [x] 0.6 Freeze commit on origin with GitHub push time recorded
 
 ### Phase 1: Construction — verifier pass, excerpts, no-source rule (no network)
 
