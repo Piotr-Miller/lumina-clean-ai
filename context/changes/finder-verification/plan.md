@@ -1081,15 +1081,15 @@ verifier keys are optional, so old review.json readers are unaffected.
 
 #### Automated
 
-- [x] 1.1 Package tests pass
-- [x] 1.2 Package typecheck and lint pass
-- [x] 1.3 Root format check passes
-- [x] 1.4 Judge files and judge prompt builders unchanged
-- [x] 1.5 Verification schema has no oneOf/anyOf/minimum/maximum
+- [x] 1.1 Package tests pass — 2c4ae34
+- [x] 1.2 Package typecheck and lint pass — 2c4ae34
+- [x] 1.3 Root format check passes — 2c4ae34
+- [x] 1.4 Judge files and judge prompt builders unchanged — 2c4ae34
+- [x] 1.5 Verification schema has no oneOf/anyOf/minimum/maximum — 2c4ae34
 
 #### Manual
 
-- [ ] 1.6 Reviewer agrees only confirmed, quote-verified findings can publish
+- [x] 1.6 Reviewer agrees only confirmed, quote-verified findings can publish
 
 ### Phase 2: Gate tooling (no network)
 

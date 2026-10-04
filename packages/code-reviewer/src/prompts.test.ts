@@ -583,7 +583,7 @@ describe("verifier prompt", () => {
     expect(prompt).toContain("2>| return a;");
   });
 
-  it("lists each finding's block ids and leaves severity out", () => {
+  it("lists each finding's block ids and sends the claim only — no severity, no suggested fix", () => {
     const prompt = buildVerifierPrompt({
       findings: [verifierFinding],
       blocks: [block()],
@@ -592,6 +592,9 @@ describe("verifier prompt", () => {
     expect(prompt).toContain('"blocks": [\n      "B1"\n    ]');
     expect(prompt).toContain('"claim": "returns the wrong value"');
     expect(prompt).not.toContain("critical");
+    // Owner, 2026-10-04: the suggestion would anchor the verifier on the finding.
+    expect(prompt).not.toContain("return b");
+    expect(prompt).not.toContain("suggestedFix");
   });
 
   it("defuses an excerpt-closing tag inside the findings fence and inside a block", () => {

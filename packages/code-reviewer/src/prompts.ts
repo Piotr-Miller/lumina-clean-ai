@@ -519,8 +519,11 @@ const excerptFence = (block: ExcerptBlock): string =>
 
 /**
  * User text for the verification call: the findings (fenced as data, each
- * naming its block ids), then every block, fenced as code. Severity is left out
- * on purpose — it is not what is being decided.
+ * naming its block ids), then every block, fenced as code. Only the claim
+ * (`description`) is judged, so severity and the finder's suggested fix are left
+ * out on purpose (owner, 2026-10-04): severity is not what is being decided, and
+ * the suggestion would anchor the verifier on the finding's own framing — in
+ * CONTROL, on its own earlier output. The verification record keeps both.
  */
 export function buildVerifierPrompt(input: VerifierPromptInput): string {
   const findings = input.findings.map((finding) => {
@@ -532,7 +535,6 @@ export function buildVerifierPrompt(input: VerifierPromptInput): string {
       ...(finding.endLine === undefined ? {} : { endLine: finding.endLine }),
       category: finding.category,
       claim: finding.description,
-      suggestedFix: finding.suggestion,
       blocks: entry !== undefined && "blockIds" in entry ? entry.blockIds : [],
     };
   });

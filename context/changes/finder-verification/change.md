@@ -136,3 +136,21 @@ Given during `/rune-plan` on 2026-10-04; they bind `plan.md` (Definitions).
   that is not an exact substring of its excerpt is compared a second time with every whitespace run collapsed
   to one space on both sides; token order must still match. Which comparison passed is recorded as
   `quoteMatch: "exact" | "whitespace"`. It is the sixth plan-chosen term the owner confirms at the seal.
+
+### Owner decisions (2026-10-04): Phase 1 interpretations
+
+Decided after Phase 1 (`2c4ae34`), before its impl review. No paid calls.
+
+1. **Format repair** as a second, reformat-only model call (the finder's pattern, no `response_format`):
+   approved. Its request reports through `onStepEnd`, so its cost counts toward G4b.
+2. **Snapped units.** A unit snapped by name is included whole, the per-finding limit applies, and the same-file
+   caller rule (E3) runs for it: approved.
+3. **Unit grammar** also accepts `export default class`: approved; the Phase 3 unit-span check covers it.
+4. **Directory-level claim** is `no-locator` before any read: approved.
+5. **Verifier input.** Severity omitted: approved. The finder's suggested fix is **removed** from the verifier
+   prompt (`suggestedFix` in `buildVerifierPrompt`): the verifier judges the claim (`description`) only, which
+   is what the hypothesis, the hand-read and R10 reuse are about, and the suggestion would anchor luna on its own
+   finding in CONTROL. The verification record keeps `suggestion`.
+6. **Logging.** The stderr verification summary line and `verifier=(not run)` on the cost line: approved. For
+   Phase 2, the incomplete-cost rule treats "verifier not called (nothing sent)" as complete and "verifier
+   called, cost missing" as incomplete.
