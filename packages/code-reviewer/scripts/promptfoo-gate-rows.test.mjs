@@ -12,6 +12,7 @@ import {
   graderErrorsOf,
   mergeRegrade,
   summarizeRows,
+  verifierChecksOf,
 } from "./promptfoo-gate-rows.mjs";
 
 const DESCRIPTIONS = {
@@ -503,5 +504,103 @@ describe("exportRows", () => {
 
   it("refuses something that is not an export", () => {
     expect(() => exportRows({ results: [] })).toThrow(/not a promptfoo export/u);
+  });
+});
+
+// --- Verifier rows (change finder-verification, plan.md Phase 2 §2) ---
+
+const withVerifier = (row, { verification = { status: "verified" }, verifier = {} } = {}) =>
+  withMetadata(row, {
+    verification,
+    verifier: {
+      model: "openai/gpt-6-luna",
+      called: true,
+      requests: [{ provider: "OpenAI", cost: 0.0002 }],
+      reasoningLeak: false,
+      retries: [],
+      ...verifier,
+    },
+  });
+const verifierRun = () => fullRun().map((row) => withVerifier(row));
+const checkV = (raws) => raws.map((raw) => checkRow(raw, "OpenAI", "OpenAI"));
+
+describe("verifier rows", () => {
+  it("a clean verifier run passes G3 and G4, and reports the verifier's cost apart from G4", () => {
+    const summary = summarizeRows(checkV(verifierRun()));
+    expect(summary.failedRun).toBe(false);
+    expect(summary.pass).toBe(true);
+    expect(summary.g4.median).toBe(0.0006);
+    expect(summary.verifier).toMatchObject({ rows: 12, called: 12, incompleteCost: 0, medianCost: 0.0002 });
+  });
+
+  it.each([
+    ["skipped-no-source", { status: "skipped-no-source" }],
+    ["no verification record at all", undefined],
+  ])("a row whose verification did not run (%s) makes the run a failed run", (_label, verification) => {
+    const rows = verifierRun();
+    rows[3] = withMetadata(rows[3], { verification });
+    const summary = summarizeRows(checkV(rows));
+    expect(summary.failedRun).toBe(true);
+    expect(summary.problems.join(" ")).toMatch(/1 row\(s\) whose verification did not run \(testIdx 4\)/u);
+    expect(summary.measurementErrorRows).toHaveLength(1);
+    expect(summary.g3).toBeUndefined();
+  });
+
+  it("a finder-error row is not also a measurement error: there was nothing to verify", () => {
+    const rows = verifierRun();
+    rows[0] = realProviderError(rows[0]);
+    const row = checkRow(rows[0], "OpenAI", "OpenAI");
+    expect(row.finderError).not.toBeNull();
+    expect(row.measurementError).toBeNull();
+  });
+
+  it("a verifier provider mismatch invalidates the row, listing the verifier's providers", () => {
+    const rows = verifierRun();
+    rows[0] = withVerifier(rows[0], { verifier: { requests: [{ provider: "Azure", cost: 0.0002 }] } });
+    const summary = summarizeRows(checkV(rows));
+    expect(summary.invalidatedRows).toEqual([
+      { testIdx: 1, case: "js-loop", providers: ["OpenAI", "OpenAI"], verifierProviders: ["Azure"] },
+    ]);
+    expect(summary.g3.cases["js-loop"].failed).toEqual(["issue_recall"]);
+    expect(summary.pass).toBe(false);
+  });
+
+  it("a verifier A3 leak fails the row", () => {
+    const rows = verifierRun();
+    rows[6] = withVerifier(rows[6], { verifier: { reasoningLeak: true } });
+    const summary = summarizeRows(checkV(rows));
+    expect(summary.leakRows).toEqual([{ testIdx: 7, case: "cross-hunk", reported: true }]);
+    expect(summary.pass).toBe(false);
+  });
+
+  it("a verifier that was called and left a request unpriced fails the result; G4 is untouched", () => {
+    const rows = verifierRun();
+    rows[2] = withVerifier(rows[2], { verifier: { requests: [{ provider: "OpenAI", cost: null }] } });
+    const summary = summarizeRows(checkV(rows));
+    expect(summary.verifier.incompleteCost).toBe(1);
+    expect(summary.g4.pass).toBe(true);
+    expect(summary.pass).toBe(false);
+  });
+
+  it("a verifier that was never called (nothing to send) is cost-complete", () => {
+    const checks = verifierChecksOf(
+      withVerifier(rawRow("clean"), {
+        verification: { status: "no-findings" },
+        verifier: { called: false, requests: [] },
+      }),
+      "OpenAI",
+    );
+    expect(checks).toMatchObject({ verifierCalled: false, verifierCostComplete: true, verifierMismatch: [] });
+  });
+
+  it("a verifier row without the verifier record fails closed", () => {
+    const checks = verifierChecksOf(rawRow("clean"), "OpenAI");
+    expect(checks).toMatchObject({ verifierReported: false, verifierCostComplete: false, verifierLeak: true });
+  });
+
+  it("a finder-only export is checked exactly as before (no verifier fields)", () => {
+    const row = checkRow(rawRow("clean"), "OpenAI");
+    expect(row.verifier).toBeNull();
+    expect(row.measurementError).toBeNull();
   });
 });

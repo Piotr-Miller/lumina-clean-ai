@@ -1,30 +1,59 @@
-// Hermetic tests for the gate runner's pure logic (change `finder-model-swap`,
-// Phase 1): fake requests and fake review functions — no network, no API key.
-// A broken check must surface here, not after a paid series.
+// Hermetic tests for the gate runner's pure logic (changes `finder-model-swap`
+// and `finder-verification`, Phase 2 §1): fake requests, fake model factories
+// behind the REAL pipeline — no network, no API key. A broken check must
+// surface here, not after a paid series.
 import { APICallError } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
 import { FinderOutputError } from "../src/output-repair.ts";
-import { RATE_LIMIT_DELAY_MS } from "../src/retry.ts";
+import {
+  capDiff,
+  capProjectContext,
+  orderDiffForCap,
+  runReviewPipeline,
+  runVerificationPass,
+} from "../src/pipeline.ts";
+import { assignFindingIds } from "../src/scorecard.ts";
+import { mergeFindings } from "../src/findings.ts";
+import { readDiffScoped } from "../src/source-provider.ts";
 import {
   ENDPOINT_NAMES,
+  G4B_CEILING,
+  STAGE_SETS,
   assertSeriesWritable,
   classify,
+  describeRequest,
   evaluateAttempt,
   parseGateArgs,
   readSeries,
   reasoningTokensOf,
-  runAttempt,
+  runGateAttempt,
+  summarizeSeries,
 } from "./finder-gate-core.mjs";
 
 const request = (overrides = {}) => ({
+  pass: "finder",
   provider: "OpenAI",
   cost: 0.001,
   reasoningTokens: { sdk: 0, openrouter: 0 },
   reasoningTextChars: 0,
   ...overrides,
 });
-const evaluate = (requests, outcome = "valid") => evaluateAttempt({ requests, outcome, expectedName: "OpenAI" });
+const EXPECTED = { finder: "OpenAI", verifier: "OpenAI" };
+const okCalls = (...passes) => passes.map((pass) => ({ pass, outcome: "ok", ms: 10 }));
+const verified = { verification: { status: "verified", verdicts: [] }, published: [] };
+const evaluate = (requests, overrides = {}) =>
+  evaluateAttempt({
+    attempt: {
+      requests,
+      calls: okCalls(...new Set(requests.map((r) => r.pass))),
+      retries: [],
+      repairs: { finder: 0, verifier: 0, judge: 0 },
+      result: verified,
+      ...overrides,
+    },
+    expected: EXPECTED,
+  });
 
 const http = (statusCode, headers) =>
   new APICallError({
@@ -38,8 +67,9 @@ const finderOutputError = () => new FinderOutputError({ text: "{", validationErr
 const noJitter = () => 0;
 
 describe("ENDPOINT_NAMES", () => {
-  it("maps the three candidate slugs to the names the endpoints API reports, and keeps the glm entries", () => {
+  it("maps the candidate slugs to the names the endpoints API reports, including MAIN's anthropic", () => {
     expect(ENDPOINT_NAMES).toMatchObject({
+      anthropic: "Anthropic",
       openai: "OpenAI",
       alibaba: "Alibaba",
       minimax: "Minimax",
@@ -53,6 +83,12 @@ describe("ENDPOINT_NAMES", () => {
 
 describe("parseGateArgs", () => {
   const base = [
+    "--stages",
+    "finder,verifier,judge",
+    "--verifier-model",
+    "openai/gpt-6-luna",
+    "--verifier-endpoint",
+    "openai",
     "--model",
     "openai/gpt-6-luna",
     "--endpoint",
@@ -74,6 +110,36 @@ describe("parseGateArgs", () => {
     const i = base.indexOf(name);
     return [...base.slice(0, i), ...base.slice(i + 2)];
   };
+
+  it("requires --stages, and checks it before any other flag", () => {
+    expect(() => parseGateArgs(["--model", "x", "--endpoint", "openai", "--case", "c"])).toThrow("missing --stages");
+    expect(() => parseGateArgs(without("--stages"))).toThrow("missing --stages");
+  });
+
+  it.each(["finder", "finder,judge", "verifier,judge", "finder,verifier,judge,extra"])(
+    "refuses the stage set %s",
+    (stages) => {
+      expect(() => parseGateArgs([...without("--stages"), "--stages", stages])).toThrow(/--stages must be one of/u);
+    },
+  );
+
+  it("accepts both stage sets and resolves the verifier's expected provider", () => {
+    for (const stages of STAGE_SETS) {
+      expect(parseGateArgs([...without("--stages"), "--stages", stages])).toMatchObject({ stages });
+    }
+    expect(
+      parseGateArgs([
+        ...without("--verifier-endpoint"),
+        "--verifier-endpoint",
+        "anthropic",
+        ...["--verifier-model", "anthropic/claude-sonnet-5"],
+      ]),
+    ).toMatchObject({ verifierEndpoint: "anthropic", expectedVerifierName: "Anthropic" });
+  });
+
+  it.each(["--verifier-model", "--verifier-endpoint"])("requires %s", (name) => {
+    expect(() => parseGateArgs(without(name))).toThrow(`missing ${name}`);
+  });
 
   it("requires --model: there is no default model to fall back to", () => {
     expect(() => parseGateArgs(without("--model"))).toThrow("missing --model");
@@ -106,7 +172,15 @@ describe("parseGateArgs", () => {
 
 // A series file as the runner writes it: a `started` line before each paid
 // call, an attempt record after it, every line carrying the series identity.
-const IDENTITY = { model: "openai/gpt-6-luna", endpoint: "openai", case: "clean", n: 5 };
+const IDENTITY = {
+  stages: "finder,verifier",
+  model: "openai/gpt-6-luna",
+  endpoint: "openai",
+  verifierModel: "openai/gpt-6-luna",
+  verifierEndpoint: "openai",
+  case: "clean",
+  n: 5,
+};
 const startedLine = (attempt, identity = IDENTITY) => JSON.stringify({ kind: "started", ...identity, attempt });
 const recordLine = (attempt, identity = IDENTITY) => JSON.stringify({ kind: "attempt", ...identity, attempt });
 const file = (...lines) => lines.map((line) => `${line}\n`).join("");
@@ -117,8 +191,11 @@ const writable = (overrides) =>
     start: 2,
     existingText: completed(1),
     out: "o",
+    stages: IDENTITY.stages,
     model: IDENTITY.model,
     endpoint: IDENTITY.endpoint,
+    verifierModel: IDENTITY.verifierModel,
+    verifierEndpoint: IDENTITY.verifierEndpoint,
     caseName: IDENTITY.case,
     n: IDENTITY.n,
     ...overrides,
@@ -180,6 +257,9 @@ describe("assertSeriesWritable", () => {
     ["model", { model: "qwen/qwen3.8-flash" }],
     ["endpoint", { endpoint: "alibaba" }],
     ["case", { caseName: "269" }],
+    ["verifier model (a CONTROL series continued as MAIN)", { verifierModel: "anthropic/claude-sonnet-5" }],
+    ["verifier endpoint", { verifierEndpoint: "anthropic" }],
+    ["stage set", { stages: "finder,verifier,judge" }],
   ])("refuses to mix series: a different %s than the file records", (_label, overrides) => {
     expect(() => writable(overrides)).toThrow(/different series/u);
   });
@@ -193,23 +273,40 @@ describe("assertSeriesWritable", () => {
   });
 });
 
-describe("evaluateAttempt", () => {
-  it("passes a valid attempt whose requests all match, with an empty findings list", () => {
-    expect(evaluate([request(), request()])).toMatchObject({
+describe("evaluateAttempt — gated on finder and verifier, reported on the judge", () => {
+  it("passes a valid attempt whose finder and verifier requests all match", () => {
+    expect(evaluate([request(), request({ pass: "verifier" })])).toMatchObject({
+      outcome: "valid",
       invalidated: false,
       reasoningLeak: false,
       costComplete: true,
+      measurementError: null,
       g1Pass: true,
     });
   });
 
+  it("passes an anthropic verifier against its own expected provider (MAIN)", () => {
+    const result = evaluateAttempt({
+      attempt: {
+        requests: [request(), request({ pass: "verifier", provider: "Anthropic" })],
+        calls: okCalls("finder", "verifier"),
+        retries: [],
+        repairs: { finder: 0, verifier: 0, judge: 0 },
+        result: verified,
+      },
+      expected: { finder: "OpenAI", verifier: "Anthropic" },
+    });
+    expect(result.invalidated).toBe(false);
+    expect(result.g1Pass).toBe(true);
+  });
+
   it.each([
-    ["a different provider", "Azure"],
-    ["a missing provider", null],
+    ["a different verifier provider", "Azure"],
+    ["a missing verifier provider", null],
   ])("invalidates the attempt on %s", (_label, provider) => {
-    const result = evaluate([request(), request({ provider })]);
+    const result = evaluate([request(), request({ pass: "verifier", provider })]);
     expect(result.invalidated).toBe(true);
-    expect(result.providerMismatch).toEqual([provider]);
+    expect(result.providerMismatch).toEqual([{ pass: "verifier", provider }]);
     expect(result.g1Pass).toBe(false);
   });
 
@@ -217,28 +314,130 @@ describe("evaluateAttempt", () => {
     ["SDK reasoning tokens", { reasoningTokens: { sdk: 3, openrouter: 0 } }],
     ["OpenRouter reasoning tokens", { reasoningTokens: { sdk: null, openrouter: 3 } }],
     ["reasoning text", { reasoningTextChars: 12 }],
-  ])("treats %s alone as an A3 leak", (_label, overrides) => {
-    const result = evaluate([request(overrides)]);
+  ])("treats %s on a VERIFIER request as an A3 leak that fails the attempt", (_label, overrides) => {
+    const result = evaluate([request(), request({ pass: "verifier", ...overrides })]);
     expect(result.reasoningLeak).toBe(true);
     expect(result.g1Pass).toBe(false);
   });
 
-  it("marks the cost incomplete when one request reported none, never treating it as free", () => {
-    const result = evaluate([request({ cost: 0.002 }), request({ cost: null })]);
+  it("reports a judge reasoning leak and a foreign judge provider without failing the attempt", () => {
+    const result = evaluate([
+      request(),
+      request({ pass: "verifier" }),
+      request({ pass: "judge", provider: "Google", reasoningTokens: { sdk: 50, openrouter: 50 } }),
+    ]);
+    expect(result.judge).toEqual({ providers: ["Google"], reasoning: true });
+    expect(result.reasoningLeak).toBe(false);
+    expect(result.invalidated).toBe(false);
+    expect(result.g1Pass).toBe(true);
+  });
+
+  it("one null judge cost leaves the attempt's cost incomplete — never free", () => {
+    const result = evaluate([request(), request({ pass: "verifier" }), request({ pass: "judge", cost: null })]);
     expect(result.costComplete).toBe(false);
-    expect(result.cost).toBe(0.002);
+    expect(result.cost).toMatchObject({ finder: 0.001, verifier: 0.001, judge: 0, total: 0.002 });
+  });
+
+  // Owner, Phase 1 interpretation 6: "not called, nothing sent" is complete;
+  // "called, cost missing" is not.
+  it("a verifier that was never called leaves the cost complete", () => {
+    expect(evaluate([request()]).costComplete).toBe(true);
+  });
+
+  it("a verifier that was called and left no priced request makes the cost incomplete", () => {
+    const result = evaluate([request()], { calls: okCalls("finder", "verifier") });
+    expect(result.costComplete).toBe(false);
   });
 
   it("marks an attempt with no requests at all as cost-incomplete", () => {
-    expect(evaluate([], "APICallError-429").costComplete).toBe(false);
+    expect(evaluate([], { error: http(429), result: undefined, calls: [] }).costComplete).toBe(false);
   });
 
-  it.each(["FinderOutputError", "APICallError-429", "timeout"])(
-    "fails (never skips) an attempt ending %s",
-    (outcome) => {
-      expect(evaluate([request()], outcome).g1Pass).toBe(false);
-    },
-  );
+  it("counts a judge timeout that was retried successfully as a timeout (R3)", () => {
+    const result = evaluate([request(), request({ pass: "verifier" }), request({ pass: "judge" })], {
+      calls: [
+        ...okCalls("finder", "verifier"),
+        { pass: "judge", outcome: "timeout", ms: 120_000 },
+        { pass: "judge", outcome: "ok", ms: 900 },
+      ],
+    });
+    expect(result.timeouts).toEqual({ verifier: 0, judge: 1 });
+    expect(result.g1Pass).toBe(true);
+    expect(result.latencyMs.judge).toBe(120_900);
+  });
+
+  it.each([
+    ["skipped-no-source", { verification: { status: "skipped-no-source", verdicts: [] }, published: [] }],
+    ["a missing verification block", { published: [] }],
+  ])("treats %s as a MEASUREMENT ERROR, never a valid attempt", (_label, result) => {
+    const evaluation = evaluate([request()], { result });
+    expect(evaluation.outcome).toBe("measurement-error");
+    expect(evaluation.measurementError).toMatch(/verification status/u);
+    expect(evaluation.g1Pass).toBe(false);
+  });
+
+  it("treats the abort for an unusable source root as a MEASUREMENT ERROR (impl-review phase 1 F1)", () => {
+    const evaluation = evaluate([request()], {
+      result: undefined,
+      error: new Error("Verification is required (--require-verification) but the source is unusable: …"),
+    });
+    expect(evaluation.outcome).toBe("measurement-error");
+    expect(evaluation.measurementError).toBe("verification aborted: no usable source");
+  });
+
+  it.each([
+    ["a finder output error", "finder", finderOutputError(), "finder:FinderOutputError"],
+    ["a verifier 429 after its retry", "verifier", http(429), "verifier:APICallError-429"],
+    ["a judge timeout after its retry", "judge", new DOMException("t", "TimeoutError"), "judge:timeout"],
+  ])("fails (never skips) an attempt ending in %s, naming the pass", (_label, pass, error, outcome) => {
+    const evaluation = evaluate([request()], {
+      result: undefined,
+      error,
+      calls: [...okCalls("finder"), { pass, outcome: classify(error), ms: 5 }],
+    });
+    expect(evaluation.outcome).toBe(outcome);
+    expect(evaluation.measurementError).toBeNull();
+    expect(evaluation.g1Pass).toBe(false);
+  });
+
+  it("reports a repaired attempt as valid-after-repair, still passing", () => {
+    expect(evaluate([request()], { repairs: { finder: 1, verifier: 1, judge: 0 } })).toMatchObject({
+      outcome: "valid-after-repair",
+      g1Pass: true,
+    });
+  });
+});
+
+describe("summarizeSeries", () => {
+  const evaluation = (overrides = {}) => ({
+    g1Pass: true,
+    measurementError: null,
+    cost: { total: 0.03 },
+    costComplete: true,
+    timeouts: { verifier: 0, judge: 0 },
+    latencyMs: { judge: 1000 },
+    ...overrides,
+  });
+
+  it("passes G4b at or under the ceiling, and reports the judge latency median and max", () => {
+    const summary = summarizeSeries([evaluation(), evaluation({ latencyMs: { judge: 3000 } })]);
+    expect(summary.g4b).toMatchObject({ pass: true, median: 0.03, ceiling: G4B_CEILING, incompleteCost: 0 });
+    expect(summary.judgeLatencyMs).toEqual({ median: 2000, max: 3000 });
+    expect(summary.timeouts.pass).toBe(true);
+  });
+
+  it("fails G4b on one incomplete cost, and the timeout clause on one retried timeout", () => {
+    const summary = summarizeSeries([
+      evaluation(),
+      evaluation({ costComplete: false, timeouts: { verifier: 0, judge: 1 } }),
+    ]);
+    expect(summary.g4b.pass).toBe(false);
+    expect(summary.timeouts).toEqual({ verifier: 0, judge: 1, pass: false });
+  });
+
+  it("fails G4b above the ceiling", () => {
+    expect(summarizeSeries([evaluation({ cost: { total: G4B_CEILING + 0.001 } })]).g4b.pass).toBe(false);
+  });
 });
 
 describe("classify", () => {
@@ -252,66 +451,6 @@ describe("classify", () => {
   });
 });
 
-describe("runAttempt — retries as in production (gate.md §4)", () => {
-  it("429 → one retry → success is a passing attempt with exactly one recorded retry", async () => {
-    const sleep = vi.fn().mockResolvedValue(undefined);
-    const fn = vi.fn().mockRejectedValueOnce(http(429)).mockResolvedValueOnce({ findings: [] });
-    const { result, error, retries } = await runAttempt(fn, { sleep, random: noJitter });
-    expect(error).toBeUndefined();
-    expect(result).toEqual({ findings: [] });
-    expect(fn).toHaveBeenCalledTimes(2);
-    expect(retries).toEqual([{ class: "APICallError-429", delayMs: RATE_LIMIT_DELAY_MS }]);
-    // The production delay is passed to the injected sleep — no real wait.
-    expect(sleep).toHaveBeenCalledWith(RATE_LIMIT_DELAY_MS);
-  });
-
-  it("429 twice fails the attempt after two calls — the failure persisted past the one retry", async () => {
-    const fn = vi.fn().mockRejectedValue(http(429));
-    const { result, error, retries } = await runAttempt(fn, { sleep: async () => {}, random: noJitter });
-    expect(result).toBeUndefined();
-    expect(classify(error)).toBe("APICallError-429");
-    expect(fn).toHaveBeenCalledTimes(2);
-    expect(retries).toHaveLength(1);
-  });
-
-  it("uses the header-aware delay: a usable Retry-After wins over the class default", async () => {
-    const sleep = vi.fn().mockResolvedValue(undefined);
-    const fn = vi
-      .fn()
-      .mockRejectedValueOnce(http(429, { "retry-after": "3" }))
-      .mockResolvedValueOnce({});
-    const { retries } = await runAttempt(fn, { sleep, random: noJitter });
-    expect(retries).toEqual([{ class: "APICallError-429", delayMs: 3000 }]);
-  });
-
-  it.each([
-    ["a 5xx", http(503), "APICallError-503"],
-    ["a timeout", new DOMException("timed out", "TimeoutError"), "timeout"],
-  ])("retries %s once", async (_label, failure, expectedClass) => {
-    const fn = vi.fn().mockRejectedValueOnce(failure).mockResolvedValueOnce({});
-    const { error, retries } = await runAttempt(fn, { sleep: async () => {}, random: noJitter });
-    expect(error).toBeUndefined();
-    expect(retries.map((r) => r.class)).toEqual([expectedClass]);
-  });
-
-  it("never retries a FinderOutputError, as in production", async () => {
-    const sleep = vi.fn();
-    const fn = vi.fn().mockRejectedValue(finderOutputError());
-    const { error, retries } = await runAttempt(fn, { sleep });
-    expect(classify(error)).toBe("FinderOutputError");
-    expect(fn).toHaveBeenCalledTimes(1);
-    expect(retries).toEqual([]);
-    expect(sleep).not.toHaveBeenCalled();
-  });
-
-  it("never retries a non-transient API error (e.g. 400 under require_parameters)", async () => {
-    const fn = vi.fn().mockRejectedValue(http(400));
-    const { retries } = await runAttempt(fn, { sleep: async () => {} });
-    expect(fn).toHaveBeenCalledTimes(1);
-    expect(retries).toEqual([]);
-  });
-});
-
 describe("reasoningTokensOf", () => {
   it("reads both channels, and null — never a fabricated 0 — when a channel is absent", () => {
     expect(
@@ -321,5 +460,206 @@ describe("reasoningTokensOf", () => {
       }),
     ).toEqual({ sdk: 4, openrouter: 0 });
     expect(reasoningTokensOf({})).toEqual({ sdk: null, openrouter: null });
+  });
+});
+
+describe("describeRequest", () => {
+  it("records the pass, provider, cost and both reasoning channels; null where unreported", () => {
+    expect(
+      describeRequest("verifier", {
+        finishReason: "stop",
+        usage: { inputTokens: 10, outputTokens: 2, outputTokenDetails: { reasoningTokens: 0 } },
+        providerMetadata: { openrouter: { provider: "OpenAI", usage: { cost: 0.0004 } } },
+      }),
+    ).toEqual({
+      pass: "verifier",
+      provider: "OpenAI",
+      finishReason: "stop",
+      cost: 0.0004,
+      inputTokens: 10,
+      outputTokens: 2,
+      reasoningTokens: { sdk: 0, openrouter: null },
+      reasoningTextChars: 0,
+    });
+    expect(describeRequest("judge", { providerMetadata: { openrouter: { provider: "" } } })).toMatchObject({
+      provider: null,
+      cost: null,
+    });
+  });
+});
+
+// --- runGateAttempt: the real pipeline behind fake model factories ---
+
+const FILES = {
+  "src/a.ts": ["// header", "export function a(items) {", "  return items[items.length];", "}"].join("\n"),
+};
+const DIFF = ["diff --git a/src/a.ts b/src/a.ts", "--- a/src/a.ts", "+++ b/src/a.ts", "@@ -1,1 +1,4 @@", "+x"].join(
+  "\n",
+);
+const reader = () =>
+  readDiffScoped({
+    allowedPaths: new Set(Object.keys(FILES)),
+    root: "/repo",
+    realpath: (path) => path,
+    isRegularFile: () => true,
+    readFile: (path) => {
+      const name = Object.keys(FILES).find((candidate) => path.endsWith(candidate));
+      if (name === undefined) throw new Error("ENOENT");
+      return FILES[name];
+    },
+  });
+const step = (provider, cost = 0.001) => ({
+  finishReason: "stop",
+  toolCalls: [],
+  usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2, outputTokenDetails: {} },
+  providerMetadata: { openrouter: { provider, usage: { cost } } },
+});
+const FINDING = {
+  file: "src/a.ts",
+  startLine: 3,
+  severity: "major",
+  category: "correctness",
+  description: "reads past the end",
+  suggestion: "use <",
+};
+const judgeResult = () => ({
+  summary: "judged",
+  scores: {},
+  verdict: "passed",
+  verdictReason: "fine",
+  droppedFindingIdRefs: [],
+});
+
+/** Fake production factories: each call emits the given steps through the chained onStepEnd. */
+function fakeApi({ findings = [FINDING], verdict = "confirmed", judgeFailures = [] } = {}) {
+  const judgeErrors = [...judgeFailures];
+  return {
+    runReviewPipeline,
+    runVerificationPass,
+    capDiff,
+    orderDiffForCap,
+    capProjectContext,
+    assignFindingIds,
+    mergeFindings,
+    createReviewer: (options) => ({
+      review: async () => {
+        options.onStepEnd?.(step("OpenAI"));
+        return { summary: "finder summary", findings };
+      },
+    }),
+    createVerifier: (options) => ({
+      verify: async (input) => {
+        options.onStepEnd?.(step("OpenAI"));
+        return {
+          verdicts: input.findings.map((f) => ({
+            id: f.id,
+            verdict,
+            quote: "return items[items.length];",
+            reason: "shown",
+          })),
+        };
+      },
+    }),
+    createJudge: (options) => ({
+      judge: async () => {
+        const failure = judgeErrors.shift();
+        if (failure !== undefined) throw failure;
+        options.onStepEnd?.(step("Anthropic", 0.02));
+        return judgeResult();
+      },
+    }),
+  };
+}
+const attemptWith = (api, overrides = {}) =>
+  runGateAttempt({
+    stages: "finder,verifier,judge",
+    api,
+    diff: DIFF,
+    rules: "rules",
+    reader: reader(),
+    finderModel: "openai/gpt-6-luna",
+    verifierModel: "openai/gpt-6-luna",
+    sleep: async () => {},
+    ...overrides,
+  });
+
+describe("runGateAttempt", () => {
+  it("passes the pipeline the reader and requireVerification: true, with no outer retry", async () => {
+    const runPipeline = vi.fn(async () => ({
+      findings: [],
+      preVerificationFindingCount: 0,
+      verification: { status: "no-findings", verdicts: [], unknownVerdictIds: [] },
+      verdict: "passed",
+    }));
+    const theReader = reader();
+    await attemptWith({ ...fakeApi(), runReviewPipeline: runPipeline }, { reader: theReader });
+    expect(runPipeline).toHaveBeenCalledTimes(1);
+    expect(runPipeline.mock.calls[0][0]).toMatchObject({
+      reader: theReader,
+      requireVerification: true,
+      overrides: { reviewModel: "openai/gpt-6-luna", verifierModel: "openai/gpt-6-luna" },
+    });
+  });
+
+  it("records every request of the real pipeline by pass, and publishes a confirmed finding", async () => {
+    const attempt = await attemptWith(fakeApi());
+    expect(attempt.error).toBeUndefined();
+    expect(attempt.requests.map((r) => [r.pass, r.provider])).toEqual([
+      ["finder", "OpenAI"],
+      ["verifier", "OpenAI"],
+      ["judge", "Anthropic"],
+    ]);
+    expect(attempt.result.published.map((f) => f.id)).toEqual(["F1"]);
+    const evaluation = evaluateAttempt({ attempt, expected: EXPECTED });
+    expect(evaluation).toMatchObject({ outcome: "valid", g1Pass: true, costComplete: true });
+    expect(evaluation.cost.total).toBeCloseTo(0.022, 10);
+  });
+
+  it("an attempt with zero findings sends no verifier request and can pass", async () => {
+    const attempt = await attemptWith(fakeApi({ findings: [] }));
+    expect(attempt.requests.some((r) => r.pass === "verifier")).toBe(false);
+    expect(attempt.calls.some((c) => c.pass === "verifier")).toBe(false);
+    expect(attempt.result.verification.status).toBe("no-findings");
+    expect(evaluateAttempt({ attempt, expected: EXPECTED })).toMatchObject({ g1Pass: true, costComplete: true });
+  });
+
+  it("a judge timeout retried once by the pipeline counts as a timeout, and the attempt still completes", async () => {
+    const attempt = await attemptWith(fakeApi({ judgeFailures: [new DOMException("t", "TimeoutError")] }));
+    expect(attempt.retries).toEqual([{ pass: "judge", class: "timeout", delayMs: expect.any(Number) }]);
+    const evaluation = evaluateAttempt({ attempt, expected: EXPECTED });
+    expect(evaluation.timeouts).toEqual({ verifier: 0, judge: 1 });
+    expect(evaluation.g1Pass).toBe(true);
+  });
+
+  it("an unusable source root aborts the attempt as a measurement error, before any verifier call", async () => {
+    const broken = readDiffScoped({
+      allowedPaths: new Set(["src/a.ts"]),
+      root: "/nowhere",
+      realpath: () => {
+        throw new Error("ENOENT");
+      },
+      isRegularFile: () => true,
+      readFile: () => {
+        throw new Error("ENOENT");
+      },
+    });
+    const attempt = await attemptWith(fakeApi(), { reader: broken });
+    expect(attempt.calls.some((c) => c.pass === "verifier")).toBe(false);
+    expect(evaluateAttempt({ attempt, expected: EXPECTED })).toMatchObject({
+      outcome: "measurement-error",
+      measurementError: "verification aborted: no usable source",
+      g1Pass: false,
+    });
+  });
+
+  it("G2 (finder,verifier) runs the finder and the verification pass only — no judge", async () => {
+    const api = fakeApi({ verdict: "refuted" });
+    const createJudge = vi.fn(api.createJudge);
+    const attempt = await attemptWith({ ...api, createJudge }, { stages: "finder,verifier" });
+    expect(createJudge).not.toHaveBeenCalled();
+    expect(attempt.requests.map((r) => r.pass)).toEqual(["finder", "verifier"]);
+    expect(attempt.result.published).toEqual([]);
+    expect(attempt.result.verification.status).toBe("verified");
+    expect(evaluateAttempt({ attempt, expected: EXPECTED }).g1Pass).toBe(true);
   });
 });

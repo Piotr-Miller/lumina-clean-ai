@@ -5,24 +5,100 @@ import { fileURLToPath } from "node:url";
 import type { ApiProvider, CallApiContextParams, ProviderOptions, ProviderResponse } from "promptfoo";
 
 import {
+  assignFindingIds,
   buildInstructions,
   buildPrompt,
+  createDiffScopedReaderForDiff,
   createDiffScopedSourceForDiff,
   createReviewer,
+  createVerifier,
   DEFAULT_FINDER_MAX_STEPS,
   DEFAULT_FINDER_TIMEOUT_MS,
+  DEFAULT_VERIFIER_TIMEOUT_MS,
   describeFinderStep,
   lensSchema,
+  mergeFindings,
+  runVerificationPass,
+  type DiffScopedReader,
+  type Finding,
+  type IdentifiedFinding,
   type Lens,
+  type ReviewResult,
   type ReviewUnit,
   type SourceProvider,
+  type VerificationBlock,
   withOneRetry,
 } from "../src/index.js";
 
 interface FinderProviderConfig {
   lens?: unknown;
   model?: unknown;
+  verifier?: unknown;
 }
+
+/**
+ * The verification arm a provider runs after the finder (change
+ * `finder-verification`, plan.md Phase 2 §2): the verifier model and the
+ * endpoints it is pinned to, as `OPENROUTER_VERIFIER_PROVIDERS` would pin them.
+ */
+export interface VerifierArmConfig {
+  model: string;
+  providers: string[];
+}
+
+const parseVerifierConfig = (raw: unknown): VerifierArmConfig | undefined => {
+  if (raw === undefined) return undefined;
+  if (typeof raw !== "object" || raw === null) throw new Error("finder-provider config.verifier must be an object");
+  const model: unknown = "model" in raw ? raw.model : undefined;
+  const providers: unknown = "providers" in raw ? raw.providers : undefined;
+  if (typeof model !== "string" || model.length === 0) {
+    throw new Error("finder-provider config.verifier.model must be a non-empty string");
+  }
+  if (
+    !Array.isArray(providers) ||
+    providers.length === 0 ||
+    !providers.every((p): p is string => typeof p === "string" && p.length > 0)
+  ) {
+    throw new Error("finder-provider config.verifier.providers must be a non-empty list of endpoint slugs");
+  }
+  return { model, providers };
+};
+
+/** One verifier request, as the rows script checks it (provider, cost, A3 on both channels). */
+export interface VerifierRequestTelemetry {
+  provider: string | null;
+  cost: number | null;
+  reasoningTokens: number | null;
+  openRouterReasoningTokens: number | null;
+  reasoningTextChars: number;
+}
+
+/** What a verifier row reports about the verifier's own requests (metadata, never graded). */
+export interface VerifierRowTelemetry {
+  model: string;
+  /** Whether the verifier was called at all; false when nothing could be sent. */
+  called: boolean;
+  requests: VerifierRequestTelemetry[];
+  reasoningLeak: boolean;
+  retries: FinderRetry[];
+  cost?: number;
+}
+
+/**
+ * The fixed summary of a verifier row's graded output. The finder writes its
+ * summary BEFORE verification, and `issue_recall` and the `flaw_*` rubrics read
+ * the whole output, so the finder's text would let a withheld finding pass
+ * through its summary (plan-review re-run F1). The finder's own summary is kept
+ * in `metadata.verification.finderSummary`.
+ */
+/** A published finding as the finder's schema has it: the code-assigned `id` dropped. */
+const withoutId = ({ id, ...finding }: IdentifiedFinding): Finding => {
+  void id;
+  return finding;
+};
+
+export const verifiedSummary = (published: number): string =>
+  `${String(published)} findings published after verification`;
 
 /** Test seams for the production retry's wait; promptfoo passes none, so the real delay applies. */
 export interface FinderProviderDeps {
@@ -175,6 +251,7 @@ export default class FinderProvider implements ApiProvider {
   private readonly providerId: string;
   private readonly model: string;
   private readonly lens: Lens;
+  private readonly verifier: VerifierArmConfig | undefined;
   private readonly deps: FinderProviderDeps;
 
   constructor(options: ProviderOptions, deps: FinderProviderDeps = {}) {
@@ -187,6 +264,7 @@ export default class FinderProvider implements ApiProvider {
     this.providerId = options.id ?? "finder-provider";
     this.model = config.model;
     this.lens = lensSchema.parse(config.lens ?? "general");
+    this.verifier = parseVerifierConfig(config.verifier);
   }
 
   id(): string {
@@ -253,6 +331,44 @@ export default class FinderProvider implements ApiProvider {
       }
     }
 
+    // The verifier's root (plan-review F1): `verifierRoot` when the row sets one,
+    // else the row's `fixtureRoot`. It feeds ONLY the verifier's reader and
+    // never reaches createReviewer, so a row with a verifierRoot and no
+    // fixtureRoot sends the finder exactly the tool-less request it always did.
+    // Resolved before any model call, with fixtureRoot's containment rule.
+    let reader: DiffScopedReader | undefined;
+    if (this.verifier !== undefined) {
+      const verifierRoot = context?.vars.verifierRoot;
+      const raw =
+        typeof verifierRoot === "string" && verifierRoot.length > 0
+          ? verifierRoot
+          : typeof fixtureRoot === "string" && fixtureRoot.length > 0
+            ? fixtureRoot
+            : undefined;
+      if (raw !== undefined) {
+        let root: string;
+        try {
+          root = resolveFixtureRoot(raw);
+        } catch (error) {
+          return {
+            error: (error instanceof Error ? error.message : String(error)).replace("fixtureRoot", "verifierRoot"),
+          };
+        }
+        reader = createDiffScopedReaderForDiff({
+          diff,
+          root,
+          readFile: (path) => readFileSync(path, "utf8"),
+          realpath: (path) => realpathSync(path),
+          isRegularFile: (path) => statSync(path).isFile(),
+        });
+      }
+    }
+    const verifierTelemetry: VerifierRowTelemetry | undefined =
+      this.verifier === undefined
+        ? undefined
+        : { model: this.verifier.model, called: false, requests: [], reasoningLeak: false, retries: [] };
+    let verification: (VerificationBlock & { finderSummary: string; publishedIds: string[] }) | undefined;
+
     // The prompt the viewer shows is the one that FORMATS the JSON — the
     // finalization request, including the real gathering transcript — captured
     // from the reviewer as sent. The loop prompt must mirror what createReviewer
@@ -295,7 +411,17 @@ export default class FinderProvider implements ApiProvider {
         numRequests: telemetry.steps,
       },
       ...(telemetry.cost === undefined ? {} : { cost: telemetry.cost }),
-      metadata: { lens: this.lens, model: this.model, toolEnabled: source !== undefined, ...telemetry },
+      metadata: {
+        lens: this.lens,
+        model: this.model,
+        toolEnabled: source !== undefined,
+        ...telemetry,
+        // Verifier rows only. Verdicts, quotes and withheld findings live HERE,
+        // never in the graded output: issue_recall regex-tests the whole output,
+        // so a quote carrying the planted line would satisfy it by construction.
+        ...(verifierTelemetry === undefined ? {} : { verifier: verifierTelemetry }),
+        ...(verification === undefined ? {} : { verification }),
+      },
     });
 
     try {
@@ -342,7 +468,25 @@ export default class FinderProvider implements ApiProvider {
         random: this.deps.random,
         onRetry: (error, delayMs) => telemetry.retries.push({ error: retryClass(error), delayMs }),
       });
-      return { output: JSON.stringify(result), prompt: actualPrompt(), ...report() };
+      if (verifierTelemetry === undefined) {
+        return { output: JSON.stringify(result), prompt: actualPrompt(), ...report() };
+      }
+      const published = await this.verify(
+        result,
+        reader,
+        (block) => {
+          verification = block;
+        },
+        verifierTelemetry,
+      );
+      // Graded output: exactly {summary, findings: published}. Ids are
+      // code-assigned and not part of the finder's schema (schema_validity).
+      const findings = published.map(withoutId);
+      return {
+        output: JSON.stringify({ summary: verifiedSummary(findings.length), findings }),
+        prompt: actualPrompt(),
+        ...report(),
+      };
     } catch (error) {
       // Telemetry rides the error path too: a row that died after burning four
       // tool-loop steps cost real money, and "how far did it get" is the whole
@@ -353,5 +497,71 @@ export default class FinderProvider implements ApiProvider {
         ...report(),
       };
     }
+  }
+
+  /**
+   * The verification pass exactly as production runs it (`runVerificationPass`,
+   * plan-review F4), pinned to this arm's endpoints. `requireVerification` is
+   * off so a missing or unusable source is RECORDED as `skipped-no-source`:
+   * the rows script turns that into a failed run (a measurement error), never
+   * a graded row.
+   */
+  private async verify(
+    result: ReviewResult,
+    reader: DiffScopedReader | undefined,
+    record: (block: VerificationBlock & { finderSummary: string; publishedIds: string[] }) => void,
+    telemetry: VerifierRowTelemetry,
+  ): Promise<IdentifiedFinding[]> {
+    const arm = this.verifier;
+    if (arm === undefined) throw new Error("verify() needs a verifier arm");
+    const findings = assignFindingIds(mergeFindings(result.findings));
+    const pass = await runVerificationPass({
+      findings,
+      reader,
+      requireVerification: false,
+      model: arm.model,
+      timeoutMs: DEFAULT_VERIFIER_TIMEOUT_MS,
+      sleep: this.deps.retrySleep,
+      onRetry: (error, delayMs) => telemetry.retries.push({ error: retryClass(error), delayMs }),
+      createVerifier: (options) => {
+        const built = createVerifier({
+          ...options,
+          providerRouting: {
+            order: arm.providers,
+            only: arm.providers,
+            allow_fallbacks: true,
+            require_parameters: true,
+          },
+          onStepEnd: (step) => {
+            const sdk = step.usage.outputTokenDetails.reasoningTokens ?? null;
+            const openRouter = asOpenRouterReasoningTokens(step.providerMetadata);
+            const textChars = step.reasoningText?.length ?? 0;
+            const info = describeFinderStep(step);
+            telemetry.requests.push({
+              provider: info.provider ?? null,
+              cost: info.cost ?? null,
+              reasoningTokens: sdk,
+              openRouterReasoningTokens: openRouter,
+              reasoningTextChars: textChars,
+            });
+            telemetry.cost = sum(telemetry.cost, info.cost);
+            if ((sdk ?? 0) > 0 || (openRouter ?? 0) > 0 || textChars > 0) telemetry.reasoningLeak = true;
+            options.onStepEnd?.(step);
+          },
+        });
+        return {
+          verify: (input, callOptions) => {
+            telemetry.called = true;
+            return built.verify(input, callOptions);
+          },
+        };
+      },
+    });
+    record({
+      ...pass.verification,
+      finderSummary: result.summary,
+      publishedIds: pass.published.map((finding) => finding.id),
+    });
+    return pass.published;
   }
 }

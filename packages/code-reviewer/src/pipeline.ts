@@ -318,7 +318,7 @@ function capBody(body: string | undefined): { body: string | undefined; truncate
 export const PROJECT_CONTEXT_CAP_CHARS = 10_000;
 export const PROJECT_CONTEXT_TRUNCATION_MARKER = "\n[...project context truncated at 10,000 chars]";
 
-function capProjectContext(text: string | undefined): string | undefined {
+export function capProjectContext(text: string | undefined): string | undefined {
   if (text === undefined || text.length <= PROJECT_CONTEXT_CAP_CHARS) return text;
   return text.slice(0, PROJECT_CONTEXT_CAP_CHARS) + PROJECT_CONTEXT_TRUNCATION_MARKER;
 }

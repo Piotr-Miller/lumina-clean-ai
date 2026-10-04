@@ -9,6 +9,7 @@
 // Usage (from packages/code-reviewer):
 //   node scripts/promptfoo-gate-rows.mjs --export <promptfoo -o file.json> \
 //     --expected-provider <OpenAI|Alibaba|Minimax> --out <gate-<slug>-promptfoo.jsonl> \
+//     [--expected-verifier-provider <OpenAI|Anthropic>] \
 //     [--regrade <promptfoo -o file.json of the re-grade run>]
 //
 // What fails a row (impl-review-phase-1 F2): a FINDER error (`response.error`
@@ -31,8 +32,21 @@
 // has no required metric — is its own failing result (`invalidatedRows`,
 // `leakRows`), printed apart from G3 and G4 (F4). G4 is cost only.
 //
-// Exit code: 0 when G3 and G4 pass and no row is invalidated or leaks, 1 when
-// any of those fails or the run is not a gate result, 2 on a usage error.
+// VERIFIER ROWS (change `finder-verification`, plan.md Phase 2 §2): with
+// `--expected-verifier-provider`, every row must also carry the verifier's
+// record. Per row: the verifier's provider (a mismatch INVALIDATES the row, as
+// the finder's does), A3 on its requests (a leak fails the row), and its cost
+// completeness — "not called, nothing sent" is complete, "called, no priced
+// request" is not (owner, Phase 1 interpretation 6), and an incomplete verifier
+// cost fails the result. A row whose verification did not run
+// (`verification.status` other than `verified` / `no-findings`, e.g.
+// `skipped-no-source`) is a MEASUREMENT ERROR: the run is a failed run, never a
+// gate result (gate.md §5). G4 stays finder-only; the verifier's cost is
+// printed beside it.
+//
+// Exit code: 0 when G3 and G4 pass and no row is invalidated, leaks or (on
+// verifier rows) has an incomplete verifier cost, 1 when any of those fails or
+// the run is not a gate result, 2 on a usage error.
 import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -119,8 +133,35 @@ function metricsOf(components) {
   return metrics;
 }
 
+/**
+ * The verifier's part of a row (verifier rows only), from the adapter's
+ * `metadata.verifier` and `metadata.verification`. Missing telemetry fails
+ * closed: no record means no proof of the provider, the A3 state or the cost.
+ */
+export function verifierChecksOf(raw, expectedVerifierProvider) {
+  const metadata = raw?.response?.metadata ?? {};
+  const verifier = metadata.verifier;
+  const status = typeof metadata.verification?.status === "string" ? metadata.verification.status : null;
+  const requests = Array.isArray(verifier?.requests) ? verifier.requests : [];
+  const providers = requests.map((r) => (typeof r?.provider === "string" ? r.provider : null));
+  const mismatch = providers.filter((p) => p !== expectedVerifierProvider);
+  const called = verifier?.called === true;
+  const reported = typeof verifier?.called === "boolean";
+  const costs = requests.map((r) => (typeof r?.cost === "number" ? r.cost : null));
+  return {
+    verificationStatus: status,
+    verifierReported: reported,
+    verifierCalled: called,
+    verifierProviders: providers,
+    verifierMismatch: mismatch,
+    verifierLeak: verifier?.reasoningLeak !== false,
+    verifierCostComplete: reported && (!called || (costs.length > 0 && costs.every((c) => c !== null))),
+    verifierCost: costs.reduce((total, c) => total + (c ?? 0), 0),
+  };
+}
+
 /** One export row → one checked gate row. Missing telemetry fails closed. */
-export function checkRow(raw, expectedProvider) {
+export function checkRow(raw, expectedProvider, expectedVerifierProvider) {
   const metadata = raw?.response?.metadata ?? {};
   const description = raw?.testCase?.description ?? raw?.description ?? null;
   const stepProviders = Array.isArray(metadata.stepProviders) ? metadata.stepProviders : [];
@@ -129,25 +170,35 @@ export function checkRow(raw, expectedProvider) {
   const retries = Array.isArray(metadata.retries) ? metadata.retries : null;
   const graderErrors = graderErrorsOf(raw);
   const regradeOf = raw?.testCase?.metadata?.regradeOf;
+  const finderError = finderErrorOf(raw);
+  const v = expectedVerifierProvider === undefined ? null : verifierChecksOf(raw, expectedVerifierProvider);
+  // A row whose verification did not run is a measurement error — unless the
+  // finder already failed, in which case there was nothing to verify.
+  const measurementError =
+    v === null || finderError !== null || v.verificationStatus === "verified" || v.verificationStatus === "no-findings"
+      ? null
+      : `verification status ${JSON.stringify(v.verificationStatus)}`;
+  const verifierInvalidated = v !== null && v.verifierMismatch.length > 0;
+  const verifierLeak = v !== null && finderError === null && v.verifierLeak;
   return {
     id: typeof raw?.id === "string" ? raw.id : null,
     testIdx: Number.isInteger(raw?.testIdx) ? raw.testIdx : null,
     case: caseOf(description)?.key ?? null,
     description,
     provider: raw?.provider?.label ?? raw?.provider?.id ?? null,
-    finderError: finderErrorOf(raw),
+    finderError,
     // promptfoo's row-level verdict text: the grader's reason on an assertion
     // failure, the finder's error on a provider error. Information only.
     rowError: typeof raw?.error === "string" ? raw.error : null,
     stepProviders,
     // No request at all cannot prove the pin either; the row has failed anyway.
     providerOk: stepProviders.length > 0 && providerMismatch.length === 0,
-    invalidated: providerMismatch.length > 0,
+    invalidated: providerMismatch.length > 0 || verifierInvalidated,
     providerMismatch,
     stepCostReported,
     costComplete: stepCostReported.length > 0 && stepCostReported.every((reported) => reported === true),
     // Fails closed: a row that did not report its A3 state cannot pass.
-    reasoningLeak: metadata.reasoningLeak !== false,
+    reasoningLeak: metadata.reasoningLeak !== false || verifierLeak,
     reasoningReported: typeof metadata.reasoningLeak === "boolean",
     retries,
     steps: metadata.steps ?? null,
@@ -161,6 +212,9 @@ export function checkRow(raw, expectedProvider) {
     graderErrorMetrics: [...new Set(graderErrors.map((e) => e.metric).filter((m) => m !== null))],
     regraded: false,
     regradeOf: typeof regradeOf === "string" ? regradeOf : null,
+    measurementError,
+    // Verifier rows only; null on a finder-only export.
+    verifier: v,
   };
 }
 
@@ -269,7 +323,13 @@ export function summarizeRows(rows, extraProblems = []) {
   // §7); such a row is "possibly under-costed", and G4 is not failed by it.
   const timeoutRetries = allRetries.filter((retry) => retryClassOf(retry) === "timeout").length;
   const missingRetryField = rows.filter((r) => r.retries === null).length;
-  const invalidatedRows = rows.filter((r) => r.invalidated).map((r) => ({ ...rowRef(r), providers: r.stepProviders }));
+  const invalidatedRows = rows
+    .filter((r) => r.invalidated)
+    .map((r) => ({
+      ...rowRef(r),
+      providers: r.stepProviders,
+      ...((r.verifier ?? null) === null ? {} : { verifierProviders: r.verifier.verifierProviders }),
+    }));
   const leakRows = rows.filter((r) => r.reasoningLeak).map((r) => ({ ...rowRef(r), reported: r.reasoningReported }));
   const finderErrorRows = rows
     .filter((r) => r.finderError !== null)
@@ -278,6 +338,29 @@ export function summarizeRows(rows, extraProblems = []) {
     .filter((r) => r.graderError)
     .map((r) => ({ ...rowRef(r), id: r.id, errors: r.graderErrors }));
   const regradedRows = rows.filter((r) => r.regraded).map((r) => ({ ...rowRef(r), id: r.id }));
+  // Verifier rows: a row whose verification did not run makes the run a FAILED
+  // RUN (a measurement error, gate.md §5), never a gate result.
+  const measurementErrorRows = rows
+    .filter((r) => (r.measurementError ?? null) !== null)
+    .map((r) => ({ ...rowRef(r), error: r.measurementError }));
+  if (measurementErrorRows.length > 0) {
+    problems.push(
+      `${String(measurementErrorRows.length)} row(s) whose verification did not run (testIdx ${measurementErrorRows
+        .map((r) => String(r.testIdx))
+        .join(", ")}) — a measurement error, not a gate result`,
+    );
+  }
+  const verifierRows = rows.filter((r) => (r.verifier ?? null) !== null);
+  const verifier =
+    verifierRows.length === 0
+      ? null
+      : {
+          rows: verifierRows.length,
+          called: verifierRows.filter((r) => r.verifier.verifierCalled).length,
+          incompleteCost: verifierRows.filter((r) => !r.verifier.verifierCostComplete).length,
+          cost: verifierRows.reduce((total, r) => total + r.verifier.verifierCost, 0),
+          medianCost: median(verifierRows.map((r) => r.verifier.verifierCost)),
+        };
   const base = {
     rowCount: rows.length,
     retryCount,
@@ -288,6 +371,8 @@ export function summarizeRows(rows, extraProblems = []) {
     finderErrorRows,
     graderErrorRows,
     regradedRows,
+    measurementErrorRows,
+    verifier,
   };
 
   if (problems.length > 0) return { failedRun: true, problems, ...base };
@@ -339,7 +424,12 @@ export function summarizeRows(rows, extraProblems = []) {
 
   return {
     failedRun: false,
-    pass: g3.pass && g4.pass && invalidatedRows.length === 0 && leakRows.length === 0,
+    pass:
+      g3.pass &&
+      g4.pass &&
+      invalidatedRows.length === 0 &&
+      leakRows.length === 0 &&
+      (verifier === null || verifier.incompleteCost === 0),
     ...base,
     g3,
     g4,
@@ -363,12 +453,18 @@ function main(args) {
   const expectedProvider = flag("--expected-provider");
   const out = flag("--out");
   const regradePath = flag("--regrade");
+  const expectedVerifierProvider = flag("--expected-verifier-provider");
   if (exportPath === undefined || expectedProvider === undefined || out === undefined) {
-    console.error("usage: --export <file.json> --expected-provider <name> --out <rows.jsonl> [--regrade <file.json>]");
+    console.error(
+      "usage: --export <file.json> --expected-provider <name> --out <rows.jsonl> " +
+        "[--expected-verifier-provider <name>] [--regrade <file.json>]",
+    );
     return 2;
   }
   const readExport = (path) =>
-    exportRows(JSON.parse(readFileSync(path, "utf8"))).map((raw) => checkRow(raw, expectedProvider));
+    exportRows(JSON.parse(readFileSync(path, "utf8"))).map((raw) =>
+      checkRow(raw, expectedProvider, expectedVerifierProvider),
+    );
   let rows = readExport(exportPath);
   let problems = [];
   if (regradePath !== undefined) ({ rows, problems } = mergeRegrade(rows, readExport(regradePath)));
@@ -395,6 +491,17 @@ function main(args) {
         `(ceiling $${String(G4_CEILING)}, ratio ${summary.g4.ratio.toFixed(3)}, incomplete cost ${String(summary.g4.incompleteCost)}; ` +
         `timeout-triggered retries ${String(summary.g4.timeoutRetries)} — possibly under-costed telemetry, does not fail G4)`,
     );
+  }
+  if (summary.verifier !== null) {
+    const v = summary.verifier;
+    console.log(
+      `verifier: called on ${String(v.called)}/${String(v.rows)} row(s), cost $${v.cost.toFixed(8)} ` +
+        `(median $${v.medianCost.toFixed(8)} per row), incomplete verifier cost ${String(v.incompleteCost)}` +
+        `${v.incompleteCost > 0 ? " — FAILS the result" : ""} (G4 above is finder-only)`,
+    );
+  }
+  if (summary.measurementErrorRows.length > 0) {
+    console.log(`MEASUREMENT-ERROR rows: ${JSON.stringify(summary.measurementErrorRows)}`);
   }
   if (summary.invalidatedRows.length > 0) {
     console.log(`INVALIDATED rows (provider mismatch, fails on its own): ${JSON.stringify(summary.invalidatedRows)}`);

@@ -1,9 +1,11 @@
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { APICallError } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { scoreIssueRecall } from "./assertions.mjs";
 import FinderProvider, {
   asOpenRouterReasoningTokens,
   resolveFixtureRoot,
@@ -286,5 +288,202 @@ describe("asOpenRouterReasoningTokens", () => {
     expect(
       asOpenRouterReasoningTokens({ openrouter: { usage: { completionTokensDetails: { reasoningTokens: 0 } } } }),
     ).toBe(0);
+  });
+});
+
+// --- Verifier rows (change finder-verification, plan.md Phase 2 §2) ---
+
+const USERS_DIFF = [
+  "diff --git a/src/users.js b/src/users.js",
+  "index 3f1c2aa..9be51d7 100644",
+  "--- a/src/users.js",
+  "+++ b/src/users.js",
+  "@@ -1,3 +1,9 @@",
+  " export function listUsers(users) {",
+  "   return users.map((u) => u.name);",
+  " }",
+  "+",
+  "+export function getUserAge(users, id) {",
+  "+  for (var i = 0; i <= users.length; i++) {",
+  "+    if (users[i].id == id) return users[i].age;",
+  "+  }",
+  "+}",
+].join("\n");
+const PLANTED_LINE = "for (var i = 0; i <= users.length; i++) {";
+const EXPECTED_ISSUES = [
+  {
+    label: "out-of-bounds loop condition",
+    patterns: ["off[- ]by[- ]one", "out[- ]of[- ]bounds", "i <= users\\.length", "i < users\\.length"],
+  },
+];
+const OFF_BY_ONE = {
+  file: "src/users.js",
+  startLine: 6,
+  severity: "major",
+  category: "correctness",
+  description: "Off-by-one: `i <= users.length` reads past the end of the array.",
+  suggestion: "Use `i < users.length`.",
+};
+const finderSaying = (summary: string, findings: unknown[]) => JSON.stringify({ summary, findings });
+const verdicts = (verdict: "confirmed" | "refuted", quote = PLANTED_LINE) =>
+  JSON.stringify({ verdicts: [{ id: "F1", verdict, quote, reason: "the loop bound is shown" }] });
+
+const verifying = () =>
+  new FinderProvider(
+    {
+      id: "control-luna-verify",
+      config: { model: "openai/gpt-6-luna", verifier: { model: "openai/gpt-6-luna", providers: ["openai"] } },
+    },
+    { retrySleep: noWait, random: () => 0 },
+  );
+const callRow = (provider: FinderProvider, vars: Record<string, unknown> = {}) =>
+  provider.callApi("", {
+    vars: { diff: USERS_DIFF, projectContext: "", verifierRoot: "./fixtures/js-loop", ...vars },
+  } as never);
+const recallOf = (output: unknown) =>
+  scoreIssueRecall(String(output), { vars: { expectedIssues: EXPECTED_ISSUES } }).pass;
+interface VerifierRowMetadata {
+  verifier: { called: boolean; requests: { provider: string | null; cost: number | null }[]; reasoningLeak: boolean };
+  verification: { status: string; finderSummary: string; publishedIds: string[]; verdicts: { quote?: string }[] };
+}
+const rowMetadata = (response: Awaited<ReturnType<typeof callRow>>) =>
+  response.metadata as unknown as VerifierRowMetadata;
+
+describe("FinderProvider verifier rows — graded output is {summary, findings: published} only", () => {
+  it("a quote carrying the planted line, kept in metadata, does not make issue_recall pass", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("one finding", [OFF_BY_ONE]), priced("OpenAI", 0.001)))
+        .mockResolvedValueOnce(generation(verdicts("refuted"), priced("OpenAI", 0.0005))),
+    });
+    const response = await callRow(verifying());
+    expect(response.error).toBeUndefined();
+    expect(JSON.parse(String(response.output))).toEqual({
+      summary: "0 findings published after verification",
+      findings: [],
+    });
+    const metadata = rowMetadata(response);
+    // The planted line IS in the record — only outside the graded output.
+    expect(metadata.verification.verdicts[0]?.quote).toBe(PLANTED_LINE);
+    expect(recallOf(response.output)).toBe(false);
+  });
+
+  it("a confirmed finding is published, ids stripped, and issue_recall passes on it", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("one finding", [OFF_BY_ONE]), priced("OpenAI", 0.001)))
+        .mockResolvedValueOnce(generation(verdicts("confirmed"), priced("OpenAI", 0.0005))),
+    });
+    const response = await callRow(verifying());
+    const output = JSON.parse(String(response.output)) as { summary: string; findings: Record<string, unknown>[] };
+    expect(output.summary).toBe("1 findings published after verification");
+    expect(output.findings).toEqual([OFF_BY_ONE]);
+    expect(rowMetadata(response).verification.publishedIds).toEqual(["F1"]);
+    expect(recallOf(response.output)).toBe(true);
+  });
+
+  it("a finder summary naming the planted flaw, with nothing published, fails issue_recall", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockResolvedValueOnce(
+        generation(finderSaying("Off-by-one: i <= users.length reads out of bounds.", []), priced("OpenAI", 0.001)),
+      );
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const response = await callRow(verifying());
+    expect(recallOf(response.output)).toBe(false);
+    const metadata = rowMetadata(response);
+    expect(metadata.verification.finderSummary).toContain("Off-by-one");
+    expect(metadata.verification.status).toBe("no-findings");
+    // Nothing to verify: no verifier request, and it says so.
+    expect(metadata.verifier.called).toBe(false);
+    expect(doGenerate).toHaveBeenCalledTimes(1);
+  });
+
+  it("the published output satisfies review-result.schema.json (schema_validity), keys included", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("one finding", [OFF_BY_ONE]), priced("OpenAI", 0.001)))
+        .mockResolvedValueOnce(generation(verdicts("confirmed"), priced("OpenAI", 0.0005))),
+    });
+    const response = await callRow(verifying());
+    const schema = JSON.parse(readFileSync(resolve(import.meta.dirname, "review-result.schema.json"), "utf8")) as {
+      required: string[];
+      properties: Record<string, unknown> & { findings: { items: { required: string[]; properties: object } } };
+    };
+    const output = JSON.parse(String(response.output)) as Record<string, unknown> & {
+      findings: Record<string, unknown>[];
+    };
+    // additionalProperties: false at both levels — exactly what promptfoo's is-json enforces.
+    expect(Object.keys(output).every((key) => key in schema.properties)).toBe(true);
+    expect(schema.required.every((key) => key in output)).toBe(true);
+    for (const finding of output.findings) {
+      expect(Object.keys(finding).every((key) => key in schema.properties.findings.items.properties)).toBe(true);
+      expect(schema.properties.findings.items.required.every((key) => key in finding)).toBe(true);
+    }
+  });
+
+  it("records the verifier's provider and cost per request, separately from the finder's G4 cost", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("one finding", [OFF_BY_ONE]), priced("OpenAI", 0.001)))
+        .mockResolvedValueOnce(generation(verdicts("confirmed"), priced("OpenAI", 0.0005))),
+    });
+    const response = await callRow(verifying());
+    expect(rowMetadata(response).verifier).toMatchObject({
+      called: true,
+      requests: [{ provider: "OpenAI", cost: 0.0005 }],
+      reasoningLeak: false,
+    });
+    expect(metadataOf(response).cost).toBe(0.001);
+  });
+
+  it("a row with no root at all records skipped-no-source rather than verifying", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("one finding", [OFF_BY_ONE]), priced("OpenAI", 0.001))),
+    });
+    const response = await callRow(verifying(), { verifierRoot: undefined });
+    expect(rowMetadata(response).verification.status).toBe("skipped-no-source");
+  });
+
+  it("sends the finder the same request with a verifierRoot as without one: no tool, the same messages", async () => {
+    const promptsOf = async (vars: Record<string, unknown>) => {
+      const doGenerate = vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("nothing", []), priced("OpenAI", 0.001)));
+      currentModel = new MockLanguageModelV3({ doGenerate });
+      await callRow(verifying(), vars);
+      const options = doGenerate.mock.calls[0]?.[0] as { prompt: unknown; tools?: unknown[] };
+      return { prompt: options.prompt, tools: options.tools ?? [] };
+    };
+    const withRoot = await promptsOf({});
+    const without = await promptsOf({ verifierRoot: undefined });
+    expect(withRoot.tools).toEqual([]);
+    expect(withRoot).toEqual(without);
+  });
+
+  it.each([
+    ["a parent-directory walk", "../../.."],
+    ["package source", "./fixtures/../../src"],
+  ])("refuses a verifierRoot outside evals/fixtures (%s), before any model call", async (_label, verifierRoot) => {
+    const doGenerate = vi.fn();
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const response = await callRow(verifying(), { verifierRoot });
+    expect(response.error).toMatch(/verifierRoot .* INSIDE evals\/fixtures/u);
+    expect(doGenerate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a verifier config without a model or providers", () => {
+    expect(() => new FinderProvider({ config: { model: "m", verifier: { providers: ["openai"] } } })).toThrow(
+      /verifier.model/u,
+    );
+    expect(() => new FinderProvider({ config: { model: "m", verifier: { model: "v", providers: [] } } })).toThrow(
+      /verifier.providers/u,
+    );
   });
 });

@@ -1095,8 +1095,8 @@ verifier keys are optional, so old review.json readers are unaffected.
 
 #### Automated
 
-- [ ] 2.1 Package tests, typecheck, lint and root format check pass
-- [ ] 2.2 The runner refuses to start without --stages
+- [x] 2.1 Package tests, typecheck, lint and root format check pass
+- [x] 2.2 The runner refuses to start without --stages
 
 #### Manual
 

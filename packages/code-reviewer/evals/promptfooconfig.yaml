@@ -75,6 +75,26 @@ providers:
     label: candidate-minimax-m3
     config:
       model: minimax/minimax-m3
+  # Change `finder-verification` (gate: context/changes/finder-verification/gate.md):
+  # the two verification arms. Both run the finder as finder-model-swap did
+  # (openai/gpt-6-luna, pinned via OPENROUTER_FINDER_PROVIDERS=openai), then the
+  # production verification pass with the verifier below, pinned to its own
+  # endpoint. The graded output is {summary, findings: published} only; verdicts
+  # and quotes are metadata. Run one at a time with --filter-providers.
+  - id: file://./finder-provider.ts
+    label: control-luna-verify
+    config:
+      model: openai/gpt-6-luna
+      verifier:
+        model: openai/gpt-6-luna
+        providers: [openai]
+  - id: file://./finder-provider.ts
+    label: main-sonnet-verify
+    config:
+      model: openai/gpt-6-luna
+      verifier:
+        model: anthropic/claude-sonnet-5
+        providers: [anthropic]
 
 defaultTest:
   vars:
@@ -125,6 +145,10 @@ tests:
             - "out[- ]of[- ]bounds"
             - 'i <= users\.length'
             - 'i < users\.length'
+      # Verifier-only tree (finder-verification Phase 0 §2, plan-review F1): the
+      # diff's post-image, frozen before any verifier prompt existed. It feeds
+      # ONLY the verifier's reader; the finder stays tool-less on this row.
+      verifierRoot: ./fixtures/js-loop
     assert:
       # No threshold on any recall assert: scoreIssueRecall's integer hit-count
       # decides pass/fail (a rounded 0.67 ratio threshold would silently demand
@@ -136,6 +160,8 @@ tests:
   - description: React 16->19 class-to-function migration with three planted flaws (post-change lines - 24 lost cleanup, 25 stale closure, 39 unsafe HTML)
     vars:
       diff: file://./fixtures/react-migration.diff
+      # Verifier-only tree, as for the JS-loop row (fixtures/README-verifier-trees.md).
+      verifierRoot: ./fixtures/react-migration
       expectedIssues:
         - label: stale closure (empty dependency array)
           patterns:
