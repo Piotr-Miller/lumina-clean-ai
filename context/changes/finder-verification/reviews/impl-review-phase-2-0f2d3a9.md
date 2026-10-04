@@ -12,7 +12,7 @@
 - **Date**: 2026-10-04
 - **Verdict**: NEEDS ATTENTION
 - **Findings**: 0 critical, 5 warnings, 4 observations
-- **Triage**: 2026-10-04 by the owner — all nine fixed (F1, F2 via Fix A); the verdict above still speaks only for 0f2d3a9
+- **Triage**: 2026-10-04 by the owner — all nine fixed (F1, F2 via Fix A); the verdict above still speaks only for 0f2d3a9. No separate re-review of 5b29930: the owner will run one /rune-impl-review covering 0f2d3a9 through the end of Phase 3's pre-seal work, before the seal
 
 ## Verdicts
 
@@ -83,7 +83,7 @@
 - **Location**: packages/code-reviewer/scripts/finder-gate-core.mjs:131-139
 - **Detail**: `seriesIdentity` covers stages, models, endpoints, case and n, but not `--diff`, `--rules` or `--source-root`, and records carry no input hash. `--append` with a different diff is accepted. An input hash mismatch is a measurement error in Definitions, and the freeze (Phase 0) depends on the exact bytes reaching the model. The gap predates this phase, but Phase 2 rewrote the identity and the paid phases rely on it.
 - **Fix**: Add the sha256 of the diff and rules, plus the source-root `HEAD`, to `seriesIdentity` and to every record line; add a test that refuses an `--append` with different inputs.
-- **Decision**: FIXED (owner accepted, 2026-10-04): `seriesIdentity` and every line carry `diffSha256`, `rulesSha256` and `sourceRootTree`; `--append` with different inputs is refused. Interpretation, flagged to the owner: the identity pins the source root's git TREE (`HEAD:<prefix>`), not its HEAD commit, because the G2 root `evals/fixtures/clean-change` lives inside this repo, whose HEAD moves with every unrelated commit; the HEAD commit is still written on every line as `sourceRootHead`. Uncommitted changes under the root refuse to start.
+- **Decision**: FIXED (owner accepted, 2026-10-04): `seriesIdentity` and every line carry `diffSha256`, `rulesSha256` and `sourceRootTree`; `--append` with different inputs is refused. Interpretation, flagged to the owner: the identity pins the source root's git TREE (`HEAD:<prefix>`), not its HEAD commit, because the G2 root `evals/fixtures/clean-change` lives inside this repo, whose HEAD moves with every unrelated commit; the HEAD commit is still written on every line as `sourceRootHead`. Uncommitted changes under the root refuse to start. **Owner-confirmed 2026-10-04:** the tree pin is accepted — `sourceRootTree` in the identity, `sourceRootHead` on every line, and uncommitted changes under the root refuse to start.
 
 ### F5 — Rows script skips every verifier check when `--expected-verifier-provider` is omitted
 
@@ -116,7 +116,7 @@
   - The series file's identity (PR series, case, n = 10) is not checked, so a G2 file is accepted.
   - The whole-pipeline detection is reported as `{x: p, of: attempts.length}`. Its numerator counts valid attempts only, but its denominator counts every attempt (the test pins `x: 1, of: 3`). The plan says "published in x of 10". This is informational only.
 - **Fix**: Refuse duplicate attempt ids and a non-PR-series identity, and compute detection x over all attempts (or label both terms), with tests.
-- **Decision**: FIXED (owner accepted, 2026-10-04): `assertOnePrSeries` refuses duplicate attempt ids or numbers, stages other than `finder,verifier,judge`, and mixed series identities; detection is `{x, of, over: "all attempts"}` over all attempts. Consequence: a pre-verification finding of an INVALID attempt now needs a match entry too (detection counts it).
+- **Decision**: FIXED (owner accepted, 2026-10-04): `assertOnePrSeries` refuses duplicate attempt ids or numbers, stages other than `finder,verifier,judge`, and mixed series identities; detection is `{x, of, over: "all attempts"}` over all attempts. Consequence: a pre-verification finding of an INVALID attempt now needs a match entry too (detection counts it). **Owner-confirmed 2026-10-04:** the match-entry requirement for invalid attempts is accepted; with the empty #240 K list, every finding's match is simply empty.
 
 ### F8 — `--max-spend` defaults to unlimited
 
