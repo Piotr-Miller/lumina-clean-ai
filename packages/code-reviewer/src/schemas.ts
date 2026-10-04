@@ -163,6 +163,108 @@ export function normalizeJudgeOutput(wire: JudgeOutputWire): JudgeOutput {
   };
 }
 
+// --- Verification pass (change `finder-verification`) ---
+//
+// The verifier answers one question per finding: do the delivered code
+// excerpts confirm the claim? FLAT on the wire, every field required, the
+// verdict a string enum — so the emitted JSON Schema carries no `oneOf`,
+// `anyOf`, `minimum` or `maximum` (lessons.md: the provider subset drops them,
+// and an optional field gets skipped). `quote` is required but MAY be empty, and
+// there is deliberately NO refine on it (plan-review 3rd run F1): a refine emits
+// nothing into the JSON Schema, so one empty quote would fail the whole output
+// as an unparseable response and take every other verdict down with it. An
+// empty quote is judged per finding, in code (`applyVerdicts`).
+//
+// "unverifiable" is not on the wire: it is a state CODE assigns (no excerpt, a
+// quote not in the excerpt, a missing verdict), never a value the model picks.
+
+export const verifierVerdictSchema = z.enum(["confirmed", "refuted", "unsupported"]);
+export type VerifierVerdict = z.infer<typeof verifierVerdictSchema>;
+
+export const verificationOutputSchema = z.object({
+  verdicts: z
+    .array(
+      z.object({
+        id: z.string().describe("The finding id exactly as given (F1, F2, …)"),
+        verdict: verifierVerdictSchema.describe(
+          "confirmed: the excerpts show the defect; refuted: the excerpts contradict the claim; unsupported: the excerpts do not settle it",
+        ),
+        quote: z
+          .string()
+          .describe(
+            "The lines copied verbatim from one code-excerpt block that show the defect (confirmed) or contradict it (refuted); empty for unsupported",
+          ),
+        reason: z.string().describe("One or two sentences: why the quoted lines decide the claim, or why nothing does"),
+      }),
+    )
+    .describe("Exactly one verdict per finding id"),
+});
+export type VerificationOutput = z.infer<typeof verificationOutputSchema>;
+
+/** A verification record's state: the model's three verdicts plus the code-assigned `unverifiable`. */
+export type VerificationState = VerifierVerdict | "unverifiable";
+
+/** Why code marked a finding unverifiable — from the excerpt planner or from applying the verdicts. */
+export type VerificationReasonCode =
+  | "excerpt-over-limit"
+  | "review-budget"
+  | "source-refused"
+  | "no-locator"
+  | "quote-not-in-excerpt"
+  | "no-verdict"
+  | "duplicate-verdict";
+
+/** One finding's verification record in review.json — published or not, with its reason. */
+export type VerificationRecord = Finding & {
+  id: string;
+  state: VerificationState;
+  /** Present when `state` is `unverifiable`. */
+  reasonCode?: VerificationReasonCode;
+  /** The model's reason, or the code's detail for an unverifiable finding. */
+  reason: string;
+  /** The model's verdict, kept when code overrode it (a `confirmed` whose quote failed the check). */
+  modelVerdict?: VerifierVerdict;
+  quote?: string;
+  /** Whether the quote passed the quote check; recorded for confirmed and refuted verdicts. */
+  quoteVerified?: boolean;
+  /** Which comparison the quote passed — only on a published finding. */
+  quoteMatch?: "exact" | "whitespace";
+  /** The code-excerpt blocks the verifier was given for this finding. */
+  blockIds: string[];
+};
+
+/**
+ * What the verification pass did. `verified`: the verifier ran and only
+ * `confirmed` findings with a checked quote were published. `no-findings`: the
+ * finder found nothing, so nothing was sent. `skipped-no-source`: no source
+ * root (or a diff with no post-change path), so findings were published
+ * UNVERIFIED — allowed locally, an abort in CI (R8).
+ */
+export interface VerificationBlock {
+  status: "verified" | "no-findings" | "skipped-no-source";
+  /** The verifier model; present only when it ran. */
+  model?: string;
+  verdicts: VerificationRecord[];
+  /** Ids the verifier answered that were never sent — recorded and ignored. */
+  unknownVerdictIds: string[];
+  /** Size of what the verifier was shown; present only when it ran. */
+  excerpts?: { blocks: number; lines: number; chars: number };
+}
+
+/** Verifier spend, accumulated across both attempts of a retried pass. */
+export interface VerifierTelemetry {
+  /** Requests observed (the call, a format repair, a retry). */
+  attempts: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  /** Absent (never 0) when no request reported a cost. */
+  cost?: number;
+  /** Wall-clock time of the whole pass, retries included. */
+  latencyMs: number;
+  /** One entry per request, for the gate's provider and A3 checks. */
+  requests: { provider?: string; cost?: number; reasoningTokens?: number; finishReason: string }[];
+}
+
 /** Judge result: validated judge output + reference-integrity metadata. */
 export type JudgeResult = JudgeOutput & { droppedFindingIdRefs: number };
 
@@ -212,6 +314,11 @@ export interface JudgeTelemetry {
   outputTokens?: number;
   totalTokens?: number;
   cost?: number;
+  /**
+   * Wall-clock time of the judge pass, retries included (R13). Timed by the
+   * pipeline around the call — the judge's own code is untouched.
+   */
+  latencyMs?: number;
 }
 
 /**
@@ -226,6 +333,7 @@ export interface JudgeTelemetry {
 /** Full result of the two-pass review pipeline (what review.json carries). */
 export interface PipelineResult {
   summary: string;
+  /** The PUBLISHED findings: what the judge scored and the comment shows. */
   findings: IdentifiedFinding[];
   /**
    * The finder's normalized finding count before the dedup/merge — always
@@ -234,6 +342,19 @@ export interface PipelineResult {
    * it, it just rides along in review.json.
    */
   preDedupFindingCount: number;
+  /**
+   * Findings after dedup and id assignment, BEFORE verification — the G3
+   * denominator's counterpart. `findings` above holds only the published ones,
+   * which keep these ids, so gaps (F1, F4, F7) are expected.
+   */
+  preVerificationFindingCount: number;
+  /** What the verification pass did with each finding; see VerificationBlock. */
+  verification: VerificationBlock;
+  /**
+   * Present only when the pipeline constructed the real verifier and observed
+   * at least one request. Same convention as finderTelemetry.
+   */
+  verifierTelemetry?: VerifierTelemetry;
   scores: Scores;
   verdict: Verdict;
   verdictReason: string;

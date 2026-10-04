@@ -38,6 +38,8 @@ const result = (overrides: Partial<PipelineResult> = {}): PipelineResult => ({
   summary: "overall assessment",
   findings: [identified("F1")],
   preDedupFindingCount: 1,
+  preVerificationFindingCount: 1,
+  verification: { status: "verified", model: "v/model", verdicts: [], unknownVerdictIds: [] },
   scores: scores(),
   verdict: "passed",
   verdictReason: "looks solid",
@@ -390,5 +392,24 @@ describe("off-diff finding warning", () => {
 
   it("says nothing at all in the healthy case", () => {
     expect(renderStickyComment(result())).not.toContain("do not appear in this PR's diff");
+  });
+});
+
+describe("verification footnotes (change `finder-verification`)", () => {
+  it("says how many findings verification withheld", () => {
+    const comment = renderStickyComment(result({ preVerificationFindingCount: 4, findings: [identified("F1")] }));
+    expect(comment).toContain("3 of 4 findings withheld by verification; see review.json");
+  });
+
+  it("says nothing when every finding was published", () => {
+    expect(renderStickyComment(result())).not.toContain("withheld");
+  });
+
+  it("says the findings are unverified when verification was skipped for want of a source", () => {
+    const comment = renderStickyComment(
+      result({ verification: { status: "skipped-no-source", verdicts: [], unknownVerdictIds: [] } }),
+    );
+    expect(comment).toContain("verification skipped: no source root — findings are unverified");
+    expect(comment).not.toContain("withheld");
   });
 });

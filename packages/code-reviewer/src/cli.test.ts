@@ -28,6 +28,8 @@ const pipelineResult = (overrides: Partial<PipelineResult> = {}): PipelineResult
   summary: "overall assessment",
   findings: [],
   preDedupFindingCount: 0,
+  preVerificationFindingCount: 0,
+  verification: { status: "no-findings", verdicts: [], unknownVerdictIds: [] },
   scores: scores(),
   verdict: "passed",
   verdictReason: "looks solid",
@@ -549,7 +551,9 @@ describe("runReviewCli cost summary line (criterion 4.8)", () => {
   it("states the impl-review spend as a ratio of the code review", async () => {
     const io = fakeIo();
     await runReviewCli([], {}, io, okPipeline(withCosts({ implReviewTelemetry: { attempts: 1, cost: 0.08 } })));
-    expect(costLine(io)).toBe("review cost: finder=$0.010000 judge=$0.030000 impl=$0.080000 impl/(finder+judge)=2.00x");
+    expect(costLine(io)).toBe(
+      "review cost: finder=$0.010000 verifier=(not run) judge=$0.030000 impl=$0.080000 impl/(finder+judge)=2.00x",
+    );
   });
 
   it("marks the impl pass as not run rather than implying it was free", async () => {
@@ -727,5 +731,146 @@ describe("runReviewCli rejected-output line", () => {
     const io = fakeIo();
     expect(await runReviewCli([], {}, io, vi.fn().mockRejectedValue(new Error("provider exploded")))).toBe(1);
     expect(io.errors).toEqual(["provider exploded"]);
+  });
+});
+
+// R8 (change `finder-verification`): CI must never publish unverified
+// findings; a local run may, but must say so.
+describe("runReviewCli verification (R8)", () => {
+  const inputOf = (pipeline: ReturnType<typeof vi.fn>): PipelineInput => pipeline.mock.calls[0]?.[0] as PipelineInput;
+  const DIFF = ["diff --git a/src/a.ts b/src/a.ts", "--- a/src/a.ts", "+++ b/src/a.ts", "@@ -1 +1 @@", "+x"].join("\n");
+  const unverified = pipelineResult({
+    findings: [
+      {
+        id: "F1",
+        file: "src/a.ts",
+        startLine: 1,
+        severity: "minor",
+        category: "correctness",
+        description: "d",
+        suggestion: "s",
+      },
+    ],
+    preVerificationFindingCount: 1,
+    verification: { status: "skipped-no-source", verdicts: [], unknownVerdictIds: [] },
+  });
+
+  it("exits 1 before any model call when --require-verification comes without --source-root", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const pipeline = okPipeline();
+    expect(await runReviewCli(["--require-verification"], {}, io, pipeline)).toBe(1);
+    expect(pipeline).not.toHaveBeenCalled();
+    expect(io.errors.at(0)).toContain("--require-verification was given without --source-root");
+    expect(io.errors.at(0)).toContain("published unverified");
+  });
+
+  it("passes requireVerification and a reader over the same root and allowlist", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const pipeline = okPipeline();
+    expect(await runReviewCli(["--source-root", "root", "--require-verification"], {}, io, pipeline)).toBe(0);
+    const input = inputOf(pipeline);
+    expect(input.requireVerification).toBe(true);
+    expect(input.reader?.paths).toEqual(["src/a.ts"]);
+    expect(input.reader?.({ path: "src/a.ts" })).toMatchObject({
+      delivered: true,
+      lines: [`content of ${join("root", "src/a.ts")}`],
+    });
+    expect(input.reader?.({ path: "../secrets.env" })).toMatchObject({ delivered: false });
+  });
+
+  it("forwards a pipeline abort for findings without a readable source as exit 1", async () => {
+    const io = fakeIo({ readStdin: () => "--- a/x.ts\n+++ /dev/null\n-x" });
+    const pipeline = vi
+      .fn()
+      .mockRejectedValue(new Error("Verification is required (--require-verification) but no source is available"));
+    expect(await runReviewCli(["--source-root", "root", "--require-verification"], {}, io, pipeline)).toBe(1);
+    expect("reader" in inputOf(pipeline)).toBe(false);
+    expect(io.errors.at(0)).toContain("Verification is required");
+  });
+
+  it("locally, warns on stderr naming the missing root and that the findings are unverified", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const pipeline = okPipeline(unverified);
+    expect(await runReviewCli([], {}, io, pipeline)).toBe(0);
+    expect(inputOf(pipeline).requireVerification).toBe(false);
+    const warning = io.errors.find((line) => line.startsWith("WARNING: verification skipped"));
+    expect(warning).toContain("no --source-root was given");
+    expect(warning).toContain("1 finding(s) are published UNVERIFIED");
+    expect(io.files.get(join(".review-out", "comment.md"))).toContain(
+      "verification skipped: no source root — findings are unverified",
+    );
+  });
+
+  it("names a root whose diff declares no post-change path", async () => {
+    const io = fakeIo({ readStdin: () => "--- a/x.ts\n+++ /dev/null\n-x" });
+    await runReviewCli(["--source-root", "root"], {}, io, okPipeline(unverified));
+    expect(io.errors.find((line) => line.startsWith("WARNING:"))).toContain(
+      "the diff declares no post-change path under --source-root root",
+    );
+  });
+
+  it("logs what verification did, with the per-state breakdown", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const verified = pipelineResult({
+      findings: [],
+      preVerificationFindingCount: 2,
+      verification: {
+        status: "verified",
+        model: "openai/gpt-6-luna",
+        unknownVerdictIds: [],
+        verdicts: [
+          {
+            id: "F1",
+            file: "a",
+            severity: "minor",
+            category: "style",
+            description: "d",
+            suggestion: "s",
+            state: "refuted",
+            reason: "r",
+            blockIds: ["B1"],
+          },
+          {
+            id: "F2",
+            file: "a",
+            severity: "minor",
+            category: "style",
+            description: "d",
+            suggestion: "s",
+            state: "unverifiable",
+            reasonCode: "no-verdict",
+            reason: "r",
+            blockIds: ["B1"],
+          },
+        ],
+      },
+    });
+    await runReviewCli(["--source-root", "root"], {}, io, okPipeline(verified));
+    expect(io.errors).toContain(
+      "verification: 0 of 2 finding(s) published (model=openai/gpt-6-luna; refuted=1 unverifiable:no-verdict=1)",
+    );
+  });
+
+  it("adds the verifier's cost to the cost line", async () => {
+    const io = fakeIo();
+    await runReviewCli(
+      [],
+      {},
+      io,
+      okPipeline(
+        pipelineResult({
+          finderTelemetry: { steps: 1, toolCalls: 0, cost: 0.01 },
+          verifierTelemetry: { attempts: 1, cost: 0.002, latencyMs: 5, requests: [] },
+          judgeTelemetry: { attempts: 1, cost: 0.03 },
+        }),
+      ),
+    );
+    expect(io.errors.find((line) => line.startsWith("review cost:"))).toContain("verifier=$0.002000");
+  });
+
+  it("accepts --require-verification as a valueless flag among others and names it in the usage", async () => {
+    const io = fakeIo();
+    expect(await runReviewCli(["--bogus"], {}, io, okPipeline())).toBe(1);
+    expect(io.errors.at(0)).toContain("[--require-verification]");
   });
 });

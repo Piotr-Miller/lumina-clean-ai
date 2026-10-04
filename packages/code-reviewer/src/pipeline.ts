@@ -9,9 +9,10 @@ import {
   type ImplReviewerOptions,
 } from "./impl-reviewer.js";
 import { createJudge, type Judge, type JudgeCallOptions, type JudgeOptions } from "./judge.js";
-import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
+import { planExcerpts } from "./excerpts.js";
+import { type ImplReviewPromptInput, type JudgePromptInput, type VerifierPromptInput } from "./prompts.js";
 import { asStepCost, asStepProvider } from "./provider-metadata.js";
-import { withOneRetry } from "./retry.js";
+import { withOneRetry, type RetryOptions } from "./retry.js";
 import {
   createReviewer,
   type ReviewCallOptions,
@@ -20,9 +21,18 @@ import {
   type SourceProvider,
 } from "./reviewer.js";
 import { assignFindingIds } from "./scorecard.js";
+import type { DiffScopedReader } from "./source-provider.js";
+import {
+  applyVerdicts,
+  createVerifier,
+  type Verifier,
+  type VerifierCallOptions,
+  type VerifierOptions,
+} from "./verifier.js";
 import type {
   DiffStats,
   FinderTelemetry,
+  IdentifiedFinding,
   ImplReviewBlock,
   ImplReviewResult,
   ImplReviewTelemetry,
@@ -31,10 +41,15 @@ import type {
   PipelineResult,
   ReviewResult,
   ReviewUnit,
+  VerificationBlock,
+  VerificationOutput,
+  VerifierTelemetry,
 } from "./schemas.js";
 
 // Two-pass orchestration in plain code: finder (full diff) → normalize +
-// merge + assign F1..Fn → judge (findings + rubric + PR metadata) → result.
+// merge + assign F1..Fn → verification (excerpts → verifier → only confirmed,
+// quote-checked findings survive) → judge (published findings + rubric + PR
+// metadata) → result.
 // Truncation caps live here so they're testable; each pass is wrapped in
 // withOneRetry (the single retry authority — both agents run maxRetries: 0).
 
@@ -69,6 +84,10 @@ export const DEFAULT_JUDGE_TIMEOUT_MS = 300_000;
 // Overridable per-run via REVIEW_IMPL_REVIEW_TIMEOUT_MS so a recalibration does
 // not need a release.
 export const DEFAULT_IMPL_REVIEW_TIMEOUT_MS = 300_000;
+// One tool-less call over findings plus excerpts (≤ 60,000 rendered chars), at
+// most one format repair inside the same budget. Sealed with the gate
+// (Pre-registration §2); REVIEW_VERIFIER_TIMEOUT_MS overrides it per run.
+export const DEFAULT_VERIFIER_TIMEOUT_MS = 120_000;
 
 // Re-exported so the package surface stays where it was: the two narrowers
 // moved to provider-metadata.ts because reviewer.ts needs asStepProvider too,
@@ -79,6 +98,7 @@ export interface PipelineTimeouts {
   finderTimeoutMs?: number;
   judgeTimeoutMs?: number;
   implReviewTimeoutMs?: number;
+  verifierTimeoutMs?: number;
 }
 
 // Same guard style as reviewer.ts's maxSteps: a zero, negative, fractional,
@@ -87,12 +107,18 @@ function resolveTimeouts(overrides: PipelineTimeouts = {}): Required<PipelineTim
   const finderTimeoutMs = overrides.finderTimeoutMs ?? DEFAULT_FINDER_TIMEOUT_MS;
   const judgeTimeoutMs = overrides.judgeTimeoutMs ?? DEFAULT_JUDGE_TIMEOUT_MS;
   const implReviewTimeoutMs = overrides.implReviewTimeoutMs ?? DEFAULT_IMPL_REVIEW_TIMEOUT_MS;
-  for (const [name, value] of Object.entries({ finderTimeoutMs, judgeTimeoutMs, implReviewTimeoutMs })) {
+  const verifierTimeoutMs = overrides.verifierTimeoutMs ?? DEFAULT_VERIFIER_TIMEOUT_MS;
+  for (const [name, value] of Object.entries({
+    finderTimeoutMs,
+    judgeTimeoutMs,
+    implReviewTimeoutMs,
+    verifierTimeoutMs,
+  })) {
     if (!Number.isSafeInteger(value) || value < 1) {
       throw new Error(`${name} must be a positive integer (ms), got: ${String(value)}`);
     }
   }
-  return { finderTimeoutMs, judgeTimeoutMs, implReviewTimeoutMs };
+  return { finderTimeoutMs, judgeTimeoutMs, implReviewTimeoutMs, verifierTimeoutMs };
 }
 
 /** Files/additions/deletions from unified-diff text (headers excluded). */
@@ -330,6 +356,7 @@ export interface PipelineOverrides {
   reviewModel?: string;
   judgeModel?: string;
   implReviewModel?: string;
+  verifierModel?: string;
 }
 
 /** Injection seam for hermetic tests: swap any pass for a pure function. */
@@ -355,6 +382,10 @@ export interface PipelineDeps {
    * across a retried run is only observable through this one.
    */
   createJudge?: (options: JudgeOptions) => Pick<Judge, "judge">;
+  /** Replaces the verifier call; bypasses construction, so no verifierTelemetry. */
+  verifier?: VerifyFn;
+  /** The construction seam for the verifier; its telemetry is observable through this one. */
+  createVerifier?: (options: VerifierOptions) => Pick<Verifier, "verify">;
   /** Replaces the real pre-retry sleep so retry-path tests never wait. */
   retrySleep?: (ms: number) => Promise<void>;
 }
@@ -454,7 +485,7 @@ export interface PipelineInput {
    * the pass name, the swallowed first failure, and the pre-retry delay.
    * Without it a recovered flake leaves zero trace in the run's output.
    */
-  onRetry?: (pass: "finder" | "judge" | "impl-review", error: unknown, delayMs: number) => void;
+  onRetry?: (pass: RetryPass, error: unknown, delayMs: number) => void;
   /**
    * File-context provider for the finder's getFileContext tool. Absent (all
    * legacy callers) → the finder stays tool-less and single-generation — the
@@ -489,6 +520,23 @@ export interface PipelineInput {
    * remedies differ.
    */
   onJudgeOutputRepair?: (detail: { reason: string }) => void;
+  /**
+   * The structured diff-scoped reader the verification pass takes its code
+   * excerpts from — the same checkout the finder's `source` reads. Absent →
+   * there is no source root, and `requireVerification` decides what happens
+   * (R8).
+   */
+  reader?: DiffScopedReader;
+  /**
+   * CI policy (R8): with findings and no reader, abort instead of publishing
+   * them unverified. Local runs leave it unset: the findings then publish with
+   * `verification.status: "skipped-no-source"` and the comment says so.
+   */
+  requireVerification?: boolean;
+  /** Observes each verifier request as it completes, for logs and the gate's provider check. */
+  onVerifierStep?: (info: VerifierStepInfo) => void;
+  /** Fires before the verifier's one format repair request. */
+  onVerifierOutputRepair?: (detail: { reason: string }) => void;
   /**
    * When the implementation review is allowed to run, given a plan resolved.
    *
@@ -580,7 +628,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
       onStepEnd: observeJudgeStep,
     }).judge;
 
-  const retryOptions = (pass: "finder" | "judge" | "impl-review") => ({
+  const retryOptions = (pass: RetryPass) => ({
     sleep: input.deps?.retrySleep,
     onRetry: (error: unknown, delayMs: number) => input.onRetry?.(pass, error, delayMs),
   });
@@ -591,12 +639,34 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   );
   // reviewer.review already normalized; mergeFindings adds the dedup +
   // deterministic file/line/category sort that makes F1..Fn stable per run.
-  const findings = assignFindingIds(mergeFindings(reviewResult.findings));
+  // These ids are FINAL: verification only removes findings, it never
+  // renumbers the survivors.
+  const preVerification = assignFindingIds(mergeFindings(reviewResult.findings));
 
+  const { published, verification, verifierTelemetry } = await runVerificationPass({
+    findings: preVerification,
+    reader: input.reader,
+    requireVerification: input.requireVerification,
+    model: models.verifierModel,
+    apiKey: input.overrides?.apiKey,
+    verifier: input.deps?.verifier,
+    createVerifier: input.deps?.createVerifier,
+    timeoutMs: timeouts.verifierTimeoutMs,
+    onRetry: (error, delayMs) => input.onRetry?.("verifier", error, delayMs),
+    sleep: input.deps?.retrySleep,
+    onVerifierStep: input.onVerifierStep,
+    onOutputRepair: input.onVerifierOutputRepair,
+  });
+
+  // R13: the judge's latency, timed here around the call (retry included) so
+  // the judge's own code stays untouched.
+  const judgeStarted = performance.now();
   const judgeResult = await withOneRetry(
-    () => judge({ findings, prTitle: input.prTitle, prBody, diffStats }, { timeoutMs: timeouts.judgeTimeoutMs }),
+    () =>
+      judge({ findings: published, prTitle: input.prTitle, prBody, diffStats }, { timeoutMs: timeouts.judgeTimeoutMs }),
     retryOptions("judge"),
   );
+  judgeTelemetry.latencyMs = Math.round(performance.now() - judgeStarted);
 
   const { implReview, implReviewTelemetry } = await runImplReviewPass({
     input,
@@ -612,8 +682,10 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
 
   return {
     summary: judgeResult.summary,
-    findings,
+    findings: published,
     preDedupFindingCount: reviewResult.findings.length,
+    preVerificationFindingCount: preVerification.length,
+    verification,
     scores: judgeResult.scores,
     verdict: judgeResult.verdict,
     verdictReason: judgeResult.verdictReason,
@@ -622,9 +694,11 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     // Against the FULL diff, not the capped one: an over-cap file is invisible
     // to the finder but still genuinely part of the PR, and flagging it as
     // off-diff would bury the real signal (a path in no version of the diff).
+    // On the PRE-verification set (R8): an off-diff finding is exactly one the
+    // source refuses, so it never publishes — and the warning must survive that.
     offDiffFindingPaths: offDiffFindingPaths(
       computeFileSegments(input.diff).map((segment) => segment.path),
-      findings,
+      preVerification,
     ),
     bodyTruncated,
     // Key absent (not `false`) when the run had no plan, so a plan-less
@@ -635,9 +709,156 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     // Key absent (not undefined-valued) when nothing was observed, so
     // review.json and `in` checks stay clean for injected-finder runs.
     ...(telemetry.steps > 0 ? { finderTelemetry: telemetry } : {}),
+    ...(verifierTelemetry === undefined ? {} : { verifierTelemetry }),
     ...(judgeTelemetry.attempts > 0 ? { judgeTelemetry } : {}),
     ...(implReview === undefined ? {} : { implReview }),
     ...(implReviewTelemetry === undefined ? {} : { implReviewTelemetry }),
+  };
+}
+
+export type RetryPass = "finder" | "verifier" | "judge" | "impl-review";
+
+/** The verifier call as the pipeline uses it — `createVerifier(...).verify`, or an injected double. */
+export type VerifyFn = (input: VerifierPromptInput, callOptions?: VerifierCallOptions) => Promise<VerificationOutput>;
+
+/** SDK-independent view of one verifier request. */
+export interface VerifierStepInfo {
+  provider?: string;
+  cost?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  /** SDK-reported reasoning tokens; R7 expects none. */
+  reasoningTokens?: number;
+  finishReason: string;
+}
+
+export interface VerificationPassInput {
+  /** Pre-verification findings, ids assigned. */
+  findings: IdentifiedFinding[];
+  reader?: DiffScopedReader;
+  requireVerification?: boolean;
+  /** The verifier model id, recorded in `verification.model`. */
+  model: string;
+  apiKey?: string;
+  /** An injected verifier call; bypasses construction (no telemetry). */
+  verifier?: VerifyFn;
+  createVerifier?: (options: VerifierOptions) => Pick<Verifier, "verify">;
+  timeoutMs?: number;
+  onRetry?: RetryOptions["onRetry"];
+  sleep?: RetryOptions["sleep"];
+  onVerifierStep?: (info: VerifierStepInfo) => void;
+  onOutputRepair?: (detail: { reason: string }) => void;
+}
+
+export interface VerificationPassResult {
+  /** The findings that may be published: confirmed with a checked quote, or all of them when skipped. */
+  published: IdentifiedFinding[];
+  verification: VerificationBlock;
+  verifierTelemetry?: VerifierTelemetry;
+}
+
+/**
+ * The verification pass — and nothing else — so the production pipeline, the
+ * gate runner and the promptfoo provider all measure ONE code path
+ * (plan-review F4):
+ *
+ * 1. zero findings → no call (`no-findings`);
+ * 2. no reader → R8: `requireVerification` throws (CI must not publish
+ *    unverified findings), otherwise the findings pass through as
+ *    `skipped-no-source` and the caller says so;
+ * 3. otherwise plan the excerpts, call the verifier (one transient retry, as
+ *    every pass), and let `applyVerdicts` decide publication in code.
+ *
+ * Construction happens only in step 3, so a run with nothing to verify needs no
+ * API key. A verifier failure after its retry propagates: a technical failure,
+ * never a silent pass-through.
+ */
+export async function runVerificationPass(input: VerificationPassInput): Promise<VerificationPassResult> {
+  const { findings } = input;
+  if (findings.length === 0) {
+    return { published: [], verification: { status: "no-findings", verdicts: [], unknownVerdictIds: [] } };
+  }
+  if (input.reader === undefined) {
+    if (input.requireVerification === true) {
+      throw new Error(
+        `Verification is required (--require-verification) but no source is available: the diff declares no ` +
+          `post-change path the verifier could read, so the ${String(findings.length)} finding(s) cannot be ` +
+          `verified. Aborting instead of publishing them unverified.`,
+      );
+    }
+    return {
+      published: findings,
+      verification: { status: "skipped-no-source", verdicts: [], unknownVerdictIds: [] },
+    };
+  }
+
+  const plan = planExcerpts({ findings, read: input.reader, diffPaths: input.reader.paths });
+  const sent = findings.filter((finding) => "blockIds" in (plan.perFinding[finding.id] ?? {}));
+
+  const requests: VerifierTelemetry["requests"] = [];
+  const telemetry: VerifierTelemetry = { attempts: 0, latencyMs: 0, requests };
+  const addTokens = (sum: number | undefined, next: number | undefined): number | undefined =>
+    next === undefined ? sum : (sum ?? 0) + next;
+  const observe = (step: StepResult<ToolSet>): void => {
+    const info: VerifierStepInfo = {
+      ...(asStepProvider(step.providerMetadata) === undefined
+        ? {}
+        : { provider: asStepProvider(step.providerMetadata) }),
+      ...(asStepCost(step.providerMetadata) === undefined ? {} : { cost: asStepCost(step.providerMetadata) }),
+      ...(step.usage.inputTokens === undefined ? {} : { inputTokens: step.usage.inputTokens }),
+      ...(step.usage.outputTokens === undefined ? {} : { outputTokens: step.usage.outputTokens }),
+      ...(step.usage.outputTokenDetails.reasoningTokens === undefined
+        ? {}
+        : { reasoningTokens: step.usage.outputTokenDetails.reasoningTokens }),
+      finishReason: step.finishReason,
+    };
+    telemetry.attempts += 1;
+    telemetry.inputTokens = addTokens(telemetry.inputTokens, info.inputTokens);
+    telemetry.outputTokens = addTokens(telemetry.outputTokens, info.outputTokens);
+    // Assigned only when reported: a fabricated 0 would read as "free".
+    if (info.cost !== undefined) telemetry.cost = (telemetry.cost ?? 0) + info.cost;
+    requests.push({
+      ...(info.provider === undefined ? {} : { provider: info.provider }),
+      ...(info.cost === undefined ? {} : { cost: info.cost }),
+      ...(info.reasoningTokens === undefined ? {} : { reasoningTokens: info.reasoningTokens }),
+      finishReason: info.finishReason,
+    });
+    input.onVerifierStep?.(info);
+  };
+
+  let output: VerificationOutput = { verdicts: [] };
+  const started = performance.now();
+  if (sent.length > 0) {
+    const verify =
+      input.verifier ??
+      (input.createVerifier ?? createVerifier)({
+        apiKey: input.apiKey,
+        model: input.model,
+        onStepEnd: observe,
+        onOutputRepair: input.onOutputRepair,
+      }).verify;
+    output = await withOneRetry(
+      () =>
+        verify(
+          { findings: sent, blocks: plan.blocks, perFinding: plan.perFinding },
+          { timeoutMs: input.timeoutMs ?? DEFAULT_VERIFIER_TIMEOUT_MS },
+        ),
+      { sleep: input.sleep, onRetry: input.onRetry },
+    );
+  }
+  telemetry.latencyMs = Math.round(performance.now() - started);
+
+  const applied = applyVerdicts({ findings, plan, output });
+  return {
+    published: applied.published,
+    verification: {
+      status: "verified",
+      model: input.model,
+      verdicts: applied.records,
+      unknownVerdictIds: applied.unknownVerdictIds,
+      excerpts: plan.telemetry,
+    },
+    ...(telemetry.attempts > 0 ? { verifierTelemetry: telemetry } : {}),
   };
 }
 

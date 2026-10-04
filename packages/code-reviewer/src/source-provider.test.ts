@@ -3,10 +3,12 @@ import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  createDiffScopedReaderForDiff,
   createDiffScopedSource,
   createDiffScopedSourceForDiff,
   MAX_LISTED_PATHS,
   parseDiffPaths,
+  readDiffScoped,
 } from "./source-provider.js";
 
 // Hermetic: every fs primitive is injected, so the security invariants
@@ -425,5 +427,101 @@ describe("createDiffScopedSource — outcome reporting (impl-review-phase-1 F4)"
     const source = makeSource(["src/a.ts"], { files: { [join(ROOT, "src/a.ts")]: "l1" } });
     expect(source({ path: "src/a.ts" })).toBe("l1");
     expect(source({ path: "nope.ts" })).toContain("not part of the reviewed diff");
+  });
+});
+
+// The verifier's structured reader (change `finder-verification`, Phase 1 §1):
+// delivered/refused is a field, never inferred from prose, and a refusal keeps
+// the exact text the finder would have been sent.
+describe("readDiffScoped — the structured reader", () => {
+  const readerWith = (allowed: string[], fs: FakeFs = {}) =>
+    readDiffScoped({
+      allowedPaths: new Set(allowed),
+      root: ROOT,
+      realpath: (path) => fs.resolves?.[path] ?? path,
+      isRegularFile: (path) => !(fs.notRegular ?? []).includes(path),
+      readFile: (path) => {
+        const content = fs.files?.[path];
+        if (content === undefined) throw new Error("ENOENT");
+        return content;
+      },
+    });
+
+  it("delivers lines with their first line number and the file's line count", () => {
+    const read = readerWith(["src/a.ts"], { files: { [join(ROOT, "src/a.ts")]: "l1\nl2\nl3" } });
+    expect(read({ path: "src/a.ts" })).toEqual({
+      delivered: true,
+      path: "src/a.ts",
+      lines: ["l1", "l2", "l3"],
+      startLine: 1,
+      total: 3,
+    });
+    expect(read({ path: "src/a.ts", startLine: 2, endLine: 2 })).toEqual({
+      delivered: true,
+      path: "src/a.ts",
+      lines: ["l2"],
+      startLine: 2,
+      total: 3,
+    });
+  });
+
+  it("exposes its allowlist, sorted", () => {
+    expect(readerWith(["b.ts", "a.ts"]).paths).toEqual(["a.ts", "b.ts"]);
+  });
+
+  const refusals: [string, string[], FakeFs, string][] = [
+    ["an unlisted path", ["src/a.ts"], {}, "not part of the reviewed diff"],
+    [
+      "a symlink escape",
+      ["src/evil.ts"],
+      {
+        resolves: { [join(ROOT, "src/evil.ts")]: join(ROOT, ".git/config") },
+        files: { [join(ROOT, ".git/config")]: "secret" },
+      },
+      "could not be read from the checkout",
+    ],
+    [
+      "a directory",
+      ["src/evil.ts"],
+      { files: { [join(ROOT, "src/evil.ts")]: "" }, notRegular: [join(ROOT, "src/evil.ts")] },
+      "could not be read from the checkout",
+    ],
+    ["an empty file", ["src/evil.ts"], { files: { [join(ROOT, "src/evil.ts")]: "" } }, "is empty."],
+  ];
+
+  it.each(refusals)("refuses %s with today's refusal prose as its reason", (_label, allowed, fs, fragment) => {
+    const result = readerWith(allowed, fs)({ path: "src/evil.ts" });
+    expect(result.delivered).toBe(false);
+    // Same prose the finder-facing adapter returns for the same request.
+    const prose = makeSource(allowed, fs)({ path: "src/evil.ts" });
+    expect(result).toEqual({ delivered: false, path: "src/evil.ts", reason: prose });
+    expect(prose).toContain(fragment);
+  });
+});
+
+describe("createDiffScopedReaderForDiff", () => {
+  const fsPrimitives = {
+    root: ROOT,
+    realpath: (path: string) => path,
+    isRegularFile: () => true,
+    readFile: () => "x",
+  };
+
+  it("derives the allowlist from the diff's post-change paths", () => {
+    const reader = createDiffScopedReaderForDiff({
+      diff: diffFor(["diff --git a/src/a.ts b/src/a.ts", "--- a/src/a.ts", "+++ b/src/a.ts", "@@ -1 +1 @@", "+x"]),
+      ...fsPrimitives,
+    });
+    expect(reader?.paths).toEqual(["src/a.ts"]);
+    expect(reader?.({ path: "src/a.ts" }).delivered).toBe(true);
+  });
+
+  it("returns undefined for a diff with no post-change path", () => {
+    expect(
+      createDiffScopedReaderForDiff({
+        diff: diffFor(["diff --git a/old.ts b/old.ts", "--- a/old.ts", "+++ /dev/null", "-x"]),
+        ...fsPrimitives,
+      }),
+    ).toBeUndefined();
   });
 });

@@ -29,6 +29,15 @@ export const DEFAULT_JUDGE_MODEL = "anthropic/claude-sonnet-5";
 export const DEFAULT_IMPL_REVIEW_MODEL = "anthropic/claude-sonnet-5";
 
 /**
+ * The verification pass's model (change `finder-verification`). CONTROL arm:
+ * the finder's own candidate, `openai/gpt-6-luna` routed to `openai` only. Its
+ * own constant, never an alias: the arms differ ONLY in this id (R1), and
+ * Phase 8 sets it to the arm the owner admits. Pinned by a literal assertion in
+ * config.test.ts.
+ */
+export const DEFAULT_VERIFIER_MODEL = "openai/gpt-6-luna";
+
+/**
  * Output-token ceiling for every model call in the pipeline.
  *
  * WHY IT EXISTS AT ALL: with no cap the provider defaults to the model's
@@ -161,24 +170,58 @@ const PROVIDER_SLUG = /^[a-z0-9][a-z0-9._/-]*$/u;
  * and the implementation review.
  */
 export function resolveFinderProviderRouting(): FinderProviderRouting {
-  const providers = parseFinderProviders(process.env.OPENROUTER_FINDER_PROVIDERS);
+  const providers = parseProviders(
+    process.env.OPENROUTER_FINDER_PROVIDERS,
+    "OPENROUTER_FINDER_PROVIDERS",
+    "finder",
+    DEFAULT_FINDER_PROVIDERS,
+  );
   return { order: [...providers], only: [...providers], allow_fallbacks: true, require_parameters: true };
 }
 
-function parseFinderProviders(raw: string | undefined): readonly string[] {
+/**
+ * The OpenRouter endpoints the verifier may be routed to (CONTROL: `openai`).
+ * Same contract as DEFAULT_FINDER_PROVIDERS; Phase 8 of `finder-verification`
+ * sets it to the admitted arm's endpoint. Pinned in config.test.ts.
+ */
+export const DEFAULT_VERIFIER_PROVIDERS: readonly string[] = ["openai"];
+
+/**
+ * The verifier's routing, built exactly like the finder's: only the listed
+ * endpoints, fallbacks allowed within that list, `require_parameters: true` so
+ * an endpoint that cannot honour `reasoning: {enabled: false}` is refused (R7).
+ * `OPENROUTER_VERIFIER_PROVIDERS` overrides the list with the same malformed-
+ * value rule — the default, said on stderr, never unfiltered routing.
+ */
+export function resolveVerifierProviderRouting(): FinderProviderRouting {
+  const providers = parseProviders(
+    process.env.OPENROUTER_VERIFIER_PROVIDERS,
+    "OPENROUTER_VERIFIER_PROVIDERS",
+    "verifier",
+    DEFAULT_VERIFIER_PROVIDERS,
+  );
+  return { order: [...providers], only: [...providers], allow_fallbacks: true, require_parameters: true };
+}
+
+function parseProviders(
+  raw: string | undefined,
+  variable: string,
+  pass: string,
+  fallback: readonly string[],
+): readonly string[] {
   const entries = (raw ?? "").split(",").map((entry) => entry.trim());
-  if (entries.every((entry) => entry === "")) return DEFAULT_FINDER_PROVIDERS;
+  if (entries.every((entry) => entry === "")) return fallback;
   // From here the list is populated, so an empty entry (`novita,,deepinfra`,
   // `novita,`) is a typo, not padding: it fails the slug check and is reported
   // as `""` rather than silently dropped into a shorter list.
   const malformed = entries.filter((entry) => !PROVIDER_SLUG.test(entry));
   if (malformed.length > 0) {
     console.warn(
-      `OPENROUTER_FINDER_PROVIDERS is malformed (${malformed.map((entry) => JSON.stringify(entry)).join(", ")} ` +
-        `is not a lowercase OpenRouter provider slug); the finder routes to the default ` +
-        `[${DEFAULT_FINDER_PROVIDERS.join(", ")}] instead, NOT to the endpoints you listed.`,
+      `${variable} is malformed (${malformed.map((entry) => JSON.stringify(entry)).join(", ")} ` +
+        `is not a lowercase OpenRouter provider slug); the ${pass} routes to the default ` +
+        `[${fallback.join(", ")}] instead, NOT to the endpoints you listed.`,
     );
-    return DEFAULT_FINDER_PROVIDERS;
+    return fallback;
   }
   return [...new Set(entries)];
 }
@@ -187,18 +230,21 @@ export interface ModelOverrides {
   reviewModel?: string;
   judgeModel?: string;
   implReviewModel?: string;
+  verifierModel?: string;
 }
 
 export interface ResolvedModels {
   reviewModel: string;
   judgeModel: string;
   implReviewModel: string;
+  verifierModel: string;
 }
 
 /**
  * Two-pass model resolution (user decision, backward compatible): finder =
  * override → OPENROUTER_REVIEW_MODEL → legacy OPENROUTER_MODEL → DEFAULT_MODEL;
- * judge = override → OPENROUTER_JUDGE_MODEL → DEFAULT_JUDGE_MODEL. Key-free so
+ * judge = override → OPENROUTER_JUDGE_MODEL → DEFAULT_JUDGE_MODEL; verifier =
+ * override → OPENROUTER_VERIFIER_MODEL → DEFAULT_VERIFIER_MODEL. Key-free so
  * hermetic pipeline tests can resolve model metadata without an API key.
  */
 export function resolveModels(overrides: ModelOverrides = {}): ResolvedModels {
@@ -210,8 +256,9 @@ export function resolveModels(overrides: ModelOverrides = {}): ResolvedModels {
   const judgeModel = overrides.judgeModel || process.env.OPENROUTER_JUDGE_MODEL || DEFAULT_JUDGE_MODEL;
   const implReviewModel =
     overrides.implReviewModel || process.env.OPENROUTER_IMPL_REVIEW_MODEL || DEFAULT_IMPL_REVIEW_MODEL;
+  const verifierModel = overrides.verifierModel || process.env.OPENROUTER_VERIFIER_MODEL || DEFAULT_VERIFIER_MODEL;
   /* eslint-enable @typescript-eslint/prefer-nullish-coalescing */
-  return { reviewModel, judgeModel, implReviewModel };
+  return { reviewModel, judgeModel, implReviewModel, verifierModel };
 }
 
 export interface ConfigOverrides extends ModelOverrides {

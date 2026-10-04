@@ -255,6 +255,18 @@ export function renderStickyComment(result: PipelineResult, options: { runUrl?: 
   // A partial plan review must never read as a complete one.
   if (result.planTruncated === true)
     notes.push("plan truncated at 80,000 chars — the implementation review covers the truncated portion");
+  // Verification footnotes (change `finder-verification`): a reader must be
+  // able to tell a review that dropped findings, and one whose findings were
+  // never checked against the code, from an ordinary one.
+  if (result.verification.status === "verified" && result.findings.length < result.preVerificationFindingCount) {
+    notes.push(
+      `${String(result.preVerificationFindingCount - result.findings.length)} of ${String(
+        result.preVerificationFindingCount,
+      )} findings withheld by verification; see review.json`,
+    );
+  }
+  if (result.verification.status === "skipped-no-source")
+    notes.push("verification skipped: no source root — findings are unverified");
   if (result.droppedFindingIdRefs > 0)
     notes.push(`${String(result.droppedFindingIdRefs)} unknown finding reference(s) dropped from scores`);
   if (notes.length > 0) lines.push("", `⚠️ ${notes.join("; ")}.`);

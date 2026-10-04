@@ -119,26 +119,40 @@ function refuseUnlisted(path: string, allowedPaths: Set<string>): string {
 const refuseUnreadable = (path: string): string =>
   `"${path}" could not be read from the checkout, so no context is available for it.`;
 
+/** One structured read: real lines of an allowlisted file, or why there are none. */
+export type DiffScopedRead =
+  | { delivered: true; path: string; lines: string[]; startLine: number; total: number }
+  | { delivered: false; path: string; reason: string };
+
+export interface DiffScopedReadRequest {
+  path: string;
+  startLine?: number;
+  endLine?: number;
+}
+
 /**
- * A SourceProvider serving 1-based-inclusive line ranges of exactly the
- * allowlisted files (missing startLine → line 1; missing endLine → end of
- * file). Range/size caps stay `fetchBoundedContext`'s job — its range clamp
- * fires only when BOTH bounds are present, so single-sided requests arrive
- * here unclamped and MAX_CONTEXT_CHARS bounds the response.
+ * The verifier's view of the same capability: a structured result instead of
+ * model-facing prose, so delivered and refused can never be confused (the
+ * reason `onResult` exists for the finder, generalised into the return value).
+ * `paths` is the allowlist the reader serves, sorted, so a caller can look for
+ * identifiers across the diff's other files without re-parsing the diff.
  */
-export function createDiffScopedSource(options: DiffScopedSourceOptions): SourceProvider {
-  const { allowedPaths, root, readFile, realpath, isRegularFile, onResult } = options;
-  // Every exit goes through one of these two, so a future return path cannot
-  // silently skip the outcome report.
-  const refuse = (path: string, message: string): string => {
-    onResult?.({ path, delivered: false });
-    return message;
-  };
-  const deliver = (path: string, content: string): string => {
-    onResult?.({ path, delivered: true });
-    return content;
-  };
-  return (request) => {
+export interface DiffScopedReader {
+  (request: DiffScopedReadRequest): DiffScopedRead;
+  readonly paths: readonly string[];
+}
+
+/**
+ * The read core shared by the finder's string source and the verifier's
+ * reader: the same allowlist, containment and regular-file checks, the same
+ * 1-based-inclusive slicing (missing startLine → line 1; missing endLine → end
+ * of file). A refusal carries the exact prose the finder has always been sent
+ * as its `reason`, so the adapter below stays byte-identical. Never throws.
+ */
+export function readDiffScoped(options: Omit<DiffScopedSourceOptions, "onResult">): DiffScopedReader {
+  const { allowedPaths, root, readFile, realpath, isRegularFile } = options;
+  const refuse = (path: string, reason: string): DiffScopedRead => ({ delivered: false, path, reason });
+  const read = (request: DiffScopedReadRequest): DiffScopedRead => {
     const { path, startLine, endLine } = request;
     if (!allowedPaths.has(path)) return refuse(path, refuseUnlisted(path, allowedPaths));
     let content: string;
@@ -168,7 +182,31 @@ export function createDiffScopedSource(options: DiffScopedSourceOptions): Source
         `"${path}" has ${String(lines.length)} line(s); lines ${String(first)}-${String(last)} are outside that range.`,
       );
     }
-    return deliver(path, slice.join("\n"));
+    return { delivered: true, path, lines: slice, startLine: first, total: lines.length };
+  };
+  return Object.assign(read, { paths: [...allowedPaths].sort() });
+}
+
+/**
+ * A SourceProvider serving 1-based-inclusive line ranges of exactly the
+ * allowlisted files (missing startLine → line 1; missing endLine → end of
+ * file). Range/size caps stay `fetchBoundedContext`'s job — its range clamp
+ * fires only when BOTH bounds are present, so single-sided requests arrive
+ * here unclamped and MAX_CONTEXT_CHARS bounds the response.
+ *
+ * A thin string adapter over `readDiffScoped`: delivered lines are joined back
+ * with "\n" and a refusal returns its reason, so the finder's tool output is
+ * byte-identical to what it was before the reader existed.
+ */
+export function createDiffScopedSource(options: DiffScopedSourceOptions): SourceProvider {
+  const { onResult, ...readOptions } = options;
+  const read = readDiffScoped(readOptions);
+  // Every exit goes through the one report below, so a future return path
+  // cannot silently skip the outcome report.
+  return (request) => {
+    const result = read(request);
+    onResult?.({ path: result.path, delivered: result.delivered });
+    return result.delivered ? result.lines.join("\n") : result.reason;
   };
 }
 
@@ -198,4 +236,21 @@ export function createDiffScopedSourceForDiff(
   const allowedPaths = parseDiffPaths(diff);
   if (allowedPaths.size === 0) return undefined;
   return createDiffScopedSource({ allowedPaths, ...fs });
+}
+
+/**
+ * The verifier's counterpart of `createDiffScopedSourceForDiff`: the same
+ * allowlist derivation, the structured reader on top. `undefined` when the diff
+ * declares no post-change path — the "no source" case R8 handles explicitly.
+ */
+export function createDiffScopedReaderForDiff(
+  options: Omit<DiffScopedSourceOptions, "allowedPaths" | "onResult"> & {
+    /** Unified diff the allowlist is derived from — pass the FULL diff, never a truncated one. */
+    diff: string;
+  },
+): DiffScopedReader | undefined {
+  const { diff, ...fs } = options;
+  const allowedPaths = parseDiffPaths(diff);
+  if (allowedPaths.size === 0) return undefined;
+  return readDiffScoped({ allowedPaths, ...fs });
 }

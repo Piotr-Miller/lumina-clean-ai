@@ -11,6 +11,7 @@ import {
   scoresWireSchema,
   findingSchema,
   reviewResultSchema,
+  verificationOutputSchema,
 } from "./schemas.js";
 
 const fileLevelFinding = {
@@ -311,5 +312,45 @@ describe("implReviewOutputSchema", () => {
     const json = JSON.stringify(z.toJSONSchema(implReviewOutputSchema));
     expect(json).not.toContain('"minimum"');
     expect(json).not.toContain('"maximum"');
+  });
+});
+
+// Change `finder-verification`: the verifier's wire shape must stay inside the
+// provider's structured-output subset and must not lose a whole response over
+// one finding's empty quote.
+describe("verificationOutputSchema", () => {
+  const verdict = { id: "F1", verdict: "confirmed", quote: "x = 1;", reason: "r" };
+
+  it("emits no oneOf, anyOf, minimum or maximum, and requires every field", () => {
+    const json = z.toJSONSchema(verificationOutputSchema);
+    const asText = JSON.stringify(json);
+    for (const construct of ["oneOf", "anyOf", "minimum", "maximum"]) expect(asText).not.toContain(`"${construct}"`);
+    const items = (json as unknown as { properties: { verdicts: { items: { required: string[] } } } }).properties
+      .verdicts.items;
+    expect([...items.required].sort()).toEqual(["id", "quote", "reason", "verdict"]);
+  });
+
+  it("emits the verdict as a string enum of the three model-chosen states", () => {
+    const json = z.toJSONSchema(verificationOutputSchema) as unknown as {
+      properties: { verdicts: { items: { properties: { verdict: { enum: string[] } } } } };
+    };
+    expect(json.properties.verdicts.items.properties.verdict.enum).toEqual(["confirmed", "refuted", "unsupported"]);
+  });
+
+  it("accepts an empty quote — no refine (plan-review 3rd run F1)", () => {
+    const output = {
+      verdicts: [verdict, { ...verdict, id: "F2", quote: "" }, { ...verdict, id: "F3", verdict: "refuted", quote: "" }],
+    };
+    expect(verificationOutputSchema.safeParse(output).success).toBe(true);
+  });
+
+  it("refuses a missing quote, an unknown verdict, and `unverifiable` (code assigns that state)", () => {
+    const withoutQuote: Record<string, unknown> = { ...verdict };
+    delete withoutQuote.quote;
+    expect(verificationOutputSchema.safeParse({ verdicts: [withoutQuote] }).success).toBe(false);
+    expect(verificationOutputSchema.safeParse({ verdicts: [{ ...verdict, verdict: "maybe" }] }).success).toBe(false);
+    expect(verificationOutputSchema.safeParse({ verdicts: [{ ...verdict, verdict: "unverifiable" }] }).success).toBe(
+      false,
+    );
   });
 });

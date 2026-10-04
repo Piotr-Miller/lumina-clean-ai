@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
 import type { PipelineResult } from "./schemas.js";
-import { createDiffScopedSourceForDiff } from "./source-provider.js";
+import { createDiffScopedReaderForDiff, createDiffScopedSourceForDiff } from "./source-provider.js";
 
 // The CLI's whole contract, extracted injectable so tests can pin the exact
 // boundary the composite action consumes (impl-review-phase-1 F6):
@@ -43,10 +43,18 @@ interface CliArgs {
    * empty → no plan, which is a known state, not an error.
    */
   planFile?: string;
+  /**
+   * CI policy (R8, change `finder-verification`): findings must be verified
+   * against the source root before they are published. Without `--source-root`
+   * the run aborts before any model call; with findings but no readable source
+   * it aborts after the finder. Absent (local runs) → unverified findings are
+   * published with a warning and a comment footnote.
+   */
+  requireVerification: boolean;
 }
 
 export function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = { outDir: ".review-out" };
+  const args: CliArgs = { outDir: ".review-out", requireVerification: false };
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv.at(i);
     const value = argv.at(i + 1);
@@ -65,9 +73,11 @@ export function parseArgs(argv: string[]): CliArgs {
     } else if (flag === "--plan-file" && value !== undefined) {
       args.planFile = value;
       i += 1;
+    } else if (flag === "--require-verification") {
+      args.requireVerification = true;
     } else {
       throw new Error(
-        `Unknown or valueless argument: ${flag ?? ""}. Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>] [--source-root <dir>] [--plan-file <path>]`,
+        `Unknown or valueless argument: ${flag ?? ""}. Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>] [--source-root <dir>] [--plan-file <path>] [--require-verification]`,
       );
     }
   }
@@ -221,11 +231,15 @@ const usd = (value: number): string => `$${value.toFixed(6)}`;
  */
 const formatCostLine = (result: PipelineResult): string | undefined => {
   const finder = result.finderTelemetry?.cost;
+  const verifier = result.verifierTelemetry?.cost;
   const judge = result.judgeTelemetry?.cost;
   const impl = result.implReviewTelemetry?.cost;
-  if (finder === undefined && judge === undefined && impl === undefined) return undefined;
+  if (finder === undefined && verifier === undefined && judge === undefined && impl === undefined) return undefined;
   const parts = [
     `finder=${finder === undefined ? "?" : usd(finder)}`,
+    // "(not run)" when no verifier request was observed — zero findings, or no
+    // source — so it never reads as an unreported cost.
+    `verifier=${verifier === undefined ? (result.verifierTelemetry === undefined ? "(not run)" : "?") : usd(verifier)}`,
     `judge=${judge === undefined ? "?" : usd(judge)}`,
     `impl=${impl === undefined ? "(not run)" : usd(impl)}`,
   ];
@@ -234,6 +248,37 @@ const formatCostLine = (result: PipelineResult): string | undefined => {
     parts.push(`impl/(finder+judge)=${(impl / baseline).toFixed(2)}x`);
   }
   return `review cost: ${parts.join(" ")}`;
+};
+
+/**
+ * One stderr line saying what verification did — the run log's only record of
+ * how many findings were withheld, and of a run that published UNVERIFIED
+ * findings (lessons.md: a degradation must name what is missing and what it
+ * costs). Silent when there was nothing to verify.
+ */
+const formatVerificationLine = (result: PipelineResult, args: CliArgs): string | undefined => {
+  const { verification } = result;
+  if (verification.status === "no-findings") return undefined;
+  if (verification.status === "skipped-no-source") {
+    const missing =
+      args.sourceRoot === undefined
+        ? "no --source-root was given"
+        : `the diff declares no post-change path under --source-root ${logSafePath(args.sourceRoot)}`;
+    return (
+      `WARNING: verification skipped — ${missing}, so the verifier had no code to read. ` +
+      `${String(result.findings.length)} finding(s) are published UNVERIFIED; in CI, --require-verification makes this an error.`
+    );
+  }
+  const counts = new Map<string, number>();
+  for (const record of verification.verdicts) {
+    const key = record.reasonCode === undefined ? record.state : `${record.state}:${record.reasonCode}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const breakdown = [...counts].map(([key, value]) => `${key}=${String(value)}`).join(" ");
+  return (
+    `verification: ${String(result.findings.length)} of ${String(result.preVerificationFindingCount)} finding(s) ` +
+    `published (model=${logSafePath(verification.model ?? "?")}; ${breakdown})`
+  );
 };
 
 /** Optional positive-integer ms override; unset/empty → pipeline default, invalid → exit 1. */
@@ -272,6 +317,14 @@ export async function runReviewCli(
   let lastObservedProvider: string | undefined;
   try {
     const args = parseArgs(argv);
+    // R8: checked before the diff is even read, so no model call can happen.
+    if (args.requireVerification && args.sourceRoot === undefined) {
+      throw new Error(
+        "--require-verification was given without --source-root: the verifier would have no code to read, so the " +
+          "findings could only be published unverified. Pass --source-root <checkout>, or drop " +
+          "--require-verification for a local run that publishes unverified findings with a warning.",
+      );
+    }
     const diff = args.diffFile === undefined ? io.readStdin() : io.readFile(args.diffFile);
     if (diff.trim() === "") throw new Error("Empty diff — nothing to review.");
 
@@ -280,7 +333,7 @@ export async function runReviewCli(
     // happens later inside the pipeline, and a truncated allowlist would
     // refuse legitimate requests. Absent flag → empty spread: no source, no
     // maxSteps, no step telemetry — byte-identical to the legacy invocation.
-    let sourceInputs: Pick<PipelineInput, "source" | "finderMaxSteps" | "onFinderStep"> = {};
+    let sourceInputs: Pick<PipelineInput, "source" | "finderMaxSteps" | "onFinderStep" | "reader"> = {};
     if (args.sourceRoot !== undefined) {
       // The allowlist derives from the FULL diff read above — capDiff
       // truncation happens later inside the pipeline, and a truncated
@@ -295,12 +348,23 @@ export async function runReviewCli(
         realpath: io.realpath,
         isRegularFile: io.isRegularFile,
       });
+      // The verifier's reader: the same root and the same allowlist, as a
+      // structured delivered/refused result instead of model-facing prose.
+      const reader = createDiffScopedReaderForDiff({
+        diff,
+        root: args.sourceRoot,
+        readFile: io.readFile,
+        realpath: io.realpath,
+        isRegularFile: io.isRegularFile,
+      });
+      if (reader !== undefined) sourceInputs = { reader };
       if (source !== undefined) {
         const finderMaxSteps = parseMaxStepsEnv(env) ?? DEFAULT_FINDER_MAX_STEPS;
         // CLI-maintained monotonic index: the SDK's stepNumber resets to 0 on
         // the retry attempt, which would make the log lie about real spend.
         let stepIndex = 0;
         sourceInputs = {
+          ...sourceInputs,
           source,
           finderMaxSteps,
           onFinderStep: (info) => {
@@ -348,7 +412,9 @@ export async function runReviewCli(
         finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
         judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
         implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
+        verifierTimeoutMs: parseTimeoutEnv(env, "REVIEW_VERIFIER_TIMEOUT_MS"),
       },
+      requireVerification: args.requireVerification,
       projectReviewContext: args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
       // CI policy, not a library default: the pass costs ~9.47x the code review
       // it accompanies, and a red code review means the diff is about to change.
@@ -371,7 +437,17 @@ export async function runReviewCli(
       onJudgeOutputRepair: ({ reason }) => {
         io.logError(`judge output repaired after strict-parse failure: ${reason}`);
       },
+      // Remembers the verifier's upstream for the rejected-output line, like the judge's.
+      onVerifierStep: (info) => {
+        lastObservedProvider = info.provider;
+      },
+      onVerifierOutputRepair: ({ reason }) => {
+        io.logError(`verifier format repair requested after strict-parse failure: ${reason}`);
+      },
     });
+
+    const verificationLine = formatVerificationLine(result, args);
+    if (verificationLine !== undefined) io.logError(verificationLine);
 
     const implReviewLine = formatImplReviewLine(result);
     if (implReviewLine !== undefined) io.logError(implReviewLine);

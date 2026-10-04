@@ -5,8 +5,11 @@ import {
   DEFAULT_IMPL_REVIEW_MODEL,
   DEFAULT_JUDGE_MODEL,
   DEFAULT_MODEL,
+  DEFAULT_VERIFIER_MODEL,
+  DEFAULT_VERIFIER_PROVIDERS,
   resolveConfig,
   resolveModels,
+  resolveVerifierProviderRouting,
 } from "./config.js";
 
 // Hermetic: scrub every OpenRouter env var so results don't depend on a
@@ -17,6 +20,8 @@ beforeEach(() => {
   vi.stubEnv("OPENROUTER_REVIEW_MODEL", undefined);
   vi.stubEnv("OPENROUTER_JUDGE_MODEL", undefined);
   vi.stubEnv("OPENROUTER_IMPL_REVIEW_MODEL", undefined);
+  vi.stubEnv("OPENROUTER_VERIFIER_MODEL", undefined);
+  vi.stubEnv("OPENROUTER_VERIFIER_PROVIDERS", undefined);
 });
 
 afterEach(() => {
@@ -157,5 +162,43 @@ describe("DEFAULT_FINDER_PROVIDERS", () => {
   // that passed gate.md — change it only alongside a measurement.
   it("is the provisional Phase 0 list", () => {
     expect(DEFAULT_FINDER_PROVIDERS).toEqual(["novita"]);
+  });
+});
+
+describe("verifier model and routing (change `finder-verification`)", () => {
+  // Pinned: the two arms differ ONLY in this id (R1). CONTROL until Phase 8
+  // sets the admitted arm.
+  it("defaults to the CONTROL arm, luna routed to openai only", () => {
+    expect(DEFAULT_VERIFIER_MODEL).toBe("openai/gpt-6-luna");
+    expect(DEFAULT_VERIFIER_PROVIDERS).toEqual(["openai"]);
+    expect(resolveModels().verifierModel).toBe("openai/gpt-6-luna");
+  });
+
+  it("resolves override → OPENROUTER_VERIFIER_MODEL → default, an empty value falling through", () => {
+    vi.stubEnv("OPENROUTER_VERIFIER_MODEL", "anthropic/claude-sonnet-5");
+    expect(resolveModels().verifierModel).toBe("anthropic/claude-sonnet-5");
+    expect(resolveModels({ verifierModel: "override/v" }).verifierModel).toBe("override/v");
+    vi.stubEnv("OPENROUTER_VERIFIER_MODEL", "");
+    expect(resolveModels().verifierModel).toBe(DEFAULT_VERIFIER_MODEL);
+  });
+
+  it("routes like the finder: only the listed endpoints, require_parameters always on", () => {
+    expect(resolveVerifierProviderRouting()).toEqual({
+      order: ["openai"],
+      only: ["openai"],
+      allow_fallbacks: true,
+      require_parameters: true,
+    });
+    vi.stubEnv("OPENROUTER_VERIFIER_PROVIDERS", "anthropic");
+    expect(resolveVerifierProviderRouting().only).toEqual(["anthropic"]);
+  });
+
+  it("falls back to the default on a malformed list, and says so naming the verifier", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.stubEnv("OPENROUTER_VERIFIER_PROVIDERS", "Anthropic");
+    expect(resolveVerifierProviderRouting().only).toEqual(["openai"]);
+    expect(warn.mock.calls[0]?.[0]).toContain("OPENROUTER_VERIFIER_PROVIDERS is malformed");
+    expect(warn.mock.calls[0]?.[0]).toContain("the verifier routes to the default [openai]");
+    warn.mockRestore();
   });
 });

@@ -21,7 +21,10 @@ import {
   PLAN_CAP_CHARS,
   PLAN_TRUNCATION_MARKER,
   runReviewPipeline,
+  runVerificationPass,
   type FinderStepInfo,
+  type RetryPass,
+  type VerifyFn,
 } from "./pipeline.js";
 import { openRouterStub, VALID_REVIEW_TEXT } from "./openrouter-stub.js";
 import { FinderOutputError } from "./output-repair.js";
@@ -29,6 +32,7 @@ import { type JudgePromptInput } from "./prompts.js";
 import { RATE_LIMIT_DELAY_MS, TRANSIENT_DELAY_MS } from "./retry.js";
 import { createReviewer, type ReviewerOptions } from "./reviewer.js";
 import { CRITERIA } from "./scorecard.js";
+import { readDiffScoped } from "./source-provider.js";
 import type {
   Finding,
   ImplGrades,
@@ -45,6 +49,7 @@ beforeEach(() => {
   vi.stubEnv("OPENROUTER_REVIEW_MODEL", undefined);
   vi.stubEnv("OPENROUTER_JUDGE_MODEL", undefined);
   vi.stubEnv("OPENROUTER_IMPL_REVIEW_MODEL", undefined);
+  vi.stubEnv("OPENROUTER_VERIFIER_MODEL", undefined);
 });
 
 afterEach(() => {
@@ -365,7 +370,7 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
   });
 
   it("reports retried passes through onRetry with the pass name and bounded delay", async () => {
-    const events: { pass: "finder" | "judge" | "impl-review"; error: unknown; delayMs: number }[] = [];
+    const events: { pass: RetryPass; error: unknown; delayMs: number }[] = [];
     const { sleep } = recordingSleep();
     const finder = vi.fn().mockRejectedValueOnce(apiError(503)).mockResolvedValueOnce({ summary: "s", findings: [] });
     const judge = vi.fn().mockRejectedValueOnce(apiError(429)).mockResolvedValueOnce(judgeResult());
@@ -748,6 +753,8 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
       outputTokens: 16,
       totalTokens: 96,
       cost: 0.03,
+      // R13: the pipeline times the judge pass (both attempts) around the call.
+      latencyMs: expect.any(Number) as number,
     });
   });
 
@@ -1356,5 +1363,255 @@ describe("finder telemetry covers the finalization and the repair (real reviewer
     expect(requests).toBe(4);
     expect(result.finderTelemetry).toMatchObject({ steps: 4, toolCalls: 1 });
     expect(result.finderTelemetry?.cost).toBeCloseTo(0.004, 10);
+  });
+});
+
+// --- Verification pass (change `finder-verification`, Phase 1 §4) ---
+
+describe("runReviewPipeline — verification between finder and judge", () => {
+  const FILES: Record<string, string> = {
+    "src/a.ts": ["// header", "export function a(items) {", "  return items[items.length];", "}"].join("\n"),
+    "src/b.ts": ["// header", "export function b() {", "  return 1;", "}"].join("\n"),
+  };
+  const reader = () =>
+    readDiffScoped({
+      allowedPaths: new Set(Object.keys(FILES)),
+      root: "/repo",
+      realpath: (path) => path,
+      isRegularFile: () => true,
+      readFile: (path) => {
+        const name = Object.keys(FILES).find((candidate) => path.endsWith(candidate));
+        if (name === undefined) throw new Error("ENOENT");
+        return FILES[name];
+      },
+    });
+  const TWO_FILE_DIFF = [
+    "diff --git a/src/a.ts b/src/a.ts",
+    "--- a/src/a.ts",
+    "+++ b/src/a.ts",
+    "@@ -1,1 +1,4 @@",
+    "+x",
+    "diff --git a/src/b.ts b/src/b.ts",
+    "--- a/src/b.ts",
+    "+++ b/src/b.ts",
+    "@@ -1,1 +1,4 @@",
+    "+y",
+  ].join("\n");
+  const finderWith = (findings: Finding[]) => () => Promise.resolve({ summary: "finder summary", findings });
+  const threeFindings = [
+    finding({ file: "src/a.ts", startLine: 3, description: "reads past the end" }),
+    finding({ file: "src/b.ts", startLine: 3, description: "wrong constant" }),
+    finding({ file: "src/b.ts", startLine: 3, category: "style", description: "naming" }),
+  ];
+  const confirm = (ids: string[], quoteFor: Record<string, string>): VerifyFn =>
+    vi.fn((input: Parameters<VerifyFn>[0]) =>
+      Promise.resolve({
+        verdicts: input.findings.map((f) =>
+          ids.includes(f.id)
+            ? { id: f.id, verdict: "confirmed" as const, quote: quoteFor[f.file], reason: "shown" }
+            : { id: f.id, verdict: "refuted" as const, quote: quoteFor[f.file], reason: "not so" },
+        ),
+      }),
+    );
+  const quotes = { "src/a.ts": "return items[items.length];", "src/b.ts": "export function b() {" };
+
+  it("sends the judge only the published findings, which keep their pre-verification ids", async () => {
+    const judge = vi.fn((input: JudgePromptInput) => {
+      void input;
+      return Promise.resolve(judgeResult());
+    });
+    const verifier = confirm(["F1", "F3"], quotes);
+    const result = await runReviewPipeline({
+      diff: TWO_FILE_DIFF,
+      reader: reader(),
+      deps: { finder: finderWith(threeFindings), verifier, judge },
+    });
+    expect(verifier).toHaveBeenCalledTimes(1);
+    expect(judge.mock.calls[0]?.[0].findings.map((f) => f.id)).toEqual(["F1", "F3"]);
+    expect(result.findings.map((f) => f.id)).toEqual(["F1", "F3"]);
+    expect(result.preVerificationFindingCount).toBe(3);
+    expect(result.verification).toMatchObject({ status: "verified", model: "openai/gpt-6-luna" });
+    expect(result.verification.verdicts.map((r) => [r.id, r.state])).toEqual([
+      ["F1", "confirmed"],
+      ["F2", "refuted"],
+      ["F3", "confirmed"],
+    ]);
+    expect(result.verification.excerpts?.blocks).toBeGreaterThan(0);
+  });
+
+  it("runs the verifier after the finder and before the judge", async () => {
+    const order: string[] = [];
+    await runReviewPipeline({
+      diff: TWO_FILE_DIFF,
+      reader: reader(),
+      deps: {
+        finder: () => {
+          order.push("finder");
+          return Promise.resolve({ summary: "s", findings: threeFindings });
+        },
+        verifier: (input) => {
+          order.push("verifier");
+          return confirm([], quotes)(input);
+        },
+        judge: () => {
+          order.push("judge");
+          return Promise.resolve(judgeResult());
+        },
+      },
+    });
+    expect(order).toEqual(["finder", "verifier", "judge"]);
+  });
+
+  it("makes no verifier call when the finder found nothing", async () => {
+    const verifier = vi.fn();
+    const result = await runReviewPipeline({
+      diff: TWO_FILE_DIFF,
+      reader: reader(),
+      requireVerification: true,
+      deps: { finder: finderWith([]), verifier, judge: () => Promise.resolve(judgeResult()) },
+    });
+    expect(verifier).not.toHaveBeenCalled();
+    expect(result.verification).toEqual({ status: "no-findings", verdicts: [], unknownVerdictIds: [] });
+    expect("verifierTelemetry" in result).toBe(false);
+  });
+
+  it("locally, with no reader, publishes the findings unverified as skipped-no-source (R8)", async () => {
+    const judge = vi.fn(() => Promise.resolve(judgeResult()));
+    const result = await runReviewPipeline({
+      diff: TWO_FILE_DIFF,
+      deps: { finder: finderWith(threeFindings), verifier: vi.fn(), judge },
+    });
+    expect(result.verification.status).toBe("skipped-no-source");
+    expect(result.findings.map((f) => f.id)).toEqual(["F1", "F2", "F3"]);
+    expect(judge).toHaveBeenCalledTimes(1);
+  });
+
+  it("in CI, with findings and no reader, aborts before the judge (R8)", async () => {
+    const judge = vi.fn(() => Promise.resolve(judgeResult()));
+    await expect(
+      runReviewPipeline({
+        diff: TWO_FILE_DIFF,
+        requireVerification: true,
+        deps: { finder: finderWith(threeFindings), verifier: vi.fn(), judge },
+      }),
+    ).rejects.toThrow(/Verification is required .* Aborting instead of publishing them unverified/s);
+    expect(judge).not.toHaveBeenCalled();
+  });
+
+  it("computes offDiffFindingPaths on the pre-verification set, so a refused off-diff finding still warns", async () => {
+    const result = await runReviewPipeline({
+      diff: TWO_FILE_DIFF,
+      reader: reader(),
+      deps: {
+        finder: finderWith([finding({ file: "packages/fixturepkg/x.ts", startLine: 1 })]),
+        verifier: confirm([], quotes),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect(result.findings).toEqual([]);
+    expect(result.verification.verdicts[0]).toMatchObject({ state: "unverifiable", reasonCode: "source-refused" });
+    expect(result.offDiffFindingPaths).toEqual(["packages/fixturepkg/x.ts"]);
+  });
+
+  it("retries a timed-out verifier once, then fails the review as a technical failure", async () => {
+    const timeout = new DOMException("budget", "TimeoutError");
+    const verifier = vi.fn(() => Promise.reject(timeout));
+    const judge = vi.fn(() => Promise.resolve(judgeResult()));
+    const retries: RetryPass[] = [];
+    await expect(
+      runReviewPipeline({
+        diff: TWO_FILE_DIFF,
+        reader: reader(),
+        onRetry: (pass) => retries.push(pass),
+        deps: { finder: finderWith(threeFindings), verifier, judge, retrySleep: () => Promise.resolve() },
+      }),
+    ).rejects.toBe(timeout);
+    expect(verifier).toHaveBeenCalledTimes(2);
+    expect(retries).toEqual(["verifier"]);
+    expect(judge).not.toHaveBeenCalled();
+  });
+
+  it("records verifierTelemetry through the construction seam, and the model it was built with", async () => {
+    const step = (cost: number) =>
+      ({
+        usage: { inputTokens: 100, outputTokens: 20, outputTokenDetails: { reasoningTokens: 0 } },
+        providerMetadata: { openrouter: { provider: "OpenAI", usage: { cost } } },
+        finishReason: "stop",
+      }) as unknown as StepResult<ToolSet>;
+    const built: string[] = [];
+    const result = await runReviewPipeline({
+      diff: TWO_FILE_DIFF,
+      reader: reader(),
+      overrides: { verifierModel: "anthropic/claude-sonnet-5" },
+      deps: {
+        finder: finderWith(threeFindings),
+        createVerifier: (options) => {
+          built.push(options.model ?? "?");
+          return {
+            verify: (input) => {
+              options.onStepEnd?.(step(0.002));
+              return confirm(["F1"], quotes)(input);
+            },
+          };
+        },
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect(built).toEqual(["anthropic/claude-sonnet-5"]);
+    expect(result.verification.model).toBe("anthropic/claude-sonnet-5");
+    expect(result.models).toEqual({ finder: DEFAULT_MODEL, judge: DEFAULT_JUDGE_MODEL });
+    expect(result.verifierTelemetry).toEqual({
+      attempts: 1,
+      inputTokens: 100,
+      outputTokens: 20,
+      cost: 0.002,
+      latencyMs: expect.any(Number) as number,
+      requests: [{ provider: "OpenAI", cost: 0.002, reasoningTokens: 0, finishReason: "stop" }],
+    });
+  });
+
+  it("keeps verifierTelemetry absent with an injected verifier", async () => {
+    const result = await runReviewPipeline({
+      diff: TWO_FILE_DIFF,
+      reader: reader(),
+      deps: {
+        finder: finderWith(threeFindings),
+        verifier: confirm(["F1"], quotes),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect("verifierTelemetry" in result).toBe(false);
+  });
+});
+
+describe("runVerificationPass — the one code path production and the gate share", () => {
+  it("constructs no verifier for zero findings, so it needs no API key", async () => {
+    const createVerifier = vi.fn();
+    const result = await runVerificationPass({ findings: [], model: "m", createVerifier });
+    expect(createVerifier).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      published: [],
+      verification: { status: "no-findings", verdicts: [], unknownVerdictIds: [] },
+    });
+  });
+
+  it("does not call the verifier when no finding could be excerpted, and records why", async () => {
+    const verifier = vi.fn();
+    const read = readDiffScoped({
+      allowedPaths: new Set(["src/a.ts"]),
+      root: "/repo",
+      realpath: (path) => path,
+      isRegularFile: () => true,
+      readFile: () => "x",
+    });
+    const result = await runVerificationPass({
+      findings: [{ ...finding({ file: "src/missing.ts", startLine: 1 }), id: "F1" }],
+      reader: read,
+      model: "m",
+      verifier,
+    });
+    expect(verifier).not.toHaveBeenCalled();
+    expect(result.published).toEqual([]);
+    expect(result.verification.verdicts[0]).toMatchObject({ state: "unverifiable", reasonCode: "source-refused" });
   });
 });

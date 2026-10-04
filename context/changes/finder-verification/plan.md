@@ -1081,11 +1081,11 @@ verifier keys are optional, so old review.json readers are unaffected.
 
 #### Automated
 
-- [ ] 1.1 Package tests pass
-- [ ] 1.2 Package typecheck and lint pass
-- [ ] 1.3 Root format check passes
-- [ ] 1.4 Judge files and judge prompt builders unchanged
-- [ ] 1.5 Verification schema has no oneOf/anyOf/minimum/maximum
+- [x] 1.1 Package tests pass
+- [x] 1.2 Package typecheck and lint pass
+- [x] 1.3 Root format check passes
+- [x] 1.4 Judge files and judge prompt builders unchanged
+- [x] 1.5 Verification schema has no oneOf/anyOf/minimum/maximum
 
 #### Manual
 
