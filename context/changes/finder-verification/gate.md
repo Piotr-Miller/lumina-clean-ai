@@ -629,9 +629,14 @@ states the seal.
 - UTC time taken: **2026-10-04T20:59:17Z**.
 - **Seal commit:** `9c85aa27f418c6d8cb669b1bedddbb333799fa02`
   (`docs(finder-verification): seal the pre-registration (p3)`), on `origin/feat/finder-verification`; its
-  committed `gate.md` reproduces the sha256 above. The SHA is rewritten by Phase 8's rebase; the annotated tag
-  `finder-verification/seal` that Phase 8 §2 requires is not created yet.
+  committed `gate.md` reproduces the sha256 above. The SHA is rewritten by Phase 8's rebase (see Rebase protection
+  below).
 - **GitHub push time: 2026-10-04T20:59:42Z.** Source:
   `GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-verification`, event `push`,
   `58fd4ec..9c85aa2`, actor `Piotr-Miller`. `git ls-remote` showed `9c85aa2` as the branch head. Recorded before
   any price re-read, T0 or paid call.
+- **Rebase protection:** annotated tag **`finder-verification/seal`** (tag object
+  `85aa508214fe24065e0559c2ec0835611c9b9a77`) on `9c85aa27f418c6d8cb669b1bedddbb333799fa02`, created and pushed to
+  `origin` on 2026-10-04 by owner decision (plan Phase 8 §2; plan-review 3rd run F3). `git ls-remote --tags origin
+'finder-verification/*'` shows it peeled to `9c85aa2`, next to `finder-verification/freeze` peeled to `c3b2f1c`.
+  Phase 8 §2 only confirms that both still exist.
