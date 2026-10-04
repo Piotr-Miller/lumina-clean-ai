@@ -51,6 +51,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
+import { ACCOUNT_ERROR_STATUSES } from "./finder-gate-core.mjs";
+
 /** G4 ceiling: 3 × the matched baseline median $0.00100551 (gate.md §4). */
 export const G4_CEILING = 0.00301653;
 
@@ -194,17 +196,26 @@ export function checkRow(raw, expectedProvider, expectedVerifierProvider) {
   const finderError = finderErrorOf(raw);
   const verifierError = verifierErrorOf(raw);
   const v = expectedVerifierProvider === undefined ? null : verifierChecksOf(raw, expectedVerifierProvider);
+  // An OpenRouter account error (401: key, 402: credits) on either pass is a
+  // MEASUREMENT ERROR, never a finder or verifier failure (gate.md §5;
+  // impl-review a8844a6 F1): read as a failed row it would fail G3f, a quality
+  // gate that can start MAIN. The adapter records the status as
+  // `metadata.errorStatus`; a message alone cannot tell it apart.
+  const accountStatus = ACCOUNT_ERROR_STATUSES.includes(metadata.errorStatus) ? metadata.errorStatus : null;
+  const failedPass = verifierError !== null ? "verifier" : "finder";
   // A row whose verification did not run is a measurement error — unless the
   // finder already failed (nothing to verify) or the verifier itself failed
   // (a failed row, not a tooling failure).
   const measurementError =
-    v === null ||
-    finderError !== null ||
-    verifierError !== null ||
-    v.verificationStatus === "verified" ||
-    v.verificationStatus === "no-findings"
-      ? null
-      : `verification status ${JSON.stringify(v.verificationStatus)}`;
+    accountStatus !== null
+      ? `OpenRouter account error (HTTP ${String(accountStatus)}) on the ${failedPass}`
+      : v === null ||
+          finderError !== null ||
+          verifierError !== null ||
+          v.verificationStatus === "verified" ||
+          v.verificationStatus === "no-findings"
+        ? null
+        : `verification status ${JSON.stringify(v.verificationStatus)}`;
   const verifierInvalidated = v !== null && v.verifierMismatch.length > 0;
   // Evaluated whenever the verifier sent a request — even when a later one
   // failed (impl-review phase 2 F6) — and on any row the finder completed.
@@ -378,9 +389,10 @@ export function summarizeRows(rows, extraProblems = []) {
     .map((r) => ({ ...rowRef(r), error: r.measurementError }));
   if (measurementErrorRows.length > 0) {
     problems.push(
-      `${String(measurementErrorRows.length)} row(s) whose verification did not run (testIdx ${measurementErrorRows
-        .map((r) => String(r.testIdx))
-        .join(", ")}) — a measurement error, not a gate result`,
+      `${String(measurementErrorRows.length)} measurement-error row(s) — verification did not run, or an ` +
+        `OpenRouter account error (testIdx ${measurementErrorRows
+          .map((r) => String(r.testIdx))
+          .join(", ")}) — a failed run, not a gate result`,
     );
   }
   const verifierRows = rows.filter((r) => (r.verifier ?? null) !== null);

@@ -1,8 +1,20 @@
 // Hermetic tests for the R4 recall guard (change finder-verification, plan.md
 // Phase 2 §3): synthetic series records, no network.
-import { describe, expect, it } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import { attemptsOf, evaluateRecall, PR_SERIES_STAGES, required } from "./recall-guard.mjs";
+import { describe, expect, it, vi } from "vitest";
+
+import {
+  attemptsOf,
+  EMPTY_LIST_LINE,
+  EXIT_EMPTY_LIST,
+  evaluateRecall,
+  main,
+  PR_SERIES_STAGES,
+  required,
+} from "./recall-guard.mjs";
 
 /** One valid attempt: `pre` = pre-verification ids, `published` = the ids that survived verification. */
 const attempt = (n, pre, published = pre, overrides = {}) => ({
@@ -171,5 +183,52 @@ describe("series integrity and detection over all attempts", () => {
   it("an invalid attempt's findings need their match entries too", () => {
     const attempts = [attempt(1, ["F1"], [], { g1Pass: false })];
     expect(() => evaluateRecall({ defects: DEFECTS, attempts, matches: {} })).toThrow(/a1\/F1 has no owner-approved/u);
+  });
+});
+
+describe("impl-review a8844a6 F5 — an empty K list is information only, with its own exit code", () => {
+  const runMain = (defects, { k = 0, p = 0 } = {}) => {
+    const dir = mkdtempSync(join(tmpdir(), "recall-guard-"));
+    const { attempts, matches } = series(k, p);
+    const paths = ["defects.json", "matches.json", "series.jsonl"].map((name) => join(dir, name));
+    writeFileSync(paths[0], JSON.stringify(defects));
+    writeFileSync(paths[1], JSON.stringify(matches));
+    writeFileSync(paths[2], attempts.map((a) => `${JSON.stringify(a)}\n`).join(""));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const code = main(paths);
+      return { code, out: log.mock.calls.map((call) => String(call[0])) };
+    } finally {
+      log.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it("an empty list prints the information-only line and exits EXIT_EMPTY_LIST, not FAIL's 1", () => {
+    const { code, out } = runMain([]);
+    expect(EXIT_EMPTY_LIST).not.toBe(1);
+    expect(code).toBe(EXIT_EMPTY_LIST);
+    expect(out).toContain("R4: NOT PROVEN (empty K list — information only, gate.md §5)");
+    expect(out).toContain(EMPTY_LIST_LINE);
+    expect(out.some((line) => line === "R4: NOT PROVEN")).toBe(false);
+  });
+
+  it("a non-empty list with nothing raised is a plain NOT PROVEN with exit 1", () => {
+    const { code, out } = runMain(DEFECTS);
+    expect(code).toBe(1);
+    expect(out).toContain("R4: NOT PROVEN");
+    expect(out).not.toContain(EMPTY_LIST_LINE);
+  });
+
+  it("FAIL exits 1 and PASS exits 0", () => {
+    expect(runMain(DEFECTS, { k: 10, p: 5 }).code).toBe(1);
+    expect(runMain(DEFECTS, { k: 3, p: 2 }).code).toBe(0);
+  });
+
+  it("evaluateRecall tells the two NOT PROVEN cases apart", () => {
+    const { attempts, matches } = series(0, 0);
+    expect(evaluateRecall({ defects: [], matches, attempts }).notProvenReason).toBe("empty-list");
+    expect(guard(0, 0).notProvenReason).toBe("none-raised");
+    expect(guard(3, 2).notProvenReason).toBeNull();
   });
 });

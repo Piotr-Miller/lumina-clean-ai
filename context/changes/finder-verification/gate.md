@@ -261,9 +261,10 @@ As frozen in `## Inputs freeze` above, unchanged.
     owner under plan Phase 3 §1 (fewer than 10 rows fully served). Reasons: no finding reached a limit (max 125
     lines / 7,054 chars per finding, 21,392 per review); the result comes from the window rules, not the limits;
     and adding rules tuned on #269's known rows would fit the verifier to known findings.
-  - **Accepted with it: D2, the one real #269 finding, is only partly served.** Seven of its eight findings
-    cite `localInput` (`bread-spike.ts` 178–196) and receive none of `deleteUpload` (198–213), its counterpart.
-    The eighth (4.2) cites `deleteUpload` itself (200–202) and receives 199–213 but not `localInput`'s upload
+  - **Accepted with it: D2, the one real #269 finding, is only partly served.** Six of its eight findings
+    cite `localInput` (`bread-spike.ts` 178–196); a seventh (5.1) cites line 214, outside both units. These
+    seven receive `localInput`'s block (167–196) and none of `deleteUpload` (198–213), its counterpart
+    (`backcheck-269-policy.json`; corrected before the seal, impl-review a8844a6 F4). The eighth (4.2) cites `deleteUpload` itself (200–202) and receives 199–213 but not `localInput`'s upload
     path (189–195) or line 198. No D2 finding is delivered all of its evidence, so the verifier may refuse to
     confirm it, and **G3h on #269 may see N = 0** (which fails G3h for #269 by §4).
 - **Unit-span check** (`unit-span-check.mjs` → `unit-span-check.json`, run 2026-10-04; TypeScript 5.9.3 and
@@ -342,7 +343,9 @@ Every gate is evaluated **per arm**. A gate that applies "on each PR series" is 
   - **Empty list** (pre-registered rule, owner decision 2026-10-04; the list below **is** empty): R4 is
     reported as `NOT PROVEN` **for information only**. It does **not** by itself block admission or stop the
     arm when every other gate passes. Recall preservation then rests on the fixtures' required metrics, 3/3 on
-    **published** findings (G3f), and #240 is stated as **no evidence about recall** (R4).
+    **published** findings (G3f), and #240 is stated as **no evidence about recall** (R4). `recall-guard.mjs`
+    prints `R4: NOT PROVEN (empty K list — information only, gate.md §5)` and exits **3**, distinct from FAIL's
+    and a non-empty NOT PROVEN's exit 1 (impl-review a8844a6 F5).
   - **Informational:** whole-pipeline detection (K published in x of **all** the series' attempts, valid or
     not; impl-review phase 2 F7). `recall-guard.mjs` refuses duplicate attempt ids or numbers, a file that is not
     one PR series, and a pre-verification finding of any attempt without a match entry.
@@ -405,10 +408,22 @@ run, never a gate result.
 - an input hash mismatch (the runner refuses a continuation whose diff or rules sha256, or source-root git tree,
   differs from the series file's; uncommitted changes under the source root refuse to start; impl-review phase 2
   F4);
-- a runner crash;
+- a code mismatch: the runner refuses a continuation whose code under test differs from the series file's —
+  the sealed hashes of §1 (instructions, sample prompt, `src/excerpts.ts`, `src/verifier.ts`, `src/prompts.ts`,
+  `EXCERPT_LIMITS`), computed by `verifier-prompt-hash.mjs` and imported by the runner, and the git tree of
+  `packages/code-reviewer/src`; uncommitted changes under that directory refuse to start (impl-review a8844a6
+  F3);
+- a runner crash, and **any error that is not attributable to the model** (impl-review a8844a6 F2). The
+  model-attributable classes are exactly: (1) an API call error that carries an HTTP status, its own or its
+  cause's (401/402 excepted, below); (2) a timeout (`TimeoutError`, its own or its cause's); (3) an
+  output-validation error after the one repair: `FinderOutputError`, `VerifierOutputError` or
+  `AI_NoObjectGeneratedError`. Every other error — a `TypeError` in the runner, a reader I/O error such as
+  `EACCES`, a connection failure with no HTTP status — is a measurement error and stops the series;
 - a grader error (A1 applies);
 - an OpenRouter account error (401, or 402 for credits) — the runner classifies it as a measurement error,
-  never as a model failure (impl-review phase 2 F3);
+  never as a model failure (impl-review phase 2 F3), and so does the fixture-row checker, from the HTTP status
+  the adapter records as `metadata.errorStatus` (impl-review a8844a6 F1): such a row makes the promptfoo run a
+  failed run, never a G3f failure;
 - a row or attempt whose verification did not run (`skipped-no-source`, or any status other than `verified` or
   `no-findings`), including an attempt aborted because the source root is unusable (§3, No source root);
 - a bug in this change's code found in a record.

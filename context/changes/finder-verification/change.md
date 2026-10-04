@@ -122,8 +122,10 @@ Given during `/rune-plan` on 2026-10-04; they bind `plan.md` (Definitions).
 - **R4 rule.** Every known defect the finder raised in at least one valid #240 attempt must be kept in the
   published findings in ≥ floor(k/2)+1 of the k attempts in which the finder raised it. Every match needs the
   owner's approval. Defects never raised are reported as "not raised — no evidence about the verifier". If the
-  finder raised no known defect, recall on #240 stays unproven and cannot be PASS. Whole-pipeline detection is
-  a separate, informational metric.
+  finder raised no known defect, recall on #240 stays unproven: the guard reads `NOT PROVEN`, never `PASS`, and
+  with a non-empty list the owner decides. **With an empty list** (the case for #240; see "Phase 3" below) that
+  `NOT PROVEN` is information only and does not by itself block the arm. Whole-pipeline detection is a separate,
+  informational metric.
 - **Hand-read reuse.** MAIN's rows may inherit an owner classification from this change's CONTROL rows (as
   well as the #269 D-rows, R10) only when PR, code version, dedup key and the claim all match. The owner
   approves the match table; new or changed claims are classified again. CONTROL's labels may not be used to
@@ -169,3 +171,20 @@ Reviewed with the ai-toolkit session at `fa5afaa`. No paid calls.
    labelled `FAIL (cost)`, **not** a G3f quality failure, so it can never trigger MAIN: CONTROL ends
    `FAIL (cost)` and the owner decides. Recorded in `gate.md` §4–§5 and in the Definitions rows "Incomplete cost"
    and "Quality gate"; `promptfoo-gate-rows.mjs` labels it that way.
+
+### Owner decisions (2026-10-04): Phase 3
+
+Decided after the pre-seal backcheck (`3f89d38`) and first recorded in `gate.md` and `a8844a6`. They are written
+here after impl-review a8844a6 (Review Notes). No paid calls.
+
+1. **`EXCERPT_LIMITS` stay as they are; 9 of 20 #269 rows fully served is accepted knowingly** (research §7
+   projected 10). No finding reached a limit (at most 125 lines / 7,054 chars per finding, 21,392 per review);
+   the shortfall comes from the window rules, and rules tuned on #269's known rows would fit the verifier to
+   known findings. Accepted with it: **D2, the one real #269 finding, is only partly served** — none of its
+   eight findings receives all of its evidence (gate.md §3), so **G3h on #269 may see N = 0**, which fails G3h
+   for #269.
+2. **#240's K list is empty, and the empty-K reading is confirmed.** R4 is reported `NOT PROVEN` for
+   information only; it does not by itself block admission or stop the arm when every other gate passes (the
+   arm is then labelled `PASS` with that note). Recall preservation rests on G3f's required metrics, 3/3 on
+   published findings, and #240 is no evidence about recall (gate.md §4 R4, §5; plan Definitions "R4 recall
+   guard" and Phase 5 §3).

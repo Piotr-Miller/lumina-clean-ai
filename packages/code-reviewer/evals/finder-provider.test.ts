@@ -529,3 +529,48 @@ describe("FinderProvider verifier rows — metadata.failedPass", () => {
     expect(response.metadata).not.toHaveProperty("failedPass");
   });
 });
+
+// impl-review a8844a6 F1: the failure's HTTP status rides the error path, so the
+// rows script can turn an OpenRouter 401/402 into a measurement error.
+describe("FinderProvider — metadata.errorStatus", () => {
+  const http = (statusCode: number) =>
+    new APICallError({ message: `HTTP ${String(statusCode)}`, url: "u", requestBodyValues: {}, statusCode });
+
+  it("a finder 402 records errorStatus 402 on the finder", async () => {
+    currentModel = new MockLanguageModelV3({ doGenerate: vi.fn().mockRejectedValue(http(402)) });
+    const response = await callRow(verifying());
+    expect(response.metadata).toMatchObject({ failedPass: "finder", errorStatus: 402 });
+  });
+
+  it("a verifier 401 records errorStatus 401 on the verifier", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("one finding", [OFF_BY_ONE]), priced("OpenAI", 0.001)))
+        .mockRejectedValue(http(401)),
+    });
+    const response = await callRow(verifying());
+    expect(response.metadata).toMatchObject({ failedPass: "verifier", errorStatus: 401 });
+  });
+
+  it("a status on the error's cause is found too", async () => {
+    const wrapped = new Error("wrapped", { cause: http(402) });
+    currentModel = new MockLanguageModelV3({ doGenerate: vi.fn().mockRejectedValue(wrapped) });
+    const response = await callRow(verifying());
+    expect(response.metadata).toMatchObject({ failedPass: "finder", errorStatus: 402 });
+  });
+
+  it("an error without a status records none, and a passing row has none", async () => {
+    currentModel = new MockLanguageModelV3({ doGenerate: vi.fn().mockRejectedValue(new TypeError("boom")) });
+    const failed = await callRow(verifying());
+    expect(failed.metadata).not.toHaveProperty("errorStatus");
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockResolvedValueOnce(generation(finderSaying("one finding", [OFF_BY_ONE]), priced("OpenAI", 0.001)))
+        .mockResolvedValueOnce(generation(verdicts("confirmed"), priced("OpenAI", 0.0005))),
+    });
+    const passed = await callRow(verifying());
+    expect(passed.metadata).not.toHaveProperty("errorStatus");
+  });
+});

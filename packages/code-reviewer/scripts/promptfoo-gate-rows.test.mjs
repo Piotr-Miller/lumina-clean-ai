@@ -548,7 +548,9 @@ describe("verifier rows", () => {
     rows[3] = withMetadata(rows[3], { verification });
     const summary = summarizeRows(checkV(rows));
     expect(summary.failedRun).toBe(true);
-    expect(summary.problems.join(" ")).toMatch(/1 row\(s\) whose verification did not run \(testIdx 4\)/u);
+    expect(summary.problems.join(" ")).toMatch(
+      /1 measurement-error row\(s\) — verification did not run, or an OpenRouter account error \(testIdx 4\)/u,
+    );
     expect(summary.measurementErrorRows).toHaveLength(1);
     expect(summary.g3).toBeUndefined();
   });
@@ -689,5 +691,57 @@ describe("F6 — a verifier failure is labelled as the verifier's, and its leak 
     const row = checkRow(realProviderError(verifierRun()[0]), "OpenAI", "OpenAI");
     expect(row.finderError).not.toBeNull();
     expect(row.verifierError).toBeNull();
+  });
+});
+
+describe("impl-review a8844a6 F1 — an OpenRouter 401/402 on a row is a measurement error, never a G3f failure", () => {
+  const accountError = (row, status, failedPass) => {
+    const message = status === 402 ? "Insufficient credits" : "No auth credentials found";
+    return {
+      ...row,
+      success: false,
+      failureReason: 2,
+      error: message,
+      gradingResult: undefined,
+      response: {
+        error: message,
+        metadata: {
+          ...row.response.metadata,
+          errorStatus: status,
+          ...(failedPass === undefined ? {} : { failedPass }),
+        },
+      },
+    };
+  };
+
+  it.each([
+    [402, "finder", undefined],
+    [401, "finder", undefined],
+    [402, "verifier", "verifier"],
+  ])("HTTP %i on the %s → failed run, no G3 verdict", (status, pass, failedPass) => {
+    const rows = verifierRun();
+    rows[0] = accountError(rows[0], status, failedPass);
+    const row = checkRow(rows[0], "OpenAI", "OpenAI");
+    expect(row.measurementError).toBe(`OpenRouter account error (HTTP ${String(status)}) on the ${pass}`);
+    const summary = summarizeRows(checkV(rows));
+    expect(summary.failedRun).toBe(true);
+    expect(summary.measurementErrorRows).toEqual([
+      { testIdx: 1, case: "js-loop", error: `OpenRouter account error (HTTP ${String(status)}) on the ${pass}` },
+    ]);
+    expect(summary.g3).toBeUndefined();
+    expect(summary.pass).not.toBe(true);
+  });
+
+  it("applies to a finder-only export too (no verifier flag)", () => {
+    const row = checkRow(accountError(rawRow("react"), 402), "OpenAI");
+    expect(row.measurementError).toBe("OpenRouter account error (HTTP 402) on the finder");
+  });
+
+  it("any other HTTP status stays the pass's own failure", () => {
+    const rows = verifierRun();
+    rows[0] = accountError(rows[0], 500, "verifier");
+    const row = checkRow(rows[0], "OpenAI", "OpenAI");
+    expect(row.measurementError).toBeNull();
+    expect(row.verifierError).not.toBeNull();
   });
 });

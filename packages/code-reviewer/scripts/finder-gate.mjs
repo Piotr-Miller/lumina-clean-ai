@@ -47,7 +47,9 @@
 // attempt k and leaves the rest unrecorded (the A3 probe is G2 attempt 01).
 // `--start k --append` continues the series at exactly max(recorded) + 1, and
 // only with the same stages, models, endpoints, case, n and inputs (the sha256
-// of the diff and the rules, and the source root's git tree; F4): every line
+// of the diff and the rules, and the source root's git tree; F4) and the same
+// code under test (the sealed hashes of verifier-prompt-hash.mjs and the git
+// tree of packages/code-reviewer/src; impl-review a8844a6 F3): every line
 // carries all of them. A `started` line goes into the file BEFORE each paid
 // call, so an attempt the process did not survive is visible as started and
 // never finished — it counts as failed, with incomplete cost, and is never
@@ -55,9 +57,12 @@
 // whole series, never of one invocation (F2).
 import { execFileSync } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   assertSeriesWritable,
+  committedTreeOf,
   parseGateArgs,
   runGateAttempt,
   runSeries,
@@ -85,6 +90,7 @@ const { createJudge } = await import("../src/judge.ts");
 const { assignFindingIds } = await import("../src/scorecard.ts");
 const { mergeFindings } = await import("../src/findings.ts");
 const { createDiffScopedReaderForDiff, createDiffScopedSourceForDiff } = await import("../src/source-provider.ts");
+const { computeVerifierPromptHashes } = await import("./verifier-prompt-hash.mjs");
 
 const {
   stages,
@@ -106,21 +112,7 @@ const diff = readFileSync(opts.diffPath, "utf8");
 const rules = readFileSync(opts.rulesPath, "utf8");
 
 const git = (cwd, ...args) => execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8" }).trim();
-/**
- * The git tree of the source root at HEAD — the committed bytes the finder's
- * source and the verifier's reader can serve (impl-review phase 2 F4). The
- * TREE, not the commit: a fixture root such as `evals/fixtures/clean-change`
- * sits inside this repository, whose HEAD moves with every unrelated commit
- * while the fixture stays byte-identical. Uncommitted changes under the root
- * would make the tree a false description of what is served, so they refuse.
- */
-function sourceRootTreeOf(root) {
-  const dirty = git(root, "status", "--porcelain", "--untracked-files=all", "--", ".");
-  if (dirty !== "") {
-    throw new Error(`--source-root ${root} has uncommitted changes; the series could not pin its inputs:\n${dirty}`);
-  }
-  return git(root, "rev-parse", `HEAD:${git(root, "rev-parse", "--show-prefix")}`);
-}
+const PACKAGE_SRC = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
 
 // Pin through the production mechanism, then confirm the routing it produced:
 // a malformed value would silently fall back to the default list.
@@ -167,7 +159,12 @@ const timeouts = {
 const inputs = {
   diffSha256: sha256Hex(diff),
   rulesSha256: sha256Hex(rules),
-  sourceRootTree: sourceRootTreeOf(opts.sourceRoot),
+  sourceRootTree: committedTreeOf({ git, dir: opts.sourceRoot, label: "--source-root" }),
+  // The code under test (impl-review a8844a6 F3): the sealed hashes, imported
+  // from verifier-prompt-hash.mjs, and the committed tree of the package's
+  // src/ — uncommitted changes there refuse, as under the source root.
+  packageSrcTree: committedTreeOf({ git, dir: PACKAGE_SRC, label: "packages/code-reviewer/src" }),
+  codeHashes: computeVerifierPromptHashes(),
 };
 const series = assertSeriesWritable({
   append,
@@ -186,7 +183,7 @@ const series = assertSeriesWritable({
 if (!append) writeFileSync(out, "");
 const identity = seriesIdentity({ stages, model, endpoint, verifierModel, verifierEndpoint, caseName, n, inputs });
 // The commit the source root was checked out at, on every line for the record.
-// The identity pins the source TREE, not the commit (see sourceRootTreeOf).
+// The identity pins the source TREE, not the commit (see committedTreeOf).
 const sourceRootHead = git(opts.sourceRoot, "rev-parse", "HEAD");
 
 const errorDetail = (error) => ({

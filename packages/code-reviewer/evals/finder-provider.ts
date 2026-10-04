@@ -120,6 +120,16 @@ const retryClass = (error: unknown): string => {
   return "name" in error && typeof error.name === "string" ? error.name : "unknown";
 };
 
+/** The HTTP status of a failed call — its own, or its cause's — or `undefined`. Same rule as the gate runner's. */
+const httpStatusOf = (error: unknown): number | undefined => {
+  if (typeof error !== "object" || error === null) return undefined;
+  const own = "statusCode" in error ? error.statusCode : undefined;
+  if (typeof own === "number") return own;
+  const cause = "cause" in error ? error.cause : undefined;
+  const nested = typeof cause === "object" && cause !== null && "statusCode" in cause ? cause.statusCode : undefined;
+  return typeof nested === "number" ? nested : undefined;
+};
+
 /** Fixture roots are authored relative to THIS directory, not the cwd promptfoo happens to run in. */
 const EVALS_DIR = dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = resolve(EVALS_DIR, "fixtures");
@@ -424,12 +434,17 @@ export default class FinderProvider implements ApiProvider {
         // The pass that failed, on the error path only (impl-review phase 2
         // F6): a verifier failure must not read as a finder error.
         ...(failedPass === undefined ? {} : { failedPass }),
+        // The failure's HTTP status, when it had one (impl-review a8844a6 F1):
+        // the rows script turns an OpenRouter 401/402 into a measurement error,
+        // which a message alone could not tell apart from a model failure.
+        ...(errorStatus === undefined ? {} : { errorStatus }),
       },
     });
 
     // Which pass is running, for `metadata.failedPass` on the error path.
     let stage: "finder" | "verifier" = "finder";
     let failedPass: "finder" | "verifier" | undefined;
+    let errorStatus: number | undefined;
     try {
       // One row = one production pass, including the pipeline's single
       // transient retry (429, 5xx, timeout; owner decision 2026-10-03, gate.md
@@ -499,6 +514,7 @@ export default class FinderProvider implements ApiProvider {
       // tool-loop steps cost real money, and "how far did it get" is the whole
       // question for a model that fails structured output.
       failedPass = stage;
+      errorStatus = httpStatusOf(error);
       return {
         error: error instanceof Error ? error.message : String(error),
         prompt: actualPrompt(),

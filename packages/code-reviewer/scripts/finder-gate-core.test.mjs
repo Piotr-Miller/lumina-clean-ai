@@ -2,6 +2,11 @@
 // and `finder-verification`, Phase 2 §1): fake requests, fake model factories
 // behind the REAL pipeline — no network, no API key. A broken check must
 // surface here, not after a paid series.
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { APICallError } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
@@ -23,14 +28,18 @@ import {
   STAGE_SETS,
   assertSeriesWritable,
   classify,
+  committedTreeOf,
   describeRequest,
   evaluateAttempt,
+  isModelAttributableError,
   parseGateArgs,
   readSeries,
   reasoningTokensOf,
   recordedEvaluations,
   runGateAttempt,
   runSeries,
+  sealedCodeHashes,
+  seriesIdentity,
   sha256Hex,
   summarizeSeries,
 } from "./finder-gate-core.mjs";
@@ -198,11 +207,20 @@ const IDENTITY = {
   diffSha256: "d".repeat(64),
   rulesSha256: "r".repeat(64),
   sourceRootTree: "t".repeat(40),
+  codeHashes: {
+    verifierInstructions: "i".repeat(64),
+    verifierPromptSample: "p".repeat(64),
+    files: { "src/excerpts.ts": "x".repeat(64), "src/verifier.ts": "v".repeat(64), "src/prompts.ts": "q".repeat(64) },
+    excerptLimitsSha256: "l".repeat(64),
+  },
+  packageSrcTree: "s".repeat(40),
 };
 const INPUTS = {
   diffSha256: IDENTITY.diffSha256,
   rulesSha256: IDENTITY.rulesSha256,
   sourceRootTree: IDENTITY.sourceRootTree,
+  codeHashes: IDENTITY.codeHashes,
+  packageSrcTree: IDENTITY.packageSrcTree,
 };
 const startedLine = (attempt, identity = IDENTITY) => JSON.stringify({ kind: "started", ...identity, attempt });
 const recordLine = (attempt, identity = IDENTITY) => JSON.stringify({ kind: "attempt", ...identity, attempt });
@@ -288,6 +306,29 @@ describe("assertSeriesWritable", () => {
     ["diff (input hash mismatch)", { inputs: { ...INPUTS, diffSha256: "e".repeat(64) } }],
     ["rules file", { inputs: { ...INPUTS, rulesSha256: "s".repeat(64) } }],
     ["source tree", { inputs: { ...INPUTS, sourceRootTree: "u".repeat(40) } }],
+    // impl-review a8844a6 F3: the code under test is part of the series.
+    ["package src tree", { inputs: { ...INPUTS, packageSrcTree: "w".repeat(40) } }],
+    [
+      "verifier instructions hash",
+      { inputs: { ...INPUTS, codeHashes: { ...INPUTS.codeHashes, verifierInstructions: "j".repeat(64) } } },
+    ],
+    [
+      "excerpts.ts hash",
+      {
+        inputs: {
+          ...INPUTS,
+          codeHashes: {
+            ...INPUTS.codeHashes,
+            files: { ...INPUTS.codeHashes.files, "src/excerpts.ts": "y".repeat(64) },
+          },
+        },
+      },
+    ],
+    [
+      "EXCERPT_LIMITS hash",
+      { inputs: { ...INPUTS, codeHashes: { ...INPUTS.codeHashes, excerptLimitsSha256: "m".repeat(64) } } },
+    ],
+    ["missing code hashes (a line from code that recorded none)", { inputs: { ...INPUTS, codeHashes: undefined } }],
   ])("refuses to mix series: a different %s than the file records", (_label, overrides) => {
     expect(() => writable(overrides)).toThrow(/different series/u);
   });
@@ -748,6 +789,177 @@ describe("F3 — an OpenRouter account error is a measurement error", () => {
   it("HTTP 403 stays a model/provider failure", () => {
     const evaluation = evaluate([], { result: undefined, error: http(403), calls: [] });
     expect(evaluation.measurementError).toBeNull();
+  });
+});
+
+describe("impl-review a8844a6 F2 — an error the model did not produce is a measurement error", () => {
+  const eacces = () => Object.assign(new Error("EACCES: permission denied, open '/repo/src/a.ts'"), { code: "EACCES" });
+
+  it.each([
+    ["a TypeError in the runner", new TypeError("Cannot read properties of undefined (reading 'findings')")],
+    ["an EACCES escaping the reader", eacces()],
+    [
+      "a connection failure with no HTTP status",
+      new APICallError({ message: "Cannot connect to API", url: "u", requestBodyValues: {} }),
+    ],
+  ])("%s → measurement error, g1 not counted as a model failure", (_label, error) => {
+    const evaluation = evaluate([request()], { result: undefined, error, calls: okCalls("finder") });
+    expect(evaluation.outcome).toBe("measurement-error");
+    expect(evaluation.measurementError).toMatch(/^runner error, not attributable to the model \(/u);
+    expect(evaluation.g1Pass).toBe(false);
+  });
+
+  it.each([
+    ["FinderOutputError", finderOutputError()],
+    ["VerifierOutputError", Object.assign(new Error("verifier output"), { name: "VerifierOutputError" })],
+    ["AI_NoObjectGeneratedError", Object.assign(new Error("no object"), { name: "AI_NoObjectGeneratedError" })],
+    ["an HTTP 500", http(500)],
+    ["a status on the cause", new Error("wrapped", { cause: http(503) })],
+    ["a timeout", new DOMException("t", "TimeoutError")],
+  ])("%s stays attributable to the model", (_label, error) => {
+    expect(isModelAttributableError(error)).toBe(true);
+    const evaluation = evaluate([request()], { result: undefined, error, calls: okCalls("finder") });
+    expect(evaluation.measurementError).toBeNull();
+  });
+
+  it("a reader that throws EACCES during a real attempt stops the series after that attempt", async () => {
+    const throwing = Object.assign(
+      () => {
+        throw eacces();
+      },
+      { paths: reader().paths },
+    );
+    const attempt = await attemptWith(fakeApi(), { reader: throwing });
+    expect(attempt.error?.code).toBe("EACCES");
+    const { summary, lines } = await seriesRun({ through: 3, attempts: [attempt, okAttempt(), okAttempt()] });
+    expect(lines.filter((l) => l.kind === "attempt").map((l) => l.outcome)).toEqual(["measurement-error"]);
+    expect(summary.stoppedBy).toMatch(/EACCES/u);
+    expect(summary.notRun).toEqual({ budget: 0, measurementError: 2 });
+  });
+
+  it("a reader whose every file read fails with EACCES aborts as an unusable source (measurement error)", async () => {
+    const denied = readDiffScoped({
+      allowedPaths: new Set(Object.keys(FILES)),
+      root: "/repo",
+      realpath: (path) => path,
+      isRegularFile: () => true,
+      readFile: () => {
+        throw eacces();
+      },
+    });
+    const attempt = await attemptWith(fakeApi(), { reader: denied });
+    const evaluation = evaluateAttempt({ attempt, expected: EXPECTED });
+    expect(evaluation.measurementError).toBe("verification aborted: no usable source");
+  });
+
+  it("a TypeError thrown by a pass during a real attempt is a measurement error, not finder:error-TypeError", async () => {
+    const api = fakeApi();
+    api.createReviewer = () => ({
+      review: async () => {
+        throw new TypeError("x is not a function");
+      },
+    });
+    const attempt = await attemptWith(api);
+    const evaluation = evaluateAttempt({ attempt, expected: EXPECTED });
+    expect(evaluation.outcome).toBe("measurement-error");
+    expect(evaluation.measurementError).toMatch(/TypeError: x is not a function/u);
+  });
+});
+
+describe("impl-review a8844a6 F3 — the identity carries the code under test", () => {
+  it("seriesIdentity keeps the sealed subset of the hash output, in a fixed order", () => {
+    const full = {
+      ...INPUTS.codeHashes,
+      sample: { source: "descriptive, not sealed" },
+      excerptLimits: { perFindingLines: 220 },
+      files: { "src/prompts.ts": "q".repeat(64), "src/verifier.ts": "v".repeat(64), "src/excerpts.ts": "x".repeat(64) },
+    };
+    const identity = seriesIdentity({ ...IDENTITY, caseName: "clean", inputs: { ...INPUTS, codeHashes: full } });
+    expect(identity.codeHashes).toEqual(IDENTITY.codeHashes);
+    expect(JSON.stringify(identity.codeHashes)).toBe(JSON.stringify(IDENTITY.codeHashes));
+    expect(identity.packageSrcTree).toBe("s".repeat(40));
+    expect(sealedCodeHashes(undefined)).toBeNull();
+  });
+
+  it("every line runSeries writes carries the code hashes and the package tree", async () => {
+    const { lines } = await seriesRun({ through: 1, attempts: [okAttempt()] });
+    expect(lines).toHaveLength(2);
+    for (const line of lines)
+      expect(line).toMatchObject({ codeHashes: IDENTITY.codeHashes, packageSrcTree: "s".repeat(40) });
+  });
+
+  it("the runner imports the hash function rather than copying it", () => {
+    const runner = readFileSync(new URL("./finder-gate.mjs", import.meta.url), "utf8");
+    expect(runner).toMatch(/await import\("\.\/verifier-prompt-hash\.mjs"\)/u);
+    expect(runner).toMatch(/codeHashes: computeVerifierPromptHashes\(\)/u);
+    expect(runner).not.toMatch(/buildVerifierInstructions/u);
+  });
+});
+
+describe("impl-review a8844a6 F8 — committedTreeOf against a real scratch repository", () => {
+  const run = (cwd, ...args) => execFileSync("git", ["-C", cwd, ...args], { encoding: "utf8" }).trim();
+  const scratch = () => {
+    const repo = mkdtempSync(join(tmpdir(), "gate-tree-"));
+    run(repo, "init", "-q");
+    run(repo, "config", "user.email", "t@example.invalid");
+    run(repo, "config", "user.name", "t");
+    run(repo, "config", "commit.gpgsign", "false");
+    mkdirSync(join(repo, "root"));
+    writeFileSync(join(repo, "root", "a.ts"), "export const a = 1;\n");
+    writeFileSync(join(repo, "outside.txt"), "x\n");
+    run(repo, "add", "-A");
+    run(repo, "commit", "-q", "-m", "init");
+    return repo;
+  };
+  const treeOf = (dir) => committedTreeOf({ git: run, dir, label: "--source-root" });
+
+  it("a clean root returns the git tree of that directory at HEAD", () => {
+    const repo = scratch();
+    try {
+      expect(treeOf(join(repo, "root"))).toBe(run(repo, "rev-parse", "HEAD:root"));
+      expect(treeOf(repo)).toBe(run(repo, "rev-parse", "HEAD^{tree}"));
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ["a tracked, unstaged modification", (repo) => writeFileSync(join(repo, "root", "a.ts"), "export const a = 2;\n")],
+    [
+      "a staged modification",
+      (repo) => {
+        writeFileSync(join(repo, "root", "a.ts"), "export const a = 3;\n");
+        run(repo, "add", "root/a.ts");
+      },
+    ],
+    ["an untracked file", (repo) => writeFileSync(join(repo, "root", "new.ts"), "export {};\n")],
+    [
+      "an untracked file in a new subdirectory",
+      (repo) => {
+        mkdirSync(join(repo, "root", "deep"));
+        writeFileSync(join(repo, "root", "deep", "b.ts"), "export {};\n");
+      },
+    ],
+  ])("refuses %s under the root, naming it", (_label, dirty) => {
+    const repo = scratch();
+    try {
+      dirty(repo);
+      expect(() => treeOf(join(repo, "root"))).toThrow(
+        /^--source-root \S+\/root has uncommitted changes; the series could not pin its inputs:\n.*(?:a|new|b)\.ts/su,
+      );
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
+  it("a change outside the root does not refuse", () => {
+    const repo = scratch();
+    try {
+      writeFileSync(join(repo, "outside.txt"), "changed\n");
+      expect(treeOf(join(repo, "root"))).toBe(run(repo, "rev-parse", "HEAD:root"));
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
   });
 });
 

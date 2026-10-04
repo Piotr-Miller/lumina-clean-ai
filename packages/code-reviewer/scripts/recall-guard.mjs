@@ -21,7 +21,9 @@
 //
 // Verdict: `PASS`, `FAIL` (a raised defect under its majority), or
 // `NOT PROVEN` — no defect listed, or none raised. NOT PROVEN can never be PASS
-// (owner, 2026-10-04). Whole-pipeline detection — K published in x of ALL the
+// (owner, 2026-10-04). `notProvenReason` tells the two apart: with an EMPTY list
+// the result is information only and does not by itself stop the arm (gate.md
+// §5); with a non-empty list and nothing raised, the owner decides. Whole-pipeline detection — K published in x of ALL the
 // series' attempts, valid or not — is reported for information.
 //
 // Usage (from packages/code-reviewer):
@@ -31,7 +33,13 @@
 //   matches.json  { "<attempt id>": { "<finding id>": ["K1", ...] } }   ([] = none)
 //   series.jsonl  the runner's records (finder-gate.mjs)
 //
-// Exit code: 0 on PASS, 1 on FAIL or NOT PROVEN, 2 on a usage or input error.
+// Exit code: 0 on PASS, 1 on FAIL or on NOT PROVEN with a non-empty list, 2 on
+// a usage or input error, and 3 (EXIT_EMPTY_LIST) on NOT PROVEN because the list
+// is EMPTY. The last is not a stop: gate.md §5 pre-registers it as information
+// only (owner, 2026-10-04), so it must not share FAIL's exit code (impl-review
+// a8844a6 F5).
+export const EXIT_EMPTY_LIST = 3;
+export const EMPTY_LIST_LINE = "R4: NOT PROVEN (empty K list — information only, gate.md §5)";
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -72,6 +80,9 @@ const IDENTITY_FIELDS = [
   "diffSha256",
   "rulesSha256",
   "sourceRootTree",
+  // The code under test (impl-review a8844a6 F3).
+  "codeHashes",
+  "packageSrcTree",
 ];
 const identityOf = (record) => JSON.stringify(IDENTITY_FIELDS.map((field) => record[field] ?? null));
 
@@ -190,10 +201,13 @@ export function evaluateRecall({ defects, matches, attempts }) {
     : defects.length === 0 || raised.length === 0
       ? "NOT PROVEN"
       : "PASS";
-  return { verdict, perDefect, attempts: attempts.length, valid: valid.length };
+  // Why NOT PROVEN: an empty list is pre-registered as information only
+  // (gate.md §5); a non-empty list with nothing raised stops for the owner.
+  const notProvenReason = verdict !== "NOT PROVEN" ? null : defects.length === 0 ? "empty-list" : "none-raised";
+  return { verdict, notProvenReason, perDefect, attempts: attempts.length, valid: valid.length };
 }
 
-function main(args) {
+export function main(args) {
   if (args.length !== 3) {
     console.error("usage: node scripts/recall-guard.mjs <defects.json> <matches.json> <series.jsonl>");
     return 2;
@@ -217,8 +231,12 @@ function main(args) {
             `${d.pass ? "PASS" : "FAIL"}; detection (published, all attempts) ${String(d.detection.x)}/${String(d.detection.of)}`,
     );
   }
-  if (result.perDefect.length === 0) console.log("no known defect listed — the guard cannot be PASS");
   console.log(`valid attempts: ${String(result.valid)}/${String(result.attempts)}`);
+  if (result.notProvenReason === "empty-list") {
+    console.log(EMPTY_LIST_LINE);
+    console.log(`SUMMARY ${JSON.stringify(result)}`);
+    return EXIT_EMPTY_LIST;
+  }
   console.log(`R4: ${result.verdict}`);
   console.log(`SUMMARY ${JSON.stringify(result)}`);
   return result.verdict === "PASS" ? 0 : 1;

@@ -141,6 +141,13 @@ export function parseGateArgs(args) {
  * see sourceRootTreeOf in finder-gate.mjs). A continuation fed a different diff,
  * rules file or source tree is a different series — the "input hash mismatch"
  * measurement error of gate.md §5 — and is refused.
+ *
+ * So is the CODE UNDER TEST (impl-review a8844a6 F3): `inputs.codeHashes`, the
+ * sealed hashes `verifier-prompt-hash.mjs` computes (imported by the runner,
+ * never copied), and `inputs.packageSrcTree`, the git tree of
+ * packages/code-reviewer/src. A continuation after a change to the prompts, the
+ * excerpt policy or any other source file is a different system under test,
+ * so it is refused — the re-run is a fresh series (gate.md §5).
  */
 export const seriesIdentity = ({ stages, model, endpoint, verifierModel, verifierEndpoint, caseName, n, inputs }) => ({
   stages,
@@ -153,16 +160,61 @@ export const seriesIdentity = ({ stages, model, endpoint, verifierModel, verifie
   diffSha256: inputs?.diffSha256 ?? null,
   rulesSha256: inputs?.rulesSha256 ?? null,
   sourceRootTree: inputs?.sourceRootTree ?? null,
+  codeHashes: sealedCodeHashes(inputs?.codeHashes),
+  packageSrcTree: inputs?.packageSrcTree ?? null,
 });
+
+/**
+ * The sealed subset of `verifier-prompt-hash.mjs`'s output, in a fixed key
+ * order so two identities compare by value (gate.md Pre-registration §1): the
+ * instruction and sample-prompt hashes, the three module files, and the hash
+ * of EXCERPT_LIMITS. The descriptive `sample` block and the raw limit values
+ * (covered by their hash) are left out.
+ */
+export const SEALED_FILES = ["src/excerpts.ts", "src/verifier.ts", "src/prompts.ts"];
+export function sealedCodeHashes(hashes) {
+  if (hashes === undefined || hashes === null) return null;
+  return {
+    verifierInstructions: hashes.verifierInstructions ?? null,
+    verifierPromptSample: hashes.verifierPromptSample ?? null,
+    files: Object.fromEntries(SEALED_FILES.map((path) => [path, hashes.files?.[path] ?? null])),
+    excerptLimitsSha256: hashes.excerptLimitsSha256 ?? null,
+  };
+}
 
 const identityKey = (entry) =>
   JSON.stringify(
     seriesIdentity({
       ...entry,
       caseName: entry.case,
-      inputs: { diffSha256: entry.diffSha256, rulesSha256: entry.rulesSha256, sourceRootTree: entry.sourceRootTree },
+      inputs: {
+        diffSha256: entry.diffSha256,
+        rulesSha256: entry.rulesSha256,
+        sourceRootTree: entry.sourceRootTree,
+        codeHashes: entry.codeHashes,
+        packageSrcTree: entry.packageSrcTree,
+      },
     }),
   );
+
+/**
+ * The git tree of `dir` at HEAD — the committed bytes it serves (impl-review
+ * phase 2 F4; moved here from finder-gate.mjs and tested, impl-review a8844a6
+ * F8). The TREE, not the commit: a fixture root such as
+ * `evals/fixtures/clean-change` sits inside this repository, whose HEAD moves
+ * with every unrelated commit while the fixture stays byte-identical.
+ * Uncommitted changes under `dir` — modified, staged or untracked — would make
+ * the tree a false description of what is served, so they refuse. `git(cwd,
+ * ...args)` runs git in `cwd` and returns its trimmed stdout (injected so the
+ * tests can run it against a scratch repository).
+ */
+export function committedTreeOf({ git, dir, label }) {
+  const dirty = git(dir, "status", "--porcelain", "--untracked-files=all", "--", ".");
+  if (dirty !== "") {
+    throw new Error(`${label} ${dir} has uncommitted changes; the series could not pin its inputs:\n${dirty}`);
+  }
+  return git(dir, "rev-parse", `HEAD:${git(dir, "rev-parse", "--show-prefix")}`);
+}
 
 /** sha256 (hex) of a text as the runner read it — the bytes the model is sent. */
 export const sha256Hex = (text) => createHash("sha256").update(text, "utf8").digest("hex");
@@ -366,9 +418,42 @@ export function describeRequest(pass, step) {
 // model through the provider: gate.md §5 lists it as a MEASUREMENT ERROR
 // (impl-review phase 2 F3), never a model failure counted against G1.
 export const ACCOUNT_ERROR_STATUSES = [401, 402];
-const accountErrorStatus = (error) => {
+const httpStatusOf = (error) => {
   const status = error?.statusCode ?? error?.cause?.statusCode;
+  return typeof status === "number" ? status : undefined;
+};
+const accountErrorStatus = (error) => {
+  const status = httpStatusOf(error);
   return ACCOUNT_ERROR_STATUSES.includes(status) ? status : undefined;
+};
+
+/**
+ * The output-validation errors a pass raises when the MODEL's output fails its
+ * contract after the one repair (gate.md §5). Matched by name, like classify:
+ * output-repair.ts, verifier.ts and the AI SDK set these names.
+ */
+export const MODEL_OUTPUT_ERROR_NAMES = ["FinderOutputError", "VerifierOutputError", "AI_NoObjectGeneratedError"];
+
+/**
+ * Whether an attempt's error is attributable to the model through the provider
+ * (impl-review a8844a6 F2, owner Fix A; gate.md §5 lists the classes): an API
+ * call error that carries an HTTP status (its own or its cause's; 401/402 are
+ * taken out before this as account errors), a timeout, or an output-validation
+ * error. EVERYTHING ELSE — a TypeError in the runner, a reader I/O error such as
+ * EACCES, a connection failure with no HTTP status — is a MEASUREMENT ERROR,
+ * which stops the series: counted against G1 it would read a harness bug as a
+ * model failure and keep spending.
+ */
+export function isModelAttributableError(error) {
+  if (httpStatusOf(error) !== undefined) return true;
+  if (classify(error) === "timeout") return true;
+  return MODEL_OUTPUT_ERROR_NAMES.includes(error?.name);
+}
+
+const errorLabel = (error) => {
+  const name = typeof error?.name === "string" && error.name !== "" ? error.name : typeof error;
+  const message = error instanceof Error ? error.message : String(error);
+  return `${name}: ${message.slice(0, 160)}`;
 };
 
 // The abort `runVerificationPass` throws under `requireVerification` when there
@@ -547,8 +632,10 @@ const sumBy = (items, pass, field) => items.filter((x) => x.pass === pass).reduc
  * - A timeout is any verifier or judge CALL that hit its timeout, including one
  *   followed by a successful retry (R3).
  * - A verification status other than `verified` / `no-findings`, the abort
- *   for an unusable source, or an OpenRouter account error (401/402) is a
- *   MEASUREMENT ERROR: never a valid attempt and never a model failure.
+ *   for an unusable source, an OpenRouter account error (401/402), or any error
+ *   that is not model-attributable (isModelAttributableError; impl-review
+ *   a8844a6 F2) is a MEASUREMENT ERROR: never a valid attempt and never a model
+ *   failure.
  */
 export function evaluateAttempt({ attempt, expected }) {
   const { requests, calls, error, result, repairs } = attempt;
@@ -589,7 +676,9 @@ export function evaluateAttempt({ attempt, expected }) {
         ? "verification aborted: no usable source"
         : accountErrorStatus(error) !== undefined
           ? `OpenRouter account error (HTTP ${String(accountErrorStatus(error))})`
-          : null
+          : isModelAttributableError(error)
+            ? null
+            : `runner error, not attributable to the model (${errorLabel(error)})`
       : status === "verified" || status === "no-findings"
         ? null
         : `verification status ${JSON.stringify(status ?? null)}`;

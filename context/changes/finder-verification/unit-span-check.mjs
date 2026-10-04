@@ -16,9 +16,13 @@
 // source is read; no model output for #240 exists or is read — owner,
 // 2026-10-04), and the four fixture trees at HEAD. #247 is never read.
 //
-// Free: git and local parsers only. Run from the repository root:
+// Free: git and local parsers only. Every git call runs at the repository's top
+// level, wherever the script is started from (impl-review a8844a6 F7: from
+// packages/code-reviewer the pathspecs used to shrink and the check passed on
+// fewer files). Usually run from the repository root:
 //   npx tsx context/changes/finder-verification/unit-span-check.mjs
-// Writes unit-span-check.json next to this file; exits 1 on any mismatch.
+// Writes unit-span-check.json next to this file; exits 1 on any mismatch, and
+// on any file or unit count other than the expected 19 files / 56 units.
 import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -29,7 +33,13 @@ import { findTopLevelUnits } from "../../../packages/code-reviewer/src/excerpts.
 import { parseDiffPaths } from "../../../packages/code-reviewer/src/source-provider.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const git = (...args) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+const TOP = execFileSync("git", ["-C", HERE, "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+const git = (...args) => execFileSync("git", ["-C", TOP, ...args], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+
+// What the check covered when it was first run (gate.md Pre-registration §3):
+// a different count means a silently skipped file or a shrunken input, never a
+// pass.
+const EXPECTED = { files: 19, units: 56 };
 
 const RECIPE_EXCLUDES = [
   ":(exclude,glob)**/reviews/*.md",
@@ -167,4 +177,11 @@ for (const r of results) {
   for (const u of r.onlyParser) console.log(`           parser only: ${u.name} ${key(u)}`);
 }
 console.log(`SUMMARY ${JSON.stringify(summary)}`);
-process.exitCode = mismatched.length === 0 ? 0 : 1;
+const countOk = summary.files === EXPECTED.files && summary.units === EXPECTED.units;
+if (!countOk) {
+  console.error(
+    `COUNT MISMATCH: ${String(summary.files)} files / ${String(summary.units)} units, expected ` +
+      `${String(EXPECTED.files)} / ${String(EXPECTED.units)} — an input was not fully read; not a pass`,
+  );
+}
+process.exitCode = mismatched.length === 0 && countOk ? 0 : 1;
