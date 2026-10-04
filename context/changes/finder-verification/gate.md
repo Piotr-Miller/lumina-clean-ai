@@ -128,7 +128,18 @@ Both slugs are listed, so no owner stop is needed. The prices equal the planning
 
 ### Freeze commit and push time
 
-The freeze commit and its GitHub push time are recorded in the follow-up commit (Phase 0 §5).
+- **Freeze commit:** `c3b2f1cf84299fda8821e816f095e42016ea4276`
+  (`docs(finder-verification): freeze gate inputs, draft pre-registration (p0)`), on
+  `origin/feat/finder-verification`.
+- **GitHub push time: 2026-10-04T11:25:02Z.** Source:
+  `GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-verification`, event `push`,
+  `573ee33..c3b2f1c`, actor `Piotr-Miller`. `git ls-remote` showed `c3b2f1c` as the branch head.
+- **No verifier prompt at the freeze:** `git grep -n buildVerifierInstructions c3b2f1c -- packages/` finds
+  nothing (exit 1). No verifier code, schema or prompt existed in the working tree before this push.
+- **Pre-commit reformat:** the hook (`prettier --write` on `*.json`) reformatted `backcheck-269-results.json`,
+  changing whitespace only. Its parsed JSON equals the carried blob `2216bcb`; the committed blob is `0173c31`.
+- **Rebase protection:** Phase 8 §2 pushes the tag `finder-verification/freeze` on this commit before any
+  rebase (plan-review 3rd run F3).
 
 ## Pre-registration
 

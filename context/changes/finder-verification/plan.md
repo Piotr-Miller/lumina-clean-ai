@@ -1065,11 +1065,11 @@ verifier keys are optional, so old review.json readers are unaffected.
 
 #### Automated
 
-- [x] 0.1 #269, #240, #247 diffs, rules and worktrees reproduce at the recorded values
-- [x] 0.2 clean-change fixture unchanged since e8ebb66
-- [x] 0.3 Verifier-only trees reproduce their diffs, lines 5–9 neutral, hashes match gate.md
-- [x] 0.4 No verifier prompt exists at the freeze commit
-- [x] 0.5 gate.md has Inputs freeze and an unsealed Pre-registration, no Results
+- [x] 0.1 #269, #240, #247 diffs, rules and worktrees reproduce at the recorded values — c3b2f1c
+- [x] 0.2 clean-change fixture unchanged since e8ebb66 — c3b2f1c
+- [x] 0.3 Verifier-only trees reproduce their diffs, lines 5–9 neutral, hashes match gate.md — c3b2f1c
+- [x] 0.4 No verifier prompt exists at the freeze commit — c3b2f1c
+- [x] 0.5 gate.md has Inputs freeze and an unsealed Pre-registration, no Results — c3b2f1c
 
 #### Manual
 
