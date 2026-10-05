@@ -640,3 +640,61 @@ states the seal.
   `origin` on 2026-10-04 by owner decision (plan Phase 8 §2; plan-review 3rd run F3). `git ls-remote --tags origin
 'finder-verification/*'` shows it peeled to `9c85aa2`, next to `finder-verification/freeze` peeled to `c3b2f1c`.
   Phase 8 §2 only confirms that both still exist.
+
+## Results
+
+Appended after the seal; never edits `## Pre-registration`. Phase 4 (CONTROL) authorized by the owner on
+2026-10-05 ("Phase 4 only: measure CONTROL, the owner authorizes paid calls within the sealed rules").
+
+### CONTROL — Phase 4 pre-flight (2026-10-05)
+
+- **Seal:** `origin/feat/finder-verification` = `a2a2085`, which descends from the seal commit `9c85aa2`. The
+  section `## Pre-registration` … `_End of Pre-registration._` hashes to
+  `8616eda6a217c8570a2f3cba957fc2a3dfcfd5b7223c2d3b3426f08baff0c375` both in the working tree at `a2a2085` and in
+  `9c85aa2`'s committed `gate.md`. This is a **check** against the recorded seal, not a recomputation of it.
+- **Code hashes at `HEAD`** (`npx tsx scripts/verifier-prompt-hash.mjs` from `packages/code-reviewer`): all equal
+  §1 — instructions `c27d78e6…6fc1`, sample prompt `9f1093c7…2e9c`, `src/excerpts.ts` `8dfdda7e…6714`,
+  `src/verifier.ts` `aa8bf887…5b42`, `src/prompts.ts` `a045da98…0311`, `EXCERPT_LIMITS` `757f3492…b060`.
+  `packages/code-reviewer/src` has no uncommitted change.
+- **Inputs** (rebuilt from the recipes in `## Inputs freeze` into this session's scratch directory, because the
+  previous session's scratch was gone after a restart): #269 diff 65,455 B `1e4ec088…550f`; #240 18,718 B
+  `4487c2b0…221e`; #247 10,838 B `21973af3…2e1` (reserve; diff only, source not read); each rules file 2,929 B
+  `34d5fcac…b48f`; detached worktrees at `fca2778742ec…` and `54d35575430f…`, `HEAD` verified, clean;
+  `clean-change.diff` `8b326f6d…08cd`, no commit after `e8ebb66`; `users.js` `5e6d2a19…148a`,
+  `MetricsPanel.jsx` `7dccd391…1f73`. **All match.**
+- **Prices and parameters** (`GET /api/v1/models/<id>/endpoints` and `GET /api/v1/models`, unauthenticated,
+  2026-10-05T18:02Z):
+
+  | Model                           | Endpoint           | `provider_name` | Price per M (in / out) | `reasoning` in `supported_parameters` | `reasoning.mandatory` |
+  | ------------------------------- | ------------------ | --------------- | ---------------------- | ------------------------------------- | --------------------- |
+  | `openai/gpt-6-luna`             | `openai`           | `OpenAI`        | $0.10 / $0.50          | yes                                   | false                 |
+  | `anthropic/claude-sonnet-5`     | `anthropic`        | `Anthropic`     | $2.00 / $10.00         | yes                                   | false                 |
+  | `google/gemini-3.1-pro-preview` | (grader, unpinned) | not pinned      | $2.00 / $12.00         | yes                                   | **true**              |
+
+  luna and sonnet-5: no price change, no lost parameter, `mandatory: false` — no stop condition.
+
+- **Grader — owner ruling 2026-10-05.** The grader `google/gemini-3.1-pro-preview` reports
+  `reasoning.mandatory: true` (efforts high / medium / low, default medium); its price is unchanged at $2.00 /
+  $12.00 per M. `finder-model-swap`'s pre-flight did not record this flag for the grader (only the candidates were
+  checked), so it is **"not previously measured", not "unchanged"**. The agent stopped and asked. **The owner
+  accepts it:** A3 applies only to finder and verifier requests (§4 A3); the grader is the same model as in
+  `finder-model-swap`'s G3; and its spend is captured by the T counter around the fixture series. The grader's
+  reasoning tokens and cost for the fixture series are reported as information only.
+- **T0 = $52.818108846** (`GET /api/v1/key`, `usage`, read 2026-10-05T18:11:42Z; `usage_daily` 0; `limit: null`;
+  `GET /api/v1/credits`: $60 total). Ceiling: counter ≤ T0 + 2.00 = **$54.818108846**; stop and ask once the
+  counter passes T0 + 1.60 = **$54.418108846**.
+
+### CONTROL — ledger
+
+Counter read before and after every series; T = counter − T0, carried as max(counter, telemetry) while the
+counter lags. `--max-spend` = min(1.60 − T, 2.00 − T − A_max); for G2 A_max = $0.02 (the rule's floor).
+
+| #   | Series                                     | Started (UTC) | P     | T before  | `--max-spend` | Counter after                                          | Telemetry (finder / verifier / judge) | T after               | Result                                                                   |
+| --- | ------------------------------------------ | ------------- | ----- | --------- | ------------- | ------------------------------------------------------ | ------------------------------------- | --------------------- | ------------------------------------------------------------------------ |
+| 1   | G2-01 (`--through 1`), A3 + provider probe | 18:12:22Z     | $0.01 | $0.000000 | $1.60         | $52.818108846 (18:12:44Z, not yet landed)              | $0.000492 / $0 (not called) / —       | $0.000492 (telemetry) | valid; providers `OpenAI`,`OpenAI`; A3 0/0, no leak; 0 raw / 0 published |
+| 2   | G2-02..05 (`--start 2 --append`)           | 18:12:53Z     | $0.01 | $0.000492 | $1.60         | $52.818601196 (18:14:35Z; carries G2-01 only, lagging) | $0.000353 / $0 (not called) / —       | $0.000845 (telemetry) | 4/4 valid; 0 raw / 0 published each                                      |
+
+**G2 (CONTROL): PASS** — 5/5 valid attempts with published `findings: []` (`gate-control-clean.jsonl`). Raw finder
+findings: 0 in each attempt (`preVerificationFindingCount` 0, `verification.status: "no-findings"`, so the
+verifier was never called). Every finder request reported `OpenAI`, SDK and OpenRouter reasoning tokens 0,
+`reasoningLeak: false`. Series spend (telemetry) $0.000845; median $0.000113.
