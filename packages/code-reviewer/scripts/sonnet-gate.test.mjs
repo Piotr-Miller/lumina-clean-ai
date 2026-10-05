@@ -7,7 +7,16 @@ import { join } from "node:path";
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { describeGlobal, main, PACKAGE_DIR, parseCliLog, readSeries, spawnReviewCli } from "./sonnet-gate.mjs";
+import {
+  describeGlobal,
+  main,
+  PACKAGE_DIR,
+  parseCliLog,
+  readSeries,
+  realGit,
+  spawnReviewCli,
+  uncommittedSrc,
+} from "./sonnet-gate.mjs";
 
 const HEADS = { 247: "dec09f8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 269: "fca2778bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" };
 
@@ -38,6 +47,7 @@ function makeWorld() {
     dirtySrc: false,
     logs: [],
     cliCalls: [],
+    sleeps: [],
     // What the fake CLI does on its next call; overridden per test.
     cli: (args) => validCli(world, args),
   };
@@ -48,7 +58,7 @@ function makeWorld() {
     git: (args, cwd) => {
       const key = args.join(" ");
       if (key === "rev-parse HEAD:packages/code-reviewer/src") return "tree-sealed";
-      if (key === "status --porcelain -- packages/code-reviewer/src") return world.dirtySrc ? " M src/x.ts" : "";
+      if (key === "status --porcelain -- :(top)packages/code-reviewer/src") return world.dirtySrc ? " M src/x.ts" : "";
       if (key === "rev-parse HEAD") return cwd === files["247"].root ? HEADS[247] : HEADS[269];
       if (key === "status --porcelain") return "";
       throw new Error(`unexpected git ${key}`);
@@ -59,7 +69,10 @@ function makeWorld() {
       return Promise.resolve(world.cli(args, env));
     },
     now: () => new Date("2026-10-06T10:00:00Z"),
-    sleep: () => Promise.resolve(),
+    sleep: (ms) => {
+      world.sleeps.push(ms);
+      return Promise.resolve();
+    },
     log: (message) => {
       world.logs.push(message);
     },
@@ -137,8 +150,18 @@ const run = (world, runId) => {
   );
 };
 
-const reconcile = (world, runId) =>
-  main(["reconcile", "--run-id", runId, "--out", world.out, "--settle-seconds", "0"], world.deps);
+const reconcile = (world, runId, settleSeconds) =>
+  main(
+    [
+      "reconcile",
+      "--run-id",
+      runId,
+      "--out",
+      world.out,
+      ...(settleSeconds === undefined ? [] : ["--settle-seconds", settleSeconds]),
+    ],
+    world.deps,
+  );
 
 let world;
 beforeEach(async () => {
@@ -170,6 +193,28 @@ describe("refusals before the paid call", () => {
 
   it("a dirty src refuses", async () => {
     world.dirtySrc = true;
+    expect(await run(world, "247-r1")).toBe(2);
+    expect(world.cliCalls).toHaveLength(0);
+    expect(world.logs.at(-1)).toContain("REFUSED (uncommitted src)");
+  });
+
+  it("a dirty src module outside the hashed files refuses against real git", async () => {
+    // A throwaway repo shaped like this one: git runs from the package dir, so
+    // a pathspec that is not anchored at the repo root would miss the edit.
+    const repo = mkdtempSync(join(tmpdir(), "sonnet-gate-git-"));
+    const pkg = join(repo, "packages", "code-reviewer");
+    mkdirSync(join(pkg, "src"), { recursive: true });
+    writeFileSync(join(pkg, "src", "pipeline.ts"), "export const v = 1;\n");
+    const git = (args) => realGit(["-c", "user.email=t@t", "-c", "user.name=t", ...args], repo);
+    git(["init", "-q"]);
+    git(["add", "."]);
+    git(["commit", "-qm", "seed"]);
+    expect(uncommittedSrc(realGit, pkg)).toBe("");
+
+    writeFileSync(join(pkg, "src", "pipeline.ts"), "export const v = 2;\n");
+    expect(uncommittedSrc(realGit, pkg)).not.toBe("");
+    const fakeGit = world.deps.git;
+    world.deps.git = (args, cwd) => (args[0] === "status" && args.length > 2 ? realGit(args, pkg) : fakeGit(args, cwd));
     expect(await run(world, "247-r1")).toBe(2);
     expect(world.cliCalls).toHaveLength(0);
     expect(world.logs.at(-1)).toContain("REFUSED (uncommitted src)");
@@ -336,6 +381,72 @@ describe("cost reconciliation", () => {
       ),
     ).toBe(0);
     expect(await run(world, "269-r1")).toBe(0);
+  });
+});
+
+describe("settlement evidence", () => {
+  const FAILED_CLI = {
+    exitCode: 1,
+    signal: null,
+    stdout: "",
+    stderr: "No output generated. Check the stream for errors.\n",
+  };
+
+  it("an immediate re-read is not settlement: a non-positive or non-numeric interval is refused", async () => {
+    expect(await run(world, "247-r1")).toBe(0);
+    for (const interval of ["0", "-5", "abc"]) {
+      expect(await reconcile(world, "247-r1", interval)).toBe(2);
+      expect(world.logs.at(-1)).toContain("REFUSED (bad settle-seconds)");
+    }
+    expect(readSeries(world.out).some((line) => line.type === "reconcile")).toBe(false);
+    expect(world.sleeps).toEqual([]);
+    // The default keeps the two readings 180 s apart.
+    expect(await reconcile(world, "247-r1")).toBe(0);
+    expect(world.sleeps).toEqual([180_000]);
+  });
+
+  it("a failed run with no telemetry and an unmoved counter stays unresolved until the owner resolves it", async () => {
+    // The CLI died before review.json: no telemetry, and the counter shows nothing —
+    // which is also what a lagging counter shows, so it is not proof the attempt was free.
+    world.cli = () => FAILED_CLI;
+    expect(await run(world, "247-r1")).toBe(1);
+    const record = readSeries(world.out).find((line) => line.type === "record");
+    expect(record.cost).toMatchObject({ total: null, costSource: "none" });
+
+    expect(await reconcile(world, "247-r1")).toBe(1);
+    expect(readSeries(world.out).at(-1)).toMatchObject({ type: "reconcile", status: "unsettled", delta: 0 });
+    expect(readSeries(world.out).at(-1).cost).toBeUndefined();
+
+    world.cliCalls.length = 0;
+    expect(await run(world, "269-r1")).toBe(2);
+    expect(world.cliCalls).toHaveLength(0);
+    expect(world.logs.at(-1)).toContain("REFUSED (unsettled spend): run(s) 247-r1");
+
+    const resolve = [
+      "resolve",
+      "--run-id",
+      "247-r1",
+      "--out",
+      world.out,
+      "--cost",
+      "0",
+      "--reason",
+      "owner: no model call",
+    ];
+    expect(await main(resolve, world.deps)).toBe(0);
+    world.cli = (args) => validCli(world, args);
+    expect(await run(world, "269-r1")).toBe(0);
+  });
+
+  it("a failed run with no telemetry settles at the counter delta once the counter has moved", async () => {
+    world.cli = () => {
+      world.counter += 0.05;
+      return FAILED_CLI;
+    };
+    expect(await run(world, "247-r1")).toBe(1);
+    expect(await reconcile(world, "247-r1")).toBe(0);
+    expect(readSeries(world.out).at(-1)).toMatchObject({ status: "settled", costSource: "counter" });
+    expect(readSeries(world.out).at(-1).cost).toBeCloseTo(0.05, 9);
   });
 });
 

@@ -110,6 +110,15 @@ export function resolveEffectiveConfig(env) {
 
 export const realGit = (args, cwd) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
 
+/**
+ * Uncommitted changes under the package's src, as `git status --porcelain` lines.
+ * `:(top)` anchors the pathspec at the repo root: git runs from the package
+ * directory, where a plain `packages/code-reviewer/src` names a nonexistent
+ * nested path and always reports clean.
+ */
+export const uncommittedSrc = (git, packageDir) =>
+  git(["status", "--porcelain", "--", ":(top)packages/code-reviewer/src"], packageDir);
+
 /** Everything the seal pins about the code and its configuration. No network. */
 export async function describeGlobal(deps) {
   const codeHashes = Object.fromEntries(
@@ -316,7 +325,7 @@ async function commandRun(flags, deps) {
   }
   if (!series.some((line) => line.type === "t0")) refuse("no T0", flags.out, "record T0 with `t0` first");
 
-  const dirty = deps.git(["status", "--porcelain", "--", "packages/code-reviewer/src"], deps.packageDir);
+  const dirty = uncommittedSrc(deps.git, deps.packageDir);
   if (dirty !== "") refuse("uncommitted src", "packages/code-reviewer/src", `commit or stash it first:\n${dirty}`);
 
   const inputs = {
@@ -497,6 +506,13 @@ async function commandReconcile(flags, deps) {
   const record = series.find((line) => line.type === "record" && line.runId === runId);
   const env = effectiveEnvWithKey(deps);
   const settleSeconds = Number(flags["settle-seconds"] ?? 180);
+  if (!Number.isFinite(settleSeconds) || settleSeconds <= 0) {
+    refuse(
+      "bad settle-seconds",
+      String(flags["settle-seconds"]),
+      "the two readings must be a positive number of seconds apart (default 180); an immediate re-read is not settlement evidence",
+    );
+  }
 
   const first = { value: await deps.readCounter(env.OPENROUTER_API_KEY), at: deps.now().toISOString() };
   await deps.sleep(settleSeconds * 1000);
@@ -516,6 +532,11 @@ async function commandReconcile(flags, deps) {
   } else if (telemetry !== null && delta - telemetry > RECONCILE_TOLERANCE(telemetry)) {
     status = "unexplained";
     note = `counter delta $${delta.toFixed(6)} exceeds complete telemetry $${telemetry.toFixed(6)}: other spend on the key, or an unreported attempt`;
+  } else if (telemetry === null && partial <= 1e-9 && delta <= 1e-9) {
+    // An unmoved counter is also what a lagging counter shows: with no telemetry
+    // to corroborate it, nothing proves the attempt was free.
+    status = "unsettled";
+    note = `counter delta $${delta.toFixed(6)} with no telemetry (${record?.cost?.costSource ?? "no record"}): nothing shows the attempt was counted yet`;
   } else {
     status = "settled";
     note =

@@ -610,15 +610,15 @@ used").
 
 #### Automated
 
-- [x] 1.1 Package tests, typecheck and lint pass
-- [x] 1.2 Root format check passes
-- [x] 1.3 DEFAULT_MODEL literal and the routing pin tests pass
-- [x] 1.4 The false && line is still present
-- [x] 1.5 schema-dump prints the finder wire schema and its sha256
+- [x] 1.1 Package tests, typecheck and lint pass — 33fdb79
+- [x] 1.2 Root format check passes — 33fdb79
+- [x] 1.3 DEFAULT_MODEL literal and the routing pin tests pass — 33fdb79
+- [x] 1.4 The false && line is still present — 33fdb79
+- [x] 1.5 schema-dump prints the finder wire schema and its sha256 — 33fdb79
 
 #### Manual
 
-- [ ] 1.6 Owner agrees the failure notice cannot read as "no remarks"
+- [x] 1.6 Owner agrees the failure notice cannot read as "no remarks"
 
 ### Phase 2: Inputs freeze, pre-registration and seal (no paid calls)
 
