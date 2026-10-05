@@ -188,3 +188,23 @@ here after impl-review a8844a6 (Review Notes). No paid calls.
    arm is then labelled `PASS` with that note). Recall preservation rests on G3f's required metrics, 3/3 on
    published findings, and #240 is no evidence about recall (gate.md §4 R4, §5; plan Definitions "R4 recall
    guard" and Phase 5 §3).
+
+### Owner decisions (2026-10-05): CONTROL stop, MAIN, decision 4.4
+
+Recorded in `gate.md` § Results (CONTROL — verdict, MAIN — not started, Decision 4.4).
+
+1. **The CONTROL stop is confirmed** (plan row 4.4): CONTROL = **`FAIL (G3f)`** (React `issue_recall` 0/3,
+   `flaw_stale_closure` 0/3, `flaw_lost_cleanup` 2/3 on published findings; G2 5/5 and G4 passed). #269 and #240
+   were not measured.
+2. **MAIN does not start**, although §5 allows it. Label `not measured (owner declined after CONTROL FAIL (G3f))`.
+   Reasons: (a) MAIN changes only the verifier, while rows 1 and 3 lost the stale closure before verification;
+   the same luna finder missed it in 0/3 rows on 2026-10-03 and 2/3 today, so G3f is bounded by finder variance
+   whatever the verifier does; (b) MAIN's pessimistic arm total ($2.25, `gate.md` §7) does not fit $2.00, so an
+   admitted MAIN would need a budget amendment.
+3. **Decision 4.4: NONE admitted.** Production is unchanged; `ai-review` stays off on `master` (the `false &&`
+   line from `68151b0` stays); Phase 8 does not run. Close-out per Phase 7: package checks green (1086 tests,
+   typecheck, lint). Spend: **T = $0.059069935** of $2.00, counter and telemetry equal.
+4. **Follow-ups for a successor change** (not this change's scope): `follow-ups/successor.md` — F-a finder
+   recall variance, F-b compound findings.
+5. **Not archived** by this decision; the owner's own files (`.claude/settings.local.json`, `temp_steps.md`,
+   `context/changes/cloud-exif-orientation/`) are untouched.

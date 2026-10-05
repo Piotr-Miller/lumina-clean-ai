@@ -734,3 +734,40 @@ verifier was never called). Every finder request reported `OpenAI`, SDK and Open
 **quality gate** (§4), so under §5 MAIN **may** start, subject to §7. The agent stopped here for the owner (Phase
 4 instruction of 2026-10-05: stop at the first decisive gate failure). **T carried = $0.059069** (telemetry
 including the grader at list price; the counter read $0.031030 at 18:20:25Z and was still lagging).
+
+### MAIN — not started
+
+**Owner decision 2026-10-05.** The CONTROL stop is confirmed (plan row 4.4): CONTROL = `FAIL (G3f)`, T carried
+$0.059069. MAIN is **allowed** by §5 (G3f is a quality gate) but **declined by the owner**, for two reasons:
+
+- **(a) MAIN cannot fix what failed.** MAIN changes only the verifier. In rows 1 and 3 the stale closure was lost
+  **before** verification: the luna finder did not raise it. The same finder missed it in 0/3 React rows on
+  2026-10-03 (`finder-model-swap`) and in 2/3 today, so G3f is bounded by finder variance whatever the verifier
+  does.
+- **(b) MAIN does not fit the budget.** MAIN's pessimistic arm total is $2.25 (§7), more than $2.00, so an
+  admitted MAIN would need a budget amendment.
+
+**Label: `not measured (owner declined after CONTROL FAIL (G3f))`.** No MAIN call was made.
+
+### Decision 4.4
+
+**Owner decision 2026-10-05: NONE admitted.**
+
+| Arm     | Label                                                    |
+| ------- | -------------------------------------------------------- |
+| CONTROL | `FAIL (G3f)`                                             |
+| MAIN    | `not measured (owner declined after CONTROL FAIL (G3f))` |
+
+- R4 is **not reached** for either arm (CONTROL stopped before #240; MAIN did not run). Had it been reached, it
+  would have been `NOT PROVEN` (empty K list, information only).
+- **Production is unchanged.** `ai-review` stays off on `master`: the `false &&` line in
+  `.github/workflows/review.yml` (`68151b0`, checked on `origin/master` 2026-10-05) stays. Phase 8 does not run.
+- **Close-out (plan Phase 7), 2026-10-05:** package checks green at `bdfaf20` (`packages/code-reviewer`:
+  `npm test` 29 files / **1086 tests passed**, `npm run typecheck` exit 0, `npm run lint` exit 0). Nothing else
+  changes.
+- **Spend (final):** counter **$52.877178781** at 2026-10-05T18:27:39Z (`usage_daily` $0.059069935) →
+  **T = $0.059069935** of $2.00. It equals the telemetry carried after the fixtures (finder $0.004044 + verifier
+  $0.001940 + grader $0.053086 at list price) to the micro-dollar, so the counter has settled and no unrecorded
+  paid call hit the key. The ceiling T0 + 2.00 = $54.818108846 was never approached; $1.60 was never reached.
+- **Follow-ups for a successor change:** `follow-ups/successor.md` (F-a finder recall variance, F-b compound
+  findings). They are not this change's scope.

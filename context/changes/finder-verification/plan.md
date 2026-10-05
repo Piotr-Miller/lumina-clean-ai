@@ -1138,13 +1138,13 @@ verifier keys are optional, so old review.json readers are unaffected.
 
 #### Automated
 
-- [x] 4.1 One JSONL line per attempt run; not-run attempts listed
-- [x] 4.2 promptfoo run has exactly 12 rows or is recorded as failed
-- [x] 4.3 The counter never exceeded T0 + 2.00
+- [x] 4.1 One JSONL line per attempt run; not-run attempts listed — bcfad4d, bdfaf20
+- [x] 4.2 promptfoo run has exactly 12 rows or is recorded as failed — bcfad4d, bdfaf20
+- [x] 4.3 The counter never exceeded T0 + 2.00 — bcfad4d, bdfaf20
 
 #### Manual
 
-- [ ] 4.4 Owner confirms every stop before more is spent
+- [x] 4.4 Owner confirms every stop before more is spent
 
 ### Phase 5: CONTROL — recall guard, hand-reads, arm verdict
 
@@ -1174,7 +1174,7 @@ verifier keys are optional, so old review.json readers are unaffected.
 
 #### Manual
 
-- [ ] 7.1 Owner records decision 4.4
+- [x] 7.1 Owner records decision 4.4
 
 ### Phase 8: Production and G5 (only after 4.4 admits an arm)
 
