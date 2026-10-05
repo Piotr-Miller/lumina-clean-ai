@@ -20,7 +20,13 @@ jobs:
     # Guards (requirements): same-repo head (fork PRs skip — secret safety),
     # not draft, labeled-events pass ONLY for ai-cr:review (any other label
     # would burn a review run), and bot-authored PRs skip.
+    # TEMPORARILY OFF (2026-10-04, owner decision R11): the finder has failed
+    # every run since 2026-09-20 (Venice ignores response_format) and no
+    # replacement passed its gates. Change `finder-verification` measures a
+    # verified finder; the change that deploys a finder which passes those
+    # gates removes the `false &&` line below. Remove only that line.
     if: >-
+      false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.draft == false &&
       (github.event.action != 'labeled' || github.event.label.name == 'ai-cr:review') &&
