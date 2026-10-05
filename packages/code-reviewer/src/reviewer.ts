@@ -2,7 +2,7 @@ import { createOpenRouter, type OpenRouterChatSettings } from "@openrouter/ai-sd
 import { isStepCount, tool, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 import { z } from "zod";
 
-import { MAX_OUTPUT_TOKENS, resolveConfig, resolveProviderRouting } from "./config.js";
+import { MAX_OUTPUT_TOKENS, resolveConfig, resolveFinderProviderRouting } from "./config.js";
 import { normalizeFindings } from "./findings.js";
 import { buildInstructions, buildPrompt } from "./prompts.js";
 import { tolerantReviewOutput } from "./output-repair.js";
@@ -68,11 +68,11 @@ export interface ReviewerOptions {
    * OpenRouter provider routing (order / fallbacks / require_parameters /
    * quantizations) for the review calls.
    *
-   * Omitted → DEFAULT_PROVIDER_ROUTING (`require_parameters: true`), which
-   * keeps this strict-schema call on endpoints that actually enforce the
-   * schema. Campaign tooling passes its OWN pin here to make provider-scoped
-   * claims (fabrication amendment A1) and must keep overriding the default —
-   * that pin is for measurement comparability, not production routing.
+   * Omitted → FINDER_PROVIDER_ROUTING, the finder's env-proof pin to the
+   * `anthropic` endpoint (change `finder-sonnet`). Campaign tooling passes its
+   * OWN pin here to make provider-scoped claims (fabrication amendment A1) and
+   * must keep overriding the default — that pin is for measurement
+   * comparability, not production routing.
    */
   providerRouting?: OpenRouterChatSettings["provider"];
 }
@@ -151,12 +151,9 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // accounting adds response fields, not tokens.
     model: openrouter(model, {
       usage: { include: true },
-      // An explicit pin (campaign tooling) wins; otherwise the schema-enforcing
-      // default applies, and only OPENROUTER_REQUIRE_PARAMETERS=false removes it.
-      ...(() => {
-        const routing = options.providerRouting ?? resolveProviderRouting();
-        return routing ? { provider: routing } : {};
-      })(),
+      // An explicit pin (campaign tooling) wins; otherwise the finder's own
+      // pin applies, which no environment variable changes or removes.
+      provider: options.providerRouting ?? resolveFinderProviderRouting(),
     }),
     // See MAX_OUTPUT_TOKENS. NOTE this bounds each generation in the tool
     // loop, not the run total — a multi-step finder run can emit more

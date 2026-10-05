@@ -3,15 +3,23 @@
 // embedder) must be able to import the barrel side-effect-free; only demo.ts
 // may exit the process.
 
-// Must match what production actually runs (the OPENROUTER_REVIEW_MODEL
-// repository variable), because this is the value that takes over if that
-// variable is ever unset or cleared. It read anthropic/claude-sonnet-5 while
-// the variable read z-ai/glm-4.6, so a cleared variable would silently have
+// The finder model production runs. Since change `finder-sonnet` this
+// constant is the source of truth and the OPENROUTER_REVIEW_MODEL repository
+// variable is meant to be ABSENT (the 2026-08-12 ruling): a variable that is
+// still set outranks this value, so it must be deleted, not left to drift.
+// Until 2026-10-05 the rule ran the other way — this value had to mirror the
+// variable (z-ai/glm-4.6), because a cleared variable would otherwise have
 // switched the finder to a model measured at ~58x the cost per review
-// (change `finder-tool-loop-evals`, impl-review-phase-4 F1). Pinned by a
-// literal assertion in config.test.ts: change both together, and only
-// alongside the repository variable.
-export const DEFAULT_MODEL = "z-ai/glm-4.6";
+// (change `finder-tool-loop-evals`, impl-review-phase-4 F1).
+//
+// sonnet-5 because three cheap finders failed in turn (glm-4.6, the
+// `finder-model-swap` candidates, `finder-verification`), and sonnet-5 is the
+// only finder measured both clean on the fixtures and catching the out-of-hunk
+// defect live. The owner accepted its cost on 2026-10-05; `finder-sonnet`'s
+// gate.md records the measurement that admits it. Its routing is pinned to
+// one endpoint by resolveFinderProviderRouting below. Pinned by a literal
+// assertion in config.test.ts: change both only with a new measurement.
+export const DEFAULT_MODEL = "anthropic/claude-sonnet-5";
 export const DEFAULT_JUDGE_MODEL = "anthropic/claude-sonnet-5";
 
 // Its own constant, deliberately NOT an alias of DEFAULT_JUDGE_MODEL: the two
@@ -76,7 +84,9 @@ export const MAX_OUTPUT_TOKENS = 16_384;
 export const IMPL_REVIEW_MAX_OUTPUT_TOKENS = 32_768;
 
 /**
- * Provider routing for every STRUCTURED model call in the pipeline.
+ * Provider routing for the judge and the implementation review. The finder
+ * has its own, pinned routing (resolveFinderProviderRouting below) since
+ * change `finder-sonnet`.
  *
  * THE FAILURE THIS PREVENTS: structured-output support on OpenRouter is a
  * property of the ENDPOINT, not the model — the same model id is served by
@@ -111,6 +121,47 @@ export const DEFAULT_PROVIDER_ROUTING = { require_parameters: true } as const;
  */
 export function resolveProviderRouting(): { require_parameters: true } | undefined {
   return process.env.OPENROUTER_REQUIRE_PARAMETERS === "false" ? undefined : DEFAULT_PROVIDER_ROUTING;
+}
+
+/**
+ * The finder's routing: OpenRouter's `anthropic` endpoint and nothing else.
+ *
+ * WHY A PIN, unlike the judge's fallbacks-on default above: the finder's
+ * admission (change `finder-sonnet`) measured sonnet-5 on exactly this
+ * endpoint, which lists `tools`, `structured_outputs` and `response_format`.
+ * Any other upstream serving the same model id is an unmeasured configuration,
+ * and the finder sends a strict json_schema inside a tool loop — the
+ * combination that failed silently on other endpoints (glm-4.6 on Venice;
+ * change `finder-serialization-outage`). An outage of the one endpoint is a
+ * loud, failed review; a silent move to an unmeasured one is not.
+ *
+ * DELIBERATELY ENV-PROOF. No environment variable reaches this value: not
+ * `OPENROUTER_REQUIRE_PARAMETERS` (the judge's escape hatch), and not the
+ * `OPENROUTER_FINDER_PROVIDERS` override that `finder-serialization-outage`
+ * built for its gate, which is not ported. Moving the finder off this endpoint
+ * is a code change with a measurement behind it, never a CI setting.
+ * Campaign tooling can still pass its own `providerRouting` to createReviewer.
+ */
+export const FINDER_PROVIDER_ROUTING = {
+  only: ["anthropic"],
+  order: ["anthropic"],
+  allow_fallbacks: false,
+  require_parameters: true,
+} as const;
+
+/** The finder's routing, as sent in `provider`. A fresh copy per call, so no caller can mutate the pin. */
+export function resolveFinderProviderRouting(): {
+  only: string[];
+  order: string[];
+  allow_fallbacks: false;
+  require_parameters: true;
+} {
+  return {
+    only: [...FINDER_PROVIDER_ROUTING.only],
+    order: [...FINDER_PROVIDER_ROUTING.order],
+    allow_fallbacks: false,
+    require_parameters: true,
+  };
 }
 
 export interface ModelOverrides {

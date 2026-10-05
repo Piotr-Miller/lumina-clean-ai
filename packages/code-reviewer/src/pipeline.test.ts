@@ -1,10 +1,12 @@
-import { APICallError, type StepResult, type ToolSet } from "ai";
+import { APICallError, type ProviderMetadata, type StepResult, type ToolSet } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_JUDGE_MODEL, DEFAULT_MODEL } from "./config.js";
 import {
   BODY_CAP_CHARS,
   BODY_TRUNCATION_MARKER,
+  asStepCost,
+  asStepProvider,
   capDiff,
   computeDiffStats,
   computeFileSegments,
@@ -478,16 +480,19 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
   });
 });
 
-// Partial step shapes cast once: the pipeline only reads toolCalls and usage.
+// Partial step shapes cast once: the pipeline only reads toolCalls, usage,
+// providerMetadata and finishReason.
 const finderStep = (over: {
   toolCalls?: { toolName: string; input: unknown }[];
   usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
   providerMetadata?: unknown;
+  finishReason?: string;
 }): StepResult<ToolSet> =>
   ({
     toolCalls: over.toolCalls ?? [],
     usage: over.usage ?? {},
     providerMetadata: over.providerMetadata,
+    finishReason: over.finishReason ?? "stop",
   }) as unknown as StepResult<ToolSet>;
 
 /** Shorthand for the provider bag OpenRouter fills under usage accounting. */
@@ -535,6 +540,43 @@ describe("describeFinderStep", () => {
     ["a null usage bag", { openrouter: { usage: null } }],
   ])("degrades to no cost on %s", (_label, providerMetadata) => {
     expect("cost" in describeFinderStep(finderStep({ providerMetadata }))).toBe(false);
+  });
+
+  it("names the serving upstream and how the step ended", () => {
+    const info = describeFinderStep(
+      finderStep({ providerMetadata: { openrouter: { provider: "Novita" } }, finishReason: "tool-calls" }),
+    );
+    expect(info.provider).toBe("Novita");
+    expect(info.finishReason).toBe("tool-calls");
+  });
+
+  it("omits the provider key entirely when OpenRouter reported none, but still reports finishReason", () => {
+    // Absent, never "" or "unknown": either would read as a real endpoint slug.
+    const info = describeFinderStep(finderStep({ finishReason: "length" }));
+    expect("provider" in info).toBe(false);
+    expect(info.finishReason).toBe("length");
+  });
+
+  it.each([
+    ["metadata from another provider", { anthropic: { provider: "Novita" } }],
+    ["an openrouter bag with no provider", { openrouter: { usage: { cost: 0.1 } } }],
+    ["a non-string provider", { openrouter: { provider: 42 } }],
+    ["an empty provider", { openrouter: { provider: "" } }],
+    ["a null openrouter bag", { openrouter: null }],
+  ])("degrades to no provider on %s", (_label, providerMetadata) => {
+    expect("provider" in describeFinderStep(finderStep({ providerMetadata }))).toBe(false);
+  });
+});
+
+describe("asStepProvider", () => {
+  it("reads the slug next to the usage-accounting bag without disturbing asStepCost", () => {
+    const metadata = { openrouter: { provider: "DeepInfra", usage: { cost: 0.002 } } } as unknown as ProviderMetadata;
+    expect(asStepProvider(metadata)).toBe("DeepInfra");
+    expect(asStepCost(metadata)).toBe(0.002);
+  });
+
+  it("returns undefined for absent metadata", () => {
+    expect(asStepProvider(undefined)).toBeUndefined();
   });
 });
 

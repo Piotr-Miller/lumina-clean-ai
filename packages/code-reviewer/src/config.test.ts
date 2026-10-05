@@ -29,12 +29,12 @@ describe("resolveModels — finder chain", () => {
 
   // Literal, not a tautology: the assertion above passes whatever the constant
   // says, so it could not catch the checked-in default drifting away from the
-  // model production actually runs. These pin the strings themselves — the
-  // finder default must equal the OPENROUTER_REVIEW_MODEL repository variable,
-  // because it is what takes over when that variable is unset or cleared
-  // (impl-review-phase-4 F1). Update these ONLY together with that variable.
+  // model production actually runs. These pin the strings themselves. Since
+  // change `finder-sonnet` the finder default IS the production model and the
+  // OPENROUTER_REVIEW_MODEL repository variable is meant to be absent; change
+  // this literal only alongside a new measurement (impl-review-phase-4 F1).
   it("defaults the finder to the model production runs", () => {
-    expect(DEFAULT_MODEL).toBe("z-ai/glm-4.6");
+    expect(DEFAULT_MODEL).toBe("anthropic/claude-sonnet-5");
   });
 
   it("defaults the judge to the model production runs", () => {
