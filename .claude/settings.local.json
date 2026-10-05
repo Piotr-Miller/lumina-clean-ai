@@ -241,14 +241,11 @@
       "Bash(git worktree *)",
       "Bash([ -L \"$WT/node_modules\" ])",
       "Bash(rm /tmp/claude-1000/-home-piotrmiller-Source-lumina-clean-ai/c39abfe6-02ab-478e-bbf3-7e8c0d5a08e5/scratchpad/wt-chore/node_modules)",
-      "Bash(git -C ../.. status --porcelain -- packages/code-reviewer/evals)"
+      "Bash(git -C ../.. status --porcelain -- packages/code-reviewer/evals)",
+      "Bash(python3 -c \"import json,sys;d=json.load\\(sys.stdin\\);print\\(d['title']\\);print\\(d['body'][:2500]\\)\")"
     ],
     "deny": [
       "Bash(rm -rf *)"
-    ],
-    "ask": [
-      "Bash(curl *)",
-      "Bash(wget *)"
     ]
   }
 }
