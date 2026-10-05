@@ -240,7 +240,8 @@
       "Bash(S=/tmp/claude-1000/-home-piotrmiller-Source-lumina-clean-ai/02645d50-521e-4e54-939d-7c4d6acf1896/scratchpad/fms-phase2; KEY=$\\(grep -E '^OPENROUTER_API_KEY=' /home/piotrmiller/Source/lumina-clean-ai/packages/code-reviewer/.env | head -1 | cut -d= -f2- | tr -d '\"'\"'\"' \\\\r'\\); curl -s -H \"Authorization: Bearer $KEY\" https://openrouter.ai/api/v1/key -o $S/key-final-3.json -w \"key http %{http_code} at $\\(date -u +%Y-%m-%dT%H:%M:%SZ\\)\\\\n\"; jq -r '.data.usage' $S/key-final-3.json | awk '{printf \"counter %s; T = %.8f; remaining to 2.00 = %.8f\\\\n\", $1, $1-52.59943383, 2.00-\\($1-52.59943383\\)}'; echo \"--- working tree:\"; git -C /home/piotrmiller/Source/lumina-clean-ai status --short)",
       "Bash(git worktree *)",
       "Bash([ -L \"$WT/node_modules\" ])",
-      "Bash(rm /tmp/claude-1000/-home-piotrmiller-Source-lumina-clean-ai/c39abfe6-02ab-478e-bbf3-7e8c0d5a08e5/scratchpad/wt-chore/node_modules)"
+      "Bash(rm /tmp/claude-1000/-home-piotrmiller-Source-lumina-clean-ai/c39abfe6-02ab-478e-bbf3-7e8c0d5a08e5/scratchpad/wt-chore/node_modules)",
+      "Bash(git -C ../.. status --porcelain -- packages/code-reviewer/evals)"
     ],
     "deny": [
       "Bash(rm -rf *)"
