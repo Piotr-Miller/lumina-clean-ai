@@ -1138,9 +1138,9 @@ verifier keys are optional, so old review.json readers are unaffected.
 
 #### Automated
 
-- [ ] 4.1 One JSONL line per attempt run; not-run attempts listed
-- [ ] 4.2 promptfoo run has exactly 12 rows or is recorded as failed
-- [ ] 4.3 The counter never exceeded T0 + 2.00
+- [x] 4.1 One JSONL line per attempt run; not-run attempts listed
+- [x] 4.2 promptfoo run has exactly 12 rows or is recorded as failed
+- [x] 4.3 The counter never exceeded T0 + 2.00
 
 #### Manual
 

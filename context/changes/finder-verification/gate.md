@@ -698,3 +698,39 @@ counter lags. `--max-spend` = min(1.60 − T, 2.00 − T − A_max); for G2 A_ma
 findings: 0 in each attempt (`preVerificationFindingCount` 0, `verification.status: "no-findings"`, so the
 verifier was never called). Every finder request reported `OpenAI`, SDK and OpenRouter reasoning tokens 0,
 `reasoningLeak: false`. Series spend (telemetry) $0.000845; median $0.000113.
+| 3 | Fixtures, promptfoo `control-luna-verify` (12 rows) | 18:16:36Z | $0.11 | $0.000845 | n/a (promptfoo has no cap; P ≤ 1.60 − T) | $52.850138781 (18:20:25Z; lagging) | $0.003199 / $0.001940 / — (grader not in telemetry) | $0.059069 (telemetry incl. grader at list price) | **G3f FAIL**; G4 PASS; 12 rows, 0 errors |
+
+**Fixtures (CONTROL), 2026-10-05T18:16:38Z–18:18:51Z** (promptfoo 0.122.0, eval `eval-6Wa-2026-10-05T18:16:38`,
+`OPENROUTER_FINDER_PROVIDERS=openai`, `--filter-providers '^control-luna-verify$'`, the sealed filter,
+`--repeat 3 -j 1 --no-cache`; rows: `gate-control-promptfoo.jsonl`, from
+`promptfoo-gate-rows.mjs --expected-provider OpenAI --expected-verifier-provider OpenAI`, exit 1):
+
+- **Not a failed run:** 12 rows; 0 finder, verifier, grader or measurement errors; 0 invalidated rows, 0 A3
+  leaks, 0 retries; every row `verification.status` ∈ {`verified`, `no-findings`}. A1 not triggered.
+- **G3f: FAIL.** js-loop `issue_recall` 3/3; **React `issue_recall` 0/3, `review_fails` 3/3,
+  `flaw_stale_closure` 0/3, `flaw_lost_cleanup` 2/3, `flaw_unsafe_html` 3/3**; clean `no_false_alarms` 3/3.
+  Cross-hunk (diagnostic): `tool_required` 3/3, `flaw_cross_hunk_contract` 3/3.
+- **G4: PASS** — finder-only median $0.00016993 (max $0.00080232) ≤ $0.00301653; incomplete cost 0.
+- **Verifier cost:** called on 9/12 rows, $0.00194018 in all, incomplete verifier cost 0 (no `FAIL (cost)`).
+- **Grader (information only, owner ruling 2026-10-05):** 9,223 tokens (5,759 prompt / 3,464 completion);
+  promptfoo reported 0 reasoning tokens in its completion details; ≈ $0.053086 at list price ($2 / $12 per M).
+- **Where the React flaws were lost** (read from `metadata.verification` of the three React rows; diagnostic,
+  not a gate input). Each row's finder raised two findings:
+  - rows 1 and 3: the lost cleanup (`MetricsPanel.jsx:18` / `:15`) and the unsafe HTML (`:40` / `:42`), both
+    `confirmed` and published. **The finder never mentioned the empty dependency array or the stale closure**,
+    so the stale-closure miss in these two rows happened **before** verification;
+  - row 2: F1 (`:16`) claimed both the missing cleanup and the stale closure ("the empty dependency array captures
+    the initial `channel` and `filter`"); the verifier returned **`unsupported`** ("the excerpts do not show how
+    `metricsClient.subscribe` handles cleanup or whether it returns an unsubscribe function"), so it was not
+    published. **This row's stale-closure and lost-cleanup misses were caused by verification.** F2 (unsafe
+    HTML, `:39`) was `confirmed`.
+  - For comparison only: luna measured alone in `finder-model-swap` on 2026-10-03 passed every React metric 3/3
+    with the same finder request shape. Today 2 of 3 finder outputs omitted the stale closure.
+
+### CONTROL — verdict
+
+**`FAIL (G3f)`** — the first decisive failure in the sealed order (§5 step 3). Measurement of CONTROL ends here:
+#269 × 10 and #240 × 10 are **`not measured (stopped after G3f FAIL)`**; R4 and G3h are not reached. G3f is a
+**quality gate** (§4), so under §5 MAIN **may** start, subject to §7. The agent stopped here for the owner (Phase
+4 instruction of 2026-10-05: stop at the first decisive gate failure). **T carried = $0.059069** (telemetry
+including the grader at list price; the counter read $0.031030 at 18:20:25Z and was still lagging).
