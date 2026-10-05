@@ -321,7 +321,18 @@ per run), and chose the linear byte midpoint (53 / 8) over the log midpoint (52 
   `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum` after
   `npx prettier --check gate.md` passed.
 - UTC time taken: **2026-10-05T21:08:58Z**.
-- Seal commit, GitHub push time and tag: recorded in the next commit, after the push.
+- **Seal commit:** `3d7b9aa34658cd5befb98f90c084445ccaa4e029`
+  (`docs(finder-sonnet): seal the pre-registration (p2)`), on `origin/feat/finder-sonnet`; its committed
+  `gate.md` reproduces the sha256 above, and its committed `gate-manifest.json` reproduces
+  `274984fa…893512`. Pre-push hook: typecheck and 418/418 unit tests passed.
+- **GitHub push time: 2026-10-05T21:09:36Z.** Source:
+  `GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-sonnet`, event
+  `branch_creation`, `0000000..3d7b9aa`, actor `Piotr-Miller`. `git ls-remote` showed `3d7b9aa` as the branch
+  head. Recorded before any price re-read, T0 or paid call.
+- **Rebase protection:** annotated tag **`finder-sonnet/seal`** (tag object
+  `f4c774cc403cd4026836f315b9b1856caf46081e`) on `3d7b9aa34658cd5befb98f90c084445ccaa4e029`, pushed to
+  `origin` on 2026-10-05. `git ls-remote --tags origin 'finder-sonnet/*'` shows it peeled to `3d7b9aa`. A later
+  rebase or rebase-merge rewrites the seal commit's SHA; the tag keeps the sealed state reachable.
 
 ## Results
 

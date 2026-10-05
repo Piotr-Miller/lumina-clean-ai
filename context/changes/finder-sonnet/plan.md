@@ -628,11 +628,11 @@ used").
 
 - [x] 2.1 Frozen inputs reproduce their sha256 and heads
 - [x] 2.2 Pre-registration has no placeholder and its code hashes match HEAD
-- [ ] 2.3 The seal tag is on origin
+- [x] 2.3 The seal tag is on origin
 
 #### Manual
 
-- [ ] 2.4 Owner confirms the plan-chosen terms and approves the pre-registration
+- [x] 2.4 Owner confirms the plan-chosen terms and approves the pre-registration
 - [ ] 2.5 Seal push time recorded before any paid call
 
 ### Phase 3: Measurement (paid)
