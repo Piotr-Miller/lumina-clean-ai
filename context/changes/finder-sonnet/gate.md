@@ -368,8 +368,34 @@ T = max(counter − T0, Σ settled run costs). Budget check before each run: T +
 | -------- | ----------- | ---------- | ----- | ------------ | -------------------------------- | --------------------------------- | ------- | ----------------------- | ---------------------------------------------- | ------------------------- | --------- |
 | `247-r1` | 21:27:19    | $0.000000  | $0.33 | $0.830000    | $52.877179 → $53.040053          | $0.127380 / $0.035494 = $0.162874 | none    | 1 (Anthropic, `stop`)   | **valid**: 5 findings, verdict `failed`, 140 s | $0.162874 (2nd reconcile) | $0.162874 |
 
+| `269-r1` | 21:36:24 | $0.162874 | $0.73 | $1.392874 | $53.040053 → $53.374463 | none (no `review.json`) | none | 2 (Anthropic `tool-calls`; Anthropic `length`) | **INVALID**: `NoOutputGeneratedError`, 201 s | $0.334410 (2nd reconcile) | $0.497284 |
 **`247-r1` notes.** The probe passed: no `minLength` 400, no missing final JSON, no workspace refusal; the finder
 answered in one step without a `getFileContext` call. The first `reconcile` (reads 21:29:45Z → 21:32:45Z) found
 the counter still moving, $52.877179 → $53.040053, and recorded `unsettled`; the second (21:32:49Z → 21:35:50Z)
 read the counter unmoved and settled the run at the delta, equal to telemetry. The record's own `counterAfter`
 (21:29:39Z) still read T0: the counter lag noted in earlier series.
+
+**`269-r1` notes — invalid; reliability FAILS; series stopped (§9).** Raw error text, the run's `stderr.log` in
+full (npm banners omitted):
+
+```
+finder step 1: getFileContext src/lib/engines/auto-params.ts, getFileContext src/lib/engines/types.ts, getFileContext src/lib/engines/auto-params.client.ts (tokens in=32371 out=3302 total=35673) provider=Anthropic finish=tool-calls
+finder step 2: no getFileContext call (tokens in=36404 out=16384 total=52788) provider=Anthropic finish=length
+No output generated.
+```
+
+- **What happened:** the finder's second step, with no tool call, spent the whole per-step output cap
+  (`MAX_OUTPUT_TOKENS = 16_384`, `config.ts:65`) and stopped with `finish=length` before writing the final JSON.
+  The AI SDK then threw `NoOutputGeneratedError` ("No output generated."). `stdout.log` is empty; no
+  `review.json` was written, so the judge never ran. Exit code 1, classified `model-attributable`.
+- **No retry:** `isRetryableError` (`retry.ts:23-31`) retries timeouts, `NoObjectGeneratedError` and HTTP
+  429/5xx, not `NoOutputGeneratedError`, so production's single retry did not apply. This is production
+  behaviour as sealed, and §4 names `NoOutputGeneratedError` as invalid.
+- **Risk already on record:** `plan.md` § Performance Considerations notes an August fixture row that wrote
+  18,408 tokens against the same 16,384 cap. The step's thinking is part of that output (reasoning at the
+  endpoint default, effort `high`).
+- **Cost:** the counter delta $0.334410 equals the logged tokens priced at $2 / $10 per M exactly
+  (32,371 + 36,404 in, 3,302 + 16,384 out). The first `reconcile` (21:39:54Z → 21:42:54Z) found the counter still
+  moving ($53.137815 → $53.374463) and recorded `unsettled`; the second (21:43:02Z → 21:46:02Z) settled it at the delta.
+- **Stop:** by §9 the series stops after this run and the owner decides whether `247-r2` and `269-r2` run **as
+  information**. Reliability has FAILED and nothing later changes that; the verdict cannot be `ADMITTED`.
