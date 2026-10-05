@@ -1,10 +1,12 @@
 ---
 change_id: finder-verification
 title: "Finder verification: a finding must cite confirming code before it is published"
-status: implementing
+status: archived
+outcome: completed
+outcome_note: "Decision 4.4 = none admitted (gate.md § Results, 37848c0). Plan rows of Phases 5, 6 and 8 stay unchecked because they do not apply on this path (CONTROL FAIL (G3f); MAIN declined; no arm admitted). They are not unfinished work."
 created: 2026-10-03
 updated: 2026-10-05
-archived_at: null
+archived_at: 2026-10-05T18:40:36Z
 ---
 
 ## Notes
