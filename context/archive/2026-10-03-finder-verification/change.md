@@ -7,6 +7,8 @@ outcome_note: "Decision 4.4 = none admitted (gate.md § Results, 37848c0). Plan 
 created: 2026-10-03
 updated: 2026-10-05
 archived_at: 2026-10-05T18:40:36Z
+archive_commit: 6a99445
+sync: none
 ---
 
 ## Notes
