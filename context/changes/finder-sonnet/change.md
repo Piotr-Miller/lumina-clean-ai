@@ -39,6 +39,10 @@ about $5–10 per month is accepted. This is a successor to finder-verification 
    reserved for G5**. Before each measurement run require T + P + $0.50 ≤ $3.00; before G5 require
    T + $0.50 ≤ $3.00. No automatic increase. Read and reconcile the OpenRouter key counter before and after
    each paid step; unresolved spend blocks another paid call. See `plan.md` Definitions for T and P.
+6. Cost formula amended by the owner on 2026-10-05, in Phase 2 before the seal: each of the 61 observed review runs
+   in the window is priced at the measured mean per-run cost of the frozen PR whose diff is nearer in bytes
+   (53 × #247, 8 × #269; linear midpoint 38,146 B), replacing the single mean, which could not pass at the
+   research estimates for these two inputs. The $10/month gate is unchanged. See `gate.md` § Pre-registration §6.
 
 **Checked at creation (2026-10-05, no model call):** the figures in point 1 match
 `context/archive/2026-08-10-finder-tool-loop-evals/decision.md` — "flawless" (line 116), run 31533093356 at
