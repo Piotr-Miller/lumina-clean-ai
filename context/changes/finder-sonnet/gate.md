@@ -336,4 +336,40 @@ per run), and chose the linear byte midpoint (53 / 8) over the log midpoint (52 
 
 ## Results
 
-Not started. Phase 3 writes the pre-flight, T0 and the ledger here.
+### Phase 3 pre-flight (2026-10-05, before any paid call)
+
+- **Seal:** `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum` →
+  `434ffe5f…403b76`, both in the working tree and at the tag `finder-sonnet/seal`. `gate-manifest.json` is
+  unchanged since `3d7b9aa` and reproduces `274984fa…893512`.
+- **Code:** at `e01f622`, the five sealed files reproduce their §3 sha256, `HEAD:packages/code-reviewer/src` is
+  `a6dd42ab…a0b1`, and `src` and `scripts` have no uncommitted changes. `sonnet-gate.mjs describe` printed JSON
+  byte-equal to `gate-manifest.json` § `global` (code hashes, `src` tree, wire schema `a6e98d41…95bf`, effective
+  configuration).
+- **Inputs:** every frozen diff, rules and metadata file in `~/.cache/finder-sonnet-gate/` reproduces its
+  sha256 and byte count; `wt-247` is at `dec09f8…` and `wt-269` at `fca2778…`, both clean.
+- **Endpoint** (`GET /api/v1/models/anthropic/claude-sonnet-5/endpoints` and `GET /api/v1/models`, read
+  2026-10-05T21:26:38Z): the `anthropic` endpoint (`Anthropic | anthropic/claude-sonnet-5-20260630`, status 0)
+  lists `tools`, `structured_outputs`, `response_format` and `reasoning`; prompt `0.000002`, completion
+  `0.00001` ($2 / $10 per M); model `reasoning` `{"mandatory": false, "default_enabled": true,
+"default_effort": "high"}`. Nothing changed against `research.md` §2.
+- **T0:** key counter **$52.877179** (`52.877178781`) at **2026-10-05T21:26:54Z**, recorded by
+  `sonnet-gate.mjs t0` as the first line of `gate-sonnet-runs.jsonl`. Account credits at the same time:
+  `total_credits` $60, `total_usage` $52.877179, so $7.12 remains, more than the $3.00 budget. The key's
+  `usage_daily` already read $0.059070 before T0, spent by something else earlier in the UTC day.
+- **Run artifacts** (`review-out/`, `stdout.log`, `stderr.log`) go to `~/.cache/finder-sonnet-gate/runs/<run-id>/`
+  (`--artifacts`), next to the frozen inputs and likewise not committed, so generated output stays out of the
+  reviewed diff. Each run's findings, verdict, steps, retries and costs are in its JSONL record.
+
+### Ledger
+
+T = max(counter − T0, Σ settled run costs). Budget check before each run: T + P + $0.50 ≤ $3.00.
+
+| Run      | Start (UTC) | T at start | P     | T + P + 0.50 | Counter before → after (settled) | Finder / judge telemetry          | Retries | Finder steps (provider) | Outcome                                        | Settled cost              | T after   |
+| -------- | ----------- | ---------- | ----- | ------------ | -------------------------------- | --------------------------------- | ------- | ----------------------- | ---------------------------------------------- | ------------------------- | --------- |
+| `247-r1` | 21:27:19    | $0.000000  | $0.33 | $0.830000    | $52.877179 → $53.040053          | $0.127380 / $0.035494 = $0.162874 | none    | 1 (Anthropic, `stop`)   | **valid**: 5 findings, verdict `failed`, 140 s | $0.162874 (2nd reconcile) | $0.162874 |
+
+**`247-r1` notes.** The probe passed: no `minLength` 400, no missing final JSON, no workspace refusal; the finder
+answered in one step without a `getFileContext` call. The first `reconcile` (reads 21:29:45Z → 21:32:45Z) found
+the counter still moving, $52.877179 → $53.040053, and recorded `unsettled`; the second (21:32:49Z → 21:35:50Z)
+read the counter unmoved and settled the run at the delta, equal to telemetry. The record's own `counterAfter`
+(21:29:39Z) still read T0: the counter lag noted in earlier series.
