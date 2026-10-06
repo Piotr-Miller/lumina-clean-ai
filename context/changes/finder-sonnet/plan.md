@@ -639,9 +639,9 @@ used").
 
 #### Automated
 
-- [x] 3.1 One record per started run, no duplicate run-id
-- [x] 3.2 Every ledger row satisfies the budget rule at its start
-- [x] 3.3 The counter never exceeded T0 + $3.00
+- [x] 3.1 One record per started run, no duplicate run-id — 375dc13
+- [x] 3.2 Every ledger row satisfies the budget rule at its start — 375dc13
+- [x] 3.3 The counter never exceeded T0 + $3.00 — 375dc13
 
 #### Manual
 
@@ -651,14 +651,14 @@ used").
 
 #### Automated
 
-- [ ] 4.1 Every published finding appears in exactly one hand-read row
-- [ ] 4.2 The projection recomputes from the recorded counts and costs
+- [x] 4.1 Every published finding appears in exactly one hand-read row
+- [x] 4.2 The projection recomputes from the recorded counts and costs
 
 #### Manual
 
-- [ ] 4.3 Owner approved dedup and D2 matches before classifying
-- [ ] 4.4 Owner classified every row
-- [ ] 4.5 Owner records the decision; exactly one verdict label
+- [x] 4.3 Owner approved dedup and D2 matches before classifying
+- [x] 4.4 Owner classified every row
+- [x] 4.5 Owner records the decision; exactly one verdict label
 
 ### Phase 5: Enable and G5 (only on ADMITTED)
 

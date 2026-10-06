@@ -351,11 +351,18 @@ per run), and chose the linear byte midpoint (53 / 8) over the log midpoint (52 
   2026-10-05T21:26:38Z): the `anthropic` endpoint (`Anthropic | anthropic/claude-sonnet-5-20260630`, status 0)
   lists `tools`, `structured_outputs`, `response_format` and `reasoning`; prompt `0.000002`, completion
   `0.00001` ($2 / $10 per M); model `reasoning` `{"mandatory": false, "default_enabled": true,
-"default_effort": "high"}`. Nothing changed against `research.md` §2.
+"default_effort": "high"}`. These values are backed by the raw
+  responses, retained outside the repository like the run artifacts, in `~/.cache/finder-sonnet-gate/preflight/`:
+  `endpoints.json` (11,516 B, sha256 `690e37b1…bb6cb`, written 21:26:38Z) and `models.json` (772,839 B, sha256
+  `f9486251…41defa`, written 21:26:47Z), with `describe.json` (sha256 `445c37e1…bbc4f`). _Corrected
+  2026-10-06: the Phase 3 review (F2) and its first fix said these responses were not retained; they had
+  survived in the session scratchpad and were moved there._ The values match `research.md` §2.
 - **T0:** key counter **$52.877179** (`52.877178781`) at **2026-10-05T21:26:54Z**, recorded by
   `sonnet-gate.mjs t0` as the first line of `gate-sonnet-runs.jsonl`. Account credits at the same time:
   `total_credits` $60, `total_usage` $52.877179, so $7.12 remains, more than the $3.00 budget. The key's
   `usage_daily` already read $0.059070 before T0, spent by something else earlier in the UTC day.
+  The account-credit and daily-usage figures were recorded manually without retained responses and are
+  not independently verified; T0 and its timestamp are supported by the JSONL.
 - **Run artifacts** (`review-out/`, `stdout.log`, `stderr.log`) go to `~/.cache/finder-sonnet-gate/runs/<run-id>/`
   (`--artifacts`), next to the frozen inputs and likewise not committed, so generated output stays out of the
   reviewed diff. Each run's findings, verdict, steps, retries and costs are in its JSONL record.
@@ -364,11 +371,11 @@ per run), and chose the linear byte midpoint (53 / 8) over the log midpoint (52 
 
 T = max(counter − T0, Σ settled run costs). Budget check before each run: T + P + $0.50 ≤ $3.00.
 
-| Run      | Start (UTC) | T at start | P     | T + P + 0.50 | Counter before → after (settled) | Finder / judge telemetry          | Retries | Finder steps (provider) | Outcome                                        | Settled cost              | T after   |
-| -------- | ----------- | ---------- | ----- | ------------ | -------------------------------- | --------------------------------- | ------- | ----------------------- | ---------------------------------------------- | ------------------------- | --------- |
-| `247-r1` | 21:27:19    | $0.000000  | $0.33 | $0.830000    | $52.877179 → $53.040053          | $0.127380 / $0.035494 = $0.162874 | none    | 1 (Anthropic, `stop`)   | **valid**: 5 findings, verdict `failed`, 140 s | $0.162874 (2nd reconcile) | $0.162874 |
+| Run      | Start (UTC) | T at start | P     | T + P + 0.50 | Counter before → after (settled) | Finder / judge telemetry          | Retries | Finder steps (provider)                        | Outcome                                        | Settled cost              | T after   |
+| -------- | ----------- | ---------- | ----- | ------------ | -------------------------------- | --------------------------------- | ------- | ---------------------------------------------- | ---------------------------------------------- | ------------------------- | --------- |
+| `247-r1` | 21:27:19    | $0.000000  | $0.33 | $0.830000    | $52.877179 → $53.040053          | $0.127380 / $0.035494 = $0.162874 | none    | 1 (Anthropic, `stop`)                          | **valid**: 5 findings, verdict `failed`, 140 s | $0.162874 (2nd reconcile) | $0.162874 |
+| `269-r1` | 21:36:24    | $0.162874  | $0.73 | $1.392874    | $53.040053 → $53.374463          | none (no `review.json`)           | none    | 2 (Anthropic `tool-calls`; Anthropic `length`) | **INVALID**: `NoOutputGeneratedError`, 201 s   | $0.334410 (2nd reconcile) | $0.497284 |
 
-| `269-r1` | 21:36:24 | $0.162874 | $0.73 | $1.392874 | $53.040053 → $53.374463 | none (no `review.json`) | none | 2 (Anthropic `tool-calls`; Anthropic `length`) | **INVALID**: `NoOutputGeneratedError`, 201 s | $0.334410 (2nd reconcile) | $0.497284 |
 **`247-r1` notes.** The probe passed: no `minLength` 400, no missing final JSON, no workspace refusal; the finder
 answered in one step without a `getFileContext` call. The first `reconcile` (reads 21:29:45Z → 21:32:45Z) found
 the counter still moving, $52.877179 → $53.040053, and recorded `unsettled`; the second (21:32:49Z → 21:35:50Z)
@@ -403,11 +410,63 @@ No output generated.
 ### Series stop (owner decision, 2026-10-06)
 
 - **Decision:** the owner chose to **stop the series** after `269-r1` (§9). `247-r2` and `269-r2` were **not
-  run**, not even as information. Nothing further was spent.
+  run**, not even as information. No further paid run is recorded in the series.
 - **Executed runs:** 2 of the 4 sealed runs (`247-r1` valid, `269-r1` invalid).
-- **Spend:** T = **$0.497284** of the $3.00 budget (`247-r1` $0.162874 + `269-r1` $0.334410). The final counter
-  read, $53.374463 at 2026-10-06T18:31:21Z, equals the `269-r1` settlement: no other spend on the key since T0.
-  The counter never exceeded T0 + $3.00 = $55.877179.
+- **Spend:** verified T = **$0.497284** of the $3.00 budget (`247-r1` $0.162874 + `269-r1` $0.334410), based
+  on the last recorded settlement at 2026-10-05T21:46:02.467Z, whose counter is $53.374463. A later counter
+  read of $53.374463 at 2026-10-06T18:31:21Z was recorded manually; its response was not retained, so that
+  later observation is not independently verified. All counter readings in the JSONL are below
+  T0 + $3.00 = $55.877179.
 - **Consequence for the verdict (Phase 4):** reliability has FAILED, so the verdict cannot be `ADMITTED`; the
   label it points to is `NOT ADMITTED (reliability)`. The hand-read of `247-r1`'s five findings and the cost
   figures are information only. m269 rests on one invalid run, whose cost covers the finder only.
+
+### Phase 4 — cost projection (§6, sealed formula)
+
+Executed runs only, valid and invalid, retries included (none occurred):
+
+| Term                    | Runs                   | Value                                        |
+| ----------------------- | ---------------------- | -------------------------------------------- |
+| m247                    | `247-r1` (valid)       | $0.162874                                    |
+| m269                    | `269-r1` (invalid)     | $0.334410 (finder only; the judge never ran) |
+| 53 × m247               |                        | $8.632322                                    |
+| 8 × m269                |                        | $2.675280                                    |
+| Run term                | must be ≤ $7.404940    | **$11.307602: over**                         |
+| 13 × impl-review mean   | 13 × $0.199620 (no G5) | $2.595060                                    |
+| **Projected per month** | gate ≤ $10.00          | **$13.902662: cost FAILS**                   |
+
+- **Not incomplete:** both PRs have an executed run, which is what §6 requires. m269 **understates** a full #269
+  run: it has no judge cost, and a complete run would cost more, so a complete m269 could only raise the projection.
+- **The failure does not depend on #269:** 53 × m247 alone ($8.63) exceeds the $7.40 run allowance. For the gate to
+  hold at the measured m269, m247 would have to be at most $0.089239 (break-even m247 alone: $0.139716).
+- **Information only:** the single unweighted mean over the two executed runs is $0.248642, so 61 × mean +
+  impl-review = $17.762222. Actual historical review spend in the window: $0.615247 over 23 logged runs (§6).
+- **Size buckets:** both measured diffs are large against the window. 53 of 61 runs were ≤ 28,509 B against
+  #247's 10,838 B, but the bucket assigns them #247's cost wholesale, so it was conservative by design.
+- **Recompute:** `53*0.16287400000000218 + 8*0.3344099999999983 + 13*0.199620`, with both costs taken from the
+  settled `reconcile` lines in `gate-sonnet-runs.jsonl`.
+
+### Phase 4 — gate outcomes
+
+| Gate          | Outcome                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| Reliability   | **FAIL**: `269-r1` invalid (`NoOutputGeneratedError` after `finish=length`).                     |
+| Hand-read 247 | **FAIL** (information): `247-r1` 2 of 5 rejected (R2, R4); R1, R3, R5 real (`hand-read-247.md`). |
+| Hand-read 269 | **Cannot pass**: no valid #269 run, so D2 was never published (`hand-read-269.md`).              |
+| Cost          | **FAIL**: projected $13.902662 per month > $10.00.                                               |
+
+### Verdict (owner, 2026-10-06)
+
+**`NOT ADMITTED (reliability)`**
+
+- The owner chose this label (§10, exactly one) because reliability was the first gate to fail, and the sealed
+  stop rule fired on it. Also failed, recorded here and not in the label: **cost** ($13.902662 per month > $10.00),
+  **hand-read #269** (no valid run, so D2 was never published) and **hand-read #247** (`247-r1`, 2 of 5 rejected).
+- **Consequence (plan § Phase 4.3):** production is unchanged and `ai-review` stays off (`false &&` in
+  `review.yml`). Phase 5 does not run. The dark Phase 1 code stays unmerged on `feat/finder-sonnet`.
+- **Cost was not the only failure**, so the record names no single next experiment (plan § Phase 4.3). Facts a
+  successor change would start from:
+  - the 16,384-token per-step cap with reasoning at effort `high`, together with `withOneRetry` not covering
+    `NoOutputGeneratedError`;
+  - a run term that fails on #247 alone (m247 $0.162874 against a $0.139716 break-even);
+  - two of five #247 findings rejected.

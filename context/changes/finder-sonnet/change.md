@@ -3,7 +3,7 @@ change_id: finder-sonnet
 title: "Make anthropic/claude-sonnet-5 the production finder and turn ai-review back on"
 status: implementing
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-06
 archived_at: null
 ---
 
@@ -48,3 +48,9 @@ about $5–10 per month is accepted. This is a successor to finder-verification 
 `context/archive/2026-08-10-finder-tool-loop-evals/decision.md` — "flawless" (line 116), run 31533093356 at
 $0.0951 (line 228), 57.6× (lines 14, 359), the only model converting out-of-hunk context into a correct verdict
 on a real PR (line 278).
+
+**Decision (owner, 2026-10-06): `NOT ADMITTED (reliability)`.** Of the four sealed runs, two were executed: `247-r1`
+valid; `269-r1` invalid (finder step 2 hit the 16,384-token cap, `NoOutputGeneratedError`, not retried). The
+owner stopped the series there. Cost also fails (projected $13.902662 per month > $10.00); hand-read #269 cannot
+pass, and #247 failed (2 of 5 rejected). Spend: $0.497284 of $3.00. Production is unchanged, `ai-review` stays off,
+Phase 5 does not run, and the dark code stays unmerged on `feat/finder-sonnet`. Record: `gate.md` § Results.
