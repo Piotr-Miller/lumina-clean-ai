@@ -435,14 +435,16 @@ Executed runs only, valid and invalid, retries included (none occurred):
 | 13 × impl-review mean   | 13 × $0.199620 (no G5) | $2.595060                                    |
 | **Projected per month** | gate ≤ $10.00          | **$13.902662: cost FAILS**                   |
 
-- **Not incomplete:** both PRs have an executed run, which is what §6 requires. m269 **understates** a full #269
-  run: it has no judge cost, and a complete run would cost more, so a complete m269 could only raise the projection.
+- **Not incomplete:** both PRs have an executed run, which is what §6 requires. m269 covers an invalid finder
+  attempt only; a successful finder-plus-judge cost was not measured. A successful run could use fewer finder
+  tokens, so the missing judge cost alone does not establish whether its total would be higher or lower.
 - **The failure does not depend on #269:** 53 × m247 alone ($8.63) exceeds the $7.40 run allowance. For the gate to
   hold at the measured m269, m247 would have to be at most $0.089239 (break-even m247 alone: $0.139716).
 - **Information only:** the single unweighted mean over the two executed runs is $0.248642, so 61 × mean +
   impl-review = $17.762222. Actual historical review spend in the window: $0.615247 over 23 logged runs (§6).
-- **Size buckets:** both measured diffs are large against the window. 53 of 61 runs were ≤ 28,509 B against
-  #247's 10,838 B, but the bucket assigns them #247's cost wholesale, so it was conservative by design.
+- **Size buckets:** 53 of 61 runs were ≤ 28,509 B and are assigned #247's cost wholesale. Against #247's
+  10,838 B representative, 39 of those diffs were smaller, 1 equal and 13 larger. Conservatism of this
+  size assignment is an assumption, not a demonstrated cost bound; byte sizes alone do not establish it.
 - **Recompute:** `53*0.16287400000000218 + 8*0.3344099999999983 + 13*0.199620`, with both costs taken from the
   settled `reconcile` lines in `gate-sonnet-runs.jsonl`.
 

@@ -1,10 +1,11 @@
 ---
 change_id: finder-sonnet
 title: "Make anthropic/claude-sonnet-5 the production finder and turn ai-review back on"
-status: implemented
+status: archived
+outcome: completed
 created: 2026-10-05
 updated: 2026-10-06
-archived_at: null
+archived_at: 2026-10-06T19:25:34Z
 ---
 
 ## Notes
