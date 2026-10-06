@@ -626,26 +626,26 @@ used").
 
 #### Automated
 
-- [x] 2.1 Frozen inputs reproduce their sha256 and heads
-- [x] 2.2 Pre-registration has no placeholder and its code hashes match HEAD
-- [x] 2.3 The seal tag is on origin
+- [x] 2.1 Frozen inputs reproduce their sha256 and heads — e01f622
+- [x] 2.2 Pre-registration has no placeholder and its code hashes match HEAD — e01f622
+- [x] 2.3 The seal tag is on origin — e01f622
 
 #### Manual
 
 - [x] 2.4 Owner confirms the plan-chosen terms and approves the pre-registration
-- [ ] 2.5 Seal push time recorded before any paid call
+- [x] 2.5 Seal push time recorded before any paid call
 
 ### Phase 3: Measurement (paid)
 
 #### Automated
 
-- [ ] 3.1 One record per started run, no duplicate run-id
-- [ ] 3.2 Every ledger row satisfies the budget rule at its start
-- [ ] 3.3 The counter never exceeded T0 + $3.00
+- [x] 3.1 One record per started run, no duplicate run-id
+- [x] 3.2 Every ledger row satisfies the budget rule at its start
+- [x] 3.3 The counter never exceeded T0 + $3.00
 
 #### Manual
 
-- [ ] 3.4 Owner confirmed every stop before more was spent
+- [x] 3.4 Owner confirmed every stop before more was spent
 
 ### Phase 4: Hand-read, cost projection, decision
 

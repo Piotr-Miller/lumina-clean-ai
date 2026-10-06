@@ -399,3 +399,15 @@ No output generated.
   moving ($53.137815 → $53.374463) and recorded `unsettled`; the second (21:43:02Z → 21:46:02Z) settled it at the delta.
 - **Stop:** by §9 the series stops after this run and the owner decides whether `247-r2` and `269-r2` run **as
   information**. Reliability has FAILED and nothing later changes that; the verdict cannot be `ADMITTED`.
+
+### Series stop (owner decision, 2026-10-06)
+
+- **Decision:** the owner chose to **stop the series** after `269-r1` (§9). `247-r2` and `269-r2` were **not
+  run**, not even as information. Nothing further was spent.
+- **Executed runs:** 2 of the 4 sealed runs (`247-r1` valid, `269-r1` invalid).
+- **Spend:** T = **$0.497284** of the $3.00 budget (`247-r1` $0.162874 + `269-r1` $0.334410). The final counter
+  read, $53.374463 at 2026-10-06T18:31:21Z, equals the `269-r1` settlement: no other spend on the key since T0.
+  The counter never exceeded T0 + $3.00 = $55.877179.
+- **Consequence for the verdict (Phase 4):** reliability has FAILED, so the verdict cannot be `ADMITTED`; the
+  label it points to is `NOT ADMITTED (reliability)`. The hand-read of `247-r1`'s five findings and the cost
+  figures are information only. m269 rests on one invalid run, whose cost covers the finder only.
