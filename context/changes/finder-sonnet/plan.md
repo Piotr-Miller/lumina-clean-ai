@@ -651,8 +651,8 @@ used").
 
 #### Automated
 
-- [x] 4.1 Every published finding appears in exactly one hand-read row
-- [x] 4.2 The projection recomputes from the recorded counts and costs
+- [x] 4.1 Every published finding appears in exactly one hand-read row — 30b6ef1
+- [x] 4.2 The projection recomputes from the recorded counts and costs — 30b6ef1
 
 #### Manual
 
