@@ -1,0 +1,57 @@
+{
+  "global": {
+    "codeHashes": {
+      "src/config.ts": "26766c748b032de03031fb4cdcea70f95e5749d0e0514d387ce3257380f76580",
+      "src/reviewer.ts": "6f2334c56280a250cb44908ef4133ff1e11037a827d08392540be60087afffc6",
+      "src/prompts.ts": "fac7dc20fb3ae79d232e92e29a7a4dbcb4b40c509bffa3aba76a944f7e5ed3fa",
+      "src/schemas.ts": "fabb3f0bcc682d1489e7fdef66bdc2771465e30d24a07d0eb7cdc20387f34ec5",
+      "scripts/sonnet-gate.mjs": "e7dda3b345aaaa7ee4038af5f057fc039b493c9de9b35ca2d963f94fc91303bf"
+    },
+    "srcTree": "a6dd42ab3885ed6ce0208b9ddc486e949036a0b1",
+    "wireSchemaSha256": "a6e98d41add5055074b2a5556c512ddc9f5c6b5b1c3b0ad2eedb54cc43d095bf",
+    "effectiveConfig": {
+      "finderModel": "anthropic/claude-sonnet-5",
+      "judgeModel": "anthropic/claude-sonnet-5",
+      "finderRouting": {
+        "only": ["anthropic"],
+        "order": ["anthropic"],
+        "allow_fallbacks": false,
+        "require_parameters": true
+      },
+      "judgeRouting": {
+        "require_parameters": true
+      },
+      "finderMaxSteps": 5,
+      "behaviourEnv": {
+        "REVIEW_FINDER_MAX_STEPS": null,
+        "REVIEW_FINDER_TIMEOUT_MS": null,
+        "REVIEW_JUDGE_TIMEOUT_MS": null,
+        "REVIEW_IMPL_REVIEW_TIMEOUT_MS": null,
+        "OPENROUTER_REQUIRE_PARAMETERS": null
+      },
+      "envPolicy": "inherited environment > packages/code-reviewer/.env > code defaults"
+    }
+  },
+  "inputs": {
+    "247": {
+      "diff": "21973af35cc39f60488935583a85baf894a6c1a9b51069d16de86e701b5dc2e1",
+      "rules": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+      "prMeta": "ec66879c3e33027ee2096677a4da060f5e68645c1fa3752ed376638cd9a24ff2",
+      "head": "dec09f8d77b2f1ee45073c194d6cd8239a7d35c7"
+    },
+    "269": {
+      "diff": "1e4ec0882371989122f9e4254c93c4df1f51826a4f57dbfe04139175177e550f",
+      "rules": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+      "prMeta": "00b7b21bd2d48b73442796a257feafc21689a296584ba1989b6f406374da82e7",
+      "head": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1"
+    }
+  },
+  "budget": {
+    "total": 3,
+    "reserve": 0.5,
+    "firstRunEstimate": {
+      "247": 0.33,
+      "269": 0.73
+    }
+  }
+}
