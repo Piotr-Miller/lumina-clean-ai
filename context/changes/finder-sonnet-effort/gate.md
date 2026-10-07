@@ -450,6 +450,7 @@ T = max(counter − T0, Σ settled run costs). Budget check before each run: T +
 | `low-247-r1`    | 19:49:06    | $0.000000  | $0.20 | $0.700000    | $53.374463 → $53.432809          | $0.028610 / $0.029736 = $0.058346 | none    | 1 (Anthropic, `stop`, 1,224 / 441)                                         | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `failed`, 46 s  | $0.058346 (2nd reconcile) | $0.058346 |
 | `medium-247-r1` | 19:56:50    | $0.058346  | $0.20 | $0.758346    | $53.432809 → $53.508583          | $0.051160 / $0.024614 = $0.075774 | none    | 1 (Anthropic, `stop`, 3,479 / 2,647)                                       | `medium` / `{"effort":"medium"}` on 1 of 1 request  | none        | **valid**: 3 findings, verdict `passed`, 61 s  | $0.075774 (2nd reconcile) | $0.134120 |
 | `medium-269-r1` | 20:04:38    | $0.134120  | $0.45 | $1.084120    | $53.508583 → $53.771985          | $0.240660 / $0.022742 = $0.263402 | none    | 2 (Anthropic `tool-calls`, 2,056 / 1,935; Anthropic `stop`, 8,553 / 7,538) | `medium` / `{"effort":"medium"}` on 2 of 2 requests | none        | **valid**: 4 findings, verdict `passed`, 139 s | $0.263402 (2nd reconcile) | $0.397522 |
+| `low-269-r1`    | 20:13:56    | $0.397522  | $0.45 | $1.347522    | $53.771985 → $53.898091          | $0.103132 / $0.022974 = $0.126106 | none    | 1 (Anthropic, `stop`, 3,839 / 2,588)                                       | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `passed`, 61 s  | $0.126106 (2nd reconcile) | $0.523628 |
 
 **`low-247-r1` notes (the probe).** The probe passed. The endpoint accepted `reasoning.effort: "low"` with no
 error. The finder answered in one step without a `getFileContext` call and wrote its final JSON
@@ -471,3 +472,9 @@ Step 2, tool-less, wrote its final JSON with 8,553 output tokens, 7,538 of them 
 and wrote nothing. Both finder requests carried the sealed `medium` settings. The first `reconcile`
 (20:07:07Z → 20:10:07Z) saw the counter move and recorded `unsettled`; the second settled the run at the delta,
 equal to telemetry.
+
+**`low-269-r1` notes.** Unlike `medium-269-r1`, the finder made no `getFileContext` call: one step wrote its final
+JSON (`finish=stop`) with 3,839 output tokens, 2,588 of them reported reasoning, against the 3,604.7 flag
+threshold. The one finder request carried the sealed `low` settings. The first `reconcile` (20:15:10Z → 20:18:10Z)
+saw the counter move and recorded `unsettled`; the second (20:18:11Z → 20:21:11Z) settled the run at the delta,
+equal to telemetry. **Round 1 complete:** four runs, all valid, no retries, no effort flag; T $0.523628.
