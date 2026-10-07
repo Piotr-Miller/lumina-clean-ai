@@ -736,15 +736,15 @@ pushes and unchanged final reviewable code. Progress step titles remain unchange
 
 #### Automated
 
-- [x] 1.1 Package tests, typecheck and lint pass
-- [x] 1.2 Root format check passes
-- [x] 1.3 The effort tests pass
-- [x] 1.4 The false && line is still present
-- [x] 1.5 describe --arm low and medium differ only in finderReasoningEffort
+- [x] 1.1 Package tests, typecheck and lint pass — 56983a2
+- [x] 1.2 Root format check passes — 56983a2
+- [x] 1.3 The effort tests pass — 56983a2
+- [x] 1.4 The false && line is still present — 56983a2
+- [x] 1.5 describe --arm low and medium differ only in finderReasoningEffort — 56983a2
 
 #### Manual
 
-- [ ] 1.6 Owner agrees the refreshed comments claim no admission
+- [x] 1.6 Owner agrees the refreshed comments claim no admission
 
 ### Phase 2: Inputs freeze, pre-registration and seal (no paid calls)
 

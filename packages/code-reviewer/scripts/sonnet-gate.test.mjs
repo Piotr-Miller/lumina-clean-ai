@@ -755,9 +755,9 @@ describe("settlement evidence", () => {
     stderr: `${evidenceLines(world, "low")}No output generated. Check the stream for errors.\n`,
   });
 
-  it("an immediate re-read is not settlement: a non-positive or non-numeric interval is refused", async () => {
+  it("a re-read under 180 s is not settlement: a shorter, non-positive or non-numeric interval is refused", async () => {
     expect(await run(world, "low-247-r1")).toBe(0);
-    for (const interval of ["0", "-5", "abc"]) {
+    for (const interval of ["0", "-5", "abc", "0.001", "179"]) {
       expect(await reconcile(world, "low-247-r1", interval)).toBe(2);
       expect(world.logs.at(-1)).toContain("REFUSED (bad settle-seconds)");
     }
@@ -765,6 +765,12 @@ describe("settlement evidence", () => {
     expect(world.sleeps).toEqual([]);
     // The default keeps the two readings 180 s apart.
     expect(await reconcile(world, "low-247-r1")).toBe(0);
+    expect(world.sleeps).toEqual([180_000]);
+  });
+
+  it("an explicit interval of exactly 180 s is accepted", async () => {
+    expect(await run(world, "low-247-r1")).toBe(0);
+    expect(await reconcile(world, "low-247-r1", "180")).toBe(0);
     expect(world.sleeps).toEqual([180_000]);
   });
 

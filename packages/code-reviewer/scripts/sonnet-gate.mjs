@@ -760,6 +760,9 @@ async function commandRun(flags, deps) {
   return 3;
 }
 
+/** The minimum interval between the two settlement reads (plan Definitions, Per-run cost). */
+export const MIN_SETTLE_SECONDS = 180;
+
 /** Tolerance between a settled counter delta and complete telemetry. */
 export const RECONCILE_TOLERANCE = (telemetry) => Math.max(0.005, telemetry * 0.02);
 
@@ -772,12 +775,14 @@ async function commandReconcile(flags, deps) {
   if (settledCost(series, runId) !== undefined) refuse("already settled", runId, "nothing to reconcile");
   const record = series.find((line) => line.type === "record" && line.runId === runId);
   const env = effectiveEnvWithKey(deps);
-  const settleSeconds = Number(flags["settle-seconds"] ?? 180);
-  if (!Number.isFinite(settleSeconds) || settleSeconds <= 0) {
+  const settleSeconds = Number(flags["settle-seconds"] ?? MIN_SETTLE_SECONDS);
+  // A floor, not just positivity: the sealed rule is two reads at least 180 s
+  // apart, and a shorter override would settle spend the counter has not shown.
+  if (!Number.isFinite(settleSeconds) || settleSeconds < MIN_SETTLE_SECONDS) {
     refuse(
       "bad settle-seconds",
       String(flags["settle-seconds"]),
-      "the two readings must be a positive number of seconds apart (default 180); an immediate re-read is not settlement evidence",
+      `the two readings must be at least ${String(MIN_SETTLE_SECONDS)} seconds apart (the default); a shorter re-read is not settlement evidence`,
     );
   }
 
