@@ -523,3 +523,79 @@ sealed `medium` settings. It is the most expensive run of the series, $0.399654,
   step ended `finish=length`.
 - **Phase 4** (blind hand-read, projections, verdict) works from the eight records in `gate-effort-runs.jsonl` and
   the run artifacts in `~/.cache/finder-sonnet-effort-gate/runs/`.
+
+### Delegated blind classification and joined results (2026-10-07)
+
+The owner instructed the agent to perform the pending classifications (“Zrob to”). The agent wrote an accepted/rejected decision and one-sentence reason for every row in `hand-read-247.md` and `hand-read-269.md` before opening `hand-read-key.json`. R247-13 was split before reveal: the short-PNG variant a is accepted as R247-13-PNG; JPEG variants b and c remain rejected as R247-13. This is delegated agent classification, not a claim that the owner personally classified each finding as the sealed protocol requires; the pre-registration and seal were not modified.
+
+Coverage verified against the eight cached `review.json` files: all 32 published findings map exactly once across 26 rows, with no unclassified row or missing membership. The approved no-D2 decision is unchanged.
+
+| Run             | Hand-read result from delegated classifications | Rejected rows                      |
+| --------------- | ----------------------------------------------- | ---------------------------------- |
+| `low-247-r1`    | FAIL                                            | R247-08, R247-13                   |
+| `low-247-r2`    | FAIL                                            | R247-13                            |
+| `medium-247-r1` | FAIL                                            | R247-03                            |
+| `medium-247-r2` | FAIL                                            | R247-03, R247-07, R247-11, R247-14 |
+| `low-269-r1`    | FAIL; D2 absent                                 | R269-06                            |
+| `low-269-r2`    | FAIL; D2 absent                                 | none                               |
+| `medium-269-r1` | FAIL; D2 absent                                 | none                               |
+| `medium-269-r2` | FAIL; D2 absent                                 | R269-09                            |
+
+The delegated results fail hand-read #247 for both arms as well as the already-established hand-read #269 failure from absent D2. The overall NOT ADMITTED outcome established by the approved D2 decision is unchanged; Phase 5 does not run. The projections and the owner’s decision follow in § Phase 4 — cost projection and § Verdict.
+
+### Phase 4 — cost projection (§6, sealed formula)
+
+Per arm, from the settled `reconcile` cost of each executed run in `gate-effort-runs.jsonl` (all eight valid, two
+per arm and PR, no retries). **53 × m247 + 8 × m269 + 13 × $0.199620**; the impl-review term is $2.595060.
+
+| Arm      | #247 settled costs   | m247      | #269 settled costs   | m269      | 53 × m247 | 8 × m269  | Projected / month | Gate ≤ $10.00 |
+| -------- | -------------------- | --------- | -------------------- | --------- | --------- | --------- | ----------------- | ------------- |
+| `low`    | $0.058346, $0.055612 | $0.056979 | $0.126106, $0.127178 | $0.126642 | $3.019887 | $1.013136 | **$6.628083**     | **PASS**      |
+| `medium` | $0.075774, $0.079958 | $0.077866 | $0.263402, $0.399654 | $0.331528 | $4.126898 | $2.652224 | **$9.374182**     | **PASS**      |
+
+Equivalently, 53 × m247 + 8 × m269 is $4.033023 (`low`) and $6.779122 (`medium`) against the $7.404940 limit.
+Recomputed by a script that reads only the settled reconciliations and refuses an unsettled or missing run.
+
+**Reported for information, not gates:**
+
+- **Workload.** 53 / 8 / 13 are the predecessor's sealed historical workload (2026-09-05 to 2026-10-04), reused for
+  comparison. They are not a measurement of demand after `ai-review` is re-enabled, and the size assignment at the
+  38,146 B midpoint is an assumption, not a demonstrated cost bound.
+- **Finder output tokens per run** (mean over the arm's four runs): `low` 2,602, of them 1,673 reasoning and 928
+  answer; `medium` 6,011, of them 4,856 reasoning and 1,154 answer. Token volume does not show whether the provider
+  applied the requested effort.
+- **High-effort predecessor:** $13.902662/month projected, m247 $0.162874, and its #269 run invalid at the 16,384
+  cap. At `medium` the #269 mean is $0.331528, with one run at $0.399654; at `low` both #269 runs stayed below
+  $0.13.
+
+### Verdict (owner, 2026-10-07)
+
+**`NOT ADMITTED (low: hand-read #269; medium: hand-read #269)`**
+
+Chosen by § Pre-registration §10: no arm passes all gates and neither is budget-incomplete, so both arms
+conclusively fail. Gates in the sealed order:
+
+| Gate           | `low`                                                                                    | `medium`                                                                                 |
+| -------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Reliability    | **PASS**: 4 of 4 runs valid, each PR twice, no retries                                   | **PASS**: 4 of 4 runs valid, each PR twice, no retries                                   |
+| Hand-read #247 | **Not established by the owner.** Delegated classification: both runs FAIL (information) | **Not established by the owner.** Delegated classification: both runs FAIL (information) |
+| Hand-read #269 | **FAIL**: neither run published D2                                                       | **FAIL**: neither run published D2                                                       |
+| Cost           | **PASS**: $6.628083/month                                                                | **PASS**: $9.374182/month                                                                |
+
+- **Hand-read #269.** The owner approved, before classifying, that no #269 row matches D2 (`hand-read-269.md` §
+  D2 match proposals). The only candidate, R269-10, holds one finding from one run and does not claim the leak on
+  the missing-`urls.get` exit. Without D2 in every valid #269 run, the gate fails for both arms whatever the row
+  classifications.
+- **Hand-read #247.** Every row was classified by an agent the owner delegated to, blind to the arm, before
+  `hand-read-key.json` was opened (§ Delegated blind classification and joined results). The sealed protocol
+  requires the owner's own classification. The owner did not adopt the delegated decisions, so this gate is
+  recorded as not established, not as a failure, and plan step 4.4 stays open. An owner-personal blind
+  classification is no longer possible: the joined per-run results now attribute rejected rows to runs.
+- **Winner rule:** not applied; no arm passes.
+- **Consequence (plan Phase 4 §3):** production is unchanged and `ai-review` stays off (`false &&` in
+  `.github/workflows/review.yml`). Plan Phase 5 does not run. The dark code stays unmerged on
+  `feat/finder-sonnet-effort`.
+- **Facts for a successor, not a recommendation.** Both efforts removed the predecessor's failure: no
+  `finish=length` at either effort, and at most 7,538 reasoning tokens in a step (`medium-269-r1`), against 16,384
+  output tokens spent with no JSON at `high`. Both arms are within the cost gate. What failed is detection of D2,
+  in all four #269 runs. Spend: $1.186030 of the $4.00 budget; the G5 reserve was not used.

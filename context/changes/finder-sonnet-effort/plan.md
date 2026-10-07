@@ -763,27 +763,27 @@ pushes and unchanged final reviewable code. Progress step titles remain unchange
 
 #### Automated
 
-- [x] 3.1 One record per started run, no duplicate or unsealed run-id
-- [x] 3.2 Every ledger row satisfies the budget rule at its start
-- [x] 3.3 The counter never exceeded T0 + $4.00
-- [x] 3.4 Every record carries per-step reasoning tokens or an effort flag
+- [x] 3.1 One record per started run, no duplicate or unsealed run-id — 0d17e81
+- [x] 3.2 Every ledger row satisfies the budget rule at its start — 0d17e81
+- [x] 3.3 The counter never exceeded T0 + $4.00 — 0d17e81
+- [x] 3.4 Every record carries per-step reasoning tokens or an effort flag — 0d17e81
 
 #### Manual
 
-- [ ] 3.5 Owner confirmed every stop before more was spent
+- [x] 3.5 Owner confirmed every stop before more was spent
 
 ### Phase 4: Blind hand-read, projections, decision
 
 #### Automated
 
-- [ ] 4.1 Every published finding in exactly one row, key complete
-- [ ] 4.2 Each arm's projection recomputes
+- [x] 4.1 Every published finding in exactly one row, key complete
+- [x] 4.2 Each arm's projection recomputes
 
 #### Manual
 
-- [ ] 4.3 Owner approved dedup and D2 matches before classifying, blind
+- [x] 4.3 Owner approved dedup and D2 matches before classifying, blind
 - [ ] 4.4 Owner classified every row
-- [ ] 4.5 Owner records the decision; exactly one verdict label
+- [x] 4.5 Owner records the decision; exactly one verdict label
 
 ### Phase 5: Enable the winner and G5 (only on ADMITTED)
 

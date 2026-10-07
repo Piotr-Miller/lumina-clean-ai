@@ -24,3 +24,8 @@ effort `high`:
 
 Nowe effort wymaga nowej oceny jakości (hand-read). Kod Phase 1 z finder-sonnet (pin `anthropic`, logowanie
 providera, runner) jest tylko na `feat/finder-sonnet` (`33fdb79`, `624a936`).
+
+Werdykt (owner, 2026-10-07): **`NOT ADMITTED (low: hand-read #269; medium: hand-read #269)`** — `gate.md` §
+Verdict. Niezawodność i koszt przechodzą w obu ramionach (low $6.63/mies., medium $9.37/mies.); żaden run #269 nie
+opublikował D2. Hand-read #247 sklasyfikował agent z delegacji właściciela — informacja, nie ustalenie właściciela
+(krok 4.4 otwarty). Produkcja bez zmian, `ai-review` wyłączony, Phase 5 nie rusza.

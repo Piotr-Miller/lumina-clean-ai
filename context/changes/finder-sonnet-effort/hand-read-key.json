@@ -1,0 +1,290 @@
+{
+  "warning": "Arm key for the blind hand-read. Do not open until every row in hand-read-247.md and hand-read-269.md is classified (plan Phase 4 §1 step 5).",
+  "rows": {
+    "R247-01": {
+      "pr": 247,
+      "title": "Downloaded production photos: no retention/deletion guidance",
+      "members": [
+        {
+          "runId": "low-247-r2",
+          "index": 0
+        }
+      ]
+    },
+    "R247-02": {
+      "pr": 247,
+      "title": "No automated tests for either new script's pure logic",
+      "members": [
+        {
+          "runId": "medium-247-r1",
+          "index": 0
+        }
+      ]
+    },
+    "R247-03": {
+      "pr": 247,
+      "title": "Hardcoded production project ref as default URL (prod-fetch-results.py)",
+      "members": [
+        {
+          "runId": "medium-247-r2",
+          "index": 0
+        },
+        {
+          "runId": "medium-247-r1",
+          "index": 1
+        }
+      ]
+    },
+    "R247-04": {
+      "pr": 247,
+      "title": "OUT_DIR defaults to the shared system temp directory",
+      "members": [
+        {
+          "runId": "medium-247-r2",
+          "index": 1
+        }
+      ]
+    },
+    "R247-05": {
+      "pr": 247,
+      "title": "Placeholder check prints the first 24 characters of the service-role key (prod-fetch-results.py)",
+      "members": [
+        {
+          "runId": "low-247-r1",
+          "index": 0
+        }
+      ]
+    },
+    "R247-06": {
+      "pr": 247,
+      "title": "No per-job error handling in the main loop",
+      "members": [
+        {
+          "runId": "low-247-r2",
+          "index": 1
+        }
+      ]
+    },
+    "R247-07": {
+      "pr": 247,
+      "title": "Unguarded signed['signedURL'] access raises a raw KeyError (prod-fetch-results.py)",
+      "members": [
+        {
+          "runId": "medium-247-r2",
+          "index": 2
+        }
+      ]
+    },
+    "R247-08": {
+      "pr": 247,
+      "title": "Date-only filenames let two jobs on the same day overwrite each other",
+      "members": [
+        {
+          "runId": "low-247-r1",
+          "index": 1
+        }
+      ]
+    },
+    "R247-09": {
+      "pr": 247,
+      "title": "'missing' check derived from the OUT_DIR listing can be wrong with stale files",
+      "members": [
+        {
+          "runId": "medium-247-r2",
+          "index": 3
+        }
+      ]
+    },
+    "R247-10": {
+      "pr": 247,
+      "title": "No unit test for the dimensions() header parser",
+      "members": [
+        {
+          "runId": "low-247-r2",
+          "index": 2
+        }
+      ]
+    },
+    "R247-11": {
+      "pr": 247,
+      "title": "Hardcoded production project ref as default URL (prod-result-dimensions.py)",
+      "members": [
+        {
+          "runId": "medium-247-r2",
+          "index": 4
+        }
+      ]
+    },
+    "R247-12": {
+      "pr": 247,
+      "title": "Placeholder check prints the first 24 characters of the service-role key (prod-result-dimensions.py)",
+      "members": [
+        {
+          "runId": "low-247-r1",
+          "index": 2
+        }
+      ]
+    },
+    "R247-13": {
+      "pr": 247,
+      "title": "JPEG parse errors on truncated/malformed headers abort the census (variants b and c)",
+      "members": [
+        {
+          "runId": "low-247-r1",
+          "index": 3
+        },
+        {
+          "runId": "low-247-r2",
+          "index": 3
+        }
+      ]
+    },
+    "R247-14": {
+      "pr": 247,
+      "title": "Unguarded signed['signedURL'] access raises a raw KeyError (prod-result-dimensions.py)",
+      "members": [
+        {
+          "runId": "medium-247-r2",
+          "index": 5
+        }
+      ]
+    },
+    "R269-01": {
+      "pr": 269,
+      "title": "manifest_roi() re-reads and re-parses the manifest on every call",
+      "members": [
+        {
+          "runId": "medium-269-r1",
+          "index": 0
+        }
+      ]
+    },
+    "R269-02": {
+      "pr": 269,
+      "title": "Image.open(path) in measure() is never closed",
+      "members": [
+        {
+          "runId": "low-269-r2",
+          "index": 0
+        },
+        {
+          "runId": "medium-269-r1",
+          "index": 1
+        }
+      ]
+    },
+    "R269-03": {
+      "pr": 269,
+      "title": "No test for browser-stats.ts comparison / threshold / exit-code logic",
+      "members": [
+        {
+          "runId": "low-269-r2",
+          "index": 1
+        },
+        {
+          "runId": "low-269-r1",
+          "index": 0
+        }
+      ]
+    },
+    "R269-04": {
+      "pr": 269,
+      "title": "None of the new scripts/s17 harness scripts has automated tests",
+      "members": [
+        {
+          "runId": "medium-269-r1",
+          "index": 2
+        }
+      ]
+    },
+    "R269-05": {
+      "pr": 269,
+      "title": "No unit test pins point_bilinear's output",
+      "members": [
+        {
+          "runId": "low-269-r1",
+          "index": 1
+        },
+        {
+          "runId": "medium-269-r2",
+          "index": 0
+        }
+      ]
+    },
+    "R269-06": {
+      "pr": 269,
+      "title": "BASELINE_SHA256 provenance is not self-contained in the file",
+      "members": [
+        {
+          "runId": "low-269-r1",
+          "index": 2
+        }
+      ]
+    },
+    "R269-07": {
+      "pr": 269,
+      "title": "No test for desktop-stats.ts compare() decision logic",
+      "members": [
+        {
+          "runId": "low-269-r2",
+          "index": 2
+        }
+      ]
+    },
+    "R269-08": {
+      "pr": 269,
+      "title": "--compare crashes when the tuning photos are missing, because photos load before the branch",
+      "members": [
+        {
+          "runId": "medium-269-r2",
+          "index": 1
+        }
+      ]
+    },
+    "R269-09": {
+      "pr": 269,
+      "title": "DATA_URI_MAX_BYTES = 1,000,000 is described as 1 MB",
+      "members": [
+        {
+          "runId": "medium-269-r2",
+          "index": 2
+        }
+      ]
+    },
+    "R269-10": {
+      "pr": 269,
+      "title": "Upload cleanup only in main()'s finally: a throw between upload and the try would leak (stated as latent)",
+      "members": [
+        {
+          "runId": "low-269-r1",
+          "index": 3
+        }
+      ]
+    },
+    "R269-11": {
+      "pr": 269,
+      "title": "Dead imageLabel.startsWith(\"data:\") check in the sidecar",
+      "members": [
+        {
+          "runId": "low-269-r2",
+          "index": 3
+        },
+        {
+          "runId": "medium-269-r1",
+          "index": 3
+        }
+      ]
+    },
+    "R247-13-PNG": {
+      "pr": 247,
+      "title": "Short PNG header raises an uncaught struct.error (original variant a)",
+      "members": [
+        {
+          "runId": "medium-247-r1",
+          "index": 2
+        }
+      ]
+    }
+  },
+  "classification_note": "All 26 rows were classified by the agent at the owner’s explicit request on 2026-10-07 before the key was opened. Original R247-13 was split before reveal; only original variant a moved to R247-13-PNG. Delegated classification is recorded distinctly from the sealed owner-personal hand-read requirement."
+}
