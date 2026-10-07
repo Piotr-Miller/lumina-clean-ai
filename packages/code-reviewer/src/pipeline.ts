@@ -1,6 +1,12 @@
 import type { ProviderMetadata, StepResult, ToolSet } from "ai";
 
-import { resolveModels } from "./config.js";
+import {
+  MAX_OUTPUT_TOKENS,
+  resolveFinderProviderRouting,
+  resolveModels,
+  resolveProviderRouting,
+  type FinderReasoningEffort,
+} from "./config.js";
 import { mergeFindings, offDiffFindingPaths } from "./findings.js";
 import {
   createImplReviewer,
@@ -13,6 +19,8 @@ import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js"
 import { withOneRetry } from "./retry.js";
 import {
   createReviewer,
+  DEFAULT_REVIEWER_MAX_STEPS,
+  type FinderRequestSettings,
   type ReviewCallOptions,
   type Reviewer,
   type ReviewerOptions,
@@ -359,8 +367,13 @@ export interface FinderStepInfo {
   fileContextCalls: { path: string; startLine?: number; endLine?: number }[];
   /** Total tool calls in the step — any tool, valid or not (it all costs). */
   toolCalls: number;
-  /** Token usage of the step's generation, where the provider reported it. */
-  usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
+  /**
+   * Token usage of the step's generation, where the provider reported it.
+   * `reasoningTokens` is the provider's own raw count (see
+   * asStepReasoningTokens) and is absent when the provider reported none —
+   * never a synthesized zero.
+   */
+  usage: { inputTokens?: number; outputTokens?: number; reasoningTokens?: number; totalTokens?: number };
   /**
    * Provider-reported cost of the step in USD. Present only when the provider
    * actually reported it — OpenRouter does so under usage accounting, which
@@ -368,7 +381,29 @@ export interface FinderStepInfo {
    * table and goes stale; this is the figure the provider billed.
    */
   cost?: number;
+  /**
+   * The upstream OpenRouter routed the step to (e.g. `novita`, `venice`).
+   * Present only when the provider reported it: the 2026-09-20 outage could
+   * not be attributed to an endpoint from the run log because nothing
+   * recorded which one served each step (change `finder-serialization-outage`).
+   */
+  provider?: string;
+  /** How the step's generation ended, as the SDK reports it (`stop`, `tool-calls`, `length`, …). */
+  finishReason: string;
 }
+
+/**
+ * The serving upstream out of the provider's metadata bag, narrowed with the
+ * same discipline as `asStepCost` below. A missing, empty or non-string value
+ * is `undefined` — never `""` or `"unknown"`, which would read as a real slug.
+ */
+export const asStepProvider = (metadata: ProviderMetadata | undefined): string | undefined => {
+  const openrouter: unknown = metadata?.openrouter;
+  if (typeof openrouter !== "object" || openrouter === null) return undefined;
+  if (!("provider" in openrouter)) return undefined;
+  const provider: unknown = openrouter.provider;
+  return typeof provider === "string" && provider !== "" ? provider : undefined;
+};
 
 /**
  * Exact per-step cost out of the provider's metadata bag.
@@ -390,6 +425,30 @@ export const asStepCost = (metadata: ProviderMetadata | undefined): number | und
   return typeof cost === "number" && Number.isFinite(cost) ? cost : undefined;
 };
 
+/**
+ * The provider-reported reasoning-token count of one step, out of the
+ * provider's metadata bag (`openrouter.usage.completionTokensDetails`).
+ *
+ * Deliberately NOT `step.usage.outputTokenDetails.reasoningTokens`: the
+ * installed provider normalizes a missing raw count to 0 there, so "the
+ * provider reported zero" and "the provider reported nothing" would look the
+ * same. The metadata bag carries the count only when the response did. A
+ * missing, non-integer or negative value is `undefined`.
+ */
+export const asStepReasoningTokens = (metadata: ProviderMetadata | undefined): number | undefined => {
+  const openrouter: unknown = metadata?.openrouter;
+  if (typeof openrouter !== "object" || openrouter === null) return undefined;
+  if (!("usage" in openrouter)) return undefined;
+  const usage: unknown = openrouter.usage;
+  if (typeof usage !== "object" || usage === null) return undefined;
+  if (!("completionTokensDetails" in usage)) return undefined;
+  const details: unknown = usage.completionTokensDetails;
+  if (typeof details !== "object" || details === null) return undefined;
+  if (!("reasoningTokens" in details)) return undefined;
+  const count: unknown = details.reasoningTokens;
+  return typeof count === "number" && Number.isSafeInteger(count) && count >= 0 ? count : undefined;
+};
+
 // The tool input is model-chosen and reaches us untyped — narrow it instead
 // of trusting the schema validated elsewhere.
 const asFileContextTarget = (input: unknown): { path: string; startLine?: number; endLine?: number } | undefined => {
@@ -405,6 +464,8 @@ const asFileContextTarget = (input: unknown): { path: string; startLine?: number
 /** Extract the small per-step description from the SDK's step result. */
 export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
   const cost = asStepCost(step.providerMetadata);
+  const provider = asStepProvider(step.providerMetadata);
+  const reasoningTokens = asStepReasoningTokens(step.providerMetadata);
   return {
     fileContextCalls: step.toolCalls.flatMap((call) => {
       if (call.toolName !== "getFileContext") return [];
@@ -415,11 +476,14 @@ export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
     usage: {
       inputTokens: step.usage.inputTokens,
       outputTokens: step.usage.outputTokens,
+      ...(reasoningTokens === undefined ? {} : { reasoningTokens }),
       totalTokens: step.usage.totalTokens,
     },
-    // Key absent rather than undefined-valued when the provider reported
+    // Keys absent rather than undefined-valued when the provider reported
     // nothing, matching the finderTelemetry convention below.
     ...(cost === undefined ? {} : { cost }),
+    ...(provider === undefined ? {} : { provider }),
+    finishReason: step.finishReason,
   };
 }
 
@@ -468,6 +532,20 @@ export interface PipelineInput {
   /** Observes each finder loop step (across both retry attempts) for per-step telemetry. */
   onFinderStep?: (info: FinderStepInfo) => void;
   /**
+   * The finder's `reasoning.effort`, forwarded to createReviewer whether or
+   * not a source is present. Absent → no `reasoning` field on the wire. The
+   * judge and the implementation review never receive it.
+   */
+  finderReasoningEffort?: FinderReasoningEffort;
+  /** Observes every outbound finder request (retries and failed calls included) as the settings it sent. */
+  onFinderRequest?: (request: FinderRequestSettings) => void;
+  /**
+   * Receives the run's resolved configuration once, before any provider call —
+   * the same values the passes below are built from (see
+   * resolvePipelineConfiguration). Safe to log: no credentials, no prompt text.
+   */
+  onResolvedConfiguration?: (configuration: ResolvedPipelineConfiguration) => void;
+  /**
    * Fires when the finder's response failed the strict parse and an envelope
    * repair rescued it (see output-repair.ts). Without it a repaired run looks
    * identical to a clean one, hiding model drift worth acting on.
@@ -495,9 +573,81 @@ export interface PipelineInput {
   deps?: PipelineDeps;
 }
 
+/**
+ * The settings a run resolves to — what G5 and the measurement runner compare
+ * against a sealed arm. Credentials and prompt content are never part of it.
+ */
+export interface ResolvedPipelineConfiguration {
+  finder: {
+    model: string;
+    routing: ReturnType<typeof resolveFinderProviderRouting>;
+    /** `null` = no `reasoning` field is sent (the endpoint's default). */
+    reasoningEffort: FinderReasoningEffort | null;
+    /** Whether the getFileContext tool loop is active (a source was supplied). */
+    toolLoop: boolean;
+    /** The loop cap; `null` for a tool-less, single-generation finder. */
+    maxSteps: number | null;
+    maxOutputTokens: number;
+    timeoutMs: number;
+  };
+  judge: {
+    model: string;
+    /** `null` when the OPENROUTER_REQUIRE_PARAMETERS escape hatch removed it. */
+    routing: ReturnType<typeof resolveProviderRouting> | null;
+    maxOutputTokens: number;
+    timeoutMs: number;
+  };
+  implReview: { model: string; timeoutMs: number; gate: "always" | "code-review-passed" };
+  retry: { policy: string; sdkMaxRetries: 0 };
+}
+
+export const RETRY_POLICY =
+  "withOneRetry: one retry per pass on TimeoutError, NoObjectGeneratedError or HTTP 429/5xx; never on NoOutputGeneratedError";
+
+/**
+ * Resolves the configuration exactly as runReviewPipeline will use it. Exported
+ * so the measurement runner describes an arm with the same code the CLI runs.
+ * Reads the environment (models, judge routing) like the passes themselves.
+ */
+export function resolvePipelineConfiguration(
+  input: Pick<
+    PipelineInput,
+    "overrides" | "timeouts" | "finderMaxSteps" | "finderReasoningEffort" | "implReviewGate"
+  > & {
+    hasSource: boolean;
+  },
+): ResolvedPipelineConfiguration {
+  const models = resolveModels(input.overrides);
+  const timeouts = resolveTimeouts(input.timeouts);
+  return {
+    finder: {
+      model: models.reviewModel,
+      routing: resolveFinderProviderRouting(),
+      reasoningEffort: input.finderReasoningEffort ?? null,
+      toolLoop: input.hasSource,
+      maxSteps: input.hasSource ? (input.finderMaxSteps ?? DEFAULT_REVIEWER_MAX_STEPS) : null,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      timeoutMs: timeouts.finderTimeoutMs,
+    },
+    judge: {
+      model: models.judgeModel,
+      routing: resolveProviderRouting() ?? null,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      timeoutMs: timeouts.judgeTimeoutMs,
+    },
+    implReview: {
+      model: models.implReviewModel,
+      timeoutMs: timeouts.implReviewTimeoutMs,
+      gate: input.implReviewGate ?? "always",
+    },
+    retry: { policy: RETRY_POLICY, sdkMaxRetries: 0 },
+  };
+}
+
 export async function runReviewPipeline(input: PipelineInput): Promise<PipelineResult> {
   const models = resolveModels(input.overrides);
   const timeouts = resolveTimeouts(input.timeouts);
+  input.onResolvedConfiguration?.(resolvePipelineConfiguration({ ...input, hasSource: input.source !== undefined }));
   // Ordered BEFORE capping so the byte-prefix cap keeps source and cuts prose
   // (path-order bias fix); identity for every in-cap diff, so the common case
   // stays byte-identical to the pre-ordering pipeline.
@@ -542,6 +692,9 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
       // The tool-less cost ceiling is a contract: a step cap only accompanies
       // a live source (impl-review-phase-1 F3).
       maxSteps: input.source === undefined ? undefined : input.finderMaxSteps,
+      // Independent of the source: a tool-less finder reasons too.
+      ...(input.finderReasoningEffort === undefined ? {} : { reasoningEffort: input.finderReasoningEffort }),
+      ...(input.onFinderRequest === undefined ? {} : { onRequest: input.onFinderRequest }),
       onStepEnd: observeFinderStep,
       onOutputRepair: input.onOutputRepair,
     }).review;

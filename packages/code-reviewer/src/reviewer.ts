@@ -2,7 +2,12 @@ import { createOpenRouter, type OpenRouterChatSettings } from "@openrouter/ai-sd
 import { isStepCount, tool, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 import { z } from "zod";
 
-import { MAX_OUTPUT_TOKENS, resolveConfig, resolveProviderRouting } from "./config.js";
+import {
+  MAX_OUTPUT_TOKENS,
+  resolveConfig,
+  resolveFinderProviderRouting,
+  type FinderReasoningEffort,
+} from "./config.js";
 import { normalizeFindings } from "./findings.js";
 import { buildInstructions, buildPrompt } from "./prompts.js";
 import { tolerantReviewOutput } from "./output-repair.js";
@@ -68,13 +73,56 @@ export interface ReviewerOptions {
    * OpenRouter provider routing (order / fallbacks / require_parameters /
    * quantizations) for the review calls.
    *
-   * Omitted → DEFAULT_PROVIDER_ROUTING (`require_parameters: true`), which
-   * keeps this strict-schema call on endpoints that actually enforce the
-   * schema. Campaign tooling passes its OWN pin here to make provider-scoped
-   * claims (fabrication amendment A1) and must keep overriding the default —
-   * that pin is for measurement comparability, not production routing.
+   * Omitted → FINDER_PROVIDER_ROUTING, the finder's env-proof pin to the
+   * `anthropic` endpoint (change `finder-sonnet`). Campaign tooling passes its
+   * OWN pin here to make provider-scoped claims (fabrication amendment A1) and
+   * must keep overriding the default — that pin is for measurement
+   * comparability, not production routing.
    */
   providerRouting?: OpenRouterChatSettings["provider"];
+  /**
+   * OpenRouter `reasoning.effort` for the finder's requests. Omitted → the
+   * request carries no `reasoning` key at all and the endpoint applies its own
+   * default — the configuration change `finder-sonnet` measured.
+   */
+  reasoningEffort?: FinderReasoningEffort;
+  /**
+   * Observes every outbound finder request, retries and failed calls included,
+   * as the settings it actually sent (see FinderRequestSettings). Fires before
+   * the response arrives, so a request that never produces a step is still
+   * seen. Proves what the client sent, not what the provider applied.
+   */
+  onRequest?: (request: FinderRequestSettings) => void;
+}
+
+/**
+ * The settings of one outbound finder request, projected out of the request
+ * body. Only these four keys: no headers, credentials, messages or tool
+ * content. `reasoning` is absent when the body carried none, so the dark
+ * default stays distinguishable from an explicit effort. `unreadable` marks a
+ * body that was not a JSON object string — reported rather than dropped.
+ */
+export interface FinderRequestSettings {
+  model?: unknown;
+  provider?: unknown;
+  reasoning?: unknown;
+  max_tokens?: unknown;
+  unreadable?: true;
+}
+
+const REQUEST_SETTING_KEYS = ["model", "provider", "reasoning", "max_tokens"] as const;
+
+export function projectFinderRequest(body: unknown): FinderRequestSettings {
+  if (typeof body !== "string") return { unreadable: true };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return { unreadable: true };
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return { unreadable: true };
+  const record = parsed as Record<string, unknown>;
+  return Object.fromEntries(REQUEST_SETTING_KEYS.filter((key) => key in record).map((key) => [key, record[key]]));
 }
 
 export interface ReviewCallOptions {
@@ -123,16 +171,30 @@ export const prepareFinalStep =
  * ToolLoopAgent so a future orchestrator can fan out one reviewer per lens.
  * Throws (never exits) when no API key is resolvable.
  */
+/** The finder's loop cap when the caller sets none. */
+export const DEFAULT_REVIEWER_MAX_STEPS = 8;
+
 export function createReviewer(options: ReviewerOptions = {}) {
   const { apiKey, model } = resolveConfig({ apiKey: options.apiKey, model: options.model });
   const lens = options.lens ?? "general";
-  const maxSteps = options.maxSteps ?? 8;
+  const maxSteps = options.maxSteps ?? DEFAULT_REVIEWER_MAX_STEPS;
   // isStepCount is equality-based: zero, negative, fractional, or non-finite
   // values would never trigger the stop condition and remove the cost guard.
   if (!Number.isSafeInteger(maxSteps) || maxSteps < 1) {
     throw new Error(`maxSteps must be a positive integer, got: ${String(options.maxSteps)}`);
   }
-  const openrouter = createOpenRouter({ apiKey });
+  // The observer wraps whatever fetch is current at call time, so it adds a
+  // projection and changes nothing about the request. Without an observer the
+  // provider keeps its own default fetch.
+  const { onRequest } = options;
+  const observingFetch: typeof fetch | undefined =
+    onRequest === undefined
+      ? undefined
+      : (input, init) => {
+          onRequest(projectFinderRequest(init?.body));
+          return globalThis.fetch(input, init);
+        };
+  const openrouter = createOpenRouter({ apiKey, ...(observingFetch === undefined ? {} : { fetch: observingFetch }) });
 
   // Cost ceiling (impl-review-phase-1 F3): without a SourceProvider the
   // context tool could only return its fixed fallback, yet its mere presence
@@ -151,12 +213,12 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // accounting adds response fields, not tokens.
     model: openrouter(model, {
       usage: { include: true },
-      // An explicit pin (campaign tooling) wins; otherwise the schema-enforcing
-      // default applies, and only OPENROUTER_REQUIRE_PARAMETERS=false removes it.
-      ...(() => {
-        const routing = options.providerRouting ?? resolveProviderRouting();
-        return routing ? { provider: routing } : {};
-      })(),
+      // An explicit pin (campaign tooling) wins; otherwise the finder's own
+      // pin applies, which no environment variable changes or removes.
+      provider: options.providerRouting ?? resolveFinderProviderRouting(),
+      // Key absent, not undefined-valued, without an effort: the dark default
+      // must send exactly what `finder-sonnet` measured.
+      ...(options.reasoningEffort === undefined ? {} : { reasoning: { effort: options.reasoningEffort } }),
     }),
     // See MAX_OUTPUT_TOKENS. NOTE this bounds each generation in the tool
     // loop, not the run total — a multi-step finder run can emit more

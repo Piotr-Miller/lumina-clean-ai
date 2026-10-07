@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  DEFAULT_FINDER_REASONING_EFFORT,
   DEFAULT_IMPL_REVIEW_MODEL,
   DEFAULT_JUDGE_MODEL,
   DEFAULT_MODEL,
+  FINDER_REASONING_EFFORTS,
+  isFinderReasoningEffort,
   resolveConfig,
   resolveModels,
 } from "./config.js";
@@ -22,6 +25,21 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+describe("finder reasoning effort", () => {
+  // Literal: until a measured arm is admitted (change `finder-sonnet-effort`),
+  // the dark default sends no `reasoning` field at all.
+  it("defaults to no effort, so the endpoint's own default applies", () => {
+    expect(DEFAULT_FINDER_REASONING_EFFORT).toBeUndefined();
+  });
+
+  it("accepts exactly low, medium and high", () => {
+    expect(FINDER_REASONING_EFFORTS).toEqual(["low", "medium", "high"]);
+    for (const value of ["low", "medium", "high"]) expect(isFinderReasoningEffort(value)).toBe(true);
+    for (const value of ["", "LOW", "max", "xhigh", "minimal", "none"])
+      expect(isFinderReasoningEffort(value)).toBe(false);
+  });
+});
+
 describe("resolveModels — finder chain", () => {
   it("falls back to DEFAULT_MODEL when nothing is set", () => {
     expect(resolveModels().reviewModel).toBe(DEFAULT_MODEL);
@@ -29,12 +47,12 @@ describe("resolveModels — finder chain", () => {
 
   // Literal, not a tautology: the assertion above passes whatever the constant
   // says, so it could not catch the checked-in default drifting away from the
-  // model production actually runs. These pin the strings themselves — the
-  // finder default must equal the OPENROUTER_REVIEW_MODEL repository variable,
-  // because it is what takes over when that variable is unset or cleared
-  // (impl-review-phase-4 F1). Update these ONLY together with that variable.
+  // model production actually runs. These pin the strings themselves. Since
+  // change `finder-sonnet` the finder default IS the production model and the
+  // OPENROUTER_REVIEW_MODEL repository variable is meant to be absent; change
+  // this literal only alongside a new measurement (impl-review-phase-4 F1).
   it("defaults the finder to the model production runs", () => {
-    expect(DEFAULT_MODEL).toBe("z-ai/glm-4.6");
+    expect(DEFAULT_MODEL).toBe("anthropic/claude-sonnet-5");
   });
 
   it("defaults the judge to the model production runs", () => {

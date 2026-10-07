@@ -1,6 +1,12 @@
 import { join } from "node:path";
 
-import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
+import {
+  DEFAULT_FINDER_REASONING_EFFORT,
+  FINDER_REASONING_EFFORTS,
+  isFinderReasoningEffort,
+  type FinderReasoningEffort,
+} from "./config.js";
+import { runReviewPipeline, type FinderStepInfo, type PipelineInput, type PipelineTimeouts } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
 import type { PipelineResult } from "./schemas.js";
 import { createDiffScopedSourceForDiff } from "./source-provider.js";
@@ -28,7 +34,7 @@ export interface CliIo {
 
 export type CliEnv = Record<string, string | undefined>;
 
-interface CliArgs {
+export interface CliArgs {
   diffFile?: string;
   outDir: string;
   /** Trusted project review rules — the caller must source this from the base branch, never the PR head. */
@@ -43,7 +49,14 @@ interface CliArgs {
    * empty → no plan, which is a known state, not an error.
    */
   planFile?: string;
+  /** The finder's reasoning effort; absent → DEFAULT_FINDER_REASONING_EFFORT. No env variable reaches it. */
+  finderReasoningEffort?: FinderReasoningEffort;
 }
+
+const USAGE =
+  "Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>] [--source-root <dir>] [--plan-file <path>] [--finder-reasoning-effort <" +
+  FINDER_REASONING_EFFORTS.join("|") +
+  ">]";
 
 export function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = { outDir: ".review-out" };
@@ -65,10 +78,16 @@ export function parseArgs(argv: string[]): CliArgs {
     } else if (flag === "--plan-file" && value !== undefined) {
       args.planFile = value;
       i += 1;
+    } else if (flag === "--finder-reasoning-effort" && value !== undefined) {
+      if (!isFinderReasoningEffort(value)) {
+        throw new Error(
+          `Invalid --finder-reasoning-effort: ${value}. Allowed values: ${FINDER_REASONING_EFFORTS.join(", ")}. ${USAGE}`,
+        );
+      }
+      args.finderReasoningEffort = value;
+      i += 1;
     } else {
-      throw new Error(
-        `Unknown or valueless argument: ${flag ?? ""}. Usage: npm run review -- --diff-file <path> [--out-dir <dir>] [--project-context-file <path>] [--source-root <dir>] [--plan-file <path>]`,
-      );
+      throw new Error(`Unknown or valueless argument: ${flag ?? ""}. ${USAGE}`);
     }
   }
   return args;
@@ -87,6 +106,38 @@ function parseMaxStepsEnv(env: CliEnv): number | undefined {
   }
   return value;
 }
+
+/**
+ * The finder's loop budget when a source is active. Separate from
+ * resolveCliFinderSettings because it is resolved — and an invalid value
+ * refused — only when the tool loop actually runs.
+ */
+export const resolveCliFinderMaxSteps = (env: CliEnv): number => parseMaxStepsEnv(env) ?? DEFAULT_FINDER_MAX_STEPS;
+
+/**
+ * The settings the CLI resolves from its flags and environment for every run,
+ * as one function: runReviewCli uses it, and so does the measurement runner
+ * when it describes an arm, so the two cannot drift. Invalid values throw.
+ */
+export function resolveCliFinderSettings(
+  args: Pick<CliArgs, "finderReasoningEffort">,
+  env: CliEnv,
+): {
+  finderReasoningEffort: FinderReasoningEffort | undefined;
+  timeouts: PipelineTimeouts;
+} {
+  return {
+    finderReasoningEffort: args.finderReasoningEffort ?? DEFAULT_FINDER_REASONING_EFFORT,
+    timeouts: {
+      finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
+      judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
+      implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
+    },
+  };
+}
+
+/** The CI pipeline's implementation-review gate (see runReviewCli). */
+export const CLI_IMPL_REVIEW_GATE = "code-review-passed" as const;
 
 const tokenCount = (value: number | undefined): string => (value === undefined ? "?" : String(value));
 
@@ -108,9 +159,70 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
     info.fileContextCalls.length === 0
       ? "no getFileContext call"
       : info.fileContextCalls.map((call) => `getFileContext ${logSafePath(call.path)}${formatRange(call)}`).join(", ");
-  const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} total=${tokenCount(info.usage.totalTokens)}`;
-  return `finder step ${String(index)}: ${calls} (${usage})`;
+  // reasoning=? means the provider reported no count — never read it as 0.
+  const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} reasoning=${tokenCount(info.usage.reasoningTokens)} total=${tokenCount(info.usage.totalTokens)}`;
+  // The provider slug comes from the response, not from us — escaped like the
+  // path for the same reason. `?` when OpenRouter did not report one.
+  const route = `provider=${info.provider === undefined ? "?" : logSafePath(info.provider)} finish=${logSafePath(info.finishReason)}`;
+  return `finder step ${String(index)}: ${calls} (${usage}) ${route}`;
 };
+
+/** How much of a rejected model output reaches the log. */
+export const REJECTED_OUTPUT_CAP_CHARS = 2_000;
+export const REJECTED_OUTPUT_TRUNCATION_MARKER = "[...rejected output truncated at 2,000 chars]";
+
+// Visible escapes rather than logSafePath's "?": the rejected text is usually
+// multi-line JSON, and the reader needs to see where the lines broke. Either
+// way no control character reaches the log, so the untrusted text cannot
+// forge or restyle log lines.
+const escapeControl = (text: string): string =>
+  text.replace(/\p{Cc}/gu, (char) => {
+    if (char === "\n") return "\\n";
+    if (char === "\r") return "\\r";
+    if (char === "\t") return "\\t";
+    return `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`;
+  });
+
+const stringField = (error: object, key: string): string | undefined =>
+  key in error && typeof (error as Record<string, unknown>)[key] === "string"
+    ? ((error as Record<string, unknown>)[key] as string)
+    : undefined;
+
+/**
+ * The text a model produced and the pipeline rejected, as one stderr line —
+ * so an outage can be attributed from the run log alone (change
+ * `finder-serialization-outage`: 35 failed runs logged only "could not parse
+ * the response", never what the model had sent).
+ *
+ * Reads any error carrying a string `text` (`NoObjectGeneratedError` today),
+ * plus its `finishReason` and `provider` where present. `undefined` when the
+ * error carries no text — an abort or an auth error never produced output.
+ * An empty text is still reported: "the model sent nothing" is a finding.
+ *
+ * Labelled by the error's class, not by pass: the pipeline rethrows the raw
+ * error, and a `NoObjectGeneratedError` can come from the finder or the judge.
+ *
+ * The text is untrusted model output and the log is public: capped at
+ * REJECTED_OUTPUT_CAP_CHARS and control characters escaped. It goes to stderr
+ * only — never into comment.md or the step summary.
+ */
+export function formatRejectedOutputLine(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const text = stringField(error, "text");
+  if (text === undefined) return undefined;
+  const provider = stringField(error, "provider");
+  const finish = stringField(error, "finishReason");
+  let shown = text;
+  if (text.length > REJECTED_OUTPUT_CAP_CHARS) {
+    // Never end on half a surrogate pair.
+    shown = text.slice(0, REJECTED_OUTPUT_CAP_CHARS).replace(/[\uD800-\uDBFF]$/u, "");
+    shown += REJECTED_OUTPUT_TRUNCATION_MARKER;
+  }
+  const route = `provider=${provider === undefined || provider === "" ? "?" : escapeControl(provider)}, finish=${
+    finish === undefined ? "?" : escapeControl(finish)
+  }`;
+  return `rejected output (${escapeControl(errorLabel(error))}, ${route}, ${String(text.length)} chars): ${escapeControl(shown)}`;
+}
 
 // One stderr line for the whole third pass — in an Actions log this is the
 // only live evidence that the pass ran and what it cost. Cost is printed only
@@ -205,6 +317,7 @@ export async function runReviewCli(
     // happens later inside the pipeline, and a truncated allowlist would
     // refuse legitimate requests. Absent flag → empty spread: no source, no
     // maxSteps, no step telemetry — byte-identical to the legacy invocation.
+    const settings = resolveCliFinderSettings(args, env);
     let sourceInputs: Pick<PipelineInput, "source" | "finderMaxSteps" | "onFinderStep"> = {};
     if (args.sourceRoot !== undefined) {
       // The allowlist derives from the FULL diff read above — capDiff
@@ -221,7 +334,7 @@ export async function runReviewCli(
         isRegularFile: io.isRegularFile,
       });
       if (source !== undefined) {
-        const finderMaxSteps = parseMaxStepsEnv(env) ?? DEFAULT_FINDER_MAX_STEPS;
+        const finderMaxSteps = resolveCliFinderMaxSteps(env);
         // CLI-maintained monotonic index: the SDK's stepNumber resets to 0 on
         // the retry attempt, which would make the log lie about real spend.
         let stepIndex = 0;
@@ -266,17 +379,25 @@ export async function runReviewCli(
       diff,
       ...sourceInputs,
       ...planInput,
+      ...(settings.finderReasoningEffort === undefined
+        ? {}
+        : { finderReasoningEffort: settings.finderReasoningEffort }),
       prTitle: env.PR_TITLE,
       prBody: env.PR_BODY,
-      timeouts: {
-        finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
-        judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
-        implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
-      },
+      timeouts: settings.timeouts,
       projectReviewContext: args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
       // CI policy, not a library default: the pass costs ~9.47x the code review
       // it accompanies, and a red code review means the diff is about to change.
-      implReviewGate: "code-review-passed",
+      implReviewGate: CLI_IMPL_REVIEW_GATE,
+      // The resolved configuration and each outbound finder request's settings,
+      // one stderr line each: the evidence a measurement or G5 compares against
+      // its sealed arm. Neither carries credentials or prompt content.
+      onResolvedConfiguration: (configuration) => {
+        io.logError(`resolved configuration: ${JSON.stringify(configuration)}`);
+      },
+      onFinderRequest: (request) => {
+        io.logError(`finder request: ${JSON.stringify(request)}`);
+      },
       // In an ultimately-green run this stderr line is the only evidence that
       // a transient flake happened and the single retry recovered it.
       onRetry: (pass, error, delayMs) => {
@@ -309,6 +430,10 @@ export async function runReviewCli(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     io.logError(message);
+    // stderr only: the rejected text is untrusted, so it stays out of the
+    // step summary below as well as out of comment.md.
+    const rejected = formatRejectedOutputLine(error);
+    if (rejected !== undefined) io.logError(rejected);
     const summaryPath = env.GITHUB_STEP_SUMMARY;
     if (summaryPath) io.appendFile(summaryPath, `\n## AI review failed\n\n${message}\n`);
     return 1;

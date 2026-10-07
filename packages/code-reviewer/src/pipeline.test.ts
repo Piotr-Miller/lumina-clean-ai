@@ -1,10 +1,13 @@
-import { APICallError, type StepResult, type ToolSet } from "ai";
+import { APICallError, type ProviderMetadata, type StepResult, type ToolSet } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_JUDGE_MODEL, DEFAULT_MODEL } from "./config.js";
 import {
   BODY_CAP_CHARS,
   BODY_TRUNCATION_MARKER,
+  asStepCost,
+  asStepProvider,
+  asStepReasoningTokens,
   capDiff,
   computeDiffStats,
   computeFileSegments,
@@ -20,6 +23,7 @@ import {
   PLAN_TRUNCATION_MARKER,
   runReviewPipeline,
   type FinderStepInfo,
+  type ResolvedPipelineConfiguration,
 } from "./pipeline.js";
 import { type JudgePromptInput } from "./prompts.js";
 import { RATE_LIMIT_DELAY_MS, TRANSIENT_DELAY_MS } from "./retry.js";
@@ -478,16 +482,19 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
   });
 });
 
-// Partial step shapes cast once: the pipeline only reads toolCalls and usage.
+// Partial step shapes cast once: the pipeline only reads toolCalls, usage,
+// providerMetadata and finishReason.
 const finderStep = (over: {
   toolCalls?: { toolName: string; input: unknown }[];
   usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
   providerMetadata?: unknown;
+  finishReason?: string;
 }): StepResult<ToolSet> =>
   ({
     toolCalls: over.toolCalls ?? [],
     usage: over.usage ?? {},
     providerMetadata: over.providerMetadata,
+    finishReason: over.finishReason ?? "stop",
   }) as unknown as StepResult<ToolSet>;
 
 /** Shorthand for the provider bag OpenRouter fills under usage accounting. */
@@ -536,6 +543,82 @@ describe("describeFinderStep", () => {
   ])("degrades to no cost on %s", (_label, providerMetadata) => {
     expect("cost" in describeFinderStep(finderStep({ providerMetadata }))).toBe(false);
   });
+
+  it("names the serving upstream and how the step ended", () => {
+    const info = describeFinderStep(
+      finderStep({ providerMetadata: { openrouter: { provider: "Novita" } }, finishReason: "tool-calls" }),
+    );
+    expect(info.provider).toBe("Novita");
+    expect(info.finishReason).toBe("tool-calls");
+  });
+
+  it("omits the provider key entirely when OpenRouter reported none, but still reports finishReason", () => {
+    // Absent, never "" or "unknown": either would read as a real endpoint slug.
+    const info = describeFinderStep(finderStep({ finishReason: "length" }));
+    expect("provider" in info).toBe(false);
+    expect(info.finishReason).toBe("length");
+  });
+
+  it.each([
+    ["metadata from another provider", { anthropic: { provider: "Novita" } }],
+    ["an openrouter bag with no provider", { openrouter: { usage: { cost: 0.1 } } }],
+    ["a non-string provider", { openrouter: { provider: 42 } }],
+    ["an empty provider", { openrouter: { provider: "" } }],
+    ["a null openrouter bag", { openrouter: null }],
+  ])("degrades to no provider on %s", (_label, providerMetadata) => {
+    expect("provider" in describeFinderStep(finderStep({ providerMetadata }))).toBe(false);
+  });
+});
+
+describe("asStepReasoningTokens / describeFinderStep reasoning count", () => {
+  const withReasoning = (reasoningTokens: unknown): unknown => ({
+    openrouter: { usage: { completionTokensDetails: { reasoningTokens } } },
+  });
+
+  it.each([
+    ["a positive count", 1234],
+    ["an explicit zero", 0],
+  ])("reports %s as usage.reasoningTokens", (_label, count) => {
+    const info = describeFinderStep(finderStep({ providerMetadata: withReasoning(count) }));
+    expect(info.usage.reasoningTokens).toBe(count);
+    expect("reasoningTokens" in info.usage).toBe(true);
+  });
+
+  it.each([
+    ["no metadata", undefined],
+    ["usage without completionTokensDetails", { openrouter: { usage: { cost: 0.1 } } }],
+    ["a null details bag", { openrouter: { usage: { completionTokensDetails: null } } }],
+    ["a negative count", withReasoning(-1)],
+    ["a fractional count", withReasoning(1.5)],
+    ["a string count", withReasoning("12")],
+    ["a non-finite count", withReasoning(Number.POSITIVE_INFINITY)],
+  ])("leaves the key absent on %s — never a synthesized zero", (_label, providerMetadata) => {
+    const info = describeFinderStep(finderStep({ providerMetadata }));
+    expect("reasoningTokens" in info.usage).toBe(false);
+  });
+
+  // The installed provider normalizes a missing raw count to 0 in the SDK's
+  // usage details, so that field must never be the source.
+  it("ignores the SDK's normalized usage.outputTokenDetails", () => {
+    const step = {
+      ...(finderStep({}) as unknown as Record<string, unknown>),
+      usage: { outputTokens: 50, outputTokenDetails: { reasoningTokens: 0 } },
+    } as unknown as StepResult<ToolSet>;
+    expect("reasoningTokens" in describeFinderStep(step).usage).toBe(false);
+    expect(asStepReasoningTokens(undefined)).toBeUndefined();
+  });
+});
+
+describe("asStepProvider", () => {
+  it("reads the slug next to the usage-accounting bag without disturbing asStepCost", () => {
+    const metadata = { openrouter: { provider: "DeepInfra", usage: { cost: 0.002 } } } as unknown as ProviderMetadata;
+    expect(asStepProvider(metadata)).toBe("DeepInfra");
+    expect(asStepCost(metadata)).toBe(0.002);
+  });
+
+  it("returns undefined for absent metadata", () => {
+    expect(asStepProvider(undefined)).toBeUndefined();
+  });
 });
 
 describe("runReviewPipeline finder source + telemetry seam", () => {
@@ -555,6 +638,52 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
     const options = finderOptionsOf(createFinder);
     expect(options.source).toBe(source);
     expect(options.maxSteps).toBe(5);
+  });
+
+  it.each([
+    ["with a source", true],
+    ["tool-less", false],
+  ])("forwards finderReasoningEffort to the finder %s, and never to the judge", async (_label, withSource) => {
+    const createFinder = vi.fn().mockReturnValue({ review: reviewOk });
+    const createJudge = vi.fn().mockReturnValue({ judge: () => Promise.resolve(judgeResult()) });
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      ...(withSource ? { source: () => "ctx", finderMaxSteps: 5 } : {}),
+      finderReasoningEffort: "medium",
+      deps: { createFinder, createJudge },
+    });
+    expect(finderOptionsOf(createFinder).reasoningEffort).toBe("medium");
+    const judgeOptions = createJudge.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(Object.keys(judgeOptions).some((key) => key.toLowerCase().includes("reasoning"))).toBe(false);
+  });
+
+  it("omits the reasoningEffort key when none is set", async () => {
+    const createFinder = vi.fn().mockReturnValue({ review: reviewOk });
+    await runReviewPipeline({ diff: SMALL_DIFF, deps: { createFinder, judge: () => Promise.resolve(judgeResult()) } });
+    expect("reasoningEffort" in finderOptionsOf(createFinder)).toBe(false);
+  });
+
+  it("reports the resolved configuration once, with the values the finder is built from", async () => {
+    const createFinder = vi.fn().mockReturnValue({ review: reviewOk });
+    const snapshots: ResolvedPipelineConfiguration[] = [];
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      source: () => "ctx",
+      finderMaxSteps: 3,
+      finderReasoningEffort: "low",
+      timeouts: { finderTimeoutMs: 1_000 },
+      onResolvedConfiguration: (configuration) => snapshots.push(configuration),
+      deps: { createFinder, judge: () => Promise.resolve(judgeResult()) },
+    });
+    expect(snapshots).toHaveLength(1);
+    const options = finderOptionsOf(createFinder);
+    expect(snapshots[0].finder).toMatchObject({
+      model: options.model,
+      reasoningEffort: options.reasoningEffort,
+      maxSteps: options.maxSteps,
+      toolLoop: true,
+      timeoutMs: 1_000,
+    });
   });
 
   it("never forwards finderMaxSteps without a source (tool-less cost ceiling)", async () => {

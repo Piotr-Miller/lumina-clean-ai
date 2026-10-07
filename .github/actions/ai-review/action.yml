@@ -3,8 +3,11 @@
 # pipeline) → sticky comment upsert → verdict label flip. Posting steps run
 # only when the review step succeeded (composite steps are sequential); the
 # CLI's exit-code contract is exit 0 for ANY produced verdict (incl.
-# "failed" — advisory data) and exit 1 for technical failure only, so a
-# provider outage leaves the last valid comment and labels untouched.
+# "failed" — advisory data) and exit 1 for technical failure only. A technical
+# failure REPLACES the sticky comment with a "did not complete" notice and
+# removes ai-cr:passed (change `finder-sonnet`): until then a provider outage
+# left the previous run's comment and label in place, so a failed run could sit
+# under an old "passed" and read as "no remarks".
 # The finder runs with a diff-scoped getFileContext tool (--source-root
 # "$GITHUB_WORKSPACE": file reads restricted to the diff's paths); its loop
 # budget defaults to 5 steps, tunable via the finder-max-steps input
@@ -79,6 +82,7 @@ runs:
       run: npm ci
 
     - name: Run two-pass review
+      id: review
       shell: bash
       working-directory: packages/code-reviewer
       env:
@@ -150,3 +154,46 @@ runs:
         # stays tolerant: an absent opposite label is normal on first runs.
         gh pr edit "$PR_NUMBER" --add-label "$ADD"
         gh pr edit "$PR_NUMBER" --remove-label "$REMOVE" || true
+
+    # A technical failure must not look like a result. Fires when the review
+    # did not succeed — it failed, or an earlier step (setup, npm ci) failed
+    # and it never ran — and NOT when the review succeeded and only a posting
+    # step above failed: then the review's own outcome is on its way and a
+    # notice would overwrite it. The job stays red either way; this step only
+    # changes what the PR shows.
+    - name: Replace the verdict with a failure notice
+      if: failure() && steps.review.outcome != 'success'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      run: |
+        # Same marker and the same bot filter as the success path, so the next
+        # successful run PATCHes this notice away like any other sticky body.
+        MARKER="<!-- ai-cr:sticky -->"
+        RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        BODY_FILE="$RUNNER_TEMP/ai-review-failure.md"
+        {
+          printf '%s\n' "$MARKER"
+          printf '%s\n\n' "## ⚠️ AI review did not complete — no verdict"
+          printf '%s\n\n' "The automated review of commit \`${HEAD_SHA:0:7}\` **failed before it produced a result**. This is a technical failure, not a review outcome: it is **not a pass**, and it does **not** mean the reviewer found nothing to remark on."
+          printf '%s\n\n' "Any earlier AI verdict on this PR is withdrawn and the \`ai-cr:passed\` label has been removed. Treat this PR as not AI-reviewed until a run completes."
+          printf '%s\n' "- Run log: ${RUN_URL}"
+          printf '%s\n' "- To retry, add the \`ai-cr:review\` label."
+        } > "$BODY_FILE"
+        EXISTING_ID=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+          --paginate --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | contains(\"$MARKER\"))) | .id" | head -1)
+        if [[ -n "$EXISTING_ID" ]]; then
+          echo "Replacing sticky comment $EXISTING_ID with the failure notice"
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${EXISTING_ID}" \
+            -F body=@"$BODY_FILE" > /dev/null
+        else
+          echo "Posting the failure notice as the sticky comment"
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            -F body=@"$BODY_FILE" > /dev/null
+        fi
+        # Tolerant: absent on a first run or after a failed verdict. Never
+        # ai-cr:failed — a failure is not a verdict, and that label means the
+        # review ran and judged the change.
+        gh pr edit "$PR_NUMBER" --remove-label "ai-cr:passed" || true

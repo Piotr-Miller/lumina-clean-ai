@@ -19,8 +19,8 @@ export type Category = z.infer<typeof categorySchema>;
 
 // Line numbers use number+refine instead of .int().min(1) for provider
 // compatibility: zod v4's .int() emits JSON Schema minimum/maximum bounds,
-// which Anthropic's structured-output endpoint rejects — and the finder falls
-// back to an Anthropic model when no review-model env is set.
+// which Anthropic's structured-output endpoint rejects — and the finder runs
+// on Anthropic's endpoint by default since change `finder-sonnet`.
 const lineNumber = (description: string) =>
   z
     .number()
