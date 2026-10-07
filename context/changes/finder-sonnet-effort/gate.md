@@ -390,3 +390,60 @@ hash below was then taken by §12 and is never recomputed. Nothing in this secti
 - UTC time taken: **2026-10-07T19:15:53Z**.
 - The seal commit, GitHub's push time and the tag `finder-sonnet-effort/seal` are recorded below once the push
   has happened. A commit cannot contain its own SHA.
+- **Seal commit:** `794cfbe42ecf3889954d0df2a280ceec60ebdfa6`
+  (`docs(finder-sonnet-effort): Inputs freeze, pre-registration and seal (no paid calls) (p2)`), on
+  `origin/feat/finder-sonnet-effort`. Its committed `gate.md` reproduces the sha256 above, and its committed
+  `gate-manifest.json` reproduces `ed78d1f4…acb7ac0`. Pre-push hook: typecheck and 418/418 unit tests passed.
+- **GitHub push time: 2026-10-07T19:16:39Z.** Source:
+  `GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-sonnet-effort`, event
+  `branch_creation`, `0000000..794cfbe`, actor `Piotr-Miller`. `git ls-remote` showed `794cfbe` as the branch
+  head. Recorded before any price re-read, T0 or paid call.
+- **Rebase protection:** annotated tag **`finder-sonnet-effort/seal`** (tag object
+  `c770b7b14b0e749a8f00843e3c7bd31d87098bcb`) on `794cfbe42ecf3889954d0df2a280ceec60ebdfa6`, pushed to `origin` on
+  2026-10-07. `git ls-remote --tags origin 'finder-sonnet-effort/*'` shows it peeled to `794cfbe`. A later rebase
+  or rebase-merge rewrites the seal commit's SHA; the tag keeps the sealed state reachable.
+
+## Results
+
+### Phase 3 pre-flight (2026-10-07, before any paid call)
+
+- **Seal:** `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum` →
+  `9639b955…a2c33`, both in the working tree and at the tag `finder-sonnet-effort/seal`. The tag is on `origin`
+  (tag object `c770b7b…`, peeled to `794cfbe`). `gate-manifest.json` has no change against `HEAD` and reproduces
+  `ed78d1f4…acb7ac0`.
+- **Code:** at `794cfbe`, the six sealed files reproduce their §3 sha256 and
+  `HEAD:packages/code-reviewer/src` is `bb21da67…3cbc`. `packages/code-reviewer/src` and `scripts` have no
+  uncommitted changes. Fresh `sonnet-gate.mjs describe`, `describe --arm low` and `describe --arm medium` equal
+  manifest `global`, `arms.low` and `arms.medium` as JSON.
+- **Inputs:** all six frozen files in `~/.cache/finder-sonnet-gate/{247,269}/` reproduce their sha256 and byte
+  counts (§ Inputs freeze). `wt-247` is at `dec09f8…` and `wt-269` at `fca2778…`, both clean.
+- **Endpoint** (`GET /api/v1/models/anthropic/claude-sonnet-5/endpoints` and `GET /api/v1/models`, read
+  2026-10-07T19:47:52Z):
+  - the `anthropic` endpoint (`Anthropic | anthropic/claude-sonnet-5-20260630`, status 0) lists `tools`,
+    `structured_outputs`, `response_format`, `reasoning` and `reasoning_effort`;
+  - prompt `0.000002`, completion `0.00001` ($2 / $10 per M), unchanged;
+  - model `reasoning`: `{"mandatory":false,"default_enabled":true,"supported_efforts":["max","xhigh","high","medium","low"],"default_effort":"high"}`,
+    so `low` and `medium` are supported.
+- **Retained responses**, outside the repository in `~/.cache/finder-sonnet-effort-gate/preflight/`:
+  - `endpoints.json` (11,543 B, sha256 `80bdce61d06f2b73c1e17a4400dd33e7dab067b67e3ac0c1b1927e264203eb5d`);
+  - `models.json` (777,720 B, sha256 `9a60065830e0a5a5bc6a5bdad8e89556fa85c0d8c30eb93ef298b62bed8581e8`);
+  - `credits.json` (sha256 `1f8a2988b5640d68eecb9fe323a91f52631c28bc7f75933373326f7f9546f06e`) and `key.json`
+    (sha256 `e3db0c3ccd08a9e995a2c0d0f32a57fcc4faad9b072c475278fdac2704dbe143`), both read 2026-10-07T19:48:00Z;
+  - `describe.json`, `describe-low.json`, `describe-medium.json`.
+- **T0:** key counter **$53.374463** (`53.374462781`) at **2026-10-07T19:48:06Z**, recorded by `sonnet-gate.mjs t0`
+  as the first line of `gate-effort-runs.jsonl`.
+  - Six seconds earlier, `/credits` read `total_credits` $60 and `total_usage` $53.374463, so **$6.63 remains**,
+    more than the $4.00 budget.
+  - `/key` read `usage_daily` $0: nothing else had spent on the key that UTC day.
+  - The counter equals the predecessor's last settled reading ($53.374463, 2026-10-05T21:46:02Z), so nothing was
+    spent between that series and this T0, the seal included.
+- **Ceiling:** the counter must never exceed T0 + $4.00 = **$57.374463**.
+- **Run artifacts** go to `~/.cache/finder-sonnet-effort-gate/runs/<run-id>/` (`--artifacts`), not committed.
+  Each run's findings, verdict, steps, requests, retries and costs are in its JSONL record.
+
+### Ledger
+
+T = max(counter − T0, Σ settled run costs). Budget check before each run: T + P + $0.50 ≤ $4.00.
+
+| Run | Start (UTC) | T at start | P   | T + P + 0.50 | Counter before → after (settled) | Finder / judge telemetry | Retries | Finder steps (provider, finish, out / reasoning) | Requested effort / sent | Effort flag | Outcome | Settled cost | T after |
+| --- | ----------- | ---------- | --- | ------------ | -------------------------------- | ------------------------ | ------- | ------------------------------------------------ | ----------------------- | ----------- | ------- | ------------ | ------- |
