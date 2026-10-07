@@ -776,8 +776,8 @@ pushes and unchanged final reviewable code. Progress step titles remain unchange
 
 #### Automated
 
-- [x] 4.1 Every published finding in exactly one row, key complete
-- [x] 4.2 Each arm's projection recomputes
+- [x] 4.1 Every published finding in exactly one row, key complete — 30c9ae7
+- [x] 4.2 Each arm's projection recomputes — 30c9ae7
 
 #### Manual
 
