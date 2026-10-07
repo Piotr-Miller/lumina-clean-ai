@@ -1,0 +1,392 @@
+# finder-sonnet-effort — pre-registered gate
+
+> Plan: `context/changes/finder-sonnet-effort/plan.md`. Phase 2 writes the inputs freeze and the pre-registration
+> and seals the pre-registration before any paid call. Phases 3–5 measure and decide against it.
+> Owner decisions it carries (`change.md` § Notes and `plan.md` § Definitions): the 2026-10-06 choice to measure
+> `anthropic/claude-sonnet-5` as the finder at OpenRouter `reasoning.effort` **low** and **medium**, the $4.00
+> budget with a $0.50 G5 reserve, the balanced run order, the winner rule, and the unchanged ≤ $10/month cost gate.
+>
+> Predecessor gate: `context/archive/2026-10-05-finder-sonnet/gate.md` (verdict `NOT ADMITTED (reliability)` at
+> the endpoint-default effort `high`).
+
+## Inputs freeze
+
+Taken **2026-10-07** (Phase 2), after Phase 1's code landed (`56983a2`, fixed in `26323d6`) and before any paid
+call of this change. The predecessor's frozen inputs are reused: every file below was re-hashed and every recipe
+re-run on 2026-10-07, and each reproduced the predecessor's recorded bytes and sha256. Nothing was rebuilt.
+
+The diffs, rules files, PR metadata and worktrees live in `~/.cache/finder-sonnet-gate/` (kept by the owner since
+the predecessor) and are not committed. **Any mismatch at measurement time stops the measurement** — the runner
+refuses before the paid call (`sonnet-gate.mjs run`, input check).
+
+**Diff recipe** (unchanged from the predecessor):
+
+```
+git diff <base>...<head> -- . ':(exclude,glob)**/reviews/*.md' ':(exclude,glob)**/results/*.json' \
+  ':(exclude,glob)**/ground-truth/*' ':(exclude,glob)**/*.md' ':(exclude,glob)**/*.jsonl'
+```
+
+**Rules recipe:** `git show <base>:.github/ai-review-rules.md`. For both PRs it is byte-identical to the head's
+copy (re-checked 2026-10-07).
+
+**PR metadata recipe:** `gh pr view <n> --json title,body > meta.json`. Re-read 2026-10-07: both PRs' current
+title and body reproduce the frozen bytes.
+
+**Source root:** a clean detached worktree at `<head>`.
+
+### #247
+
+- **Base** `d097949bf217ecafb3333f63e757af67cc7daf07`; **head** `dec09f8d77b2f1ee45073c194d6cd8239a7d35c7`.
+- **Diff:** `247/pr.diff`, 10,838 B, sha256 `21973af35cc39f60488935583a85baf894a6c1a9b51069d16de86e701b5dc2e1`;
+  the recipe reproduces it.
+- **Rules:** `247/rules.md`, 2,929 B, sha256 `34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f`.
+- **Metadata:** `247/meta.json`, 2,059 B, sha256
+  `ec66879c3e33027ee2096677a4da060f5e68645c1fa3752ed376638cd9a24ff2`.
+- **Source root:** `~/.cache/finder-sonnet-gate/wt-247`; `HEAD` = head, `git status --porcelain` empty.
+
+### #269
+
+- **Base** `3d0adc1b4910c31973c6ac98a7ce776fcb68d878`; **head** `fca2778742ec0bc02a84f42b23bf639fc32c7ad1`.
+- **Diff:** `269/pr.diff`, 65,455 B, sha256 `1e4ec0882371989122f9e4254c93c4df1f51826a4f57dbfe04139175177e550f`;
+  the recipe reproduces it.
+- **Rules:** `269/rules.md`, 2,929 B, sha256 `34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f`.
+- **Metadata:** `269/meta.json`, 1,701 B, sha256
+  `00b7b21bd2d48b73442796a257feafc21689a296584ba1989b6f406374da82e7`.
+- **Source root:** `~/.cache/finder-sonnet-gate/wt-269`; `HEAD` = head, `git status --porcelain` empty.
+- **D2 re-confirmed at the head (2026-10-07):** in the worktree's `scripts/spikes/bread-spike.ts`, `localInput`
+  (`:167–196`) calls `process.exit(1)` at `:191–194` when the upload response has no `urls.get`, before
+  returning `uploadedFileId: file.id` at `:195`, so `deleteUpload` (`:199–213`) never sees the file. The diff
+  references `bread-spike.ts` 5 times.
+
+### Run manifest
+
+`context/changes/finder-sonnet-effort/gate-manifest.json` is what `sonnet-gate.mjs run --manifest` checks before
+every paid call:
+
+- `global`: the output of `sonnet-gate.mjs describe` at `26323d6`;
+- `arms`: the outputs of `describe --arm low` and `describe --arm medium`;
+- `runOrder`: the eight run ids of § Pre-registration §5;
+- `inputs`: the per-PR hashes and heads above, unchanged from the predecessor's manifest;
+- `budget`: `total 4`, `reserve 0.5`, `firstRunEstimate {247: 0.2, 269: 0.45}`.
+
+It is Prettier-formatted before hashing, so the pre-commit hook cannot change its bytes.
+
+- sha256 `ed78d1f4c32a1fb5cde3f00d20c09c2e24c3f09a62de90e9d0a4201acacb7ac0`.
+- **Dry pre-flight, no network (2026-10-07).** `main(["run", …])` ran against this manifest with the real `git`,
+  the package `.env`, a scratch series holding a placeholder T0, and a counter stub that throws.
+  - `low-247-r1` passed every pre-network check and stopped at the first counter read: run id, sealed order,
+    T0, clean `src`, inputs, clean source root, global manifest and arm configuration.
+  - `medium-247-r1` refused as out of the sealed order. `low-247-r3` refused as not in the sealed order.
+    `high-247-r1` refused as an unknown arm.
+  - Child CLI invocations: 0. Nothing was spent.
+
+## Pre-registration
+
+### 1. Arms
+
+Two arms, each one finder configuration. Everything except the finder's effort is production as sealed.
+
+- **Finder:** `anthropic/claude-sonnet-5`, pinned to OpenRouter's `anthropic` endpoint
+  (`resolveFinderProviderRouting()`), with request field `reasoning: {effort: <arm>}`, `<arm>` ∈ {`low`,
+  `medium`}. It runs the production `ToolLoopAgent` with strict `json_schema` output, a tool-less final step,
+  5 steps, a 16,384-token output cap per step and `withOneRetry`.
+- **Judge:** production `anthropic/claude-sonnet-5` (`DEFAULT_JUDGE_MODEL`), routing unchanged
+  (`resolveProviderRouting()`), with **no effort setting**.
+- **No impl-review pass:** no plan file is passed. Its cost enters the projection only through §6.
+- **Entry point:** `npm run review` in `packages/code-reviewer`, driven by `scripts/sonnet-gate.mjs run`. It
+  passes the arguments `action.yml` passes plus `--finder-reasoning-effort <arm>`: `--diff-file`, `--out-dir`,
+  `--source-root`, `--project-context-file`, and `PR_TITLE` / `PR_BODY` in the environment.
+- **Dark default:** `DEFAULT_FINDER_REASONING_EFFORT` is `undefined`. Without the flag the CLI sends no
+  `reasoning` field. Only the flag sets an arm.
+- **Not varied:** the output cap, retry policy, step limit and loop. Each would be its own arm (predecessor's full
+  review, § Dark code, item 1). A cap hit at low or medium is recorded and fails that arm.
+
+### 2. Effective configuration
+
+Resolved by `sonnet-gate.mjs describe --arm low|medium` at `26323d6` and pinned in `gate-manifest.json` §
+`arms.<arm>`. The two arms are identical except `resolved.finder.reasoningEffort`:
+
+- **finder:** model `anthropic/claude-sonnet-5`. Routing
+  `{"only":["anthropic"],"order":["anthropic"],"allow_fallbacks":false,"require_parameters":true}`.
+  `reasoningEffort` **`low`** or **`medium`**. Tool loop on, `maxSteps` 5, `maxOutputTokens` 16,384,
+  `timeoutMs` 300,000.
+- **judge:** model `anthropic/claude-sonnet-5`, routing `{"require_parameters":true}`, `maxOutputTokens` 16,384,
+  `timeoutMs` 300,000.
+- **implReview** (not run): model `anthropic/claude-sonnet-5`, `timeoutMs` 300,000, gate `code-review-passed`.
+- **retry:** `withOneRetry`, one retry per pass on `TimeoutError`, `NoObjectGeneratedError` or HTTP 429/5xx. It
+  never retries `NoOutputGeneratedError`. `sdkMaxRetries` 0.
+- **Behaviour environment:** `REVIEW_FINDER_MAX_STEPS`, `REVIEW_FINDER_TIMEOUT_MS`, `REVIEW_JUDGE_TIMEOUT_MS`,
+  `REVIEW_IMPL_REVIEW_TIMEOUT_MS`, `OPENROUTER_REQUIRE_PARAMETERS` are all unset. No `REVIEW_FINDER_MAX_STEPS`
+  repository variable exists (`gh variable list`, 2026-10-07).
+- **Environment policy** (runner pre-flight and child CLI alike): inherited environment >
+  `packages/code-reviewer/.env` > code defaults. The runner resolves the arm under that merge with the CLI's and
+  pipeline's own resolvers and hands the merged environment to the child.
+- **Global manifest** (`describe` without `--arm`, § `global.effectiveConfig`): the same values with
+  `reasoningEffort: null`, the dark default.
+- **Child evidence, checked per run** (`classifyRun`):
+  - The child's own `resolved configuration:` line must equal the sealed arm's `resolved`.
+  - Every outbound finder request, including retries, must carry exactly the sealed `model`, `provider`,
+    `reasoning: {effort: <arm>}` and `max_tokens` 16,384, as projected on the `finder request:` lines.
+  - A missing or different line is a measurement error, not a run result.
+  - This proves what the client sent, not what the provider applied.
+
+### 3. Code under test
+
+Taken at `26323d6`. Each equals `sha256sum` at that commit and `gate-manifest.json` § `global.codeHashes`:
+
+| File                      | sha256                                                             |
+| ------------------------- | ------------------------------------------------------------------ |
+| `src/config.ts`           | `16cb42e740f859f0d044997b9b16f8ceda4c085d4b16a4dbf45fede8c23cf65e` |
+| `src/reviewer.ts`         | `d79c2e94281870f8dad5c5074b9f6139ac7688991f0ce4bb6f945b60ea42c289` |
+| `src/prompts.ts`          | `fac7dc20fb3ae79d232e92e29a7a4dbcb4b40c509bffa3aba76a944f7e5ed3fa` |
+| `src/schemas.ts`          | `fabb3f0bcc682d1489e7fdef66bdc2771465e30d24a07d0eb7cdc20387f34ec5` |
+| `src/cli.ts`              | `776527240625a7cdfc44efffa5c330e40ea9eff036a3160daf3a5fd6fd60e690` |
+| `scripts/sonnet-gate.mjs` | `869069b5a1ac33462184f4ee6f73681a8ec0faa0571b8d311972b1e668d1e8c1` |
+
+- `src/cli.ts` is hashed because the runner parses its step, request and configuration lines.
+- **Finder wire schema** (`review_result`, as `describe` computes it from `tolerantReviewOutput()`): sha256
+  `a6e98d41add5055074b2a5556c512ddc9f5c6b5b1c3b0ad2eedb54cc43d095bf`. It **equals the predecessor's**: effort
+  does not change the schema.
+- **`packages/code-reviewer/src` git tree:** `bb21da6718c2f865295d8a8f61dadc9792923cbc`
+  (`git rev-parse 26323d6:packages/code-reviewer/src`). The runner refuses to start when that directory has
+  uncommitted changes.
+- **Run manifest:** `gate-manifest.json`, sha256
+  `ed78d1f4c32a1fb5cde3f00d20c09c2e24c3f09a62de90e9d0a4201acacb7ac0` (§ Inputs freeze).
+
+### 4. Definitions
+
+Restated from `plan.md` § Definitions; the plan's wording governs where the two differ.
+
+- **Arm:** one finder configuration, sonnet-5 @ `anthropic` with finder `reasoning: {effort: <arm>}`, `<arm>` ∈
+  {`low`, `medium`}. Everything else is production as sealed: judge unchanged, 16,384 cap, 5 steps,
+  `withOneRetry`.
+- **Run:** one production pipeline pass (finder → judge) through the production CLI for one arm and one PR.
+  - It **includes** the single built-in retry per pass. There is no outer retry.
+  - Run id `<arm>-<pr>-r<k>`.
+  - A run that hit a retry is still one run; retry use is recorded.
+  - An interrupted run is failed, never re-run.
+- **Valid run:** `review.json` produced, with parsed finder **and** judge output.
+  - Invalid: exhausted retries, a 4xx/5xx after the retry, `NoObjectGeneratedError` or `NoOutputGeneratedError`.
+  - **Measurement error:** OpenRouter 401/402, a runner or CLI crash, or a child configuration or request that
+    differs from the sealed arm. Stop; the owner decides. A measurement error is not a run result.
+- **Reliability gate:** every executed run **of the arm** valid, with each PR run twice per arm.
+  - One invalid run → that arm FAILS and ends; **the other arm continues**.
+  - A run not executed for budget → the arm is INCOMPLETE, never PASS.
+- **Published finding:** a finding in `review.json` `findings`. `findings: []` → N = 0.
+- **Hand-read acceptance (per run):** the owner classifies **every** published finding. **Zero rejected**, and
+  unresolved = rejected.
+  - **#247:** N = 0 passes.
+  - **#269:** the run's findings must include D2.
+  - Applied to every valid run of the arm.
+- **Blind classification:** the owner classifies rows without seeing which arm produced them. The arm key is
+  revealed after every row is classified. A finding produced by both arms is one row with both memberships.
+- **D2:** `scripts/spikes/bread-spike.ts:178–214` (`localInput`). The missing-`urls.get` exit leaks the
+  uploaded file.
+  - **Match:** the finding cites `bread-spike.ts` in `localInput`'s upload path or `main`'s cleanup, **and**
+    claims the file is not deleted or leaks on that exit.
+  - The agent proposes matches; **the owner approves** each one.
+- **Per-run cost:** finder + judge cost, retries included, settled as the key-counter delta.
+  - Settled by `reconcile`: two counter reads ≥ 180 s apart.
+  - Unsettled or unexplained spend blocks the next paid call.
+- **Projected monthly cost (per arm):** §6.
+- **Winner:** if both arms pass all gates, the arm with the **lower projected monthly cost** wins; within
+  $0.50, `low` wins.
+  - If one arm passes, it wins even if the other is incomplete.
+  - If neither passes, §10's precedence applies.
+- **Budget** and **P:** §8.
+- **Reasoning-volume anomaly:** a per-step heuristic, flagged to the owner before the next run. §9 gives the
+  thresholds.
+  - A flag is not an automatic verdict.
+  - No flag does not prove the provider honoured the effort.
+  - Requested effort and request-body evidence are recorded separately from observed tokens.
+  - Ignored effort can stay below the threshold; correctly applied adaptive effort can exceed it.
+
+### 5. Run order and probe
+
+**Owner, 2026-10-06; sealed as `gate-manifest.json` § `runOrder`:**
+
+1. Round 1: `low-247-r1` (probe) → `medium-247-r1` → `medium-269-r1` → `low-269-r1`.
+2. Round 2: `medium-247-r2` → `low-247-r2` → `low-269-r2` → `medium-269-r2`.
+
+How each run is carried out:
+
+- One run at a time, through `sonnet-gate.mjs run` with this manifest.
+- Series file: `--out context/changes/finder-sonnet-effort/gate-effort-runs.jsonl`.
+- Artifacts: `--artifacts ~/.cache/finder-sonnet-effort-gate/runs/<run-id>/`, outside the repository.
+- Inputs: the frozen files in `~/.cache/finder-sonnet-gate/` (§ Inputs freeze).
+- Each run is reconciled before the next paid call: `sonnet-gate.mjs reconcile`, two counter reads ≥ 180 s apart.
+
+How the runner enforces the order:
+
+- It runs only the next eligible entry. An unsealed id (including any `r3`) is refused before the CLI starts, and
+  so are an out-of-order id, a direct request for an ended arm, and an unknown arm.
+- An arm that has ended, through an invalid run or a recorded budget skip, has its later entries skipped in place.
+  The remaining arm keeps its sealed order.
+- A started run without a terminal record blocks the series and is never replaced.
+
+**The probe.** `low-247-r1` is the first run with an effort field on this endpoint. A provider rejection of
+`reasoning.effort`, a missing final JSON or a `finish=length` would appear there. Any of them makes the run
+invalid (or a measurement error), and the raw error text is reported to the owner first (the run's
+`stderr.log`).
+
+### 6. Cost
+
+**Formula (per arm):** **53 × m247 + 8 × m269 + 13 × $0.199620**.
+
+- **m247** and **m269** are the arm's mean per-run cost over its executed runs on that PR. Valid and invalid runs
+  both count; finder + judge, retries included, settled.
+- A PR with no executed run in the arm leaves that arm's projection INCOMPLETE. It is never zero and never
+  passing.
+- **Gate: ≤ $10.00/month**, which holds exactly when **53 × m247 + 8 × m269 ≤ $7.404940**. The impl-review term
+  is 13 × $0.199620 = $2.595060.
+
+**Reused, not re-measured** (assumption, stated). The counts 53 / 8 / 13 and the impl-review mean $0.199620 are
+the predecessor's sealed figures (`context/archive/2026-10-05-finder-sonnet/gate.md` § Pre-registration §6, data
+`gate-window-runs.tsv`, sha256 `45037f72e55b0ffafa4eade71a4b023b75b160f5f825502ff1d68c4bb0946efb`).
+
+- They are the observed review runs of the window 2026-09-05 to 2026-10-04, size-assigned at the 38,146 B midpoint
+  between the two frozen diffs.
+- They are reused for comparability with the predecessor.
+- The size assignment is an assumption, not a demonstrated cost bound.
+- `ai-review` has been off since `68151b0`, so later days add no active-review demand observations. The baseline
+  does not establish demand after re-enable.
+
+**After G5** (plan Phase 5): the winner's projection is recomputed with m247/m269 unchanged.
+
+- If G5 actually ran impl-review, the impl-review mean becomes `($0.199620 + G5 impl-review cost) / 2`;
+  otherwise it stays $0.199620.
+- Missing cost for an executed pass is unresolved, never zero.
+- A breach replaces the verdict with `NOT ADMITTED (cost)`.
+
+**Reported for information alongside the projection** (not gates): the size-assignment caveat; each arm's mean
+reasoning and answer tokens; the high-effort predecessor's figures ($13.902662/month projected; m247 $0.162874).
+
+### 7. Gates (per arm)
+
+1. **Reliability:** every executed run of the arm valid, each PR run twice (§4).
+2. **Hand-read #247:** every valid #247 run of the arm accepted (§4).
+3. **Hand-read #269:** every valid #269 run of the arm accepted, including D2 (§4).
+4. **Cost:** the arm's projected monthly cost ≤ $10.00 (§6).
+
+An arm passes only when all four pass. The **winner rule** (§4) picks at most one passing arm. G5 (plan Phase 5)
+is a further condition for merge, not for admission.
+
+### 8. Budget and P
+
+- **Budget: $4.00 in total**, covering all runs, retries and G5. **$0.50 is reserved for G5.**
+- **Before each measurement run:** T + P(next run) + $0.50 ≤ $4.00.
+- **Before G5:** T + $0.50 ≤ $4.00.
+- No automatic increase.
+- **T** = max(key counter − T0, Σ settled series spend), in USD since T0, G5 included.
+  - Each run's settled cost is its counter delta, so telemetry and counter are never added for the same run.
+  - Unresolved spend blocks further paid calls.
+- **T0** is read once from `GET /api/v1/key` (`sonnet-gate.mjs t0`), with its time, in the Phase 3 pre-flight.
+- **P**, computed per arm and PR. P is an estimate, not a cap.
+  - **First run of an arm on a PR:** **#247 $0.20**, **#269 $0.45**. These are the predecessor's high-effort costs,
+    rounded up, plus about $0.10 judge for #269.
+  - **Later run:** 2 × that arm's largest settled cost on that PR.
+- **A run that does not fit is not executed.** The runner records a non-paid `budget_skip` event for that run id.
+  Its arm ends INCOMPLETE (budget), and its later entries are skipped.
+- **Conditional affordability, not a worst-case bound.** Suppose each #247 run settles at $0.20 and each #269 run
+  at $0.45.
+  - The balanced order then reaches run 8 (`medium-269-r2`) with T = $2.15 and P = 2 × $0.45 = $0.90.
+  - The check is T + P + $0.50 = $3.55 ≤ $4.00, so it fits.
+  - The eight runs total $2.60; with $0.50 for G5, $3.10.
+  - P is not a provider spending cap, and retries or outliers may force budget skips or exceed an estimate. The
+    actual settled spend controls every admission check.
+- Budget figures in `gate-manifest.json`: `total 4`, `reserve 0.5`, `firstRunEstimate {247: 0.2, 269: 0.45}`.
+
+### 9. Stop rules
+
+- **An invalid run** ends its arm: reliability FAILs and nothing later can change that. The owner is told, with the
+  raw error text, before the next run (`sonnet-gate.mjs ack`). The other arm then continues in sealed order.
+- **A measurement error** (exit 3) stops the series for the owner: an OpenRouter 401/402, a CLI crash, a
+  finder-model mismatch, or a configuration or request mismatch against the sealed arm. Any fix needs a dated,
+  hashed amendment pushed before the next run (§11). A measurement error is not a run result and does not by
+  itself authorize resumption.
+- **An effort flag** stops for the owner (`ack`) before the next run.
+  - A step is flagged when its reported reasoning tokens exceed **3,604.7** for `low` (3,277 + 10%) or
+    **9,011.2** for `medium` (8,192 + 10%).
+  - A step is also flagged when its reasoning count is missing. `reasoning=?` is recorded as
+    `reasoningTokens: null`, never as zero.
+  - The reference values are OpenRouter's documented effort fractions (low 0.2, medium 0.5) of the 16,384 cap. They
+    are not ceilings the provider promises for adaptive Sonnet-5.
+- **Unsettled or unexplained spend:** no further paid call until `reconcile` settles it or the owner `resolve`s
+  it.
+- **Budget:** record a non-paid `budget_skip`. That run's arm ends INCOMPLETE (budget) and its later entries are
+  skipped.
+- **Phase 3 pre-flight:** stop and ask on any of these:
+  - a seal, code, `src` tree or input mismatch;
+  - a changed price (≠ $2 / $10 per M);
+  - the `anthropic` endpoint losing `tools`, `structured_outputs`, `response_format` or `reasoning`;
+  - `supported_efforts` no longer including `low` and `medium`.
+
+### 10. Verdict labels and precedence
+
+Exactly one overall label, chosen by this table. Each arm's outcomes are recorded alongside it:
+
+| Per-arm outcomes                                                   | Overall label                                                | Required accompanying record                                                                                                                       |
+| ------------------------------------------------------------------ | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| At least one arm passes all gates                                  | `ADMITTED (<winner>)`                                        | Apply the winner rule; record the other arm's outcomes, including budget incompleteness                                                            |
+| No arm passes all gates, and at least one arm is budget-incomplete | `INCOMPLETE (budget)`                                        | Record which arm is incomplete and all established failures of either arm                                                                          |
+| Both arms conclusively fail                                        | `NOT ADMITTED (low: <failed gates>; medium: <failed gates>)` | List every established failed gate per arm in order: reliability, hand-read #247, hand-read #269, cost; distinguish unmeasured gates from failures |
+
+- A passing arm takes precedence over the other arm's budget-incomplete state. Without a passing arm, any
+  budget-incomplete arm takes precedence over the NOT ADMITTED label.
+- An invalid run conclusively fails its arm's reliability even when later scheduled runs are skipped.
+- Missing valid #269 output cannot satisfy D2.
+- Absent cost data never becomes a zero or a passing cost gate.
+- A budget skip establishes INCOMPLETE for that arm, not a retrospective PASS.
+- A run ending in a measurement error is recorded as `failed run — measurement error`; it is not a verdict, and
+  this table does not authorize resumption or new runs.
+- **Not admitted** (either non-ADMITTED label): production is unchanged and plan Phase 5 does not run.
+
+### 11. Amendments
+
+A protocol change after the seal goes into a `## Amendments` section placed **after** the seal.
+
+- Each amendment is dated, carries its own sha256, and is committed and pushed to `origin` **before** the run it
+  affects.
+- Amendments never edit this section; the seal check covers this section only.
+- A code change after the seal changes a code hash, so the runner refuses until an amendment re-pins the manifest.
+
+### 12. Seal procedure
+
+1. The owner confirms the three plan-chosen terms one by one (§ Pre-registration seal): P (§8), blind
+   classification (§4), and the reasoning-volume anomaly flagging (§4, §9).
+2. The owner approves this section.
+3. The sha256 of this section is recorded with its UTC time, computed as
+   `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum` after
+   `npx prettier --check` passes on `gate.md` (the pre-commit hook must not change the hashed bytes). The state is
+   then committed and pushed.
+4. GitHub's push time is recorded (repository activity API). An annotated tag `finder-sonnet-effort/seal` on the
+   seal commit is pushed before any paid call.
+5. The seal is never recomputed.
+
+_End of Pre-registration._
+
+## Pre-registration seal
+
+**Sealed 2026-10-07.** The owner confirmed the three plan-chosen terms one by one and approved the section. The
+hash below was then taken by §12 and is never recomputed. Nothing in this section is part of the hashed bytes.
+
+### Plan-chosen terms (the owner confirms each one)
+
+1. P (§8): first run of an arm on a PR #247 $0.20 / #269 $0.45; later run 2 × that arm's largest settled cost on
+   that PR. — Confirmed: owner (date: 2026-10-07)
+2. Blind classification (§4): the owner classifies without seeing the arm; the key is revealed after every row
+   is classified; a finding produced by both arms is one row. — Confirmed: owner (date: 2026-10-07)
+3. Reasoning-volume anomaly flagging (§4, §9): thresholds 3,604.7 (`low`) and 9,011.2 (`medium`) reasoning tokens
+   per step, or a missing count; a flag stops for the owner; it is not a verdict either way. — Confirmed: owner
+   (date: 2026-10-07)
+
+### Approval and hash
+
+- Owner approval: approved by the owner as written (date: 2026-10-07; no edits before the seal).
+- sha256 of `## Pre-registration` … `_End of Pre-registration._` (284 lines):
+  **`9639b955e06e75244902b12348878196d534bc89aaba6e4f3db508a9b93a2c33`**, computed as
+  `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum` after
+  `npx prettier --check gate.md` passed.
+- UTC time taken: **2026-10-07T19:15:53Z**.
+- The seal commit, GitHub's push time and the tag `finder-sonnet-effort/seal` are recorded below once the push
+  has happened. A commit cannot contain its own SHA.
