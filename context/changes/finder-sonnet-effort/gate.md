@@ -445,10 +445,11 @@ hash below was then taken by §12 and is never recomputed. Nothing in this secti
 
 T = max(counter − T0, Σ settled run costs). Budget check before each run: T + P + $0.50 ≤ $4.00.
 
-| Run             | Start (UTC) | T at start | P     | T + P + 0.50 | Counter before → after (settled) | Finder / judge telemetry          | Retries | Finder steps (provider, finish, out / reasoning) | Requested effort / sent                            | Effort flag | Outcome                                       | Settled cost              | T after   |
-| --------------- | ----------- | ---------- | ----- | ------------ | -------------------------------- | --------------------------------- | ------- | ------------------------------------------------ | -------------------------------------------------- | ----------- | --------------------------------------------- | ------------------------- | --------- |
-| `low-247-r1`    | 19:49:06    | $0.000000  | $0.20 | $0.700000    | $53.374463 → $53.432809          | $0.028610 / $0.029736 = $0.058346 | none    | 1 (Anthropic, `stop`, 1,224 / 441)               | `low` / `{"effort":"low"}` on 1 of 1 request       | none        | **valid**: 4 findings, verdict `failed`, 46 s | $0.058346 (2nd reconcile) | $0.058346 |
-| `medium-247-r1` | 19:56:50    | $0.058346  | $0.20 | $0.758346    | $53.432809 → $53.508583          | $0.051160 / $0.024614 = $0.075774 | none    | 1 (Anthropic, `stop`, 3,479 / 2,647)             | `medium` / `{"effort":"medium"}` on 1 of 1 request | none        | **valid**: 3 findings, verdict `passed`, 61 s | $0.075774 (2nd reconcile) | $0.134120 |
+| Run             | Start (UTC) | T at start | P     | T + P + 0.50 | Counter before → after (settled) | Finder / judge telemetry          | Retries | Finder steps (provider, finish, out / reasoning)                           | Requested effort / sent                             | Effort flag | Outcome                                        | Settled cost              | T after   |
+| --------------- | ----------- | ---------- | ----- | ------------ | -------------------------------- | --------------------------------- | ------- | -------------------------------------------------------------------------- | --------------------------------------------------- | ----------- | ---------------------------------------------- | ------------------------- | --------- |
+| `low-247-r1`    | 19:49:06    | $0.000000  | $0.20 | $0.700000    | $53.374463 → $53.432809          | $0.028610 / $0.029736 = $0.058346 | none    | 1 (Anthropic, `stop`, 1,224 / 441)                                         | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `failed`, 46 s  | $0.058346 (2nd reconcile) | $0.058346 |
+| `medium-247-r1` | 19:56:50    | $0.058346  | $0.20 | $0.758346    | $53.432809 → $53.508583          | $0.051160 / $0.024614 = $0.075774 | none    | 1 (Anthropic, `stop`, 3,479 / 2,647)                                       | `medium` / `{"effort":"medium"}` on 1 of 1 request  | none        | **valid**: 3 findings, verdict `passed`, 61 s  | $0.075774 (2nd reconcile) | $0.134120 |
+| `medium-269-r1` | 20:04:38    | $0.134120  | $0.45 | $1.084120    | $53.508583 → $53.771985          | $0.240660 / $0.022742 = $0.263402 | none    | 2 (Anthropic `tool-calls`, 2,056 / 1,935; Anthropic `stop`, 8,553 / 7,538) | `medium` / `{"effort":"medium"}` on 2 of 2 requests | none        | **valid**: 4 findings, verdict `passed`, 139 s | $0.263402 (2nd reconcile) | $0.397522 |
 
 **`low-247-r1` notes (the probe).** The probe passed. The endpoint accepted `reasoning.effort: "low"` with no
 error. The finder answered in one step without a `getFileContext` call and wrote its final JSON
@@ -462,3 +463,11 @@ unmoved and settled the run at the delta, equal to telemetry.
 tokens against the 9,011.2 flag threshold. The child's configuration and its one finder request equal the sealed
 `medium` arm. The first `reconcile` (19:58:01Z → 20:01:01Z) saw the counter move and recorded `unsettled`; the
 second settled the run at the delta, equal to telemetry.
+
+**`medium-269-r1` notes.** The predecessor's failure point did not recur at `medium`. Step 1 called
+`getFileContext` for `src/lib/engines/types.ts` and `src/lib/engines/auto-params.ts` (`finish=tool-calls`).
+Step 2, tool-less, wrote its final JSON with 8,553 output tokens, 7,538 of them reported reasoning, and ended
+`finish=stop`, against a 16,384 cap and the 9,011.2 flag threshold. At `high`, the same step spent the full 16,384
+and wrote nothing. Both finder requests carried the sealed `medium` settings. The first `reconcile`
+(20:07:07Z → 20:10:07Z) saw the counter move and recorded `unsettled`; the second settled the run at the delta,
+equal to telemetry.
