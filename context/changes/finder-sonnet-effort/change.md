@@ -1,7 +1,7 @@
 ---
 change_id: finder-sonnet-effort
 title: "Measure sonnet-5 as finder at reasoning effort low and medium"
-status: implementing
+status: impl_reviewed
 created: 2026-10-06
 updated: 2026-10-07
 archived_at: null

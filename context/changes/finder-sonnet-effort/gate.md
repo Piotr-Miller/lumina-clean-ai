@@ -445,15 +445,16 @@ hash below was then taken by §12 and is never recomputed. Nothing in this secti
 
 T = max(counter − T0, Σ settled run costs). Budget check before each run: T + P + $0.50 ≤ $4.00.
 
-| Run             | Start (UTC) | T at start | P         | T + P + 0.50 | Counter before → after (settled) | Finder / judge telemetry          | Retries | Finder steps (provider, finish, out / reasoning)                           | Requested effort / sent                             | Effort flag | Outcome                                        | Settled cost              | T after   |
-| --------------- | ----------- | ---------- | --------- | ------------ | -------------------------------- | --------------------------------- | ------- | -------------------------------------------------------------------------- | --------------------------------------------------- | ----------- | ---------------------------------------------- | ------------------------- | --------- |
-| `low-247-r1`    | 19:49:06    | $0.000000  | $0.20     | $0.700000    | $53.374463 → $53.432809          | $0.028610 / $0.029736 = $0.058346 | none    | 1 (Anthropic, `stop`, 1,224 / 441)                                         | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `failed`, 46 s  | $0.058346 (2nd reconcile) | $0.058346 |
-| `medium-247-r1` | 19:56:50    | $0.058346  | $0.20     | $0.758346    | $53.432809 → $53.508583          | $0.051160 / $0.024614 = $0.075774 | none    | 1 (Anthropic, `stop`, 3,479 / 2,647)                                       | `medium` / `{"effort":"medium"}` on 1 of 1 request  | none        | **valid**: 3 findings, verdict `passed`, 61 s  | $0.075774 (2nd reconcile) | $0.134120 |
-| `medium-269-r1` | 20:04:38    | $0.134120  | $0.45     | $1.084120    | $53.508583 → $53.771985          | $0.240660 / $0.022742 = $0.263402 | none    | 2 (Anthropic `tool-calls`, 2,056 / 1,935; Anthropic `stop`, 8,553 / 7,538) | `medium` / `{"effort":"medium"}` on 2 of 2 requests | none        | **valid**: 4 findings, verdict `passed`, 139 s | $0.263402 (2nd reconcile) | $0.397522 |
-| `low-269-r1`    | 20:13:56    | $0.397522  | $0.45     | $1.347522    | $53.771985 → $53.898091          | $0.103132 / $0.022974 = $0.126106 | none    | 1 (Anthropic, `stop`, 3,839 / 2,588)                                       | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `passed`, 61 s  | $0.126106 (2nd reconcile) | $0.523628 |
-| `medium-247-r2` | 20:21:46    | $0.523628  | $0.151548 | $1.175176    | $53.898091 → $53.978049          | $0.042030 / $0.037928 = $0.079958 | none    | 1 (Anthropic, `stop`, 2,566 / 1,376)                                       | `medium` / `{"effort":"medium"}` on 1 of 1 request  | none        | **valid**: 6 findings, verdict `passed`, 62 s  | $0.079958 (2nd reconcile) | $0.603586 |
-| `low-247-r2`    | 20:29:20    | $0.603586  | $0.116692 | $1.220278    | $53.978049 → $54.033661          | $0.029860 / $0.025752 = $0.055612 | none    | 1 (Anthropic, `stop`, 1,349 / 543)                                         | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `passed`, 38 s  | $0.055612 (2nd reconcile) | $0.659198 |
-| `low-269-r2`    | 20:36:26    | $0.659198  | $0.252212 | $1.411410    | $54.033661 → $54.160839          | $0.104692 / $0.022486 = $0.127178 | none    | 1 (Anthropic, `stop`, 3,995 / 3,121)                                       | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `passed`, 62 s  | $0.127178 (2nd reconcile) | $0.786376 |
+| Run             | Start (UTC) | T at start | P         | T + P + 0.50 | Counter before → after (settled) | Finder / judge telemetry          | Retries | Finder steps (provider, finish, out / reasoning)                                                                                                | Requested effort / sent                             | Effort flag | Outcome                                        | Settled cost              | T after   |
+| --------------- | ----------- | ---------- | --------- | ------------ | -------------------------------- | --------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ----------- | ---------------------------------------------- | ------------------------- | --------- |
+| `low-247-r1`    | 19:49:06    | $0.000000  | $0.20     | $0.700000    | $53.374463 → $53.432809          | $0.028610 / $0.029736 = $0.058346 | none    | 1 (Anthropic, `stop`, 1,224 / 441)                                                                                                              | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `failed`, 46 s  | $0.058346 (2nd reconcile) | $0.058346 |
+| `medium-247-r1` | 19:56:50    | $0.058346  | $0.20     | $0.758346    | $53.432809 → $53.508583          | $0.051160 / $0.024614 = $0.075774 | none    | 1 (Anthropic, `stop`, 3,479 / 2,647)                                                                                                            | `medium` / `{"effort":"medium"}` on 1 of 1 request  | none        | **valid**: 3 findings, verdict `passed`, 61 s  | $0.075774 (2nd reconcile) | $0.134120 |
+| `medium-269-r1` | 20:04:38    | $0.134120  | $0.45     | $1.084120    | $53.508583 → $53.771985          | $0.240660 / $0.022742 = $0.263402 | none    | 2 (Anthropic `tool-calls`, 2,056 / 1,935; Anthropic `stop`, 8,553 / 7,538)                                                                      | `medium` / `{"effort":"medium"}` on 2 of 2 requests | none        | **valid**: 4 findings, verdict `passed`, 139 s | $0.263402 (2nd reconcile) | $0.397522 |
+| `low-269-r1`    | 20:13:56    | $0.397522  | $0.45     | $1.347522    | $53.771985 → $53.898091          | $0.103132 / $0.022974 = $0.126106 | none    | 1 (Anthropic, `stop`, 3,839 / 2,588)                                                                                                            | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `passed`, 61 s  | $0.126106 (2nd reconcile) | $0.523628 |
+| `medium-247-r2` | 20:21:46    | $0.523628  | $0.151548 | $1.175176    | $53.898091 → $53.978049          | $0.042030 / $0.037928 = $0.079958 | none    | 1 (Anthropic, `stop`, 2,566 / 1,376)                                                                                                            | `medium` / `{"effort":"medium"}` on 1 of 1 request  | none        | **valid**: 6 findings, verdict `passed`, 62 s  | $0.079958 (2nd reconcile) | $0.603586 |
+| `low-247-r2`    | 20:29:20    | $0.603586  | $0.116692 | $1.220278    | $53.978049 → $54.033661          | $0.029860 / $0.025752 = $0.055612 | none    | 1 (Anthropic, `stop`, 1,349 / 543)                                                                                                              | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `passed`, 38 s  | $0.055612 (2nd reconcile) | $0.659198 |
+| `low-269-r2`    | 20:36:26    | $0.659198  | $0.252212 | $1.411410    | $54.033661 → $54.160839          | $0.104692 / $0.022486 = $0.127178 | none    | 1 (Anthropic, `stop`, 3,995 / 3,121)                                                                                                            | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `passed`, 62 s  | $0.127178 (2nd reconcile) | $0.786376 |
+| `medium-269-r2` | 20:43:59    | $0.786376  | $0.526804 | $1.813180    | $54.160839 → $54.560493          | $0.369780 / $0.029874 = $0.399654 | none    | 4 (Anthropic `tool-calls`, 2,735 / 2,517; Anthropic `tool-calls`, 3,454 / 3,342; Anthropic `tool-calls`, 182 / 71; Anthropic `stop`, 1,019 / 0) | `medium` / `{"effort":"medium"}` on 4 of 4 requests | none        | **valid**: 3 findings, verdict `passed`, 111 s | $0.399654 (2nd reconcile) | $1.186030 |
 
 **`low-247-r1` notes (the probe).** The probe passed. The endpoint accepted `reasoning.effort: "low"` with no
 error. The finder answered in one step without a `getFileContext` call and wrote its final JSON
@@ -496,3 +497,29 @@ saw the counter move; the second (20:32:59Z → 20:35:59Z) settled at the delta,
 largest `low` step of the series. The first `reconcile` (20:37:28Z → 20:40:29Z) saw the counter move; the second
 (20:40:29Z → 20:43:29Z) settled at the delta, equal to telemetry. **The `low` arm's four sealed runs are all
 executed and valid.**
+
+**`medium-269-r2` notes.** P was 2 × the arm's largest settled #269 cost ($0.263402). The finder used four of its
+five steps: three `getFileContext` steps (`src/lib/engines/auto-params.ts:1-40` and
+`src/lib/engines/auto-params.client.ts:1-40`; `scripts/s17/desktop-stats.ts:190-225`;
+`scripts/s17/desktop-stats.ts:140-185`), then a tool-less step that wrote its final JSON (`finish=stop`). The
+largest reported reasoning count was 3,342. Step 4 reported an explicit `reasoning=0`; under the sealed rule it is
+recorded as `reasoningTokens: 0`, not as a missing count, and raises no flag. All four finder requests carried the
+sealed `medium` settings. It is the most expensive run of the series, $0.399654, against $0.263402 for
+`medium-269-r1`. The first `reconcile` (20:45:51Z → 20:48:51Z) saw the counter move; the second
+(20:48:51Z → 20:51:51Z) settled at the delta, equal to telemetry.
+
+### Series end (2026-10-07)
+
+- **All eight sealed runs executed, in the sealed order, and all eight valid.** No retries, no effort flag, no
+  measurement error, no budget skip, no owner stop.
+- **Spend:** T = **$1.186030** of the $4.00 budget, the sum of the eight settled counter deltas. The last settled
+  counter, $54.560493 (2026-10-07T20:51:51Z), equals T0 + T. The highest counter reading in the series is that
+  same value, below the ceiling T0 + $4.00 = $57.374463. $2.813970 of the budget remains, $0.50 of it reserved
+  for G5.
+- **Per arm** (settled costs; information for Phase 4, not a projection):
+  - `low`: #247 $0.058346, $0.055612; #269 $0.126106, $0.127178.
+  - `medium`: #247 $0.075774, $0.079958; #269 $0.263402, $0.399654.
+- **Largest reported reasoning per step:** `low` 3,121 (threshold 3,604.7); `medium` 7,538 (threshold 9,011.2). No
+  step ended `finish=length`.
+- **Phase 4** (blind hand-read, projections, verdict) works from the eight records in `gate-effort-runs.jsonl` and
+  the run artifacts in `~/.cache/finder-sonnet-effort-gate/runs/`.
