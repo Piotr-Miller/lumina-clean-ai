@@ -452,6 +452,7 @@ T = max(counter − T0, Σ settled run costs). Budget check before each run: T +
 | `medium-269-r1` | 20:04:38    | $0.134120  | $0.45     | $1.084120    | $53.508583 → $53.771985          | $0.240660 / $0.022742 = $0.263402 | none    | 2 (Anthropic `tool-calls`, 2,056 / 1,935; Anthropic `stop`, 8,553 / 7,538) | `medium` / `{"effort":"medium"}` on 2 of 2 requests | none        | **valid**: 4 findings, verdict `passed`, 139 s | $0.263402 (2nd reconcile) | $0.397522 |
 | `low-269-r1`    | 20:13:56    | $0.397522  | $0.45     | $1.347522    | $53.771985 → $53.898091          | $0.103132 / $0.022974 = $0.126106 | none    | 1 (Anthropic, `stop`, 3,839 / 2,588)                                       | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `passed`, 61 s  | $0.126106 (2nd reconcile) | $0.523628 |
 | `medium-247-r2` | 20:21:46    | $0.523628  | $0.151548 | $1.175176    | $53.898091 → $53.978049          | $0.042030 / $0.037928 = $0.079958 | none    | 1 (Anthropic, `stop`, 2,566 / 1,376)                                       | `medium` / `{"effort":"medium"}` on 1 of 1 request  | none        | **valid**: 6 findings, verdict `passed`, 62 s  | $0.079958 (2nd reconcile) | $0.603586 |
+| `low-247-r2`    | 20:29:20    | $0.603586  | $0.116692 | $1.220278    | $53.978049 → $54.033661          | $0.029860 / $0.025752 = $0.055612 | none    | 1 (Anthropic, `stop`, 1,349 / 543)                                         | `low` / `{"effort":"low"}` on 1 of 1 request        | none        | **valid**: 4 findings, verdict `passed`, 38 s  | $0.055612 (2nd reconcile) | $0.659198 |
 
 **`low-247-r1` notes (the probe).** The probe passed. The endpoint accepted `reasoning.effort: "low"` with no
 error. The finder answered in one step without a `getFileContext` call and wrote its final JSON
@@ -484,3 +485,7 @@ equal to telemetry. **Round 1 complete:** four runs, all valid, no retries, no e
 `getFileContext` call, `finish=stop`, 1,376 reported reasoning tokens. The first `reconcile`
 (20:22:49Z → 20:25:50Z) saw the counter move; the second (20:25:50Z → 20:28:50Z) settled at the delta, equal to
 telemetry.
+
+**`low-247-r2` notes.** P was 2 × the arm's largest settled #247 cost ($0.058346). One finder step without a
+`getFileContext` call, `finish=stop`, 543 reported reasoning tokens. The first `reconcile` (20:29:58Z → 20:32:58Z)
+saw the counter move; the second (20:32:59Z → 20:35:59Z) settled at the delta, equal to telemetry.
