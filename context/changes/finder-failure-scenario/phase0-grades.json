@@ -1,0 +1,144 @@
+{
+  "_note": "Contract layer (C) per member finding, graded from the finding's own text only (phase0.md §2). T/W: yes | no | borderline. Rescue: whether a revised finder could plausibly supply T and W from code facts already in the archived pre-sorts; never changes the outcome.",
+  "members": {
+    "low-247-r2#0": ["yes", "no", "says only that retention guidance is missing; names no wrong result"],
+    "medium-247-r1#0": ["no", "no", "testing gap; names no input and no wrong result"],
+    "medium-247-r2#0": [
+      "yes",
+      "borderline",
+      "'exposes internal infrastructure details' while conceding the ref is not a secret"
+    ],
+    "medium-247-r1#1": [
+      "no",
+      "borderline",
+      "'by accident … copy-pasted elsewhere', 'if the repo is ever public': hypothetical trigger"
+    ],
+    "medium-247-r2#1": ["yes", "yes", "shared multi-user host; other local users can read customer photos"],
+    "low-247-r1#0": ["yes", "yes", "placeholder-detection failure prints 24 characters of the secret"],
+    "low-247-r2#1": ["yes", "yes", "a failed sign-URL call or timeout aborts the remaining jobs"],
+    "medium-247-r2#2": [
+      "yes",
+      "no",
+      "KeyError traceback 'instead of the script's friendly die()': both end the script; message only"
+    ],
+    "low-247-r1#1": ["yes", "yes", "two jobs on one date: the second download overwrites the first"],
+    "medium-247-r2#3": ["yes", "yes", "stale files from an earlier run give a false 'missing' result"],
+    "low-247-r2#2": [
+      "borderline",
+      "borderline",
+      "'could silently misreport on edge-case JPEGs (e.g. APP markers with odd lengths)'"
+    ],
+    "medium-247-r2#4": ["no", "no", "'Same … issue as in prod-fetch-results.py': no scenario of its own"],
+    "low-247-r1#2": ["yes", "yes", "the placeholder check prints a fragment of the service-role key"],
+    "low-247-r1#3": ["yes", "yes", "a segment length past the 2,048 bytes raises and crashes the census"],
+    "low-247-r2#3": ["yes", "yes", "a truncated ranged response raises inside dimensions() and crashes the census"],
+    "medium-247-r2#5": [
+      "yes",
+      "borderline",
+      "unhandled KeyError 'breaking the … error-handling style'; does not say the work aborts"
+    ],
+    "medium-269-r1#0": ["yes", "no", "repeated manifest read; a cost with no stated consequence"],
+    "low-269-r2#0": ["yes", "no", "unclosed image handle, 'harmless for a short-lived CLI script'"],
+    "medium-269-r1#1": ["yes", "no", "unclosed image handle until GC; no consequence"],
+    "low-269-r2#1": ["no", "no", "testing gap 'to catch a regression'"],
+    "low-269-r1#0": ["no", "no", "testing gap 'to confirm the threshold logic actually flags differences'"],
+    "medium-269-r1#2": ["no", "no", "testing gap; correctness 'rests on prose'"],
+    "low-269-r1#1": ["no", "no", "'a future refactor or numpy-version edge case could silently shift tuning numbers'"],
+    "medium-269-r2#0": ["no", "no", "testing gap; no wrong result named"],
+    "low-269-r1#2": ["no", "no", "a reviewer 'can't verify the invariant independently': documentation"],
+    "low-269-r2#2": ["no", "borderline", "'a bug here would silently mis-report': hypothetical bug"],
+    "medium-269-r2#1": ["yes", "yes", "--compare with missing or stale photos crashes"],
+    "medium-269-r2#2": ["yes", "no", "'Harmless but slightly inconsistent'"],
+    "low-269-r1#3": ["no", "yes", "calls itself 'latent rather than active … fragile to future edits'"],
+    "low-269-r2#3": ["yes", "no", "dead branch 'never actually does anything'"],
+    "medium-269-r1#3": ["yes", "no", "dead branch 'could mislead a future reader'"],
+    "medium-247-r1#2": ["yes", "yes", "a short or empty body makes struct.unpack raise and aborts the census"],
+    "openai-pr269-01#1.1": ["yes", "yes", "EXIF 5-8: wrong source geometry changes Auto statistics"],
+    "openai-pr269-03#3.1": ["yes", "yes", "rotated inputs: different pixels than the browser"],
+    "openai-pr269-04#4.3": ["yes", "yes", "orientations 5-8: sample geometry breaks the documented rule"],
+    "openai-pr269-10#10.3": ["yes", "yes", "rotated inputs: unintended decode scale changes pixels"],
+    "openai-pr269-01#1.2": ["yes", "yes", "upload without urls.get: file remains in the Replicate account"],
+    "openai-pr269-02#2.1": ["yes", "yes", "upload without urls.get: uploaded inputs left in the account"],
+    "openai-pr269-03#3.2": ["yes", "yes", "upload without urls.get: file left until expiry"],
+    "openai-pr269-04#4.2": ["yes", "yes", "upload without urls.get: process.exit bypasses finally; file left"],
+    "openai-pr269-05#5.1": ["yes", "yes", "upload without urls.get: finally cannot delete; left until expiry"],
+    "openai-pr269-06#6.3": ["yes", "yes", "upload without urls.get: finally cannot delete; left until expiry"],
+    "openai-pr269-07#7.1": ["yes", "yes", "upload without urls.get: exit before cleanup; file left behind"],
+    "openai-pr269-08#8.2": ["yes", "yes", "upload without urls.get: finally cannot delete the file"],
+    "openai-pr269-04#4.1": ["yes", "yes", "two runs sharing an 8-char prefix: overwrite, wrong image shown"],
+    "openai-pr269-06#6.1": ["yes", "yes", "shared prefix: overwrite, sheet misrepresents a run"],
+    "openai-pr269-07#7.2": ["yes", "yes", "shared prefix: overwrite, wrong result displayed"],
+    "openai-pr269-08#8.1": ["yes", "yes", "shared prefix: overwrite, runs misrepresented"],
+    "openai-pr269-10#10.1": ["yes", "yes", "shared prefix: overwrite, wrong image for a run"],
+    "openai-pr269-01#1.5": [
+      "borderline",
+      "borderline",
+      "testing gap that names 'the orientation sizing defect' (D1) as what a test would catch"
+    ],
+    "openai-pr269-03#3.3": [
+      "no",
+      "borderline",
+      "'Changes in these behaviors can silently alter the Auto values': future change"
+    ],
+    "openai-pr269-09#9.5": ["no", "no", "testing gap; no wrong result named"],
+    "openai-pr269-04#4.5": ["no", "borderline", "'A regression can silently change …': future regression"],
+    "openai-pr269-07#7.4": ["no", "no", "failure cases 'not covered'; no wrong result of the current code"],
+    "openai-pr269-10#10.4": ["no", "borderline", "'Regressions can silently change measurements'"],
+    "openai-pr269-08#8.3": ["no", "borderline", "'Incorrect results here can be accepted': no trigger"],
+    "openai-pr269-05#5.4": [
+      "yes",
+      "yes",
+      "testing gap that names the trigger (requested photo with no runs) and an uncaught exception"
+    ],
+    "openai-pr269-09#9.6": ["no", "borderline", "'Regressions … could allow stale data to go unnoticed'"],
+    "openai-pr269-01#1.3": [
+      "yes",
+      "yes",
+      "missing baseline entry: uncaught exception 'rather than the documented controlled comparison failure'"
+    ],
+    "openai-pr269-09#9.4": [
+      "yes",
+      "yes",
+      "malformed JSON 'not handled as the documented comparison error (exit status 1)'"
+    ],
+    "openai-pr269-01#1.4": ["yes", "yes", "small image collapses the ROI: NaN means"],
+    "openai-pr269-09#9.3": ["yes", "yes", "profiled images: values are not sRGB, misleading comparisons"],
+    "openai-pr269-05#5.2": ["yes", "yes", "requested photo with no runs: min() raises ValueError"],
+    "openai-pr269-09#9.1": ["yes", "yes", "outputs smaller than the original: enlarged against the documented rule"],
+    "openai-pr269-05#5.3": ["yes", "yes", "draft smaller than target: enlargement, different pixels"],
+    "openai-pr269-06#6.2": [
+      "yes",
+      "borderline",
+      "--all with ids: 'unexpectedly' decodes validation inputs; no documented contract named"
+    ],
+    "openai-pr269-09#9.2": ["yes", "yes", "destination edges: buffers disagree with the browser sampler"],
+    "openai-pr269-04#4.4": [
+      "yes",
+      "no",
+      "typo in an id: uncaught exception 'rather than a clear harness error': both stop; message only"
+    ],
+    "openai-pr269-07#7.3": ["yes", "yes", "geometry mismatch within tolerance: reported as a match"],
+    "openai-pr269-10#10.2": ["yes", "yes", "non-OK create response: polls instead of terminating"],
+    "247-r1#0": [
+      "yes",
+      "borderline",
+      "customer photos persist in a non-auto-cleaned path; the complaint is the missing guidance"
+    ],
+    "247-r1#1": ["no", "no", "checks 'diverge … for no stated reason'; no wrong result"],
+    "247-r1#2": ["yes", "yes", "jobs table past the row cap: a present job reported 'NOT found'"],
+    "247-r1#3": ["yes", "yes", "SOF past the fetched range: struct.error aborts the census"],
+    "247-r1#4": ["yes", "yes", "jobs past the page size: CONFIRMED printed on a subset"]
+  },
+  "rescue": {
+    "E-R247-01": "plausible: the copied photos outlive the 24 h retention NFR (owner classified the same claim real, H-R1)",
+    "E-R247-02": "plausible: the short-PNG struct.error (E-R247-13-PNG, reproduced by the delegated session) is a concrete case a test would catch",
+    "E-R247-07": "plausible: per the pre-sort the sign call sits outside any try, so an HTTPError aborts the run, by another mechanism",
+    "E-R247-10": "plausible: same short-PNG case as E-R247-02",
+    "E-R247-14": "plausible: as E-R247-07 (sign call outside the try aborts the census)",
+    "E-R269-10": "plausible and notable: the uncovered window it describes contains D2's missing-urls.get exit; a finder required to name a reachable trigger could have named it, or could have dropped the finding as it is dropped here",
+    "G-D4": "no: the defect it leans on (D1) is contradicted by the code",
+    "G-D5": "partly: member 4.5 mentions 'leave uploaded files behind', the D2 consequence, without the trigger",
+    "G-D18": "no: owner basis is a missing friendly message; supplying a wrong result would be invention",
+    "H-R1": "plausible: retention NFR, as E-R247-01"
+  }
+}
