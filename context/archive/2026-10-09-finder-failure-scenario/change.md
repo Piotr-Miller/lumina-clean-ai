@@ -1,10 +1,11 @@
 ---
 change_id: finder-failure-scenario
 title: "Require every finder finding to state a concrete failure scenario, measured free before paid"
-status: new
+status: archived
+outcome: completed
 created: 2026-10-09
 updated: 2026-10-09
-archived_at: null
+archived_at: 2026-10-09T19:21:42Z
 ---
 
 ## Notes
