@@ -1,10 +1,11 @@
 ---
 change_id: finder-sonnet-effort
 title: "Measure sonnet-5 as finder at reasoning effort low and medium"
-status: implemented
+status: archived
+outcome: completed
 created: 2026-10-06
-updated: 2026-10-07
-archived_at: null
+updated: 2026-10-09
+archived_at: 2026-10-09T17:38:40Z
 ---
 
 ## Notes
@@ -25,7 +26,9 @@ effort `high`:
 Nowe effort wymaga nowej oceny jakości (hand-read). Kod Phase 1 z finder-sonnet (pin `anthropic`, logowanie
 providera, runner) jest tylko na `feat/finder-sonnet` (`33fdb79`, `624a936`).
 
-Werdykt (owner, 2026-10-07): **`NOT ADMITTED (low: hand-read #269; medium: hand-read #269)`** — `gate.md` §
+Werdykt (owner, 2026-10-07; etykieta poprawiona 2026-10-09):
+**`NOT ADMITTED (low: hand-read #247, hand-read #269; medium: hand-read #247, hand-read #269)`** — `gate.md` §
 Verdict. Niezawodność i koszt przechodzą w obu ramionach (low $6.63/mies., medium $9.37/mies.); żaden run #269 nie
-opublikował D2. Hand-read #247 sklasyfikował agent z delegacji właściciela — informacja, nie ustalenie właściciela
-(krok 4.4 otwarty). Produkcja bez zmian, `ai-review` wyłączony, Phase 5 nie rusza.
+opublikował D2. Hand-read #247 nie przechodzi z reguły „unresolved = rejected": właściciel nie przyjął klasyfikacji
+agenta (te są informacją). Krok 4.4 nie da się już wykonać na ślepo. Produkcja bez zmian, `ai-review` wyłączony,
+Phase 5 nie rusza.

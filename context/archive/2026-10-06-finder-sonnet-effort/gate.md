@@ -528,6 +528,11 @@ sealed `medium` settings. It is the most expensive run of the series, $0.399654,
 
 The owner instructed the agent to perform the pending classifications (“Zrob to”). The agent wrote an accepted/rejected decision and one-sentence reason for every row in `hand-read-247.md` and `hand-read-269.md` before opening `hand-read-key.json`. R247-13 was split before reveal: the short-PNG variant a is accepted as R247-13-PNG; JPEG variants b and c remain rejected as R247-13. This is delegated agent classification, not a claim that the owner personally classified each finding as the sealed protocol requires; the pre-registration and seal were not modified.
 
+**Limits of this record (full review F3, 2026-10-09).** The owner approved the 25-row dedup; the R247-13 split into
+26 rows came afterwards and was not re-approved, so plan step 4.3 covers the 25-row dedup only. The split moved
+the one `medium` member out of an otherwise all-`low` rejected row; no run result changed. That the delegated
+session classified blind rests on its own statement: no file records whether it had seen the arm mapping.
+
 Coverage verified against the eight cached `review.json` files: all 32 published findings map exactly once across 26 rows, with no unclassified row or missing membership. The approved no-D2 decision is unchanged.
 
 | Run             | Hand-read result from delegated classifications | Rejected rows                      |
@@ -541,7 +546,7 @@ Coverage verified against the eight cached `review.json` files: all 32 published
 | `medium-269-r1` | FAIL; D2 absent                                 | none                               |
 | `medium-269-r2` | FAIL; D2 absent                                 | R269-09                            |
 
-The delegated results fail hand-read #247 for both arms as well as the already-established hand-read #269 failure from absent D2. The overall NOT ADMITTED outcome established by the approved D2 decision is unchanged; Phase 5 does not run. The projections and the owner’s decision follow in § Phase 4 — cost projection and § Verdict.
+The delegated results also fail every #247 run; they are information, and hand-read #247 fails by the sealed rule instead (§ Verdict). Hand-read #269 fails from absent D2. The overall NOT ADMITTED outcome established by the approved D2 decision is unchanged; Phase 5 does not run. The projections and the owner’s decision follow in § Phase 4 — cost projection and § Verdict.
 
 ### Phase 4 — cost projection (§6, sealed formula)
 
@@ -568,29 +573,37 @@ Recomputed by a script that reads only the settled reconciliations and refuses a
   cap. At `medium` the #269 mean is $0.331528, with one run at $0.399654; at `low` both #269 runs stayed below
   $0.13.
 
-### Verdict (owner, 2026-10-07)
+### Verdict (owner, 2026-10-07; label corrected 2026-10-09)
 
-**`NOT ADMITTED (low: hand-read #269; medium: hand-read #269)`**
+**`NOT ADMITTED (low: hand-read #247, hand-read #269; medium: hand-read #247, hand-read #269)`**
+
+The owner first recorded `NOT ADMITTED (low: hand-read #269; medium: hand-read #269)` on 2026-10-07. The full
+implementation review (`reviews/impl-review-eba4b35.md` F1) showed that the sealed rule makes hand-read #247 a
+failure, and the owner re-recorded the label on 2026-10-09. The outcome is unchanged.
 
 Chosen by § Pre-registration §10: no arm passes all gates and neither is budget-incomplete, so both arms
 conclusively fail. Gates in the sealed order:
 
-| Gate           | `low`                                                                                    | `medium`                                                                                 |
-| -------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Reliability    | **PASS**: 4 of 4 runs valid, each PR twice, no retries                                   | **PASS**: 4 of 4 runs valid, each PR twice, no retries                                   |
-| Hand-read #247 | **Not established by the owner.** Delegated classification: both runs FAIL (information) | **Not established by the owner.** Delegated classification: both runs FAIL (information) |
-| Hand-read #269 | **FAIL**: neither run published D2                                                       | **FAIL**: neither run published D2                                                       |
-| Cost           | **PASS**: $6.628083/month                                                                | **PASS**: $9.374182/month                                                                |
+| Gate           | `low`                                                                        | `medium`                                                                     |
+| -------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Reliability    | **PASS**: 4 of 4 runs valid, each PR twice, no retries                       | **PASS**: 4 of 4 runs valid, each PR twice, no retries                       |
+| Hand-read #247 | **FAIL**: no owner classification, so every finding is unresolved = rejected | **FAIL**: no owner classification, so every finding is unresolved = rejected |
+| Hand-read #269 | **FAIL**: neither run published D2                                           | **FAIL**: neither run published D2                                           |
+| Cost           | **PASS**: $6.628083/month                                                    | **PASS**: $9.374182/month                                                    |
 
 - **Hand-read #269.** The owner approved, before classifying, that no #269 row matches D2 (`hand-read-269.md` §
   D2 match proposals). The only candidate, R269-10, holds one finding from one run and does not claim the leak on
   the missing-`urls.get` exit. Without D2 in every valid #269 run, the gate fails for both arms whatever the row
   classifications.
-- **Hand-read #247.** Every row was classified by an agent the owner delegated to, blind to the arm, before
-  `hand-read-key.json` was opened (§ Delegated blind classification and joined results). The sealed protocol
-  requires the owner's own classification. The owner did not adopt the delegated decisions, so this gate is
-  recorded as not established, not as a failure, and plan step 4.4 stays open. An owner-personal blind
-  classification is no longer possible: the joined per-run results now attribute rejected rows to runs.
+- **Hand-read #247.** The sealed rule (§ Pre-registration §4) is that the owner classifies every published finding,
+  with zero rejected and unresolved = rejected. The owner did not adopt the delegated classifications, so no #247
+  finding has an owner classification: each is unresolved and therefore rejected, and every #247 run (3–6
+  findings each) fails. This follows from the rule, not from a judgement of the findings.
+  - The delegated agent classifications (§ Delegated blind classification and joined results) are information.
+    They also fail every #247 run, but they are not the basis of this gate.
+  - **Plan step 4.4 cannot be completed blind.** The joined per-run results attribute rejected rows to runs, so an
+    owner-personal blind classification is no longer possible. The step stays open in Progress for that reason;
+    no later step depends on it.
 - **Winner rule:** not applied; no arm passes.
 - **Consequence (plan Phase 4 §3):** production is unchanged and `ai-review` stays off (`false &&` in
   `.github/workflows/review.yml`). Plan Phase 5 does not run. The dark code stays unmerged on
@@ -599,3 +612,26 @@ conclusively fail. Gates in the sealed order:
   `finish=length` at either effort, and at most 7,538 reasoning tokens in a step (`medium-269-r1`), against 16,384
   output tokens spent with no JSON at `high`. Both arms are within the cost gate. What failed is detection of D2,
   in all four #269 runs. Spend: $1.186030 of the $4.00 budget; the G5 reserve was not used.
+
+### Carry-forward for any reuse of this branch's code (full review, 2026-10-09)
+
+This branch's `packages/code-reviewer` changes stay unmerged. A successor that ports them, as this change ported
+`feat/finder-sonnet`, inherits these known defects (`reviews/impl-review-eba4b35.md`):
+
+- **The finder's Anthropic pin re-routes every other `createReviewer` caller** (F2). `src/reviewer.ts:218`
+  defaults `provider` to `resolveFinderProviderRouting()` (`only: ["anthropic"]`, `allow_fallbacks: false`) when a
+  caller passes no routing; at the base, no routing was sent. `evals/finder-provider.ts:185-204` passes none, so the
+  promptfoo rows for non-Anthropic models (`evals/promptfooconfig.yaml:30-63`) can only be routed to Anthropic and
+  come back as provider errors. The new `DEFAULT_MODEL` also moves `scripts/finder-distribution.mjs` and
+  `src/demo.ts` to sonnet-5, and the yaml's "production baseline" comment goes stale. Before merging, give the eval
+  provider its own routing or confine the pin to the CLI/pipeline path.
+- **Runner gaps in `scripts/sonnet-gate.mjs`** (F4). None affected this series.
+  - `MEASUREMENT_ERROR` (`:360-361`) is tested against the child's whole stderr before any success check (`:379`).
+    Step lines with bare token counts, `getFileContext` paths and rejected model text can match `\b(401|402)\b`:
+    a complete review with a step reporting `out=401` is classified `measurement-error`. It fails safe, since the
+    series stops for the owner. Match only the CLI's error line, and add that case as a test.
+  - `spawnReviewCli` (`:911-933`) has no `'error'` listener. A spawn failure crashes the runner after `started` is
+    appended, which leaves a blocking unresolved run with nothing spent.
+  - `readSeries` (`:180-185`) throws a raw `SyntaxError` on a torn JSONL line instead of a refusal naming the line.
+  - The default run directory without `--artifacts` is inside the tracked change folder and not gitignored. Each
+    record's `artifacts` field stores an absolute `/home/<user>/…` path, as the eight committed records here do.

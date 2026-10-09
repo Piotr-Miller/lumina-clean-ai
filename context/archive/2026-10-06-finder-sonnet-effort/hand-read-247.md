@@ -154,6 +154,7 @@ All row classifications, including the R247-13 split, were written before openin
 
 Coverage verified against all eight cached `review.json` files: 32 published findings, each mapped exactly once across 26 classified rows (25 original rows plus the pre-reveal PNG/JPEG split). No D2 match was added.
 
-**Owner decision (2026-10-07):** these #247 results are **information**. The owner did not adopt the delegated
-classifications as their own, so hand-read #247 is not an owner-established gate result and plan step 4.4 stays
-open. The verdict rests on hand-read #269 (`gate.md` § Verdict).
+**Owner decision (2026-10-07; corrected 2026-10-09):** these #247 results are **information**. The owner did not
+adopt the delegated classifications, so every #247 finding is unresolved, which the sealed rule counts as rejected:
+hand-read #247 fails for both arms by rule (`gate.md` § Verdict). Plan step 4.4 cannot be completed blind and stays
+open.
