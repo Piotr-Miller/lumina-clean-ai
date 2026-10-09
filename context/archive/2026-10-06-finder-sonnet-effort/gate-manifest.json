@@ -1,0 +1,177 @@
+{
+  "global": {
+    "codeHashes": {
+      "src/config.ts": "16cb42e740f859f0d044997b9b16f8ceda4c085d4b16a4dbf45fede8c23cf65e",
+      "src/reviewer.ts": "d79c2e94281870f8dad5c5074b9f6139ac7688991f0ce4bb6f945b60ea42c289",
+      "src/prompts.ts": "fac7dc20fb3ae79d232e92e29a7a4dbcb4b40c509bffa3aba76a944f7e5ed3fa",
+      "src/schemas.ts": "fabb3f0bcc682d1489e7fdef66bdc2771465e30d24a07d0eb7cdc20387f34ec5",
+      "src/cli.ts": "776527240625a7cdfc44efffa5c330e40ea9eff036a3160daf3a5fd6fd60e690",
+      "scripts/sonnet-gate.mjs": "869069b5a1ac33462184f4ee6f73681a8ec0faa0571b8d311972b1e668d1e8c1"
+    },
+    "srcTree": "bb21da6718c2f865295d8a8f61dadc9792923cbc",
+    "wireSchemaSha256": "a6e98d41add5055074b2a5556c512ddc9f5c6b5b1c3b0ad2eedb54cc43d095bf",
+    "effectiveConfig": {
+      "resolved": {
+        "finder": {
+          "model": "anthropic/claude-sonnet-5",
+          "routing": {
+            "only": ["anthropic"],
+            "order": ["anthropic"],
+            "allow_fallbacks": false,
+            "require_parameters": true
+          },
+          "reasoningEffort": null,
+          "toolLoop": true,
+          "maxSteps": 5,
+          "maxOutputTokens": 16384,
+          "timeoutMs": 300000
+        },
+        "judge": {
+          "model": "anthropic/claude-sonnet-5",
+          "routing": {
+            "require_parameters": true
+          },
+          "maxOutputTokens": 16384,
+          "timeoutMs": 300000
+        },
+        "implReview": {
+          "model": "anthropic/claude-sonnet-5",
+          "timeoutMs": 300000,
+          "gate": "code-review-passed"
+        },
+        "retry": {
+          "policy": "withOneRetry: one retry per pass on TimeoutError, NoObjectGeneratedError or HTTP 429/5xx; never on NoOutputGeneratedError",
+          "sdkMaxRetries": 0
+        }
+      },
+      "behaviourEnv": {
+        "REVIEW_FINDER_MAX_STEPS": null,
+        "REVIEW_FINDER_TIMEOUT_MS": null,
+        "REVIEW_JUDGE_TIMEOUT_MS": null,
+        "REVIEW_IMPL_REVIEW_TIMEOUT_MS": null,
+        "OPENROUTER_REQUIRE_PARAMETERS": null
+      },
+      "envPolicy": "inherited environment > packages/code-reviewer/.env > code defaults"
+    }
+  },
+  "arms": {
+    "low": {
+      "resolved": {
+        "finder": {
+          "model": "anthropic/claude-sonnet-5",
+          "routing": {
+            "only": ["anthropic"],
+            "order": ["anthropic"],
+            "allow_fallbacks": false,
+            "require_parameters": true
+          },
+          "reasoningEffort": "low",
+          "toolLoop": true,
+          "maxSteps": 5,
+          "maxOutputTokens": 16384,
+          "timeoutMs": 300000
+        },
+        "judge": {
+          "model": "anthropic/claude-sonnet-5",
+          "routing": {
+            "require_parameters": true
+          },
+          "maxOutputTokens": 16384,
+          "timeoutMs": 300000
+        },
+        "implReview": {
+          "model": "anthropic/claude-sonnet-5",
+          "timeoutMs": 300000,
+          "gate": "code-review-passed"
+        },
+        "retry": {
+          "policy": "withOneRetry: one retry per pass on TimeoutError, NoObjectGeneratedError or HTTP 429/5xx; never on NoOutputGeneratedError",
+          "sdkMaxRetries": 0
+        }
+      },
+      "behaviourEnv": {
+        "REVIEW_FINDER_MAX_STEPS": null,
+        "REVIEW_FINDER_TIMEOUT_MS": null,
+        "REVIEW_JUDGE_TIMEOUT_MS": null,
+        "REVIEW_IMPL_REVIEW_TIMEOUT_MS": null,
+        "OPENROUTER_REQUIRE_PARAMETERS": null
+      },
+      "envPolicy": "inherited environment > packages/code-reviewer/.env > code defaults"
+    },
+    "medium": {
+      "resolved": {
+        "finder": {
+          "model": "anthropic/claude-sonnet-5",
+          "routing": {
+            "only": ["anthropic"],
+            "order": ["anthropic"],
+            "allow_fallbacks": false,
+            "require_parameters": true
+          },
+          "reasoningEffort": "medium",
+          "toolLoop": true,
+          "maxSteps": 5,
+          "maxOutputTokens": 16384,
+          "timeoutMs": 300000
+        },
+        "judge": {
+          "model": "anthropic/claude-sonnet-5",
+          "routing": {
+            "require_parameters": true
+          },
+          "maxOutputTokens": 16384,
+          "timeoutMs": 300000
+        },
+        "implReview": {
+          "model": "anthropic/claude-sonnet-5",
+          "timeoutMs": 300000,
+          "gate": "code-review-passed"
+        },
+        "retry": {
+          "policy": "withOneRetry: one retry per pass on TimeoutError, NoObjectGeneratedError or HTTP 429/5xx; never on NoOutputGeneratedError",
+          "sdkMaxRetries": 0
+        }
+      },
+      "behaviourEnv": {
+        "REVIEW_FINDER_MAX_STEPS": null,
+        "REVIEW_FINDER_TIMEOUT_MS": null,
+        "REVIEW_JUDGE_TIMEOUT_MS": null,
+        "REVIEW_IMPL_REVIEW_TIMEOUT_MS": null,
+        "OPENROUTER_REQUIRE_PARAMETERS": null
+      },
+      "envPolicy": "inherited environment > packages/code-reviewer/.env > code defaults"
+    }
+  },
+  "runOrder": [
+    "low-247-r1",
+    "medium-247-r1",
+    "medium-269-r1",
+    "low-269-r1",
+    "medium-247-r2",
+    "low-247-r2",
+    "low-269-r2",
+    "medium-269-r2"
+  ],
+  "inputs": {
+    "247": {
+      "diff": "21973af35cc39f60488935583a85baf894a6c1a9b51069d16de86e701b5dc2e1",
+      "rules": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+      "prMeta": "ec66879c3e33027ee2096677a4da060f5e68645c1fa3752ed376638cd9a24ff2",
+      "head": "dec09f8d77b2f1ee45073c194d6cd8239a7d35c7"
+    },
+    "269": {
+      "diff": "1e4ec0882371989122f9e4254c93c4df1f51826a4f57dbfe04139175177e550f",
+      "rules": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+      "prMeta": "00b7b21bd2d48b73442796a257feafc21689a296584ba1989b6f406374da82e7",
+      "head": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1"
+    }
+  },
+  "budget": {
+    "total": 4,
+    "reserve": 0.5,
+    "firstRunEstimate": {
+      "247": 0.2,
+      "269": 0.45
+    }
+  }
+}
