@@ -1,0 +1,227 @@
+{
+  "summary": {
+    "files": 19,
+    "byInput": {
+      "#269": {
+        "files": 8,
+        "units": 37
+      },
+      "#240": {
+        "files": 7,
+        "units": 8
+      },
+      "fixture cross-hunk": {
+        "files": 1,
+        "units": 6
+      },
+      "fixture clean-change": {
+        "files": 1,
+        "units": 1
+      },
+      "fixture js-loop": {
+        "files": 1,
+        "units": 2
+      },
+      "fixture react-migration": {
+        "files": 1,
+        "units": 2
+      }
+    },
+    "units": 56,
+    "parserUnits": 56,
+    "mismatchedFiles": 0,
+    "typescript": "5.9.3"
+  },
+  "results": [
+    {
+      "input": "#269",
+      "rev": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1",
+      "path": "scripts/measure-hue-shares.py",
+      "parser": "python ast",
+      "units": 9,
+      "parserUnits": 9,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#269",
+      "rev": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1",
+      "path": "scripts/s17/auto-values.ts",
+      "parser": "typescript",
+      "units": 1,
+      "parserUnits": 1,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#269",
+      "rev": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1",
+      "path": "scripts/s17/browser-stats.ts",
+      "parser": "typescript",
+      "units": 2,
+      "parserUnits": 2,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#269",
+      "rev": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1",
+      "path": "scripts/s17/contact-sheet.py",
+      "parser": "python ast",
+      "units": 8,
+      "parserUnits": 8,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#269",
+      "rev": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1",
+      "path": "scripts/s17/decode-inputs.py",
+      "parser": "python ast",
+      "units": 4,
+      "parserUnits": 4,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#269",
+      "rev": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1",
+      "path": "scripts/s17/desktop-stats.ts",
+      "parser": "typescript",
+      "units": 6,
+      "parserUnits": 6,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#269",
+      "rev": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1",
+      "path": "scripts/s17/harness.ts",
+      "parser": "typescript",
+      "units": 1,
+      "parserUnits": 1,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#269",
+      "rev": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1",
+      "path": "scripts/spikes/bread-spike.ts",
+      "parser": "typescript",
+      "units": 6,
+      "parserUnits": 6,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#240",
+      "rev": "54d35575430f644876264397ac5c29b38db47f42",
+      "path": "src/components/enhance/BeforeAfterSlider.tsx",
+      "parser": "typescript",
+      "units": 1,
+      "parserUnits": 1,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#240",
+      "rev": "54d35575430f644876264397ac5c29b38db47f42",
+      "path": "src/components/enhance/EnhanceWorkspace.tsx",
+      "parser": "typescript",
+      "units": 2,
+      "parserUnits": 2,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#240",
+      "rev": "54d35575430f644876264397ac5c29b38db47f42",
+      "path": "src/lib/engines/result-scaling.ts",
+      "parser": "typescript",
+      "units": 2,
+      "parserUnits": 2,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#240",
+      "rev": "54d35575430f644876264397ac5c29b38db47f42",
+      "path": "src/lib/enhance-strings.ts",
+      "parser": "typescript",
+      "units": 0,
+      "parserUnits": 0,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#240",
+      "rev": "54d35575430f644876264397ac5c29b38db47f42",
+      "path": "tests/e2e/chroma-postpass-on.spec.ts",
+      "parser": "typescript",
+      "units": 1,
+      "parserUnits": 1,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#240",
+      "rev": "54d35575430f644876264397ac5c29b38db47f42",
+      "path": "tests/e2e/north-star-cloud-result.spec.ts",
+      "parser": "typescript",
+      "units": 1,
+      "parserUnits": 1,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "#240",
+      "rev": "54d35575430f644876264397ac5c29b38db47f42",
+      "path": "tests/result-scaling.test.ts",
+      "parser": "typescript",
+      "units": 1,
+      "parserUnits": 1,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "fixture cross-hunk",
+      "rev": "HEAD",
+      "path": "packages/code-reviewer/evals/fixtures/cross-hunk/src/lib/engines/canvas-helpers.ts",
+      "parser": "typescript",
+      "units": 6,
+      "parserUnits": 6,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "fixture clean-change",
+      "rev": "HEAD",
+      "path": "packages/code-reviewer/evals/fixtures/clean-change/src/lib/format-bytes.ts",
+      "parser": "typescript",
+      "units": 1,
+      "parserUnits": 1,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "fixture js-loop",
+      "rev": "HEAD",
+      "path": "packages/code-reviewer/evals/fixtures/js-loop/src/users.js",
+      "parser": "typescript",
+      "units": 2,
+      "parserUnits": 2,
+      "onlyE2": [],
+      "onlyParser": []
+    },
+    {
+      "input": "fixture react-migration",
+      "rev": "HEAD",
+      "path": "packages/code-reviewer/evals/fixtures/react-migration/src/components/MetricsPanel.jsx",
+      "parser": "typescript",
+      "units": 2,
+      "parserUnits": 2,
+      "onlyE2": [],
+      "onlyParser": []
+    }
+  ]
+}
