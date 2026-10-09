@@ -141,8 +141,9 @@ _End of Pre-registration._
   `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' phase0.md | sha256sum` after
   `npx prettier --check` passed.
 - UTC time taken: **2026-10-09T19:03:34Z**, before any row was graded.
-- Committed locally as `126427f` on `feat/finder-failure-scenario` by itself, before grading. It was **not pushed**, so there is
-  no external timestamp; the commit time is the only anchor until the owner pushes.
+- Committed as `126427f` on `feat/finder-failure-scenario` by itself, before grading. A rebase-merge rewrites
+  that SHA; the annotated tag **`finder-failure-scenario/prereg`** on `126427f`, pushed with the branch, keeps the
+  committed pre-registration reachable.
 
 ## Results (graded 2026-10-09, after the record above)
 
