@@ -1,0 +1,1520 @@
+[
+  {
+    "set": "E",
+    "row": "E-R247-01",
+    "member": "low-247-r2#0",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 1,
+      "endLine": 20,
+      "severity": "nit",
+      "category": "documentation",
+      "description": "The script downloads real, possibly PII-containing production user photos to a local temp directory by default; the safety contract documents what not to do with them (don't move into licensed test-photos) but doesn't mention retention/deletion guidance for the downloaded files themselves.",
+      "suggestion": "Add a note recommending the operator delete OUT_DIR after inspection, since these are live user photos.",
+      "id": "F1"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-02",
+    "member": "medium-247-r1#0",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 1,
+      "endLine": 93,
+      "severity": "nit",
+      "category": "testing",
+      "description": "Both new scripts talk to production with the service-role key and perform non-trivial parsing/logic (binary header parsing, signed-URL flow), but neither has any automated test (e.g. unit-testing the dimensions() parser against known-good/bad byte sequences, or the validation guard clauses).",
+      "suggestion": "Add minimal unit tests for the pure logic (placeholder/key validation, dimensions() parsing) that don't require network access, to protect against regressions in these safety checks.",
+      "id": "F1"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-03",
+    "member": "medium-247-r2#0",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 27,
+      "endLine": 27,
+      "severity": "minor",
+      "category": "security",
+      "description": "The production Supabase project ref (tebdkqpgjjypdethpezo) is hardcoded as the default URL and committed to the repo. While not a secret by itself, baking a specific production project identifier into version-controlled source needlessly exposes internal infrastructure details in git history.",
+      "suggestion": "Require SUPABASE_URL to be passed explicitly (or read from a local, gitignored config) rather than hardcoding the prod project ref as a fallback default.",
+      "id": "F1"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-03",
+    "member": "medium-247-r1#1",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 27,
+      "endLine": 27,
+      "severity": "minor",
+      "category": "security",
+      "description": "The production project URL (tebdkqpgjjypdethpezo.supabase.co) is hardcoded as the default in a script committed to the repo, duplicated in both new files. While not a secret by itself, baking the real production project ref into source control makes it easy to run destructive/exfiltration-capable tooling against prod by accident (e.g. copy-pasted elsewhere) and increases the attack surface if the repo is ever public.",
+      "suggestion": "Require SUPABASE_URL to be passed explicitly (or source it from a gitignored local config) rather than defaulting to the real production ref in committed code.",
+      "id": "F2"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-04",
+    "member": "medium-247-r2#1",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 33,
+      "endLine": 33,
+      "severity": "minor",
+      "category": "security",
+      "description": "OUT_DIR defaults to the shared system temp directory (tempfile.gettempdir()), which is often world-readable on multi-user systems. Downloaded production customer photos (explicitly noted as having no stated licence) could be readable by other local users.",
+      "suggestion": "Default to a directory under the user's home (e.g. ~/.cache/lumina-prod-results) with restrictive permissions, or create the temp dir with mode 0700.",
+      "id": "F2"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-05",
+    "member": "low-247-r1#0",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 41,
+      "endLine": 42,
+      "severity": "major",
+      "category": "security",
+      "description": "On a placeholder-detection failure the script prints `KEY[:24] + \"...\"` which is 24 real characters of the service-role secret straight to stderr/terminal/logs. This directly contradicts the file's own safety contract (\"never stored, logged or printed\") and the project rule that secrets must never appear in logs.",
+      "suggestion": "Redact entirely (e.g. print only whether it looks like a placeholder) instead of echoing any slice of the actual key value.",
+      "id": "F1"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-06",
+    "member": "low-247-r2#1",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 63,
+      "endLine": 80,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The main loop has no per-job error handling: a failed sign-URL call or a download timeout for one job aborts the entire script, losing results for jobs already processed in that run's message (though files already written remain).",
+      "suggestion": "Catch urllib.error per-job and continue, reporting the failure in the final summary alongside 'missing'.",
+      "id": "F2"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-07",
+    "member": "medium-247-r2#2",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 68,
+      "endLine": 68,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "If the sign API call returns an error payload instead of {'signedURL': ...} (e.g. object missing, auth issue), accessing signed['signedURL'] raises an unhandled KeyError with a raw traceback instead of the script's friendly die() pattern used elsewhere.",
+      "suggestion": "Wrap the sign call / key access and surface failures via die() with a clear message, consistent with the rest of the script's error handling.",
+      "id": "F3"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-08",
+    "member": "low-247-r1#1",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 76,
+      "endLine": 78,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "`dest` filenames are built from `created_at[:10]` (date only); if two selected jobs share the same date, the second download silently overwrites the first's saved file with no warning.",
+      "suggestion": "Include more of the id or full timestamp in the filename to avoid collisions.",
+      "id": "F2"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-09",
+    "member": "medium-247-r2#3",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 87,
+      "endLine": 87,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "The 'missing' check scans OUT_DIR for any existing file starting with the job prefix, which can produce false negatives if stale files from a previous run are present, or false positives if OUT_DIR is reused across unrelated invocations.",
+      "suggestion": "Track which prefixes were actually fetched during this run (e.g. a list of matched prefixes) instead of re-deriving it from directory listing.",
+      "id": "F4"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-10",
+    "member": "low-247-r2#2",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 1,
+      "endLine": 141,
+      "severity": "nit",
+      "category": "testing",
+      "description": "No automated tests cover the PNG/JPEG header-parsing logic (dimensions()), which is the core logic of this diagnostic and could silently misreport on edge-case JPEGs (e.g. APP markers with odd lengths).",
+      "suggestion": "Add a small unit test feeding known PNG/JPEG byte headers to dimensions() to pin expected (w,h,kind) output.",
+      "id": "F3"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-11",
+    "member": "medium-247-r2#4",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 23,
+      "endLine": 23,
+      "severity": "minor",
+      "category": "security",
+      "description": "Same hardcoded production project ref issue as in prod-fetch-results.py.",
+      "suggestion": "Avoid embedding the production project ref directly in committed source; source it from an untracked local file or require it as a mandatory argument.",
+      "id": "F5"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-12",
+    "member": "low-247-r1#2",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 46,
+      "endLine": 47,
+      "severity": "major",
+      "category": "security",
+      "description": "Same issue as in prod-fetch-results.py: the placeholder check prints `KEY[:24] + \"...\"`, exposing a real fragment of the service-role key in output/logs, contradicting the script's stated safety contract.",
+      "suggestion": "Avoid printing any substring of the real key; report only a boolean/length-based diagnostic.",
+      "id": "F3"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-13",
+    "member": "low-247-r1#3",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 79,
+      "endLine": 92,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The hand-rolled JPEG segment walker can run off the end of the truncated 2048-byte buffer when a segment length field points past the available bytes (struct.unpack on a short/missing slice raises), and this exception isn't caught, which will crash the whole census run on one malformed/truncated JPEG header.",
+      "suggestion": "Wrap dimensions() parsing in a try/except to classify unparsable headers as 'unreadable' instead of raising unhandled exceptions.",
+      "id": "F4"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-13",
+    "member": "low-247-r2#3",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 90,
+      "endLine": 108,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The JPEG marker parser can raise an unhandled struct.error/IndexError on malformed or truncated ranged responses (e.g. if the 2KB slice ends mid-segment), since only urllib.error.URLError is caught around the request, not parsing. A truncated download that happens to throw an exception inside dimensions() would crash the whole census run instead of being reported as 'unreadable'.",
+      "suggestion": "Wrap the dimensions() call in a try/except (struct.error, IndexError) and treat failures as 'unreadable' like the network-error path.",
+      "id": "F4"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-14",
+    "member": "medium-247-r2#5",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 100,
+      "endLine": 100,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "Same unguarded dict access pattern: signed['signedURL'] will throw an unhandled KeyError if the storage sign endpoint returns an error object instead of a signed URL, breaking the otherwise careful error-handling style of this diagnostic.",
+      "suggestion": "Check for an 'error' key or missing 'signedURL' and report via die() or a per-row 'unreadable' verdict instead of letting the exception propagate.",
+      "id": "F6"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-01",
+    "member": "medium-269-r1#0",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/measure-hue-shares.py",
+      "startLine": 117,
+      "endLine": 124,
+      "severity": "nit",
+      "category": "performance",
+      "description": "manifest_roi() re-reads and re-parses the whole s17-benchmark.json manifest from disk on every call. When measure() is invoked for many labels in one run (the documented batch usage: `label=path [label=path ...]`), this repeats the same file read/parse for each image.",
+      "suggestion": "Cache the parsed manifest entries (e.g. functools.lru_cache or a module-level dict) the first time it is loaded.",
+      "id": "F1"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-02",
+    "member": "low-269-r2#0",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/measure-hue-shares.py",
+      "startLine": 135,
+      "endLine": 140,
+      "severity": "nit",
+      "category": "style",
+      "description": "`original = Image.open(path)` is never explicitly closed (relies on GC); minor resource-handling nit, harmless for a short-lived CLI script but inconsistent with the explicit `with open(path, \"rb\")` used just above for hashing.",
+      "suggestion": "Use `with Image.open(path) as original:` or otherwise close the handle for consistency.",
+      "id": "F1"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-02",
+    "member": "medium-269-r1#1",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/measure-hue-shares.py",
+      "startLine": 150,
+      "endLine": 161,
+      "severity": "nit",
+      "category": "style",
+      "description": "`exposure()` opens `original` via `Image.open(path)` in `measure()` and never closes it (no `with`/context manager), leaving the file handle open until GC.",
+      "suggestion": "Use `with Image.open(path) as original:` or explicitly close it after use, consistent with the rest of the script's careful resource handling.",
+      "id": "F2"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-03",
+    "member": "low-269-r2#1",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": false,
+    "Lwhy": "file-level finding (no startLine)",
+    "finding": {
+      "file": "scripts/s17/browser-stats.ts",
+      "severity": "minor",
+      "category": "testing",
+      "description": "This file performs a non-trivial comparison (percentile binning, tolerance thresholds, exit-code semantics) between offline and browser-computed luma stats, but like the other new S-17 scripts there is no automated test exercising the comparison/threshold logic (e.g. with synthetic stats objects) to catch a regression in the bad/pass logic.",
+      "suggestion": "Add a small unit test for the comparison function (extract it from the Playwright-driving `main`) covering the percentile-bin rounding and the pass/fail thresholds.",
+      "id": "F2"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-03",
+    "member": "low-269-r1#0",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/browser-stats.ts",
+      "startLine": 41,
+      "endLine": 46,
+      "severity": "minor",
+      "category": "testing",
+      "description": "The parity-check tolerances (`CONTINUOUS_TOLERANCE = 0.001`, percentile bin equality) gate whether the browser-based diagnostic is considered trustworthy for Phase 2/3 tuning, but there's no test exercising `compare`/exit-code logic (e.g. a fixture pair of offline/browser JSON files with a deliberately introduced mismatch) to confirm the threshold logic actually flags differences as intended.",
+      "suggestion": "Add a lightweight test that feeds two synthetic `LumaStats` objects (one matching, one with a field just inside/outside tolerance) through the comparison logic and asserts the resulting exit status, to guard the threshold arithmetic itself from future edits.",
+      "id": "F1"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-04",
+    "member": "medium-269-r1#2",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 1,
+      "endLine": 197,
+      "severity": "minor",
+      "category": "testing",
+      "description": "The offline Auto harness (ICC→sRGB conversion, EXIF-orientation handling, the custom `point_bilinear`/`jpeg-draft` resampler, and ROI geometry in contact-sheet.py) is new, numerically sensitive logic that directly feeds tuning decisions (gamma/strength selection), yet none of the new scripts in `scripts/s17/` ship with any automated tests — correctness currently rests entirely on the prose in the docstrings and the manual `browser-stats.ts`/`desktop-stats.ts` cross-checks.",
+      "suggestion": "Add at least unit tests for the pure numeric pieces (`point_bilinear` against known small arrays, `manifest_roi`/ROI-slicing arithmetic, `exposure_stats`) so a regression in the resampling or ROI math is caught before it silently changes tuning parameters.",
+      "id": "F3"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-05",
+    "member": "low-269-r1#1",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 64,
+      "endLine": 90,
+      "severity": "minor",
+      "category": "testing",
+      "description": "`point_bilinear` is a hand-written 2-tap bilinear resampler that the harness relies on to reproduce Chromium's canvas sampling (and whose output directly drives gamma/strength tuning decisions per the docstring's own claim about S17-04 crossing the clip guard). There is no unit test pinning this function's output against known inputs/expected pixels, so a future refactor or numpy-version edge case (e.g. off-by-one in `np.floor`/clamping) could silently shift tuning numbers without any test failing.",
+      "suggestion": "Add a small pytest (or equivalent) that feeds `point_bilinear` a synthetic array with known expected output (e.g. a 2x2 gradient) and asserts exact pixel values, plus a regression test comparing against a stored golden output for one of the s17-v1 tuning photos.",
+      "id": "F2"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-05",
+    "member": "medium-269-r2#0",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 77,
+      "endLine": 91,
+      "severity": "minor",
+      "category": "testing",
+      "description": "`point_bilinear` reimplements the custom 2-tap bilinear sampler that the harness relies on to reproduce the browser's canvas downscaling (the docstring even cites a measured 0.13-level match vs. 2.4-level for Pillow's bilinear). This numerically sensitive function, which directly feeds tuning decisions in `calibration.md`/the plan, has no automated unit test (e.g. comparing against a few hand-computed pixels or against `browser-stats.ts`'s live browser output in CI) — only the ad hoc `browser-stats.ts` cross-check, which requires Playwright/Chromium and isn't run automatically.",
+      "suggestion": "Add a small pytest (or equivalent) that feeds `point_bilinear` a tiny synthetic array with a known expected result, to catch regressions in the resampling math independent of the heavier browser-parity harness.",
+      "id": "F1"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-06",
+    "member": "low-269-r1#2",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 23,
+      "endLine": 24,
+      "severity": "nit",
+      "category": "documentation",
+      "description": "BASELINE_SHA256 is a hardcoded hex digest pinning the tuning source; if the baseline file is ever regenerated for a legitimate reason, the only guidance is the comment pointing to \"the plan\" (an external doc not shown here), so a reviewer reading just this file can't verify the invariant independently.",
+      "suggestion": "Consider adding a short note of which command regenerates the baseline and what the plan document/section is named, so the hash's provenance is self-contained in-repo.",
+      "id": "F3"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-07",
+    "member": "low-269-r2#2",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 101,
+      "endLine": 123,
+      "severity": "minor",
+      "category": "testing",
+      "description": "The `compare()` function contains the same kind of threshold/rounding logic as browser-stats.ts (clip-guard side flips, Auto value equality) with no test coverage, and a bug here would silently mis-report whether retuning is required.",
+      "suggestion": "Extract `compare`'s core decision logic into a pure function and add unit tests with crafted LumaStats fixtures that straddle the CLIP_GUARD boundary.",
+      "id": "F3"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-08",
+    "member": "medium-269-r2#1",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 141,
+      "endLine": 162,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The module-level code unconditionally reads every tuning photo from disk and throws on any sha256 mismatch before the `--compare` branch is even checked (line 154-163, `argv`/`compareAt` parsed only afterwards at line 153). This means `--compare`, which only needs the manifest entries and the two JSON files being diffed, will crash if the (gitignored, licensed) photo files are missing or stale on the machine running the comparison — a plausible situation for a review/CI machine that only has the stats JSON files checked in.",
+      "suggestion": "Move the photo-loading/validation loop (and the `modules`/`html` construction used only for serving) behind the `compareAt === -1` branch, or gate it in a `main()`-like entry point so `--compare` only touches the manifest and the two stats files it actually compares.",
+      "id": "F2"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-09",
+    "member": "medium-269-r2#2",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "rejected",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 52,
+      "endLine": 52,
+      "severity": "nit",
+      "category": "documentation",
+      "description": "`DATA_URI_MAX_BYTES = 1_000_000` is commented/described as \"1 MB\" in both the file header and inline comment, but 1 MB is conventionally 1,048,576 bytes; the actual threshold is 1,000,000 bytes (≈0.95 MiB). Harmless but slightly inconsistent with itself when matching Replicate's stated 1 MB guidance.",
+      "suggestion": "Either rename the constant/comment to \"1,000,000 bytes (~1 MB)\" or use 1_048_576 if true binary-MB parity with Replicate's guidance is intended.",
+      "id": "F3"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-10",
+    "member": "low-269-r1#3",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 205,
+      "endLine": 219,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "`deleteUpload` is only invoked from the `finally` of `main()`, which wraps `runPrediction`; however if `localInput` itself throws after a successful upload but before `runPrediction` is called (e.g. a later exception between upload and the `try/finally`), the uploaded file would never be cleaned up. Currently the code path from `localInput` to the `try` block has no intervening throwable statements, so this is latent rather than active, but it's fragile to future edits.",
+      "suggestion": "Move the upload + prediction + cleanup into a single try/finally scope (or return the ImageInput from inside the try) so any future refactor can't reintroduce an uncovered throw between upload and cleanup.",
+      "id": "F4"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-11",
+    "member": "low-269-r2#3",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 245,
+      "endLine": 246,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The sidecar's `input` field checks `run.imageLabel.startsWith(\"data:\")`, but `imageLabel` is always set to either the local file path or a URL (`localPath ?? imageUrl`/`input.image`), never the data URI itself, so this branch can never be true. It reads as if it guards against logging a data URI but never actually does anything.",
+      "suggestion": "Remove the dead check or compare against `input.transport === \"data-uri\"` instead, which is the actual signal available.",
+      "id": "F4"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R269-11",
+    "member": "medium-269-r1#3",
+    "pr": 269,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 245,
+      "endLine": 246,
+      "severity": "nit",
+      "category": "style",
+      "description": "`run.imageLabel` is always set from `localPath ?? input.image`, so for the local-file path it is always the filesystem path, never a `data:` URI — the `imageLabel.startsWith(\"data:\")` branch in the sidecar can never be true. The check is vestigial and could mislead a future reader into thinking data URIs still reach this branch.",
+      "suggestion": "Remove the dead `startsWith(\"data:\")` check (or if intentionally defensive, add a comment explaining it can no longer trigger) so the sidecar-writing logic reads as it actually behaves.",
+      "id": "F4"
+    }
+  },
+  {
+    "set": "E",
+    "row": "E-R247-13-PNG",
+    "member": "medium-247-r1#2",
+    "pr": 247,
+    "owner": "unresolved",
+    "ownerBasis": null,
+    "delegated": "accepted",
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 65,
+      "endLine": 84,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "dimensions() assumes the ranged response contains enough bytes for struct.unpack (e.g. raw[16:24] for the PNG IHDR). If a stored object is smaller than the requested range or the server returns a short/empty body for any reason, struct.unpack will raise struct.error, which is not caught anywhere in the loop (only urllib.error.URLError is handled), aborting the entire census instead of marking that one row 'unreadable'.",
+      "suggestion": "Wrap the dimensions() call (or the unpacking inside it) in a try/except that treats malformed/short headers the same as the existing 'header not recognised' branch, so one bad object doesn't kill the whole run.",
+      "id": "F3"
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D1",
+    "member": "openai-pr269-01#1.1",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "code contradicts the claim",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 144,
+      "endLine": 151,
+      "severity": "major",
+      "category": "correctness",
+      "description": "For EXIF orientations 5–8, `w` and `h` are swapped to calculate the sample dimensions, but `img.draft()` receives those oriented dimensions even though it decodes in stored orientation. After `exif_transpose`, the draft dimensions are swapped, so the subsequent resampling uses the wrong source geometry and can change the Auto statistics for affected inputs.",
+      "suggestion": "Pass the requested draft size in stored orientation, then verify the oriented decoded dimensions and sample geometry before resampling. Add a fixture covering orientations 5–8."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D1",
+    "member": "openai-pr269-03#3.1",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "code contradicts the claim",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 117,
+      "endLine": 118,
+      "severity": "major",
+      "category": "correctness",
+      "description": "For EXIF orientations 5–8, the JPEG draft target dimensions are swapped before `img.draft()`, even though draft sizing uses the stored image orientation. The resulting decode geometry can be wrong after the later transpose, so `point_bilinear` samples different pixels from the browser on rotated inputs and can skew Auto diagnostics.",
+      "suggestion": "Request the draft size in stored orientation, then apply EXIF transpose and resize to the oriented sample dimensions; add a rotated-JPEG parity case."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D1",
+    "member": "openai-pr269-04#4.3",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "code contradicts the claim",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 118,
+      "endLine": 123,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "For rotated JPEGs, `draft()` is called before EXIF transpose using a target derived from oriented dimensions, then transpose is applied to the draft-decoded image. The decoder's scaling dimensions can therefore be wrong for orientations 5–8, producing a sample geometry that does not match the documented 512-pixel long-edge rule or the browser sampler.",
+      "suggestion": "Choose the draft target in stored-image coordinates consistently with the requested oriented sample size, then verify the resulting dimensions after transpose; add coverage for rotated JPEGs."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D1",
+    "member": "openai-pr269-10#10.3",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "code contradicts the claim",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 154,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "For EXIF orientations that swap width and height, `sw` and `sh` are oriented target dimensions, but `img.draft()` expects requested dimensions in the stored image's orientation. Passing `(sh, sw)` can select an unintended JPEG decode scale and change the pixels used for calibration.",
+      "suggestion": "Compute the requested draft dimensions explicitly in stored orientation from the oriented target dimensions, and test a rotated JPEG against the intended decode scale."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D2",
+    "member": "openai-pr269-01#1.2",
+    "pr": 269,
+    "owner": "real",
+    "ownerBasis": "real",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 178,
+      "endLine": 182,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "If the upload succeeds but the response has no `urls.get`, this exits before `localInput` returns an `ImageInput`. Consequently, `main` never reaches its `finally` cleanup with the uploaded file id, and the uploaded image remains in the Replicate account.",
+      "suggestion": "Retain the returned file id and attempt deletion when the URL is missing before exiting, or restructure upload handling so cleanup covers this failure path."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D2",
+    "member": "openai-pr269-02#2.1",
+    "pr": 269,
+    "owner": "real",
+    "ownerBasis": "real",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 185,
+      "endLine": 187,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "If Replicate accepts the upload but returns a response without `urls.get`, this exits before `localInput` returns and before the caller's `finally` can delete the uploaded file. Repeated malformed or unexpected responses can therefore leave uploaded inputs in the account.",
+      "suggestion": "Validate the response and, when it contains a file id but no URL, best-effort delete that file before exiting; alternatively return the upload metadata so the caller's cleanup path always runs."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D2",
+    "member": "openai-pr269-03#3.2",
+    "pr": 269,
+    "owner": "real",
+    "ownerBasis": "real",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 181,
+      "endLine": 183,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "If the upload succeeds but its response has no `urls.get`, the script exits without deleting the returned file. This leaves the uploaded input in the Replicate account until expiry, despite the normal cleanup path for uploaded inputs.",
+      "suggestion": "Retain the returned file id and attempt deletion before exiting, or route this failure through the same cleanup mechanism as prediction runs."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D2",
+    "member": "openai-pr269-04#4.2",
+    "pr": 269,
+    "owner": "real",
+    "ownerBasis": "real",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 200,
+      "endLine": 202,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "If the Files API accepts the upload but returns no `urls.get`, `process.exit(1)` terminates immediately, bypassing `main`'s `finally` cleanup. The uploaded file is left in the Replicate account, contrary to the best-effort cleanup path used for later failures.",
+      "suggestion": "Return a failure result or throw an error instead of exiting here, and retain the uploaded file ID so the `finally` block can attempt deletion."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D2",
+    "member": "openai-pr269-05#5.1",
+    "pr": 269,
+    "owner": "real",
+    "ownerBasis": "real",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 214,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "If Replicate accepts the upload but its response has no `urls.get`, this exits before `localInput` returns the uploaded file ID. The caller’s `finally` cannot then delete that file, leaving it in the account until expiry.",
+      "suggestion": "Retain the returned file ID before validating the URL and delete the file on this error path, or restructure upload cleanup so every successful upload is covered."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D2",
+    "member": "openai-pr269-06#6.3",
+    "pr": 269,
+    "owner": "real",
+    "ownerBasis": "real",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 192,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "If Replicate accepts the upload but the response has no `urls.get`, this path exits before returning an `ImageInput` with the uploaded file ID. The `finally` cleanup in `main` therefore cannot delete the uploaded file, leaving it in the account until it expires.",
+      "suggestion": "Retain the returned file ID and delete the upload before exiting this error path, or restructure upload handling so cleanup runs for every successful upload."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D2",
+    "member": "openai-pr269-07#7.1",
+    "pr": 269,
+    "owner": "real",
+    "ownerBasis": "real",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 194,
+      "endLine": 196,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "If the upload succeeds but the response lacks `urls.get`, `process.exit(1)` terminates before `main()` reaches its cleanup `finally`, leaving the newly uploaded file behind. This is especially likely to matter for malformed or changed API responses.",
+      "suggestion": "Throw or return an error instead of calling `process.exit()` here so control unwinds through `main()`'s `finally` and `deleteUpload()` can run; validate the returned file ID as well."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D2",
+    "member": "openai-pr269-08#8.2",
+    "pr": 269,
+    "owner": "real",
+    "ownerBasis": "real",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 193,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "If the Files API creates an upload but its response lacks `urls.get`, this function exits before returning the file ID. The caller's `finally` cleanup therefore cannot delete the uploaded file, leaving it in the account without the intended best-effort cleanup.",
+      "suggestion": "When the response includes a file ID but no URL, attempt to delete that file before exiting, and report cleanup failure."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D3",
+    "member": "openai-pr269-04#4.1",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "cannot occur with the harness's inputs",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 139,
+      "endLine": 140,
+      "severity": "major",
+      "category": "correctness",
+      "description": "Each output image is named using only the first eight characters of `prediction_id`. If two runs for one photo share that prefix, the later save overwrites the earlier image while both figures reference the same filename, so the sheet can display the wrong run for one or both parameter sets.",
+      "suggestion": "Use a collision-resistant filename such as the full prediction ID, or detect duplicate generated names and fail before writing the sheet."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D3",
+    "member": "openai-pr269-06#6.1",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "cannot occur with the harness's inputs",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 138,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "Output filenames use only the first eight characters of `prediction_id`. If two runs for the same photo share that prefix, the later save overwrites the earlier image and both figures then display the same output, making the contact sheet misrepresent a run.",
+      "suggestion": "Use the full prediction ID (or another collision-resistant name), or detect and reject duplicate output filenames."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D3",
+    "member": "openai-pr269-07#7.2",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "cannot occur with the harness's inputs",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 144,
+      "endLine": 145,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "Output filenames use only the first eight characters of `prediction_id`. If two runs share that prefix, one image overwrites the other, and both figures link to the overwritten file, so the contact sheet can display the wrong result for a run.",
+      "suggestion": "Use the full prediction ID for output filenames, or explicitly detect and reject collisions before writing the sheet."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D3",
+    "member": "openai-pr269-08#8.1",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "cannot occur with the harness's inputs",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 146,
+      "severity": "major",
+      "category": "correctness",
+      "description": "Each output image is named with only the first eight characters of `prediction_id`. If two runs for one photo share that prefix, the later image overwrites the earlier one while both figures still reference the same path, so the contact sheet can silently misrepresent the runs being compared.",
+      "suggestion": "Use the full prediction ID or another collision-resistant filename; alternatively, detect duplicate generated names and fail before writing the sheet."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D3",
+    "member": "openai-pr269-10#10.1",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "cannot occur with the harness's inputs",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 130,
+      "severity": "major",
+      "category": "correctness",
+      "description": "Output filenames use only the first eight characters of `prediction_id`. If two runs for the same photo share that prefix, the later save overwrites the earlier image while both figures still reference that path, so the sheet can show the wrong image for a run's parameters.",
+      "suggestion": "Use the full prediction ID in output filenames, or detect and reject filename collisions."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D4",
+    "member": "openai-pr269-01#1.5",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "missing tests for maintainer-only tooling",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 80,
+      "endLine": 151,
+      "severity": "minor",
+      "category": "testing",
+      "description": "The new decoder's output feeds the Auto tuning harness, but no tests exercise its EXIF orientation, ICC conversion, draft decoding, or custom resampling paths. The orientation sizing defect is one example of behavior that a focused fixture test would catch.",
+      "suggestion": "Add risk-weighted tests with small synthetic images, especially EXIF orientations 5–8, and assert oriented dimensions and sampled pixel/stat values."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D4",
+    "member": "openai-pr269-03#3.3",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "missing tests for maintainer-only tooling",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 1,
+      "endLine": 197,
+      "severity": "minor",
+      "category": "testing",
+      "description": "The new decoder performs EXIF orientation, ICC conversion, JPEG draft decoding, and custom resampling, but no executable tests are added for these transformations or their browser parity. Changes in these behaviors can silently alter the Auto values used for tuning.",
+      "suggestion": "Add focused fixtures for rotated and profiled images and a regression check against browser-produced sample pixels or stats."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D4",
+    "member": "openai-pr269-09#9.5",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "missing tests for maintainer-only tooling",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 1,
+      "endLine": 1,
+      "severity": "major",
+      "category": "testing",
+      "description": "The new offline decoder's pixel-sampling, EXIF orientation, and ICC conversion determine Auto calibration values, but the diff adds no tests for these behaviors. A small edge-focused fixture and browser parity regression would protect the central claim that this harness reproduces the app sampler.",
+      "suggestion": "Add tests using synthetic images with known edge pixels, EXIF orientations, and ICC profiles, and compare generated samples/statistics with the browser sampler."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D5",
+    "member": "openai-pr269-04#4.5",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "missing tests for maintainer-only tooling",
+    "delegated": null,
+    "L": false,
+    "Lwhy": "directory or non-file path",
+    "finding": {
+      "file": "scripts/s17",
+      "severity": "minor",
+      "category": "testing",
+      "description": "The new harness adds consequential decoding/orientation logic, browser-parity checks, upload and cleanup behavior, and validation of run records, but no tests are added for these paths. A regression can silently change calibration inputs or leave uploaded files behind.",
+      "suggestion": "Add focused tests for rotated-image sample dimensions, upload success and failure cleanup, and contact-sheet checksum/record validation."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D5",
+    "member": "openai-pr269-07#7.4",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "missing tests for maintainer-only tooling",
+    "delegated": null,
+    "L": false,
+    "Lwhy": "directory or non-file path",
+    "finding": {
+      "file": "scripts/s17",
+      "severity": "major",
+      "category": "testing",
+      "description": "The PR adds substantial new decoding, ROI, browser-parity, contact-sheet, and upload/cleanup behavior without tests. In particular, the uploaded-file cleanup path and diagnostic handling of empty or malformed regions have failure cases that are not covered by the scripts' successful-path output.",
+      "suggestion": "Add focused tests for the highest-risk behaviors, especially upload cleanup on prediction failure and missing upload metadata, ROI bounds/empty regions, contact-sheet filename collisions, and parity status on dimension mismatches."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D5",
+    "member": "openai-pr269-10#10.4",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "missing tests for maintainer-only tooling",
+    "delegated": null,
+    "L": false,
+    "Lwhy": "directory or non-file path",
+    "finding": {
+      "file": "scripts/s17/",
+      "severity": "major",
+      "category": "testing",
+      "description": "This change adds calibration paths whose output guides model tuning, plus upload, polling, cleanup, and contact-sheet logic, but includes no tests. Regressions can silently change measurements or misrepresent model outputs.",
+      "suggestion": "Add risk-weighted tests for EXIF/JPEG draft sizing, create failures, large-file upload and cleanup, and contact-sheet output naming and record validation."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D6",
+    "member": "openai-pr269-08#8.3",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "missing tests for maintainer-only tooling",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/auto-values.ts",
+      "startLine": 1,
+      "severity": "major",
+      "category": "testing",
+      "description": "The new calibration harness has no tests in this diff for its decoding, computed recommendations, or record-validation behavior. Incorrect results here can be accepted as calibration data; the useful parity checks only compare runs and do not establish that malformed or mismatched inputs are rejected correctly.",
+      "suggestion": "Add automated tests for the risky user-visible behaviors, including malformed RGBA lengths, missing records, and input-hash mismatches; include coverage for the contact-sheet collision case and upload cleanup failure path."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D7",
+    "member": "openai-pr269-05#5.4",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "missing tests for maintainer-only tooling",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 140,
+      "endLine": 141,
+      "severity": "minor",
+      "category": "testing",
+      "description": "The new contact-sheet CLI has no coverage for empty scans or requested photos with no runs, despite those cases taking different user-visible paths, including an uncaught exception.",
+      "suggestion": "Add CLI-level tests for an empty scan and a requested tuning ID with no matching run records, asserting clear output and exit status."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D8",
+    "member": "openai-pr269-09#9.6",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "missing tests for maintainer-only tooling",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 1,
+      "endLine": 1,
+      "severity": "minor",
+      "category": "testing",
+      "description": "The comparison tool is intended to gate parameter changes and clip-guard flips, but no tests exercise its exit decisions or malformed-input handling. Regressions in this decision logic could allow stale or changed calibration data to go unnoticed.",
+      "suggestion": "Add focused tests for unchanged records, Auto-value changes, clip-guard boundary flips, missing fields, and malformed JSON."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D9",
+    "member": "openai-pr269-01#1.3",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "only a friendlier message is missing, no wrong result",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 119,
+      "endLine": 120,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The comparison validates that each new record exists, but assumes the corresponding baseline record exists and that both records contain numeric fields. A missing or malformed baseline entry causes an uncaught exception rather than the documented controlled comparison failure; malformed values can also produce misleading results.",
+      "suggestion": "Validate baseline and new records for every tuning id and require finite numbers for all compared fields before computing recommendations or deltas; report invalid input and exit with status 1."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D10",
+    "member": "openai-pr269-09#9.4",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "only a friendlier message is missing, no wrong result",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 75,
+      "endLine": 76,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "Malformed JSON and unexpected record shapes are not handled as the documented comparison error (exit status 1). JSON.parse exceptions escape, and missing baseline entries or fields can cause unrelated runtime errors during Auto calculation.",
+      "suggestion": "Catch parse errors and validate that both records contain every tuning id and all expected finite LumaStats fields before comparing; report a clear error and exit 1 on invalid input."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D11",
+    "member": "openai-pr269-01#1.4",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "cannot occur with the harness's inputs",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/measure-hue-shares.py",
+      "startLine": 134,
+      "endLine": 136,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "A floored manifest ROI can collapse to zero width or height for sufficiently small images. `exposure_stats` then attempts to average an empty array, producing NaN means and misleading diagnostics.",
+      "suggestion": "Check that the computed ROI has positive width and height; report a clear error or handle an empty ROI explicitly."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D12",
+    "member": "openai-pr269-09#9.3",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "documented, deliberate method",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/measure-hue-shares.py",
+      "startLine": 34,
+      "endLine": 35,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The new exposure diagnostic says it reports encoded RGB values, but converting to RGB does not apply an embedded ICC profile. For profiled images, the reported exposure and clipping shares therefore describe profile-encoded channel values, not the sRGB values produced by the browser/app decode path; this can mislead comparisons with the harness output.",
+      "suggestion": "Explicitly define the metric as stored/profile-encoded channel values and distinguish it from app-input exposure, or convert embedded profiles to sRGB consistently with decode-inputs.py and update the method description."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D13",
+    "member": "openai-pr269-05#5.2",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "code contradicts the claim",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 140,
+      "endLine": 141,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "For an explicitly requested tuning photo with no runs, `outputs` and `sizes` are empty and `min(sizes, ...)` raises `ValueError`. With no requested IDs, an entirely empty scan instead creates an empty index without explaining that no runs were found.",
+      "suggestion": "Handle empty run sets before building a photo: report a clear error for requested IDs and a clear no-runs result for an empty default scan."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D14",
+    "member": "openai-pr269-09#9.1",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "code contradicts the claim",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 139,
+      "endLine": 139,
+      "severity": "major",
+      "category": "correctness",
+      "description": "The target size is selected only from model outputs, so if all outputs are smaller than the original, the original is enlarged despite the documented no-enlargement rule. Resizing every image to that width and height can also distort images with differing aspect ratios, making the visual comparisons misleading.",
+      "suggestion": "Compute a shared display scale that preserves aspect ratio and is no greater than 1 for every source image, then resize each image proportionally to that scale."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D15",
+    "member": "openai-pr269-05#5.3",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "code contradicts the claim",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 167,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The `jpeg-draft` path assumes Pillow’s reduced JPEG decode still covers the requested sample dimensions. `draft()` can return dimensions smaller than the target; `point_bilinear()` then enlarges that image, producing different sample pixels than the documented decode-and-downscale method.",
+      "suggestion": "Check the post-draft dimensions and use a fallback decode/resampling path when either dimension is below the target; add a fixture that exercises an undersized draft."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D16",
+    "member": "openai-pr269-06#6.2",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "only a friendlier message is missing, no wrong result",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 193,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "When `--all` and positional IDs are both supplied, `--all` silently takes precedence and decodes every manifest entry. A caller intending to process only the named photos can therefore unexpectedly decode validation inputs as well.",
+      "suggestion": "Reject the combination of `--all` and positional IDs, or explicitly define and document the intended behavior."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D17",
+    "member": "openai-pr269-09#9.2",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "cannot occur with the harness's inputs",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 55,
+      "endLine": 57,
+      "severity": "major",
+      "category": "correctness",
+      "description": "The sampler clamps source coordinates before deriving interpolation weights. At destination edges, this differs from sampling at the original pixel-center coordinate, so the generated RGBA buffers can disagree with the browser sampler the harness claims to mirror and can skew the Auto cross-check.",
+      "suggestion": "Derive interpolation weights from the unclamped pixel-center coordinates and clamp only the neighbor indices, or add edge-focused comparisons against browser getImageData and implement the behavior those tests establish."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D18",
+    "member": "openai-pr269-04#4.4",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "only a friendlier message is missing, no wrong result",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/auto-values.ts",
+      "startLine": 29,
+      "endLine": 34,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "When IDs are supplied explicitly, the script assumes each corresponding `.meta.json` exists. A typo or missing decode causes an uncaught filesystem exception rather than a clear harness error, making the documented named-ID workflow brittle.",
+      "suggestion": "Check that each requested metadata file exists before processing and report the missing ID with guidance to run `decode-inputs.py`."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D19",
+    "member": "openai-pr269-07#7.3",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "only a friendlier message is missing, no wrong result",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/s17/browser-stats.ts",
+      "startLine": 184,
+      "endLine": 186,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The parity decision compares summary statistics but never checks the browser sample's natural dimensions against the offline sample dimensions. A sizing or decode-geometry mismatch can therefore be reported as a match if the statistics happen to fall within tolerance.",
+      "suggestion": "Include a dimension comparison in the per-entry parity status and report it alongside the existing offline and natural dimensions."
+    }
+  },
+  {
+    "set": "G",
+    "row": "G-D20",
+    "member": "openai-pr269-10#10.2",
+    "pr": 269,
+    "owner": "rejected",
+    "ownerBasis": "code contradicts the claim",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 115,
+      "severity": "major",
+      "category": "correctness",
+      "description": "After a non-OK create response, setting `process.exitCode` and returning only exits `runPrediction`'s `if` block; execution continues to parse the error body as a prediction and poll using its missing ID. A failed create can therefore spin through polling instead of terminating promptly.",
+      "suggestion": "Return from `runPrediction` immediately after handling the failed response, or throw an error that stops the polling flow."
+    }
+  },
+  {
+    "set": "H",
+    "row": "H-R1",
+    "member": "247-r1#0",
+    "pr": 247,
+    "owner": "real",
+    "ownerBasis": "no retention guidance for copied production photos",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 38,
+      "endLine": 38,
+      "severity": "minor",
+      "category": "documentation",
+      "description": "The script downloads real, licence-less production customer photographs to a persistent local path (`tempfile.gettempdir()` by default, which is not auto-cleaned on many systems) with no retention/cleanup guidance beyond \"don't commit them\". Given these are customer-submitted images, the safety contract should say what happens to them after inspection (e.g., required deletion, no re-upload, no inclusion in bug reports).",
+      "suggestion": "Extend the safety-contract docstring with an explicit retention/cleanup expectation for the downloaded files, or have the script offer to delete them after use.",
+      "id": "F1"
+    }
+  },
+  {
+    "set": "H",
+    "row": "H-R2",
+    "member": "247-r1#1",
+    "pr": 247,
+    "owner": "rejected",
+    "ownerBasis": "only an earlier message is missing, no wrong result",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 47,
+      "endLine": 56,
+      "severity": "nit",
+      "category": "style",
+      "description": "Unlike its sibling `prod-result-dimensions.py`, this script doesn't validate that `SUPABASE_SERVICE_ROLE_KEY` actually looks like a service-role key (dot count / `sb_secret_` prefix) nor reject a localhost/127.0.0.1 URL. The two scripts share almost identical preambles but diverge in safety checks for no stated reason.",
+      "suggestion": "Factor the shared validation (`die`, URL/key checks, `api()`) into a small common helper module so both scripts enforce the same guardrails.",
+      "id": "F2"
+    }
+  },
+  {
+    "set": "H",
+    "row": "H-R3",
+    "member": "247-r1#2",
+    "pr": 247,
+    "owner": "real",
+    "ownerBasis": "latent unpaginated query, false NOT found past max_rows",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 68,
+      "endLine": 68,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "Same unpaginated PostgREST query as the dimensions script. If the jobs table exceeds PostgREST's default row cap, one of the target job ids could legitimately exist but fall outside the returned page, and the script would incorrectly report it as \"NOT found in the jobs table\".",
+      "suggestion": "Add explicit pagination (or an id-based filter, e.g. `id=in.(...)` built from the wanted prefixes) instead of fetching the whole table and filtering client-side.",
+      "id": "F3"
+    }
+  },
+  {
+    "set": "H",
+    "row": "H-R4",
+    "member": "247-r1#3",
+    "pr": 247,
+    "owner": "rejected",
+    "ownerBasis": "code contradicts the claim",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 79,
+      "endLine": 96,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "`dimensions()` calls `struct.unpack` on slices derived from only the first 2048 bytes of the object. For a JPEG whose SOF marker segment extends past the fetched range, or any truncated/malformed header, `struct.unpack` raises `struct.error`, which is not caught anywhere in the per-job loop (only `urllib.error.URLError` is caught). A single such object aborts the whole census instead of being logged as \"unreadable\".",
+      "suggestion": "Wrap the `dimensions(raw)` call (or the unpack calls themselves) in a try/except that falls through to the existing \"header not recognised\"/unreadable path.",
+      "id": "F4"
+    }
+  },
+  {
+    "set": "H",
+    "row": "H-R5",
+    "member": "247-r1#4",
+    "pr": 247,
+    "owner": "real",
+    "ownerBasis": "latent unpaginated census prints CONFIRMED on a subset",
+    "delegated": null,
+    "L": true,
+    "Lwhy": "overlaps a diff hunk",
+    "finding": {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 100,
+      "endLine": 100,
+      "severity": "major",
+      "category": "correctness",
+      "description": "The jobs query has no `limit`/pagination handling and relies on PostgREST's default page size (commonly 1000 rows). If the `jobs` table has more rows than that, the scan silently covers only a subset, yet the script prints a confident verdict (\"CONFIRMED: no production job has ever exercised Cloud AI at a real phone's resolution\") based on the incomplete set. Since this script's whole purpose is to produce an authoritative count used to justify a technical decision, an undetected truncation would produce a false conclusion.",
+      "suggestion": "Either request `Prefer: count=exact` and compare against `len(jobs)`, or loop with `Range`/`offset` headers until all rows are retrieved, and print a warning if truncation is suspected.",
+      "id": "F5"
+    }
+  }
+]
