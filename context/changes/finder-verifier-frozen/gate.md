@@ -1,62 +1,114 @@
-# Sealed verifier on frozen findings — Implementation Plan
+# finder-verifier-frozen — pre-registered gate
 
-## Overview
+> Plan: `context/changes/finder-verifier-frozen/plan.md` (Phase 2 writes this file; Phase 3 measures against it;
+> Phase 4 appends the results). Owner decisions: `change.md` § Owner decisions 1–12 and the 2026-10-10 note.
+> Instrument: `harness.mjs`, reviewed APPROVED in `reviews/impl-review-phase-1-edc0a83.md` (Re-review 1).
+>
+> **Status of this file:** a draft until `## Pre-registration seal` records the owner's approval and the hash. The
+> hashed section is everything from `## Pre-registration` to `_End of Pre-registration._`, computed as
+> `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum`. It is never edited
+> after the seal; a later protocol change goes into `## Amendments`.
 
-Measure the verifier of `finder-verification`, unchanged and exactly as sealed, on 75 frozen code-review findings
-whose truth the owner has already classified. The question is whether it keeps true findings, including D2, the
-one real #269 defect, and refutes findings that the code contradicts.
+## Pre-registration
 
-- **Stage 1:** `openai/gpt-6-luna` only. Two arms (production excerpts, and the same plus frozen evidence lines),
-  3 repeats each over the 19 original batches.
-- **Pre-registration:** sealed and pushed before any paid call.
-- **Effect on production:** none. The result can show whether the verifier is useful; it cannot by itself
-  justify re-enabling AI review (owner decision 6).
+### 1. Question
 
-## Current State Analysis
+Does the verifier of `finder-verification`, unchanged and exactly as sealed, keep the true findings (D2 above all)
+and refute the findings that the code contradicts, when it is given frozen, already-classified findings instead
+of a live finder's output?
 
-- **The code under test** exists only at the pushed tag `finder-verification/seal` (`9c85aa2`).
-  - Its `packages/code-reviewer/src` is tree `9be94235…` and is byte-identical to `origin/feat/finder-verification`.
-  - In a scratch worktree it reproduces the six sealed hashes and passes 1,086/1,086 package tests
-    (`research.md` § Follow-up).
-  - `master` has no verifier, and `ai-review` is off there (`.github/workflows/review.yml:29`, `false &&`).
-- **The instrument exists**: `context/changes/finder-verifier-frozen/harness.mjs`, with two free modes.
-  - **`plan`**: excerpt serving per finding for both arms. For the 38 G findings it equals the sealed
-    `backcheck-269-policy.json`, with 0 mismatches.
-  - **`dry-run`**: runs the real `createVerifier` with the package's `openRouterStub`. That covers 38 requests,
-    the checked wire shape, every publication branch and 0 failures.
-  - Neither mode calls the network.
-- **The verifier's behaviour** (code, at the seal):
-  - It sends one request per review, with all findings and all blocks (`src/pipeline.ts:870-885`).
-  - Each finding gets one verdict over its whole `description`.
-  - Only `confirmed` with a quote that passes the check is published (`src/verifier.ts:307-386`).
-  - There is no `temperature` and no `seed` (`src/verifier.ts:166-175`), so repeats are independent provider
-    draws.
-  - The output cap is 16,384 tokens per step, while the largest batch holds 6 findings, so a `finish=length`
-    cutoff is not a realistic risk.
-  - A format failure after its one repair throws `VerifierOutputError`. A timeout, 429 or 5xx is retried once
-    (`src/retry.ts:33-37`).
-- **Evidence serving in base** (`harness-plan-check.json`):
-  - D2's 8 members receive 14/30 evidence lines (×7) and 22/30 (×1).
-  - The 3 code-refutable findings receive 100%.
-  - H-R1 25/25, H-R3 5/5, H-R5 2/4.
-  - Arm O serves every listed line.
-- **Owner decisions 1–8** are in `change.md`: route A, whole-finding verification, per-class scoring, arm O, luna
-  first, gate unchanged, frozen evidence lines, final classes. This planning session added decisions 9–12 (Key
-  Discoveries below).
+- Stage 1 only: `openai/gpt-6-luna` @ `openai`. A sonnet stage needs a separate owner decision (decision 5).
+- The answer is reported per class. There is no single pass/fail number.
 
-### Carried from predecessor
+### 2. What this can and cannot show
 
-none — no Predecessor line
+- **It can show** whether, on these 75 findings, the sealed verifier:
+  - keeps the true ones through publication;
+  - refutes the code-contradicted ones for the right reason;
+  - fails because evidence was not delivered (arm O) or because of its judgement.
+- **It cannot show:**
+  - finder recall, since D2 detection is a separate study;
+  - behaviour on other PRs;
+  - anything about sonnet;
+  - that AI review may be re-enabled. The sealed "zero owner-rejected" gate of `finder-sonnet-effort` is unchanged
+    and is not what this experiment tests (decision 6).
+- **Limits:**
+  - 3 code-refutable findings give 9 base observations;
+  - G-D2's 8 members are input variants of one defect, not 8 independent cases;
+  - an offline result is not adoption evidence;
+  - arm O is diagnostic only and never counts as a success of the production policy;
+  - the cost cap is conditional on assumptions A1–A3 (§6, Request gate).
 
-_(For the record, outside the template:_
+### 3. Frozen inputs
 
-- _this change implements the next experiment named in_
-  _`context/archive/2026-10-09-finder-failure-scenario/phase0.md` § Owner decision;_
-- _F-b (`context/archive/2026-10-03-finder-verification/follow-ups/successor.md`) is handled by owner decision 2_
-  _(verify whole, flag compound findings);_
-- _F-a (finder recall variance) does not apply to frozen findings.)_
+- **Code under test:** the pushed tag `finder-verification/seal` = commit `9c85aa27f418c6d8cb669b1bedddbb333799fa02`.
+  - `packages/code-reviewer/src` is tree `9be9423531d08ec932f82db7683e97d4da5ddf5c`.
+  - `scripts/finder-gate-core.mjs` has sha256 `e713226c84ce35d7f29fd2644660e823a91645c653761ee8f33e9a5f784bcb17`.
+  - It is used from a scratch worktree, with `npm ci` in its package.
+- **Corpus:** `context/archive/2026-10-09-finder-failure-scenario/phase0-findings.json`, 75 findings in 19 batches,
+  sha256 `46aaa0f2407bb08139d416cfde9c80d9fee69d5c42c73febc3635d0225830740`.
+- **Diffs**, rebuilt by the recipe in `context/archive/2026-10-03-finder-verification/gate.md` § Inputs freeze, each
+  read through the sealed `readDiffScoped` at its head:
+  - #269 `3d0adc1…fca2778`, sha256 `1e4ec0882371989122f9e4254c93c4df1f51826a4f57dbfe04139175177e550f`;
+  - #247 `d097949…dec09f8`, sha256 `21973af35cc39f60488935583a85baf894a6c1a9b51069d16de86e701b5dc2e1`.
+- **Scoring inputs** inside `harness.mjs`, each pinned as the sha256 of its canonical JSON (sorted keys):
+  - `EVID`: arm O's evidence lines (decision 7);
+  - `CLASS` (decision 8);
+  - `COMPOUND` (§8);
+  - `RATIONALE` (§7).
+- **`harness.mjs` itself** is pinned. `run` refuses unless this section is sealed and every pin below equals what
+  the harness computes (`checkSeal`).
 
-## Definitions
+```json pins
+{
+  "sealCommit": "9c85aa27f418c6d8cb669b1bedddbb333799fa02",
+  "srcTree": "9be9423531d08ec932f82db7683e97d4da5ddf5c",
+  "gateCore": "e713226c84ce35d7f29fd2644660e823a91645c653761ee8f33e9a5f784bcb17",
+  "corpus": "46aaa0f2407bb08139d416cfde9c80d9fee69d5c42c73febc3635d0225830740",
+  "diffs": {
+    "247": "21973af35cc39f60488935583a85baf894a6c1a9b51069d16de86e701b5dc2e1",
+    "269": "1e4ec0882371989122f9e4254c93c4df1f51826a4f57dbfe04139175177e550f"
+  },
+  "evid": "330f6c0211407c2c54eb6e0c05aa510d758a992e8b36c301d5409edcbbaa1c47",
+  "class": "45960b73a2dcf603f74b606e77760d84e0094c87d9cfd09580e2763c1e5d96b4",
+  "compound": "42b33581fd024fe02913d6e250c5a914365c216accbc599fa1518392f15378bd",
+  "rationale": "cfbd8ba7d11bbd99b27c7e84107dbdeccbf1c13c72b02cc4edff8700febac1b1",
+  "model": "openai/gpt-6-luna",
+  "slug": "openai",
+  "harness": "5ab5086f000b44a49f1ffd0fa5b20562f4ed19760882cb6a9afbf38113b6906b"
+}
+```
+
+### 4. Arms, request shape and order
+
+- **Base:** the sealed `runVerificationPass`, unchanged, on each original batch (`mergeFindings` →
+  `assignFindingIds`).
+- **O:** the base plan unchanged, plus one block per contiguous run of the finding's frozen evidence lines that
+  its own blocks lack, rendered byte-identically to `renderRange`. It goes through the same `createVerifier` →
+  `withOneRetry(verify)` → `applyVerdicts`, with identical telemetry.
+- **Request**, sealed:
+  - `openai/gpt-6-luna`, routing `{order: ["openai"], only: ["openai"], allow_fallbacks: true, require_parameters: true}`;
+  - `reasoning: {enabled: false}`, `max_tokens` 16,384, no `response_format`, no tools;
+  - 120 s timeout, one transient retry (429/5xx/timeout), one format repair.
+- **Order:** for r in 1..3, for each batch in corpus order, base then O. That is 19 × 2 × 3 = 114 attempts.
+- **Invocation:** `harness.mjs run --series context/changes/finder-verifier-frozen/series-luna.jsonl --repeats 3
+--t0 <T0> --cap 0.80 --price-in <$/M> --price-out <$/M>`.
+  - T0 and the prices come from the Phase 3 pre-flight and are pinned in the series header.
+  - A resume uses `--resume`, with the same values or none.
+
+### 5. Corpus classes
+
+The classes are those of decision 8 (`CLASS`):
+
+| Class                       | Rows                                         | Findings                                   |
+| --------------------------- | -------------------------------------------- | ------------------------------------------ |
+| True                        | G-D2 (8 members), H-R1, H-R3, H-R5           | 11                                         |
+| Code-refutable              | G-D13, G-D14, G-D20                          | 3                                          |
+| Policy (reported only)      | G-D4–D10, G-D16, G-D18, G-D19, H-R2          | 15 (G-D5's 3 are `no-locator`, never sent) |
+| Ambiguous (reported only)   | G-D1, G-D3, G-D11, G-D12, G-D15, G-D17, H-R4 | 14                                         |
+| Descriptive (reported only) | all set-E rows                               | 32                                         |
+
+### 6. Definitions (verbatim from `plan.md` § Definitions at the seal)
 
 | Term                                    | Decided meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Origin                                                                                                                        | On degenerate data                                                                                                                                                                                                    | Verified by                                        |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
@@ -87,517 +139,117 @@ _(For the record, outside the template:_
 - **Result:** hard fail, 1/3 (majority view fails too). The diagnosis is `evidence-delivery limit`, and the
   report notes that r3 was lost to reliability. Every step is decided by the table above.
 
-## Desired End State
-
-**`gate.md` in this folder** holds three things, the first sealed:
-
-1. a sealed pre-registration, its sha256 recorded, tagged `finder-verifier-frozen/seal` and pushed;
-2. a ledger of every paid series;
-3. a Results section.
-
-**The Results section states**, per finding and per repeat, for both arms:
-
-- the record state, quote match, reason and failure cause;
-- **per class:**
-  - the hard 3/3 verdict and the majority view;
-  - for the code-refutable class, the automatic result and the blinded hand-read result side by side;
-  - the true-class diagnosis per finding;
-  - the policy, ambiguous and descriptive distributions, reported only;
-- reliability, kept apart from judgement quality;
-- the spend against the $1.00 cap.
-
-**The owner then records a stage-2 decision** (sonnet or stop). Production is untouched throughout.
-
-### Key Discoveries:
-
-- **The seam is clean.** The sealed `runVerificationPass` runs on frozen findings unchanged
-  (`research.md` § Follow-up, dry run).
-- **Arm O cannot reuse it whole.** It must reproduce `runVerificationPass` step 3 (`createVerifier` →
-  `withOneRetry(verify)` → `applyVerdicts`) on the augmented plan, because `planExcerpts` is called inside the
-  pass (`src/pipeline.ts:798`). The harness already does this. In the paid mode it must also thread
-  `onStepEnd`/telemetry through the same `asStepProvider`/`asStepCost` helpers the pass uses
-  (`src/pipeline.ts:822-850`), so both arms are measured identically.
-- **Owner decisions of this session:**
-  - 9: 3/3 per finding, majority reported as information;
-  - 10: refuted = check + blinded hand-read under pre-registered rationales;
-  - 11: the failure taxonomy above, keep every attempt;
-  - 12: budget $1.00 hard, stop and ask at $0.80.
-- **The refutation rationales already exist** in `context/archive/2026-10-02-finder-model-swap/hand-read-269-presort.md:22,26,31`
-  and are owner-confirmed (D13 and D20 checked by the owner in code). Phase 2 copies them verbatim.
-- **Prior lessons that shape this plan** (`context/foundation/lessons.md`):
-  - count attempts, not successful rows (guard-metric lesson);
-  - a model grader or hand-read needs its rule fixed before the result is seen (regex-grader lesson);
-  - an offline eval is not adoption evidence (offline-eval lesson);
-  - print state, subject and way out, never silence (check-that-cannot-say lesson);
-  - `finish=length` is not retried (per-step cap lesson).
-
-## What We're NOT Doing
-
-- **No sonnet run.** That is stage 2, and only on a separate owner decision after stage 1 (decision 5).
-- **No change to the sealed code**, its excerpt policy, prompt, limits or quote rule. No port and no merge of
-  `feat/finder-verification`.
-- **No hand-splitting of compound findings** (decision 2). They are flagged, not split.
-- **No change to the sealed "zero owner-rejected" gate** (decision 6), and no claim that AI review may be
-  re-enabled.
-- **No hard criterion for the policy, ambiguous or descriptive classes.** No mandatory `confirmed` for policy
-  rows, especially missing-tests claims (decision 8).
-- **No owner classification of set E** in this change.
-- **No re-draw after a failed attempt.** No deletion of attempts after a condition violation (decision 11).
-- **No D2-detection (finder recall) study.** That is separate by the owner's direction.
-
-## Implementation Approach
-
-**Free first, paid last, sealed in between:**
-
-1. Phase 1 finishes the instrument and proves every scoring and failure rule on stubbed series. That needs no
-   network.
-2. Phase 2 freezes everything the result depends on (code, corpus, evidence, classes, rationales, compound list,
-   harness) under one hash and a pushed tag, with the owner's approval.
-3. Phase 3 spends: live pre-flight, then the interleaved series under the budget rule.
-4. Phase 4 runs the blinded hand-read and writes the results. The owner decides stage 2.
-
-## Critical Implementation Details
-
-- **Ordering.** The harness's own sha256 is part of the sealed inputs. Phase 1 must be complete before Phase 2
-  hashes anything, and the paid mode refuses to start if `harness.mjs` differs from the sealed hash, the same way
-  it already refuses a changed `src` tree.
-- **State sequencing.** The series file is append-only and holds a `start` line before every request and an `end`
-  line after it, each `fsync`ed. A resume recomputes T from the file, refuses on any pinned-hash difference or
-  unmatched `start`, and never rewrites a line. The cap is a total, so recorded spend is counted once.
-- **Blinding.** The sheet must not be generated before the series is complete, and its key must not be readable
-  in the session that grades it. The key is written to scratch and only its sha256 is committed until the owner
-  hands in the grades.
-
-## Phase 1: Finish the instrument (free)
-
-### Overview
-
-Add the paid run, the report and the blinded-sheet modes to `harness.mjs`, and a `self-test` mode that drives
-every scoring and failure rule through the real sealed code with a stubbed HTTP client.
-
-### Changes Required:
-
-#### 1. Paid run mode
-
-**File**: `context/changes/finder-verifier-frozen/harness.mjs`
-
-**Intent**: Run the frozen batches against the real OpenRouter endpoint and record everything needed to score and
-audit each attempt. Both arms go through the same telemetry path.
-
-**Contract**:
-
-- **Invocation:** `harness.mjs run --series <path> --repeats 3 --t0 <usd> --cap <usd> [--resume]`, plus
-  `harness.mjs reconcile --series <path> --key <attempt-key> --cost <usd|P>` for an interrupted attempt.
-- **Refusals:** missing `OPENROUTER_API_KEY`, a series path outside this change folder, `--cap` absent or above
-  $1.00, `--t0` absent, any start line without an end line (unless reconciled), any pinned hash differing from the
-  header.
-- **Pinned hashes:** besides the `src` tree, it pins `scripts/finder-gate-core.mjs`
-  (`e713226c…bcb17`), whose `describeRequest`, `reasoningTokensOf` and `isModelAttributableError` it reuses.
-- **Line 1 is a header:** the seal commit, the `src` tree, the gate-core sha256, the corpus sha256, both diff
-  sha256s, the `harness.mjs` sha256, the EVID/CLASS/COMPOUND/RATIONALE sha256s, model, slug, repeats, the
-  pre-flight prices, and **T0 with its read time**. A resume must pass the same `--t0` or omit it.
-- **`counter` lines** `{kind:"counter", usage, at}` are written at each invocation's start and end, and at
-  `reconcile`.
-- **Two lines per attempt.** Each is written and `fsync`ed before the code moves on.
-  - **`start`**, written **before** any request is sent: `{kind:"start", key, repeat, run, arm, P, at}`.
-  - **`end`**: `{kind:"end", key, latencyMs, status, failureClass?, cause?, cost, costComplete,
-requests[describeRequest(...) + timedOut], rawText, records[{member, id, state, reasonCode, modelVerdict,
-quote, quoteVerified, quoteMatch, reason, blockIds}]}`.
-  - The key is `r<repeat>/<run>/<arm>`.
-  - **`request`** lines (Request gate) precede every send within the attempt.
-  - `reconcile` appends `{kind:"interrupted", key, cost: max(P, Σ request bounds), basis}` and never sends a
-    request.
-- **Telemetry, both arms:** every step of every request (call, repair, retried call) goes through the sealed
-  `describeRequest`, by chaining `onStepEnd` (base: `createVerifier` injected into `runVerificationPass`; O: the
-  same factory). The two arms therefore record identically.
-- **Order:** for r in 1..3, for batch in corpus order, base then O.
-- **Failure classes** (Definitions): `failed-attempt` records its cause and the series continues;
-  `condition-violation` stops with a message naming the attempt key, what was observed and how to resume.
-- **Budget:**
-  - Admission: before each attempt, compute T and P (Definitions). If T + P > `--cap`, do not start; print T, P
-    and the cap.
-  - **Request gate:** a `fetch` wrapper, passed through the sealed `createVerifier({fetch})` seam in both arms,
-    bounds every outgoing body. It writes and `fsync`s the `request` line, then sends only within the cap.
-    Afterwards it checks the reported `prompt_tokens` and cost against the bound.
-  - E is printed beside the actual cost, for information.
-- **Output:** one line per attempt (key, status, cost, T), and a summary at the end.
-
-#### 2. Report and blind modes
-
-**File**: `context/changes/finder-verifier-frozen/harness.mjs`
-
-**Intent**: Turn a series into the pre-registered tables, and produce the blinded hand-read sheet for the
-code-refutable refutations.
-
-**Contract**:
-
-- **`report --series <path> [--grades <path>]`** prints Markdown and a JSON summary. It writes no file unless
-  `--out` is given. Its tables:
-  - per finding × repeat × arm;
-  - per class, the 3/3 verdict and the majority view;
-  - the true-class diagnosis;
-  - reliability: attempts, failed attempts by cause, violations;
-  - spend by telemetry.
-- **`blind --series <path> --seed <hex> --out <dir>`** collects every `refuted` record of G-D13, G-D14 and G-D20,
-  in both arms and all repeats. It writes:
-  - `sheet.md` (blind labels `R01…`; claim, pre-registered rationale, quote, reason; no arm, repeat or run);
-  - `key.json` (label → arm, repeat, member);
-  - the sha256 of each.
-- **`report --grades`** joins the owner's grades (`pass` / `off-target` / `no-evidence` per label) through the key.
-
-#### 3. Self-test mode
-
-**File**: `context/changes/finder-verifier-frozen/harness.mjs`
-
-**Intent**: Prove every Definitions row on canned provider answers through the sealed code, before any spend.
-
-**Contract**: `self-test` exits 0 only when every case holds. **The cases follow from coverage, not from a count:**
-each Definitions row and each failure class has at least one case, and a new rule adds a case. Groups:
-
-- **Publication:** a valid quote → published; a 9-character quote → `quote-not-in-excerpt`; `unsupported` → not
-  survived; a whitespace-collapsed match → published, `quoteMatch: "whitespace"`; a sent finding with no verdict →
-  `no-verdict`; two verdicts for one id → `duplicate-verdict`.
-- **Refutation:** `refuted` with an empty quote → "refuted without evidence"; `refuted` with a quote absent from
-  its blocks → "refuted without evidence"; `refuted` with a valid quote → automatic pass, pending the hand-read.
-- **Failed attempt:** malformed output twice → `VerifierOutputError`; unparseable first answer with
-  `finish=length` → no repair, cause `length`; **parseable** first answer with `finish=length` → scored normally,
-  `length` noted; `AI_NoOutputGeneratedError` → cause `no-output`, cause chain recorded; two 5xx → exactly one retry, then failed; a timeout on both
-  tries → failed, cause `timeout`, cost-incomplete; HTTP 400 → failed at once. Each fails every finding of the
-  batch for that repeat and sends no extra request.
-- **Condition violation:** provider `Azure`; provider missing; SDK reasoning tokens > 0; OpenRouter reasoning
-  tokens > 0 alone; reasoning text alone; 401; 402; a connection error with no status; an injected runner
-  `TypeError`. Each stops the series and keeps every earlier line.
-- **Precedence:** `AI_NoOutputGeneratedError` with a 402 cause → account violation; a 5xx after a step with
-  provider `Azure` → violation, not a failed attempt; a reported request cost above its bound → violation.
-- **Cost:** a success with one unreported request cost → that request is charged **its own bound**, flagged, and the series continues.
-- **Budget:**
-  - T + P > cap → the attempt is not started (the stub sees no request);
-  - a resume with 0.30 recorded and a stale counter → T = 0.30, counted once;
-  - recorded 0.795 with cap 0.80 → refused;
-  - `--cap 1.01` → refused;
-  - a resume with a `--t0` different from the header → refused;
-  - the reserve P for a 1-finding batch uses the full 16,384-token output bound;
-  - the Request gate blocks a repair whose bound would pass the cap: the stub sees only the first request, and the
-    attempt is `budget-stopped` and never re-sent;
-  - the gate's bound grows with the actual repair body (a first answer carrying 1,000 closing delimiters);
-  - reported `prompt_tokens` above the bound → violation; a reported cost above the bound → violation;
-  - a body without `max_tokens` → refused, nothing sent.
-- **Durability:**
-  - a process killed after `start` and before `end` → resume refused;
-  - `reconcile` → cost = max(P, Σ bounds of the slot's `request` lines), whatever the counter shows (two equal
-    counter reads below the true cost must not lower it); an `interrupted` line is appended and no request is
-    sent;
-  - resume then continues with the next slot, and the slot scores as a failure, cause `interrupted`.
-- **Resume integrity:** a changed corpus hash, a changed `harness.mjs` hash and a changed gate-core hash → each
-  refused.
-- **Scoring:**
-  - a 2/3 series → `unstable`, hard fail, majority pass;
-  - one case per diagnosis rule (1)–(5), including a finding matching both the old "survives" and "anomaly"
-    readings, which must land on rule (2) only.
-- **Blind:** the sheet contains no value from `key.json` (arm, repeat, run, member).
-
-It prints one line per case: group, case, expected, observed.
-
-### Success Criteria:
-
-#### Automated Verification:
-
-- The sealed worktree is intact: `git -C <wt> rev-parse HEAD:packages/code-reviewer/src` equals `9be94235…` — at planning: exit 0
-- The sealed package tests pass in the worktree: `npm test` in `<wt>/packages/code-reviewer` — at planning: exit 0 (1,086 passed, run during research)
-- The dry run still passes: `FV_OUT=<scratch> FV_PKG=<wt>/packages/code-reviewer npx tsx context/changes/finder-verifier-frozen/harness.mjs dry-run` — at planning: exit 0
-- The self-test passes every case (coverage per Definitions row and failure class): `… harness.mjs self-test` — at planning: exit 1 — expected until Phase 1 (mode not implemented: `usage: harness.mjs plan|dry-run`)
-- The report renders from the self-test's stub series: `… harness.mjs report --series <scratch>/stub-series.jsonl` — at planning: exit 1 — expected until Phase 1 (mode not implemented)
-- The plan mode output is unchanged: `… harness.mjs plan` then `git diff --exit-code -- context/changes/finder-verifier-frozen/harness-plan-check.json` — not run: writes (it rewrites the tracked-to-be JSON)
-- The change folder is formatted: `npx prettier --check context/changes/finder-verifier-frozen` — at planning: exit 0
-
-#### Manual Verification:
-
-- The owner reads one self-test case output per failure class and agrees it says what happened, which attempt, and what to do next
-
-**Implementation Note**: Manual checks are acceptance. `/rune-implement` commits a phase once its automated verification passes, then asks the human about these; a pending manual check is reported, not a blocker for the next phase. Phase blocks use plain bullets — the corresponding `- [ ]` checkboxes for these items live in the `## Progress` section at the bottom of the plan.
-
----
-
-## Phase 2: Pre-registration and seal (free; owner approval)
-
-### Overview
-
-Write `gate.md` with everything the result depends on, get the owner's approval, then hash, commit, tag and push
-it before any paid call.
-
-### Changes Required:
-
-#### 1. The pre-registration
-
-**File**: `context/changes/finder-verifier-frozen/gate.md`
-
-**Intent**: Fix the question, the inputs, the scoring and the stop rules before any verdict exists.
-
-**Contract**: one section `## Pre-registration` … `_End of Pre-registration._`, containing:
-
-- **The question**, plus decision 6's limit on what it can show.
-- **Frozen inputs with sha256:**
-  - the seal commit and src tree;
-  - `phase0-findings.json` `46aaa0f2…0740`;
-  - both diffs;
-  - `harness.mjs`;
-  - the EVID, CLASS, COMPOUND and RATIONALE objects, hashed as canonical JSON.
-- **The arms**, and the request shape, which is the sealed one: luna @ `openai`, `reasoning: {enabled: false}`,
-  `require_parameters: true`, no `response_format`, 120 s, one transient retry, one format repair.
-- **The Definitions table above, verbatim**, and the degenerate walk.
-- **Per-class criteria:**
-  - true: survives 3/3 base;
-  - code-refutable: refutes 3/3 base, automatic and hand-read reported separately;
-  - all others: reported only;
-  - the majority view as information.
-- **The three refutation rationales, verbatim** from `hand-read-269-presort.md:22,26,31`, with the hand-read
-  rule: "Sukces wymaga refuted, cytatu przechodzącego zapieczętowany quote check oraz argumentu, który wraz z
-  cytatem rzeczywiście obala zamrożoną tezę. Hand-read stosuje wcześniej zapisane uzasadnienia. Nietrafiony
-  argument i brak poprawnego cytatu są raportowane osobno."
-- **The compound-finding list**: the agent's proposal over all 75 findings, owner-approved.
-- **The failure taxonomy and the resume rule.**
-- **Budget:** $1.00 hard, stop and ask at $0.80; the T, P, Request gate, E and Cap definitions, verbatim,
-  **including assumptions A1–A3 and the statement that the cap is conditional on them**; the feasibility
-  statement (expected $0.079; admission binds only past T ≈ $0.742).
-- **Durability:** the start/end protocol and the interrupted-attempt rule.
-- **The blinding procedure and seed rule:** 32 bytes from `/dev/urandom`, written to `gate.md` before `blind`
-  runs.
-- **What a result can and cannot show.**
-
-#### 2. Seal record
-
-**File**: `context/changes/finder-verifier-frozen/gate.md`
-
-**Intent**: Make the pre-registration provably earlier than every paid call.
-
-**Contract**: `## Pre-registration seal`, outside the hashed section, records:
-
-- the owner approval with date;
-- the sha256 computed as `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum`;
-- the UTC time;
-- the commit;
-- GitHub's push time from the activity API;
-- the annotated tag `finder-verifier-frozen/seal`, pushed. The tag survives the rebase-merge SHA rewrite.
-
-The seal is never recomputed.
-
-### Success Criteria:
-
-#### Automated Verification:
-
-- The pre-registration section exists and hashes reproducibly: the `sed … | sha256sum` above, run twice — not run: needs Phase 2 output
-- The paid mode refuses a `harness.mjs` that differs from the sealed hash: `… harness.mjs run --series <scratch>/probe.jsonl --t0 0 --cap 0` on a deliberately edited copy — not run: needs Phase 1 output
-- The change folder is formatted: `npx prettier --check context/changes/finder-verifier-frozen` — at planning: exit 0
-- (paid) The seal commit and the tag are on `origin`: `git push origin HEAD refs/tags/finder-verifier-frozen/seal`, then `git ls-remote --tags origin 'finder-verifier-frozen/*'` — artifact: `gate.md` § Pre-registration seal — not run: paid (external effect: push)
-
-#### Manual Verification:
-
-- The owner approves the compound-finding list
-- The owner approves the pre-registration as written, before the hash is taken
-
----
-
-## Phase 3: Paid measurement, stage 1 (owner authorization)
-
-### Overview
-
-A live pre-flight, then 114 attempts (19 batches × 2 arms × 3 repeats) under the budget rule.
-
-### Changes Required:
-
-#### 1. Pre-flight and ledger
-
-**File**: `context/changes/finder-verifier-frozen/gate.md`
-
-**Intent**: Record, before T0, that nothing the seal assumed has moved.
-
-**Contract**: `## Results` → `### Pre-flight` records:
-
-- the seal check: the hash reproduces;
-- the code and input hashes, by the harness itself;
-- the endpoint list `GET /api/v1/models/openai/gpt-6-luna/endpoints`, with `provider_name`, price and `reasoning`
-  support (a price or parameter change → stop and ask);
-- T0 from `GET /api/v1/key`, and the credit total.
-
-`### Ledger` keeps one row per invocation: start time, P of the next attempt, T before, `--cap`, the counter after, telemetry,
-T after and the result.
-
-#### 2. The series
-
-**File**: `context/changes/finder-verifier-frozen/series-luna.jsonl`
-
-**Intent**: The raw, append-only record of every attempt.
-
-**Contract**: as Phase 1 §1, invoked with `--t0 <T0 from the pre-flight> --cap 0.80`. The cap is the total for the change, not a remainder: T already contains everything recorded.
-
-**Size note:** the file is `*.jsonl`, which the review diff recipe already excludes, so committing it does not
-blind a review.
-
-### Success Criteria:
-
-#### Automated Verification:
-
-- (paid) Pre-flight reads prices and the key counter: `GET /api/v1/models/openai/gpt-6-luna/endpoints`, `GET /api/v1/key` — artifact: `gate.md` § Results › Pre-flight — not run: paid (external)
-- (paid) The series completes or stops by a pre-registered rule: `… harness.mjs run --series context/changes/finder-verifier-frozen/series-luna.jsonl --repeats 3 --t0 <T0> --cap 0.80` — artifact: `series-luna.jsonl` — not run: paid
-- The report reproduces from the committed series: `… harness.mjs report --series context/changes/finder-verifier-frozen/series-luna.jsonl` — not run: needs Phase 3 output
-- Spend stays within the cap: ledger T after ≤ $0.80, never > $1.00 — not run: needs Phase 3 output
-
-#### Manual Verification:
-
-- The owner authorizes the paid series after reading the pre-flight
-- Any condition violation is decided by the owner (resume under identical conditions, or a new series)
-
----
-
-## Phase 4: Blinded hand-read, results and decision
-
-### Overview
-
-Grade the code-refutable refutations blind, write the results against the pre-registration, and record the
-owner's stage-2 decision.
-
-### Changes Required:
-
-#### 1. Blind sheet and grades
-
-**File**: `context/changes/finder-verifier-frozen/hand-read/`
-
-**Intent**: Grade each refutation's argument without knowing which arm or repeat produced it.
-
-**Contract**:
-
-- The seed goes into `gate.md` first.
-- Then `blind` writes `sheet.md` (committed) and `key.json` (kept in scratch; only its sha256 is committed).
-- The owner fills `grades.json`.
-- After that, `key.json` is committed and its sha256 checked against the recorded one.
-
-#### 2. Results
-
-**File**: `context/changes/finder-verifier-frozen/gate.md`
-
-**Intent**: State the outcome per class exactly as pre-registered, without editing the pre-registration.
-
-**Contract**: `## Results` holds the `report --grades` output and three verdict lines:
-
-- true class: 3/3 count, and per-finding diagnosis;
-- code-refutable: automatic and hand-read;
-- reliability.
-
-Below them sit the information-only distributions, then the owner's stage-2 decision, with date.
-
-### Success Criteria:
-
-#### Automated Verification:
-
-- The blind sheet carries no arm, repeat or run identifier: `grep -cE 'openai-pr269-|"arm"|"repeat"|blockIds' hand-read/sheet.md` returns 0 (plain words like "base" may legitimately occur in quoted code, so they are not grepped; S15 checks the sheet against every key value) — not run: needs Phase 3 output
-- The key matches its recorded hash: `sha256sum hand-read/key.json` — not run: needs Phase 4 output
-- The graded report reproduces: `… harness.mjs report --series series-luna.jsonl --grades hand-read/grades.json` — not run: needs Phase 4 output
-- The seal still reproduces after results are appended: the Phase 2 `sed … | sha256sum` — not run: needs Phase 2 output
-- The change folder is formatted: `npx prettier --check context/changes/finder-verifier-frozen` — at planning: exit 0
-
-#### Manual Verification:
-
-- The owner grades every sheet entry against its pre-registered rationale
-- The owner records the stage-2 decision (sonnet or stop) in `change.md`
-
----
-
-## Testing Strategy
-
-### Unit Tests:
-
-- The self-test cases S1–S15 (Phase 1 §3) run through the sealed code with `openRouterStub`. Each Definitions
-  row maps to at least one case.
-- `harness.mjs plan` against the archived `backcheck-269-policy.json` (0 of 38 mismatches) stays the regression
-  check for the excerpt plan.
-
-### Integration Tests:
-
-- `harness.mjs dry-run`: the full 38-request path, with the wire shape asserted.
-
-### Manual Testing Steps:
-
-1. Read one self-test output per failure class: is it understandable without the code?
-2. Read the pre-flight before authorizing the spend.
-3. Grade the blind sheet.
-
-## Performance Considerations
-
-114 sequential requests of at most about 31k characters each, with a 120 s timeout each. Expect roughly 10–25
-minutes of wall time. There is no concurrency, matching the sealed one-request-per-review shape.
-
-## Migration Notes
-
-None. Nothing in `src/`, `packages/` or CI changes.
-
-## References
-
-- Research: `context/changes/finder-verifier-frozen/research.md` (incl. § Follow-up Research)
-- Owner decisions: `context/changes/finder-verifier-frozen/change.md`
-- Instrument: `context/changes/finder-verifier-frozen/harness.mjs`, `harness-plan-check.json`
-- Sealed predecessor gate: `context/archive/2026-10-03-finder-verification/gate.md`
-- Corpus: `context/archive/2026-10-09-finder-failure-scenario/phase0.md`, `phase0-findings.json`
-- Refutation rationales: `context/archive/2026-10-02-finder-model-swap/hand-read-269-presort.md:22,26,31`
-
-## Progress
-
-> Convention: `- [ ]` pending, `- [x]` done, `- [-]` not applicable (` — n/a: <reason>` required). Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
-
-### Phase 1: Finish the instrument (free)
-
-#### Automated
-
-- [x] 1.1 The sealed worktree is intact — edc0a83
-- [x] 1.2 The sealed package tests pass in the worktree — edc0a83
-- [x] 1.3 The dry run still passes — edc0a83
-- [x] 1.4 The self-test passes every case — edc0a83
-- [x] 1.5 The report renders from the self-test's stub series — edc0a83
-- [x] 1.6 The plan mode output is unchanged — edc0a83
-- [x] 1.7 The change folder is formatted — edc0a83
-
-#### Manual
-
-- [ ] 1.8 The owner reads one self-test case output per failure class and agrees it says what happened, which attempt, and what to do next
-
-### Phase 2: Pre-registration and seal (free; owner approval)
-
-#### Automated
-
-- [x] 2.1 The pre-registration section exists and hashes reproducibly
-- [x] 2.2 The paid mode refuses a `harness.mjs` that differs from the sealed hash
-- [x] 2.3 The change folder is formatted
-- [ ] 2.4 (paid) The seal commit and the tag are on `origin`
-
-#### Manual
-
-- [x] 2.5 The owner approves the compound-finding list
-- [x] 2.6 The owner approves the pre-registration as written, before the hash is taken
-
-### Phase 3: Paid measurement, stage 1 (owner authorization)
-
-#### Automated
-
-- [ ] 3.1 (paid) Pre-flight reads prices and the key counter
-- [ ] 3.2 (paid) The series completes or stops by a pre-registered rule
-- [ ] 3.3 The report reproduces from the committed series
-- [ ] 3.4 Spend stays within the cap
-
-#### Manual
-
-- [ ] 3.5 The owner authorizes the paid series after reading the pre-flight
-- [ ] 3.6 Any condition violation is decided by the owner
-
-### Phase 4: Blinded hand-read, results and decision
-
-#### Automated
-
-- [ ] 4.1 The blind sheet carries no arm, repeat or run identifier
-- [ ] 4.2 The key matches its recorded hash
-- [ ] 4.3 The graded report reproduces
-- [ ] 4.4 The seal still reproduces after results are appended
-- [ ] 4.5 The change folder is formatted
-
-#### Manual
-
-- [ ] 4.6 The owner grades every sheet entry against its pre-registered rationale
-- [ ] 4.7 The owner records the stage-2 decision in `change.md`
+### 7. Criteria per class
+
+- **True class:** each finding must **survive publication in 3/3 base repeats**. 2/3 is `unstable`, a hard
+  fail; the majority view is reported as information.
+  - Per finding, the diagnosis rules (1)–(5) of §6 apply, with base against O.
+  - A repeat lost to a failed or interrupted attempt counts as not met; its cause is reported as execution.
+- **Code-refutable class:** each finding must be **refuted in 3/3 base repeats**. A repeat counts only when all
+  three hold:
+  - the verdict is `refuted`;
+  - the quote passes the sealed check;
+  - the blinded hand-read grades it `pass`.
+
+  The automatic result (the first two conditions) and the hand-read result are reported side by side.
+
+  The hand-read applies this rule (owner decision 10), verbatim:
+
+  > Sukces wymaga refuted, cytatu przechodzącego zapieczętowany quote check oraz argumentu, który wraz z cytatem
+  > rzeczywiście obala zamrożoną tezę. Hand-read stosuje wcześniej zapisane uzasadnienia. Nietrafiony argument i
+  > brak poprawnego cytatu są raportowane osobno.
+
+  The rationales it applies, verbatim from
+  `context/archive/2026-10-02-finder-model-swap/hand-read-269-presort.md:22,26,31`:
+
+  - **G-D13:** A requested id with no runs exits with "no runs found for …" before `build_photo` is called, so
+    `min(sizes)` never sees an empty set; an empty default scan writes the index and prints "0 photo(s), 0
+    run(s)" to stderr.
+  - **G-D14:** The claim inverts the arithmetic: outputs smaller than the original make line 146 a downscale,
+    the documented rule ("an output is never enlarged") is honoured at line 151, and every image on one sheet
+    comes from the same photo, so the aspect ratios agree to rounding.
+  - **G-D20:** `return` at line 120 leaves `runPrediction` itself (a `return` inside an `if` returns from the
+    enclosing function), so nothing parses the error body or polls; `main`'s `finally` runs the cleanup and the
+    process ends with exit code 1 (the predecessor rejected the "fragile" version of this claim, N45).
+
+- **Policy, ambiguous, descriptive:** reported as distributions and per-finding detail, with no hard criterion.
+  For policy rows, `confirmed` is not mandatory (decision 8).
+- **Reliability** (attempts by status and cause, flags, headroom) is reported apart from judgement quality.
+
+### 8. Compound findings (flagged, never split — decision 2)
+
+These are findings whose description makes two or more separately checkable claims. They are flagged in every
+report table. A testing claim joined to a claim that a defect exists counts as compound. A second claim that is
+itself only about test coverage does not; G-D6 `openai-pr269-08#8.3` is the borderline case, left out on that
+ground.
+
+| Member                | Row       | The claims                                                                       |
+| --------------------- | --------- | -------------------------------------------------------------------------------- |
+| `openai-pr269-01#1.3` | G-D9      | missing baseline → uncaught exception; malformed values mislead                  |
+| `openai-pr269-09#9.4` | G-D10     | malformed JSON escapes; missing entries cause unrelated errors                   |
+| `openai-pr269-05#5.2` | G-D13     | unreachable `ValueError`; silent empty index                                     |
+| `openai-pr269-09#9.1` | G-D14     | enlargement; aspect distortion                                                   |
+| `247-r1#1`            | H-R2      | no key-shape check; no localhost check                                           |
+| `247-r1#3`            | H-R4      | JPEG SOF past the range (false); any truncated header (true for a short PNG)     |
+| `medium-247-r2#3`     | E-R247-09 | false negatives from stale files; false positives from reuse                     |
+| `openai-pr269-05#5.4` | G-D7      | no tests for the empty cases; an uncaught exception (D13's rationale refutes it) |
+| `openai-pr269-01#1.5` | G-D4      | no decoder tests; the orientation sizing defect (D1's claim)                     |
+| `openai-pr269-07#7.4` | G-D5      | no tests; the cleanup path and empty/malformed regions have failure cases        |
+
+### 9. Blinding and seed
+
+The procedure runs only after the series is complete:
+
+1. Write 32 bytes from `/dev/urandom`, as hex, into `## Results` of this file, and commit and push it.
+2. Run `harness.mjs blind --series series-luna.jsonl --seed <hex> --out <scratch dir>`. The sheet lists every
+   `refuted` record of G-D13, G-D14 and G-D20, in both arms and every repeat, ordered by
+   `sha256(seed:slot:member)`. It shows no slot, member or run.
+3. Commit the sheet. `key.json` stays in scratch and only its sha256 is recorded until the owner hands in
+   `grades.json` (`pass` / `off-target` / `no-evidence` per label).
+4. Commit `key.json` afterwards and check it against its recorded sha256.
+
+### 10. Budget
+
+- **Limits:** $1.00 hard; stop and ask at $0.80 (`--cap 0.80`).
+- **Definitions** of T, P, Request gate, E and Cap are as in §6.
+- **Expected spend:** E ≈ $0.079 for all 114 attempts. The admission reserve P binds only past T ≈ $0.742.
+- **The cap is conditional** on assumptions A1–A3 of the Request gate. A broken assumption is detected after the
+  request and stops the series; only that request's excess is unprevented.
+- **T0 and credit** are read at the Phase 3 pre-flight (`GET /api/v1/key`, `GET /api/v1/credits`). Prices and
+  `provider_name` come from `GET /api/v1/models/openai/gpt-6-luna/endpoints`.
+- **Stop and ask** before T0 on any of: a price change from $0.10 / $0.50 per M, a lost parameter, or a missing
+  `OpenAI` endpoint.
+
+### 11. Stop rules
+
+- **Condition violation:** the series stops. Every line is kept. It resumes only under identical conditions,
+  and the violated slot gets one fresh attempt (owner decision 2026-10-10).
+- **Interrupted attempt:** resume is refused until `reconcile`. The cost is max(P, Σ request bounds), and the slot
+  is never re-sent.
+- **Admission stop or request-gate stop at the cap:** the series stops. Continuing past $0.80 needs an owner
+  decision and a new invocation with a cap of at most $1.00.
+- **A harness defect** found in a record is a measurement error. The fix goes in as a dated, hashed amendment
+  pushed before any re-run, and the re-run is a new series. The void series' spend still counts.
+
+### 12. Amendments
+
+A protocol change after the seal goes into `## Amendments`, placed after the seal. Each amendment is dated,
+carries its own sha256, and is committed and pushed before the measurement it affects. A change to the model,
+prompt, code, inputs or a criterion after a result has been seen needs a new pre-registered change.
+
+_End of Pre-registration._
+
+## Pre-registration seal
+
+**Sealed 2026-10-10.** The owner approved the section as written, including the compound list of §8 (ten
+members: the agent's seven, the owner's two additions G-D7 `openai-pr269-05#5.4` and G-D4 `openai-pr269-01#1.5`,
+and the agent's G-D5 `openai-pr269-07#7.4`, with G-D6 `openai-pr269-08#8.3` left out on the stated ground). The hash
+below was then taken and is never recomputed. Nothing in this record is part of the hashed section.
+
+- Owner approval: approved by the owner (date: 2026-10-10). Edits before the seal: the three compound additions above,
+  made on the owner's review of the first draft (same date).
+- sha256 of `## Pre-registration` … `_End of Pre-registration._`: **`c26476825dd06a6daf0c5904591ba48ec493810ca02a197a3bb92f1938a8adaa`**, computed as
+  `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum` (reproduced twice).
+- UTC time taken: **2026-10-10T15:28:07Z**.
+- `harness.mjs` at the seal: sha256 `5ab5086f000b44a49f1ffd0fa5b20562f4ed19760882cb6a9afbf38113b6906b`, equal to the `harness` pin in §3.
+- Seal commit, tag and GitHub push time: recorded in the next commit, below.

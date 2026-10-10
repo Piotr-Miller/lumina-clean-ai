@@ -106,3 +106,4 @@ Measure the existing finder-verification verifier on frozen, already-classified 
 
 2026-10-10: owner decision — on resume, a slot whose attempt was a condition violation gets one fresh attempt; the violated attempt is kept, counted in T, never scored; plan.md § Definitions, Condition violation.
 2026-10-10: Phase 1 impl-review `reviews/impl-review-phase-1-edc0a83.md` (REJECTED: 1 critical, 3 warnings) — all four fixed in `fix(finder-verifier-frozen): address phase 1 review (p1)`; self-test 63/63; the reviewer's mutants now fail.
+2026-10-10: owner approved the pre-registration in `gate.md`, including §8's ten compound findings (the owner added G-D7 #5.4 and G-D4 #1.5; the agent added G-D5 #7.4); sealed at sha256 c26476825dd06a6daf0c5904591ba48ec493810ca02a197a3bb92f1938a8adaa. The seal does not start Phase 3.

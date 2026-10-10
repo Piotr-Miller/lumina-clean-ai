@@ -128,3 +128,81 @@ The exact copies remain in /tmp/fv-impl-review-t5lyn_vv/mutants/. To rerun them,
 - **Scope**: No Phase 2 seal, Phase 3 paid calls/pre-flight, or Phase 4 hand-read acceptance was attempted. Existing free checkSeal tests were verified as part of the Phase 1 instrument.
 - **Writes**: Per the user's explicit write-only-report restriction, change.md was not stamped and the carry record was not updated. No code/plan edits or triage fixes were made; all findings remain PENDING. No commits or pushes were made.
 - **Cleanup**: The temporary sealed worktree was removed successfully. Scratch logs, stub series, JSON reports and mutation copies remain outside the repository.
+
+## Re-review 1 (2026-10-10)
+
+- **Scope**: Phase 1 (phases 1–4)
+- **Session**: fresh — this conversation did not implement the phase or its fixes
+- **Base**: edc0a83e6a60dc49b2b48e051477f775fc8dde45 (previous round)
+- **Head**: a05ef268971fd18577fbcb736d2dbc5f0c37d395
+- **Worktree**: excluded — clean at the recorded head; no local changes to include
+- **Checks ran at**: a05ef268971fd18577fbcb736d2dbc5f0c37d395 in a temporary checkout; sealed dependency code at `finder-verification/seal`, `9c85aa27f418c6d8cb669b1bedddbb333799fa02`, in a separate scratch worktree
+- **Manual acceptance**: 0 of 1 confirmed — pending: 1.8
+- **Verdict**: APPROVED
+- **Findings**: 0 critical, 0 warnings, 0 observations
+- **Closes**: F1, F2, F3, F4
+
+None.
+
+### Verdicts
+
+| Dimension           | Verdict |
+| ------------------- | ------- |
+| Plan Adherence      | PASS    |
+| Scope Discipline    | PASS    |
+| Safety & Quality    | PASS    |
+| Architecture        | PASS    |
+| Pattern Consistency | PASS    |
+| Success Criteria    | PASS    |
+
+### Fix verification
+
+- **F1 closed**: `harness.mjs:538–600` refuses subsequent sends with `ViolationStop` before body parsing, accounting or journaling; it latches the first observable wire violation before returning the response to the SDK. `onStepEnd` at lines 613–619 also latches SDK metadata before forwarding the callback. `classifyAttempt` at lines 513–522 preserves account → latched → recorded → budget precedence (the existing unbounded-request precondition stays first). Each attempt gets a fresh context. The original cost, prompt-token and provider/budget probes now observe exactly one send and `condition-violation`; the cost probe records T = $0.02, not $0.92, entirely simulated. The new resume case retains the violated attempt and gives that slot its fresh attempt. Additional scratch probes inject SDK-only reasoning metadata with clean wire metadata: both base and O stop before repair, each with one send. A direct precedence probe confirms account-402 outranks the latch, which outranks recorded provider-Azure and budget.
+- **F2 closed**: `memberOutcome` at lines 943–950 preserves quote, quote validation/match, reason, reasonCode and modelVerdict. `buildReport` at lines 1095–1119 emits `detail` for every selected finding × repeat × arm, including policy, ambiguous and descriptive members; execution causes are retained. Markdown includes every member with quote check/match and a reason excerpt; JSON preserves full quote/reason text. Refutation cells at lines 1009–1016 distinguish `refuted (quote verified)` from `refuted without evidence`, independently of grades. The original four-member probe reports `expected=4 missing=`. The three-repeat stub report has 12 detail records, including members #5.3 and #5.4; D13 shows verified, empty and absent quotes separately.
+- **F3 closed**: Report-level assertions at lines 2181–2231 exercise valid, empty and absent quotes (automatic 1/1, 0/1, 0/1), plus three mixed repeats (automatic 1/3 unstable; blind-key hand-read pass 1/3 versus off-target 0/3, with no-evidence grades on the other repeats). The original substantive `autoMet` mutation now fails both report-scoring cases. The independent CLI stub report agrees: D13 automatic 1/3 unstable, majority fail, hand-read pending without supplied grades.
+- **F4 closed**: The FS seam at lines 389–401 preserves write → fsync → close, with close in `finally`. The durability cases at lines 2234–2311 observe zero unsynced lines at the actual HTTP stub boundary, a preceding start and the corresponding request as the last write; an injected request-line fsync failure sends nothing and records a condition violation. Removing `FS.fsyncSync(fd)` now fails both cases: four unsynced lines at send, and one send when a failed flush should prevent it. This proves the journal/send ordering contract, not a storage device's behavior under power loss.
+
+### Automated verification
+
+All checks captured stdout/stderr to scratch log files and used the actual exit status. Every shell command began with `env -u OPENROUTER_API_KEY`; child commands inherited that removal. Network was used only for `npm ci` in the sealed package. Every npx invocation used `--no-install --offline`. Harness series operations occurred only inside self-test with injected HTTP/counter stubs; no CLI `run` or `reconcile` was invoked.
+
+For harness commands below, the prefix was `env -u OPENROUTER_API_KEY FV_OUT=/tmp/fv-rereview-gp1ickb2 FV_PKG=/tmp/fv-rereview-gp1ickb2/fv-seal/packages/code-reviewer npx --no-install --offline tsx context/changes/finder-verifier-frozen/harness.mjs`, from the temporary checkout at a05ef26. Formatting and git commands also removed the API key.
+
+| Progress | Check                                                                                                                                                                                                          | Exit      | Observed result                                                                                       | Scratch log                                |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Setup    | `npm ci` in sealed `packages/code-reviewer`                                                                                                                                                                    | 0         | Dependencies installed                                                                                | npm-ci.log                                 |
+| 1.1      | `git rev-parse HEAD:packages/code-reviewer/src` in sealed package                                                                                                                                              | 0         | `9be9423531d08ec932f82db7683e97d4da5ddf5c`                                                            | src-pin.log                                |
+| 1.1      | `sha256sum scripts/finder-gate-core.mjs` in sealed package                                                                                                                                                     | 0         | `e713226c84ce35d7f29fd2644660e823a91645c653761ee8f33e9a5f784bcb17`                                    | gate-core-pin.log                          |
+| 1.2      | `npm test` in sealed package                                                                                                                                                                                   | 0         | 29 files; 1,086/1,086 tests passed                                                                    | package-tests.log                          |
+| 1.3      | `dry-run`                                                                                                                                                                                                      | 0         | 19 batches, 38 requests, `failures: []`                                                               | dry-run.log                                |
+| 1.4      | `self-test`                                                                                                                                                                                                    | 0         | `SELF-TEST PASS: 63/63`                                                                               | self-test.log                              |
+| 1.5      | `report --series <self-test>/s38.jsonl --out <scratch>/report-interrupted.json`                                                                                                                                | 0         | Interrupted base 0/1 fail, O published, diagnosis lost to reliability; detail retains execution cause | report-interrupted.log                     |
+| 1.5      | `report --series <self-test>/s57.jsonl --out <scratch>/report-mixed.json`                                                                                                                                      | 0         | Four members × three repeats; D13 automatic 1/3 unstable; quote/reason fields retained                | report-mixed.log                           |
+| 1.6      | `plan`; `npx --no-install --offline prettier --write context/changes/finder-verifier-frozen/harness-plan-check.json`; `git diff --exit-code -- context/changes/finder-verifier-frozen/harness-plan-check.json` | 0 / 0 / 0 | Byte-identical pinned plan JSON: `d0743e843a67569459b0d204dfa950b4a48a517c723261233a22c54a5367c88c`   | plan.log; plan-prettier.log; plan-diff.log |
+| 1.7      | `npx --no-install --offline prettier --check context/changes/finder-verifier-frozen`                                                                                                                           | 0         | All matched files formatted                                                                           | prettier.log                               |
+
+### Original probes and mutations rerun
+
+Each copy derives from a05ef26 in scratch; the four additional assertions were recovered verbatim from the first review's `review-probes.mjs`. Only self-test was executed on these copies.
+
+| Scratch change / probe                                                      | Exit | Result                                                  | Interpretation                                                         |
+| --------------------------------------------------------------------------- | ---- | ------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Four original F1/F2 probes on fixed code                                    | 0    | 67/67; all four probes pass                             | Original defect reproductions confirm the fixes                        |
+| `autoMet` also accepts `refutedNoEvidence`                                  | 1    | 61/63; both report-scoring cases fail                   | F3's previously surviving mutant is detected                           |
+| Remove `FS.fsyncSync(fd)`                                                   | 1    | 61/63; both durability cases fail                       | F4's previously surviving mutant is detected                           |
+| Remove request cap gate                                                     | 1    | 62/63; blocked-repair case becomes ok with two requests | Negative control remains detected                                      |
+| Original probes plus SDK-only base/O latch, price-pin and precedence probes | 0    | 71/71                                                   | Callback latch and unchanged resume/classification contracts confirmed |
+
+The extra price probe initially omitted required repeat/run/arm configuration and hit those earlier refusals. After supplying the unchanged series configuration, it reached the price check and observed `resume refused: the price priceIn differs from the header's 0.1`. These were scratch-probe setup failures, not implementation failures; logs retain every run.
+
+### Regression verification and review notes
+
+- **Bookkeeping in diff**: `context/changes/finder-verifier-frozen/change.md`, `context/changes/finder-verifier-frozen/plan.md`, `context/changes/finder-verifier-frozen/reviews/impl-review-phase-1-edc0a83.md`. The harness is the planned instrument under review. No extra implementation paths changed.
+- **Prior matches retained**: Compared edc0a83 to a05ef26; the pins/corpus/evidence augmentation/frozen scoring inputs, series bookkeeping and cost bounds, base/O dispatch, seal and T0/price checks, hard/majority scoring, diagnosis priority and report scoring predicate are byte-unchanged. Base still calls sealed `runVerificationPass`; O still preserves base blocks and adds only frozen missing evidence before the same verifier/retry/apply path. The unchanged plan JSON and passing wire/publication dry-run independently confirm excerpt serving and verifier behavior. All five diagnosis rules, interrupted accounting, changed T0/harness/corpus/gate-core refusals and free seal cases still pass. Price-pin refusal was additionally exercised with a stubbed resume. No actual Phase 2 seal or paid provider behavior is claimed.
+- **Lessons**: 35 of 38 ledger entries apply; selected blocks read fully. Attempt-based guard metrics, observable checks and output-limit/error distinctions remain relevant priors.
+- **Mapped-risk Stryker gate**: skipped; the test plan's six app risks concern Cloud AI/Supabase/auth/retention/watchdog behavior, none touched by this harness change. The user-requested narrow scratch mutations above were performed offline.
+- **Evidence**: `/tmp/fv-rereview-gp1ickb2/logs/`; exact command/exit records in `checks.json`, `mutation-checks.json`, `report-checks.json` and `step-price-check-final.json`; scratch copies in `mutants/`, stub series in `fv-selftest-Qj6gD8/`, rendered JSON reports and `regression-segments.json` alongside them. Recreate the sealed worktree and install dependencies to rerun retained copies; no secrets are needed.
+- **Scope and writes**: Only this requested re-review round is appended. Earlier report bytes are preserved. The explicit user restriction overrides the skill's change.md stamp and carry-record writes; neither is changed. No code, plan, frozen JSON, archive, triage-fix, commit or push writes. Manual 1.8 remains pending and does not lower this phase verdict; Phases 2–4 remain outside this review.
+- **Cleanup**: Both temporary worktrees removed successfully; scratch logs, reports, stubs and probes retained. Sealed source/gate-core were clean before removal. Original harness, plan, change.md and frozen JSON hashes remained unchanged.
+
+**Verdict: APPROVED. Closes: F1, F2, F3, F4.**
