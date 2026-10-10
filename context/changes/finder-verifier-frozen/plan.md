@@ -578,14 +578,14 @@ None. Nothing in `src/`, `packages/` or CI changes.
 #### Automated
 
 - [x] 3.1 (paid) Pre-flight reads prices and the key counter
-- [ ] 3.2 (paid) The series completes or stops by a pre-registered rule
-- [ ] 3.3 The report reproduces from the committed series
-- [ ] 3.4 Spend stays within the cap
+- [x] 3.2 (paid) The series completes or stops by a pre-registered rule
+- [x] 3.3 The report reproduces from the committed series
+- [x] 3.4 Spend stays within the cap
 
 #### Manual
 
-- [ ] 3.5 The owner authorizes the paid series after reading the pre-flight
-- [ ] 3.6 Any condition violation is decided by the owner
+- [x] 3.5 The owner authorizes the paid series after reading the pre-flight
+- [-] 3.6 Any condition violation is decided by the owner — n/a: no condition violation occurred (series-luna.jsonl: 114/114 attempts `ok`, gate.md § Results › Ledger)
 
 ### Phase 4: Blinded hand-read, results and decision
 

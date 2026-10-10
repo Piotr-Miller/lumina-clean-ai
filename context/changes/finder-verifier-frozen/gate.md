@@ -300,6 +300,50 @@ Appended after the seal; never edits `## Pre-registration`.
     spent since.
   - Ceiling: counter ≤ T0 + 1.00 = $55.560492781; stop and ask at T0 + 0.80 = $55.360492781.
 
+### Ledger
+
+| #   | Series                                                              | Started (UTC)        | P (first attempt) | T before | `--cap` | Counter after                                                                             | Telemetry (recorded) | T after   | Result                     |
+| --- | ------------------------------------------------------------------- | -------------------- | ----------------- | -------- | ------- | ----------------------------------------------------------------------------------------- | -------------------- | --------- | -------------------------- |
+| 1   | `series-luna.jsonl`, 114 attempts (harness `ea7a3977`, Amendment 1) | 2026-10-10T15:45:13Z | $0.053711         | $0       | $0.80   | $54.604845991 at 15:52:26Z, Δ $0.044353 (lagging; the run's own end read was Δ $0.042276) | $0.045438            | $0.045438 | **complete**, 114/114 `ok` |
+
+The paid series was authorized by the owner on 2026-10-10 after the pre-flight and Amendment 1. T is carried as
+max(counter, recorded) = **$0.045438** of the $0.80 cap; the ceiling was never approached. Expected E was $0.081953.
+
+### Series outcome (automatic; the code-refutable hand-read is Phase 4)
+
+From `harness.mjs report --series series-luna.jsonl`, which reproduces byte for byte.
+
+- **Reliability:** 114/114 attempts `ok`; no failed attempt, no condition violation, no stop. Served tier `default`
+  on all 114 requests (Amendment 1); 114/114 generation ids recorded. Headroom: max prompt_tokens ÷ bound 0.281, max
+  cost ÷ bound 0.112 (A1–A3 held).
+- **True class (hard: survive publication 3/3 base):**
+
+  | Member              | Row  | Base                         | O   | Hard     | Diagnosis               |
+  | ------------------- | ---- | ---------------------------- | --- | -------- | ----------------------- |
+  | openai-pr269-01#1.2 | G-D2 | 3/3                          | 3/3 | pass     | survives                |
+  | openai-pr269-02#2.1 | G-D2 | 3/3                          | 3/3 | pass     | survives                |
+  | openai-pr269-03#3.2 | G-D2 | 2/3 (1 quote-not-in-excerpt) | 2/3 | unstable | investigate             |
+  | openai-pr269-04#4.2 | G-D2 | 0/3 (unsupported)            | 3/3 | fail     | evidence-delivery limit |
+  | openai-pr269-05#5.1 | G-D2 | 3/3                          | 3/3 | pass     | survives                |
+  | openai-pr269-06#6.3 | G-D2 | 3/3                          | 3/3 | pass     | survives                |
+  | openai-pr269-07#7.1 | G-D2 | 2/3 (1 unsupported)          | 2/3 | unstable | investigate             |
+  | openai-pr269-08#8.2 | G-D2 | 3/3                          | 3/3 | pass     | survives                |
+  | 247-r1#0            | H-R1 | 1/3                          | 3/3 | unstable | evidence-delivery limit |
+  | 247-r1#2            | H-R3 | 0/3                          | 3/3 | fail     | evidence-delivery limit |
+  | 247-r1#4            | H-R5 | 0/3                          | 0/3 | fail     | investigate             |
+
+  **The true class fails its hard criterion:** 5 of 11 findings pass 3/3. The D2 defect survives 3/3 in 5 of its 8
+  input variants and in at least 2 of 3 repeats in 7 of 8.
+
+- **Code-refutable class (automatic part; hand-read pending):**
+  - **G-D13 and G-D14 were `confirmed` and published 3/3 in both arms.** The verifier restated the false claims, in
+    O too, where G-D13 received main's guard (`contact-sheet.py:208–211`) that refutes it. Their automatic result is
+    0/3, so their hard criterion **fails** whatever the hand-read finds.
+  - **G-D20 was `refuted` with a verified quote 3/3 in both arms.** Automatic 3/3; its hard result waits on the
+    blinded hand-read (Phase 4).
+- **Information only:** the policy, ambiguous and descriptive distributions and the per-finding detail are in the
+  report.
+
 ## Amendments
 
 ### Amendment 1 (2026-10-10)
