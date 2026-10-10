@@ -591,11 +591,11 @@ None. Nothing in `src/`, `packages/` or CI changes.
 
 #### Automated
 
-- [x] 4.1 The blind sheet carries no arm, repeat or run identifier
-- [x] 4.2 The key matches its recorded hash
-- [x] 4.3 The graded report reproduces
-- [x] 4.4 The seal still reproduces after results are appended
-- [x] 4.5 The change folder is formatted
+- [x] 4.1 The blind sheet carries no arm, repeat or run identifier — d52d0ff
+- [x] 4.2 The key matches its recorded hash — d52d0ff
+- [x] 4.3 The graded report reproduces — d52d0ff
+- [x] 4.4 The seal still reproduces after results are appended — d52d0ff
+- [x] 4.5 The change folder is formatted — d52d0ff
 
 #### Manual
 
