@@ -363,6 +363,38 @@ From `harness.mjs report --series series-luna.jsonl`, which reproduces byte for 
 - **Blinding is partial,** as pre-registered: all six entries are the same row (G-D20), so arm and repeat are hidden
   but the row is not.
 
+### Hand-read and final result (Phase 4)
+
+- **Grades (owner, 2026-10-10):** R01–R06 all `pass` (`hand-read/grades.json`).
+- **Unblinding:** `hand-read/key.json` is the hashed key (raw sha256 `3e24cd3f…400f`, checked before the copy). It
+  is committed formatted by Prettier and is JSON-equal to the raw key. The six entries are G-D20, three from base and
+  three from O, one per repeat.
+- **Full graded report:** `series-luna-report.md`, the output of `harness.mjs report --series series-luna.jsonl
+--grades hand-read/grades.json --key hand-read/key.json`.
+
+**Verdicts, as pre-registered (§7):**
+
+| Criterion                        | Result                                                                                                                                                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| True class: survive 3/3 base     | **FAIL — 5 of 11.** Survives: D2 #1.2, #2.1, #5.1, #6.3, #8.2. Evidence-delivery limit: D2 #4.2, H-R1, H-R3 (base fails, O 3/3). Investigate: D2 #3.2 and #7.1 (2/3 in both arms), H-R5 (0/3 in both arms). |
+| Code-refutable: refuted 3/3 base | **FAIL — 1 of 3.** G-D20 3/3 (automatic and hand-read). **G-D13 and G-D14 0/3: `confirmed` and published in every repeat of both arms.**                                                                    |
+| Reliability                      | 114/114 attempts `ok`; tier `default` on every request; T $0.045438 of $0.80.                                                                                                                               |
+
+**The question of §1, answered within §2's limits:**
+
+- **On these findings the sealed verifier does not reliably tell truth from a convincing falsehood.** It refuted the
+  one false claim whose refutation sits in the cited lines (G-D20, the `return` on the same screen). It confirmed the
+  two whose refutation needs a step away from them, six times each. For G-D13 that held in arm O too, which was given
+  main's guard (`contact-sheet.py:208–211`). Its reasons restate the finding's local reading of `build_photo`.
+- **It keeps D2** in 5 of 8 input variants on every repeat, and in at least 2 of 3 repeats in 7 of 8.
+  - The variant whose excerpts lack the upload path (#4.2) is lost in base and kept in O: an evidence-delivery limit
+    of the sealed excerpt policy.
+  - The same holds for H-R1 and H-R3.
+  - H-R5 is `unsupported` in both arms. Its reasons cite the API's page cap, a fact outside the code. That is the
+    instruction's own `unsupported` case, not a code-reading error.
+- **This does not justify re-enabling AI review** (§2, decision 6). Stage 2 (sonnet) is the owner's decision (plan
+  4.7).
+
 ## Amendments
 
 ### Amendment 1 (2026-10-10)
