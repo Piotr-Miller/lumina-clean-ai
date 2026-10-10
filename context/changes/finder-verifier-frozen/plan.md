@@ -600,4 +600,4 @@ None. Nothing in `src/`, `packages/` or CI changes.
 #### Manual
 
 - [x] 4.6 The owner grades every sheet entry against its pre-registered rationale
-- [ ] 4.7 The owner records the stage-2 decision in `change.md`
+- [x] 4.7 The owner records the stage-2 decision in `change.md`
