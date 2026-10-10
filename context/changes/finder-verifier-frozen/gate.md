@@ -336,8 +336,7 @@ From `harness.mjs report --series series-luna.jsonl`, which reproduces byte for 
   input variants and in at least 2 of 3 repeats in 7 of 8.
 
 - **Code-refutable class (automatic part; hand-read pending):**
-  - **G-D13 and G-D14 were `confirmed` and published 3/3 in both arms.** The verifier restated the false claims, in
-    O too, where G-D13 received main's guard (`contact-sheet.py:208–211`) that refutes it. Their automatic result is
+  - **G-D13 and G-D14 were `confirmed` and published 3/3 in both arms.** The verifier restated the false claims in every repeat of both arms, although G-D13's excerpts contained main's guard (`contact-sheet.py:208–211`, in block 195–226) that refutes it, **in base as well as in O** (corrected 2026-10-10 after the full review; the first wording implied the guard was delivered in O only). Their automatic result is
     0/3, so their hard criterion **fails** whatever the hand-read finds.
   - **G-D20 was `refuted` with a verified quote 3/3 in both arms.** Automatic 3/3; its hard result waits on the
     blinded hand-read (Phase 4).
@@ -383,9 +382,7 @@ From `harness.mjs report --series series-luna.jsonl`, which reproduces byte for 
 **The question of §1, answered within §2's limits:**
 
 - **On these findings the sealed verifier does not reliably tell truth from a convincing falsehood.** It refuted the
-  one false claim whose refutation sits in the cited lines (G-D20, the `return` on the same screen). It confirmed the
-  two whose refutation needs a step away from them, six times each. For G-D13 that held in arm O too, which was given
-  main's guard (`contact-sheet.py:208–211`). Its reasons restate the finding's local reading of `build_photo`.
+  one false claim whose refutation sits in the cited lines (G-D20, the `return` on the same screen). G-D13 and G-D14 were confirmed six times each despite delivered counterevidence, and their reasons repeated the findings' local interpretation. G-D13's guard (`contact-sheet.py:208–211`) was in its excerpts in every repeat of **both** arms. _(Corrected 2026-10-10 after the full review. The first wording said their refutation "needs a step away" from the cited lines, a qualitative description that this series did not isolate, and implied the guard reached O only.)_
 - **It keeps D2** in 5 of 8 input variants on every repeat, and in at least 2 of 3 repeats in 7 of 8.
   - The variant whose excerpts lack the upload path (#4.2) is lost in base and kept in O: an evidence-delivery limit
     of the sealed excerpt policy.
@@ -394,6 +391,20 @@ From `harness.mjs report --series series-luna.jsonl`, which reproduces byte for 
     instruction's own `unsupported` case, not a code-reading error.
 - **This does not justify re-enabling AI review** (§2, decision 6). Stage 2 (sonnet) is the owner's decision (plan
   4.7).
+
+### Corrections and caveats (full review, 2026-10-10)
+
+From `reviews/impl-review-e0d2d19.md` (APPROVED, no findings). None of these changes a measured value or a verdict.
+
+1. **G-D13's counterevidence was delivered in both arms.** Its block B4 spans 195–226 in every repeat, base and O.
+   The two sentences above that implied O only are corrected in place and marked.
+2. **"Needs a step away from the cited lines"** was a qualitative reading, not an isolated cause; it is replaced by
+   the reviewer's wording ("confirmed six times each despite delivered counterevidence; their reasons repeated the
+   findings' local interpretation").
+3. **`t0At` in the series header** (`series-luna.jsonl:1`) is the header's creation time, 15:45:13.768Z, not the
+   pre-flight read of T0 at 15:31:46Z. The CLI does not forward the read time. The run's start counter
+   (`series-luna.jsonl:2`, 15:45:13.871Z) re-observed the identical T0, so spend and results are unaffected. The
+   series and the sealed harness stay as they are; a future harness should carry the read time explicitly.
 
 ## Amendments
 
