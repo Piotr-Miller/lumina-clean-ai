@@ -313,7 +313,7 @@ const HARNESS_SHA256 = fileSha256(HARNESS_PATH);
 
 // ---- Frozen scoring inputs (owner decisions 2, 8 and 10; approved at the Phase 2 seal) ----
 // Findings whose description makes two or more separately checkable claims. Flagged in the
-// report, never split (owner decision 2). Agent proposal, 2026-10-10.
+// report, never split (owner decision 2). Agent proposal, 2026-10-10, completed on the owner's review.
 const COMPOUND = [
   "openai-pr269-01#1.3", // G-D9: missing baseline → uncaught exception; malformed values mislead
   "openai-pr269-09#9.4", // G-D10: malformed JSON escapes; missing entries cause unrelated errors
@@ -322,6 +322,10 @@ const COMPOUND = [
   "247-r1#1", // H-R2: no key-shape check; no localhost check
   "247-r1#3", // H-R4: JPEG SOF past the range (false); any truncated header (true for short PNG)
   "medium-247-r2#3", // E-R247-09: false negatives from stale files; false positives from reuse
+  // Added 2026-10-10 on the owner's review of the draft gate.md (a testing claim joined to a defect claim):
+  "openai-pr269-05#5.4", // G-D7: no tests for the empty cases; an uncaught exception (refuted by D13's rationale)
+  "openai-pr269-01#1.5", // G-D4: no decoder tests; the orientation sizing defect (D1's claim)
+  "openai-pr269-07#7.4", // G-D5: no tests; the cleanup path and empty/malformed regions have failure cases
 ];
 // The pre-registered rationales for the code-refutable rows, verbatim from
 // context/archive/2026-10-02-finder-model-swap/hand-read-269-presort.md:22,26,31, and the
