@@ -1,10 +1,11 @@
 ---
 change_id: finder-verifier-frozen
 title: "Measure the existing verifier on frozen findings, with D2 as the control"
-status: implemented
+status: archived
+outcome: completed
 created: 2026-10-09
 updated: 2026-10-10
-archived_at: null
+archived_at: 2026-10-10T21:19:58Z
 ---
 
 ## Notes
