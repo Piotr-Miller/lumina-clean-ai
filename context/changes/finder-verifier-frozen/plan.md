@@ -591,13 +591,13 @@ None. Nothing in `src/`, `packages/` or CI changes.
 
 #### Automated
 
-- [ ] 4.1 The blind sheet carries no arm, repeat or run identifier
-- [ ] 4.2 The key matches its recorded hash
-- [ ] 4.3 The graded report reproduces
-- [ ] 4.4 The seal still reproduces after results are appended
-- [ ] 4.5 The change folder is formatted
+- [x] 4.1 The blind sheet carries no arm, repeat or run identifier
+- [x] 4.2 The key matches its recorded hash
+- [x] 4.3 The graded report reproduces
+- [x] 4.4 The seal still reproduces after results are appended
+- [x] 4.5 The change folder is formatted
 
 #### Manual
 
-- [ ] 4.6 The owner grades every sheet entry against its pre-registered rationale
+- [x] 4.6 The owner grades every sheet entry against its pre-registered rationale
 - [ ] 4.7 The owner records the stage-2 decision in `change.md`
