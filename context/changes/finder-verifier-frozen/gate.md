@@ -349,4 +349,10 @@ _End of Amendment 1._
 - sha256 of `### Amendment 1 (2026-10-10)` … `_End of Amendment 1._`: **`3d2b2a40a58fbb514c60f4333a5198b08c5464c417f840a3f82baa9ed4741d96`**, computed as
   `sed -n '/^### Amendment 1 (2026-10-10)$/,/^_End of Amendment 1\._$/p' gate.md | sha256sum`; taken 2026-10-10T15:39:06Z, before
   any paid call.
-- Commit, tag `finder-verifier-frozen/amendment-1` and GitHub push time: recorded in the next commit, below.
+- **Amendment commit:** `6e670d618b57eda2f46c1106d966335e1922b6ac` (`docs(finder-verifier-frozen): pre-flight and Amendment 1 (p3)`); its
+  committed `gate.md` reproduces the amendment sha256 above, and its committed `harness.mjs` hashes to the
+  amendment's `harness` pin.
+- **GitHub push time: 2026-10-10T15:39:52Z** (`GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-verifier-frozen`,
+  event `push`, `3dfae1a..6e670d6`, actor `Piotr-Miller`). Before any paid call.
+- **Tag:** annotated **`finder-verifier-frozen/amendment-1`** (tag object `f01980c50562bdb7a565d3aa938b21d60541a67a`) on `6e670d6`, pushed;
+  `git ls-remote --tags origin 'finder-verifier-frozen/*'` shows it peeled to `6e670d6`.
