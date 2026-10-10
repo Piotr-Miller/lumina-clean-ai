@@ -378,6 +378,7 @@ class HarnessRefusal extends Error {
 }
 class HarnessCrash extends Error {} // self-test only: simulates the process dying mid-attempt
 class BudgetStop extends Error {}
+class ViolationStop extends Error {}
 class UnboundedRequest extends Error {}
 const refuse = (message) => {
   throw new HarnessRefusal(message);
@@ -385,13 +386,16 @@ const refuse = (message) => {
 
 // ---- Series file: append-only, one fsync per line ----
 const nowIso = () => new Date().toISOString();
+// The file operations go through FS so the self-test can observe that every line is
+// fsync'd before the request it records is sent (review F4). Production uses node:fs.
+let FS = { openSync, writeSync, fsyncSync, closeSync };
 function appendLine(path, obj) {
-  const fd = openSync(path, "a");
+  const fd = FS.openSync(path, "a");
   try {
-    writeSync(fd, `${JSON.stringify(obj)}\n`);
-    fsyncSync(fd);
+    FS.writeSync(fd, `${JSON.stringify(obj)}\n`);
+    FS.fsyncSync(fd);
   } finally {
-    closeSync(fd);
+    FS.closeSync(fd);
   }
 }
 const readLines = (path) =>
@@ -503,15 +507,19 @@ function stepViolations(requests, steps) {
   }
   return null;
 }
-function classifyAttempt({ error, requests, steps, budgetStopped, unbounded }) {
+const accountOf = (rec) => (rec.status === 401 || rec.status === 402 ? `account-${String(rec.status)}` : null);
+// Recorded violations and account errors outrank a budget stop (review F1): a slot whose
+// conditions were broken gets its fresh attempt on resume, never a permanent "not met".
+function classifyAttempt({ error, requests, steps, budgetStopped, unbounded, latched }) {
   if (unbounded) return { status: "condition-violation", cause: "unbounded-request (no max_tokens)" };
-  if (budgetStopped) return { status: "budget-stopped", cause: "budget" };
   const account = [...chainOf(error).map((x) => x?.statusCode), ...requests.map((r) => r.status)].find(
     (s) => s === 401 || s === 402,
   );
   if (account !== undefined) return { status: "condition-violation", cause: `account-${String(account)}` };
+  if (latched !== undefined && latched !== null) return { status: "condition-violation", cause: latched };
   const violation = stepViolations(requests, steps);
   if (violation !== null) return { status: "condition-violation", cause: violation };
+  if (budgetStopped) return { status: "budget-stopped", cause: "budget" };
   if (error === undefined || error === null) return { status: "ok", cause: null };
   if (isModelAttributableError(error)) {
     if (error?.name === "VerifierOutputError")
@@ -529,6 +537,9 @@ function classifyAttempt({ error, requests, steps, budgetStopped, unbounded }) {
 // ---- One attempt: both arms through the same gate and the same telemetry ----
 function gatedFetch(ctx) {
   return async (url, init) => {
+    // A violation already observed on this attempt stops every later send (review F1).
+    if (ctx.latched !== undefined)
+      throw new ViolationStop(`request not sent: ${ctx.latched} was observed on an earlier request of this attempt`);
     const body = JSON.parse(typeof init?.body === "string" ? init.body : "{}");
     const b = requestBound(body, ctx.prices);
     if (b === null) {
@@ -584,6 +595,9 @@ function gatedFetch(ctx) {
     } catch {
       // A body that is not JSON carries no usage: the request is charged its bound.
     }
+    // Latch the first observable violation now, before the SDK can repair or retry.
+    const seen = accountOf(rec) ?? stepViolations([rec], []);
+    if (seen !== null && ctx.latched === undefined) ctx.latched = seen;
     return res;
   };
 }
@@ -598,7 +612,10 @@ async function runAttempt({ prepared, arm, ctx }) {
       fetch: fetchImpl,
       providerRouting: ROUTING,
       onStepEnd: (step) => {
-        ctx.steps.push(describeRequest("verifier", step));
+        const described = describeRequest("verifier", step);
+        ctx.steps.push(described);
+        const seen = stepViolations([], [described]);
+        if (seen !== null && ctx.latched === undefined) ctx.latched = seen;
         options.onStepEnd?.(step);
       },
     });
@@ -650,6 +667,7 @@ async function runAttempt({ prepared, arm, ctx }) {
     steps: ctx.steps,
     budgetStopped: ctx.budgetStopped !== undefined,
     unbounded: ctx.unbounded === true,
+    latched: ctx.latched,
   });
   const sentRequests = ctx.requests.filter((r) => !r.blocked);
   const cost = sentRequests.reduce((t, r) => t + (r.cost ?? r.bound), 0);
@@ -900,7 +918,6 @@ async function reconcile({ seriesPath, key, readCounter }) {
 // ---- Scoring (plan § Definitions: Survives, Refutes, Hard pass, True-class diagnosis) ----
 const rowOfMember = new Map(corpus.map((r) => [r.member, r.row]));
 const findingOfMember = new Map(corpus.map((r) => [r.member, r.finding]));
-const SCORED_ROWS = { true: CLASS.true, "false-code-refutable": CLASS["false-code-refutable"] };
 
 function scoringAttempt(list) {
   // The last attempt that is not a condition violation; violated attempts are never scored.
@@ -923,6 +940,12 @@ function memberOutcome(attempt, member) {
     published: r.published,
     refutedVerified: r.state === "refuted" && r.quoteVerified === true,
     refutedNoEvidence: r.state === "refuted" && r.quoteVerified !== true,
+    reasonCode: r.reasonCode,
+    modelVerdict: r.modelVerdict,
+    quote: r.quote,
+    quoteVerified: r.quoteVerified,
+    quoteMatch: r.quoteMatch,
+    reason: r.reason,
     flags: e.flags,
   };
 }
@@ -982,7 +1005,13 @@ function buildReport({ state, grades, blindKey }) {
     }
     rows.push({ member: rec.member, row: rec.row, class: cls, compound: COMPOUND.includes(rec.member), arms });
   }
-  const cell = (o) => (o.kind === "result" ? o.state + (o.grade ? `/${o.grade}` : "") : `${o.kind}:${o.cause}`);
+  // A refutation is labelled by its quote evidence independently of any hand-read grade (review F2).
+  const cell = (o) => {
+    if (o.kind !== "result") return `${o.kind}:${o.cause}`;
+    const state =
+      o.state === "refuted" ? (o.refutedVerified ? "refuted (quote verified)" : "refuted without evidence") : o.state;
+    return state + (o.grade ? ` / ${o.grade}` : "");
+  };
   const trueRows = rows
     .filter((r) => r.class === "true")
     .map((r) => ({
@@ -1063,6 +1092,30 @@ function buildReport({ state, grades, blindKey }) {
             },
     })),
     distribution,
+    // Every finding × repeat × arm, with the evidence fields the raw series keeps (review F2).
+    detail: rows.flatMap((r) =>
+      Object.entries(r.arms).flatMap(([arm, outs]) =>
+        outs.map((o, i) => ({
+          member: r.member,
+          row: r.row,
+          class: r.class,
+          compound: r.compound,
+          arm,
+          repeat: i + 1,
+          outcome: cell(o),
+          kind: o.kind,
+          cause: o.cause ?? null,
+          state: o.state ?? null,
+          reasonCode: o.reasonCode ?? null,
+          modelVerdict: o.modelVerdict ?? null,
+          quoteVerified: o.quoteVerified ?? null,
+          quoteMatch: o.quoteMatch ?? null,
+          quote: o.quote ?? null,
+          reason: o.reason ?? null,
+          grade: o.grade ?? null,
+        })),
+      ),
+    ),
   };
   const md = [];
   md.push(`# Series report — ${header.model} @ ${header.slug}, ${String(header.repeats)} repeats`);
@@ -1106,6 +1159,19 @@ function buildReport({ state, grades, blindKey }) {
     const [c, arm, o] = k.split("|");
     md.push(`| ${c} | ${arm} | ${o} | ${String(n)} |`);
   }
+  const safe = (t, max) =>
+    t === null || t === undefined ? "" : String(t).replace(/\s+/gu, " ").replace(/\|/gu, "\\|").slice(0, max);
+  md.push(
+    "",
+    "## Every finding × repeat × arm (quotes and full reasons are in the JSON `detail`)",
+    "",
+    "| Member | Row | Class | Compound | Arm | Repeat | Outcome | Quote check | Match | Reason (first 100 chars) |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+  );
+  for (const d of json.detail)
+    md.push(
+      `| ${d.member} | ${d.row} | ${d.class} | ${d.compound ? "yes" : ""} | ${d.arm} | ${String(d.repeat)} | ${d.outcome} | ${d.quoteVerified === null ? "" : d.quoteVerified ? "passed" : "failed"} | ${d.quoteMatch ?? ""} | ${safe(d.reason, 100)} |`,
+    );
   return { md: `${md.join("\n")}\n`, json };
 }
 
@@ -1731,8 +1797,8 @@ async function selfTest() {
         n % 2 === 1 ? { json: completion({ content: "not json {", provider: "Azure" }) } : errorBody(503),
     });
     return [
-      r.ends[0]?.status === "condition-violation" && r.ends[0].cause === "provider-Azure",
-      `${r.ends[0]?.status}:${r.ends[0]?.cause}`,
+      r.ends[0]?.status === "condition-violation" && r.ends[0].cause === "provider-Azure" && r.s.bodies.length === 1,
+      `${r.ends[0]?.status}:${r.ends[0]?.cause} requests=${r.s.bodies.length}`,
     ];
   });
   add("precedence", "reported cost above the request bound → violation", async () => {
@@ -2035,6 +2101,207 @@ async function selfTest() {
       e = caught;
     }
     return [isRefusal(e, "changed after the seal"), String(e?.message).slice(0, 90)];
+  });
+
+  // Review F1: an observed violation latches and no later request is sent
+  const latchCase = (name, extra, expectCause) =>
+    add("latch (review F1)", name, async () => {
+      const r = await one({ responder: () => ({ json: completion({ content: "not json {", ...extra }) }) });
+      return [
+        r.ends[0]?.status === "condition-violation" &&
+          String(r.ends[0].cause).startsWith(expectCause) &&
+          r.s.bodies.length === 1,
+        `${r.ends[0]?.status}:${r.ends[0]?.cause} requests=${r.s.bodies.length}`,
+      ];
+    });
+  latchCase("malformed answer + cost above its bound → exactly one request", { cost: 5 }, "cost-above-bound");
+  latchCase(
+    "malformed answer + prompt_tokens above its bound → exactly one request",
+    { promptTokens: 10_000_000 },
+    "prompt-tokens-above-bound",
+  );
+  latchCase("malformed answer + provider Azure → exactly one request", { provider: "Azure" }, "provider-Azure");
+  latchCase("malformed answer + reasoning text → exactly one request", { reasoningText: "hmm" }, "reasoning-text");
+  add("latch (review F1)", "violation + blocked repair → condition-violation, slot re-run on resume", async () => {
+    const calib = await one({ responder: good });
+    const b1 = calib.ends[0].requests[0].bound;
+    const path = fresh();
+    const r = await one({
+      path,
+      cap: b1,
+      skipAdmission: true,
+      responder: () => ({ json: completion({ content: "not json {", provider: "Azure", cost: b1 * 0.9 }) }),
+    });
+    const unit = classifyAttempt({
+      requests: [{ status: 200, provider: "Azure", blocked: false, reasoningChars: 0, promptTokens: null, cost: null }],
+      steps: [],
+      budgetStopped: true,
+    });
+    const again = await one({ path, resume: true, cap: 0.8, responder: good });
+    const list = again.state.byKey.get("r1/openai-pr269-02/base");
+    return [
+      r.ends[0]?.status === "condition-violation" &&
+        r.s.bodies.length === 1 &&
+        unit.status === "condition-violation" &&
+        list.length === 2 &&
+        list[1].end.status === "ok",
+      `${r.ends[0]?.status}:${r.ends[0]?.cause} requests=${r.s.bodies.length}; unit=${unit.status}; resume attempts=${list.length}`,
+    ];
+  });
+
+  // Review F2 + F3: the report carries every finding, and refutation scoring is pinned at report level
+  const refutationSeries = async (verdicts, repeats) => {
+    const path = fresh();
+    await one({
+      path,
+      run: "openai-pr269-05",
+      repeats,
+      responder: (_b, n) => with05(verdicts[(n - 1) % verdicts.length]),
+    });
+    return seriesState(readLines(path));
+  };
+  const D13valid = { id: D13, verdict: "refuted", quote: goodQuote(own(P05, D13)), reason: "the guard exits first" };
+  const D13empty = { id: D13, verdict: "refuted", quote: "", reason: "r" };
+  const D13absent = { id: D13, verdict: "refuted", quote: "this line is not in any block at all", reason: "r" };
+  const autoOf = (st) => buildReport({ state: st }).json.codeRefutable.find((x) => x.member === "openai-pr269-05#5.2");
+  add("report (review F2)", "every member of a batch appears in the detail, labelled by quote evidence", async () => {
+    const st = await refutationSeries([D13empty], 1);
+    const { json, md } = buildReport({ state: st });
+    const members = new Set(json.detail.map((d) => d.member));
+    const d13 = json.detail.find((d) => d.member === "openai-pr269-05#5.2");
+    const wanted = batches.get("openai-pr269-05").members.map((m) => m.member);
+    return [
+      wanted.every((m) => members.has(m)) &&
+        d13.outcome === "refuted without evidence" &&
+        d13.quoteVerified === false &&
+        md.includes("openai-pr269-05#5.4"),
+      `members=${[...members].join(",")} d13=${d13?.outcome}`,
+    ];
+  });
+  add("report (review F3)", "automatic score: valid quote 1/1 pass, empty 0/1 fail, absent 0/1 fail", async () => {
+    const a = autoOf(await refutationSeries([D13valid], 1));
+    const b = autoOf(await refutationSeries([D13empty], 1));
+    const c = autoOf(await refutationSeries([D13absent], 1));
+    return [
+      a.automatic.met === "1/1" &&
+        a.automatic.hard === "pass" &&
+        b.automatic.met === "0/1" &&
+        b.automatic.hard === "fail" &&
+        c.automatic.met === "0/1",
+      `valid=${a.automatic.met} empty=${b.automatic.met} absent=${c.automatic.met}`,
+    ];
+  });
+  add(
+    "report (review F3)",
+    "3 repeats mixed: automatic 1/3 unstable; hand-read pass vs off-target via the blind key",
+    async () => {
+      const st = await refutationSeries([D13valid, D13empty, D13absent], 3);
+      const auto = autoOf(st);
+      const { keyText } = buildBlind({ state: st, seed: "cd".repeat(32) });
+      const key = JSON.parse(keyText);
+      const gradesFor = (verifiedGrade) =>
+        Object.fromEntries(
+          Object.entries(key.entries).map(([label, e]) => [
+            label,
+            e.key.startsWith("r1/") ? verifiedGrade : "no-evidence",
+          ]),
+        );
+      const pass = buildReport({ state: st, grades: gradesFor("pass"), blindKey: key }).json.codeRefutable.find(
+        (x) => x.member === "openai-pr269-05#5.2",
+      );
+      const off = buildReport({ state: st, grades: gradesFor("off-target"), blindKey: key }).json.codeRefutable.find(
+        (x) => x.member === "openai-pr269-05#5.2",
+      );
+      return [
+        auto.automatic.met === "1/3" &&
+          auto.automatic.hard === "unstable" &&
+          pass.handRead.met === "1/3" &&
+          off.handRead.met === "0/3" &&
+          off.handRead.hard === "fail",
+        `auto=${auto.automatic.met} ${auto.automatic.hard}; hand-read pass=${pass.handRead.met} off-target=${off.handRead.met}`,
+      ];
+    },
+  );
+
+  // Review F4: every journal line is fsync'd before the request it records is sent
+  const instrumentedFs = (failFsyncOn) => {
+    const pending = new Map();
+    const unsynced = [];
+    const events = [];
+    return {
+      events,
+      unsynced,
+      fs: {
+        openSync: (path, flags) => {
+          const fd = openSync(path, flags);
+          pending.set(fd, []);
+          return fd;
+        },
+        writeSync: (fd, text) => {
+          pending.get(fd).push(text);
+          unsynced.push(text);
+          events.push({ op: "write", text });
+          return writeSync(fd, text);
+        },
+        fsyncSync: (fd) => {
+          const lines = pending.get(fd);
+          if (failFsyncOn !== undefined && lines.some((t) => failFsyncOn(t))) {
+            failFsyncOn = undefined;
+            throw Object.assign(new Error("EIO: injected fsync failure"), { code: "EIO" });
+          }
+          for (const t of lines) unsynced.splice(unsynced.indexOf(t), 1);
+          pending.set(fd, []);
+          events.push({ op: "fsync" });
+          return fsyncSync(fd);
+        },
+        closeSync: (fd) => {
+          pending.delete(fd);
+          return closeSync(fd);
+        },
+      },
+    };
+  };
+  const withFs = async (inst, fn) => {
+    const saved = FS;
+    FS = inst.fs;
+    try {
+      return await fn();
+    } finally {
+      FS = saved;
+    }
+  };
+  add("durability (review F4)", "start and request lines are fsync'd before the stub sees the request", async () => {
+    const inst = instrumentedFs();
+    const seenAtSend = [];
+    const r = await withFs(inst, () =>
+      one({
+        responder: () => {
+          seenAtSend.push({
+            unsynced: inst.unsynced.length,
+            hasStart: inst.events.some((e) => e.op === "write" && e.text.includes('"kind":"start"')),
+            lastWrite: [...inst.events].reverse().find((e) => e.op === "write")?.text ?? "",
+          });
+          return good();
+        },
+      }),
+    );
+    const s0 = seenAtSend[0];
+    return [
+      r.ends[0]?.status === "ok" &&
+        s0 !== undefined &&
+        s0.unsynced === 0 &&
+        s0.hasStart &&
+        s0.lastWrite.includes('"kind":"request"'),
+      JSON.stringify({ ...s0, lastWrite: s0?.lastWrite.slice(0, 40) }),
+    ];
+  });
+  add("durability (review F4)", "a failed fsync of the request line → nothing is sent", async () => {
+    const inst = instrumentedFs((t) => t.includes('"kind":"request"'));
+    const r = await withFs(inst, () => one({ responder: good }));
+    return [
+      r.s.bodies.length === 0 && r.ends[0]?.status === "condition-violation",
+      `requests=${r.s.bodies.length} ${r.ends[0]?.status}:${r.ends[0]?.cause}`,
+    ];
   });
 
   let failed = 0;

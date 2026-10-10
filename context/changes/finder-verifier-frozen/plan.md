@@ -547,13 +547,13 @@ None. Nothing in `src/`, `packages/` or CI changes.
 
 #### Automated
 
-- [x] 1.1 The sealed worktree is intact
-- [x] 1.2 The sealed package tests pass in the worktree
-- [x] 1.3 The dry run still passes
-- [x] 1.4 The self-test passes every case
-- [x] 1.5 The report renders from the self-test's stub series
-- [x] 1.6 The plan mode output is unchanged
-- [x] 1.7 The change folder is formatted
+- [x] 1.1 The sealed worktree is intact — edc0a83
+- [x] 1.2 The sealed package tests pass in the worktree — edc0a83
+- [x] 1.3 The dry run still passes — edc0a83
+- [x] 1.4 The self-test passes every case — edc0a83
+- [x] 1.5 The report renders from the self-test's stub series — edc0a83
+- [x] 1.6 The plan mode output is unchanged — edc0a83
+- [x] 1.7 The change folder is formatted — edc0a83
 
 #### Manual
 
