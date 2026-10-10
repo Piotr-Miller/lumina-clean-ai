@@ -259,3 +259,94 @@ below was then taken and is never recomputed. Nothing in this record is part of 
 - **Rebase protection:** annotated tag **`finder-verifier-frozen/seal`** (tag object `163dfb95cec1c509ff50ccaf68c7f58b835eb8f0`) on
   `6e38ce8`, pushed with the branch. `git ls-remote --tags origin 'finder-verifier-frozen/*'` shows it peeled to `6e38ce8`. A
   rebase-merge rewrites the commit SHA; the tag keeps the sealed commit reachable.
+
+## Results
+
+Appended after the seal; never edits `## Pre-registration`.
+
+### Pre-flight (2026-10-10)
+
+- **Seal:** the committed `gate.md` at `3dfae1a` hashes the section to
+  `c26476825dd06a6daf0c5904591ba48ec493810ca02a197a3bb92f1938a8adaa`, equal to the record. The tag
+  `finder-verifier-frozen/seal` on `origin` peels to `6e38ce8`. This is a check, not a recomputation.
+- **Code and inputs:**
+  - the scratch worktree is at `9c85aa2`, with `src` tree `9be94235…` and nothing uncommitted under `src` or
+    `scripts/finder-gate-core.mjs`;
+  - gate-core sha256 is `e713226c…bcb17`;
+  - `harness.mjs` sha256 is `5ab5086f…906b`, equal to the `harness` pin.
+  - The corpus and diff hashes are re-checked by the harness at start-up.
+- **Endpoints** (`GET /api/v1/models/openai/gpt-6-luna/endpoints`, unauthenticated, 2026-10-10T15:30:55Z):
+
+  | Tag (slug)    | `provider_name` | Price per M (in / out) | `reasoning` / `max_tokens` supported |
+  | ------------- | --------------- | ---------------------- | ------------------------------------ |
+  | `openai`      | `OpenAI`        | $0.10 / $0.50          | yes / yes                            |
+  | `openai/flex` | `OpenAI`        | $0.05 / $0.25          | yes / yes                            |
+  | `openai/fast` | `OpenAI`        | $0.20 / $1.00          | yes / yes                            |
+
+  Azure (three tags) and Amazon Bedrock are listed as well; the sealed routing excludes them (`only: ["openai"]`).
+  - **No stop condition of §10 holds:** the `openai` endpoint is present, its price is unchanged at $0.10 / $0.50,
+    and neither parameter is lost.
+  - **Noted, not a sealed condition:** OpenAI now lists two service-tier variants beside `openai`. The predecessors'
+    pre-flights listed only the `openai` slug. OpenRouter's provider-routing docs (read 2026-10-10, route
+    `openrouter.ai/docs/features/provider-routing`) say a base slug matches a provider's variants and regions, but
+    that "service tier endpoints … are **not** matched by base slugs — they require explicit opt-in via the
+    `service_tier` parameter or a tier-suffixed slug", with `openai/fast` as the example. `openai/flex` is not named
+    there. The docs do not say whether the response identifies the variant that served it; every variant reports
+    `provider_name: OpenAI`.
+
+- **T0 = $54.560492781** (`GET /api/v1/key` `usage`, 2026-10-10T15:31:46Z; `usage_daily` 0; `limit` null).
+  - `GET /api/v1/credits`: $60 total, $54.560492781 used, about $5.44 left.
+  - It equals the last settled counter of `finder-sonnet-effort` (2026-10-07) to the micro-dollar, so nothing was
+    spent since.
+  - Ceiling: counter ≤ T0 + 1.00 = $55.560492781; stop and ask at T0 + 0.80 = $55.360492781.
+
+## Amendments
+
+### Amendment 1 (2026-10-10)
+
+- **Why.** The Phase 3 pre-flight (§ Results › Pre-flight) found OpenAI service-tier variants (`openai/flex`,
+  `openai/fast`) beside the sealed `openai` endpoint. All of them report `provider_name: OpenAI`, so the sealed
+  provider check cannot tell them apart.
+  - OpenRouter's docs (read 2026-10-10) say a request that names no tier "is never routed to a non-default service
+    tier" (route `openrouter.ai/docs/guides/features/service-tiers`).
+  - The same docs say the response carries a top-level `service_tier` (`default`, `flex`, `priority`, `ultrafast` or
+    null), and that `GET /api/v1/generation?id=…` reports `provider_name` and `service_tier` per generation (route
+    `openrouter.ai/docs/api/api-reference/generations/get-generation`).
+  - Owner decision 2026-10-10: record that audit trail before the series, because it cannot be recovered after it.
+- **What changes:**
+  - `harness.mjs` records each response's `generationId` (`id`) and `serviceTier` (`service_tier`). That covers every
+    request, including retries and format repairs. A missing or null field stays null and is reported as
+    `undetermined`.
+  - The report's reliability section shows the tier distribution and how many generation ids were recorded.
+  - `checkSeal` applies hashed amendments like this one, which may change **only** the `harness` pin and must name
+    the pin they supersede.
+  - **Defect fixed on the way:** `checkSeal` located `## Pre-registration seal` with a substring search. That search
+    first hits this file's preamble, which mentions the heading in prose. It worked only because the first bold hash
+    after that point happened to be the seal's. It now matches the heading as a whole line, with a regression case.
+- **What does not change:**
+  - the requests: the dry run asserts the same wire shape, with 38 requests and `failures: []`;
+  - the scoring, every criterion of §7, the inputs, the budget, and the stop rules.
+  - **A non-default tier is recorded and reported, never scored or stopped on** (owner: no change to requests or
+    scoring).
+- **Enforcement note:** the amendment is enforced by the amended harness, which reads `## Amendments`. The sealed
+  harness `5ab5086f…` predates amendments and ignores them. Which harness ran is pinned in every series header
+  (`harness`), so a run by the superseded harness is visible in the record.
+- **Verification before this record:**
+  - self-test 72/72, with 9 new cases;
+  - four mutants fail: no generation id, amendment not applied, amendment hash unchecked, substring heading match;
+  - `harness-plan-check.json` is byte-identical;
+  - the sealed section's hash is unchanged.
+
+```json amendment-pins
+{
+  "harness": "ea7a397784af1bd01a973b4f39d9365b4c23af7dc37877971dedc1b145cc37bd",
+  "supersedes": "5ab5086f000b44a49f1ffd0fa5b20562f4ed19760882cb6a9afbf38113b6906b"
+}
+```
+
+_End of Amendment 1._
+
+- sha256 of `### Amendment 1 (2026-10-10)` … `_End of Amendment 1._`: **`3d2b2a40a58fbb514c60f4333a5198b08c5464c417f840a3f82baa9ed4741d96`**, computed as
+  `sed -n '/^### Amendment 1 (2026-10-10)$/,/^_End of Amendment 1\._$/p' gate.md | sha256sum`; taken 2026-10-10T15:39:06Z, before
+  any paid call.
+- Commit, tag `finder-verifier-frozen/amendment-1` and GitHub push time: recorded in the next commit, below.

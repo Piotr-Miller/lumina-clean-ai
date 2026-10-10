@@ -577,7 +577,7 @@ None. Nothing in `src/`, `packages/` or CI changes.
 
 #### Automated
 
-- [ ] 3.1 (paid) Pre-flight reads prices and the key counter
+- [x] 3.1 (paid) Pre-flight reads prices and the key counter
 - [ ] 3.2 (paid) The series completes or stops by a pre-registered rule
 - [ ] 3.3 The report reproduces from the committed series
 - [ ] 3.4 Spend stays within the cap

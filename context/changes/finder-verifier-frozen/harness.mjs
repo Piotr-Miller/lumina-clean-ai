@@ -564,6 +564,8 @@ function gatedFetch(ctx) {
       reasoningChars: 0,
       finishReason: null,
       content: null,
+      generationId: null,
+      serviceTier: null,
       error: null,
     };
     if (ctx.Tbase + spentInAttempt + b.bound > ctx.cap) {
@@ -596,6 +598,10 @@ function gatedFetch(ctx) {
       rec.reasoningChars = typeof message?.reasoning === "string" ? message.reasoning.length : 0;
       rec.finishReason = data?.choices?.[0]?.finish_reason ?? null;
       rec.content = typeof message?.content === "string" ? message.content : null;
+      // Amendment 1: the audit trail for the served endpoint tier. Recorded only; it changes no
+      // request and no scoring. A missing or null field stays null ("undetermined").
+      rec.generationId = typeof data?.id === "string" && data.id !== "" ? data.id : null;
+      rec.serviceTier = typeof data?.service_tier === "string" && data.service_tier !== "" ? data.service_tier : null;
     } catch {
       // A body that is not JSON carries no usage: the request is charged its bound.
     }
@@ -730,8 +736,17 @@ function checkSeal(gatePath) {
   const text = readFileSync(gatePath, "utf8");
   const section = preRegistrationSection(text);
   if (section === null) refuse(`${gatePath} has no "## Pre-registration" … "_End of Pre-registration._" section.`);
-  const sealAt = text.indexOf("## Pre-registration seal");
-  const sealed = sealAt < 0 ? null : text.slice(sealAt).match(/\*\*`([0-9a-f]{64})`\*\*/u);
+  // The heading as a whole line: the file's own preamble mentions "## Pre-registration seal" in prose.
+  const textLines = text.split("\n");
+  const sealLine = textLines.indexOf("## Pre-registration seal");
+  const sealSection =
+    sealLine < 0
+      ? ""
+      : textLines
+          .slice(sealLine)
+          .join("\n")
+          .split(/\n(?=## )/u)[0];
+  const sealed = sealLine < 0 ? null : sealSection.match(/\*\*`([0-9a-f]{64})`\*\*/u);
   if (sealed === null) refuse(`${gatePath} is not sealed: no recorded sha256 under "## Pre-registration seal".`);
   const actual = createHash("sha256").update(section, "utf8").digest("hex");
   if (sealed[1] !== actual)
@@ -740,13 +755,53 @@ function checkSeal(gatePath) {
     );
   const pinsBlock = section.match(/```json pins\n([\s\S]*?)\n```/u);
   if (pinsBlock === null) refuse("the pre-registration has no ```json pins``` block.");
-  const sealedPins = JSON.parse(pinsBlock[1]);
+  const sealedPins = { ...JSON.parse(pinsBlock[1]) };
+  sealedPins.harness = harnessPinInForce(text, sealedPins.harness);
   const expected = { ...PINS, harness: HARNESS_SHA256 };
   const differing = [...new Set([...Object.keys(sealedPins), ...Object.keys(expected)])].filter(
     (k) => canon(sealedPins[k]) !== canon(expected[k]),
   );
   if (differing.length > 0)
     refuse(`the sealed pins differ from this harness and its inputs: ${differing.join(", ")}. Nothing was sent.`);
+}
+
+// Amendments (gate.md § Amendments, after the seal): each `### Amendment N (…)` … `_End of Amendment N._`
+// block carries its own recorded sha256 and a ```json amendment-pins``` block that may change ONLY the
+// harness pin, naming the pin it supersedes. Applied in order 1, 2, …; anything else is refused.
+function harnessPinInForce(text, sealedHarness) {
+  const lines = text.split("\n");
+  const sealLine = lines.indexOf("## Pre-registration seal");
+  let current = sealedHarness;
+  for (let n = 1; ; n += 1) {
+    const start = lines.findIndex(
+      (l) => l === `### Amendment ${String(n)}` || l.startsWith(`### Amendment ${String(n)} (`),
+    );
+    if (start < 0) break;
+    if (start < sealLine) refuse(`amendment ${String(n)} sits before the seal; an amendment always follows it`);
+    const end = lines.findIndex((l, i) => i > start && l === `_End of Amendment ${String(n)}._`);
+    if (end < 0) refuse(`amendment ${String(n)} has no "_End of Amendment ${String(n)}._" line`);
+    const block = `${lines.slice(start, end + 1).join("\n")}\n`;
+    const tail = lines
+      .slice(end + 1)
+      .join("\n")
+      .split(/\n(?=#{2,3} )/u)[0];
+    const recorded = tail.match(/\*\*`([0-9a-f]{64})`\*\*/u);
+    if (recorded === null) refuse(`amendment ${String(n)} has no recorded sha256 after its block`);
+    const actual = createHash("sha256").update(block, "utf8").digest("hex");
+    if (recorded[1] !== actual)
+      refuse(`amendment ${String(n)} changed after it was recorded: recorded ${recorded[1]}, now ${actual}`);
+    const pins = block.match(/```json amendment-pins\n([\s\S]*?)\n```/u);
+    if (pins === null) refuse(`amendment ${String(n)} has no \`\`\`json amendment-pins\`\`\` block`);
+    const ap = JSON.parse(pins[1]);
+    if (canon(Object.keys(ap).sort()) !== canon(["harness", "supersedes"]))
+      refuse(`amendment ${String(n)} may change only the harness pin; it names ${Object.keys(ap).join(", ")}`);
+    if (ap.supersedes !== current)
+      refuse(
+        `amendment ${String(n)} supersedes ${String(ap.supersedes)}, but the harness pin in force is ${String(current)}`,
+      );
+    current = ap.harness;
+  }
+  return current;
 }
 
 // ---- The series ----
@@ -1045,6 +1100,8 @@ function buildReport({ state, grades, blindKey }) {
   let maxTokRatio = 0;
   let maxCostRatio = 0;
   let eSum = 0;
+  const serviceTiers = {};
+  const generationIds = { recorded: 0, missing: 0 };
   for (const a of attempts) {
     eSum += a.start.E ?? 0;
     const status = a.interrupted !== null ? "interrupted" : (a.end?.status ?? "open");
@@ -1053,6 +1110,12 @@ function buildReport({ state, grades, blindKey }) {
     if (cause) byCause[`${status}:${cause}`] = (byCause[`${status}:${cause}`] ?? 0) + 1;
     for (const f of a.end?.flags ?? []) flags[f] = (flags[f] ?? 0) + 1;
     for (const r of a.end?.requests ?? []) {
+      if (!r.blocked && r.status !== null) {
+        const tier = r.serviceTier ?? "undetermined";
+        serviceTiers[tier] = (serviceTiers[tier] ?? 0) + 1;
+        if (typeof r.generationId === "string") generationIds.recorded += 1;
+        else generationIds.missing += 1;
+      }
       if (r.promptTokens !== null && r.tokIn > 0) maxTokRatio = Math.max(maxTokRatio, r.promptTokens / r.tokIn);
       if (r.cost !== null && r.bound > 0) maxCostRatio = Math.max(maxCostRatio, r.cost / r.bound);
     }
@@ -1067,7 +1130,15 @@ function buildReport({ state, grades, blindKey }) {
       expectedE: eSum,
       headroom: { maxPromptTokensOverBound: maxTokRatio, maxCostOverBound: maxCostRatio },
     },
-    reliability: { attempts: attempts.length, byStatus, byCause, flags, open: state.open.length },
+    reliability: {
+      attempts: attempts.length,
+      byStatus,
+      byCause,
+      flags,
+      open: state.open.length,
+      serviceTiers,
+      generationIds,
+    },
     trueClass: trueRows.map((r) => ({
       member: r.member,
       row: r.row,
@@ -1133,6 +1204,9 @@ function buildReport({ state, grades, blindKey }) {
   md.push("", "## Reliability (execution, never judgement)", "");
   md.push(
     `- Attempts ${String(attempts.length)}; by status ${JSON.stringify(byStatus)}; by cause ${JSON.stringify(byCause)}; flags ${JSON.stringify(flags)}; open ${String(state.open.length)}.`,
+  );
+  md.push(
+    `- Served tiers (Amendment 1; "undetermined" = no service_tier in the response): ${JSON.stringify(serviceTiers)}; generation ids recorded ${String(generationIds.recorded)}, missing ${String(generationIds.missing)}.`,
   );
   md.push("", "## True class — must survive publication, 3/3 base", "");
   md.push(
@@ -1474,9 +1548,12 @@ async function selfTest() {
     promptTokens = 100,
     reasoningTokens,
     reasoningText,
+    id = "gen-self-test",
+    serviceTier,
   }) => ({
-    id: "gen-self-test",
+    id,
     object: "chat.completion",
+    ...(serviceTier === undefined ? {} : { service_tier: serviceTier }),
     created: 0,
     model: VERIFIER.model,
     ...(provider === null ? {} : { provider }),
@@ -2306,6 +2383,121 @@ async function selfTest() {
       r.s.bodies.length === 0 && r.ends[0]?.status === "condition-violation",
       `requests=${r.s.bodies.length} ${r.ends[0]?.status}:${r.ends[0]?.cause}`,
     ];
+  });
+
+  // Amendment 1: the served tier is recorded for audit, for every response, repair and retry included
+  add("amendment 1", "generation id and service_tier recorded per response, repair included", async () => {
+    const r = await one({
+      responder: (_b, n) =>
+        n === 1
+          ? { json: completion({ content: "not json {", id: "gen-a1", serviceTier: "default" }) }
+          : {
+              json: completion({
+                content: JSON.stringify({ verdicts: [{ id: F02, verdict: "unsupported", quote: "", reason: "r" }] }),
+                id: "gen-a2",
+              }),
+            },
+    });
+    const q = r.ends[0].requests.map((x) => `${x.generationId}/${x.serviceTier}`);
+    const rel = buildReport({ state: r.state }).json.reliability;
+    return [
+      canon(q) === canon(["gen-a1/default", "gen-a2/null"]) &&
+        canon(rel.serviceTiers) === canon({ default: 1, undetermined: 1 }) &&
+        rel.generationIds.recorded === 2,
+      `${q.join(" ")} tiers=${JSON.stringify(rel.serviceTiers)}`,
+    ];
+  });
+  add("amendment 1", "an error response has no generation id; the retried response's id is recorded", async () => {
+    const r = await one({
+      responder: (_b, n) =>
+        n === 1
+          ? errorBody(503)
+          : { json: completion({ content: JSON.stringify({ verdicts: [] }), id: "gen-b2", serviceTier: "default" }) },
+    });
+    const q = r.ends[0].requests.map((x) => `${x.generationId}/${x.serviceTier}`);
+    const rel = buildReport({ state: r.state }).json.reliability;
+    return [
+      canon(q) === canon(["null/null", "gen-b2/default"]) &&
+        rel.generationIds.missing === 1 &&
+        rel.generationIds.recorded === 1,
+      `${q.join(" ")} ids=${JSON.stringify(rel.generationIds)}`,
+    ];
+  });
+  const amendedGate = ({ sealedHarness, amendmentPins, editAfter = false, position = "after" }) => {
+    const section = `## Pre-registration\n\ntext\n\n\`\`\`json pins\n${JSON.stringify({ ...PINS, harness: sealedHarness }, null, 1)}\n\`\`\`\n\n_End of Pre-registration._\n`;
+    const h = createHash("sha256").update(section, "utf8").digest("hex");
+    const block = `### Amendment 1 (2026-10-10)\n\nwhy\n\n\`\`\`json amendment-pins\n${JSON.stringify(amendmentPins, null, 1)}\n\`\`\`\n\n_End of Amendment 1._\n`;
+    const ah = createHash("sha256").update(block, "utf8").digest("hex");
+    const body = editAfter ? block.replace("why", "edited") : block;
+    const seal = `## Pre-registration seal\n\n- sha256: **\`${h}\`**\n`;
+    const amend = `## Amendments\n\n${body}\n- sha256: **\`${ah}\`**\n`;
+    const p = join(dir, `gate-${String((fileNo += 1))}.md`);
+    writeFileSync(
+      p,
+      position === "after" ? `# Gate\n\n${section}\n${seal}\n${amend}` : `# Gate\n\n${amend}\n${section}\n${seal}`,
+    );
+    return p;
+  };
+  const sealOutcome = (path) => {
+    try {
+      checkSeal(path);
+      return "accepted";
+    } catch (e) {
+      return e instanceof HarnessRefusal ? `refused: ${e.message}` : `threw ${String(e)}`;
+    }
+  };
+  const OLD = "a".repeat(64);
+  add("amendment 1", "a recorded amendment that supersedes the sealed harness pin → accepted", async () => {
+    const o = sealOutcome(
+      amendedGate({ sealedHarness: OLD, amendmentPins: { harness: HARNESS_SHA256, supersedes: OLD } }),
+    );
+    return [o === "accepted", o.slice(0, 90)];
+  });
+  add("amendment 1", "an amendment edited after its record → refused", async () => {
+    const o = sealOutcome(
+      amendedGate({ sealedHarness: OLD, amendmentPins: { harness: HARNESS_SHA256, supersedes: OLD }, editAfter: true }),
+    );
+    return [o.includes("changed after it was recorded"), o.slice(0, 90)];
+  });
+  add("amendment 1", "an amendment that changes any other pin → refused", async () => {
+    const o = sealOutcome(
+      amendedGate({
+        sealedHarness: OLD,
+        amendmentPins: { harness: HARNESS_SHA256, supersedes: OLD, corpus: "0".repeat(64) },
+      }),
+    );
+    return [o.includes("may change only the harness pin"), o.slice(0, 90)];
+  });
+  add("amendment 1", "an amendment naming the wrong superseded pin → refused", async () => {
+    const o = sealOutcome(
+      amendedGate({ sealedHarness: OLD, amendmentPins: { harness: HARNESS_SHA256, supersedes: "b".repeat(64) } }),
+    );
+    return [o.includes("but the harness pin in force is"), o.slice(0, 90)];
+  });
+  add("amendment 1", "the sealed harness alone, once an amendment is in force → refused", async () => {
+    const o = sealOutcome(
+      amendedGate({
+        sealedHarness: HARNESS_SHA256,
+        amendmentPins: { harness: "c".repeat(64), supersedes: HARNESS_SHA256 },
+      }),
+    );
+    return [o.includes("differ from this harness") && o.includes("harness"), o.slice(0, 90)];
+  });
+  add("seal", 'a preamble that mentions "## Pre-registration seal" in prose does not hide the seal', async () => {
+    const p = sealedGate({ ...PINS, harness: HARNESS_SHA256 });
+    writeFileSync(p, `> \`## Pre-registration seal\` records the hash.\n\n${readFileSync(p, "utf8")}`);
+    const o = sealOutcome(p);
+    return [o === "accepted", o.slice(0, 90)];
+  });
+  add("amendment 1", "an amendment placed before the seal → refused", async () => {
+    const o = sealOutcome(
+      amendedGate({
+        sealedHarness: OLD,
+        amendmentPins: { harness: HARNESS_SHA256, supersedes: OLD },
+        position: "before",
+      }),
+    );
+    return [o.includes("before the seal"), o.slice(0, 90)];
   });
 
   let failed = 0;
