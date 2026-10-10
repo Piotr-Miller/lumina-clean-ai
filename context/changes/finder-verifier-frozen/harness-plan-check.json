@@ -1,0 +1,2749 @@
+{
+  "summary": {
+    "sealCommit": "9c85aa27f418c6d8cb669b1bedddbb333799fa02",
+    "sealSrcTree": "9be9423531d08ec932f82db7683e97d4da5ddf5c",
+    "corpusSha256": "46aaa0f2407bb08139d416cfde9c80d9fee69d5c42c73febc3635d0225830740",
+    "batches": 19,
+    "findings": 75,
+    "byClass": {
+      "true": {
+        "base": {
+          "findings": 11,
+          "fullEvidence": 2,
+          "unverifiable": 0
+        },
+        "O": {
+          "findings": 11,
+          "fullEvidence": 11,
+          "unverifiable": 0
+        }
+      },
+      "false-code-refutable": {
+        "base": {
+          "findings": 3,
+          "fullEvidence": 3,
+          "unverifiable": 0
+        },
+        "O": {
+          "findings": 3,
+          "fullEvidence": 3,
+          "unverifiable": 0
+        }
+      },
+      "ambiguous": {
+        "base": {
+          "findings": 14,
+          "fullEvidence": 5,
+          "unverifiable": 0
+        },
+        "O": {
+          "findings": 14,
+          "fullEvidence": 14,
+          "unverifiable": 0
+        }
+      },
+      "policy": {
+        "base": {
+          "findings": 15,
+          "fullEvidence": 4,
+          "unverifiable": 3
+        },
+        "O": {
+          "findings": 15,
+          "fullEvidence": 12,
+          "unverifiable": 3
+        }
+      },
+      "descriptive": {
+        "base": {
+          "findings": 32,
+          "fullEvidence": 0,
+          "unverifiable": 0
+        },
+        "O": {
+          "findings": 32,
+          "fullEvidence": 0,
+          "unverifiable": 0
+        }
+      }
+    }
+  },
+  "perBatch": [
+    {
+      "run": "low-247-r2",
+      "set": "E",
+      "pr": "247",
+      "findings": 4,
+      "base": {
+        "blocks": 4,
+        "lines": 111,
+        "chars": 5029
+      },
+      "O": {
+        "blocks": 4,
+        "chars": 5029
+      }
+    },
+    {
+      "run": "medium-247-r1",
+      "set": "E",
+      "pr": "247",
+      "findings": 3,
+      "base": {
+        "blocks": 4,
+        "lines": 119,
+        "chars": 5414
+      },
+      "O": {
+        "blocks": 4,
+        "chars": 5414
+      }
+    },
+    {
+      "run": "medium-247-r2",
+      "set": "E",
+      "pr": "247",
+      "findings": 6,
+      "base": {
+        "blocks": 3,
+        "lines": 192,
+        "chars": 8703
+      },
+      "O": {
+        "blocks": 3,
+        "chars": 8703
+      }
+    },
+    {
+      "run": "low-247-r1",
+      "set": "E",
+      "pr": "247",
+      "findings": 4,
+      "base": {
+        "blocks": 4,
+        "lines": 156,
+        "chars": 7171
+      },
+      "O": {
+        "blocks": 4,
+        "chars": 7171
+      }
+    },
+    {
+      "run": "medium-269-r1",
+      "set": "E",
+      "pr": "269",
+      "findings": 4,
+      "base": {
+        "blocks": 13,
+        "lines": 295,
+        "chars": 16860
+      },
+      "O": {
+        "blocks": 13,
+        "chars": 16860
+      }
+    },
+    {
+      "run": "low-269-r2",
+      "set": "E",
+      "pr": "269",
+      "findings": 4,
+      "base": {
+        "blocks": 10,
+        "lines": 284,
+        "chars": 16294
+      },
+      "O": {
+        "blocks": 10,
+        "chars": 16294
+      }
+    },
+    {
+      "run": "low-269-r1",
+      "set": "E",
+      "pr": "269",
+      "findings": 4,
+      "base": {
+        "blocks": 11,
+        "lines": 344,
+        "chars": 18178
+      },
+      "O": {
+        "blocks": 11,
+        "chars": 18178
+      }
+    },
+    {
+      "run": "medium-269-r2",
+      "set": "E",
+      "pr": "269",
+      "findings": 3,
+      "base": {
+        "blocks": 7,
+        "lines": 294,
+        "chars": 15576
+      },
+      "O": {
+        "blocks": 7,
+        "chars": 15576
+      }
+    },
+    {
+      "run": "openai-pr269-01",
+      "set": "G",
+      "pr": "269",
+      "findings": 5,
+      "base": {
+        "blocks": 11,
+        "lines": 358,
+        "chars": 19810
+      },
+      "O": {
+        "blocks": 15,
+        "chars": 21490
+      }
+    },
+    {
+      "run": "openai-pr269-03",
+      "set": "G",
+      "pr": "269",
+      "findings": 3,
+      "base": {
+        "blocks": 7,
+        "lines": 196,
+        "chars": 10986
+      },
+      "O": {
+        "blocks": 9,
+        "chars": 12155
+      }
+    },
+    {
+      "run": "openai-pr269-04",
+      "set": "G",
+      "pr": "269",
+      "findings": 5,
+      "base": {
+        "blocks": 13,
+        "lines": 381,
+        "chars": 21392
+      },
+      "O": {
+        "blocks": 18,
+        "chars": 22325
+      }
+    },
+    {
+      "run": "openai-pr269-10",
+      "set": "G",
+      "pr": "269",
+      "findings": 4,
+      "base": {
+        "blocks": 10,
+        "lines": 318,
+        "chars": 18608
+      },
+      "O": {
+        "blocks": 11,
+        "chars": 18725
+      }
+    },
+    {
+      "run": "openai-pr269-02",
+      "set": "G",
+      "pr": "269",
+      "findings": 1,
+      "base": {
+        "blocks": 3,
+        "lines": 100,
+        "chars": 5444
+      },
+      "O": {
+        "blocks": 4,
+        "chars": 6254
+      }
+    },
+    {
+      "run": "openai-pr269-05",
+      "set": "G",
+      "pr": "269",
+      "findings": 4,
+      "base": {
+        "blocks": 10,
+        "lines": 323,
+        "chars": 18547
+      },
+      "O": {
+        "blocks": 11,
+        "chars": 19357
+      }
+    },
+    {
+      "run": "openai-pr269-06",
+      "set": "G",
+      "pr": "269",
+      "findings": 3,
+      "base": {
+        "blocks": 9,
+        "lines": 273,
+        "chars": 16068
+      },
+      "O": {
+        "blocks": 12,
+        "chars": 17079
+      }
+    },
+    {
+      "run": "openai-pr269-07",
+      "set": "G",
+      "pr": "269",
+      "findings": 4,
+      "base": {
+        "blocks": 10,
+        "lines": 302,
+        "chars": 17147
+      },
+      "O": {
+        "blocks": 13,
+        "chars": 18300
+      }
+    },
+    {
+      "run": "openai-pr269-08",
+      "set": "G",
+      "pr": "269",
+      "findings": 3,
+      "base": {
+        "blocks": 8,
+        "lines": 238,
+        "chars": 13730
+      },
+      "O": {
+        "blocks": 10,
+        "chars": 14657
+      }
+    },
+    {
+      "run": "openai-pr269-09",
+      "set": "G",
+      "pr": "269",
+      "findings": 6,
+      "base": {
+        "blocks": 10,
+        "lines": 342,
+        "chars": 19182
+      },
+      "O": {
+        "blocks": 16,
+        "chars": 22655
+      }
+    },
+    {
+      "run": "247-r1",
+      "set": "H",
+      "pr": "247",
+      "findings": 5,
+      "base": {
+        "blocks": 3,
+        "lines": 184,
+        "chars": 8415
+      },
+      "O": {
+        "blocks": 6,
+        "chars": 9154
+      }
+    }
+  ],
+  "findings": [
+    {
+      "member": "low-247-r2#0",
+      "row": "E-R247-01",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F1",
+      "cited": "scripts/prod-fetch-results.py:1-20",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-45"],
+        "lines": 45,
+        "chars": 1951,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-45"],
+        "lines": 45,
+        "chars": 1951,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-247-r2#1",
+      "row": "E-R247-06",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F2",
+      "cited": "scripts/prod-fetch-results.py:63-80",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-45", "B2 scripts/prod-fetch-results.py:59-64"],
+        "lines": 51,
+        "chars": 2346,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-45", "B2 scripts/prod-fetch-results.py:59-64"],
+        "lines": 51,
+        "chars": 2346,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-247-r2#2",
+      "row": "E-R247-10",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F3",
+      "cited": "scripts/prod-result-dimensions.py:1-141",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B3 scripts/prod-result-dimensions.py:1-40"],
+        "lines": 40,
+        "chars": 1834,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B3 scripts/prod-result-dimensions.py:1-40"],
+        "lines": 40,
+        "chars": 1834,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-247-r2#3",
+      "row": "E-R247-13",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F4",
+      "cited": "scripts/prod-result-dimensions.py:90-108",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B3 scripts/prod-result-dimensions.py:1-40", "B4 scripts/prod-result-dimensions.py:79-98"],
+        "lines": 60,
+        "chars": 2683,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B3 scripts/prod-result-dimensions.py:1-40", "B4 scripts/prod-result-dimensions.py:79-98"],
+        "lines": 60,
+        "chars": 2683,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-247-r1#0",
+      "row": "E-R247-02",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F1",
+      "cited": "scripts/prod-fetch-results.py:1-93",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-52"],
+        "lines": 52,
+        "chars": 2263,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-52"],
+        "lines": 52,
+        "chars": 2263,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-247-r1#1",
+      "row": "E-R247-03",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F2",
+      "cited": "scripts/prod-fetch-results.py:27-27",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-52"],
+        "lines": 52,
+        "chars": 2263,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-52"],
+        "lines": 52,
+        "chars": 2263,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-247-r1#2",
+      "row": "E-R247-13-PNG",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F3",
+      "cited": "scripts/prod-result-dimensions.py:65-84",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/prod-result-dimensions.py:1-40",
+          "B3 scripts/prod-result-dimensions.py:70-76",
+          "B4 scripts/prod-result-dimensions.py:79-98"
+        ],
+        "lines": 67,
+        "chars": 3151,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/prod-result-dimensions.py:1-40",
+          "B3 scripts/prod-result-dimensions.py:70-76",
+          "B4 scripts/prod-result-dimensions.py:79-98"
+        ],
+        "lines": 67,
+        "chars": 3151,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-247-r2#0",
+      "row": "E-R247-03",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F1",
+      "cited": "scripts/prod-fetch-results.py:27-27",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4297,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4297,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-247-r2#1",
+      "row": "E-R247-04",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F2",
+      "cited": "scripts/prod-fetch-results.py:33-33",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4297,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4297,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-247-r2#2",
+      "row": "E-R247-07",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F3",
+      "cited": "scripts/prod-fetch-results.py:68-68",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4297,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4297,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-247-r2#3",
+      "row": "E-R247-09",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F4",
+      "cited": "scripts/prod-fetch-results.py:87-87",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4297,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4297,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-247-r2#4",
+      "row": "E-R247-11",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F5",
+      "cited": "scripts/prod-result-dimensions.py:23-23",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-48"],
+        "lines": 48,
+        "chars": 2148,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-48"],
+        "lines": 48,
+        "chars": 2148,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-247-r2#5",
+      "row": "E-R247-14",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F6",
+      "cited": "scripts/prod-result-dimensions.py:100-100",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-48", "B3 scripts/prod-result-dimensions.py:75-125"],
+        "lines": 99,
+        "chars": 4406,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-48", "B3 scripts/prod-result-dimensions.py:75-125"],
+        "lines": 99,
+        "chars": 4406,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-247-r1#0",
+      "row": "E-R247-05",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F1",
+      "cited": "scripts/prod-fetch-results.py:41-42",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4298,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4298,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-247-r1#1",
+      "row": "E-R247-08",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F2",
+      "cited": "scripts/prod-fetch-results.py:76-78",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4298,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4298,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-247-r1#2",
+      "row": "E-R247-12",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F3",
+      "cited": "scripts/prod-result-dimensions.py:46-47",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-40", "B3 scripts/prod-result-dimensions.py:45-47"],
+        "lines": 43,
+        "chars": 2019,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-40", "B3 scripts/prod-result-dimensions.py:45-47"],
+        "lines": 43,
+        "chars": 2019,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-247-r1#3",
+      "row": "E-R247-13",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F4",
+      "cited": "scripts/prod-result-dimensions.py:79-92",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-40", "B4 scripts/prod-result-dimensions.py:79-98"],
+        "lines": 60,
+        "chars": 2688,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-40", "B4 scripts/prod-result-dimensions.py:79-98"],
+        "lines": 60,
+        "chars": 2688,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-269-r1#0",
+      "row": "E-R269-01",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F1",
+      "cited": "scripts/measure-hue-shares.py:117-124",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/measure-hue-shares.py:1-40",
+          "B2 scripts/measure-hue-shares.py:117-124",
+          "B3 scripts/measure-hue-shares.py:143-152"
+        ],
+        "lines": 58,
+        "chars": 3448,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/measure-hue-shares.py:1-40",
+          "B2 scripts/measure-hue-shares.py:117-124",
+          "B3 scripts/measure-hue-shares.py:143-152"
+        ],
+        "lines": 58,
+        "chars": 3448,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-269-r1#1",
+      "row": "E-R269-02",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F2",
+      "cited": "scripts/measure-hue-shares.py:150-161",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/measure-hue-shares.py:1-40",
+          "B3 scripts/measure-hue-shares.py:143-152",
+          "B4 scripts/measure-hue-shares.py:155-181",
+          "B5 scripts/measure-hue-shares.py:184-191"
+        ],
+        "lines": 85,
+        "chars": 4791,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/measure-hue-shares.py:1-40",
+          "B3 scripts/measure-hue-shares.py:143-152",
+          "B4 scripts/measure-hue-shares.py:155-181",
+          "B5 scripts/measure-hue-shares.py:184-191"
+        ],
+        "lines": 85,
+        "chars": 4791,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-269-r1#2",
+      "row": "E-R269-04",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F3",
+      "cited": "scripts/s17/decode-inputs.py:1-197",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B6 scripts/s17/decode-inputs.py:1-40",
+          "B7 scripts/s17/decode-inputs.py:80-102",
+          "B8 scripts/s17/decode-inputs.py:121-121",
+          "B9 scripts/s17/decode-inputs.py:129-169"
+        ],
+        "lines": 105,
+        "chars": 5946,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B6 scripts/s17/decode-inputs.py:1-40",
+          "B7 scripts/s17/decode-inputs.py:80-102",
+          "B8 scripts/s17/decode-inputs.py:121-121",
+          "B9 scripts/s17/decode-inputs.py:129-169"
+        ],
+        "lines": 105,
+        "chars": 5946,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-269-r1#3",
+      "row": "E-R269-11",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F4",
+      "cited": "scripts/spikes/bread-spike.ts:245-246",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B10 scripts/spikes/bread-spike.ts:1-40",
+          "B11 scripts/spikes/bread-spike.ts:99-99",
+          "B12 scripts/spikes/bread-spike.ts:131-154",
+          "B13 scripts/spikes/bread-spike.ts:222-253"
+        ],
+        "lines": 97,
+        "chars": 5719,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B10 scripts/spikes/bread-spike.ts:1-40",
+          "B11 scripts/spikes/bread-spike.ts:99-99",
+          "B12 scripts/spikes/bread-spike.ts:131-154",
+          "B13 scripts/spikes/bread-spike.ts:222-253"
+        ],
+        "lines": 97,
+        "chars": 5719,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-269-r2#0",
+      "row": "E-R269-02",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F1",
+      "cited": "scripts/measure-hue-shares.py:135-140",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/measure-hue-shares.py:1-40",
+          "B2 scripts/measure-hue-shares.py:135-140",
+          "B3 scripts/measure-hue-shares.py:143-152"
+        ],
+        "lines": 56,
+        "chars": 3367,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/measure-hue-shares.py:1-40",
+          "B2 scripts/measure-hue-shares.py:135-140",
+          "B3 scripts/measure-hue-shares.py:143-152"
+        ],
+        "lines": 56,
+        "chars": 3367,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-269-r2#1",
+      "row": "E-R269-03",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F2",
+      "cited": "scripts/s17/browser-stats.ts:---",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B4 scripts/s17/browser-stats.ts:1-40"],
+        "lines": 40,
+        "chars": 2408,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B4 scripts/s17/browser-stats.ts:1-40"],
+        "lines": 40,
+        "chars": 2408,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-269-r2#2",
+      "row": "E-R269-07",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F3",
+      "cited": "scripts/s17/desktop-stats.ts:101-123",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B5 scripts/s17/desktop-stats.ts:1-40", "B6 scripts/s17/desktop-stats.ts:87-137"],
+        "lines": 91,
+        "chars": 4800,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B5 scripts/s17/desktop-stats.ts:1-40", "B6 scripts/s17/desktop-stats.ts:87-137"],
+        "lines": 91,
+        "chars": 4800,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-269-r2#3",
+      "row": "E-R269-11",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F4",
+      "cited": "scripts/spikes/bread-spike.ts:245-246",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B7 scripts/spikes/bread-spike.ts:1-40",
+          "B8 scripts/spikes/bread-spike.ts:99-99",
+          "B9 scripts/spikes/bread-spike.ts:131-154",
+          "B10 scripts/spikes/bread-spike.ts:222-253"
+        ],
+        "lines": 97,
+        "chars": 5719,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B7 scripts/spikes/bread-spike.ts:1-40",
+          "B8 scripts/spikes/bread-spike.ts:99-99",
+          "B9 scripts/spikes/bread-spike.ts:131-154",
+          "B10 scripts/spikes/bread-spike.ts:222-253"
+        ],
+        "lines": 97,
+        "chars": 5719,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-269-r1#0",
+      "row": "E-R269-03",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F1",
+      "cited": "scripts/s17/browser-stats.ts:41-46",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/s17/browser-stats.ts:1-71", "B3 scripts/s17/desktop-stats.ts:87-126"],
+        "lines": 111,
+        "chars": 5318,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/s17/browser-stats.ts:1-71", "B3 scripts/s17/desktop-stats.ts:87-126"],
+        "lines": 111,
+        "chars": 5318,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-269-r1#1",
+      "row": "E-R269-05",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F2",
+      "cited": "scripts/s17/decode-inputs.py:64-90",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B4 scripts/s17/decode-inputs.py:1-40",
+          "B5 scripts/s17/decode-inputs.py:80-102",
+          "B6 scripts/s17/decode-inputs.py:121-121",
+          "B7 scripts/s17/decode-inputs.py:129-169"
+        ],
+        "lines": 105,
+        "chars": 5957,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B4 scripts/s17/decode-inputs.py:1-40",
+          "B5 scripts/s17/decode-inputs.py:80-102",
+          "B6 scripts/s17/decode-inputs.py:121-121",
+          "B7 scripts/s17/decode-inputs.py:129-169"
+        ],
+        "lines": 105,
+        "chars": 5957,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-269-r1#2",
+      "row": "E-R269-06",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F3",
+      "cited": "scripts/s17/desktop-stats.ts:23-24",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/s17/desktop-stats.ts:1-49"],
+        "lines": 49,
+        "chars": 2413,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/s17/desktop-stats.ts:1-49"],
+        "lines": 49,
+        "chars": 2413,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "low-269-r1#3",
+      "row": "E-R269-10",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F4",
+      "cited": "scripts/spikes/bread-spike.ts:205-219",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B8 scripts/spikes/bread-spike.ts:1-40",
+          "B9 scripts/spikes/bread-spike.ts:68-68",
+          "B10 scripts/spikes/bread-spike.ts:75-97",
+          "B11 scripts/spikes/bread-spike.ts:199-213"
+        ],
+        "lines": 79,
+        "chars": 4490,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B8 scripts/spikes/bread-spike.ts:1-40",
+          "B9 scripts/spikes/bread-spike.ts:68-68",
+          "B10 scripts/spikes/bread-spike.ts:75-97",
+          "B11 scripts/spikes/bread-spike.ts:199-213"
+        ],
+        "lines": 79,
+        "chars": 4490,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-269-r2#0",
+      "row": "E-R269-05",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F1",
+      "cited": "scripts/s17/decode-inputs.py:77-91",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/decode-inputs.py:1-40",
+          "B2 scripts/s17/decode-inputs.py:80-102",
+          "B3 scripts/s17/decode-inputs.py:121-121",
+          "B4 scripts/s17/decode-inputs.py:129-169"
+        ],
+        "lines": 105,
+        "chars": 5958,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/decode-inputs.py:1-40",
+          "B2 scripts/s17/decode-inputs.py:80-102",
+          "B3 scripts/s17/decode-inputs.py:121-121",
+          "B4 scripts/s17/decode-inputs.py:129-169"
+        ],
+        "lines": 105,
+        "chars": 5958,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-269-r2#1",
+      "row": "E-R269-08",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F2",
+      "cited": "scripts/s17/desktop-stats.ts:141-162",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B5 scripts/s17/desktop-stats.ts:1-40", "B6 scripts/s17/desktop-stats.ts:116-187"],
+        "lines": 112,
+        "chars": 5433,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B5 scripts/s17/desktop-stats.ts:1-40", "B6 scripts/s17/desktop-stats.ts:116-187"],
+        "lines": 112,
+        "chars": 5433,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "medium-269-r2#2",
+      "row": "E-R269-09",
+      "class": "descriptive",
+      "owner": "unresolved",
+      "id": "F3",
+      "cited": "scripts/spikes/bread-spike.ts:52-52",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B7 scripts/spikes/bread-spike.ts:1-77"],
+        "lines": 77,
+        "chars": 4185,
+        "evidence": "none defined",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B7 scripts/spikes/bread-spike.ts:1-77"],
+        "lines": 77,
+        "chars": 4185,
+        "evidence": "none defined",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-01#1.4",
+      "row": "G-D11",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F1",
+      "cited": "scripts/measure-hue-shares.py:134-136",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/measure-hue-shares.py:1-40",
+          "B2 scripts/measure-hue-shares.py:135-140",
+          "B3 scripts/measure-hue-shares.py:143-152"
+        ],
+        "lines": 56,
+        "chars": 3363,
+        "evidence": "3/11",
+        "missing": [
+          "scripts/measure-hue-shares.py:113",
+          "scripts/measure-hue-shares.py:114",
+          "scripts/measure-hue-shares.py:127",
+          "scripts/measure-hue-shares.py:128",
+          "scripts/measure-hue-shares.py:129",
+          "scripts/measure-hue-shares.py:130",
+          "scripts/measure-hue-shares.py:131",
+          "scripts/measure-hue-shares.py:132"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/measure-hue-shares.py:1-40",
+          "B2 scripts/measure-hue-shares.py:135-140",
+          "B3 scripts/measure-hue-shares.py:143-152",
+          "B12 scripts/measure-hue-shares.py:113-114",
+          "B13 scripts/measure-hue-shares.py:127-132"
+        ],
+        "lines": 64,
+        "chars": 3883,
+        "evidence": "11/11",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-01#1.5",
+      "row": "G-D4",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/s17/decode-inputs.py:80-151",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B4 scripts/s17/decode-inputs.py:1-40"],
+        "lines": 40,
+        "chars": 2670,
+        "evidence": "40/49",
+        "missing": [
+          "scripts/s17/decode-inputs.py:41",
+          "scripts/s17/decode-inputs.py:42",
+          "scripts/s17/decode-inputs.py:43",
+          "scripts/s17/decode-inputs.py:44",
+          "scripts/s17/decode-inputs.py:45",
+          "scripts/s17/decode-inputs.py:46",
+          "scripts/s17/decode-inputs.py:47",
+          "scripts/s17/decode-inputs.py:48",
+          "scripts/s17/decode-inputs.py:49"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B4 scripts/s17/decode-inputs.py:1-40", "B14 scripts/s17/decode-inputs.py:41-49"],
+        "lines": 49,
+        "chars": 3020,
+        "evidence": "49/49",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-01#1.1",
+      "row": "G-D1",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F3",
+      "cited": "scripts/s17/decode-inputs.py:144-151",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B4 scripts/s17/decode-inputs.py:1-40",
+          "B5 scripts/s17/decode-inputs.py:121-170",
+          "B6 scripts/s17/decode-inputs.py:173-193"
+        ],
+        "lines": 111,
+        "chars": 6222,
+        "evidence": "12/12",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B4 scripts/s17/decode-inputs.py:1-40",
+          "B5 scripts/s17/decode-inputs.py:121-170",
+          "B6 scripts/s17/decode-inputs.py:173-193"
+        ],
+        "lines": 111,
+        "chars": 6222,
+        "evidence": "12/12",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-01#1.3",
+      "row": "G-D9",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F4",
+      "cited": "scripts/s17/desktop-stats.ts:119-120",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B7 scripts/s17/desktop-stats.ts:1-40", "B8 scripts/s17/desktop-stats.ts:87-137"],
+        "lines": 91,
+        "chars": 4779,
+        "evidence": "23/23",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B7 scripts/s17/desktop-stats.ts:1-40", "B8 scripts/s17/desktop-stats.ts:87-137"],
+        "lines": 91,
+        "chars": 4779,
+        "evidence": "23/23",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-01#1.2",
+      "row": "G-D2",
+      "class": "true",
+      "owner": "real",
+      "id": "F5",
+      "cited": "scripts/spikes/bread-spike.ts:178-182",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B9 scripts/spikes/bread-spike.ts:1-40",
+          "B10 scripts/spikes/bread-spike.ts:68-97",
+          "B11 scripts/spikes/bread-spike.ts:167-196"
+        ],
+        "lines": 100,
+        "chars": 5446,
+        "evidence": "14/30",
+        "missing": [
+          "scripts/spikes/bread-spike.ts:198",
+          "scripts/spikes/bread-spike.ts:199",
+          "scripts/spikes/bread-spike.ts:200",
+          "scripts/spikes/bread-spike.ts:201",
+          "scripts/spikes/bread-spike.ts:202",
+          "scripts/spikes/bread-spike.ts:203",
+          "scripts/spikes/bread-spike.ts:204",
+          "scripts/spikes/bread-spike.ts:205",
+          "scripts/spikes/bread-spike.ts:206",
+          "scripts/spikes/bread-spike.ts:207",
+          "scripts/spikes/bread-spike.ts:208",
+          "scripts/spikes/bread-spike.ts:209",
+          "scripts/spikes/bread-spike.ts:210",
+          "scripts/spikes/bread-spike.ts:211",
+          "scripts/spikes/bread-spike.ts:212",
+          "scripts/spikes/bread-spike.ts:213"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B9 scripts/spikes/bread-spike.ts:1-40",
+          "B10 scripts/spikes/bread-spike.ts:68-97",
+          "B11 scripts/spikes/bread-spike.ts:167-196",
+          "B15 scripts/spikes/bread-spike.ts:198-213"
+        ],
+        "lines": 116,
+        "chars": 6256,
+        "evidence": "30/30",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-03#3.3",
+      "row": "G-D4",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F1",
+      "cited": "scripts/s17/decode-inputs.py:1-197",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/s17/decode-inputs.py:1-40"],
+        "lines": 40,
+        "chars": 2670,
+        "evidence": "40/49",
+        "missing": [
+          "scripts/s17/decode-inputs.py:41",
+          "scripts/s17/decode-inputs.py:42",
+          "scripts/s17/decode-inputs.py:43",
+          "scripts/s17/decode-inputs.py:44",
+          "scripts/s17/decode-inputs.py:45",
+          "scripts/s17/decode-inputs.py:46",
+          "scripts/s17/decode-inputs.py:47",
+          "scripts/s17/decode-inputs.py:48",
+          "scripts/s17/decode-inputs.py:49"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/s17/decode-inputs.py:1-40", "B8 scripts/s17/decode-inputs.py:41-49"],
+        "lines": 49,
+        "chars": 3029,
+        "evidence": "49/49",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-03#3.1",
+      "row": "G-D1",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/s17/decode-inputs.py:117-118",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/decode-inputs.py:1-40",
+          "B2 scripts/s17/decode-inputs.py:105-118",
+          "B3 scripts/s17/decode-inputs.py:121-121",
+          "B4 scripts/s17/decode-inputs.py:125-165"
+        ],
+        "lines": 96,
+        "chars": 5542,
+        "evidence": "12/12",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/decode-inputs.py:1-40",
+          "B2 scripts/s17/decode-inputs.py:105-118",
+          "B3 scripts/s17/decode-inputs.py:121-121",
+          "B4 scripts/s17/decode-inputs.py:125-165"
+        ],
+        "lines": 96,
+        "chars": 5542,
+        "evidence": "12/12",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-03#3.2",
+      "row": "G-D2",
+      "class": "true",
+      "owner": "real",
+      "id": "F3",
+      "cited": "scripts/spikes/bread-spike.ts:181-183",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B5 scripts/spikes/bread-spike.ts:1-40",
+          "B6 scripts/spikes/bread-spike.ts:68-97",
+          "B7 scripts/spikes/bread-spike.ts:167-196"
+        ],
+        "lines": 100,
+        "chars": 5444,
+        "evidence": "14/30",
+        "missing": [
+          "scripts/spikes/bread-spike.ts:198",
+          "scripts/spikes/bread-spike.ts:199",
+          "scripts/spikes/bread-spike.ts:200",
+          "scripts/spikes/bread-spike.ts:201",
+          "scripts/spikes/bread-spike.ts:202",
+          "scripts/spikes/bread-spike.ts:203",
+          "scripts/spikes/bread-spike.ts:204",
+          "scripts/spikes/bread-spike.ts:205",
+          "scripts/spikes/bread-spike.ts:206",
+          "scripts/spikes/bread-spike.ts:207",
+          "scripts/spikes/bread-spike.ts:208",
+          "scripts/spikes/bread-spike.ts:209",
+          "scripts/spikes/bread-spike.ts:210",
+          "scripts/spikes/bread-spike.ts:211",
+          "scripts/spikes/bread-spike.ts:212",
+          "scripts/spikes/bread-spike.ts:213"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B5 scripts/spikes/bread-spike.ts:1-40",
+          "B6 scripts/spikes/bread-spike.ts:68-97",
+          "B7 scripts/spikes/bread-spike.ts:167-196",
+          "B9 scripts/spikes/bread-spike.ts:198-213"
+        ],
+        "lines": 116,
+        "chars": 6254,
+        "evidence": "30/30",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-04#4.5",
+      "row": "G-D5",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F1",
+      "cited": "scripts/s17:---",
+      "base": {
+        "state": "unverifiable:no-locator",
+        "blocks": []
+      },
+      "O": {
+        "state": "unverifiable:no-locator",
+        "blocks": []
+      }
+    },
+    {
+      "member": "openai-pr269-04#4.4",
+      "row": "G-D18",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/s17/auto-values.ts:29-34",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/s17/auto-values.ts:1-65"],
+        "lines": 65,
+        "chars": 3021,
+        "evidence": "3/11",
+        "missing": [
+          "scripts/s17/decode-inputs.py:183",
+          "scripts/s17/decode-inputs.py:184",
+          "scripts/s17/decode-inputs.py:185",
+          "scripts/s17/browser-stats.ts:80",
+          "scripts/s17/browser-stats.ts:81",
+          "scripts/s17/browser-stats.ts:82",
+          "scripts/s17/browser-stats.ts:83",
+          "scripts/s17/browser-stats.ts:84"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/auto-values.ts:1-65",
+          "B14 scripts/s17/decode-inputs.py:183-185",
+          "B15 scripts/s17/browser-stats.ts:80-84"
+        ],
+        "lines": 73,
+        "chars": 3406,
+        "evidence": "11/11",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-04#4.1",
+      "row": "G-D3",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F3",
+      "cited": "scripts/s17/contact-sheet.py:139-140",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/s17/contact-sheet.py:1-40",
+          "B3 scripts/s17/contact-sheet.py:136-174",
+          "B4 scripts/s17/contact-sheet.py:177-177",
+          "B5 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6891,
+        "evidence": "2/3",
+        "missing": ["scripts/spikes/bread-spike.ts:233"]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/s17/contact-sheet.py:1-40",
+          "B3 scripts/s17/contact-sheet.py:136-174",
+          "B4 scripts/s17/contact-sheet.py:177-177",
+          "B5 scripts/s17/contact-sheet.py:195-226",
+          "B16 scripts/spikes/bread-spike.ts:233-233"
+        ],
+        "lines": 113,
+        "chars": 7008,
+        "evidence": "3/3",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-04#4.3",
+      "row": "G-D1",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F4",
+      "cited": "scripts/s17/decode-inputs.py:118-123",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B6 scripts/s17/decode-inputs.py:1-40",
+          "B7 scripts/s17/decode-inputs.py:105-118",
+          "B8 scripts/s17/decode-inputs.py:121-170",
+          "B9 scripts/s17/decode-inputs.py:173-193"
+        ],
+        "lines": 125,
+        "chars": 6996,
+        "evidence": "12/12",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B6 scripts/s17/decode-inputs.py:1-40",
+          "B7 scripts/s17/decode-inputs.py:105-118",
+          "B8 scripts/s17/decode-inputs.py:121-170",
+          "B9 scripts/s17/decode-inputs.py:173-193"
+        ],
+        "lines": 125,
+        "chars": 6996,
+        "evidence": "12/12",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-04#4.2",
+      "row": "G-D2",
+      "class": "true",
+      "owner": "real",
+      "id": "F5",
+      "cited": "scripts/spikes/bread-spike.ts:200-202",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B10 scripts/spikes/bread-spike.ts:1-40",
+          "B11 scripts/spikes/bread-spike.ts:68-68",
+          "B12 scripts/spikes/bread-spike.ts:75-97",
+          "B13 scripts/spikes/bread-spike.ts:199-213"
+        ],
+        "lines": 79,
+        "chars": 4484,
+        "evidence": "22/30",
+        "missing": [
+          "scripts/spikes/bread-spike.ts:189",
+          "scripts/spikes/bread-spike.ts:190",
+          "scripts/spikes/bread-spike.ts:191",
+          "scripts/spikes/bread-spike.ts:192",
+          "scripts/spikes/bread-spike.ts:193",
+          "scripts/spikes/bread-spike.ts:194",
+          "scripts/spikes/bread-spike.ts:195",
+          "scripts/spikes/bread-spike.ts:198"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B10 scripts/spikes/bread-spike.ts:1-40",
+          "B11 scripts/spikes/bread-spike.ts:68-68",
+          "B12 scripts/spikes/bread-spike.ts:75-97",
+          "B13 scripts/spikes/bread-spike.ts:199-213",
+          "B17 scripts/spikes/bread-spike.ts:189-195",
+          "B18 scripts/spikes/bread-spike.ts:198-198"
+        ],
+        "lines": 87,
+        "chars": 4915,
+        "evidence": "30/30",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-10#10.4",
+      "row": "G-D5",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F1",
+      "cited": "scripts/s17/:---",
+      "base": {
+        "state": "unverifiable:no-locator",
+        "blocks": []
+      },
+      "O": {
+        "state": "unverifiable:no-locator",
+        "blocks": []
+      }
+    },
+    {
+      "member": "openai-pr269-10#10.1",
+      "row": "G-D3",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/s17/contact-sheet.py:130-130",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/contact-sheet.py:1-40",
+          "B2 scripts/s17/contact-sheet.py:129-133",
+          "B3 scripts/s17/contact-sheet.py:136-174"
+        ],
+        "lines": 84,
+        "chars": 5339,
+        "evidence": "2/3",
+        "missing": ["scripts/spikes/bread-spike.ts:233"]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/contact-sheet.py:1-40",
+          "B2 scripts/s17/contact-sheet.py:129-133",
+          "B3 scripts/s17/contact-sheet.py:136-174",
+          "B11 scripts/spikes/bread-spike.ts:233-233"
+        ],
+        "lines": 85,
+        "chars": 5456,
+        "evidence": "3/3",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-10#10.3",
+      "row": "G-D1",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F3",
+      "cited": "scripts/s17/decode-inputs.py:154-154",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B4 scripts/s17/decode-inputs.py:1-40",
+          "B5 scripts/s17/decode-inputs.py:121-170",
+          "B6 scripts/s17/decode-inputs.py:173-193"
+        ],
+        "lines": 111,
+        "chars": 6215,
+        "evidence": "12/12",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B4 scripts/s17/decode-inputs.py:1-40",
+          "B5 scripts/s17/decode-inputs.py:121-170",
+          "B6 scripts/s17/decode-inputs.py:173-193"
+        ],
+        "lines": 111,
+        "chars": 6215,
+        "evidence": "12/12",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-10#10.2",
+      "row": "G-D20",
+      "class": "false-code-refutable",
+      "owner": "rejected",
+      "id": "F4",
+      "cited": "scripts/spikes/bread-spike.ts:115-115",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B7 scripts/spikes/bread-spike.ts:1-40",
+          "B8 scripts/spikes/bread-spike.ts:68-68",
+          "B9 scripts/spikes/bread-spike.ts:72-97",
+          "B10 scripts/spikes/bread-spike.ts:99-154"
+        ],
+        "lines": 123,
+        "chars": 7054,
+        "evidence": "11/11",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B7 scripts/spikes/bread-spike.ts:1-40",
+          "B8 scripts/spikes/bread-spike.ts:68-68",
+          "B9 scripts/spikes/bread-spike.ts:72-97",
+          "B10 scripts/spikes/bread-spike.ts:99-154"
+        ],
+        "lines": 123,
+        "chars": 7054,
+        "evidence": "11/11",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-02#2.1",
+      "row": "G-D2",
+      "class": "true",
+      "owner": "real",
+      "id": "F1",
+      "cited": "scripts/spikes/bread-spike.ts:185-187",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/spikes/bread-spike.ts:1-40",
+          "B2 scripts/spikes/bread-spike.ts:68-97",
+          "B3 scripts/spikes/bread-spike.ts:167-196"
+        ],
+        "lines": 100,
+        "chars": 5444,
+        "evidence": "14/30",
+        "missing": [
+          "scripts/spikes/bread-spike.ts:198",
+          "scripts/spikes/bread-spike.ts:199",
+          "scripts/spikes/bread-spike.ts:200",
+          "scripts/spikes/bread-spike.ts:201",
+          "scripts/spikes/bread-spike.ts:202",
+          "scripts/spikes/bread-spike.ts:203",
+          "scripts/spikes/bread-spike.ts:204",
+          "scripts/spikes/bread-spike.ts:205",
+          "scripts/spikes/bread-spike.ts:206",
+          "scripts/spikes/bread-spike.ts:207",
+          "scripts/spikes/bread-spike.ts:208",
+          "scripts/spikes/bread-spike.ts:209",
+          "scripts/spikes/bread-spike.ts:210",
+          "scripts/spikes/bread-spike.ts:211",
+          "scripts/spikes/bread-spike.ts:212",
+          "scripts/spikes/bread-spike.ts:213"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/spikes/bread-spike.ts:1-40",
+          "B2 scripts/spikes/bread-spike.ts:68-97",
+          "B3 scripts/spikes/bread-spike.ts:167-196",
+          "B4 scripts/spikes/bread-spike.ts:198-213"
+        ],
+        "lines": 116,
+        "chars": 6254,
+        "evidence": "30/30",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-05#5.2",
+      "row": "G-D13",
+      "class": "false-code-refutable",
+      "owner": "rejected",
+      "id": "F1",
+      "cited": "scripts/s17/contact-sheet.py:140-141",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/contact-sheet.py:1-40",
+          "B2 scripts/s17/contact-sheet.py:136-174",
+          "B3 scripts/s17/contact-sheet.py:177-177",
+          "B4 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6891,
+        "evidence": "7/7",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/contact-sheet.py:1-40",
+          "B2 scripts/s17/contact-sheet.py:136-174",
+          "B3 scripts/s17/contact-sheet.py:177-177",
+          "B4 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6891,
+        "evidence": "7/7",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-05#5.4",
+      "row": "G-D7",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/s17/contact-sheet.py:140-141",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/contact-sheet.py:1-40",
+          "B2 scripts/s17/contact-sheet.py:136-174",
+          "B3 scripts/s17/contact-sheet.py:177-177",
+          "B4 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6891,
+        "evidence": "4/4",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/contact-sheet.py:1-40",
+          "B2 scripts/s17/contact-sheet.py:136-174",
+          "B3 scripts/s17/contact-sheet.py:177-177",
+          "B4 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6891,
+        "evidence": "4/4",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-05#5.3",
+      "row": "G-D15",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F3",
+      "cited": "scripts/s17/decode-inputs.py:167-167",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B5 scripts/s17/decode-inputs.py:1-40",
+          "B6 scripts/s17/decode-inputs.py:121-170",
+          "B7 scripts/s17/decode-inputs.py:173-193"
+        ],
+        "lines": 111,
+        "chars": 6215,
+        "evidence": "8/8",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B5 scripts/s17/decode-inputs.py:1-40",
+          "B6 scripts/s17/decode-inputs.py:121-170",
+          "B7 scripts/s17/decode-inputs.py:173-193"
+        ],
+        "lines": 111,
+        "chars": 6215,
+        "evidence": "8/8",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-05#5.1",
+      "row": "G-D2",
+      "class": "true",
+      "owner": "real",
+      "id": "F4",
+      "cited": "scripts/spikes/bread-spike.ts:214-214",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B8 scripts/spikes/bread-spike.ts:1-40",
+          "B9 scripts/spikes/bread-spike.ts:68-97",
+          "B10 scripts/spikes/bread-spike.ts:167-196"
+        ],
+        "lines": 100,
+        "chars": 5441,
+        "evidence": "14/30",
+        "missing": [
+          "scripts/spikes/bread-spike.ts:198",
+          "scripts/spikes/bread-spike.ts:199",
+          "scripts/spikes/bread-spike.ts:200",
+          "scripts/spikes/bread-spike.ts:201",
+          "scripts/spikes/bread-spike.ts:202",
+          "scripts/spikes/bread-spike.ts:203",
+          "scripts/spikes/bread-spike.ts:204",
+          "scripts/spikes/bread-spike.ts:205",
+          "scripts/spikes/bread-spike.ts:206",
+          "scripts/spikes/bread-spike.ts:207",
+          "scripts/spikes/bread-spike.ts:208",
+          "scripts/spikes/bread-spike.ts:209",
+          "scripts/spikes/bread-spike.ts:210",
+          "scripts/spikes/bread-spike.ts:211",
+          "scripts/spikes/bread-spike.ts:212",
+          "scripts/spikes/bread-spike.ts:213"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B8 scripts/spikes/bread-spike.ts:1-40",
+          "B9 scripts/spikes/bread-spike.ts:68-97",
+          "B10 scripts/spikes/bread-spike.ts:167-196",
+          "B11 scripts/spikes/bread-spike.ts:198-213"
+        ],
+        "lines": 116,
+        "chars": 6251,
+        "evidence": "30/30",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-06#6.1",
+      "row": "G-D3",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F1",
+      "cited": "scripts/s17/contact-sheet.py:138-138",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/contact-sheet.py:1-40",
+          "B2 scripts/s17/contact-sheet.py:136-174",
+          "B3 scripts/s17/contact-sheet.py:177-177",
+          "B4 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6890,
+        "evidence": "2/3",
+        "missing": ["scripts/spikes/bread-spike.ts:233"]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/contact-sheet.py:1-40",
+          "B2 scripts/s17/contact-sheet.py:136-174",
+          "B3 scripts/s17/contact-sheet.py:177-177",
+          "B4 scripts/s17/contact-sheet.py:195-226",
+          "B10 scripts/spikes/bread-spike.ts:233-233"
+        ],
+        "lines": 113,
+        "chars": 7007,
+        "evidence": "3/3",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-06#6.2",
+      "row": "G-D16",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/s17/decode-inputs.py:193-193",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B5 scripts/s17/decode-inputs.py:1-40", "B6 scripts/s17/decode-inputs.py:173-193"],
+        "lines": 61,
+        "chars": 3736,
+        "evidence": "13/14",
+        "missing": ["scripts/s17/decode-inputs.py:170"]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B5 scripts/s17/decode-inputs.py:1-40",
+          "B6 scripts/s17/decode-inputs.py:173-193",
+          "B11 scripts/s17/decode-inputs.py:170-170"
+        ],
+        "lines": 62,
+        "chars": 3820,
+        "evidence": "14/14",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-06#6.3",
+      "row": "G-D2",
+      "class": "true",
+      "owner": "real",
+      "id": "F3",
+      "cited": "scripts/spikes/bread-spike.ts:192-192",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B7 scripts/spikes/bread-spike.ts:1-40",
+          "B8 scripts/spikes/bread-spike.ts:68-97",
+          "B9 scripts/spikes/bread-spike.ts:167-196"
+        ],
+        "lines": 100,
+        "chars": 5442,
+        "evidence": "14/30",
+        "missing": [
+          "scripts/spikes/bread-spike.ts:198",
+          "scripts/spikes/bread-spike.ts:199",
+          "scripts/spikes/bread-spike.ts:200",
+          "scripts/spikes/bread-spike.ts:201",
+          "scripts/spikes/bread-spike.ts:202",
+          "scripts/spikes/bread-spike.ts:203",
+          "scripts/spikes/bread-spike.ts:204",
+          "scripts/spikes/bread-spike.ts:205",
+          "scripts/spikes/bread-spike.ts:206",
+          "scripts/spikes/bread-spike.ts:207",
+          "scripts/spikes/bread-spike.ts:208",
+          "scripts/spikes/bread-spike.ts:209",
+          "scripts/spikes/bread-spike.ts:210",
+          "scripts/spikes/bread-spike.ts:211",
+          "scripts/spikes/bread-spike.ts:212",
+          "scripts/spikes/bread-spike.ts:213"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B7 scripts/spikes/bread-spike.ts:1-40",
+          "B8 scripts/spikes/bread-spike.ts:68-97",
+          "B9 scripts/spikes/bread-spike.ts:167-196",
+          "B12 scripts/spikes/bread-spike.ts:198-213"
+        ],
+        "lines": 116,
+        "chars": 6252,
+        "evidence": "30/30",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-07#7.4",
+      "row": "G-D5",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F1",
+      "cited": "scripts/s17:---",
+      "base": {
+        "state": "unverifiable:no-locator",
+        "blocks": []
+      },
+      "O": {
+        "state": "unverifiable:no-locator",
+        "blocks": []
+      }
+    },
+    {
+      "member": "openai-pr269-07#7.3",
+      "row": "G-D19",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/s17/browser-stats.ts:184-186",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/browser-stats.ts:1-40",
+          "B2 scripts/s17/browser-stats.ts:72-72",
+          "B3 scripts/s17/browser-stats.ts:154-202"
+        ],
+        "lines": 90,
+        "chars": 4812,
+        "evidence": "30/39",
+        "missing": [
+          "scripts/s17/harness.ts:43",
+          "scripts/s17/harness.ts:44",
+          "scripts/s17/harness.ts:45",
+          "scripts/s17/harness.ts:46",
+          "scripts/s17/harness.ts:47",
+          "scripts/s17/harness.ts:48",
+          "scripts/s17/harness.ts:49",
+          "scripts/s17/harness.ts:50",
+          "scripts/s17/harness.ts:51"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B1 scripts/s17/browser-stats.ts:1-40",
+          "B2 scripts/s17/browser-stats.ts:72-72",
+          "B3 scripts/s17/browser-stats.ts:154-202",
+          "B11 scripts/s17/harness.ts:43-51"
+        ],
+        "lines": 99,
+        "chars": 5038,
+        "evidence": "39/39",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-07#7.2",
+      "row": "G-D3",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F3",
+      "cited": "scripts/s17/contact-sheet.py:144-145",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B4 scripts/s17/contact-sheet.py:1-40",
+          "B5 scripts/s17/contact-sheet.py:136-174",
+          "B6 scripts/s17/contact-sheet.py:177-177",
+          "B7 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6891,
+        "evidence": "2/3",
+        "missing": ["scripts/spikes/bread-spike.ts:233"]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B4 scripts/s17/contact-sheet.py:1-40",
+          "B5 scripts/s17/contact-sheet.py:136-174",
+          "B6 scripts/s17/contact-sheet.py:177-177",
+          "B7 scripts/s17/contact-sheet.py:195-226",
+          "B12 scripts/spikes/bread-spike.ts:233-233"
+        ],
+        "lines": 113,
+        "chars": 7008,
+        "evidence": "3/3",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-07#7.1",
+      "row": "G-D2",
+      "class": "true",
+      "owner": "real",
+      "id": "F4",
+      "cited": "scripts/spikes/bread-spike.ts:194-196",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B8 scripts/spikes/bread-spike.ts:1-40",
+          "B9 scripts/spikes/bread-spike.ts:68-97",
+          "B10 scripts/spikes/bread-spike.ts:167-196"
+        ],
+        "lines": 100,
+        "chars": 5444,
+        "evidence": "14/30",
+        "missing": [
+          "scripts/spikes/bread-spike.ts:198",
+          "scripts/spikes/bread-spike.ts:199",
+          "scripts/spikes/bread-spike.ts:200",
+          "scripts/spikes/bread-spike.ts:201",
+          "scripts/spikes/bread-spike.ts:202",
+          "scripts/spikes/bread-spike.ts:203",
+          "scripts/spikes/bread-spike.ts:204",
+          "scripts/spikes/bread-spike.ts:205",
+          "scripts/spikes/bread-spike.ts:206",
+          "scripts/spikes/bread-spike.ts:207",
+          "scripts/spikes/bread-spike.ts:208",
+          "scripts/spikes/bread-spike.ts:209",
+          "scripts/spikes/bread-spike.ts:210",
+          "scripts/spikes/bread-spike.ts:211",
+          "scripts/spikes/bread-spike.ts:212",
+          "scripts/spikes/bread-spike.ts:213"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B8 scripts/spikes/bread-spike.ts:1-40",
+          "B9 scripts/spikes/bread-spike.ts:68-97",
+          "B10 scripts/spikes/bread-spike.ts:167-196",
+          "B13 scripts/spikes/bread-spike.ts:198-213"
+        ],
+        "lines": 116,
+        "chars": 6254,
+        "evidence": "30/30",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-08#8.3",
+      "row": "G-D6",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F1",
+      "cited": "scripts/s17/auto-values.ts:1-1",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/s17/auto-values.ts:1-26"],
+        "lines": 26,
+        "chars": 1398,
+        "evidence": "3/3",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/s17/auto-values.ts:1-26"],
+        "lines": 26,
+        "chars": 1398,
+        "evidence": "3/3",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-08#8.1",
+      "row": "G-D3",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/s17/contact-sheet.py:146-146",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/s17/contact-sheet.py:1-40",
+          "B3 scripts/s17/contact-sheet.py:136-174",
+          "B4 scripts/s17/contact-sheet.py:177-177",
+          "B5 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6890,
+        "evidence": "2/3",
+        "missing": ["scripts/spikes/bread-spike.ts:233"]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/s17/contact-sheet.py:1-40",
+          "B3 scripts/s17/contact-sheet.py:136-174",
+          "B4 scripts/s17/contact-sheet.py:177-177",
+          "B5 scripts/s17/contact-sheet.py:195-226",
+          "B9 scripts/spikes/bread-spike.ts:233-233"
+        ],
+        "lines": 113,
+        "chars": 7007,
+        "evidence": "3/3",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-08#8.2",
+      "row": "G-D2",
+      "class": "true",
+      "owner": "real",
+      "id": "F3",
+      "cited": "scripts/spikes/bread-spike.ts:193-193",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B6 scripts/spikes/bread-spike.ts:1-40",
+          "B7 scripts/spikes/bread-spike.ts:68-97",
+          "B8 scripts/spikes/bread-spike.ts:167-196"
+        ],
+        "lines": 100,
+        "chars": 5442,
+        "evidence": "14/30",
+        "missing": [
+          "scripts/spikes/bread-spike.ts:198",
+          "scripts/spikes/bread-spike.ts:199",
+          "scripts/spikes/bread-spike.ts:200",
+          "scripts/spikes/bread-spike.ts:201",
+          "scripts/spikes/bread-spike.ts:202",
+          "scripts/spikes/bread-spike.ts:203",
+          "scripts/spikes/bread-spike.ts:204",
+          "scripts/spikes/bread-spike.ts:205",
+          "scripts/spikes/bread-spike.ts:206",
+          "scripts/spikes/bread-spike.ts:207",
+          "scripts/spikes/bread-spike.ts:208",
+          "scripts/spikes/bread-spike.ts:209",
+          "scripts/spikes/bread-spike.ts:210",
+          "scripts/spikes/bread-spike.ts:211",
+          "scripts/spikes/bread-spike.ts:212",
+          "scripts/spikes/bread-spike.ts:213"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B6 scripts/spikes/bread-spike.ts:1-40",
+          "B7 scripts/spikes/bread-spike.ts:68-97",
+          "B8 scripts/spikes/bread-spike.ts:167-196",
+          "B10 scripts/spikes/bread-spike.ts:198-213"
+        ],
+        "lines": 116,
+        "chars": 6252,
+        "evidence": "30/30",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-09#9.3",
+      "row": "G-D12",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F1",
+      "cited": "scripts/measure-hue-shares.py:34-35",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/measure-hue-shares.py:1-60"],
+        "lines": 60,
+        "chars": 3592,
+        "evidence": "5/7",
+        "missing": ["scripts/measure-hue-shares.py:143", "scripts/measure-hue-shares.py:144"]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/measure-hue-shares.py:1-60", "B11 scripts/measure-hue-shares.py:143-144"],
+        "lines": 62,
+        "chars": 3736,
+        "evidence": "7/7",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-09#9.1",
+      "row": "G-D14",
+      "class": "false-code-refutable",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/s17/contact-sheet.py:139-139",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/s17/contact-sheet.py:1-40",
+          "B3 scripts/s17/contact-sheet.py:136-174",
+          "B4 scripts/s17/contact-sheet.py:177-177",
+          "B5 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6890,
+        "evidence": "14/14",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/s17/contact-sheet.py:1-40",
+          "B3 scripts/s17/contact-sheet.py:136-174",
+          "B4 scripts/s17/contact-sheet.py:177-177",
+          "B5 scripts/s17/contact-sheet.py:195-226"
+        ],
+        "lines": 112,
+        "chars": 6890,
+        "evidence": "14/14",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-09#9.5",
+      "row": "G-D4",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F3",
+      "cited": "scripts/s17/decode-inputs.py:1-1",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B6 scripts/s17/decode-inputs.py:1-82"],
+        "lines": 82,
+        "chars": 4048,
+        "evidence": "49/49",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B6 scripts/s17/decode-inputs.py:1-82"],
+        "lines": 82,
+        "chars": 4048,
+        "evidence": "49/49",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-09#9.2",
+      "row": "G-D17",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F4",
+      "cited": "scripts/s17/decode-inputs.py:55-57",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B6 scripts/s17/decode-inputs.py:1-82"],
+        "lines": 82,
+        "chars": 4048,
+        "evidence": "0/25",
+        "missing": [
+          "scripts/s17/decode-inputs.py:88",
+          "scripts/s17/decode-inputs.py:89",
+          "scripts/s17/decode-inputs.py:90",
+          "scripts/s17/decode-inputs.py:91",
+          "scripts/s17/decode-inputs.py:92",
+          "scripts/s17/decode-inputs.py:93",
+          "scripts/s17/decode-inputs.py:94",
+          "scripts/s17/decode-inputs.py:95",
+          "scripts/s17/decode-inputs.py:96",
+          "scripts/s17/decode-inputs.py:97",
+          "scripts/s17/decode-inputs.py:98",
+          "scripts/s17/decode-inputs.py:99",
+          "scripts/s17/decode-inputs.py:100",
+          "scripts/s17/decode-inputs.py:101",
+          "scripts/s17/decode-inputs.py:102",
+          "scripts/s17/decode-inputs.py:135",
+          "scripts/s17/decode-inputs.py:136",
+          "scripts/s17/decode-inputs.py:137",
+          "scripts/s17/decode-inputs.py:138",
+          "scripts/s17/decode-inputs.py:139",
+          "scripts/s17/decode-inputs.py:140",
+          "scripts/s17/decode-inputs.py:146",
+          "scripts/s17/decode-inputs.py:147",
+          "scripts/s17/decode-inputs.py:148",
+          "scripts/s17/decode-inputs.py:149"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B6 scripts/s17/decode-inputs.py:1-82",
+          "B12 scripts/s17/decode-inputs.py:88-102",
+          "B13 scripts/s17/decode-inputs.py:135-140",
+          "B14 scripts/s17/decode-inputs.py:146-149"
+        ],
+        "lines": 107,
+        "chars": 5377,
+        "evidence": "25/25",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-09#9.6",
+      "row": "G-D8",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F5",
+      "cited": "scripts/s17/desktop-stats.ts:1-1",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B7 scripts/s17/desktop-stats.ts:1-40"],
+        "lines": 40,
+        "chars": 2269,
+        "evidence": "0/34",
+        "missing": [
+          "scripts/s17/desktop-stats.ts:103",
+          "scripts/s17/desktop-stats.ts:104",
+          "scripts/s17/desktop-stats.ts:105",
+          "scripts/s17/desktop-stats.ts:106",
+          "scripts/s17/desktop-stats.ts:107",
+          "scripts/s17/desktop-stats.ts:108",
+          "scripts/s17/desktop-stats.ts:109",
+          "scripts/s17/desktop-stats.ts:110",
+          "scripts/s17/desktop-stats.ts:111",
+          "scripts/s17/desktop-stats.ts:112",
+          "scripts/s17/desktop-stats.ts:113",
+          "scripts/s17/desktop-stats.ts:114",
+          "scripts/s17/desktop-stats.ts:115",
+          "scripts/s17/desktop-stats.ts:116",
+          "scripts/s17/desktop-stats.ts:117",
+          "scripts/s17/desktop-stats.ts:118",
+          "scripts/s17/desktop-stats.ts:119",
+          "scripts/s17/desktop-stats.ts:120",
+          "scripts/s17/desktop-stats.ts:121",
+          "scripts/s17/desktop-stats.ts:122",
+          "scripts/s17/desktop-stats.ts:123",
+          "scripts/s17/desktop-stats.ts:124",
+          "scripts/s17/desktop-stats.ts:125",
+          "scripts/s17/desktop-stats.ts:126",
+          "scripts/s17/desktop-stats.ts:127",
+          "scripts/s17/desktop-stats.ts:128",
+          "scripts/s17/desktop-stats.ts:129",
+          "scripts/s17/desktop-stats.ts:130",
+          "scripts/s17/desktop-stats.ts:131",
+          "scripts/s17/desktop-stats.ts:132",
+          "scripts/s17/desktop-stats.ts:133",
+          "scripts/s17/desktop-stats.ts:134",
+          "scripts/s17/desktop-stats.ts:135",
+          "scripts/s17/desktop-stats.ts:136"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B7 scripts/s17/desktop-stats.ts:1-40", "B15 scripts/s17/desktop-stats.ts:103-136"],
+        "lines": 74,
+        "chars": 3887,
+        "evidence": "34/34",
+        "missing": []
+      }
+    },
+    {
+      "member": "openai-pr269-09#9.4",
+      "row": "G-D10",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F6",
+      "cited": "scripts/s17/desktop-stats.ts:75-76",
+      "base": {
+        "state": "excerpted",
+        "blocks": [
+          "B7 scripts/s17/desktop-stats.ts:1-40",
+          "B8 scripts/s17/desktop-stats.ts:72-76",
+          "B9 scripts/s17/desktop-stats.ts:87-87",
+          "B10 scripts/s17/desktop-stats.ts:91-132"
+        ],
+        "lines": 88,
+        "chars": 4652,
+        "evidence": "15/22",
+        "missing": [
+          "scripts/s17/desktop-stats.ts:56",
+          "scripts/s17/desktop-stats.ts:57",
+          "scripts/s17/desktop-stats.ts:58",
+          "scripts/s17/desktop-stats.ts:59",
+          "scripts/s17/desktop-stats.ts:60",
+          "scripts/s17/desktop-stats.ts:61",
+          "scripts/s17/desktop-stats.ts:62"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B7 scripts/s17/desktop-stats.ts:1-40",
+          "B8 scripts/s17/desktop-stats.ts:72-76",
+          "B9 scripts/s17/desktop-stats.ts:87-87",
+          "B10 scripts/s17/desktop-stats.ts:91-132",
+          "B16 scripts/s17/desktop-stats.ts:56-62"
+        ],
+        "lines": 95,
+        "chars": 5034,
+        "evidence": "22/22",
+        "missing": []
+      }
+    },
+    {
+      "member": "247-r1#0",
+      "row": "H-R1",
+      "class": "true",
+      "owner": "real",
+      "id": "F1",
+      "cited": "scripts/prod-fetch-results.py:38-38",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4305,
+        "evidence": "25/25",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4305,
+        "evidence": "25/25",
+        "missing": []
+      }
+    },
+    {
+      "member": "247-r1#1",
+      "row": "H-R2",
+      "class": "policy",
+      "owner": "rejected",
+      "id": "F2",
+      "cited": "scripts/prod-fetch-results.py:47-56",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4305,
+        "evidence": "10/16",
+        "missing": [
+          "scripts/prod-result-dimensions.py:62",
+          "scripts/prod-result-dimensions.py:63",
+          "scripts/prod-result-dimensions.py:64",
+          "scripts/prod-result-dimensions.py:65",
+          "scripts/prod-result-dimensions.py:66",
+          "scripts/prod-result-dimensions.py:67"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93", "B4 scripts/prod-result-dimensions.py:62-67"],
+        "lines": 99,
+        "chars": 4735,
+        "evidence": "16/16",
+        "missing": []
+      }
+    },
+    {
+      "member": "247-r1#2",
+      "row": "H-R3",
+      "class": "true",
+      "owner": "real",
+      "id": "F3",
+      "cited": "scripts/prod-fetch-results.py:68-68",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4305,
+        "evidence": "5/5",
+        "missing": []
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": ["B1 scripts/prod-fetch-results.py:1-93"],
+        "lines": 93,
+        "chars": 4305,
+        "evidence": "5/5",
+        "missing": []
+      }
+    },
+    {
+      "member": "247-r1#3",
+      "row": "H-R4",
+      "class": "ambiguous",
+      "owner": "rejected",
+      "id": "F4",
+      "cited": "scripts/prod-result-dimensions.py:79-96",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-40", "B3 scripts/prod-result-dimensions.py:75-125"],
+        "lines": 91,
+        "chars": 4110,
+        "evidence": "30/33",
+        "missing": [
+          "scripts/prod-result-dimensions.py:126",
+          "scripts/prod-result-dimensions.py:127",
+          "scripts/prod-result-dimensions.py:128"
+        ]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/prod-result-dimensions.py:1-40",
+          "B3 scripts/prod-result-dimensions.py:75-125",
+          "B5 scripts/prod-result-dimensions.py:126-128"
+        ],
+        "lines": 94,
+        "chars": 4270,
+        "evidence": "33/33",
+        "missing": []
+      }
+    },
+    {
+      "member": "247-r1#4",
+      "row": "H-R5",
+      "class": "true",
+      "owner": "real",
+      "id": "F5",
+      "cited": "scripts/prod-result-dimensions.py:100-100",
+      "base": {
+        "state": "excerpted",
+        "blocks": ["B2 scripts/prod-result-dimensions.py:1-40", "B3 scripts/prod-result-dimensions.py:75-125"],
+        "lines": 91,
+        "chars": 4110,
+        "evidence": "2/4",
+        "missing": ["scripts/prod-result-dimensions.py:138", "scripts/prod-result-dimensions.py:139"]
+      },
+      "O": {
+        "state": "excerpted",
+        "blocks": [
+          "B2 scripts/prod-result-dimensions.py:1-40",
+          "B3 scripts/prod-result-dimensions.py:75-125",
+          "B6 scripts/prod-result-dimensions.py:138-139"
+        ],
+        "lines": 93,
+        "chars": 4259,
+        "evidence": "4/4",
+        "missing": []
+      }
+    }
+  ]
+}
