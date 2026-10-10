@@ -344,6 +344,11 @@ From `harness.mjs report --series series-luna.jsonl`, which reproduces byte for 
 - **Information only:** the policy, ambiguous and descriptive distributions and the per-finding detail are in the
   report.
 
+### Blind seed (Phase 4, §9)
+
+- Seed: **`300c74fa4dd1493d18b6cf435d79f375a5c3834cf64b2b2a93812d5b52755970`**, 32 bytes from `/dev/urandom`, written 2026-10-10T20:55:13Z, before `blind` runs. It is committed and pushed
+  before the draw; the sheet's order is `sha256(seed:slot:member)`.
+
 ## Amendments
 
 ### Amendment 1 (2026-10-10)
