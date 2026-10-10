@@ -349,6 +349,20 @@ From `harness.mjs report --series series-luna.jsonl`, which reproduces byte for 
 - Seed: **`300c74fa4dd1493d18b6cf435d79f375a5c3834cf64b2b2a93812d5b52755970`**, 32 bytes from `/dev/urandom`, written 2026-10-10T20:55:13Z, before `blind` runs. It is committed and pushed
   before the draw; the sheet's order is `sha256(seed:slot:member)`.
 
+### Blind sheet (Phase 4, §9)
+
+- `harness.mjs blind --series series-luna.jsonl --seed <the seed above>` gave **6 entries**: every `refuted` record of
+  G-D13, G-D14 and G-D20, in both arms and every repeat. G-D13 and G-D14 have none: they were `confirmed`.
+- **The sheet** is committed as `hand-read/sheet.md`, formatted by Prettier.
+  - Raw output sha256: `f8cd9ae29c206963748de76c2a2f3b64779ad7334aae4ff7f57ab976da417d85`.
+  - Committed file sha256: `89442e0db18b4b786c835125374f5562b820e34d31e27f3d4f43a01bbffa70a3`. Only the formatting
+    differs.
+  - The sheet carries no slot, member, run, `"arm"`, `"repeat"` or `blockIds` string (grep: 0).
+- **`key.json`** stays outside the repository until the grades are in. sha256
+  **`3e24cd3f7d21c1672ccf3f07fcafc2369460ae87adddec61b8a7db2321d1400f`**.
+- **Blinding is partial,** as pre-registered: all six entries are the same row (G-D20), so arm and repeat are hidden
+  but the row is not.
+
 ## Amendments
 
 ### Amendment 1 (2026-10-10)
