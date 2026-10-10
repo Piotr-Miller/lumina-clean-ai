@@ -252,4 +252,10 @@ below was then taken and is never recomputed. Nothing in this record is part of 
   `sed -n '/^## Pre-registration$/,/^_End of Pre-registration\._$/p' gate.md | sha256sum` (reproduced twice).
 - UTC time taken: **2026-10-10T15:28:07Z**.
 - `harness.mjs` at the seal: sha256 `5ab5086f000b44a49f1ffd0fa5b20562f4ed19760882cb6a9afbf38113b6906b`, equal to the `harness` pin in §3.
-- Seal commit, tag and GitHub push time: recorded in the next commit, below.
+- **Seal commit:** `6e38ce8a88d2a8f5b7103f4e495cd38b9afbf213` (`docs(finder-verifier-frozen): seal the pre-registration (p2)`); its
+  committed `gate.md` reproduces the sha256 above.
+- **GitHub push time: 2026-10-10T15:29:05Z.** Source: `GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-verifier-frozen`,
+  event `push`, `cf719bc..6e38ce8`, actor `Piotr-Miller`. Recorded before any price read, T0 or paid call.
+- **Rebase protection:** annotated tag **`finder-verifier-frozen/seal`** (tag object `163dfb95cec1c509ff50ccaf68c7f58b835eb8f0`) on
+  `6e38ce8`, pushed with the branch. `git ls-remote --tags origin 'finder-verifier-frozen/*'` shows it peeled to `6e38ce8`. A
+  rebase-merge rewrites the commit SHA; the tag keeps the sealed commit reachable.

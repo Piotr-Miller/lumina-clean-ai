@@ -563,10 +563,10 @@ None. Nothing in `src/`, `packages/` or CI changes.
 
 #### Automated
 
-- [x] 2.1 The pre-registration section exists and hashes reproducibly
-- [x] 2.2 The paid mode refuses a `harness.mjs` that differs from the sealed hash
-- [x] 2.3 The change folder is formatted
-- [ ] 2.4 (paid) The seal commit and the tag are on `origin`
+- [x] 2.1 The pre-registration section exists and hashes reproducibly — 6e38ce8
+- [x] 2.2 The paid mode refuses a `harness.mjs` that differs from the sealed hash — 6e38ce8
+- [x] 2.3 The change folder is formatted — 6e38ce8
+- [x] 2.4 (paid) The seal commit and the tag are on `origin` — 6e38ce8
 
 #### Manual
 
