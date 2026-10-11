@@ -290,13 +290,23 @@ the pre-registration can cite it by hash.
   4. Cost ≤ bound (A3), and the ratio.
   5. `service_tier` value or `absent`.
   6. The sealed parser accepted the answer, or the repair path ran (information).
+  7. Spend: T = max(counter Δ, recorded) ≤ the probe's `--cap` (owner decision 2026-10-11, review F3).
+  8. The generation record of every successful response was read (HTTP 200). A failed or skipped read is
+     reported with its status as "could not see", never as absent fields (owner decision 2026-10-11, review F2).
 - **Outcome rules, fixed here before the probe runs:**
   - all of 1–4 hold → Phase 3;
   - **1 fails only because the wire field is absent**, while the generation record says `Anthropic` → Phase 1 is
     reopened to read the provider from the generation record. A second probe needs the owner;
   - **2 fails** (any reasoning) → stop. Stage 2 as specified cannot run, and the owner decides;
   - **3 or 4 fails** → stop and ask. A1–A3 are broken for this endpoint;
-  - the credit is below $5.10 → stop and ask before the probe.
+  - the credit is below $5.10 → stop and ask before the probe;
+  - **(owner decision 2026-10-11, review F1–F3)** also never PROCEED on: an account error (401/402) on any
+    request → stop and ask; any other condition violation that items 1–4 do not explain → stop and ask; item 7
+    failing → stop and ask (reconcile the counter and the recorded cost); item 8 failing → undetermined (re-read the
+    record, free, and decide with the owner). A plain format failure or `budget-stopped` is information only.
+  - **Precedence** (the first failing rule decides; every other failing rule is printed after it): account → reasoning
+    (2) → no successful response → provider (1) → A1–A3 (3–4) → other condition violation → spend (7) → generation
+    read (8) → PROCEED.
 
 ### Success Criteria:
 
@@ -519,15 +529,15 @@ None. Nothing in `src/`, `packages/` or CI changes. The archive stays untouched.
 
 #### Automated
 
-- [x] 1.1 The sealed worktree is intact at the stable path
-- [x] 1.2 The sealed package tests pass there
-- [x] 1.3 The stage-1 self-test still passes from the archive as a baseline
-- [x] 1.4 The new self-test passes every case, the 72 inherited ones included
-- [x] 1.5 The dry run passes with the sonnet wire shape
-- [x] 1.6 Excerpt serving is unchanged
-- [x] 1.7 Mutants fail
-- [x] 1.8 The archive is untouched
-- [x] 1.9 The change folder is formatted
+- [x] 1.1 The sealed worktree is intact at the stable path — 3f96b05
+- [x] 1.2 The sealed package tests pass there — 3f96b05
+- [x] 1.3 The stage-1 self-test still passes from the archive as a baseline — 3f96b05
+- [x] 1.4 The new self-test passes every case, the 72 inherited ones included — 3f96b05
+- [x] 1.5 The dry run passes with the sonnet wire shape — 3f96b05
+- [x] 1.6 Excerpt serving is unchanged — 3f96b05
+- [x] 1.7 Mutants fail — 3f96b05
+- [x] 1.8 The archive is untouched — 3f96b05
+- [x] 1.9 The change folder is formatted — 3f96b05
 
 #### Manual
 

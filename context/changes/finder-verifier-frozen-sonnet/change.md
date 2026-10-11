@@ -17,6 +17,10 @@ Predecessor: finder-verifier-frozen
 
 ## Owner decisions
 
+2026-10-11: Codex completed the owner's requested steps 1–3: read the stub demo checklist and independently reviewed Phase 1 at `3f96b05` (two fresh-context, read-only passes; all nine automated gates rerun successfully). Manual 1.10 remains unconfirmed: the probe can report PROCEED after an account condition violation, an unsuccessful generation read, or final spend above its cap. Report: `reviews/impl-review-phase-1-3f96b05.md` (NEEDS ATTENTION; 3 warnings, 1 observation). Push is deferred until the checklist is corrected and re-reviewed, before the paid Phase 2 probe. No paid call or push was made. The change remains implementing.
+
+2026-10-11: owner decision — manual 1.10 needs correction: the probe must never PROCEED past an account error, an unread generation record, or a final spend above its cap; F1–F4 of `reviews/impl-review-phase-1-3f96b05.md` fixed, push held until a re-review passes; plan.md Phase 2 § Probe record (checklist items 7–8, outcome rules and precedence).
+
 From `research.md` § Open Questions (owner, 2026-10-10):
 
 1. **Budget: variant (a).** The sealed admission reserve P stays as in the predecessor (`harness.mjs:457-465`; about $1.07–1.16 per attempt at $2 / $10 per M). The cap is raised instead: about $3.9 stop-and-ask and $4.5 hard, so that a series of about $2.2–2.7 can finish. The exact values are fixed in the pre-registration after the pre-flight re-reads the credit (last recorded about $5.39).
