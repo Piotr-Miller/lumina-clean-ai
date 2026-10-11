@@ -21,6 +21,10 @@ Predecessor: finder-verifier-frozen
 
 2026-10-11: owner decision — manual 1.10 needs correction: the probe must never PROCEED past an account error, an unread generation record, or a final spend above its cap; F1–F4 of `reviews/impl-review-phase-1-3f96b05.md` fixed, push held until a re-review passes; plan.md Phase 2 § Probe record (checklist items 7–8, outcome rules and precedence).
 
+2026-10-11: owner decision — the $1.68 projection (stage 1's measured tokens at sonnet prices) goes into gate §10 only, as the expected spend; the harness `report` mode stays unchanged. Plan Definitions E amended; Phase 3 §10 already carried it. Reason: Phase 1 fixes every other mode of the instrument and Phase 2's probe runs on that harness, so a report change after the probe would reopen Phase 1; the projection is a pre-series assumption, not a series measurement.
+
+2026-10-11: owner decision — after reading the stubbed checklists (re-review 2, F5 fixed): item 1 reads `incomplete (generation record not read, item 8)` when a record is unread, `not read` / `no successful response` / `no id` / `error` replace the empty-list word `none` and the placeholder `absent` where nothing was read, and two outcome messages the demo had not shown (`STOP AND ASK (rule 1)`, `UNDETERMINED: no successful response`) get self-test cases. PROCEED after a plain format failure or `budget-stopped` stays as ruled (information only). The stubbed run is kept as `demo-checklists.txt` in the change folder as the record for manual 1.10.
+
 From `research.md` § Open Questions (owner, 2026-10-10):
 
 1. **Budget: variant (a).** The sealed admission reserve P stays as in the predecessor (`harness.mjs:457-465`; about $1.07–1.16 per attempt at $2 / $10 per M). The cap is raised instead: about $3.9 stop-and-ask and $4.5 hard, so that a series of about $2.2–2.7 can finish. The exact values are fixed in the pre-registration after the pre-flight re-reads the credit (last recorded about $5.39).

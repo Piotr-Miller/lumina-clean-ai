@@ -433,8 +433,10 @@ function seriesState(lines) {
   const byKey = new Map();
   let counterMax = null;
   for (const line of lines.slice(1)) {
-    if (line.kind === "counter") counterMax = Math.max(counterMax ?? -Infinity, line.usage);
-    else if (line.kind === "start") {
+    if (line.kind === "counter") {
+      // A counter line whose read failed carries usage null (probe, review F5); it raises nothing.
+      if (typeof line.usage === "number") counterMax = Math.max(counterMax ?? -Infinity, line.usage);
+    } else if (line.kind === "start") {
       const a = { start: line, requests: [], end: null, interrupted: null };
       attempts.set(line.id, a);
       if (!byKey.has(line.key)) byKey.set(line.key, []);
@@ -1119,7 +1121,16 @@ async function liveGeneration(apiKey, id, sleep) {
       continue;
     }
     if (res.ok) {
-      const d = (await res.json())?.data ?? {};
+      let d;
+      try {
+        d = (await res.json())?.data ?? {};
+      } catch (error) {
+        // A 2xx whose body is not JSON was not read either (review F5); the status says what came back.
+        return {
+          status: res.status,
+          error: `HTTP ${String(res.status)} from GET /api/v1/generation with a body that is not JSON (${String(error?.message ?? error).slice(0, 120)})`,
+        };
+      }
       return {
         status: res.status,
         provider_name: d.provider_name ?? null,
@@ -1156,7 +1167,8 @@ function probeChecklist({ result, generations, spend }) {
       return { id: null, read: false, why: "the response carried no generation id" };
     const g = genById.get(r.generationId);
     if (g === undefined) return { id: r.generationId, read: false, why: "not looked up" };
-    if (g.status !== 200) return { id: r.generationId, read: false, why: `${g.error ?? `HTTP ${fmt(g.status)}`}`, g };
+    if (g.status !== 200 || g.error !== undefined)
+      return { id: r.generationId, read: false, why: `${g.error ?? `HTTP ${fmt(g.status)}`}`, g };
     return { id: r.generationId, read: true, g };
   });
   const genRead = ok2xx.length > 0 && genReads.every((x) => x.read);
@@ -1187,7 +1199,11 @@ function probeChecklist({ result, generations, spend }) {
   const hold3 = ok2xx.length > 0 && ok2xx.every((r) => r.promptTokens !== null && r.promptTokens <= r.tokIn);
   const hold4 = ok2xx.length > 0 && ok2xx.every((r) => r.cost !== null && r.cost <= r.bound);
   // Final spend against the probe's own cap (review F3): T = max(counter Δ, recorded), as in the series.
-  const holdSpend = spend.T <= spend.cap + 1e-9;
+  // An end counter that could not be read leaves the final spend unverified (review F5): item 7 is then
+  // undetermined, never held, whatever the recorded cost says.
+  const counterError = spend.counterError ?? null;
+  const spendWithinCap = spend.T <= spend.cap + 1e-9;
+  const holdSpend = counterError === null && spendWithinCap;
   const account =
     sent.map(accountOf).find((x) => x !== null) ??
     (String(result.cause ?? "").startsWith("account-") ? result.cause : null);
@@ -1203,24 +1219,30 @@ function probeChecklist({ result, generations, spend }) {
       ? `${String(r.reasoningDetails)}${r.reasoningDetails > 0 ? ` (${r.reasoningDetailTypes.join("/")})` : ""}`
       : (r.reasoningDetailsField ?? "absent");
   const genText = (x) =>
-    x.read ? `${x.id}: provider_name ${fmt(x.g.provider_name)}` : `${fmt(x.id)}: NOT READ (${x.why})`;
+    x.read ? `${x.id}: provider_name ${fmt(x.g.provider_name)}` : `${x.id ?? "no id"}: NOT READ (${x.why})`;
+  // "none" is the empty-list word; it never stands for "not read" or "no successful response" (manual 1.10).
+  const genList = (xs) => (xs.length === 0 && genReads.some((x) => !x.read) ? "not read" : list(xs));
+  const okList = (xs) => (ok2xx.length === 0 ? "no successful response" : list(xs));
+  const httpOf = (r) => (r.status === null && r.error !== null ? "error" : fmt(r.status));
+  // Item 1 is read on three channels; with a generation record unread it is incomplete, not held.
+  const item1 = genRead ? holds(hold1) : hold1 ? "incomplete (generation record not read, item 8)" : holds(false);
   const lines = [
-    `1. Served by ${PROVIDER_NAME}: wire provider [${list(wire.map(fmt))}]; SDK step provider [${list(sdk.map(fmt))}]; ` +
-      `generation record [${list(genReads.map(genText))}] → ${holds(hold1)}`,
+    `1. Served by ${PROVIDER_NAME}: wire provider [${okList(wire.map(fmt))}]; SDK step provider [${list(sdk.map(fmt))}]; ` +
+      `generation record [${okList(genReads.map(genText))}] → ${item1}`,
     `2. No reasoning on any channel: wire reasoning_tokens [${list(sent.map((r) => fmt(r.reasoningTokens)))}]; ` +
       `wire reasoning text chars [${list(sent.map(wireText))}]; ` +
       `wire reasoning_details [${list(sent.map(wireDetails))}]; ` +
       `SDK tokens sdk/openrouter [${list(steps.map((s) => `${fmt(s.reasoningTokens?.sdk)}/${fmt(s.reasoningTokens?.openrouter)}`))}] (the SDK reports a missing count as 0); ` +
       `SDK text chars [${list(steps.map((s) => fmt(s.reasoningTextChars)))}] (derived); SDK reasoning_details [${list(steps.map((s) => fmt(s.reasoningDetails)))}] (derived: the provider fills [] when the field is absent); ` +
-      `generation native_tokens_reasoning [${list(readGens.map((g) => fmt(g.native_tokens_reasoning)))}] → ${holds(hold2)}`,
-    `3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [${list(ok2xx.map((r) => `${fmt(r.promptTokens)} / ${String(r.tokIn)}${r.promptTokens === null ? "" : ` = ${(r.promptTokens / r.tokIn).toFixed(3)}`}`))}] → ${holds(hold3)}`,
-    `4. cost ≤ bound (A3): [${list(ok2xx.map((r) => `$${fmt(r.cost)} / $${r.bound.toFixed(6)}${r.cost === null ? "" : ` = ${(r.cost / r.bound).toFixed(3)}`}`))}] → ${holds(hold4)}`,
-    `5. service_tier: response [${list(sent.map((r) => fmt(r.serviceTier)))}]; generation record [${list(readGens.map((g) => fmt(g.service_tier)))}] (information)`,
+      `generation native_tokens_reasoning [${genList(readGens.map((g) => fmt(g.native_tokens_reasoning)))}] → ${holds(hold2)}`,
+    `3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [${okList(ok2xx.map((r) => `${fmt(r.promptTokens)} / ${String(r.tokIn)}${r.promptTokens === null ? "" : ` = ${(r.promptTokens / r.tokIn).toFixed(3)}`}`))}] → ${holds(hold3)}`,
+    `4. cost ≤ bound (A3): [${okList(ok2xx.map((r) => `$${fmt(r.cost)} / $${r.bound.toFixed(6)}${r.cost === null ? "" : ` = ${(r.cost / r.bound).toFixed(3)}`}`))}] → ${holds(hold4)}`,
+    `5. service_tier: response [${list(sent.map((r) => fmt(r.serviceTier)))}]; generation record [${genList(readGens.map((g) => fmt(g.service_tier)))}] (information)`,
     `6. Attempt: ${result.status}${result.cause ? ` (${String(result.cause)})` : ""}; requests sent ${String(sent.length)}, blocked ${String(result.requests.length - sent.length)}; ` +
-      `HTTP [${list(sent.map((r) => fmt(r.status)))}]; ` +
+      `HTTP [${list(sent.map(httpOf))}]; ` +
       `the sealed parser ${result.status === "ok" ? "accepted the answer" : "did not produce a scored answer"}${sent.length > 1 ? "; a repair or retry ran" : ""}`,
-    `7. Spend within the probe cap: T $${spend.T.toFixed(6)} = max(counter Δ ${spend.counterDelta === null ? "n/a" : `$${spend.counterDelta.toFixed(6)}`}, recorded $${spend.recorded.toFixed(6)}) vs cap $${spend.cap.toFixed(2)} → ${holds(holdSpend)}`,
-    `8. Generation record read for every successful response: [${list(genReads.map((x) => (x.read ? `${x.id}: read` : `${fmt(x.id)}: ${x.why}`)))}] → ${holds(genRead)}`,
+    `7. Spend within the probe cap: T $${spend.T.toFixed(6)} = max(counter Δ ${spend.counterDelta === null ? (counterError === null ? "n/a" : "not read") : `$${spend.counterDelta.toFixed(6)}`}, recorded $${spend.recorded.toFixed(6)}) vs cap $${spend.cap.toFixed(2)}${counterError === null ? "" : `; end counter NOT READ (${counterError})`} → ${holds(holdSpend)}`,
+    `8. Generation record read for every successful response: [${okList(genReads.map((x) => (x.read ? `${x.id}: read` : `${x.id ?? "no id"}: ${x.why}`)))}] → ${holds(genRead)}`,
   ];
   // Precedence, most severe first (review F1–F3). Every failing rule is listed; the first one decides.
   const blocking = [];
@@ -1252,9 +1274,13 @@ function probeChecklist({ result, generations, spend }) {
     blocking.push(
       `STOP AND ASK (condition violation): the attempt ended ${String(result.cause)}, which the probe's items do not explain (inherited stop rule). Nothing is sealed; the owner decides.`,
     );
-  if (!holdSpend)
+  if (!spendWithinCap)
     blocking.push(
       `STOP AND ASK (spend): T $${spend.T.toFixed(6)} is above the probe cap $${spend.cap.toFixed(2)} (item 7). Reconcile the counter and the recorded cost with the owner before anything is sealed.`,
+    );
+  if (counterError !== null)
+    blocking.push(
+      `UNDETERMINED (item 7): the end key counter could not be read (${counterError}), so the final spend is unverified. Re-read it (free GET /api/v1/key) and decide with the owner; a second paid probe needs the owner.`,
     );
   if (ok2xx.length > 0 && !genRead)
     blocking.push(
@@ -1362,7 +1388,18 @@ async function runProbe(opts) {
       appendLine(opts.seriesPath, { kind: "generation", ...g, at: nowIso() });
       generations.push(g);
     }
-  appendLine(opts.seriesPath, { kind: "counter", usage: await readCounter(), at: nowIso(), when: "end" });
+  // The end counter read is free and comes after the paid attempt (review F5): a failure is journaled
+  // and printed, never thrown past the checklist, so the record stays complete and readable.
+  let endCounter;
+  try {
+    endCounter = { usage: await readCounter() };
+  } catch (error) {
+    endCounter = {
+      usage: null,
+      error: `${error?.name ?? typeof error}: ${String(error?.message ?? error).slice(0, 200)}`,
+    };
+  }
+  appendLine(opts.seriesPath, { kind: "counter", ...endCounter, at: nowIso(), when: "end" });
   const state = seriesState(readLines(opts.seriesPath));
   const checklist = probeChecklist({
     result,
@@ -1370,7 +1407,9 @@ async function runProbe(opts) {
     spend: {
       T: spendT(state),
       recorded: state.recorded,
-      counterDelta: state.counterMax === null ? null : state.counterMax - state.header.t0,
+      counterDelta:
+        endCounter.error === undefined && state.counterMax !== null ? state.counterMax - state.header.t0 : null,
+      counterError: endCounter.error ?? null,
       cap,
     },
   });
@@ -3096,7 +3135,11 @@ async function selfTest() {
         priceOut: prices.outPerM,
         apiKey: "self-test-no-network",
         fetchImpl: s.fetch,
-        readCounter: async () => (counters.length > 1 ? counters.shift() : counters[0]),
+        readCounter: async () => {
+          const c = counters.length > 1 ? counters.shift() : counters[0];
+          if (c instanceof Error) throw c;
+          return c;
+        },
         readCredits: async () => ({ ...credit, at: T0_AT }),
         readGeneration: async () => (typeof generation === "function" ? generation() : generation),
         allowOutside: true,
@@ -3235,7 +3278,8 @@ async function selfTest() {
       return [
         r.result?.result.status === "condition-violation" &&
           String(r.result.result.cause).startsWith("measurement-error") &&
-          r.result.checklist.outcome.startsWith("STOP AND ASK (condition violation)"),
+          r.result.checklist.outcome.startsWith("STOP AND ASK (condition violation)") &&
+          r.text.includes("HTTP [200, error]"),
         `${r.result?.result.status}:${r.result?.result.cause} → ${probeOutcome(r).slice(0, 70)}`,
       ];
     },
@@ -3253,7 +3297,10 @@ async function selfTest() {
       return [
         r.result?.checklist.proceed === false &&
           r.result.checklist.outcome.startsWith("UNDETERMINED (item 8)") &&
-          r.text.includes("NOT READ"),
+          r.text.includes("NOT READ") &&
+          r.text.includes("→ incomplete (generation record not read, item 8)") &&
+          r.text.includes("native_tokens_reasoning [not read]") &&
+          r.text.includes("generation record [not read] (information)"),
         `${probeOutcome(r).slice(0, 40)}; ${r.text
           .split("\n")
           .find((l) => l.startsWith("8."))
@@ -3280,7 +3327,7 @@ async function selfTest() {
     });
     return [
       r.result?.checklist.outcome.startsWith("UNDETERMINED (item 8)") === true &&
-        r.text.includes("the response carried no generation id"),
+        r.text.includes("no id: NOT READ (the response carried no generation id)"),
       probeOutcome(r).slice(0, 60),
     ];
   });
@@ -3324,6 +3371,53 @@ async function selfTest() {
           .split("\n")
           .find((l) => l.startsWith("2."))
           ?.slice(0, 160),
+      ];
+    },
+  );
+
+  // Manual 1.10 read (2026-10-11): the two outcome messages the stub demo had not shown.
+  add("probe (manual 1.10)", "served by Azure on the wire → STOP AND ASK (rule 1)", async () => {
+    const r = await probeOne({ responder: () => probeAnswer({ provider: "Azure" }) });
+    return [
+      r.result?.checklist.proceed === false &&
+        r.result.checklist.outcome.startsWith("STOP AND ASK (rule 1)") &&
+        r.result.result.cause === "provider-Azure",
+      `${r.result?.result.status}:${r.result?.result.cause} → ${probeOutcome(r).slice(0, 60)}`,
+    ];
+  });
+  add("probe (manual 1.10)", "HTTP 503 on every request → UNDETERMINED (no successful response)", async () => {
+    const r = await probeOne({ responder: () => errorBody(503) });
+    return [
+      r.result?.checklist.proceed === false &&
+        r.result.checklist.outcome.startsWith("UNDETERMINED: no successful response") &&
+        r.text.includes("wire provider [no successful response]"),
+      `${r.result?.result.status}:${r.result?.result.cause} → ${probeOutcome(r).slice(0, 60)}`,
+    ];
+  });
+  // Review F5 (re-review 2, 2026-10-11): a free read that fails after the paid attempt is journaled and
+  // printed, never thrown past the checklist; neither read is taken as seen.
+  genCase("generation read HTTP 200 with a body that is not JSON", {
+    status: 200,
+    error: "HTTP 200 from GET /api/v1/generation with a body that is not JSON (Unexpected token < in JSON)",
+  });
+  add(
+    "probe (p1 review F5)",
+    "end counter read fails → journaled, checklist printed, UNDETERMINED (item 7)",
+    async () => {
+      const r = await probeOne({
+        responder: () => probeAnswer(),
+        counters: [T0, new HarnessRefusal("reading the key counter failed: HTTP 503 from GET /api/v1/key")],
+      });
+      const end = readLines(r.path).find((l) => l.kind === "counter" && l.when === "end");
+      return [
+        r.error === undefined &&
+          end?.usage === null &&
+          String(end?.error).includes("HTTP 503") &&
+          r.result?.state.counterMax === T0 &&
+          r.result.checklist.proceed === false &&
+          r.result.checklist.outcome.startsWith("UNDETERMINED (item 7)") &&
+          r.text.includes("end counter NOT READ"),
+        `${probeOutcome(r).slice(0, 60)}; end usage=${String(end?.usage)}`,
       ];
     },
   );
