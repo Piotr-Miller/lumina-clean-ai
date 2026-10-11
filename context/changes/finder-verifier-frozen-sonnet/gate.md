@@ -417,3 +417,8 @@ From `harness.mjs report --series series-sonnet.jsonl`, which reproduces byte fo
 
 - **Information only:** the policy, ambiguous and descriptive distributions and the per-finding detail are in the
   report. The side-by-side with stage 1 (§13) is written in Phase 5.
+
+### Blind seed (Phase 5, §9)
+
+- Seed: **`dce53766e8f0ebfb9f214f30b04115d41f2f88361a7b7b9a4b9d2e7a451770c6`**, 32 bytes from `/dev/urandom`, written 2026-10-11T13:23:10Z, before `blind` runs. It is committed and pushed
+  before the draw; the sheet's order is `sha256(seed:slot:member)`.
