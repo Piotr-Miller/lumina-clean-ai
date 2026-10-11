@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createImplReviewer } from "./impl-reviewer.js";
 import { createJudge } from "./judge.js";
+import { FinderOutputError } from "./output-repair.js";
 import { PROJECT_CONTEXT_CAP_CHARS, runReviewPipeline } from "./pipeline.js";
 import { createReviewer } from "./reviewer.js";
 import { CRITERIA } from "./scorecard.js";
@@ -117,12 +118,12 @@ describe("final-step guard at the provider boundary (impl-review-phase-3 F2)", (
     const result = await reviewer.review({ kind: "diff", diff: "--- a\n+++ b" });
     expect(result.findings).toEqual([]);
     // Steps 1..2 offer the tool (and this model spends them on fetches); the
-    // final allowed step must offer none, forcing the structured review out
-    // within the maxSteps budget. Without prepareFinalStep wired into the
-    // agent this loop ends tool-calling at the step cap with no output.
-    expect(doGenerate).toHaveBeenCalledTimes(3);
+    // final allowed step must offer none, so the gathering loop ends on an
+    // answer within the maxSteps budget. The fourth request is the separate,
+    // tool-less finalization that writes the JSON (finder-serialization-outage).
+    expect(doGenerate).toHaveBeenCalledTimes(4);
     const toolCounts = doGenerate.mock.calls.map((call) => ((call[0] as { tools?: unknown[] }).tools ?? []).length);
-    expect(toolCounts).toEqual([1, 1, 0]);
+    expect(toolCounts).toEqual([1, 1, 0, 0]);
   });
 });
 
@@ -177,6 +178,56 @@ describe("project review context wiring (impl-review-phase-1 F4)", () => {
     const finderPrompt = promptOfCall(doGenerate, 0);
     expect(finderPrompt).toContain("project context truncated");
     expect(finderPrompt).not.toContain("r".repeat(PROJECT_CONTEXT_CAP_CHARS + 1));
+  });
+});
+
+// A pass is bounded: the loop (<= maxSteps), one finalization, and at most
+// one format repair — never another whole-pass run on a format failure.
+const textGeneration = (text: string) => ({ ...successfulGeneration(), content: [{ type: "text" as const, text }] });
+
+describe("finder requests per pass (two stages, at most one repair)", () => {
+  it("a loop without a tool call plus the finalization is 2 requests", async () => {
+    const doGenerate = vi.fn().mockResolvedValue(successfulGeneration());
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    await createReviewer({ apiKey: "test-key", source: () => "ctx" }).review({ kind: "diff", diff: "--- a\n+++ b" });
+    expect(doGenerate).toHaveBeenCalledTimes(2);
+  });
+
+  it("plus a successful repair is 3 requests", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockResolvedValueOnce(textGeneration("I reviewed it."))
+      .mockResolvedValueOnce(textGeneration('{"summary": 1}'))
+      .mockResolvedValueOnce(successfulGeneration());
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const result = await createReviewer({ apiKey: "test-key", source: () => "ctx" }).review({
+      kind: "diff",
+      diff: "--- a\n+++ b",
+    });
+    expect(result.findings).toEqual([]);
+    expect(doGenerate).toHaveBeenCalledTimes(3);
+  });
+
+  it("a format failure that survives the repair stops at 3 requests", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockResolvedValueOnce(textGeneration("I reviewed it."))
+      .mockResolvedValue(textGeneration('{"summary": 1}'));
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    await expect(
+      createReviewer({ apiKey: "test-key", source: () => "ctx" }).review({ kind: "diff", diff: "--- a\n+++ b" }),
+    ).rejects.toBeInstanceOf(FinderOutputError);
+    expect(doGenerate).toHaveBeenCalledTimes(3);
+  });
+
+  it("through the pipeline a format failure is not re-run: still 3 finder requests, and no judge", async () => {
+    const doGenerate = vi.fn().mockResolvedValue(textGeneration('{"summary": 1}'));
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    await expect(
+      runReviewPipeline({ diff: "diff --git a/a b/a\n+x", source: () => "ctx", overrides: { apiKey: "test-key" } }),
+    ).rejects.toBeInstanceOf(FinderOutputError);
+    // loop answer (no tool call) + finalization + one repair; a retried pass would be 6.
+    expect(doGenerate).toHaveBeenCalledTimes(3);
   });
 });
 

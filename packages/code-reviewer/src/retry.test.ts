@@ -1,6 +1,7 @@
 import { APICallError, NoObjectGeneratedError } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
+import { FinderOutputError } from "./output-repair.js";
 import {
   isRetryableError,
   MAX_RETRY_DELAY_MS,
@@ -71,6 +72,11 @@ describe("isRetryableError", () => {
 
   it("never retries an external cancellation (plain AbortError)", () => {
     expect(isRetryableError(new DOMException("aborted", "AbortError"))).toBe(false);
+  });
+
+  it("never retries the finder's FinderOutputError, repaired or not", () => {
+    expect(isRetryableError(new FinderOutputError({ text: "", validationError: "v", repaired: false }))).toBe(false);
+    expect(isRetryableError(new FinderOutputError({ text: "{", validationError: "v", repaired: true }))).toBe(false);
   });
 
   it("retries a structured-output schema mismatch (NoObjectGeneratedError)", () => {
@@ -183,6 +189,20 @@ describe("withOneRetry", () => {
     await expect(withOneRetry(fn, { sleep })).rejects.toBe(authError);
     expect(fn).toHaveBeenCalledTimes(1);
     expect(calls).toEqual([]);
+  });
+
+  // The finder's format failure is terminal: its one format repair already
+  // took the re-roll's place, and a re-roll of the whole pass failed
+  // identically on every post-break run (change finder-serialization-outage).
+  it("never retries the finder's FinderOutputError: exactly one pass, no sleep", async () => {
+    const { calls, sleep } = recordingSleep();
+    const onRetry = vi.fn();
+    const error = new FinderOutputError({ text: "prose", validationError: "v", repaired: true });
+    const fn = vi.fn().mockRejectedValue(error);
+    await expect(withOneRetry(fn, { sleep, onRetry })).rejects.toBe(error);
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual([]);
+    expect(onRetry).not.toHaveBeenCalled();
   });
 
   it("retries a schema mismatch immediately: no sleep call at all", async () => {
