@@ -1,0 +1,45 @@
+{
+  "seed": "dce53766e8f0ebfb9f214f30b04115d41f2f88361a7b7b9a4b9d2e7a451770c6",
+  "entries": {
+    "R01": {
+      "key": "r1/openai-pr269-10/base",
+      "member": "openai-pr269-10#10.2",
+      "row": "G-D20",
+      "run": "openai-pr269-10",
+      "arm": "base",
+      "repeat": 1
+    },
+    "R02": {
+      "key": "r1/openai-pr269-05/O",
+      "member": "openai-pr269-05#5.2",
+      "row": "G-D13",
+      "run": "openai-pr269-05",
+      "arm": "O",
+      "repeat": 1
+    },
+    "R03": {
+      "key": "r3/openai-pr269-10/O",
+      "member": "openai-pr269-10#10.2",
+      "row": "G-D20",
+      "run": "openai-pr269-10",
+      "arm": "O",
+      "repeat": 3
+    },
+    "R04": {
+      "key": "r2/openai-pr269-10/base",
+      "member": "openai-pr269-10#10.2",
+      "row": "G-D20",
+      "run": "openai-pr269-10",
+      "arm": "base",
+      "repeat": 2
+    },
+    "R05": {
+      "key": "r3/openai-pr269-05/O",
+      "member": "openai-pr269-05#5.2",
+      "row": "G-D13",
+      "run": "openai-pr269-05",
+      "arm": "O",
+      "repeat": 3
+    }
+  }
+}

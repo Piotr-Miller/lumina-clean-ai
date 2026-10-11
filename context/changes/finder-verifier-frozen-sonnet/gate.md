@@ -437,3 +437,65 @@ From `harness.mjs report --series series-sonnet.jsonl`, which reproduces byte fo
   **`cd03196e5e548d8a2db12e39f4d83813e0205217ce02a7c4d4df8a1c00098209`**.
 - **Blinding is partial,** as pre-registered: the frozen claim and its rationale show the row (two rows here, G-D13
   and G-D20), so arm and repeat are hidden but the row is not.
+
+### Hand-read and final result (Phase 5)
+
+- **Grades (owner, 2026-10-11):** R01, R03 and R04 `pass`; R02 and R05 `off-target`; none `no-evidence`
+  (`hand-read/grades.json`). The owner's grounds: R01, R03 and R04 refute the claim, since the `return` leaves
+  `runPrediction` itself. R02 and R05 refute only the `ValueError` part of G-D13, not the claim that an empty default
+  scan gives no message; showing that it prints "0 photo(s), 0 run(s)" would be needed. Every quote passed the check.
+- **Unblinding:** `hand-read/key.json` is the hashed key (raw sha256 `cd03196e…8209`, checked before the copy). It is
+  committed formatted by Prettier and is JSON-equal to the raw key. R01, R03 and R04 are G-D20 (base r1, O r3, base
+  r2); R02 and R05 are G-D13 (O r1, O r3).
+- **Full graded report:** `series-sonnet-report.md`, the output of `harness.mjs report --series series-sonnet.jsonl
+--grades hand-read/grades.json --key hand-read/key.json`, formatted by Prettier. It reproduces byte for byte
+  (raw sha256 `a2a1c7ef…fb93`, run twice).
+
+**Verdicts, as pre-registered (§7):**
+
+| Criterion                        | Result                                                                                                                                                                                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| True class: survive 3/3 base     | **FAIL — 9 of 11.** Survives: D2 #1.2, #2.1, #5.1 (O anomaly), #6.3, #7.1, #8.2, H-R1, H-R3, H-R5. Evidence-delivery limit by rule (4): D2 #3.2 and #4.2, `refuted` with a verified quote in every base repeat, published 3/3 in O.           |
+| Code-refutable: refuted 3/3 base | **FAIL — 0 of 3.** G-D20 2/3 in base, both graded `pass`; r3 base published the false claim (majority view: pass). **G-D13 and G-D14 0/3: confirmed and published in every base repeat.** G-D13's two O refutations were graded `off-target`. |
+| Reliability                      | 114/114 attempts `ok`; three format repairs; provider `Anthropic`, tier `default` and no reasoning on all 117 requests; T $2.655654 of $3.90.                                                                                                 |
+
+**The question of §1, answered within §2's limits:**
+
+- **With sonnet-5 the sealed verifier keeps far more of the true findings, and still does not reliably refute the
+  false ones.** G-D13 and G-D14 were confirmed in every base repeat despite delivered counterevidence, as with luna;
+  the excerpts are the same sealed ones. G-D14 was also confirmed in every O repeat. G-D20, which luna refuted 3/3,
+  was published once in base.
+- **The true-class gain is in the findings luna lost:** H-R1, H-R3 and H-R5, and D2 #7.1, now survive 3/3.
+- **The two true-class failures are refutations, not abstentions.** For D2 #4.2 every base reason says the excerpts
+  do not show the exit path, and still answers `refuted` with a quote of the cleanup `finally`; luna answered
+  `unsupported` there. For D2 #3.2 the excerpt does show the exit, and the reasons contradict themselves. Rule (4)
+  labels both `evidence-delivery limit` because O publishes them; the labels do not say why a true finding was
+  refuted, and that is reported here as observed, not as a cause.
+- **This does not justify re-enabling AI review** (§2, decision 6).
+
+### Side-by-side with stage 1 (§13, information only)
+
+Stage 1: `context/archive/2026-10-09-finder-verifier-frozen/gate.md` § Results (luna). Never a criterion; each
+stage's verdicts stand on its own §7.
+
+| Member               | Row   | Stage 1 base (hard)             | Stage 1 O | Stage 1 diagnosis       | Stage 2 base (hard)                    | Stage 2 O              | Stage 2 diagnosis       |
+| -------------------- | ----- | ------------------------------- | --------- | ----------------------- | -------------------------------------- | ---------------------- | ----------------------- |
+| openai-pr269-01#1.2  | G-D2  | 3/3 (pass)                      | 3/3       | survives                | 3/3 (pass)                             | 3/3                    | survives                |
+| openai-pr269-02#2.1  | G-D2  | 3/3 (pass)                      | 3/3       | survives                | 3/3 (pass)                             | 3/3                    | survives                |
+| openai-pr269-03#3.2  | G-D2  | 2/3 (unstable)                  | 2/3       | investigate             | 0/3 refuted (fail)                     | 3/3                    | evidence-delivery limit |
+| openai-pr269-04#4.2  | G-D2  | 0/3 unsupported (fail)          | 3/3       | evidence-delivery limit | 0/3 refuted (fail)                     | 3/3                    | evidence-delivery limit |
+| openai-pr269-05#5.1  | G-D2  | 3/3 (pass)                      | 3/3       | survives                | 3/3 (pass)                             | 2/3                    | survives, O anomaly     |
+| openai-pr269-06#6.3  | G-D2  | 3/3 (pass)                      | 3/3       | survives                | 3/3 (pass)                             | 3/3                    | survives                |
+| openai-pr269-07#7.1  | G-D2  | 2/3 (unstable)                  | 2/3       | investigate             | 3/3 (pass)                             | 3/3                    | survives                |
+| openai-pr269-08#8.2  | G-D2  | 3/3 (pass)                      | 3/3       | survives                | 3/3 (pass)                             | 3/3                    | survives                |
+| 247-r1#0             | H-R1  | 1/3 (unstable)                  | 3/3       | evidence-delivery limit | 3/3 (pass)                             | 3/3                    | survives                |
+| 247-r1#2             | H-R3  | 0/3 (fail)                      | 3/3       | evidence-delivery limit | 3/3 (pass)                             | 3/3                    | survives                |
+| 247-r1#4             | H-R5  | 0/3 (fail)                      | 0/3       | investigate             | 3/3 (pass)                             | 3/3                    | survives                |
+| openai-pr269-05#5.2  | G-D13 | 0/3, published 3/3 (fail)       | 0/3       | —                       | 0/3, published 3/3 (fail)              | 2 refuted (off-target) | —                       |
+| openai-pr269-09#9.1  | G-D14 | 0/3, published 3/3 (fail)       | 0/3       | —                       | 0/3, published 3/3 (fail)              | 0/3                    | —                       |
+| openai-pr269-10#10.2 | G-D20 | 3/3 refuted, hand-read 3/3 pass | 3/3       | —                       | 2/3 refuted, hand-read 2/2 pass (fail) | 1/3 refuted (pass)     | —                       |
+
+- **Class totals:** true class 5/11 → 9/11; code-refutable 1/3 → 0/3. Spend $0.045438 → $2.655654.
+- **What the comparison can carry (§13):** the code, inputs and request shape are equal; the tokenizer, the provider
+  and the reasons' length are not (prompt tokens 1.49 ×, completion tokens 1.91 × stage 1). Three findings per
+  class and one corpus are the limits of §2.
