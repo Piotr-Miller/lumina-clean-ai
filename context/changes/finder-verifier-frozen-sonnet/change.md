@@ -27,6 +27,8 @@ Predecessor: finder-verifier-frozen
 
 2026-10-11: probe (Phase 2) PROCEED at $0.005754, outcome confirmed by the owner (manual 2.5). Owner approved the pre-registration in `gate.md` after two corrections (continuation after any budget stop needs the owner; stage-1 amounts explained under §6); sealed at sha256 3641d01bb31b69f3cca2638391a0f29d998475e86146a7a052d895b78dea68e4. The seal does not authorize Phase 4.
 
+2026-10-11: paid series authorized by the owner after the pre-flight and complete — 114/114 attempts ok, T $2.655654 of the $3.90 cap (counter re-read equal); automatic outcome in `gate.md` § Results: true class 9/11 pass 3/3 (D2 #3.2 and #4.2 refuted in base, O 3/3); code-refutable 0/3 before the hand-read (G-D13 and G-D14 published 3/3 in base, G-D20 2/3). Hand-read and results are Phase 5.
+
 From `research.md` § Open Questions (owner, 2026-10-10):
 
 1. **Budget: variant (a).** The sealed admission reserve P stays as in the predecessor (`harness.mjs:457-465`; about $1.07–1.16 per attempt at $2 / $10 per M). The cap is raised instead: about $3.9 stop-and-ask and $4.5 hard, so that a series of about $2.2–2.7 can finish. The exact values are fixed in the pre-registration after the pre-flight re-reads the credit (last recorded about $5.39).

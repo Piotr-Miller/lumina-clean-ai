@@ -579,15 +579,15 @@ None. Nothing in `src/`, `packages/` or CI changes. The archive stays untouched.
 
 #### Automated
 
-- [ ] 4.1 (paid) Pre-flight reads
-- [ ] 4.2 (paid) The series completes or stops by a sealed rule
-- [ ] 4.3 The report reproduces from the committed series
-- [ ] 4.4 Spend stays within the cap
+- [x] 4.1 (paid) Pre-flight reads
+- [x] 4.2 (paid) The series completes or stops by a sealed rule
+- [x] 4.3 The report reproduces from the committed series
+- [x] 4.4 Spend stays within the cap
 
 #### Manual
 
-- [ ] 4.5 The owner authorizes the series after reading the pre-flight
-- [ ] 4.6 Any condition violation or admission stop is decided by the owner
+- [x] 4.5 The owner authorizes the series after reading the pre-flight
+- [-] 4.6 Any condition violation or admission stop is decided by the owner — n/a: the series completed 114/114 with no condition violation and no admission or budget stop
 
 ### Phase 5: Blinded hand-read, results and decision
 
