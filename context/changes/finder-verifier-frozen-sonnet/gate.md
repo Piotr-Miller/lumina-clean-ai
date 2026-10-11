@@ -322,3 +322,98 @@ reading. The hash below was then taken and is never recomputed. Nothing in this 
 ## Results
 
 Appended after the seal; never edits `## Pre-registration`.
+
+### Pre-flight (2026-10-11)
+
+- **Seal:** the committed `gate.md` at `046c1b4` hashes the section to
+  `3641d01bb31b69f3cca2638391a0f29d998475e86146a7a052d895b78dea68e4`, equal to the record. The tag
+  `finder-verifier-frozen-sonnet/seal` on `origin` peels to `a6c6202`. This is a check, not a recomputation.
+- **Code and inputs:**
+  - the worktree `~/.cache/finder-verifier-frozen-sonnet/fv-seal` is at `9c85aa2`, with `src` tree `9be94235…` and
+    nothing uncommitted under `src` or `scripts/finder-gate-core.mjs`;
+  - gate-core sha256 is `e713226c…bcb17`;
+  - `harness.mjs` sha256 is `57e64a7a…23db`, equal to the `harness` pin;
+  - the corpus and diff hashes are re-checked by the harness at start-up;
+  - `series-sonnet.jsonl` does not exist yet.
+- **Endpoints** (`GET /api/v1/models/anthropic/claude-sonnet-5/endpoints`, authenticated, 2026-10-11T12:54:19Z):
+  the `anthropic` endpoint has `provider_name` `Anthropic`, model `claude-sonnet-5-20260630`, $2 / $10 per M, status
+  0, and lists `reasoning` and `max_tokens` among its supported parameters. Nine other endpoints are listed
+  (`claude-on-aws`, Azure ×2, Google Vertex ×3, Amazon Bedrock ×3); the sealed routing excludes them
+  (`only: ["anthropic"]`). No tier variant of `anthropic` is listed.
+- **Model** (`GET /api/v1/models`, 2026-10-11T12:54:19Z): `anthropic/claude-sonnet-5`, `reasoning`
+  `{mandatory: false, default_enabled: true, default_effort: high}`, `expiration_date: null`, no deprecation field.
+- **Credit** (`GET /api/v1/credits`, 2026-10-11T12:54:19Z): $65 total, $54.611684621 used, **$10.388315 left**
+  (≥ $4.50; the probe's spend is not added again).
+- **Key counter** (`GET /api/v1/key`, 2026-10-11T12:54:19Z): usage $54.611684621, `limit` null. It equals the probe's
+  T0 plus its recorded $0.005754 to the micro-dollar, so nothing else was spent since.
+- **No stop condition of §10 holds:** the price is $2 / $10, the `anthropic` endpoint is present with
+  `provider_name` `Anthropic`, `reasoning` and `max_tokens` are supported, there is no deprecation and
+  `expiration_date` is null, and the credit is above $4.50.
+- **T0** is re-read immediately before the run and passed with its read time as `--t0` / `--t0-at`; the ledger
+  records both.
+
+### Ledger
+
+| #   | Series                                                   | Started (UTC)            | P (first attempt) | T before | `--cap` | Counter after                                                                             | Telemetry (recorded) | T after       | Result                     |
+| --- | -------------------------------------------------------- | ------------------------ | ----------------- | -------- | ------- | ----------------------------------------------------------------------------------------- | -------------------- | ------------- | -------------------------- |
+| 1   | `series-sonnet.jsonl`, 114 attempts (harness `57e64a7a`) | 2026-10-11T12:55:43.729Z | $1.074225         | $0       | $3.90   | $57.267338621 at 13:14:32Z, Δ $2.655654 (lagging: the run's own end read was Δ $2.424546) | $2.655654            | **$2.655654** | **complete**, 114/114 `ok` |
+
+- **T0 = $54.611684621**, read at **2026-10-11T12:55:42.599Z** (`GET /api/v1/key`) and passed as `--t0` /
+  `--t0-at`; the series header records both. It equals the pre-flight read.
+- The paid series was authorized by the owner on 2026-10-11 after reading the pre-flight. T is carried as
+  max(counter, recorded) = **$2.655654** of the $3.90 cap; the counter re-read six minutes after the run equals the
+  recorded cost to the micro-dollar. Credit left: $7.732661.
+- **Spend against §10:** expected $1.68; the planning range was about $2.2–2.7. Tokens were 975,062 prompt (1.49 ×
+  stage 1's 654,426) and 70,553 completion (1.91 × stage 1's 36,850), close to `research.md`'s "+50% input, 2×
+  output" row. E as reported: $1.639068.
+- **Admission:** the last attempt started at T $2.632714 with P $1.099375, so T + P = $3.732 ≤ $3.90. Admission
+  never stopped the series, by a margin of $0.168.
+
+### Series outcome (automatic; the code-refutable hand-read is Phase 5)
+
+From `harness.mjs report --series series-sonnet.jsonl`, which reproduces byte for byte (series sha256
+`e18634dbf22a7b29b268fb7eb4d1e472c6d51b6e2f5a7a99cfaaa0a0981f27a9`).
+
+- **Reliability:** 114/114 attempts `ok`; no failed attempt, no condition violation, no stop. 117 requests: three
+  attempts needed a format repair (r2 `openai-pr269-07` O, r3 `openai-pr269-03` O, r3 `openai-pr269-08` O), each
+  accepted after it. Provider `Anthropic` and tier `default` on all 117; `reasoning_tokens` 0 on all 117,
+  `reasoning_details` absent on all 117; 117/117 generation ids recorded. Every `finish_reason` was `stop`; the
+  largest completion was 1,256 tokens. Headroom: max prompt_tokens ÷ bound 0.412, max cost ÷ bound 0.143 (A1–A3
+  held).
+- **True class (hard: survive publication 3/3 base):**
+
+  | Member              | Row  | Base                          | O                | Hard | Diagnosis               |
+  | ------------------- | ---- | ----------------------------- | ---------------- | ---- | ----------------------- |
+  | openai-pr269-01#1.2 | G-D2 | 3/3                           | 3/3              | pass | survives                |
+  | openai-pr269-02#2.1 | G-D2 | 3/3                           | 3/3              | pass | survives                |
+  | openai-pr269-03#3.2 | G-D2 | 0/3 (refuted, quote verified) | 3/3              | fail | evidence-delivery limit |
+  | openai-pr269-04#4.2 | G-D2 | 0/3 (refuted, quote verified) | 3/3              | fail | evidence-delivery limit |
+  | openai-pr269-05#5.1 | G-D2 | 3/3                           | 2/3 (r3 refuted) | pass | survives, O anomaly     |
+  | openai-pr269-06#6.3 | G-D2 | 3/3                           | 3/3              | pass | survives                |
+  | openai-pr269-07#7.1 | G-D2 | 3/3                           | 3/3              | pass | survives                |
+  | openai-pr269-08#8.2 | G-D2 | 3/3                           | 3/3              | pass | survives                |
+  | 247-r1#0            | H-R1 | 3/3                           | 3/3              | pass | survives                |
+  | 247-r1#2            | H-R3 | 3/3                           | 3/3              | pass | survives                |
+  | 247-r1#4            | H-R5 | 3/3                           | 3/3              | pass | survives                |
+
+  **The true class fails its hard criterion: 9 of 11 findings pass 3/3.** The two failures are D2 input variants
+  whose base misses are all `refuted` with a verified quote, not `unsupported`; O publishes them 3/3. By §6's rule
+  (4) their diagnosis is `evidence-delivery limit`. The diagnosis does not say why a true finding was refuted rather
+  than left unsupported; that is for the per-finding reasons in the report's detail.
+
+- **Code-refutable class (automatic part; hand-read pending):**
+
+  | Member               | Row   | Base                                 | O                             | Automatic                    |
+  | -------------------- | ----- | ------------------------------------ | ----------------------------- | ---------------------------- |
+  | openai-pr269-05#5.2  | G-D13 | published 3/3                        | refuted, unsupported, refuted | 0/3 fail                     |
+  | openai-pr269-09#9.1  | G-D14 | published 3/3                        | published 3/3                 | 0/3 fail                     |
+  | openai-pr269-10#10.2 | G-D20 | refuted, refuted, **published** (r3) | published, published, refuted | 2/3 unstable (majority pass) |
+  - **G-D13 and G-D14 were confirmed and published in every base repeat**, as in stage 1. G-D14 was published in
+    every O repeat too; G-D13 was refuted in two O repeats.
+  - **G-D20 was refuted in 2 of 3 base repeats and published in r3.** Its hard criterion needs 3/3, so it **fails
+    whatever the hand-read finds**.
+  - **The code-refutable class therefore fails its hard criterion, 0 of 3, before the hand-read.** The blinded
+    hand-read of §9 still runs (Phase 5) and decides the hand-read column and the majority view.
+
+- **Information only:** the policy, ambiguous and descriptive distributions and the per-finding detail are in the
+  report. The side-by-side with stage 1 (§13) is written in Phase 5.
