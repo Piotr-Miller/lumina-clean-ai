@@ -422,3 +422,18 @@ From `harness.mjs report --series series-sonnet.jsonl`, which reproduces byte fo
 
 - Seed: **`dce53766e8f0ebfb9f214f30b04115d41f2f88361a7b7b9a4b9d2e7a451770c6`**, 32 bytes from `/dev/urandom`, written 2026-10-11T13:23:10Z, before `blind` runs. It is committed and pushed
   before the draw; the sheet's order is `sha256(seed:slot:member)`.
+
+### Blind sheet (Phase 5, §9)
+
+- `harness.mjs blind --series series-sonnet.jsonl --seed <the seed above>` gave **5 entries**: every `refuted`
+  record of G-D13, G-D14 and G-D20, in both arms and every repeat. G-D14 has none: it was published in every
+  repeat of both arms.
+- **The sheet** is committed as `hand-read/sheet.md`, formatted by Prettier.
+  - Raw output sha256: `5f1d4c5be8b397693d3aca0adeb6ed218e43dc1eb91a91e0a31fbcd95d64e1f8`.
+  - Committed file sha256: `6081a01e7de22a82d5193db452f5051412f0c32020f68b23ca2cc43a06eb51a8`. Only the code-fence
+    style and a trailing blank line differ.
+  - The sheet carries no slot, member, run, `"arm"`, `"repeat"` or `blockIds` string (grep: 0).
+- **`key.json`** stays outside the repository until the grades are in. sha256
+  **`cd03196e5e548d8a2db12e39f4d83813e0205217ce02a7c4d4df8a1c00098209`**.
+- **Blinding is partial,** as pre-registered: the frozen claim and its rationale show the row (two rows here, G-D13
+  and G-D20), so arm and repeat are hidden but the row is not.
