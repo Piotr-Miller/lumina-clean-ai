@@ -552,28 +552,28 @@ None. Nothing in `src/`, `packages/` or CI changes. The archive stays untouched.
 
 #### Automated
 
-- [x] 2.1 (paid) The probe runs and its journal is complete
-- [x] 2.2 Probe spend ≤ $0.60
-- [x] 2.3 The change folder is formatted
+- [x] 2.1 (paid) The probe runs and its journal is complete — d831929
+- [x] 2.2 Probe spend ≤ $0.60 — d831929
+- [x] 2.3 The change folder is formatted — d831929
 
 #### Manual
 
 - [x] 2.4 The owner authorizes the probe after reading the reads
-- [ ] 2.5 The owner reads the checklist and confirms the outcome rule that applies
+- [x] 2.5 The owner reads the checklist and confirms the outcome rule that applies
 
 ### Phase 3: Pre-registration and seal (free; owner approval; push)
 
 #### Automated
 
-- [ ] 3.1 The section hashes reproducibly
-- [ ] 3.2 The harness accepts the seal and refuses an edited harness
-- [ ] 3.3 Every non-model pin equals stage 1's
-- [ ] 3.4 The change folder is formatted
+- [x] 3.1 The section hashes reproducibly
+- [x] 3.2 The harness accepts the seal and refuses an edited harness
+- [x] 3.3 Every non-model pin equals stage 1's
+- [x] 3.4 The change folder is formatted
 - [ ] 3.5 (paid) The seal commit and tag are on `origin`
 
 #### Manual
 
-- [ ] 3.6 The owner approves the pre-registration as written, before the hash is taken
+- [x] 3.6 The owner approves the pre-registration as written, before the hash is taken
 
 ### Phase 4: Paid series, stage 2 (owner authorization)
 
