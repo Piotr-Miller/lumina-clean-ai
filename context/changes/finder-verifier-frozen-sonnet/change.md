@@ -25,6 +25,8 @@ Predecessor: finder-verifier-frozen
 
 2026-10-11: owner decision — after reading the stubbed checklists (re-review 2, F5 fixed): item 1 reads `incomplete (generation record not read, item 8)` when a record is unread, `not read` / `no successful response` / `no id` / `error` replace the empty-list word `none` and the placeholder `absent` where nothing was read, and two outcome messages the demo had not shown (`STOP AND ASK (rule 1)`, `UNDETERMINED: no successful response`) get self-test cases. PROCEED after a plain format failure or `budget-stopped` stays as ruled (information only). The stubbed run is kept as `demo-checklists.txt` in the change folder as the record for manual 1.10.
 
+2026-10-11: probe (Phase 2) PROCEED at $0.005754, outcome confirmed by the owner (manual 2.5). Owner approved the pre-registration in `gate.md` after two corrections (continuation after any budget stop needs the owner; stage-1 amounts explained under §6); sealed at sha256 3641d01bb31b69f3cca2638391a0f29d998475e86146a7a052d895b78dea68e4. The seal does not authorize Phase 4.
+
 From `research.md` § Open Questions (owner, 2026-10-10):
 
 1. **Budget: variant (a).** The sealed admission reserve P stays as in the predecessor (`harness.mjs:457-465`; about $1.07–1.16 per attempt at $2 / $10 per M). The cap is raised instead: about $3.9 stop-and-ask and $4.5 hard, so that a series of about $2.2–2.7 can finish. The exact values are fixed in the pre-registration after the pre-flight re-reads the credit (last recorded about $5.39).
