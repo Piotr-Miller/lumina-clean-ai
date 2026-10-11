@@ -138,7 +138,9 @@ The owner records the next decision. Production is untouched.
    72 cases plus the new ones.
 2. **Phase 2, paid, about $0.02, at most $0.60:** one probe on a synthetic batch, before anything is sealed.
 3. **Phase 3, free plus a push:** seal the pre-registration with the harness the probe validated.
-4. **Phase 4, paid, expected about $2.2:** pre-flight, then the 114-attempt series under the sealed budget.
+4. **Phase 4, paid, expected $1.68:** pre-flight, then the 114-attempt series under the sealed budget. This is the
+   stage-1 measured-token projection carried in gate §10; the planning estimate with token inflation is about
+   $2.2 (`research.md`), within the unchanged $4.50 hard cap.
 5. **Phase 5:** blinded hand-read, results, the side-by-side with stage 1, and the owner's next decision.
 
 ## Critical Implementation Details
