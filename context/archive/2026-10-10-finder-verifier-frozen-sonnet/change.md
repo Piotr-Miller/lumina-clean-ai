@@ -1,10 +1,11 @@
 ---
 change_id: finder-verifier-frozen-sonnet
 title: "Stage 2: the sealed verifier on frozen findings with sonnet-5 as the model"
-status: implementing
+status: archived
+outcome: completed
 created: 2026-10-10
 updated: 2026-10-11
-archived_at: null
+archived_at: 2026-10-11T13:31:58Z
 ---
 
 ## Notes
