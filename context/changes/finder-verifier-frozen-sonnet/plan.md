@@ -565,11 +565,11 @@ None. Nothing in `src/`, `packages/` or CI changes. The archive stays untouched.
 
 #### Automated
 
-- [x] 3.1 The section hashes reproducibly
-- [x] 3.2 The harness accepts the seal and refuses an edited harness
-- [x] 3.3 Every non-model pin equals stage 1's
-- [x] 3.4 The change folder is formatted
-- [ ] 3.5 (paid) The seal commit and tag are on `origin`
+- [x] 3.1 The section hashes reproducibly — a6c6202
+- [x] 3.2 The harness accepts the seal and refuses an edited harness — a6c6202
+- [x] 3.3 Every non-model pin equals stage 1's — a6c6202
+- [x] 3.4 The change folder is formatted — a6c6202
+- [x] 3.5 (paid) The seal commit and tag are on `origin` — a6c6202
 
 #### Manual
 

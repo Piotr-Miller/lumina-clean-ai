@@ -308,6 +308,16 @@ reading. The hash below was then taken and is never recomputed. Nothing in this 
 - UTC time taken: **2026-10-11T12:51:02Z**.
 - `harness.mjs` at the seal: sha256 `57e64a7aed3f0675f41e5f4d255307d85729e5efd9b122e8cc7bc5269f5723db`, equal to the
   `harness` pin in §3 and to the harness the probe ran on.
+- **Seal commit:** `a6c62028b412a5a197e0cc1ba829ff8b24d82c97`
+  (`docs(finder-verifier-frozen-sonnet): seal the pre-registration (p3)`); its committed `gate.md` reproduces the
+  sha256 above.
+- **GitHub push time: 2026-10-11T12:52:11Z.** Source:
+  `GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-verifier-frozen-sonnet`, event `push`,
+  `0539158..a6c6202`, actor `Piotr-Miller`. Recorded before any Phase 4 read, T0 or paid call.
+- **Rebase protection:** annotated tag **`finder-verifier-frozen-sonnet/seal`** (tag object
+  `a33a893d2fac07755db8165e50dc744994bc0d0e`) on `a6c6202`, pushed with the branch.
+  `git ls-remote --tags origin 'finder-verifier-frozen-sonnet/*'` shows it peeled to `a6c6202`. A rebase-merge
+  rewrites the commit SHA; the tag keeps the sealed commit reachable.
 
 ## Results
 
