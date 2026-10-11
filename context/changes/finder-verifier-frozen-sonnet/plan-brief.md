@@ -3,6 +3,9 @@
 > Full plan: `context/changes/finder-verifier-frozen-sonnet/plan.md`
 > Research: `context/changes/finder-verifier-frozen-sonnet/research.md`
 
+> **Outcome (2026-10-11):** the series completed 114/114 at $2.66. True class FAIL 9/11 (luna 5/11); code-refutable
+> FAIL 0/3 (luna 1/3). Verdicts and the side-by-side: `gate.md` § Results.
+
 ## What & Why
 
 Stage 1 ran the sealed verifier with luna. It failed both hard criteria: the true class kept 5 of 11 findings and the

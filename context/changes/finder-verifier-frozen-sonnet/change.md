@@ -29,6 +29,8 @@ Predecessor: finder-verifier-frozen
 
 2026-10-11: paid series authorized by the owner after the pre-flight and complete — 114/114 attempts ok, T $2.655654 of the $3.90 cap (counter re-read equal); automatic outcome in `gate.md` § Results: true class 9/11 pass 3/3 (D2 #3.2 and #4.2 refuted in base, O 3/3); code-refutable 0/3 before the hand-read (G-D13 and G-D14 published 3/3 in base, G-D20 2/3). Hand-read and results are Phase 5.
 
+2026-10-11: owner graded the blind sheet (R01, R03, R04 pass; R02, R05 off-target); final result in `gate.md` § Results › Hand-read and final result — true class FAIL (9/11; D2 #3.2 and #4.2 refuted in base), code-refutable FAIL (0/3: G-D13 and G-D14 confirmed in every base repeat, G-D20 2/3 with both graded pass). Side-by-side with stage 1 in § Results (information only). The owner's next decision is pending.
+
 From `research.md` § Open Questions (owner, 2026-10-10):
 
 1. **Budget: variant (a).** The sealed admission reserve P stays as in the predecessor (`harness.mjs:457-465`; about $1.07–1.16 per attempt at $2 / $10 per M). The cap is raised instead: about $3.9 stop-and-ask and $4.5 hard, so that a series of about $2.2–2.7 can finish. The exact values are fixed in the pre-registration after the pre-flight re-reads the credit (last recorded about $5.39).
