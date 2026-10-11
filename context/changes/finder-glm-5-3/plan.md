@@ -1072,13 +1072,13 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Automated
 
-- [x] 1.1 Port tests pass (699)
-- [x] 1.2 Typecheck
-- [x] 1.3 Lint
-- [x] 1.4 Repo formatting
-- [x] 1.5 No verifier or wire-dump file came along
-- [x] 1.6 No absolute paths in the change folder
-- [ ] 1.7 Branch push and draft PR open; PR CI green
+- [x] 1.1 Port tests pass (699) — 9782f38
+- [x] 1.2 Typecheck — 9782f38
+- [x] 1.3 Lint — 9782f38
+- [x] 1.4 Repo formatting — 9782f38
+- [x] 1.5 No verifier or wire-dump file came along — 9782f38
+- [x] 1.6 No absolute paths in the change folder — 9782f38
+- [x] 1.7 Branch push and draft PR open; PR CI green — 9782f38
 
 #### Manual
 
@@ -1088,12 +1088,12 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Automated
 
-- [ ] 2.1 Unit and wire tests pass
-- [ ] 2.2 Typecheck, lint
-- [ ] 2.3 Sentinel absent everywhere
-- [ ] 2.4 The old reasoning shape is gone
-- [ ] 2.5 Repo formatting
-- [ ] 2.6 Stale pointers inside manifest files resolved before the seal
+- [x] 2.1 Unit and wire tests pass
+- [x] 2.2 Typecheck, lint
+- [x] 2.3 Sentinel absent everywhere
+- [x] 2.4 The old reasoning shape is gone
+- [x] 2.5 Repo formatting
+- [x] 2.6 Stale pointers inside manifest files resolved before the seal
 
 #### Manual
 

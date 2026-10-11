@@ -1,8 +1,10 @@
 import { join } from "node:path";
 
+import { FINDER_REASONING, resolveFinderProviderRouting, resolveModels } from "./config.js";
+import { containsInlineReasoning } from "./output-repair.js";
 import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
-import type { PipelineResult } from "./schemas.js";
+import type { PipelineResult, Reported } from "./schemas.js";
 import { createDiffScopedSourceForDiff } from "./source-provider.js";
 
 // The CLI's whole contract, extracted injectable so tests can pin the exact
@@ -101,8 +103,15 @@ const formatRange = (call: { startLine?: number; endLine?: number }): string =>
 // property (C0 + DEL + C1) so no control literal appears in the source.
 const logSafePath = (path: string): string => path.replace(/\p{Cc}/gu, "?");
 
+// `missing`, never a stand-in: a value the provider did not report must not
+// read like one it did (assumption A3 of change `finder-glm-5-3`).
+const reportedField = <T extends string | number>(field: Reported<T>): string =>
+  field.source === "missing" ? "missing" : logSafePath(String(field.value));
+
 // One stderr line per finder loop step — in an Actions log this is the only
-// live evidence of what the tool loop fetched and spent.
+// live evidence of what the tool loop fetched and spent. `model` and
+// `reasoning` (the reasoning-token count) come from the raw response, so the
+// served model and the volume of reasoning are visible without any model text.
 const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
   const calls =
     info.fileContextCalls.length === 0
@@ -112,8 +121,19 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
   // The provider slug comes from the response, not from us — escaped like the
   // path for the same reason. `?` when OpenRouter did not report one.
   const route = `provider=${info.provider === undefined ? "?" : logSafePath(info.provider)} finish=${logSafePath(info.finishReason)}`;
-  return `finder step ${String(index)}: ${calls} (${usage}) ${route}`;
+  const served = `model=${reportedField(info.model)} reasoning=${reportedField(info.reasoningTokens)}`;
+  return `finder step ${String(index)}: ${calls} (${usage}) ${route} ${served}`;
 };
+
+/**
+ * The finder's configuration, once per run, from the same resolvers and
+ * constant the requests use — so a run log states which model, reasoning
+ * effort and endpoint list the finder asked for before any request is made.
+ * The model may come from an environment variable, so it is escaped.
+ */
+export const formatFinderConfigurationLine = (): string =>
+  `finder configuration: model=${logSafePath(resolveModels().reviewModel)} reasoning=${FINDER_REASONING.effort} ` +
+  `providers=${resolveFinderProviderRouting().order.join(",")}`;
 
 /** How much of a rejected model output reaches the log. */
 export const REJECTED_OUTPUT_CAP_CHARS = 2_000;
@@ -163,6 +183,11 @@ const stringField = (error: object, key: string): string | undefined =>
  * The text is untrusted model output and the log is public: capped at
  * REJECTED_OUTPUT_CAP_CHARS and control characters escaped. It goes to stderr
  * only — never into comment.md or the step summary.
+ *
+ * A text carrying inline reasoning (`<think`) is NEVER shown, whatever error
+ * carries it and whichever guard classified the failure — a truncated
+ * response is checked too: the line then ends `reason=inline-reasoning
+ * chars=<n>` instead of the text (owner decision 2 of change `finder-glm-5-3`).
  */
 export function formatRejectedOutputLine(error: unknown, fallbackProvider?: string): string | undefined {
   if (typeof error !== "object" || error === null) return undefined;
@@ -171,16 +196,20 @@ export function formatRejectedOutputLine(error: unknown, fallbackProvider?: stri
   const own = stringField(error, "provider");
   const provider = own === undefined || own === "" ? fallbackProvider : own;
   const finish = stringField(error, "finishReason");
+  const label = escapeControl(errorLabel(error));
+  const route = `provider=${provider === undefined || provider === "" ? "?" : escapeControl(provider)}, finish=${
+    finish === undefined ? "?" : escapeControl(finish)
+  }`;
+  if (containsInlineReasoning(text)) {
+    return `rejected output (${label}, ${route}): reason=inline-reasoning chars=${String(text.length)}`;
+  }
   let shown = text;
   if (text.length > REJECTED_OUTPUT_CAP_CHARS) {
     // Never end on half a surrogate pair.
     shown = text.slice(0, REJECTED_OUTPUT_CAP_CHARS).replace(/[\uD800-\uDBFF]$/u, "");
     shown += REJECTED_OUTPUT_TRUNCATION_MARKER;
   }
-  const route = `provider=${provider === undefined || provider === "" ? "?" : escapeControl(provider)}, finish=${
-    finish === undefined ? "?" : escapeControl(finish)
-  }`;
-  return `rejected output (${escapeControl(errorLabel(error))}, ${route}, ${String(text.length)} chars): ${escapeControl(shown)}`;
+  return `rejected output (${label}, ${route}, ${String(text.length)} chars): ${escapeControl(shown)}`;
 }
 
 // One stderr line for the whole third pass — in an Actions log this is the
@@ -338,18 +367,25 @@ export async function runReviewCli(
       }
     }
 
+    const timeouts = {
+      finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
+      judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
+      implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
+    };
+    const projectReviewContext =
+      args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile);
+
+    // Once per run, after every input is validated and before the first
+    // request, so the line describes a run that actually started.
+    io.logError(formatFinderConfigurationLine());
     const result = await pipeline({
       diff,
       ...sourceInputs,
       ...planInput,
       prTitle: env.PR_TITLE,
       prBody: env.PR_BODY,
-      timeouts: {
-        finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
-        judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
-        implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
-      },
-      projectReviewContext: args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
+      timeouts,
+      projectReviewContext,
       // CI policy, not a library default: the pass costs ~9.47x the code review
       // it accompanies, and a red code review means the diff is about to change.
       implReviewGate: "code-review-passed",

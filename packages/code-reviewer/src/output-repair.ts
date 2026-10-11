@@ -69,26 +69,57 @@ export function parseFinderOutput(text: string): FinderParseResult {
   return { ok: true, result: result.data };
 }
 
+/**
+ * Inline reasoning in a finder response's TEXT: `<think` anywhere, any case
+ * (assumption A2 of change `finder-glm-5-3`). Reasoning returned in the
+ * separate `reasoning` / `reasoning_details` fields never reaches `.text`; an
+ * upstream that writes it into `content` instead is caught here. Fail-closed:
+ * such a response fails the attempt and its text is never parsed or logged.
+ */
+export const containsInlineReasoning = (text: string): boolean => /<think/iu.test(text);
+
+/**
+ * Why the finder refused a response: it would not parse into a review
+ * (`parse`), it was cut off at the output-token cap (`length`), or its text
+ * carried inline reasoning (`inline-reasoning`).
+ */
+export type FinderFailureReason = "parse" | "length" | "inline-reasoning";
+
+/** Which request produced the refused response: the n-th gathering-loop step (1-based), the finalization or the repair. */
+export type FinderFailedRequest = { kind: "step"; index: number } | { kind: "finalization" } | { kind: "repair" };
+
 export interface FinderOutputErrorDetails {
-  /** The rejected model text — untrusted; the CLI prints it capped and escaped, never into comment.md. */
+  /**
+   * The rejected model text — untrusted; the CLI prints it capped and escaped,
+   * never into comment.md, and not at all when it carries inline reasoning.
+   */
   text: string;
   /** The upstream that served the rejected response, when OpenRouter reported it. */
   provider?: string;
   /** How the rejected generation ended (`stop`, `length`, …). */
   finishReason?: string;
-  /** Why parseFinderOutput refused the text. */
+  /** Why the response was refused; `parse` when omitted. */
+  reason?: FinderFailureReason;
+  /** The request that produced it, when known. */
+  request?: FinderFailedRequest;
+  /** Why the response was refused, in words — never quoting the response. */
   validationError: string;
   /** Whether the one format repair was attempted before giving up. */
   repaired: boolean;
 }
 
+const describeRequest = (request: FinderFailedRequest): string =>
+  request.kind === "step" ? `step:${String(request.index)}` : request.kind;
+
 /**
- * The finder's terminal format failure. Deliberately NOT a
- * `NoObjectGeneratedError`: retry.ts re-rolls that class, and a re-roll of the
- * whole pass is exactly what the one format repair replaced — the frame saw
- * both attempts fail identically on every post-break run. The message names
- * the provider, the finish reason and the validation error, so one log line
- * attributes the failure.
+ * The finder's terminal failure. Deliberately NOT a `NoObjectGeneratedError`:
+ * retry.ts re-rolls that class, and a re-roll of the whole pass is exactly what
+ * the one format repair replaced — the frame saw both attempts fail
+ * identically on every post-break run. A truncated or inline-reasoning
+ * response is not retried either: truncation fails the attempt (owner
+ * decision 2 of change `finder-glm-5-3`). The message names the reason, the
+ * request, the provider and the finish reason, so one log line attributes the
+ * failure, and it never quotes the response.
  */
 export class FinderOutputError extends Error {
   readonly text: string;
@@ -97,18 +128,25 @@ export class FinderOutputError extends Error {
   // that reported no provider. Absent must mean absent.
   declare readonly provider?: string;
   declare readonly finishReason?: string;
+  declare readonly request?: FinderFailedRequest;
+  readonly reason: FinderFailureReason;
   readonly validationError: string;
   readonly repaired: boolean;
 
   constructor(details: FinderOutputErrorDetails) {
+    const reason = details.reason ?? "parse";
     super(
-      `Finder output rejected (provider=${details.provider ?? "?"}, finish=${details.finishReason ?? "?"}, ` +
+      `Finder output rejected (reason=${reason}, ` +
+        (details.request === undefined ? "" : `request=${describeRequest(details.request)}, `) +
+        `provider=${details.provider ?? "?"}, finish=${details.finishReason ?? "?"}, ` +
         `${details.repaired ? "after one format repair" : "no format repair attempted"}): ${details.validationError}`,
     );
     this.name = "FinderOutputError";
     this.text = details.text;
     if (details.provider !== undefined) this.provider = details.provider;
     if (details.finishReason !== undefined) this.finishReason = details.finishReason;
+    if (details.request !== undefined) this.request = details.request;
+    this.reason = reason;
     this.validationError = details.validationError;
     this.repaired = details.repaired;
   }

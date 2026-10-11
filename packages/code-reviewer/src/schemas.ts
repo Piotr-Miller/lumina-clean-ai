@@ -176,6 +176,39 @@ export interface DiffStats {
 }
 
 /**
+ * A value as the provider reported it in its RAW response, or `missing`.
+ * `value` is `null` exactly when `source` is `missing`: an SDK default — the
+ * requested model id substituted for an absent `model`, a `0` for absent
+ * reasoning tokens — is never recorded as if the provider had said it.
+ */
+export type Reported<T> = { value: T; source: "reported" } | { value: null; source: "missing" };
+
+/** Which finder request a telemetry entry describes: a gathering-loop step, the finalization or the format repair. */
+export type FinderRequestKind = "step" | "finalization" | "repair";
+
+/**
+ * One finder request, as review.json records it (change `finder-glm-5-3`,
+ * decision 4: the served model and providers must be verifiable in
+ * telemetry). Metadata only — there is deliberately no text field, so no
+ * model output or reasoning can ride along.
+ */
+export interface FinderRequestTelemetry {
+  kind: FinderRequestKind;
+  /** The pipeline attempt (withOneRetry) the request belonged to. */
+  attempt: 1 | 2;
+  /** The upstream that served it (`Z.AI`, `Fireworks`, …). */
+  provider: Reported<string>;
+  /** The model id the upstream reported serving. */
+  model: Reported<string>;
+  /** How the generation ended, as the SDK reports it (`stop`, `tool-calls`, `length`, …). */
+  finishReason: string;
+  /** `usage.completion_tokens_details.reasoning_tokens` — the volume of reasoning, never its text. */
+  reasoningTokens: Reported<number>;
+  /** Provider-reported cost in USD; `null` when none was reported. */
+  cost: number | null;
+}
+
+/**
  * Cost summary of the finder's agent loop, accumulated across BOTH attempts
  * of a retried run — it measures real spend, so `steps` counts generations
  * across attempts and MAY exceed the per-attempt maxSteps cap. Token fields
@@ -197,6 +230,8 @@ export interface FinderTelemetry {
    * instrumented and the denominator was not.
    */
   cost?: number;
+  /** Every finder request in order, retry attempts included — one entry per observed generation. */
+  requests: FinderRequestTelemetry[];
 }
 
 /**

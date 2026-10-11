@@ -2,9 +2,14 @@ import { createOpenRouter, type OpenRouterChatSettings } from "@openrouter/ai-sd
 import { generateText, isStepCount, tool, ToolLoopAgent, type StepResult, type ToolSet } from "ai";
 import { z } from "zod";
 
-import { MAX_OUTPUT_TOKENS, resolveConfig, resolveFinderProviderRouting } from "./config.js";
+import { FINDER_REASONING, MAX_OUTPUT_TOKENS, resolveConfig, resolveFinderProviderRouting } from "./config.js";
 import { normalizeFindings } from "./findings.js";
-import { FinderOutputError, parseFinderOutput } from "./output-repair.js";
+import {
+  containsInlineReasoning,
+  FinderOutputError,
+  parseFinderOutput,
+  type FinderFailedRequest,
+} from "./output-repair.js";
 import {
   buildFinalizationInstructions,
   buildFinalizationPrompt,
@@ -14,8 +19,8 @@ import {
   buildPrompt,
   type GatheredContextEntry,
 } from "./prompts.js";
-import { asStepProvider } from "./provider-metadata.js";
-import { type Lens, type ReviewResult, type ReviewUnit } from "./schemas.js";
+import { asStepProvider, createResponseObserver, type ReportedResponseFields } from "./provider-metadata.js";
+import { type FinderRequestKind, type Lens, type ReviewResult, type ReviewUnit } from "./schemas.js";
 
 // Defense-in-depth caps on the context tool: requested ranges and returned
 // context are bounded regardless of what the provider serves. Exported so
@@ -41,6 +46,16 @@ export type SourceProvider = (request: {
   endLine?: number;
 }) => string | Promise<string>;
 
+/**
+ * What the reviewer knows about a request beyond the SDK's step result: which
+ * kind of finder request it was, and the three fields its RAW response
+ * reported (see createResponseObserver). Passed as onStepEnd's second argument.
+ */
+export interface FinderRequestMeta {
+  kind: FinderRequestKind;
+  reported: ReportedResponseFields;
+}
+
 export interface ReviewerOptions {
   /** Review focus; defaults to a balanced "general" review. */
   lens?: Lens;
@@ -55,11 +70,12 @@ export interface ReviewerOptions {
   /**
    * Observes EVERY provider request of a review as it completes — each
    * gathering-loop step, the finalization and the format repair alike — with
-   * the step's tool calls and token usage. Telemetry that skipped the
-   * finalization or the repair would understate the cost by exactly the
-   * requests this design added. Purely observational.
+   * the step's tool calls and token usage, plus which request it was and what
+   * its raw response reported. Telemetry that skipped the finalization or the
+   * repair would understate the cost by exactly the requests this design
+   * added. Purely observational.
    */
-  onStepEnd?: (step: StepResult<ToolSet>) => void;
+  onStepEnd?: (step: StepResult<ToolSet>, request: FinderRequestMeta) => void;
   /**
    * Fires when the finalization's text failed the strict parse and the one
    * format repair request is about to be sent; `reason` is the validation
@@ -79,7 +95,7 @@ export interface ReviewerOptions {
    * TEST SEAM, not configuration: replaces the HTTP client of the OpenRouter
    * provider, so a hermetic test can capture the exact request bodies the SDK
    * sends (owner condition 1 is about the wire, not the settings). Leave unset
-   * in production.
+   * in production. Either way the response observer wraps it.
    */
   fetch?: typeof fetch;
   /**
@@ -95,7 +111,7 @@ export interface ReviewerOptions {
    * Omitted → resolveFinderProviderRouting(): only the endpoints in
    * DEFAULT_FINDER_PROVIDERS (or OPENROUTER_FINDER_PROVIDERS), with
    * `require_parameters: true` so an endpoint that cannot honour `tools` or
-   * `reasoning: {enabled: false}` is refused. Campaign tooling passes its OWN
+   * FINDER_REASONING is refused. Campaign tooling passes its OWN
    * pin here to make provider-scoped claims (fabrication amendment A1) and
    * must keep overriding the default — that pin is for measurement
    * comparability, not production routing, and replaces the default whole.
@@ -227,8 +243,15 @@ function createReviewBudget(callOptions: ReviewCallOptions): { signal: AbortSign
  * carries `response_format`. A separate `generateText` request with no tools
  * and no `output` then writes the JSON, which parseFinderOutput validates
  * strictly. A failed parse gets at most one format repair; after that, or when
- * a repair could only guess (no `{` in the text, or a truncated answer), the
- * review throws FinderOutputError.
+ * a repair could only guess (no `{` in the text), the review throws
+ * FinderOutputError.
+ *
+ * TWO RESPONSES ARE NEVER USED, at any request (change `finder-glm-5-3`): one
+ * cut off at the output-token cap (`finish=length` — truncation fails the
+ * attempt, even when the text would parse) and one whose text carries inline
+ * reasoning (`<think`, assumption A2). Both throw FinderOutputError, which is
+ * never retried; a stage-1 step is checked before its text can enter the
+ * transcript, the finalization and the repair before they are parsed.
  */
 export function createReviewer(options: ReviewerOptions = {}) {
   const { apiKey, model } = resolveConfig({ apiKey: options.apiKey, model: options.model });
@@ -239,7 +262,17 @@ export function createReviewer(options: ReviewerOptions = {}) {
   if (!Number.isSafeInteger(maxSteps) || maxSteps < 1) {
     throw new Error(`maxSteps must be a positive integer, got: ${String(options.maxSteps)}`);
   }
-  const openrouter = createOpenRouter({ apiKey, ...(options.fetch === undefined ? {} : { fetch: options.fetch }) });
+  // Every response passes the observer, so each request's telemetry carries
+  // what the provider itself reported (A3) rather than SDK fallbacks.
+  const observer = createResponseObserver(options.fetch);
+  const openrouter = createOpenRouter({ apiKey, fetch: observer.fetch });
+  const stepEnd =
+    (kind: FinderRequestKind) =>
+    (step: StepResult<ToolSet>): void => {
+      // Taken even without a listener, so a later request never inherits it.
+      const reported = observer.take();
+      options.onStepEnd?.(step, { kind, reported });
+    };
 
   // Cost ceiling (impl-review-phase-1 F3): without a SourceProvider the
   // context tool could only return its fixed fallback, yet its mere presence
@@ -259,14 +292,11 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // reports 0, which is exactly the blind spot #119 shipped with. Free:
     // accounting adds response fields, not tokens.
     usage: { include: true },
-    // Amendment A3: reasoning OFF on every finder request. With it on,
-    // glm-4.6 spent the whole 16,384-token budget on reasoning in 7 of 9 Phase 0
-    // calls and answered nothing (Novita 1/5); with it off, 4/5 were valid
-    // (probe-phase0.md, run 3). Sent through `extraBody`, not the typed
-    // `reasoning` setting: that type requires `max_tokens` or `effort`, and
-    // `effort: "none"` is a different request from the one A2 measured.
-    // `extraBody` is spread last into the body; the wire test pins it.
-    extraBody: { reasoning: { enabled: false } },
+    // Owner decision 2 of change `finder-glm-5-3`: reasoning at effort low on
+    // every finder request. The typed setting, and no `extraBody` at all: the
+    // provider spreads `extraBody` last, so one would override this. The wire
+    // test pins the exact body.
+    reasoning: FINDER_REASONING,
     // An explicit pin (campaign tooling) wins; otherwise the finder's own
     // routing applies. OPENROUTER_REQUIRE_PARAMETERS=false does not reach it
     // (Amendment A3; see resolveFinderProviderRouting).
@@ -318,7 +348,12 @@ export function createReviewer(options: ReviewerOptions = {}) {
 
   // A tool-less, output-less request: no `tools`, no `tool_choice`, no
   // `response_format` on the wire — the finalization and the repair both.
-  const complete = async (system: string, prompt: string, abortSignal: AbortSignal) => {
+  const complete = async (
+    kind: "finalization" | "repair",
+    system: string,
+    prompt: string,
+    abortSignal: AbortSignal,
+  ) => {
     const result = await generateText({
       model: languageModel,
       instructions: system,
@@ -326,13 +361,44 @@ export function createReviewer(options: ReviewerOptions = {}) {
       maxOutputTokens: MAX_OUTPUT_TOKENS,
       maxRetries: 0,
       abortSignal,
-      onStepEnd: options.onStepEnd,
+      onStepEnd: stepEnd(kind),
     });
     return {
       text: result.text,
       finishReason: result.finishReason,
       provider: asStepProvider(result.finalStep.providerMetadata),
     };
+  };
+
+  // The two responses no request may use, checked before the text goes
+  // anywhere — the transcript, the parser or a repair prompt. Inline reasoning
+  // is checked first, but either way the CLI never prints a text carrying it.
+  const refuseUnusable = (
+    response: { text: string; finishReason: string; provider: string | undefined },
+    request: FinderFailedRequest,
+    repaired: boolean,
+  ): void => {
+    const common = {
+      text: response.text,
+      ...(response.provider === undefined ? {} : { provider: response.provider }),
+      finishReason: response.finishReason,
+      request,
+      repaired,
+    };
+    if (containsInlineReasoning(response.text)) {
+      throw new FinderOutputError({
+        ...common,
+        reason: "inline-reasoning",
+        validationError: "the response text carries inline reasoning (<think>); it is never parsed or logged",
+      });
+    }
+    if (response.finishReason === "length") {
+      throw new FinderOutputError({
+        ...common,
+        reason: "length",
+        validationError: "the response was cut off at the output-token cap (finish=length)",
+      });
+    }
   };
 
   const finish = (unit: ReviewUnit, result: ReviewResult): ReviewResult => ({
@@ -348,26 +414,39 @@ export function createReviewer(options: ReviewerOptions = {}) {
         const gathered = await agent.generate({
           prompt: buildPrompt(unit),
           abortSignal: budget.signal,
-          onStepEnd: options.onStepEnd,
+          onStepEnd: stepEnd("step"),
         });
+        // Before the transcript: a truncated or reasoning-carrying note must
+        // never reach the finalization, and no finalization is sent after one.
+        for (const [index, step] of gathered.steps.entries()) {
+          refuseUnusable(
+            { text: step.text, finishReason: step.finishReason, provider: asStepProvider(step.providerMetadata) },
+            { kind: "step", index: index + 1 },
+            false,
+          );
+        }
         transcript = transcriptFromSteps(gathered.steps);
       }
 
       const prompt = buildFinalizationPrompt(unit, transcript);
       options.onFinalizationPrompt?.({ system: finalizationSystem, prompt });
-      const final = await complete(finalizationSystem, prompt, budget.signal);
+      const final = await complete("finalization", finalizationSystem, prompt, budget.signal);
+      // A truncated answer is not a complete review even when it parses — a
+      // repair would only invent the rest (plan-review F1) — so `length` is
+      // refused BEFORE the parse, not after a failed one.
+      refuseUnusable(final, { kind: "finalization" }, false);
       const parsed = parseFinderOutput(final.text);
       if (parsed.ok) return finish(unit, parsed.result);
 
       // No repair where it could only guess: prose with no object at all is not
-      // a review in the wrong format, and a truncated answer is not a complete
-      // review — either repaired would become `findings: []` or a completed
-      // list the model never wrote (plan-review F1).
-      if (!final.text.includes("{") || final.finishReason === "length") {
+      // a review in the wrong format, and repaired it would become
+      // `findings: []` the model never wrote.
+      if (!final.text.includes("{")) {
         throw new FinderOutputError({
           text: final.text,
           ...(final.provider === undefined ? {} : { provider: final.provider }),
           finishReason: final.finishReason,
+          request: { kind: "finalization" },
           validationError: parsed.reason,
           repaired: false,
         });
@@ -375,16 +454,19 @@ export function createReviewer(options: ReviewerOptions = {}) {
 
       options.onOutputRepair?.({ reason: parsed.reason });
       const repair = await complete(
+        "repair",
         buildFormatRepairInstructions(),
         buildFormatRepairPrompt(final.text, parsed.reason),
         budget.signal,
       );
+      refuseUnusable(repair, { kind: "repair" }, true);
       const reparsed = parseFinderOutput(repair.text);
       if (reparsed.ok) return finish(unit, reparsed.result);
       throw new FinderOutputError({
         text: repair.text,
         ...(repair.provider === undefined ? {} : { provider: repair.provider }),
         finishReason: repair.finishReason,
+        request: { kind: "repair" },
         validationError: reparsed.reason,
         repaired: true,
       });

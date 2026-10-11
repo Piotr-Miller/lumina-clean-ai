@@ -77,6 +77,12 @@ describe("isRetryableError", () => {
   it("never retries the finder's FinderOutputError, repaired or not", () => {
     expect(isRetryableError(new FinderOutputError({ text: "", validationError: "v", repaired: false }))).toBe(false);
     expect(isRetryableError(new FinderOutputError({ text: "{", validationError: "v", repaired: true }))).toBe(false);
+    // Truncation and inline reasoning fail the attempt (change finder-glm-5-3).
+    for (const reason of ["length", "inline-reasoning"] as const) {
+      expect(isRetryableError(new FinderOutputError({ text: "", reason, validationError: "v", repaired: false }))).toBe(
+        false,
+      );
+    }
   });
 
   it("retries a structured-output schema mismatch (NoObjectGeneratedError)", () => {
@@ -198,6 +204,34 @@ describe("withOneRetry", () => {
     const { calls, sleep } = recordingSleep();
     const onRetry = vi.fn();
     const error = new FinderOutputError({ text: "prose", validationError: "v", repaired: true });
+    const fn = vi.fn().mockRejectedValue(error);
+    await expect(withOneRetry(fn, { sleep, onRetry })).rejects.toBe(error);
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual([]);
+    expect(onRetry).not.toHaveBeenCalled();
+  });
+
+  // Owner decision 2 of change `finder-glm-5-3`: a truncated response and one
+  // carrying inline reasoning fail the ATTEMPT — withOneRetry must not turn
+  // them into a second paid pass.
+  it.each([
+    ["a truncated step", { kind: "step", index: 1 }, "length"],
+    ["a truncated finalization", { kind: "finalization" }, "length"],
+    ["a truncated repair", { kind: "repair" }, "length"],
+    ["inline reasoning in a step", { kind: "step", index: 2 }, "inline-reasoning"],
+    ["inline reasoning in the finalization", { kind: "finalization" }, "inline-reasoning"],
+    ["inline reasoning in the repair", { kind: "repair" }, "inline-reasoning"],
+  ] as const)("never retries %s: exactly one pass, no sleep", async (_label, request, reason) => {
+    const { calls, sleep } = recordingSleep();
+    const onRetry = vi.fn();
+    const error = new FinderOutputError({
+      text: "",
+      finishReason: "length",
+      reason,
+      request,
+      validationError: "v",
+      repaired: request.kind === "repair",
+    });
     const fn = vi.fn().mockRejectedValue(error);
     await expect(withOneRetry(fn, { sleep, onRetry })).rejects.toBe(error);
     expect(fn).toHaveBeenCalledTimes(1);

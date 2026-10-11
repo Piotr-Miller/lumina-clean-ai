@@ -3,15 +3,14 @@
 // embedder) must be able to import the barrel side-effect-free; only demo.ts
 // may exit the process.
 
-// Must match what production actually runs (the OPENROUTER_REVIEW_MODEL
-// repository variable), because this is the value that takes over if that
-// variable is ever unset or cleared. It read anthropic/claude-sonnet-5 while
-// the variable read z-ai/glm-4.6, so a cleared variable would silently have
-// switched the finder to a model measured at ~58x the cost per review
-// (change `finder-tool-loop-evals`, impl-review-phase-4 F1). Pinned by a
-// literal assertion in config.test.ts: change both together, and only
-// alongside the repository variable.
-export const DEFAULT_MODEL = "z-ai/glm-4.6";
+// The finder production runs (change `finder-glm-5-3`, under its sealed gate).
+// The OPENROUTER_REVIEW_MODEL repository variable must be UNSET, not set to
+// match: it overrides this constant in resolveModels(), so while it exists a
+// change to this line changes nothing in CI, and a stale value (it still named
+// the previous finder when this change began) would silently route the
+// two-stage finder to a model no gate measured. Pinned by a literal assertion
+// in config.test.ts.
+export const DEFAULT_MODEL = "z-ai/glm-5.3";
 export const DEFAULT_JUDGE_MODEL = "anthropic/claude-sonnet-5";
 
 // Its own constant, deliberately NOT an alias of DEFAULT_JUDGE_MODEL: the two
@@ -117,17 +116,32 @@ export function resolveProviderRouting(): { require_parameters: true } | undefin
 }
 
 /**
- * The OpenRouter endpoints the finder may be routed to, in preference order.
+ * The finder's reasoning setting, sent on EVERY finder request — each
+ * gathering-loop step, the finalization and the format repair — and on no
+ * judge or implementation-review request (owner decision 2 of change
+ * `finder-glm-5-3`). Through the typed `reasoning` model setting, never
+ * `extraBody`, which the provider spreads last and would override it.
  *
- * PROVISIONAL. `novita` is a Phase 0 PROBE result, not a gate result: it
- * passed only Amendment A2 (4/5 strictly valid with reasoning disabled,
- * probe-phase0.md) and holds no G1–G4 status. It exists so local runs do not
- * default to Z.AI, which returned nothing but HTTP 429 in Phase 0. Phase 5 of
- * change `finder-serialization-outage` replaces it with exactly the endpoints
- * that passed the gate (gate.md). Changing it requires a measurement; the
- * literal is pinned in config.test.ts.
+ * Reasoning counts against MAX_OUTPUT_TOKENS: there is no separate reasoning
+ * cap, and a request that hits the shared cap fails the attempt (reviewer.ts).
+ * The reasoning TEXT never leaves the wire — the reviewer reads only `.text`,
+ * and inline `<think>` in that text fails the attempt.
  */
-export const DEFAULT_FINDER_PROVIDERS: readonly string[] = ["novita"];
+export const FINDER_REASONING = { enabled: true, effort: "low" } as const;
+
+/**
+ * The OpenRouter endpoints the finder may be routed to, in preference order:
+ * the three that serve z-ai/glm-5.3 with tools and reasoning (owner decision 4
+ * of change `finder-glm-5-3`). Fallback stays WITHIN this list — `only` is the
+ * allow-list — and the served provider of every finder request is recorded in
+ * review.json (`finderTelemetry.requests`) so a measurement can check it.
+ *
+ * Every createReviewer caller inherits this routing, not just the CI pipeline:
+ * demo.ts, scripts/finder-distribution.mjs and scripts/judge-diagnose.mjs
+ * included. Accepted — they run the same finder. The literal is pinned in
+ * config.test.ts; change it only alongside a measurement.
+ */
+export const DEFAULT_FINDER_PROVIDERS: readonly string[] = ["z-ai", "fireworks", "together"];
 
 /** The shape of the finder's routing preference, as sent in `provider`. */
 export interface FinderProviderRouting {
@@ -137,8 +151,8 @@ export interface FinderProviderRouting {
   require_parameters: true;
 }
 
-// An OpenRouter provider slug: `novita`, `z-ai`, `deepinfra/fp8`. Lowercase
-// only, so a typo such as `Novita` is rejected loudly rather than guessed at.
+// An OpenRouter provider slug: `z-ai`, `fireworks`, `deepinfra/fp8`. Lowercase
+// only, so a typo such as `Fireworks` is rejected loudly rather than guessed at.
 const PROVIDER_SLUG = /^[a-z0-9][a-z0-9._/-]*$/u;
 
 /**
@@ -148,17 +162,16 @@ const PROVIDER_SLUG = /^[a-z0-9][a-z0-9._/-]*$/u;
  * `OPENROUTER_FINDER_PROVIDERS` (comma-separated slugs) overrides the list, so
  * the Phase 4 gate can pin one endpoint at a time. An unset or blank value
  * (`""`, `" , "`) uses the default. A value with ANY malformed entry — an empty
- * one in an otherwise populated list (`novita,,deepinfra`) included — also uses
+ * one in an otherwise populated list (`z-ai,,fireworks`) included — also uses
  * the default — never unfiltered routing, and never a partial list — and says
  * so on stderr, because a gate run that meant to pin one endpoint would
  * otherwise measure another without a word.
  *
- * `require_parameters: true` is unconditional here (Amendment A3). With no
- * `response_format`, it now filters on `tools` and `reasoning` support, and it
- * is what refuses an endpoint that cannot honour `reasoning: {enabled: false}`
- * instead of letting it reason to the token cap. `OPENROUTER_REQUIRE_PARAMETERS
- * =false` therefore does NOT reach the finder; it still applies to the judge
- * and the implementation review.
+ * `require_parameters: true` is unconditional here. With no `response_format`,
+ * it filters on `tools` and `reasoning` support, so an endpoint that cannot
+ * honour FINDER_REASONING is refused rather than silently ignoring it.
+ * `OPENROUTER_REQUIRE_PARAMETERS=false` therefore does NOT reach the finder; it
+ * still applies to the judge and the implementation review.
  */
 export function resolveFinderProviderRouting(): FinderProviderRouting {
   const providers = parseFinderProviders(process.env.OPENROUTER_FINDER_PROVIDERS);
@@ -168,8 +181,8 @@ export function resolveFinderProviderRouting(): FinderProviderRouting {
 function parseFinderProviders(raw: string | undefined): readonly string[] {
   const entries = (raw ?? "").split(",").map((entry) => entry.trim());
   if (entries.every((entry) => entry === "")) return DEFAULT_FINDER_PROVIDERS;
-  // From here the list is populated, so an empty entry (`novita,,deepinfra`,
-  // `novita,`) is a typo, not padding: it fails the slug check and is reported
+  // From here the list is populated, so an empty entry (`z-ai,,fireworks`,
+  // `z-ai,`) is a typo, not padding: it fails the slug check and is reported
   // as `""` rather than silently dropped into a shorter list.
   const malformed = entries.filter((entry) => !PROVIDER_SLUG.test(entry));
   if (malformed.length > 0) {

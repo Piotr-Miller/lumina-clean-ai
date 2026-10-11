@@ -13,6 +13,10 @@ last_updated_by: Claude (Opus 5.5)
 
 # Research: finder-glm-5-3
 
+> **Note (2026-10-11, after Phase 1):** the `screening/` directory cited below is no longer in the tree. The raw
+> files are kept outside git at `~/.cache/finder-glm-5-3/screening/`; their configuration, metadata and sha256 are in
+> `screening-config.md`.
+
 **Date**: 2026-10-11T20:11:26+02:00
 **Researcher**: Claude (Opus 5.5) for Piotr-Miller
 **Git Commit**: `d4239b7`

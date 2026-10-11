@@ -2,8 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MAX_OUTPUT_TOKENS } from "./config.js";
 
 import { DEFAULT_MODEL } from "./config.js";
-import { openRouterStub, VALID_REVIEW_TEXT, type StubCompletion, type WireBody } from "./openrouter-stub.js";
+import {
+  openRouterStub,
+  STUB_MODEL,
+  VALID_REVIEW_TEXT,
+  type StubCompletion,
+  type WireBody,
+} from "./openrouter-stub.js";
 import { FinderOutputError } from "./output-repair.js";
+import { MISSING_RESPONSE_FIELDS, readReportedResponseFields } from "./provider-metadata.js";
 import { buildFinalizationInstructions, buildFinalizationPrompt } from "./prompts.js";
 import {
   createReviewer,
@@ -12,6 +19,7 @@ import {
   MAX_CONTEXT_LINES,
   prepareFinalStep,
   transcriptFromSteps,
+  type FinderRequestMeta,
   type SourceProvider,
 } from "./reviewer.js";
 
@@ -66,13 +74,16 @@ describe("createReviewer", () => {
     expect(() => createReviewer({ apiKey: "test-key", maxSteps })).toThrow(/positive integer/);
   });
 
-  it("forwards onStepEnd to the gathering loop's generate call (telemetry pass-through)", async () => {
+  it("forwards onStepEnd to the gathering loop's generate call, labelling each step (telemetry pass-through)", async () => {
     const onStepEnd = vi.fn();
     const stub = openRouterStub([{ content: VALID_REVIEW_TEXT, finish: "stop" }]);
     const reviewer = createReviewer({ apiKey: "test-key", source: () => "ctx", onStepEnd, fetch: stub.fetch });
     const generate = vi.spyOn(reviewer.agent, "generate").mockResolvedValue({ steps: [] } as never);
     await reviewer.review({ kind: "diff", diff: "+x" });
-    expect(generate).toHaveBeenCalledWith(expect.objectContaining({ onStepEnd }));
+    const forwarded = (generate.mock.calls[0]?.[0] as { onStepEnd?: (step: unknown) => void }).onStepEnd;
+    const step = { text: "" };
+    forwarded?.(step);
+    expect(onStepEnd).toHaveBeenCalledWith(step, { kind: "step", reported: MISSING_RESPONSE_FIELDS });
   });
 
   it("disables tools on the final allowed step so the review always gets emitted", () => {
@@ -232,14 +243,22 @@ describe("two-stage finder on the wire (owner condition 1, Amendment A3)", () =>
     expect(system).toContain("<gathering-note>");
   });
 
-  it("every request — loop, finalization and repair — disables reasoning and requires parameters (A3)", async () => {
+  // Decision 2 of change `finder-glm-5-3`: exactly this reasoning object on
+  // every finder request, nothing merged into it, and the decided routing.
+  it("every request — loop, finalization and repair — carries reasoning effort low and the finder routing", async () => {
     const stub = openRouterStub([toolCall, answer("draft"), answer('{"summary": 1}'), answer(VALID_REVIEW_TEXT)]);
     const reviewer = createReviewer({ apiKey: "test-key", source: () => FILE_CONTENT, maxSteps: 2, fetch: stub.fetch });
     await reviewer.review(UNIT);
     expect(stub.bodies).toHaveLength(4);
     for (const body of stub.bodies) {
-      expect(body.reasoning).toEqual({ enabled: false });
-      expect(body.provider).toEqual(expect.objectContaining({ require_parameters: true }));
+      expect(body.reasoning).toStrictEqual({ enabled: true, effort: "low" });
+      expect("include_reasoning" in body).toBe(false);
+      expect(body.provider).toEqual({
+        order: ["z-ai", "fireworks", "together"],
+        only: ["z-ai", "fireworks", "together"],
+        allow_fallbacks: true,
+        require_parameters: true,
+      });
     }
   });
 
@@ -334,6 +353,7 @@ describe("format repair: at most one, then FinderOutputError (owner condition 3)
     expect(error).toBeInstanceOf(FinderOutputError);
     expect((error as FinderOutputError).repaired).toBe(false);
     expect((error as FinderOutputError).finishReason).toBe("length");
+    expect((error as FinderOutputError).reason).toBe("length");
     expect(bodies).toHaveLength(1);
     expect(onOutputRepair).not.toHaveBeenCalled();
   });
@@ -342,6 +362,191 @@ describe("format repair: at most one, then FinderOutputError (owner condition 3)
     const { error } = await run([answer("No issues found.", { provider: undefined })]);
     expect("provider" in (error as FinderOutputError)).toBe(false);
     expect((error as FinderOutputError).message).toContain("provider=?");
+  });
+});
+
+// Owner decision 2 of change `finder-glm-5-3`: any finder request ending
+// `finish=length` fails the attempt — truncation is checked before the text is
+// used, so even a parseable truncated answer never becomes a review.
+describe("truncation fails the attempt at every request kind", () => {
+  const run = async (responses: StubCompletion[], withSource: boolean) => {
+    const stub = openRouterStub(responses);
+    const onOutputRepair = vi.fn();
+    const reviewer = createReviewer({
+      apiKey: "test-key",
+      fetch: stub.fetch,
+      onOutputRepair,
+      ...(withSource ? { source: () => FILE_CONTENT, maxSteps: 3 } : {}),
+    });
+    const error = await reviewer.review(UNIT).then(
+      () => undefined,
+      (failure: unknown) => failure,
+    );
+    return { error: error as FinderOutputError, bodies: stub.bodies, onOutputRepair };
+  };
+
+  it("a stage-1 step ending length throws before the finalization: exactly the stage-1 bodies are sent", async () => {
+    const { error, bodies } = await run([toolCall, answer("a note cut off mid-sent", { finish: "length" })], true);
+    expect(error).toBeInstanceOf(FinderOutputError);
+    expect(error).toMatchObject({ reason: "length", request: { kind: "step", index: 2 }, finishReason: "length" });
+    expect(error.message).toContain("request=step:2");
+    // Two loop requests, no finalization.
+    expect(bodies).toHaveLength(2);
+    for (const body of bodies) expect("tools" in body).toBe(true);
+  });
+
+  it("a finalization ending length throws even though its JSON would parse — no repair", async () => {
+    const { error, bodies, onOutputRepair } = await run([answer(VALID_REVIEW_TEXT, { finish: "length" })], false);
+    expect(error).toMatchObject({ reason: "length", request: { kind: "finalization" }, repaired: false });
+    expect(bodies).toHaveLength(1);
+    expect(onOutputRepair).not.toHaveBeenCalled();
+  });
+
+  it("a repair ending length throws even though its JSON would parse", async () => {
+    const { error, bodies, onOutputRepair } = await run(
+      [answer('{"summary": 1}'), answer(VALID_REVIEW_TEXT, { finish: "length" })],
+      false,
+    );
+    expect(error).toMatchObject({ reason: "length", request: { kind: "repair" }, repaired: true });
+    expect(bodies).toHaveLength(2);
+    expect(onOutputRepair).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Assumption A2: inline reasoning in a response's TEXT fails the attempt and is
+// never parsed, carried into the transcript, or used in a repair prompt.
+describe("inline reasoning (<think>) fails the attempt at every request kind", () => {
+  const THINK = "<think>REASONING-SENTINEL-inline</think>";
+  const run = async (responses: StubCompletion[], withSource: boolean) => {
+    const stub = openRouterStub(responses);
+    const reviewer = createReviewer({
+      apiKey: "test-key",
+      fetch: stub.fetch,
+      ...(withSource ? { source: () => FILE_CONTENT, maxSteps: 3 } : {}),
+    });
+    const error = await reviewer.review(UNIT).then(
+      () => undefined,
+      (failure: unknown) => failure,
+    );
+    return { error: error as FinderOutputError, bodies: stub.bodies };
+  };
+
+  it("in a stage-1 note: no finalization is sent, so the note never enters a transcript", async () => {
+    const { error, bodies } = await run([toolCall, answer(`${THINK} looks fine`)], true);
+    expect(error).toMatchObject({ reason: "inline-reasoning", request: { kind: "step", index: 2 } });
+    expect(bodies).toHaveLength(2);
+    expect(bodies.some((body) => !("tools" in body))).toBe(false);
+  });
+
+  it("in the finalization: refused before the parse, even when the rest is a valid review", async () => {
+    const { error, bodies } = await run([answer(`${THINK}${VALID_REVIEW_TEXT}`)], false);
+    expect(error).toMatchObject({ reason: "inline-reasoning", request: { kind: "finalization" }, repaired: false });
+    // No repair: its prompt would have quoted the text.
+    expect(bodies).toHaveLength(1);
+  });
+
+  it("in the repair", async () => {
+    const { error, bodies } = await run([answer('{"summary": 1}'), answer(`${THINK}${VALID_REVIEW_TEXT}`)], false);
+    expect(error).toMatchObject({ reason: "inline-reasoning", request: { kind: "repair" }, repaired: true });
+    expect(bodies).toHaveLength(2);
+  });
+
+  it("is checked before truncation: a mixed response is classified as inline reasoning", async () => {
+    const { error } = await run([answer(THINK, { finish: "length" })], false);
+    expect(error).toMatchObject({ reason: "inline-reasoning", finishReason: "length" });
+  });
+
+  it("the error message never carries the text", async () => {
+    const { error } = await run([toolCall, answer(THINK)], true);
+    expect(error.message).not.toContain("REASONING-SENTINEL");
+  });
+});
+
+// Assumption A3: what each request's RAW response reported, read through the
+// fetch observer — never the SDK's stand-ins (the requested model id for an
+// absent `model`, a 0 for absent reasoning tokens).
+describe("each request is labelled and carries what its raw response reported", () => {
+  const observe = async (responses: StubCompletion[]) => {
+    const stub = openRouterStub(responses);
+    const seen: FinderRequestMeta[] = [];
+    const reviewer = createReviewer({
+      apiKey: "test-key",
+      source: () => FILE_CONTENT,
+      maxSteps: 2,
+      fetch: stub.fetch,
+      onStepEnd: (_step, request) => seen.push(request),
+    });
+    await reviewer.review(UNIT).catch(() => undefined);
+    return seen;
+  };
+
+  it("labels loop steps, the finalization and the repair, with model, provider and reasoning tokens", async () => {
+    const seen = await observe([
+      { ...toolCall, provider: "Z.AI", reasoningTokens: 120 },
+      answer("draft", { provider: "Fireworks", reasoningTokens: 0 }),
+      answer('{"summary": 1}', { provider: "Together", model: "z-ai/glm-5.3-20261001", reasoningTokens: 64 }),
+      answer(VALID_REVIEW_TEXT, { provider: "Z.AI", reasoningTokens: 8 }),
+    ]);
+    expect(seen.map((request) => request.kind)).toEqual(["step", "step", "finalization", "repair"]);
+    expect(seen.map((request) => request.reported.provider.value)).toEqual(["Z.AI", "Fireworks", "Together", "Z.AI"]);
+    expect(seen.map((request) => request.reported.model.value)).toEqual([
+      STUB_MODEL,
+      STUB_MODEL,
+      "z-ai/glm-5.3-20261001",
+      STUB_MODEL,
+    ]);
+    // A reported 0 stays a reported 0.
+    expect(seen.map((request) => request.reported.reasoningTokens)).toEqual([
+      { value: 120, source: "reported" },
+      { value: 0, source: "reported" },
+      { value: 64, source: "reported" },
+      { value: 8, source: "reported" },
+    ]);
+  });
+
+  it("a response without `model` is missing — not the requested id the SDK substitutes", async () => {
+    const seen = await observe([answer("draft", { model: null }), answer(VALID_REVIEW_TEXT, { model: null })]);
+    expect(seen).toHaveLength(2);
+    for (const request of seen) expect(request.reported.model).toEqual({ value: null, source: "missing" });
+  });
+
+  it("a response without reasoning_tokens is missing — never 0", async () => {
+    const seen = await observe([answer("draft"), answer(VALID_REVIEW_TEXT)]);
+    for (const request of seen) expect(request.reported.reasoningTokens).toEqual({ value: null, source: "missing" });
+  });
+
+  it("a response without `provider` is missing", async () => {
+    const seen = await observe([answer("draft", { provider: undefined }), answer(VALID_REVIEW_TEXT)]);
+    expect(seen[0]?.reported.provider).toEqual({ value: null, source: "missing" });
+    expect(seen[1]?.reported.provider).toEqual({ value: "Novita", source: "reported" });
+  });
+
+  it("keeps nothing of the response but the three fields: REASONING-SENTINEL never reaches the request metadata", async () => {
+    const sentinel = "REASONING-SENTINEL-7f3a";
+    const seen = await observe([
+      answer("draft", { reasoning: sentinel, reasoningDetailsText: sentinel, reasoningTokens: 3 }),
+      answer(VALID_REVIEW_TEXT, { reasoning: sentinel, reasoningDetailsText: sentinel, reasoningTokens: 3 }),
+    ]);
+    expect(seen).toHaveLength(2);
+    for (const request of seen)
+      expect(Object.keys(request.reported).sort()).toEqual(["model", "provider", "reasoningTokens"]);
+    expect(JSON.stringify(seen)).not.toContain(sentinel);
+  });
+});
+
+describe("readReportedResponseFields", () => {
+  it.each([
+    ["an empty model and provider", { model: "", provider: "" }],
+    ["non-string model and provider", { model: 5, provider: null }],
+    ["a negative reasoning count", { usage: { completion_tokens_details: { reasoning_tokens: -1 } } }],
+    ["a fractional reasoning count", { usage: { completion_tokens_details: { reasoning_tokens: 1.5 } } }],
+    ["a string reasoning count", { usage: { completion_tokens_details: { reasoning_tokens: "3" } } }],
+    ["no body at all", null],
+  ])("reads %s as missing", (_label, body) => {
+    const fields = readReportedResponseFields(body);
+    expect(fields.model.source).toBe("missing");
+    expect(fields.provider.source).toBe("missing");
+    expect(fields.reasoningTokens).toEqual({ value: null, source: "missing" });
   });
 });
 

@@ -16,6 +16,14 @@ export interface StubCompletion {
   provider?: string;
   /** `usage.cost`; omitted when undefined. */
   cost?: number;
+  /** Top-level `model`; STUB_MODEL when undefined, omitted when `null`. */
+  model?: string | null;
+  /** `message.reasoning`, the plain-string reasoning field; omitted when undefined. */
+  reasoning?: string;
+  /** `message.reasoning_details` as one `reasoning.text` entry carrying this text; omitted when undefined. */
+  reasoningDetailsText?: string;
+  /** `usage.completion_tokens_details.reasoning_tokens`; omitted when undefined. */
+  reasoningTokens?: number;
   /** Answer only after this many ms (a fake clock can drive it). */
   delayMs?: number;
   /** Never answer; reject when the request's signal aborts. */
@@ -26,11 +34,14 @@ export type WireBody = Record<string, unknown> & {
   messages: { role: string; content?: unknown; tool_calls?: unknown[] }[];
 };
 
+/** The `model` every answer reports unless a completion overrides it. */
+export const STUB_MODEL = "z-ai/glm-5.3";
+
 const completionBody = (completion: StubCompletion, index: number) => ({
   id: `gen-stub-${String(index)}`,
   object: "chat.completion",
   created: 0,
-  model: "z-ai/glm-4.6",
+  ...(completion.model === null ? {} : { model: completion.model ?? STUB_MODEL }),
   ...(completion.provider === undefined ? {} : { provider: completion.provider }),
   choices: [
     {
@@ -39,6 +50,10 @@ const completionBody = (completion: StubCompletion, index: number) => ({
       message: {
         role: "assistant",
         content: completion.content ?? "",
+        ...(completion.reasoning === undefined ? {} : { reasoning: completion.reasoning }),
+        ...(completion.reasoningDetailsText === undefined
+          ? {}
+          : { reasoning_details: [{ type: "reasoning.text", text: completion.reasoningDetailsText }] }),
         ...(completion.toolCalls === undefined
           ? {}
           : {
@@ -56,6 +71,9 @@ const completionBody = (completion: StubCompletion, index: number) => ({
     completion_tokens: 5,
     total_tokens: 15,
     ...(completion.cost === undefined ? {} : { cost: completion.cost }),
+    ...(completion.reasoningTokens === undefined
+      ? {}
+      : { completion_tokens_details: { reasoning_tokens: completion.reasoningTokens } }),
   },
 });
 

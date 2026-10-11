@@ -23,11 +23,12 @@ import {
   runReviewPipeline,
   type FinderStepInfo,
 } from "./pipeline.js";
-import { openRouterStub, VALID_REVIEW_TEXT } from "./openrouter-stub.js";
+import { openRouterStub, VALID_REVIEW_TEXT, type WireBody } from "./openrouter-stub.js";
 import { FinderOutputError } from "./output-repair.js";
 import { type JudgePromptInput } from "./prompts.js";
 import { RATE_LIMIT_DELAY_MS, TRANSIENT_DELAY_MS } from "./retry.js";
-import { createReviewer, type ReviewerOptions } from "./reviewer.js";
+import { MISSING_RESPONSE_FIELDS, type ReportedResponseFields } from "./provider-metadata.js";
+import { createReviewer, type FinderRequestMeta, type ReviewerOptions } from "./reviewer.js";
 import { CRITERIA } from "./scorecard.js";
 import type {
   Finding,
@@ -49,6 +50,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 const finding = (overrides: Partial<Finding>): Finding => ({
@@ -604,6 +606,17 @@ describe("asStepProvider", () => {
   });
 });
 
+/** What the real reviewer hands onStepEnd next to each step: the request kind and the raw response's fields. */
+const servedBy = (provider: string, reasoningTokens: number): ReportedResponseFields => ({
+  model: { value: "z-ai/glm-5.3", source: "reported" },
+  provider: { value: provider, source: "reported" },
+  reasoningTokens: { value: reasoningTokens, source: "reported" },
+});
+const stepMeta = (reported: ReportedResponseFields = MISSING_RESPONSE_FIELDS): FinderRequestMeta => ({
+  kind: "step",
+  reported,
+});
+
 describe("runReviewPipeline finder source + telemetry seam", () => {
   const reviewOk = () => Promise.resolve({ summary: "s", findings: [] });
   const finderOptionsOf = (createFinder: ReturnType<typeof vi.fn>): ReviewerOptions =>
@@ -647,7 +660,9 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
     let attempt = 0;
     const createFinder = vi.fn().mockImplementation((options: ReviewerOptions) => ({
       review: () => {
-        for (const step of attemptSteps) options.onStepEnd?.(step);
+        for (const [index, step] of attemptSteps.entries()) {
+          options.onStepEnd?.(step, stepMeta(servedBy(attempt === 0 ? "Z.AI" : "Together", 10 * (index + 1))));
+        }
         attempt += 1;
         return attempt === 1 ? Promise.reject(apiError(503)) : Promise.resolve({ summary: "s", findings: [] });
       },
@@ -662,12 +677,28 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
     });
     // 2 steps × 2 attempts: real spend — steps deliberately exceeds the
     // per-attempt cap of 2 (the SDK's stepNumber resets on the retry attempt).
+    const request = (attemptNumber: 1 | 2, provider: string, reasoningTokens: number) => ({
+      kind: "step",
+      attempt: attemptNumber,
+      provider: { value: provider, source: "reported" },
+      model: { value: "z-ai/glm-5.3", source: "reported" },
+      finishReason: "stop",
+      reasoningTokens: { value: reasoningTokens, source: "reported" },
+      cost: null,
+    });
     expect(result.finderTelemetry).toEqual({
       steps: 4,
       toolCalls: 2,
       inputTokens: 440,
       outputTokens: 80,
       totalTokens: 520,
+      // One entry per request, the retry's included and labelled as attempt 2.
+      requests: [
+        request(1, "Z.AI", 10),
+        request(1, "Z.AI", 20),
+        request(2, "Together", 10),
+        request(2, "Together", 20),
+      ],
     });
     expect(infos).toHaveLength(4);
     expect(infos.at(0)?.fileContextCalls).toEqual([{ path: "src/a.ts", startLine: 1, endLine: 40 }]);
@@ -686,8 +717,8 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
       }) as unknown as StepResult<ToolSet>;
     const createFinder = vi.fn().mockImplementation((options: ReviewerOptions) => ({
       review: () => {
-        options.onStepEnd?.(withCostStep(0.004));
-        options.onStepEnd?.(withCostStep(0.006));
+        options.onStepEnd?.(withCostStep(0.004), stepMeta());
+        options.onStepEnd?.(withCostStep(0.006), stepMeta());
         return Promise.resolve({ summary: "s", findings: [] });
       },
     }));
@@ -706,7 +737,7 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
     } as unknown as StepResult<ToolSet>;
     const createFinder = vi.fn().mockImplementation((options: ReviewerOptions) => ({
       review: () => {
-        options.onStepEnd?.(bareStep);
+        options.onStepEnd?.(bareStep, stepMeta());
         return Promise.resolve({ summary: "s", findings: [] });
       },
     }));
@@ -1356,5 +1387,84 @@ describe("finder telemetry covers the finalization and the repair (real reviewer
     expect(requests).toBe(4);
     expect(result.finderTelemetry).toMatchObject({ steps: 4, toolCalls: 1 });
     expect(result.finderTelemetry?.cost).toBeCloseTo(0.004, 10);
+  });
+});
+
+describe("finder requests in review.json (real reviewer, stubbed wire)", () => {
+  it("records each request's kind, attempt and reported fields — a missing model stays missing", async () => {
+    const stub = openRouterStub([
+      { content: '{"summary": 1}', finish: "stop", provider: "Z.AI", model: null, cost: 0.001 },
+      { content: VALID_REVIEW_TEXT, finish: "stop", provider: "Together", reasoningTokens: 17, cost: 0.002 },
+    ]);
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: {
+        createFinder: (options) => createReviewer({ ...options, apiKey: "test-key", fetch: stub.fetch }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect(result.finderTelemetry?.requests).toEqual([
+      {
+        kind: "finalization",
+        attempt: 1,
+        provider: { value: "Z.AI", source: "reported" },
+        // NOT the requested id the SDK would substitute.
+        model: { value: null, source: "missing" },
+        finishReason: "stop",
+        reasoningTokens: { value: null, source: "missing" },
+        cost: 0.001,
+      },
+      {
+        kind: "repair",
+        attempt: 1,
+        provider: { value: "Together", source: "reported" },
+        model: { value: "z-ai/glm-5.3", source: "reported" },
+        finishReason: "stop",
+        reasoningTokens: { value: 17, source: "reported" },
+        cost: 0.002,
+      },
+    ]);
+  });
+});
+
+// Decision 2 on the wire: reasoning on the finder only. The two strict-schema
+// passes run their real factories against a stubbed global fetch, so their
+// request bodies are captured exactly as the SDK serializes them.
+describe("only the finder requests reasoning (all three passes on a stubbed wire)", () => {
+  it("the judge and implementation-review bodies carry no reasoning key", async () => {
+    const judgeAnswer = JSON.stringify({
+      scores: Object.fromEntries(CRITERIA.map(({ key }) => [key, { score: "8", justification: "j", findingIds: [] }])),
+      verdict: "passed",
+      verdictReason: "fine",
+      summary: "judged",
+    });
+    const schemaName = (body: WireBody): string | undefined =>
+      (body.response_format as { json_schema?: { name?: string } } | undefined)?.json_schema?.name;
+    const stub = openRouterStub((body) =>
+      schemaName(body) === "judge_scorecard"
+        ? { content: judgeAnswer, finish: "stop" }
+        : // The finder's answer; the implementation review's fails its parse, which
+          // the pass turns into a failed block — its request body is what counts.
+          { content: VALID_REVIEW_TEXT, finish: "stop" },
+    );
+    vi.stubGlobal("fetch", stub.fetch);
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: { text: "## Plan\n\nDo the thing." },
+      overrides: { apiKey: "test-key" },
+      deps: { retrySleep: () => Promise.resolve() },
+    });
+    expect(result.implReview?.status).toBeDefined();
+    const finder = stub.bodies.filter((body) => schemaName(body) === undefined);
+    const judge = stub.bodies.filter((body) => schemaName(body) === "judge_scorecard");
+    const implReview = stub.bodies.filter((body) => ![undefined, "judge_scorecard"].includes(schemaName(body)));
+    expect(finder).toHaveLength(1);
+    expect(judge).toHaveLength(1);
+    expect(implReview.length).toBeGreaterThanOrEqual(1);
+    for (const body of finder) expect(body.reasoning).toStrictEqual({ enabled: true, effort: "low" });
+    for (const body of [...judge, ...implReview]) {
+      expect("reasoning" in body).toBe(false);
+      expect("include_reasoning" in body).toBe(false);
+    }
   });
 });

@@ -78,10 +78,15 @@ describe("resolveProviderRouting", () => {
 });
 
 /** The finder's default routing, spelled out: a change to it must be deliberate. */
-const FINDER_DEFAULT = { order: ["novita"], only: ["novita"], allow_fallbacks: true, require_parameters: true };
+const FINDER_DEFAULT = {
+  order: ["z-ai", "fireworks", "together"],
+  only: ["z-ai", "fireworks", "together"],
+  allow_fallbacks: true,
+  require_parameters: true,
+};
 
 describe("resolveFinderProviderRouting", () => {
-  it("defaults to the provisional endpoint list, fallbacks only within it", () => {
+  it("defaults to the decided endpoint list (decision 4), fallbacks only within it", () => {
     expect(resolveFinderProviderRouting()).toEqual(FINDER_DEFAULT);
   });
 
@@ -137,8 +142,8 @@ describe("resolveFinderProviderRouting", () => {
     warn.mockRestore();
   });
 
-  // Amendment A3: require_parameters is what refuses an endpoint that cannot
-  // honour `reasoning: {enabled: false}`, so the judge's escape hatch must not reach it.
+  // require_parameters is what refuses an endpoint that cannot honour the
+  // finder's reasoning setting, so the judge's escape hatch must not reach it.
   it("OPENROUTER_REQUIRE_PARAMETERS=false leaves the finder's require_parameters in place", () => {
     vi.stubEnv("OPENROUTER_REQUIRE_PARAMETERS", "false");
     expect(resolveFinderProviderRouting()).toEqual(FINDER_DEFAULT);
@@ -146,7 +151,7 @@ describe("resolveFinderProviderRouting", () => {
 
   it("hands out a fresh list each time, so a caller cannot mutate the default", () => {
     resolveFinderProviderRouting().order.push("venice");
-    expect(DEFAULT_FINDER_PROVIDERS).toEqual(["novita"]);
+    expect(DEFAULT_FINDER_PROVIDERS).toEqual(["z-ai", "fireworks", "together"]);
     expect(resolveFinderProviderRouting()).toEqual(FINDER_DEFAULT);
   });
 });
@@ -179,6 +184,27 @@ describe("each pass requests its own routing", () => {
   });
 });
 
+// Decision 2 of change `finder-glm-5-3`, at the settings level: the typed
+// setting on the finder and no `extraBody` (spread last, it would override
+// it); nothing on the two strict-schema passes. reviewer.test.ts and
+// pipeline.test.ts pin the same on the wire.
+describe("each pass requests its own reasoning", () => {
+  it("finder: exactly FINDER_REASONING, and no extraBody", () => {
+    createReviewer({ apiKey: "k" });
+    expect(captured.at(-1)?.settings?.reasoning).toEqual({ enabled: true, effort: "low" });
+    expect(captured.at(-1)?.settings).not.toHaveProperty("extraBody");
+  });
+
+  it("judge and implementation review: no reasoning setting at all", () => {
+    createJudge({ apiKey: "k" });
+    expect(captured.at(-1)?.settings).not.toHaveProperty("reasoning");
+    expect(captured.at(-1)?.settings).not.toHaveProperty("extraBody");
+    createImplReviewer({ apiKey: "k" });
+    expect(captured.at(-1)?.settings).not.toHaveProperty("reasoning");
+    expect(captured.at(-1)?.settings).not.toHaveProperty("extraBody");
+  });
+});
+
 describe("overrides and the escape hatch", () => {
   // The campaign probe pins {order:["venice"], allow_fallbacks:false, …} to keep
   // measurements within one endpoint. That MUST still win, or the instrument
@@ -197,7 +223,7 @@ describe("overrides and the escape hatch", () => {
     expect(captured.at(-1)?.settings).not.toHaveProperty("provider");
   });
 
-  it("the escape hatch does not reach the finder (Amendment A3)", () => {
+  it("the escape hatch does not reach the finder", () => {
     vi.stubEnv("OPENROUTER_REQUIRE_PARAMETERS", "false");
     createReviewer({ apiKey: "k" });
     expect(lastProvider()).toEqual(FINDER_DEFAULT);

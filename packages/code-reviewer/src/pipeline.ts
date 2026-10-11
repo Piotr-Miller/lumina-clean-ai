@@ -10,10 +10,11 @@ import {
 } from "./impl-reviewer.js";
 import { createJudge, type Judge, type JudgeCallOptions, type JudgeOptions } from "./judge.js";
 import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
-import { asStepCost, asStepProvider } from "./provider-metadata.js";
+import { asStepCost, asStepProvider, MISSING_RESPONSE_FIELDS } from "./provider-metadata.js";
 import { withOneRetry } from "./retry.js";
 import {
   createReviewer,
+  type FinderRequestMeta,
   type ReviewCallOptions,
   type Reviewer,
   type ReviewerOptions,
@@ -22,6 +23,7 @@ import {
 import { assignFindingIds } from "./scorecard.js";
 import type {
   DiffStats,
+  FinderRequestKind,
   FinderTelemetry,
   ImplReviewBlock,
   ImplReviewResult,
@@ -29,6 +31,7 @@ import type {
   JudgeResult,
   JudgeTelemetry,
   PipelineResult,
+  Reported,
   ReviewResult,
   ReviewUnit,
 } from "./schemas.js";
@@ -375,7 +378,7 @@ export interface FinderStepInfo {
    */
   cost?: number;
   /**
-   * The upstream OpenRouter routed the step to (e.g. `novita`, `venice`).
+   * The upstream OpenRouter routed the step to (e.g. `Z.AI`, `Fireworks`).
    * Present only when the provider reported it: the 2026-09-20 outage could
    * not be attributed to an endpoint from the run log because nothing
    * recorded which one served each step (change `finder-serialization-outage`).
@@ -383,6 +386,12 @@ export interface FinderStepInfo {
   provider?: string;
   /** How the step's generation ended, as the SDK reports it (`stop`, `tool-calls`, `length`, …). */
   finishReason: string;
+  /** Which finder request this was: a gathering-loop step, the finalization or the format repair. */
+  kind: FinderRequestKind;
+  /** The model id the RAW response reported — never the requested id substituted for a missing one. */
+  model: Reported<string>;
+  /** The reasoning-token count the RAW response reported — never a substituted 0. */
+  reasoningTokens: Reported<number>;
 }
 
 // The tool input is model-chosen and reaches us untyped — narrow it instead
@@ -397,8 +406,16 @@ const asFileContextTarget = (input: unknown): { path: string; startLine?: number
   };
 };
 
-/** Extract the small per-step description from the SDK's step result. */
-export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
+/**
+ * Extract the small per-step description from the SDK's step result and the
+ * reviewer's request metadata. Without the metadata — an embedder that
+ * observes steps on its own — the request reads as a loop step whose reported
+ * fields are all `missing`: unknown stays visibly unknown.
+ */
+export function describeFinderStep(
+  step: StepResult<ToolSet>,
+  request: FinderRequestMeta = { kind: "step", reported: MISSING_RESPONSE_FIELDS },
+): FinderStepInfo {
   const cost = asStepCost(step.providerMetadata);
   const provider = asStepProvider(step.providerMetadata);
   return {
@@ -418,6 +435,9 @@ export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
     ...(cost === undefined ? {} : { cost }),
     ...(provider === undefined ? {} : { provider }),
     finishReason: step.finishReason,
+    kind: request.kind,
+    model: request.reported.model,
+    reasoningTokens: request.reported.reasoningTokens,
   };
 }
 
@@ -526,11 +546,15 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   // the retry attempt; each event is simply counted). One attempt alone can
   // exceed it too: the finalization and the format repair are requests of
   // their own, counted here so `cost` covers them (up to maxSteps + 2).
-  const telemetry: FinderTelemetry = { steps: 0, toolCalls: 0 };
+  // `requests` records each of them by kind and attempt (change
+  // `finder-glm-5-3`), with only what the provider itself reported.
+  const telemetry: FinderTelemetry = { steps: 0, toolCalls: 0, requests: [] };
+  // Which withOneRetry attempt is running; set by the finder call below.
+  let finderAttempt: 1 | 2 = 1;
   const addTokens = (sum: number | undefined, next: number | undefined): number | undefined =>
     next === undefined ? sum : (sum ?? 0) + next;
-  const observeFinderStep = (step: StepResult<ToolSet>): void => {
-    const info = describeFinderStep(step);
+  const observeFinderStep = (step: StepResult<ToolSet>, request?: FinderRequestMeta): void => {
+    const info = describeFinderStep(step, request);
     telemetry.steps += 1;
     telemetry.toolCalls += info.toolCalls;
     telemetry.inputTokens = addTokens(telemetry.inputTokens, info.usage.inputTokens);
@@ -540,6 +564,15 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     // CREATE the key, and an un-instrumented run would then read as an
     // instrumented one that cost nothing.
     if (info.cost !== undefined) telemetry.cost = (telemetry.cost ?? 0) + info.cost;
+    telemetry.requests.push({
+      kind: info.kind,
+      attempt: finderAttempt,
+      provider: request?.reported.provider ?? MISSING_RESPONSE_FIELDS.provider,
+      model: info.model,
+      finishReason: info.finishReason,
+      reasoningTokens: info.reasoningTokens,
+      cost: info.cost ?? null,
+    });
     input.onFinderStep?.(info);
   };
 
@@ -585,10 +618,12 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     onRetry: (error: unknown, delayMs: number) => input.onRetry?.(pass, error, delayMs),
   });
 
-  const reviewResult = await withOneRetry(
-    () => finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs }),
-    retryOptions("finder"),
-  );
+  let finderCalls = 0;
+  const reviewResult = await withOneRetry(() => {
+    finderCalls += 1;
+    finderAttempt = finderCalls === 1 ? 1 : 2;
+    return finder({ kind: "diff", diff }, { timeoutMs: timeouts.finderTimeoutMs });
+  }, retryOptions("finder"));
   // reviewer.review already normalized; mergeFindings adds the dedup +
   // deterministic file/line/category sort that makes F1..Fn stable per run.
   const findings = assignFindingIds(mergeFindings(reviewResult.findings));

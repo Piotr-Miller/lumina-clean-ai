@@ -1,7 +1,13 @@
 import { NoObjectGeneratedError } from "ai";
 import { describe, expect, it } from "vitest";
 
-import { extractJsonObject, FinderOutputError, parseFinderOutput, repairParsedJudgeOutput } from "./output-repair.js";
+import {
+  containsInlineReasoning,
+  extractJsonObject,
+  FinderOutputError,
+  parseFinderOutput,
+  repairParsedJudgeOutput,
+} from "./output-repair.js";
 import { isRetryableError } from "./retry.js";
 import { CRITERIA } from "./scorecard.js";
 
@@ -132,10 +138,37 @@ describe("FinderOutputError", () => {
       repaired: false,
     });
     expect(error.name).toBe("FinderOutputError");
-    expect(error).toMatchObject({ text: "prose", provider: "Novita", finishReason: "stop", repaired: false });
+    expect(error).toMatchObject({
+      text: "prose",
+      provider: "Novita",
+      finishReason: "stop",
+      reason: "parse",
+      repaired: false,
+    });
     expect(error.message).toBe(
-      "Finder output rejected (provider=Novita, finish=stop, no format repair attempted): no complete JSON object in the response",
+      "Finder output rejected (reason=parse, provider=Novita, finish=stop, no format repair attempted): no complete JSON object in the response",
     );
+  });
+
+  // The CLI's no-artifact record classifies a failed run from this message
+  // alone, so the reason and the request must be in it — and the text never.
+  it.each([
+    [{ kind: "step", index: 2 } as const, "length", "request=step:2"],
+    [{ kind: "finalization" } as const, "inline-reasoning", "request=finalization"],
+    [{ kind: "repair" } as const, "length", "request=repair"],
+  ] as const)("names the request %o and the reason %s, never the text", (request, reason, label) => {
+    const error = new FinderOutputError({
+      text: "<think>REASONING-SENTINEL</think>",
+      finishReason: "length",
+      reason,
+      request,
+      validationError: "v",
+      repaired: request.kind === "repair",
+    });
+    expect(error.reason).toBe(reason);
+    expect(error.request).toEqual(request);
+    expect(error.message).toContain(`(reason=${reason}, ${label}, provider=?, finish=length, `);
+    expect(error.message).not.toContain("REASONING-SENTINEL");
   });
 
   it("is not a NoObjectGeneratedError, so the pipeline's single retry never re-rolls it", () => {
@@ -143,8 +176,22 @@ describe("FinderOutputError", () => {
     expect(NoObjectGeneratedError.isInstance(error)).toBe(false);
     expect(isRetryableError(error)).toBe(false);
     expect("provider" in error).toBe(false);
+    expect("request" in error).toBe(false);
     expect(error.message).toContain("provider=?, finish=?, after one format repair");
   });
+});
+
+describe("containsInlineReasoning (assumption A2)", () => {
+  it.each(["<think>x</think>{}", "notes <THINK>", "<Think", "a\n<thinking>b"])("flags %o", (text) => {
+    expect(containsInlineReasoning(text)).toBe(true);
+  });
+
+  it.each(["", '{"summary": "think about it", "findings": []}', "< think>", "&lt;think&gt;"])(
+    "leaves %o alone",
+    (text) => {
+      expect(containsInlineReasoning(text)).toBe(false);
+    },
+  );
 });
 
 const schemaFailure = (text: string): NoObjectGeneratedError =>
