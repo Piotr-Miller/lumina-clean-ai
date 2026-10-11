@@ -552,13 +552,13 @@ None. Nothing in `src/`, `packages/` or CI changes. The archive stays untouched.
 
 #### Automated
 
-- [ ] 2.1 (paid) The probe runs and its journal is complete
-- [ ] 2.2 Probe spend ≤ $0.60
-- [ ] 2.3 The change folder is formatted
+- [x] 2.1 (paid) The probe runs and its journal is complete
+- [x] 2.2 Probe spend ≤ $0.60
+- [x] 2.3 The change folder is formatted
 
 #### Manual
 
-- [ ] 2.4 The owner authorizes the probe after reading the reads
+- [x] 2.4 The owner authorizes the probe after reading the reads
 - [ ] 2.5 The owner reads the checklist and confirms the outcome rule that applies
 
 ### Phase 3: Pre-registration and seal (free; owner approval; push)
