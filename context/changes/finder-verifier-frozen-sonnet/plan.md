@@ -579,10 +579,10 @@ None. Nothing in `src/`, `packages/` or CI changes. The archive stays untouched.
 
 #### Automated
 
-- [x] 4.1 (paid) Pre-flight reads
-- [x] 4.2 (paid) The series completes or stops by a sealed rule
-- [x] 4.3 The report reproduces from the committed series
-- [x] 4.4 Spend stays within the cap
+- [x] 4.1 (paid) Pre-flight reads — 1255c96
+- [x] 4.2 (paid) The series completes or stops by a sealed rule — 1255c96
+- [x] 4.3 The report reproduces from the committed series — 1255c96
+- [x] 4.4 Spend stays within the cap — 1255c96
 
 #### Manual
 
