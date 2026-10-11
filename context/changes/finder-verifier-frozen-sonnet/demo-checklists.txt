@@ -1,0 +1,262 @@
+===== DEMO probe-79.jsonl
+
+REFUSED: --cap 0.61 is above the probe's hard limit $0.60 for its one attempt, retry and repair included (plan § Definitions, Probe). Nothing was sent.
+===== DEMO series-sonnet.jsonl
+
+REFUSED: the probe never writes the series file series-sonnet.jsonl; give it its own path (plan: probe.jsonl).
+===== DEMO probe-80.jsonl
+
+REFUSED: the credit left is $5.000000 (total $60, used $55), below $5.10 (probe $0.60 + series hard cap $4.50). Stop and ask the owner (owner decision 3). Nothing was sent.
+===== DEMO probe-81.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [0]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/0] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [standard]; generation record [standard] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME PROCEED: items 1–4, 7 and 8 hold → Phase 3 (pre-registration and seal).
+===== DEMO probe-82.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name absent] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [absent] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [absent] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME PROCEED: items 1–4, 7 and 8 hold → Phase 3 (pre-registration and seal).
+===== DEMO probe-83.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [1 (reasoning.encrypted)]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [1] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → does NOT hold
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [standard] (information)
+6. Attempt: condition-violation (reasoning-details (wire)); requests sent 1, blocked 0; HTTP [200]; the sealed parser did not produce a scored answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME STOP (rule 2): reasoning was observed although the sealed request turns it off. Stage 2 as specified cannot run; the owner decides.
+===== DEMO probe-84.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [absent]; SDK step provider [absent]; generation record [gen-self-test: provider_name Anthropic] → does NOT hold
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [standard] (information)
+6. Attempt: condition-violation (provider-missing); requests sent 1, blocked 0; HTTP [200]; the sealed parser did not produce a scored answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME REOPEN PHASE 1 (rule 1): the response carries no provider field, while the generation record says Anthropic. Read the provider from the generation record, re-run Phase 1's checks; a second probe needs the owner.
+===== DEMO probe-85.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [10000000 / 5692 = 1756.852] → does NOT hold
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [standard] (information)
+6. Attempt: condition-violation (prompt-tokens-above-bound (A1/A2 broke)); requests sent 1, blocked 0; HTTP [200]; the sealed parser did not produce a scored answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME STOP AND ASK (rules 3–4): A1–A3 do not hold for this endpoint (items 3–4). Nothing is sealed; the owner decides.
+===== DEMO probe-86.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic, Anthropic]; SDK step provider [Anthropic, Anthropic]; generation record [gen-self-test: provider_name Anthropic, gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent, absent, absent]; wire reasoning text chars [absent, absent, absent]; wire reasoning_details [absent, absent, absent]; SDK tokens sdk/openrouter [0/absent, 0/absent] (the SDK reports a missing count as 0); SDK text chars [0, 0] (derived); SDK reasoning_details [0, 0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0, 0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018, 100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.02 / $0.192746 = 0.104, $0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent, absent, absent]; generation record [standard, standard] (information)
+6. Attempt: ok; requests sent 3, blocked 0; HTTP [200, 503, 200]; the sealed parser accepted the answer; a repair or retry ran
+7. Spend within the probe cap: T $0.205019 = max(counter Δ $0.000000, recorded $0.205019) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read, gen-self-test: read] → holds
+OUTCOME PROCEED: items 1–4, 7 and 8 hold → Phase 3 (pre-registration and seal).
+===== DEMO probe-87.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.40)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent, absent]; wire reasoning text chars [absent, absent]; wire reasoning_details [absent, absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.02 / $0.192746 = 0.104] → holds
+5. service_tier: response [absent, absent]; generation record [standard] (information)
+6. Attempt: budget-stopped (budget); requests sent 2, blocked 1; HTTP [200, 503]; the sealed parser did not produce a scored answer; a repair or retry ran
+7. Spend within the probe cap: T $0.204919 = max(counter Δ $0.000000, recorded $0.204919) vs cap $0.40 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME PROCEED: items 1–4, 7 and 8 hold → Phase 3 (pre-registration and seal).
+===== DEMO probe-88.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent, absent]; wire reasoning text chars [absent, absent]; wire reasoning_details [absent, absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent, absent]; generation record [standard] (information)
+6. Attempt: condition-violation (account-401); requests sent 2, blocked 0; HTTP [200, 401]; the sealed parser did not produce a scored answer; a repair or retry ran
+7. Spend within the probe cap: T $0.185019 = max(counter Δ $0.000000, recorded $0.185019) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME STOP AND ASK (account): account-401 on a request of the probe — an account error, not a model result (inherited condition violation). Check the key and credit; nothing is sealed.
+===== DEMO probe-89.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent, absent]; wire reasoning text chars [absent, absent]; wire reasoning_details [absent, absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent, absent]; generation record [standard] (information)
+6. Attempt: condition-violation (account-402); requests sent 2, blocked 0; HTTP [200, 402]; the sealed parser did not produce a scored answer; a repair or retry ran
+7. Spend within the probe cap: T $0.185019 = max(counter Δ $0.000000, recorded $0.185019) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME STOP AND ASK (account): account-402 on a request of the probe — an account error, not a model result (inherited condition violation). Check the key and credit; nothing is sealed.
+===== DEMO probe-90.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent, absent]; wire reasoning text chars [absent, absent]; wire reasoning_details [absent, absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent, absent]; generation record [standard] (information)
+6. Attempt: condition-violation (measurement-error:error-AI_APICallError); requests sent 2, blocked 0; HTTP [200, error]; the sealed parser did not produce a scored answer; a repair or retry ran
+7. Spend within the probe cap: T $0.185019 = max(counter Δ $0.000000, recorded $0.185019) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME STOP AND ASK (condition violation): the attempt ended measurement-error:error-AI_APICallError, which the probe's items do not explain (inherited stop rule). Nothing is sealed; the owner decides.
+===== DEMO probe-91.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic, Anthropic]; SDK step provider [Anthropic, Anthropic]; generation record [gen-self-test: provider_name Anthropic, gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent, absent]; wire reasoning text chars [absent, absent]; wire reasoning_details [absent, absent]; SDK tokens sdk/openrouter [0/absent, 0/absent] (the SDK reports a missing count as 0); SDK text chars [0, 0] (derived); SDK reasoning_details [0, 0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0, 0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018, 100 / 2134 = 0.047] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001, $0.0001 / $0.184919 = 0.001] → holds
+5. service_tier: response [absent, absent]; generation record [standard, standard] (information)
+6. Attempt: failed-attempt (format); requests sent 2, blocked 0; HTTP [200, 200]; the sealed parser did not produce a scored answer; a repair or retry ran
+7. Spend within the probe cap: T $0.000200 = max(counter Δ $0.000000, recorded $0.000200) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read, gen-self-test: read] → holds
+OUTCOME PROCEED: items 1–4, 7 and 8 hold → Phase 3 (pre-registration and seal).
+===== DEMO probe-92.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: NOT READ (HTTP 401 from GET /api/v1/generation)] → incomplete (generation record not read, item 8)
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [not read] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [not read] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: HTTP 401 from GET /api/v1/generation] → does NOT hold
+OUTCOME UNDETERMINED (item 8): a generation record could not be read, so item 1 is incomplete. Re-read it (free GET /api/v1/generation) and decide with the owner; a second paid probe needs the owner.
+===== DEMO probe-93.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: NOT READ (HTTP 500 from GET /api/v1/generation)] → incomplete (generation record not read, item 8)
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [not read] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [not read] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: HTTP 500 from GET /api/v1/generation] → does NOT hold
+OUTCOME UNDETERMINED (item 8): a generation record could not be read, so item 1 is incomplete. Re-read it (free GET /api/v1/generation) and decide with the owner; a second paid probe needs the owner.
+===== DEMO probe-94.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: NOT READ (HTTP 404 from GET /api/v1/generation (still unavailable after 10 reads, 3 s apart))] → incomplete (generation record not read, item 8)
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [not read] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [not read] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: HTTP 404 from GET /api/v1/generation (still unavailable after 10 reads, 3 s apart)] → does NOT hold
+OUTCOME UNDETERMINED (item 8): a generation record could not be read, so item 1 is incomplete. Re-read it (free GET /api/v1/generation) and decide with the owner; a second paid probe needs the owner.
+===== DEMO probe-95.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: NOT READ (TypeError: fetch failed)] → incomplete (generation record not read, item 8)
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [not read] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [not read] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: TypeError: fetch failed] → does NOT hold
+OUTCOME UNDETERMINED (item 8): a generation record could not be read, so item 1 is incomplete. Re-read it (free GET /api/v1/generation) and decide with the owner; a second paid probe needs the owner.
+===== DEMO probe-96.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [no id: NOT READ (the response carried no generation id)] → incomplete (generation record not read, item 8)
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [not read] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [not read] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [no id: the response carried no generation id] → does NOT hold
+OUTCOME UNDETERMINED (item 8): a generation record could not be read, so item 1 is incomplete. Re-read it (free GET /api/v1/generation) and decide with the owner; a second paid probe needs the owner.
+===== DEMO probe-97.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [standard] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.610000 = max(counter Δ $0.610000, recorded $0.000100) vs cap $0.60 → does NOT hold
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME STOP AND ASK (spend): T $0.610000 is above the probe cap $0.60 (item 7). Reconcile the counter and the recorded cost with the owner before anything is sealed.
+===== DEMO probe-98.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [standard] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.600000 = max(counter Δ $0.600000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME PROCEED: items 1–4, 7 and 8 hold → Phase 3 (pre-registration and seal).
+===== DEMO probe-99.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [null]; wire reasoning_details [0]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [standard] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME PROCEED: items 1–4, 7 and 8 hold → Phase 3 (pre-registration and seal).
+===== DEMO probe-100.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Azure]; SDK step provider [Azure]; generation record [gen-self-test: provider_name Anthropic] → does NOT hold
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [standard] (information)
+6. Attempt: condition-violation (provider-Azure); requests sent 1, blocked 0; HTTP [200]; the sealed parser did not produce a scored answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME STOP AND ASK (rule 1): not served by Anthropic on every channel. Nothing is sealed; the owner decides.
+===== DEMO probe-101.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [no successful response]; SDK step provider [none]; generation record [no successful response] → does NOT hold
+2. No reasoning on any channel: wire reasoning_tokens [absent, absent]; wire reasoning text chars [absent, absent]; wire reasoning_details [absent, absent]; SDK tokens sdk/openrouter [none] (the SDK reports a missing count as 0); SDK text chars [none] (derived); SDK reasoning_details [none] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [none] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [no successful response] → does NOT hold
+4. cost ≤ bound (A3): [no successful response] → does NOT hold
+5. service_tier: response [absent, absent]; generation record [none] (information)
+6. Attempt: failed-attempt (APICallError-503); requests sent 2, blocked 0; HTTP [503, 503]; the sealed parser did not produce a scored answer; a repair or retry ran
+7. Spend within the probe cap: T $0.385493 = max(counter Δ $0.000000, recorded $0.385493) vs cap $0.60 → holds
+8. Generation record read for every successful response: [no successful response] → does NOT hold
+OUTCOME UNDETERMINED: no successful response, so items 1–4 cannot be read. Stop and ask the owner; a second probe needs the owner.
+===== DEMO probe-102.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: NOT READ (HTTP 200 from GET /api/v1/generation with a body that is not JSON (Unexpected token < in JSON))] → incomplete (generation record not read, item 8)
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [not read] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [not read] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ $0.000000, recorded $0.000100) vs cap $0.60 → holds
+8. Generation record read for every successful response: [gen-self-test: HTTP 200 from GET /api/v1/generation with a body that is not JSON (Unexpected token < in JSON)] → does NOT hold
+OUTCOME UNDETERMINED (item 8): a generation record could not be read, so item 1 is incomplete. Re-read it (free GET /api/v1/generation) and decide with the owner; a second paid probe needs the owner.
+===== DEMO probe-103.jsonl
+PROBE anthropic/claude-sonnet-5 @ anthropic (packages/code-reviewer/src/retry.ts, one attempt, cap $0.60)
+1. Served by Anthropic: wire provider [Anthropic]; SDK step provider [Anthropic]; generation record [gen-self-test: provider_name Anthropic] → holds
+2. No reasoning on any channel: wire reasoning_tokens [absent]; wire reasoning text chars [absent]; wire reasoning_details [absent]; SDK tokens sdk/openrouter [0/absent] (the SDK reports a missing count as 0); SDK text chars [0] (derived); SDK reasoning_details [0] (derived: the provider fills [] when the field is absent); generation native_tokens_reasoning [0] → holds
+3. prompt_tokens ≤ b + 32·m + 32 (A1/A2): [100 / 5692 = 0.018] → holds
+4. cost ≤ bound (A3): [$0.0001 / $0.192746 = 0.001] → holds
+5. service_tier: response [absent]; generation record [standard] (information)
+6. Attempt: ok; requests sent 1, blocked 0; HTTP [200]; the sealed parser accepted the answer
+7. Spend within the probe cap: T $0.000100 = max(counter Δ not read, recorded $0.000100) vs cap $0.60; end counter NOT READ (HarnessRefusal: reading the key counter failed: HTTP 503 from GET /api/v1/key) → does NOT hold
+8. Generation record read for every successful response: [gen-self-test: read] → holds
+OUTCOME UNDETERMINED (item 7): the end key counter could not be read (HarnessRefusal: reading the key counter failed: HTTP 503 from GET /api/v1/key), so the final spend is unverified. Re-read it (free GET /api/v1/key) and decide with the owner; a second paid probe needs the owner.

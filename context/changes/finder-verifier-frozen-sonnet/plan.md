@@ -76,7 +76,7 @@ is `user` (decisions 2–11 of the predecessor) and the owner's "same criteria" 
 | **Request gate, A1–A3** | Formula and enforcement inherited. Restated for Claude: **(A1)** the messages tokenize to at most b tokens (no byte-per-token guarantee is published for Claude's tokenizer; observed about 2.2 bytes per token on diff text, `research.md` §3); **(A2)** the overhead the provider adds is at most 32 tokens per message plus 32. Anthropic documents no per-message overhead and 0 tool tokens without tools; this is an **assumption with no published guarantee**; **(A3)** billed prices are at most 1.10 × the pre-flight prices                              | plan (inherited formula; wording from `research.md` §3)                                           | The probe's reported `prompt_tokens` above b + 32·m + 32 → the series is not sealed until the owner decides                                                                                                                                                           | probe (Phase 2); self-test, budget group               |
 | **Cap**                 | Inherited enforcement. Values: `CAP_HARD` = **$4.50**; the series runs with `--cap 3.90` (stop and ask). Admission (T + P ≤ cap) therefore admits attempts while T ≤ about $2.74 at `--cap 3.90`. A resume past that needs an owner decision and a new invocation with a cap ≤ $4.50, which admits while T ≤ about $3.34                                                                                                                                                                                                                                            | user (owner decision 1); plan (the exact values)                                                  | Credit below $5.10 (probe limit $0.60 + `CAP_HARD` $4.50) before the probe → stop and ask. Credit below $4.50 (the series maximum) at the series pre-flight → stop and ask before T0; the probe's spend, already gone from the balance, is not added again            | self-test, budget group (realistic prices); pre-flight |
 | **Probe**               | One verifier attempt on a **synthetic, non-corpus** batch, sent through the new harness's gated fetch at sonnet-5 prices, **before the seal**, with its own hard limit of $0.60 covering every request of the attempt, retry and repair included. The Request gate admits each request when T so far + its bound ≤ $0.60: bounds are about $0.20 for a call and about $0.33 for a repair, so after a cheap first call a retry or a repair can still fit. Protection is conditional on A1–A3, as in the series. Its outcome is read against the checklist in Phase 2 | user (owner decision 2); plan (input, placement, limit)                                           | First call costs $0.02 and needs a repair → T 0.02 + repair bound about 0.33 ≤ 0.60 → sent. A transient error after that → T + the retry's bound is checked the same way: sent if it fits, otherwise `budget-stopped`, and the checklist is read on what was recorded | self-test, probe group; Phase 2                        |
-| **E**                   | Inherited formula, reported only. Its 60-output-tokens-per-finding constant stays, and the report also prints the projection from stage 1's measured tokens at sonnet prices ($1.68)                                                                                                                                                                                                                                                                                                                                                                                | plan                                                                                              | —                                                                                                                                                                                                                                                                     | report                                                 |
+| **E**                   | Inherited formula, reported only. Its 60-output-tokens-per-finding constant stays, and gate §10 carries the projection from stage 1's measured tokens at sonnet prices ($1.68) as the expected spend; the `report` mode is unchanged (owner decision 2026-10-11)                                                                                                                                                                                                                                                                                                    | plan                                                                                              | —                                                                                                                                                                                                                                                                     | gate §10                                               |
 
 **Degenerate walk (stage 2):**
 
@@ -290,9 +290,11 @@ the pre-registration can cite it by hash.
   4. Cost ≤ bound (A3), and the ratio.
   5. `service_tier` value or `absent`.
   6. The sealed parser accepted the answer, or the repair path ran (information).
-  7. Spend: T = max(counter Δ, recorded) ≤ the probe's `--cap` (owner decision 2026-10-11, review F3).
-  8. The generation record of every successful response was read (HTTP 200). A failed or skipped read is
-     reported with its status as "could not see", never as absent fields (owner decision 2026-10-11, review F2).
+  7. Spend: T = max(counter Δ, recorded) ≤ the probe's `--cap` (owner decision 2026-10-11, review F3). The end
+     counter read is journaled even when it fails; a failed read leaves the spend unverified (re-review 2, F5).
+  8. The generation record of every successful response was read (HTTP 200 with a JSON body). A failed or
+     skipped read is reported with its status as "could not see", never as absent fields (owner decision
+     2026-10-11, review F2; a 2xx body that is not JSON counts as not read, re-review 2, F5).
 - **Outcome rules, fixed here before the probe runs:**
   - all of 1–4 hold → Phase 3;
   - **1 fails only because the wire field is absent**, while the generation record says `Anthropic` → Phase 1 is
@@ -302,7 +304,8 @@ the pre-registration can cite it by hash.
   - the credit is below $5.10 → stop and ask before the probe;
   - **(owner decision 2026-10-11, review F1–F3)** also never PROCEED on: an account error (401/402) on any
     request → stop and ask; any other condition violation that items 1–4 do not explain → stop and ask; item 7
-    failing → stop and ask (reconcile the counter and the recorded cost); item 8 failing → undetermined (re-read the
+    failing → stop and ask (reconcile the counter and the recorded cost); the end counter unread → undetermined
+    (re-read it, free, and decide with the owner; re-review 2, F5); item 8 failing → undetermined (re-read the
     record, free, and decide with the owner). A plain format failure or `budget-stopped` is information only.
   - **Precedence** (the first failing rule decides; every other failing rule is printed after it): account → reasoning
     (2) → no successful response → provider (1) → A1–A3 (3–4) → other condition violation → spend (7) → generation
@@ -541,7 +544,7 @@ None. Nothing in `src/`, `packages/` or CI changes. The archive stays untouched.
 
 #### Manual
 
-- [ ] 1.10 The owner reads the probe checklist output on a stubbed run and agrees that it says what was observed, what is absent, and what to do next
+- [x] 1.10 The owner reads the probe checklist output on a stubbed run and agrees that it says what was observed, what is absent, and what to do next
 
 ### Phase 2: Probe and pre-seal pre-flight (paid, about $0.02, at most $0.60; owner authorization)
 
