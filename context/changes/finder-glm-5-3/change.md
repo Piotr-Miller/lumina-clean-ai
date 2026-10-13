@@ -9,6 +9,8 @@ archived_at: null
 
 ## Notes
 
+2026-10-13: re-confirmed 2.7 — was accepted (no revision); accepted at b6afeb193255ff875a53e0e9254d68942c3f5730. Explicit owner confirmation through `/rune-implement`; recording preflight returned `recordable`. Previous legacy mark: verified by Codex at the owner's explicit request, 2026-10-13, after the F1–F6 fixes in the working tree.
+
 — measure z-ai/glm-5.3 (reasoning effort low) as the ai-review finder with the two-stage finder, under the finder-model-swap gates including a live PR probe; carries the 2026-10-11 screening results
 
 2026-10-11: owner decision — the screening result justifies a new change (this one), which qualifies decision 5.7 of `finder-verifier-frozen-sonnet` ("no further model swap now"). Screening results: `glm-screening-results.md`; raw artifacts in `screening/` (uncommitted; they contain absolute local paths — inspect before committing).

@@ -1104,7 +1104,7 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — verified by Codex at the owner's explicit request, 2026-10-13, after the F1–F6 fixes in the working tree
+- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — accepted at b6afeb193255ff875a53e0e9254d68942c3f5730
 
   Observed through the real CLI, pipeline, reviewer, judge and response observer with stubbed HTTP:
 
