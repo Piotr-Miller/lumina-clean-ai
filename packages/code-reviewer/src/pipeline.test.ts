@@ -592,6 +592,23 @@ describe("describeFinderStep", () => {
   ])("degrades to no provider on %s", (_label, providerMetadata) => {
     expect("provider" in describeFinderStep(finderStep({ providerMetadata }))).toBe(false);
   });
+
+  // Phase 2 review F6: the telemetry's provider comes from the RAW response, the
+  // same place as model and reasoning tokens — not from the SDK's metadata.
+  it("carries the raw response's reported provider, and missing without request metadata", () => {
+    const reported = { value: "Z.AI", source: "reported" as const };
+    const info = describeFinderStep(finderStep({ providerMetadata: { openrouter: { provider: "Fireworks" } } }), {
+      kind: "finalization",
+      reported: {
+        provider: reported,
+        model: { value: null, source: "missing" },
+        reasoningTokens: { value: null, source: "missing" },
+      },
+    });
+    expect(info.reportedProvider).toEqual(reported);
+    expect(info.provider).toBe("Fireworks");
+    expect(describeFinderStep(finderStep({})).reportedProvider).toEqual({ value: null, source: "missing" });
+  });
 });
 
 describe("asStepProvider", () => {

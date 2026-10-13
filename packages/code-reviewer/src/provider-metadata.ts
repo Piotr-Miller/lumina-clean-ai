@@ -89,7 +89,8 @@ export function readReportedResponseFields(body: unknown): ReportedResponseField
  *
  * Requests of one review are strictly sequential — each loop step, then the
  * finalization, then the repair — so "the most recent response" is the one the
- * step callback is about. The slot is cleared when a request starts and again
+ * step callback is about. Concurrent reviews must not share one observer (see
+ * createReviewer: one review at a time per instance). The slot is cleared when a request starts and again
  * when it is taken, so a request whose response was never read cannot inherit
  * an older one's fields.
  *

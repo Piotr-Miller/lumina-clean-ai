@@ -1,6 +1,6 @@
 import type { StepResult, ToolSet } from "ai";
 
-import { resolveModels } from "./config.js";
+import { resolveModels, type FinderProviderRouting } from "./config.js";
 import { mergeFindings, offDiffFindingPaths } from "./findings.js";
 import {
   createImplReviewer,
@@ -388,6 +388,11 @@ export interface FinderStepInfo {
   finishReason: string;
   /** Which finder request this was: a gathering-loop step, the finalization or the format repair. */
   kind: FinderRequestKind;
+  /**
+   * The upstream the RAW response reported — the telemetry's source of truth.
+   * `provider` above is the SDK's view of the same field, kept for the step line.
+   */
+  reportedProvider: Reported<string>;
   /** The model id the RAW response reported — never the requested id substituted for a missing one. */
   model: Reported<string>;
   /** The reasoning-token count the RAW response reported — never a substituted 0. */
@@ -436,6 +441,7 @@ export function describeFinderStep(
     ...(provider === undefined ? {} : { provider }),
     finishReason: step.finishReason,
     kind: request.kind,
+    reportedProvider: request.reported.provider,
     model: request.reported.model,
     reasoningTokens: request.reported.reasoningTokens,
   };
@@ -483,6 +489,12 @@ export interface PipelineInput {
   source?: SourceProvider;
   /** Finder loop cap, forwarded to createReviewer as maxSteps — only when `source` is set. */
   finderMaxSteps?: number;
+  /**
+   * The finder's provider routing, already resolved by the caller (the CLI
+   * prints it in its configuration line, so the line and the requests share one
+   * object). Absent → createReviewer resolves it itself.
+   */
+  finderProviderRouting?: FinderProviderRouting;
   /**
    * Observes each finder request (across both retry attempts) for per-step
    * telemetry: every gathering-loop step, the finalization and the format
@@ -567,7 +579,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     telemetry.requests.push({
       kind: info.kind,
       attempt: finderAttempt,
-      provider: request?.reported.provider ?? MISSING_RESPONSE_FIELDS.provider,
+      provider: info.reportedProvider,
       model: info.model,
       finishReason: info.finishReason,
       reasoningTokens: info.reasoningTokens,
@@ -587,6 +599,7 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
       // The tool-less cost ceiling is a contract: a step cap only accompanies
       // a live source (impl-review-phase-1 F3).
       maxSteps: input.source === undefined ? undefined : input.finderMaxSteps,
+      ...(input.finderProviderRouting === undefined ? {} : { providerRouting: input.finderProviderRouting }),
       onStepEnd: observeFinderStep,
       onOutputRepair: input.onOutputRepair,
     }).review;

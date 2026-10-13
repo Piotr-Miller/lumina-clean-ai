@@ -7,6 +7,7 @@ import {
   FinderOutputError,
   parseFinderOutput,
   repairParsedJudgeOutput,
+  startsWithInlineReasoning,
 } from "./output-repair.js";
 import { isRetryableError } from "./retry.js";
 import { CRITERIA } from "./scorecard.js";
@@ -171,6 +172,22 @@ describe("FinderOutputError", () => {
     expect(error.message).not.toContain("REASONING-SENTINEL");
   });
 
+  // Phase 2 review F2: an inline-reasoning text is not kept even on the error —
+  // scripts write `error.text` into results files — only its length is.
+  it("an inline-reasoning error keeps no text, only its length; other reasons keep the text", () => {
+    const text = "<think>REASONING-SENTINEL</think>";
+    const make = (reason: "inline-reasoning" | "length" | "parse") =>
+      new FinderOutputError({ text, reason, validationError: "v", repaired: false });
+    const inline = make("inline-reasoning");
+    expect(inline.text).toBe("");
+    expect(inline.chars).toBe(33);
+    expect(JSON.stringify(inline)).not.toContain("REASONING-SENTINEL");
+    for (const reason of ["length", "parse"] as const) {
+      expect(make(reason).text).toBe(text);
+      expect(make(reason).chars).toBe(33);
+    }
+  });
+
   it("is not a NoObjectGeneratedError, so the pipeline's single retry never re-rolls it", () => {
     const error = new FinderOutputError({ text: "", validationError: "v", repaired: true });
     expect(NoObjectGeneratedError.isInstance(error)).toBe(false);
@@ -181,7 +198,34 @@ describe("FinderOutputError", () => {
   });
 });
 
-describe("containsInlineReasoning (assumption A2)", () => {
+// Phase 2 review F1: REJECTION looks only at how the text opens. A `<think`
+// further in is quoted code — a finding on this very guard — and refusing it
+// would fail a correct review of this package.
+describe("startsWithInlineReasoning (assumption A2, rejection)", () => {
+  it.each(["<think>x</think>{}", "  \n<THINK>", "<Think", "\uFEFF<thinking>b"])("rejects %o", (text) => {
+    expect(startsWithInlineReasoning(text)).toBe(true);
+  });
+
+  it.each([
+    "",
+    "notes <THINK>",
+    "a\n<thinking>b",
+    "< think>",
+    JSON.stringify({ summary: "containsInlineReasoning matches /<think/iu anywhere", findings: [] }),
+  ])("leaves %o alone", (text) => {
+    expect(startsWithInlineReasoning(text)).toBe(false);
+  });
+
+  it("everything it rejects, the broader redaction check hides too", () => {
+    for (const text of ["<think>x", "  <THINK", "\uFEFF<thinking>"]) {
+      expect(startsWithInlineReasoning(text)).toBe(true);
+      expect(containsInlineReasoning(text)).toBe(true);
+    }
+  });
+});
+
+// REDACTION stays broad: `<think` anywhere keeps a rejected text out of the log.
+describe("containsInlineReasoning (log redaction)", () => {
   it.each(["<think>x</think>{}", "notes <THINK>", "<Think", "a\n<thinking>b"])("flags %o", (text) => {
     expect(containsInlineReasoning(text)).toBe(true);
   });

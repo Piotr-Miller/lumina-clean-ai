@@ -5,7 +5,7 @@ import { z } from "zod";
 import { FINDER_REASONING, MAX_OUTPUT_TOKENS, resolveConfig, resolveFinderProviderRouting } from "./config.js";
 import { normalizeFindings } from "./findings.js";
 import {
-  containsInlineReasoning,
+  startsWithInlineReasoning,
   FinderOutputError,
   parseFinderOutput,
   type FinderFailedRequest,
@@ -248,10 +248,18 @@ function createReviewBudget(callOptions: ReviewCallOptions): { signal: AbortSign
  *
  * TWO RESPONSES ARE NEVER USED, at any request (change `finder-glm-5-3`): one
  * cut off at the output-token cap (`finish=length` — truncation fails the
- * attempt, even when the text would parse) and one whose text carries inline
- * reasoning (`<think`, assumption A2). Both throw FinderOutputError, which is
+ * attempt, even when the text would parse) and one whose text opens with
+ * inline reasoning (a leading `<think`, assumption A2 — a `<think` further in
+ * is quoted code, not reasoning). Both throw FinderOutputError, which is
  * never retried; a stage-1 step is checked before its text can enter the
  * transcript, the finalization and the repair before they are parsed.
+ *
+ * ONE REVIEW AT A TIME PER INSTANCE. Each request's reported model, provider
+ * and reasoning tokens come from one shared observer slot
+ * (createResponseObserver), which is correct only while requests are
+ * sequential. Two concurrent `review()` calls on one instance would attribute
+ * responses to the wrong request; fan out with one reviewer per call instead
+ * (Phase 2 review F5 of change `finder-glm-5-3`).
  */
 export function createReviewer(options: ReviewerOptions = {}) {
   const { apiKey, model } = resolveConfig({ apiKey: options.apiKey, model: options.model });
@@ -320,7 +328,17 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // SDK-internal retries off (default is 2): retry.ts's withOneRetry is the
     // single retry authority in the CI pipeline, keeping cost predictable.
     maxRetries: 0,
-    stopWhen: isStepCount(maxSteps),
+    // A step the attempt can never use ends the loop at once (Phase 2 review
+    // F3): another paid request would only re-send its text as history, and
+    // refuseUnusable fails the attempt after the loop anyway. getFileContext
+    // runs locally, so stopping after this step's tool call costs nothing.
+    stopWhen: [
+      isStepCount(maxSteps),
+      ({ steps }) => {
+        const last = steps.at(-1);
+        return last !== undefined && (startsWithInlineReasoning(last.text) || last.finishReason === "length");
+      },
+    ],
     prepareStep: prepareFinalStep(hasSource, maxSteps),
     tools: hasSource
       ? {
@@ -385,7 +403,7 @@ export function createReviewer(options: ReviewerOptions = {}) {
       request,
       repaired,
     };
-    if (containsInlineReasoning(response.text)) {
+    if (startsWithInlineReasoning(response.text)) {
       throw new FinderOutputError({
         ...common,
         reason: "inline-reasoning",

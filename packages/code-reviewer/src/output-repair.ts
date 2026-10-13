@@ -70,11 +70,21 @@ export function parseFinderOutput(text: string): FinderParseResult {
 }
 
 /**
- * Inline reasoning in a finder response's TEXT: `<think` anywhere, any case
- * (assumption A2 of change `finder-glm-5-3`). Reasoning returned in the
- * separate `reasoning` / `reasoning_details` fields never reaches `.text`; an
- * upstream that writes it into `content` instead is caught here. Fail-closed:
- * such a response fails the attempt and its text is never parsed or logged.
+ * Inline reasoning in a finder response's TEXT, for REJECTION: the text opens
+ * with `<think`, any case, after optional whitespace (assumption A2 of change
+ * `finder-glm-5-3`, amended by its Phase 2 review F1). Reasoning returned in
+ * the separate `reasoning` / `reasoning_details` fields never reaches `.text`;
+ * an upstream that writes it into `content` prefixes it there, and is caught
+ * here. Anchored on purpose: a `<think` further in is quoted code — a finding
+ * on this very guard — and rejecting it would fail a correct review.
+ */
+export const startsWithInlineReasoning = (text: string): boolean => /^\s*<think/iu.test(text);
+
+/**
+ * `<think` ANYWHERE, any case — for LOG REDACTION only, never for rejection.
+ * Broader than startsWithInlineReasoning on purpose: a rejected text is never
+ * printed if it carries `<think` at all, whatever the error and wherever the
+ * tag sits.
  */
 export const containsInlineReasoning = (text: string): boolean => /<think/iu.test(text);
 
@@ -122,7 +132,14 @@ const describeRequest = (request: FinderFailedRequest): string =>
  * failure, and it never quotes the response.
  */
 export class FinderOutputError extends Error {
+  /**
+   * The rejected response's text — EMPTY for `inline-reasoning`: that text is
+   * not kept even on the error, so no consumer of `.text` (the CLI, a script
+   * writing a results file) can publish it (Phase 2 review F2).
+   */
   readonly text: string;
+  /** The rejected text's length, kept when the text itself is not. */
+  readonly chars: number;
   // `declare`: an ordinary optional field is DEFINED as undefined under
   // ES2022 class fields, so `"provider" in error` would be true for a response
   // that reported no provider. Absent must mean absent.
@@ -142,7 +159,8 @@ export class FinderOutputError extends Error {
         `${details.repaired ? "after one format repair" : "no format repair attempted"}): ${details.validationError}`,
     );
     this.name = "FinderOutputError";
-    this.text = details.text;
+    this.text = reason === "inline-reasoning" ? "" : details.text;
+    this.chars = details.text.length;
     if (details.provider !== undefined) this.provider = details.provider;
     if (details.finishReason !== undefined) this.finishReason = details.finishReason;
     if (details.request !== undefined) this.request = details.request;

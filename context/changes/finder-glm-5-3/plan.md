@@ -63,7 +63,7 @@ Historical Context. Two of their open follow-ups land here:
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
 | finder request       | One OpenRouter call made by the finder: a stage-1 loop step, the finalization, or the format repair. The judge and impl-review are not finder requests                                                                                                                                                                                                                                                                                                                                                                                     | user (decision 2: "throughout the finder")                                            | A run with no source root has no stage 1: finalization (+ repair) only                                                                                                      | wire test 2.1                  |
 | reasoning shape      | Every finder request carries exactly `reasoning: {enabled: true, effort: "low"}` and no `extraBody.reasoning`; judge and impl-review requests carry no `reasoning`                                                                                                                                                                                                                                                                                                                                                                         | user (decision 2)                                                                     | Repair request included                                                                                                                                                     | wire test 2.1                  |
-| reasoning text       | Reasoning returned by the provider, either as `reasoning` / `reasoning_details` or inline in `content` inside `<think>…</think>`                                                                                                                                                                                                                                                                                                                                                                                                           | user (decision 2) + plan                                                              | Inline `<think>` fails the attempt (assumption A2); reasoning parts are never read                                                                                          | tests 2.3, 2.4                 |
+| reasoning text       | Reasoning returned by the provider, either as `reasoning` / `reasoning_details` or inline in `content` inside `<think>…</think>`                                                                                                                                                                                                                                                                                                                                                                                                           | user (decision 2) + plan                                                              | A leading inline `<think` fails the attempt (assumption A2); reasoning parts are never read                                                                                 | tests 2.3, 2.4                 |
 | truncation           | Any finder request ending `finishReason === "length"`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | user (decision 2)                                                                     | Fails the attempt with `FinderOutputError`, which is never retried, even if the text would parse                                                                            | tests 2.2                      |
 | attempt / run        | One invocation of the production CLI (`npm run review`) on one input, including its single `withOneRetry`                                                                                                                                                                                                                                                                                                                                                                                                                                  | product (`pipeline.ts:574-577`)                                                       | A retry inside the run is the same run; its cost counts                                                                                                                     | runner test 3.1                |
 | valid run            | CLI exit 0, `review.json` carries findings and a judge verdict; every finder request has a **provider-reported** listed provider and a **provider-reported** accepted model; no truncation, no inline reasoning, no timeout after the retry. A technical judge failure (no completed verdict) makes the run **invalid**. A completed `verdict: "failed"` does not invalidate the run; all other validity and hand-read criteria still apply                                                                                                | user (decision 6, clarified by review F1) + product                                   | A wrong, missing or fallback-only provider or model = invalid, never "measurement error". An invalid run may have no `review.json`; it is still recorded (§ Phase 3 runner) | runner test 3.1                |
@@ -162,9 +162,12 @@ overturn it at the Phase 4 approval.
   importing it. G3 runs through promptfoo, with an amended port of `promptfoo-gate-rows.mjs`
   (`29b15b8`) and `promptfoo-regrade-config.mjs`. Reason: it measures the production path, judge included, at about
   a quarter of the porting cost of the alternatives (delegate report § 3).
-- **A2. Inline reasoning.** A finder response whose text contains `<think` (case-insensitive) fails the attempt with
-  `FinderOutputError` (reason `inline-reasoning`). The rejected-output log line then prints only the reason and the
-  character count, never the text. This is fail-closed and keeps reasoning out of parsing and logs. The screening saw
+- **A2. Inline reasoning.** A finder response whose text **opens** with `<think` (case-insensitive, after optional
+  whitespace) fails the attempt with `FinderOutputError` (reason `inline-reasoning`). A `<think` further in is quoted
+  code, not reasoning, and is used. Redaction is separate and broader: a rejected-output log line whose text carries
+  `<think` **anywhere** prints only `reason=inline-reasoning` and the character count, never the text. _Amended
+  2026-10-13 by owner decision on Phase 2 review F1: the original "contains `<think`" would fail correct reviews of
+  this package, G5's own PR included._ This is fail-closed and keeps reasoning out of parsing and logs. The screening saw
   no such response.
 - **A3. Accepted model ids** are as in § Definitions, judged only on values the provider reported in the raw
   response. SDK fallbacks (the requested model id substituted for a missing `model`, a `0` substituted for missing
@@ -390,13 +393,16 @@ packages/code-reviewer/.env.example`; every hit is either updated or deliberatel
 - `packages/code-reviewer/src/output-repair.test.ts`
 - `packages/code-reviewer/src/cli.test.ts`
 
-**Intent**: A2. Text containing `<think` (case-insensitive) in any finder response fails the attempt, and no log line
-ever prints that text.
+**Intent**: A2. Text opening with `<think` (case-insensitive) in any finder response fails the attempt, and no log
+line ever prints a rejected text carrying `<think` anywhere (amended 2026-10-13, Phase 2 review F1).
 
 **Contract**:
 
 - `FinderOutputError` gains a reason `inline-reasoning`. Stage-1 note text is checked before it enters the transcript.
-- For that reason, `formatRejectedOutputLine` prints only `reason=inline-reasoning chars=<n>`.
+- `formatRejectedOutputLine` prints only `reason=inline-reasoning chars=<n>` for any rejected text carrying `<think`
+  anywhere, whatever the error's reason.
+- A `<think` quoted mid-text (a stage-1 note, a finding or summary in the finalization or the repair) is not rejected
+  (tests pin both checks).
 - **Mixed-condition tests:** for each request kind (step, finalization, repair), a response containing
   `<think>REASONING-SENTINEL</think>` and ending `finishReason: "length"` throws `FinderOutputError` without retry.
   The sentinel is absent from captured CLI stderr and step summary regardless of which guard classifies the
@@ -992,8 +998,9 @@ decides. Every later push to the ready PR is another paid review and is ledgered
   - routing object for the finder only.
 - **Truncation:** at each of the three finder request kinds, fails without retry; parseable text does not rescue a
   `length` finalization.
-- **Inline reasoning:** `<think>` in a stage-1 note, in the finalization and in the repair each fail; the log shows
-  no text.
+- **Inline reasoning:** a leading `<think>` in a stage-1 note, in the finalization and in the repair each fail; the
+  log shows no text. A `<think` quoted mid-text at each kind is used, and a rejected text quoting it is still
+  redacted.
 - **Inline reasoning with truncation:** step, finalization and repair each have a mixed response containing
   `<think>REASONING-SENTINEL</think>` and `finishReason: "length"`; it fails without retry, and the sentinel never
   reaches stderr or step summary regardless of guard ordering.
@@ -1088,16 +1095,29 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Automated
 
-- [x] 2.1 Unit and wire tests pass
-- [x] 2.2 Typecheck, lint
-- [x] 2.3 Sentinel absent everywhere
-- [x] 2.4 The old reasoning shape is gone
-- [x] 2.5 Repo formatting
-- [x] 2.6 Stale pointers inside manifest files resolved before the seal
+- [x] 2.1 Unit and wire tests pass — 64fad61
+- [x] 2.2 Typecheck, lint — 64fad61
+- [x] 2.3 Sentinel absent everywhere — 64fad61
+- [x] 2.4 The old reasoning shape is gone — 64fad61
+- [x] 2.5 Repo formatting — 64fad61
+- [x] 2.6 Stale pointers inside manifest files resolved before the seal — 64fad61
 
 #### Manual
 
-- [ ] 2.7 Owner reads the configuration and step lines from a stubbed run
+- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — verified by Codex at the owner's explicit request, 2026-10-13, after the F1–F6 fixes in the working tree
+
+  Observed through the real CLI, pipeline, reviewer, judge and response observer with stubbed HTTP:
+
+  ```text
+  finder configuration: model=z-ai/glm-5.3 reasoning=low providers=z-ai,fireworks,together
+  finder step 1: getFileContext src/a.ts (tokens in=10 out=5 total=15) provider=Z.AI finish=tool-calls model=z-ai/glm-5.3 reasoning=41
+  ```
+
+  The successful run exited 0 after four stubbed HTTP requests. Configuration appeared once and matched every
+  finder request's model, routing and reasoning effort. The step showed the response's model, provider and
+  reasoning-token count; neither the model's note nor its reasoning sentinel appeared in the log lines. A separate
+  rejected run exited 1 after one request and printed `reason=inline-reasoning chars=44`, preserving the original
+  count after F2 blanked the error text. `npx vitest run src/cli.test.ts` passed all 74 tests. No live API calls.
 
 ### Phase 3: Build the measurement tooling
 

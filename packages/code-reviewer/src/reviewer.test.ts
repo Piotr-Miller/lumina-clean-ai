@@ -460,6 +460,42 @@ describe("inline reasoning (<think>) fails the attempt at every request kind", (
     const { error } = await run([toolCall, answer(THINK)], true);
     expect(error.message).not.toContain("REASONING-SENTINEL");
   });
+
+  // Phase 2 review F3: a tool-calling step that opens with `<think` ends the
+  // loop at once — no further paid request re-sends its text as history.
+  it("in a stage-1 step that also calls a tool: the loop stops there, no further request is sent", async () => {
+    const { error, bodies } = await run(
+      [{ ...toolCall, content: `${THINK} let me look` }, answer("more notes"), answer(VALID_REVIEW_TEXT)],
+      true,
+    );
+    expect(error).toMatchObject({ reason: "inline-reasoning", request: { kind: "step", index: 1 } });
+    expect(bodies).toHaveLength(1);
+  });
+
+  // Phase 2 review F1: only a LEADING `<think` is inline reasoning. A review of
+  // this package quotes the guard, and that answer is used, not refused.
+  const QUOTED_SUMMARY = "containsInlineReasoning matches /<think/iu anywhere";
+  const QUOTED_REVIEW = JSON.stringify({ summary: QUOTED_SUMMARY, findings: [] });
+
+  it("a <think quoted mid-text in a stage-1 note and in the finalization is used", async () => {
+    const stub = openRouterStub([
+      toolCall,
+      answer("note: the guard is tested with `<think>` mid-text"),
+      answer(QUOTED_REVIEW),
+    ]);
+    const reviewer = createReviewer({ apiKey: "test-key", fetch: stub.fetch, source: () => FILE_CONTENT, maxSteps: 3 });
+    await expect(reviewer.review(UNIT)).resolves.toMatchObject({ summary: QUOTED_SUMMARY, findings: [] });
+    expect(stub.bodies).toHaveLength(3);
+    // The note entered the transcript the finalization was built from.
+    expect(JSON.stringify(stub.bodies[2])).toContain("the guard is tested with `<think>` mid-text");
+  });
+
+  it("a <think quoted mid-text in the repair is used", async () => {
+    const stub = openRouterStub([answer('{"summary": 1}'), answer(QUOTED_REVIEW)]);
+    const reviewer = createReviewer({ apiKey: "test-key", fetch: stub.fetch });
+    await expect(reviewer.review(UNIT)).resolves.toMatchObject({ summary: QUOTED_SUMMARY, findings: [] });
+    expect(stub.bodies).toHaveLength(2);
+  });
 });
 
 // Assumption A3: what each request's RAW response reported, read through the

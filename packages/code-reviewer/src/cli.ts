@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { FINDER_REASONING, resolveFinderProviderRouting, resolveModels } from "./config.js";
+import { FINDER_REASONING, resolveFinderProviderRouting, resolveModels, type FinderProviderRouting } from "./config.js";
 import { containsInlineReasoning } from "./output-repair.js";
 import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
@@ -129,11 +129,15 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
  * The finder's configuration, once per run, from the same resolvers and
  * constant the requests use — so a run log states which model, reasoning
  * effort and endpoint list the finder asked for before any request is made.
- * The model may come from an environment variable, so it is escaped.
+ * The model may come from an environment variable, so it is escaped. The CLI
+ * passes the routing it hands the pipeline, so it is resolved (and a malformed
+ * OPENROUTER_FINDER_PROVIDERS warned about) once per run.
  */
-export const formatFinderConfigurationLine = (): string =>
+export const formatFinderConfigurationLine = (
+  routing: FinderProviderRouting = resolveFinderProviderRouting(),
+): string =>
   `finder configuration: model=${logSafePath(resolveModels().reviewModel)} reasoning=${FINDER_REASONING.effort} ` +
-  `providers=${resolveFinderProviderRouting().order.join(",")}`;
+  `providers=${routing.order.join(",")}`;
 
 /** How much of a rejected model output reaches the log. */
 export const REJECTED_OUTPUT_CAP_CHARS = 2_000;
@@ -184,10 +188,12 @@ const stringField = (error: object, key: string): string | undefined =>
  * REJECTED_OUTPUT_CAP_CHARS and control characters escaped. It goes to stderr
  * only — never into comment.md or the step summary.
  *
- * A text carrying inline reasoning (`<think`) is NEVER shown, whatever error
- * carries it and whichever guard classified the failure — a truncated
- * response is checked too: the line then ends `reason=inline-reasoning
- * chars=<n>` instead of the text (owner decision 2 of change `finder-glm-5-3`).
+ * A text carrying `<think` ANYWHERE is NEVER shown, whatever error carries it
+ * and whichever guard classified the failure — a truncated response, or a
+ * quoted `<think` the reviewer accepted and the parser then rejected, is
+ * checked too: the line then ends `reason=inline-reasoning chars=<n>` instead
+ * of the text (owner decision 2 of change `finder-glm-5-3`). Broader than the
+ * reviewer's rejection check (a LEADING `<think`) on purpose.
  */
 export function formatRejectedOutputLine(error: unknown, fallbackProvider?: string): string | undefined {
   if (typeof error !== "object" || error === null) return undefined;
@@ -200,8 +206,12 @@ export function formatRejectedOutputLine(error: unknown, fallbackProvider?: stri
   const route = `provider=${provider === undefined || provider === "" ? "?" : escapeControl(provider)}, finish=${
     finish === undefined ? "?" : escapeControl(finish)
   }`;
-  if (containsInlineReasoning(text)) {
-    return `rejected output (${label}, ${route}): reason=inline-reasoning chars=${String(text.length)}`;
+  // A FinderOutputError refused for inline reasoning no longer holds its text
+  // (it is ""), only its length; any other text carrying `<think` is hidden too.
+  if (stringField(error, "reason") === "inline-reasoning" || containsInlineReasoning(text)) {
+    const kept = (error as Record<string, unknown>).chars;
+    const chars = typeof kept === "number" ? kept : text.length;
+    return `rejected output (${label}, ${route}): reason=inline-reasoning chars=${String(chars)}`;
   }
   let shown = text;
   if (text.length > REJECTED_OUTPUT_CAP_CHARS) {
@@ -377,9 +387,11 @@ export async function runReviewCli(
 
     // Once per run, after every input is validated and before the first
     // request, so the line describes a run that actually started.
-    io.logError(formatFinderConfigurationLine());
+    const finderProviderRouting = resolveFinderProviderRouting();
+    io.logError(formatFinderConfigurationLine(finderProviderRouting));
     const result = await pipeline({
       diff,
+      finderProviderRouting,
       ...sourceInputs,
       ...planInput,
       prTitle: env.PR_TITLE,

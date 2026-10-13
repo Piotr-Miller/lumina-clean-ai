@@ -125,7 +125,7 @@ export function resolveProviderRouting(): { require_parameters: true } | undefin
  * Reasoning counts against MAX_OUTPUT_TOKENS: there is no separate reasoning
  * cap, and a request that hits the shared cap fails the attempt (reviewer.ts).
  * The reasoning TEXT never leaves the wire — the reviewer reads only `.text`,
- * and inline `<think>` in that text fails the attempt.
+ * and a text opening with inline `<think>` fails the attempt.
  */
 export const FINDER_REASONING = { enabled: true, effort: "low" } as const;
 

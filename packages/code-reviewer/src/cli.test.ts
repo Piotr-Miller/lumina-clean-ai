@@ -401,7 +401,12 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
   // when the raw response carried one.
   const reported = <T>(value: T) => ({ value, source: "reported" as const });
   const missing = { value: null, source: "missing" as const };
-  const served = { kind: "step" as const, model: reported("z-ai/glm-5.3"), reasoningTokens: reported(212) };
+  const served = {
+    kind: "step" as const,
+    reportedProvider: reported("Fireworks"),
+    model: reported("z-ai/glm-5.3"),
+    reasoningTokens: reported(212),
+  };
 
   it("writes one monotonic stderr line per finder step with targets, tokens, model and reasoning volume", async () => {
     const io = fakeIo({ readStdin: () => DIFF });
@@ -420,6 +425,7 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         usage: {},
         finishReason: "stop",
         kind: "finalization",
+        reportedProvider: missing,
         model: missing,
         reasoningTokens: missing,
       });
@@ -433,6 +439,7 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         provider: "Z.AI",
         finishReason: "length",
         kind: "step",
+        reportedProvider: reported("Z.AI"),
         model: reported("z-ai/glm-5.3-20261001"),
         reasoningTokens: reported(0),
       });
@@ -461,6 +468,7 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         provider: "evil\nfinder step 98: forged",
         finishReason: "stop",
         ...served,
+        reportedProvider: reported("evil\nfinder step 98: forged"),
         model: reported("z-ai/glm-5.3\nfinder step 97: forged"),
       });
       return Promise.resolve(pipelineResult());
@@ -480,6 +488,34 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     const io = fakeIo();
     expect(await runReviewCli([], {}, io, okPipeline())).toBe(0);
     expect(io.errors).toEqual(["finder configuration: model=acme/other?forged reasoning=low providers=together"]);
+  });
+
+  // Phase 2 review F6: the CLI resolves the finder routing ONCE and hands that
+  // object to both the configuration line and the requests, so a malformed list
+  // warns once and the line cannot disagree with the wire.
+  it("a malformed OPENROUTER_FINDER_PROVIDERS warns once per run, and the line matches the finder's wire routing", async () => {
+    vi.stubEnv("OPENROUTER_FINDER_PROVIDERS", "Bad Slug");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const stub = e2eWire([{ content: VALID_REVIEW_TEXT, finish: "stop", provider: "Z.AI" }]);
+      const io = e2eIo();
+      expect(await runReviewCli(["--diff-file", "pr.diff"], {}, io, realPipeline)).toBe(0);
+      expect(
+        warn.mock.calls.filter(([message]) => String(message).includes("OPENROUTER_FINDER_PROVIDERS")),
+      ).toHaveLength(1);
+      expect(io.errors).toContain(
+        "finder configuration: model=z-ai/glm-5.3 reasoning=low providers=z-ai,fireworks,together",
+      );
+      const finder = stub.bodies.filter((body) => !("response_format" in body));
+      expect(finder).toHaveLength(1);
+      expect((finder[0] as { provider?: { order?: unknown } }).provider?.order).toEqual([
+        "z-ai",
+        "fireworks",
+        "together",
+      ]);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("mentions --source-root in the usage message", async () => {
@@ -923,6 +959,63 @@ describe("decision 2 end to end: reasoning never leaves the wire", () => {
     );
   });
 
+  // Phase 2 review F4: the attempt label and each request's reported fields
+  // through the REAL reviewer and fetch observer, across the pipeline's retry.
+  it("a retried finder run labels attempt 1 and attempt 2 requests, each with its own reported fields", async () => {
+    const tool = (id: string): StubCompletion => ({
+      toolCalls: [{ id, name: "getFileContext", arguments: { path: "src/a.ts" } }],
+      finish: "tool_calls",
+      provider: "Z.AI",
+      reasoningTokens: 11,
+    });
+    const stub = e2eWire([
+      // Attempt 1: two loop steps, then its finalization fails with a 502 (below).
+      tool("c1"),
+      { content: "draft one", finish: "stop", provider: "Fireworks", reasoningTokens: 12 },
+      // Attempt 2.
+      { ...tool("c2"), provider: "Together", model: "z-ai/glm-5.3-20261001", reasoningTokens: 21 },
+      { content: "draft two", finish: "stop", provider: "Z.AI", reasoningTokens: 22 },
+      { content: VALID_REVIEW_TEXT, finish: "stop", provider: "Fireworks", reasoningTokens: 23 },
+    ]);
+    let finderRequests = 0;
+    vi.stubGlobal("fetch", (url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(typeof init?.body === "string" ? init.body : "{}") as WireBody;
+      if (!("response_format" in body)) {
+        finderRequests += 1;
+        if (finderRequests === 3) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ error: { message: "upstream unavailable", code: 502 } }), {
+              status: 502,
+              headers: { "content-type": "application/json" },
+            }),
+          );
+        }
+      }
+      return stub.fetch(url, init);
+    });
+    const io = e2eIo();
+    expect(await runReviewCli(["--diff-file", "pr.diff", "--source-root", "root"], {}, io, realPipeline)).toBe(0);
+    expect(finderRequests).toBe(6);
+
+    const result = JSON.parse(io.files.get(join(".review-out", "review.json")) ?? "{}") as PipelineResult;
+    // The failed request reported nothing and is not a step; everything else is kept, attempt 1 included.
+    expect(
+      result.finderTelemetry?.requests.map((request) => [
+        request.kind,
+        request.attempt,
+        request.provider.value,
+        request.model.value,
+        request.reasoningTokens.value,
+      ]),
+    ).toEqual([
+      ["step", 1, "Z.AI", "z-ai/glm-5.3", 11],
+      ["step", 1, "Fireworks", "z-ai/glm-5.3", 12],
+      ["step", 2, "Together", "z-ai/glm-5.3-20261001", 21],
+      ["step", 2, "Z.AI", "z-ai/glm-5.3", 22],
+      ["finalization", 2, "Fireworks", "z-ai/glm-5.3", 23],
+    ]);
+  });
+
   // § 1: the judge's request carries no reasoning, while every finder request does.
   it("the judge's wire body carries no reasoning; every finder body carries effort low", async () => {
     const stub = e2eWire([{ content: VALID_REVIEW_TEXT, finish: "stop", provider: "Z.AI" }]);
@@ -978,9 +1071,53 @@ describe("inline reasoning together with finish=length fails without retry and s
     expect(formatRejectedOutputLine(error)).toBe(
       "rejected output (FinderOutputError, provider=?, finish=length): reason=inline-reasoning chars=33",
     );
+    // An inline-reasoning error holds no text (review F2); the line still says why, and how long it was.
+    const inline = new FinderOutputError({
+      text: MIXED,
+      finishReason: "length",
+      reason: "inline-reasoning",
+      request: { kind: "finalization" },
+      validationError: "v",
+      repaired: false,
+    });
+    expect(formatRejectedOutputLine(inline)).toBe(
+      "rejected output (FinderOutputError, provider=?, finish=length): reason=inline-reasoning chars=33",
+    );
     // Any error class, not just the finder's.
     expect(formatRejectedOutputLine(noObject(`x <THINK>REASONING-SENTINEL`))).toBe(
       "rejected output (AI_NoObjectGeneratedError, provider=?, finish=stop): reason=inline-reasoning chars=27",
     );
+  });
+});
+
+// Phase 2 review F1: rejection and redaction are separate checks. Only a LEADING
+// `<think` fails the attempt, so a review quoting the guard is published; a
+// `<think` ANYWHERE keeps a rejected text out of the log.
+describe("a quoted <think is not inline reasoning, but a rejected text quoting it is still never printed", () => {
+  it("a correct review quoting <think in its summary is parsed, judged and published (exit 0)", async () => {
+    const quoted = JSON.stringify({ summary: "the guard matches /<think/iu anywhere", findings: [] });
+    const stub = e2eWire([{ content: quoted, finish: "stop", provider: "Z.AI" }]);
+    const io = e2eIo();
+    expect(await runReviewCli(["--diff-file", "pr.diff"], {}, io, realPipeline)).toBe(0);
+    // The finder's answer reached the parser and the judge ran on it.
+    expect(vi.mocked(parseFinderOutput).mock.calls.map(([text]) => text)).toEqual([quoted]);
+    expect(stub.bodies.filter((body) => "response_format" in body)).toHaveLength(1);
+    expect(io.files.get(join(".review-out", "review.json")) ?? "").not.toBe("");
+  });
+
+  it("a REASONING-SENTINEL quoted mid-text in an unparsable answer fails as parse, and stderr redacts it", async () => {
+    const rejected = "no review here, only a quote: <think>REASONING-SENTINEL";
+    const stub = e2eWire([{ content: rejected, finish: "stop", provider: "Z.AI" }]);
+    const io = e2eIo();
+    expect(
+      await runReviewCli(["--diff-file", "pr.diff"], { GITHUB_STEP_SUMMARY: "summary.md" }, io, realPipeline),
+    ).toBe(1);
+    // No `{`: no repair, no retry, no judge.
+    expect(stub.bodies).toHaveLength(1);
+    const stderr = io.errors.join("\n");
+    expect(stderr).toContain("reason=parse");
+    expect(stderr).toContain(`reason=inline-reasoning chars=${String(rejected.length)}`);
+    expect(stderr).not.toContain("REASONING-SENTINEL");
+    expect(io.appended.get("summary.md") ?? "").not.toContain("REASONING-SENTINEL");
   });
 });
