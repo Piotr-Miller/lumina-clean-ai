@@ -340,6 +340,18 @@ describe("run", () => {
     expect(lines.at(-1)).toMatch(/run-id already used/u);
   });
 
+  it("a dry run stays re-runnable as written: a reused id is recorded as <id>-r<k>", async () => {
+    const { world, deps, lines } = await ready();
+    for (let i = 0; i < 3; i += 1) {
+      expect(await main(["run", "--case", "clean", "--run-id", "dry-1", "--dry-run"], deps)).toBe(0);
+    }
+    const ids = readSeries(join(world.cache, "dry-run", "series.jsonl"))
+      .filter((line) => line.type === "record")
+      .map((line) => line.stepId);
+    expect(ids).toEqual(["dry-1", "dry-1-r2", "dry-1-r3"]);
+    expect(lines.at(-1)).toMatch(/^VALID RUN: dry-1-r3 /u);
+  });
+
   it("records a budget stop (exit 4) and spends nothing when T + P exceeds the cap", async () => {
     const { world, deps, lines, setCounter } = await ready();
     await main(["continue", "--for", "pause", "--note", "n"], deps).catch(() => undefined);

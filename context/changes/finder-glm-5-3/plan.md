@@ -1130,10 +1130,10 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Automated
 
-- [x] 3.1 Hermetic tooling tests pass
-- [x] 3.2 Stubbed dry run of one case end to end
-- [x] 3.3 Projection reproduces the sonnet-effort record
-- [x] 3.4 Typecheck, lint, format
+- [x] 3.1 Hermetic tooling tests pass — 965ae3d
+- [x] 3.2 Stubbed dry run of one case end to end — 965ae3d
+- [x] 3.3 Projection reproduces the sonnet-effort record — 965ae3d
+- [x] 3.4 Typecheck, lint, format — 965ae3d
 
 #### Manual
 

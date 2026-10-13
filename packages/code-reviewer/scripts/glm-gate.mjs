@@ -396,15 +396,23 @@ const RUN_ID = /^[a-z0-9][a-z0-9-]*$/u;
 async function commandRun(flags, deps) {
   const context = contextFor(flags, deps);
   const caseKey = flags.case;
-  const stepId = flags["run-id"];
+  const requestedId = flags["run-id"];
   if (!RUN_CASES.includes(caseKey)) refuse("unknown case", String(caseKey), `use one of ${RUN_CASES.join(", ")}`);
-  if (typeof stepId !== "string" || !RUN_ID.test(stepId)) {
-    refuse("bad run-id", String(stepId), "use lowercase letters, digits and dashes, e.g. pr269-01");
+  if (typeof requestedId !== "string" || !RUN_ID.test(requestedId)) {
+    refuse("bad run-id", String(requestedId), "use lowercase letters, digits and dashes, e.g. pr269-01");
   }
   checkEnvironment(deps);
   const series = readSeries(context.series);
-  if (series.some((line) => line.stepId === stepId))
-    refuse("run-id already used", stepId, "a run is never re-run or replaced");
+  const used = (id) => series.some((line) => line.stepId === id);
+  // A paid run is never re-run or replaced. A dry run is a smoke test that must
+  // stay re-runnable as written, so a reused id is recorded as `<id>-r<k>`.
+  let stepId = requestedId;
+  if (used(stepId)) {
+    if (!context.dryRun) refuse("run-id already used", stepId, "a run is never re-run or replaced");
+    let k = 2;
+    while (used(`${requestedId}-r${String(k)}`)) k += 1;
+    stepId = `${requestedId}-r${String(k)}`;
+  }
   const manifest = checkManifest(context, deps, { required: !context.dryRun });
   if (!context.dryRun) {
     if (!series.some((line) => line.type === "preflight"))
