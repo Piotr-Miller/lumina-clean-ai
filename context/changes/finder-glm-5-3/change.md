@@ -39,3 +39,5 @@ archived_at: null
 2026-10-11: owner decision during `/rune-plan-review`, F4 — File declarations use full repo-relative paths, enumerated files instead of brace notation, and the results directory instead of a glob. All 14 Manual Verification criteria now declare explicit surfaces. Criterion wording and Progress IDs, titles and marks are preserved; acceptance-state resolves all 14 surfaces, with all Manual rows still pending.
 
 2026-10-11: owner decision during `/rune-plan-review`, F5 — add mixed-condition test requirements for step, finalization and repair responses containing `<think>REASONING-SENTINEL</think>` with `finishReason: "length"`. The attempt fails without retry; the sentinel must be absent from stderr and step summary regardless of guard ordering.
+
+2026-10-13: owner decision — G3 rows include production's single retry, prove the reasoning shape by wire capture of each finder request's `reasoning` key, and fail on a request without a provider-reported accepted model; plan.md Phase 3 § 2 (G3 rows) Contract.

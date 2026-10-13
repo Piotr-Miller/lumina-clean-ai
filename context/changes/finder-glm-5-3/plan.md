@@ -615,6 +615,13 @@ The JSONL lives at `context/changes/finder-glm-5-3/gate/series.jsonl`, and conso
 - **Row count:** ≠ 12 rows, or any row from a case outside the four registered prefixes, is a failed run.
 - **Re-grading:** a grader error is re-graded once via the regrade config (A1 of `finder-model-swap`).
 - **Exit codes:** 0 pass, 1 fail or not a result, 2 usage.
+- **One row = one production pass (owner decision 2026-10-13):** `finder-provider.ts` wraps the review in
+  `withOneRetry`, as production does, and records each retry; `FinderOutputError` is still never retried.
+- **Reasoning-shape evidence (owner decision 2026-10-13):** the adapter captures only the `reasoning` key of every
+  outgoing finder request body on the wire; a row passes the shape check only when there is at least one and each
+  deep-equals `{enabled: true, effort: "low"}`.
+- **Accepted model (owner decision 2026-10-13):** a row whose finder requests include one without a
+  **provider-reported** accepted model (§ Definitions) fails on its own, like a provider mismatch.
 
 #### 3. Hand-read sheet and resolver
 
@@ -1123,10 +1130,10 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Automated
 
-- [ ] 3.1 Hermetic tooling tests pass
-- [ ] 3.2 Stubbed dry run of one case end to end
-- [ ] 3.3 Projection reproduces the sonnet-effort record
-- [ ] 3.4 Typecheck, lint, format
+- [x] 3.1 Hermetic tooling tests pass
+- [x] 3.2 Stubbed dry run of one case end to end
+- [x] 3.3 Projection reproduces the sonnet-effort record
+- [x] 3.4 Typecheck, lint, format
 
 #### Manual
 
