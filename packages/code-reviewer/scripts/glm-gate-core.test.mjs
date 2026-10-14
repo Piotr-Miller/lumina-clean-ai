@@ -58,7 +58,7 @@ const review = (over = {}) => ({
 });
 const STDERR_OK = [
   EXPECTED_CONFIGURATION_LINE,
-  "finder step 1: no getFileContext call (tokens in=1 out=1 total=2) provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=64",
+  "finder step 1: no getFileContext call (tokens in=1 out=1 total=2) kind=step provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=64",
   "review cost: finder=$0.010000 judge=$0.020000 impl=(not run)",
 ].join("\n");
 
@@ -178,7 +178,7 @@ describe("classifyRun — validity per reason", () => {
   it("a provider or model mismatch is read off the step lines when there is no review.json", () => {
     const stderr = [
       EXPECTED_CONFIGURATION_LINE,
-      "finder step 1: no getFileContext call (tokens in=1 out=1 total=2) provider=Novita finish=stop model=missing reasoning=missing",
+      "finder step 1: no getFileContext call (tokens in=1 out=1 total=2) kind=step provider=Novita finish=stop model=missing reasoning=missing",
     ].join("\n");
     expect(classifyRun({ exitCode: 1, signal: null, stderr }).reasons).toEqual(["provider-mismatch", "model-mismatch"]);
   });
@@ -248,14 +248,33 @@ describe("parseCliStderr", () => {
     const parsed = parseCliStderr(
       [
         EXPECTED_CONFIGURATION_LINE,
-        "finder step 1: getFileContext src/a.ts (tokens in=1 out=1 total=2) provider=? finish=tool-calls model=missing reasoning=missing",
+        "finder step 1: getFileContext src/a.ts (tokens in=1 out=1 total=2) kind=step provider=? finish=tool-calls model=missing reasoning=missing",
+        "finder step 2: no getFileContext call (tokens in=1 out=1 total=2) kind=finalization provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=7",
+        "finder step 3: no getFileContext call (tokens in=1 out=1 total=2) kind=repair provider=Together finish=stop model=z-ai/glm-5.3 reasoning=0",
         "retrying finder after APICallError in 10000ms",
         "Finder output rejected (reason=inline-reasoning, request=step:2, provider=Z.AI, finish=stop, no format repair attempted): v",
         "rejected output (FinderOutputError, provider=Z.AI, finish=stop): reason=inline-reasoning chars=33",
       ].join("\n"),
     );
+    // The kind is read off the line: a failed run has no review.json to say which request was which.
     expect(parsed.steps).toEqual([
-      { step: 1, provider: null, finishReason: "tool-calls", model: null, reasoningTokens: null },
+      { step: 1, kind: "step", provider: null, finishReason: "tool-calls", model: null, reasoningTokens: null },
+      {
+        step: 2,
+        kind: "finalization",
+        provider: "Z.AI",
+        finishReason: "stop",
+        model: "z-ai/glm-5.3",
+        reasoningTokens: 7,
+      },
+      {
+        step: 3,
+        kind: "repair",
+        provider: "Together",
+        finishReason: "stop",
+        model: "z-ai/glm-5.3",
+        reasoningTokens: 0,
+      },
     ]);
     expect(parsed.retries).toEqual([{ pass: "finder", error: "APICallError", delayMs: 10_000 }]);
     expect(parsed.finderRefusal).toEqual({ reason: "inline-reasoning", request: "step:2" });

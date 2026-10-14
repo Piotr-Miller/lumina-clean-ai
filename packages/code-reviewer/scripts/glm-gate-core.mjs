@@ -135,7 +135,10 @@ export function finalProjection({ m247, m269, g5ImplReviewCost }) {
 
 // --- CLI stderr ------------------------------------------------------------------
 
-const STEP_LINE = /^finder step (\d+): .* provider=(\S+) finish=(\S+) model=(\S+) reasoning=(\S+)$/u;
+// `kind` (owner decision 2026-10-14) names the request, so a run without
+// review.json still tells the finalization and the repair from a loop step.
+const STEP_LINE =
+  /^finder step (\d+): .* kind=(step|finalization|repair) provider=(\S+) finish=(\S+) model=(\S+) reasoning=(\S+)$/u;
 const RETRY_LINE = /^retrying (finder|judge|impl-review) after (\S+) in (\d+)ms$/u;
 const FINDER_REJECTED = /Finder output rejected \(reason=([a-z-]+), (?:request=([a-z]+(?::\d+)?), )?/u;
 const CONFIGURATION_PREFIX = "finder configuration: ";
@@ -169,10 +172,11 @@ export function parseCliStderr(stderr) {
     if (step) {
       steps.push({
         step: Number(step[1]),
-        provider: step[2] === "?" ? null : step[2],
-        finishReason: step[3],
-        model: step[4] === "missing" ? null : step[4],
-        reasoningTokens: step[5] === "missing" ? null : Number(step[5]),
+        kind: step[2],
+        provider: step[3] === "?" ? null : step[3],
+        finishReason: step[4],
+        model: step[5] === "missing" ? null : step[5],
+        reasoningTokens: step[6] === "missing" ? null : Number(step[6]),
       });
     }
     const retry = RETRY_LINE.exec(line);

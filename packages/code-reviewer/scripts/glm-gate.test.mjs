@@ -84,7 +84,7 @@ const reviewJson = (over = {}) => ({
   judgeTelemetry: { attempts: 1, cost: 0.02 },
   ...over,
 });
-const STDERR = `${EXPECTED_CONFIGURATION_LINE}\nfinder step 1: no getFileContext call (tokens in=1 out=1 total=2) provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=10\n`;
+const STDERR = `${EXPECTED_CONFIGURATION_LINE}\nfinder step 1: no getFileContext call (tokens in=1 out=1 total=2) kind=step provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=10\n`;
 
 /** A fake CLI that writes `review` (or nothing) into --out-dir and exits as told. */
 const fakeCli = ({ review = reviewJson(), exitCode = 0, stderr = STDERR } = {}) =>
@@ -284,7 +284,7 @@ describe("run", () => {
       cost: { complete: false },
     });
     expect(record.requests).toEqual([
-      { step: 1, provider: "Z.AI", finishReason: "stop", model: "z-ai/glm-5.3", reasoningTokens: 10 },
+      { step: 1, kind: "step", provider: "Z.AI", finishReason: "stop", model: "z-ai/glm-5.3", reasoningTokens: 10 },
     ]);
     expect(lines.at(-1)).toMatch(/INVALID RUN \(finder-output:length\)/u);
     expect(lines.at(-1)).toMatch(/G2-01 PROBE FAILED/u);

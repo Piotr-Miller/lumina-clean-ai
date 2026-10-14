@@ -471,7 +471,7 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     reasoningTokens: reported(212),
   };
 
-  it("writes one monotonic stderr line per finder step with targets, tokens, model and reasoning volume", async () => {
+  it("writes one monotonic stderr line per finder request with its kind, targets, tokens, model and reasoning volume", async () => {
     const io = fakeIo({ readStdin: () => DIFF });
     const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
       input.onFinderStep?.({
@@ -506,16 +506,28 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         model: reported("z-ai/glm-5.3-20261001"),
         reasoningTokens: reported(0),
       });
+      input.onFinderStep?.({
+        fileContextCalls: [],
+        toolCalls: 0,
+        usage: { totalTokens: 7 },
+        provider: "Together",
+        finishReason: "stop",
+        ...served,
+        kind: "repair",
+        reportedProvider: reported("Together"),
+      });
       return Promise.resolve(pipelineResult());
     });
     expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
     expect(io.errors).toEqual([
       CONFIG_LINE,
-      "finder step 1: getFileContext src/a.ts:10-80 (tokens in=100 out=10 total=110) provider=Fireworks finish=tool-calls model=z-ai/glm-5.3 reasoning=212",
+      "finder step 1: getFileContext src/a.ts:10-80 (tokens in=100 out=10 total=110) kind=step provider=Fireworks finish=tool-calls model=z-ai/glm-5.3 reasoning=212",
       // Nothing reported → "?" / "missing", never a guessed slug, the requested id or a 0.
-      "finder step 2: no getFileContext call (tokens in=? out=? total=?) provider=? finish=stop model=missing reasoning=missing",
+      "finder step 2: no getFileContext call (tokens in=? out=? total=?) kind=finalization provider=? finish=stop model=missing reasoning=missing",
       // A REPORTED zero stays a zero.
-      "finder step 3: getFileContext src/a.ts:5-end, getFileContext src/a.ts:1-8 (tokens in=? out=? total=50) provider=Z.AI finish=length model=z-ai/glm-5.3-20261001 reasoning=0",
+      "finder step 3: getFileContext src/a.ts:5-end, getFileContext src/a.ts:1-8 (tokens in=? out=? total=50) kind=step provider=Z.AI finish=length model=z-ai/glm-5.3-20261001 reasoning=0",
+      // The kind tells a finalization or repair apart from a loop step with no tool call.
+      "finder step 4: no getFileContext call (tokens in=? out=? total=7) kind=repair provider=Together finish=stop model=z-ai/glm-5.3 reasoning=212",
     ]);
   });
 
@@ -539,7 +551,7 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
     expect(io.errors).toEqual([
       CONFIG_LINE,
-      "finder step 1: getFileContext src/a.ts??[31mfinder step 99: forged? (tokens in=? out=? total=10) provider=evil?finder step 98: forged finish=stop model=z-ai/glm-5.3?finder step 97: forged reasoning=212",
+      "finder step 1: getFileContext src/a.ts??[31mfinder step 99: forged? (tokens in=? out=? total=10) kind=step provider=evil?finder step 98: forged finish=stop model=z-ai/glm-5.3?finder step 97: forged reasoning=212",
     ]);
   });
 
@@ -1018,8 +1030,13 @@ describe("decision 2 end to end: reasoning never leaves the wire", () => {
       ]);
     }
     expect(io.errors).toContain(
-      "finder step 1: getFileContext src/a.ts (tokens in=10 out=5 total=15) provider=Z.AI finish=tool-calls model=z-ai/glm-5.3 reasoning=41",
+      "finder step 1: getFileContext src/a.ts (tokens in=10 out=5 total=15) kind=step provider=Z.AI finish=tool-calls model=z-ai/glm-5.3 reasoning=41",
     );
+    // Through the real reviewer, each line names its request as review.json does.
+    const kinds = io.errors
+      .filter((line) => line.startsWith("finder step "))
+      .map((line) => /kind=(\S+)/u.exec(line)?.[1]);
+    expect(kinds).toEqual(["step", "step", "finalization"]);
   });
 
   // Phase 2 review F4: the attempt label and each request's reported fields

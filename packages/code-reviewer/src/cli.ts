@@ -109,10 +109,13 @@ const logSafePath = (path: string): string => path.replace(/\p{Cc}/gu, "?");
 const reportedField = <T extends string | number>(field: Reported<T>): string =>
   field.source === "missing" ? "missing" : logSafePath(String(field.value));
 
-// One stderr line per finder loop step — in an Actions log this is the only
-// live evidence of what the tool loop fetched and spent. `model` and
-// `reasoning` (the reasoning-token count) come from the raw response, so the
-// served model and the volume of reasoning are visible without any model text.
+// One stderr line per finder request — in an Actions log this is the only
+// live evidence of what the tool loop fetched and spent. `kind` says which
+// request it was: the finalization and the repair also print as `finder
+// step N`, and a failed run uploads no review.json to tell them apart. `model`
+// and `reasoning` (the reasoning-token count) come from the raw response, so
+// the served model and the volume of reasoning are visible without any model
+// text.
 const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
   const calls =
     info.fileContextCalls.length === 0
@@ -120,8 +123,9 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
       : info.fileContextCalls.map((call) => `getFileContext ${logSafePath(call.path)}${formatRange(call)}`).join(", ");
   const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} total=${tokenCount(info.usage.totalTokens)}`;
   // The provider slug comes from the response, not from us — escaped like the
-  // path for the same reason. `?` when OpenRouter did not report one.
-  const route = `provider=${info.provider === undefined ? "?" : logSafePath(info.provider)} finish=${logSafePath(info.finishReason)}`;
+  // path for the same reason. `?` when OpenRouter did not report one. `kind`
+  // is ours (a closed union), so it needs no escaping.
+  const route = `kind=${info.kind} provider=${info.provider === undefined ? "?" : logSafePath(info.provider)} finish=${logSafePath(info.finishReason)}`;
   const served = `model=${reportedField(info.model)} reasoning=${reportedField(info.reasoningTokens)}`;
   return `finder step ${String(index)}: ${calls} (${usage}) ${route} ${served}`;
 };
