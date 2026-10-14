@@ -493,6 +493,17 @@ section is part of the hashed bytes.
   had been made when the hash was taken.
 - GitHub's push time and the tag `finder-glm-5-3/seal` are recorded below once the push has happened. A commit
   cannot contain its own push time.
+- **Seal commit:** `docs(finder-glm-5-3): Pre-registration and seal (p4)`, on `origin/feat/finder-glm-5-3`. Its
+  committed `gate.md` reproduces the sha256 above, and its committed `gate-manifest.json` reproduces `12989509…9272ee`
+  (both re-hashed from `git show` after the commit). Pre-push hook: typecheck and 418/418 unit tests passed.
+- **GitHub push time: 2026-10-14T20:17:37Z.** Source:
+  `GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-glm-5-3`, event `push`, actor
+  `Piotr-Miller`, its `after` equal to the seal commit. `git ls-remote` showed the seal commit as the branch head.
+  Recorded before any T0, endpoint read or paid call.
+- **Rebase protection:** annotated tag **`finder-glm-5-3/seal`** (tag object
+  `4b38d4f8b1fff6503a0294ff6bbb97c6cd2e5141`) on the seal commit, pushed to `origin` on 2026-10-14.
+  `git ls-remote --tags origin 'finder-glm-5-3/*'` shows it peeled to the seal commit. A later rebase or rebase-merge
+  rewrites the seal commit's SHA; the tag keeps the sealed state reachable as `finder-glm-5-3/seal^{commit}`.
 
 ## Amendments
 

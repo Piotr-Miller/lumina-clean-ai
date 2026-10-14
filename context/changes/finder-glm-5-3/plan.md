@@ -1260,9 +1260,9 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Automated
 
-- [x] 4.1 Pre-registration formatted
-- [x] 4.2 Manifest matches the tree
-- [ ] 4.3 Seal commit, push and tag pushed
+- [x] 4.1 Pre-registration formatted — f231ff0
+- [x] 4.2 Manifest matches the tree — f231ff0
+- [x] 4.3 Seal commit, push and tag pushed — f231ff0
 
 #### Manual
 

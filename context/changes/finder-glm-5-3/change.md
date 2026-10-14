@@ -69,3 +69,5 @@ archived_at: null
 2026-10-14: reopened 2.7 — was accepted at eb5ea063faa79344efd73c6badf02f0088a332b3; changed: packages/code-reviewer/src/cli.ts
 
 2026-10-14: re-confirmed 2.7 — was reopened (last accepted at eb5ea063faa79344efd73c6badf02f0088a332b3); accepted at f2ccfddd25b5483cec2ea02237adaf2620eef86d. Explicit owner confirmation after the stubbed real-CLI re-check of f2ccfdd against eb5ea06 (five cases: stderr, step summary and stdout byte-identical; `comment.md` differs only in the failed impl-review line, which no longer carries the provider body); recording preflight returned `recordable`.
+
+2026-10-14: pre-registration approved by the owner as written (A1–A8 and the five plan- and tooling-chosen terms) and sealed — sha256 of § Pre-registration `1a34e2efa74771898d986c74f060fabf9b3d272816fd85ac10877aad2ea802f3`, taken 2026-10-14T20:16:36Z; GitHub push time 2026-10-14T20:17:37Z; annotated tag `finder-glm-5-3/seal`. Record: gate.md § Pre-registration seal. The seal authorizes no spending: Phase 5 waits for the owner's authorization after the free preflight.
