@@ -204,6 +204,30 @@ describe("runReviewCli api error status line", () => {
     expect(io.errors).toContain("api error: status=402");
   });
 
+  // Owner decision 2026-10-14 (Manual 2.7 re-check): an APICallError's message
+  // is the provider's response body text, so the step summary — which outlives
+  // the job log — carries only its metadata. stderr keeps the message line.
+  it.each([
+    ["an APICallError", (error: APICallError) => error],
+    ["a wrapper whose message repeats it", (error: APICallError) => new Error(error.message, { cause: error })],
+  ])("keeps the provider message of %s out of the step summary (BODY-SENTINEL)", async (_label, wrap) => {
+    const io = fakeIo();
+    const error = new APICallError({
+      message: "Insufficient credits BODY-SENTINEL",
+      url: "u",
+      requestBodyValues: {},
+      statusCode: 402,
+      responseBody: '{"error":{"code":402,"message":"Insufficient credits BODY-SENTINEL"}}',
+    });
+    const failing = vi.fn().mockRejectedValue(wrap(error));
+    expect(await runReviewCli([], { GITHUB_STEP_SUMMARY: "summary.md" }, io, failing)).toBe(1);
+    const summary = io.appended.get("summary.md") ?? "";
+    expect(summary).toContain("## AI review failed");
+    expect(summary).toContain("api error: status=402");
+    expect(summary).not.toContain("BODY-SENTINEL");
+    expect(io.errors).toEqual([CONFIG_LINE, "Insufficient credits BODY-SENTINEL", "api error: status=402"]);
+  });
+
   it.each([
     ["a non-API error", new Error("boom")],
     ["a message that mentions 401", new Error("This request can only afford 401 tokens")],

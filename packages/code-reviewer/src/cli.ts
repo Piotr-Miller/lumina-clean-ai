@@ -449,8 +449,15 @@ export async function runReviewCli(
     // step summary below as well as out of comment.md.
     const rejected = formatRejectedOutputLine(error, lastObservedProvider);
     if (rejected !== undefined) io.logError(rejected);
+    // An APICallError's message is the provider's response body text, so the
+    // step summary shows only its metadata — the message stays on stderr above
+    // (owner decision 2026-10-14, Manual 2.7 re-check).
+    const summary =
+      status === undefined
+        ? message
+        : `${escapeControl(errorLabel(error))}: api error: status=${String(status)} (provider message only in the job log)`;
     const summaryPath = env.GITHUB_STEP_SUMMARY;
-    if (summaryPath) io.appendFile(summaryPath, `\n## AI review failed\n\n${message}\n`);
+    if (summaryPath) io.appendFile(summaryPath, `\n## AI review failed\n\n${summary}\n`);
     return 1;
   }
 }

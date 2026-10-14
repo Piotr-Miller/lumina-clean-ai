@@ -483,6 +483,11 @@ number | null}>`. `value` is `null` exactly when `source` is `missing`, so a mis
 - **CLI step line:** gains `model=<id|missing> reasoning=<n|missing>`.
 - **Configuration line:** a `finder configuration: model=<id> reasoning=low providers=z-ai,fireworks,together` stderr
   line is printed once per run, from the same constants the request uses.
+- **Step summary on a provider error (owner decision 2026-10-14):** when the failure's chain carries an
+  `APICallError` with a status, `$GITHUB_STEP_SUMMARY` gets only
+  `<error name>: api error: status=<n> (provider message only in the job log)`. The error message, which is the
+  provider's response body text, stays on the stderr message line only. Every other failure keeps its message in the summary. Found by the stubbed 402 run of Manual
+  2.7: the body sentinel reached the summary.
 - **Schema:** retry attempts are included. No text field exists.
 
 ### Success Criteria:
@@ -1142,6 +1147,24 @@ decides. Every later push to the ready PR is another paid review and is ledgered
   reasoning-token count; neither the model's note nor its reasoning sentinel appeared in the log lines. A separate
   rejected run exited 1 after one request and printed `reason=inline-reasoning chars=44`, preserving the original
   count after F2 blanked the error text. `npx vitest run src/cli.test.ts` passed all 74 tests. No live API calls.
+
+  Re-check after `8cf9194` (2026-10-14), through `npm run review` with a dummy key and a preloaded `fetch` that
+  answers the chat endpoint HTTP 402 and refuses every other URL. Body:
+  `{"error":{"code":402,"message":"Insufficient credits QX402-BODY-SENTINEL-9d41","metadata":{"hint":"QX402-BODY-SENTINEL-9d41"}}}`.
+  Full stderr; exit 1 after one finder request (402 is not retried), no stdout, no `review.json`:
+
+  ```text
+  finder configuration: model=z-ai/glm-5.3 reasoning=low providers=z-ai,fireworks,together
+  Insufficient credits QX402-BODY-SENTINEL-9d41
+  api error: status=402
+  ```
+
+  Step summary: `## AI review failed` followed by
+  `AI_APICallError: api error: status=402 (provider message only in the job log)`. The configuration line is
+  byte-identical to the one above (`cmp`). `api error: status=402` appears once. The sentinel appears only on the
+  message line, which existed before `8cf9194`, and nowhere in the step summary or on stdout. Before this fix, the
+  same run put the sentinel into the step summary, which received the raw message; the fix landed in the commit that
+  records this paragraph (owner decision 2026-10-14, Phase 2 § 6). No live API calls.
 
 ### Phase 3: Build the measurement tooling
 
