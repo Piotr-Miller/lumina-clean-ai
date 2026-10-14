@@ -480,7 +480,10 @@ tokens, so SDK-level values cannot tell "reported" from "absent".
 {value: string | null, source: "reported" | "missing"}, model: {value: string | null, source: "reported" |
 "missing"}, finishReason: string, reasoningTokens: {value: number | null, source: "reported" | "missing"}, cost:
 number | null}>`. `value` is `null` exactly when `source` is `missing`, so a missing count is never shown as `0`.
-- **CLI step line:** gains `model=<id|missing> reasoning=<n|missing>`.
+- **CLI step line:** gains `kind=<step|finalization|repair>` before `provider=`, and
+  `model=<id|missing> reasoning=<n|missing>` at the end. `kind` is the same value as `requests[].kind` (owner
+  decision 2026-10-14): a failed run uploads no `review.json`, and without it the finalization and the repair print
+  exactly like a loop step that made no tool call.
 - **Configuration line:** a `finder configuration: model=<id> reasoning=low providers=z-ai,fireworks,together` stderr
   line is printed once per run, from the same constants the request uses.
 - **Step summary on a provider error (owner decision 2026-10-14):** when the failure's chain carries an
@@ -580,7 +583,8 @@ keep a series ledger.
 missing` is a local configuration error with its own reason. Resumption is `continue --for auth-credit
 --amendment <ref> --note <text>`, once per stop. G3 applies the same standard to the finder error's typed
       status recorded by `evals/finder-provider.ts`; a grader 401/402 stays a grader error.
-    - `telemetry` holds whatever per-request lines were printed.
+    - `telemetry` holds whatever per-request lines were printed, each with its `kind` read off the line's `kind=`
+      (owner decision 2026-10-14).
     - `cost: null` until settled.
   - **Settlement.** A run whose cost telemetry is incomplete, which includes every run without an artifact, is
     **unsettled**. The next paid step is refused until `reconcile` has settled it from the counter.
@@ -1133,7 +1137,7 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — accepted at 20a312796062d07948ea0af8d9b78789b2105d19
+- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — accepted at d04c66fa6ea251f2dc0d6fe558e0eee247a5fd5b
 
   Observed through the real CLI, pipeline, reviewer, judge and response observer with stubbed HTTP:
 
@@ -1165,6 +1169,19 @@ decides. Every later push to the ready PR is another paid review and is ledgered
   message line, which existed before `8cf9194`, and nowhere in the step summary or on stdout. Before this fix, the
   same run put the sentinel into the step summary, which received the raw message; the fix landed in the commit that
   records this paragraph (owner decision 2026-10-14, Phase 2 § 6). No live API calls.
+
+  Reopened 2026-10-14: the step line gained `kind=` (owner decision 2026-10-14, Phase 2 § 6 Contract). The lines
+  read above were accepted at `20a3127` without it. Observed through the real CLI with the dry-run stub
+  (`glm-gate.mjs run --case clean --run-id dry-kind --dry-run`, scratch cache, no key):
+
+  ```text
+  finder step 1: no getFileContext call (tokens in=100 out=20 total=120) kind=step provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=16
+  finder step 2: no getFileContext call (tokens in=100 out=20 total=120) kind=finalization provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=16
+  ```
+
+  Apart from `kind=`, the two lines are byte-identical. The runner's `parseCliStderr` reads them as
+  `kind: "step"` and `kind: "finalization"`. `kind` comes from the code's closed union, never from the response.
+  No live API calls.
 
 ### Phase 3: Build the measurement tooling
 
