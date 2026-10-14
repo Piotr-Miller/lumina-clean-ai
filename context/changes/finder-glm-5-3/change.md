@@ -49,3 +49,5 @@ archived_at: null
 2026-10-14: reopened 2.7 — was accepted at b6afeb193255ff875a53e0e9254d68942c3f5730; changed: packages/code-reviewer/src/cli.ts
 
 2026-10-14: owner decision — on a provider error (an `APICallError` with a status in the chain), the step summary shows only `<error name>: api error: status=<n>`; the provider message stays on stderr. Found by the stubbed 402 re-check of Manual 2.7 (the body sentinel reached the summary); plan.md Phase 2 § 6 Contract, 2.7 evidence.
+
+2026-10-14: re-confirmed 2.7 — was reopened (last accepted at b6afeb193255ff875a53e0e9254d68942c3f5730); accepted at 20a312796062d07948ea0af8d9b78789b2105d19. Explicit owner confirmation through `/rune-implement` after the stubbed HTTP 402 re-check (conditions a–c met at that revision); recording preflight returned `recordable`.

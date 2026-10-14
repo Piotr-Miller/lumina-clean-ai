@@ -1133,7 +1133,7 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [ ] 2.7 Owner reads the configuration and step lines from a stubbed run
+- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — accepted at 20a312796062d07948ea0af8d9b78789b2105d19
 
   Observed through the real CLI, pipeline, reviewer, judge and response observer with stubbed HTTP:
 
