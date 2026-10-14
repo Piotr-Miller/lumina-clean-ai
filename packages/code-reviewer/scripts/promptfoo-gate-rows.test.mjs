@@ -399,6 +399,33 @@ describe("summarizeRows", () => {
     expect(summary.retryCount).toBe(0);
   });
 
+  it.each([
+    "Finder output rejected (reason=parse, request=finalization, provider=Z.AI)",
+    "Finder output rejected (reason=length, request=finalization, provider=Z.AI)",
+    "TimeoutError: finder exceeded its 300000 ms budget",
+  ])("fails G3 when a diagnostic cross-hunk finder row errors: %s", (error) => {
+    const rows = fullRun();
+    rows[6] = providerError(rows[6], error);
+    const summary = summarizeRows(check(rows));
+    expect(summary).toMatchObject({ failedRun: false, pass: false });
+    expect(summary.finderErrorRows).toEqual([{ testIdx: 7, case: "cross-hunk", error }]);
+    expect(summary.g3.pass).toBe(true); // Diagnostic recall stays outside the required metric gate.
+  });
+
+  it.each([
+    ["empty", []],
+    ["absent", undefined],
+    ["malformed", "unusable telemetry"],
+  ])("fails G3 with %s response-request telemetry, even with correct captured reasoning", (_label, requests) => {
+    const rows = fullRun();
+    rows[6] = withMetadata(rows[6], { requests });
+    const summary = summarizeRows(check(rows));
+    expect(summary).toMatchObject({ failedRun: false, pass: false });
+    expect(summary.invalidatedRows).toEqual([{ testIdx: 7, case: "cross-hunk", providers: [] }]);
+    expect(summary.modelRows).toEqual([{ testIdx: 7, case: "cross-hunk", models: [] }]);
+    expect(summary.shapeRows).toEqual([]);
+  });
+
   it("11 rows is a failed run, not a gate result", () => {
     const summary = summarizeRows(check(fullRun().slice(1)));
     expect(summary.failedRun).toBe(true);

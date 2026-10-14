@@ -483,7 +483,7 @@ async function commandRun(flags, deps) {
   }
   // An interrupted run is invalid whatever it left behind: the run did not finish on its own.
   const classification = child.interrupted
-    ? { valid: false, artifact: false, reasons: ["interrupted"], requests: null, log: parseCliStderr(child.stderr) }
+    ? { valid: false, artifact: null, reasons: ["interrupted"], requests: null, log: parseCliStderr(child.stderr) }
     : classifyRun({ exitCode: child.exitCode, signal: child.signal, stderr: child.stderr, review });
   const cost = runCost(classification.artifact ? review : undefined, classification.log);
   let reviewSha256 = null;
@@ -678,9 +678,15 @@ async function commandReconcile(flags, deps) {
   }
 
   const stepId = unsettled[0];
-  const started = series.find((line) => line.type === "started" && line.stepId === stepId);
+  const spend = seriesSpend(series, second.value);
+  if (spend.counterDelta === undefined)
+    refuse("no preflight", stepId, "restore the series preflight before reconciling");
   const record = series.find((line) => (line.type === "record" || line.type === "g3") && line.stepId === stepId);
-  const delta = second.value - started.counterBefore;
+  // A step's admission counter can lag behind earlier telemetry settlements.
+  // Attribute only cumulative usage not already recorded, never those charges again.
+  // As with T, usage on this key outside the series cannot be distinguished and
+  // is conservatively included; use a key with no concurrent external spending.
+  const delta = Math.max(0, spend.counterDelta - spend.settledTotal);
   // Telemetry: a run's complete cost, or the part that is known (a G3 step's finder cost; grading is not reported).
   const known =
     record?.type === "g3"
@@ -691,6 +697,9 @@ async function commandReconcile(flags, deps) {
   if (moving) {
     status = "unsettled";
     note = `counter still moving (${String(first.value)} → ${String(second.value)} over ${String(settleSeconds)} s)`;
+  } else if (spend.counterDelta < spend.settledTotal - 1e-9) {
+    status = "unsettled";
+    note = `counter delta $${spend.counterDelta.toFixed(6)} is below already settled $${spend.settledTotal.toFixed(6)}: still lagging`;
   } else if (delta < known - reconcileTolerance(known)) {
     status = "unsettled";
     note = `counter delta $${delta.toFixed(6)} is below the reported $${known.toFixed(6)}: still lagging`;
@@ -709,6 +718,8 @@ async function commandReconcile(flags, deps) {
     stepId,
     at: second.at,
     reads: [first, second],
+    counterDelta: spend.counterDelta,
+    settledTotal: spend.settledTotal,
     delta,
     known,
     status,

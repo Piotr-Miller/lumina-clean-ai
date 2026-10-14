@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 
 import { load } from "js-yaml";
 import { describe, expect, it } from "vitest";
+import { resolveCase } from "./glm-gate-sheet.mjs";
 
 import {
   a6Stops,
@@ -153,7 +154,7 @@ describe("classifyRun — validity per reason", () => {
   it("a technical judge failure leaves no review.json: invalid, no artifact, classified from stderr", () => {
     const stderr = `${STDERR_OK}\nretrying judge after AI_NoObjectGeneratedError in 4000ms\nNo object generated: could not parse the response.`;
     const result = classifyRun({ exitCode: 1, signal: null, stderr, review: undefined });
-    expect(result).toMatchObject({ valid: false, artifact: false, requests: null });
+    expect(result).toMatchObject({ valid: false, artifact: null, requests: null });
     expect(result.reasons).toEqual(["judge-error"]);
   });
 
@@ -459,14 +460,98 @@ const measured = ({ m247 = 0.08, m269 = 0.15 } = {}) => {
     t0(),
     ...g2Passed(),
     ...g3Passed(),
-    ...ran("pr247-01", "pr247", m247),
-    ...ran("pr247-02", "pr247", m247),
+    ...ran("pr247-01", "pr247", m247, true, { reviewSha256: "a".repeat(64) }),
+    ...ran("pr247-02", "pr247", m247, true, { reviewSha256: "a".repeat(64) }),
   ];
-  for (let i = 1; i <= 10; i += 1) series.push(...ran(`pr269-${String(i).padStart(2, "0")}`, "pr269", m269));
+  for (let i = 1; i <= 10; i += 1)
+    series.push(
+      ...ran(`pr269-${String(i).padStart(2, "0")}`, "pr269", m269, true, {
+        reviewSha256: "b".repeat(64),
+        findings: [{ id: "F1", file: "scripts/spikes/bread-spike.ts" }],
+      }),
+    );
   return series;
 };
 
+/** Real resolver output, with synthetic owner verdicts for this fixture's findings. */
+const handReadFor = (series, { approveD2 = true } = {}) => {
+  const cases = Object.fromEntries(
+    ["pr247", "pr269"].map((kind) => {
+      const runs = series.filter((line) => line.type === "record" && line.kind === kind && line.valid);
+      const verdicts = new Map(
+        runs.flatMap((run) =>
+          run.findings.map((finding) => [
+            `${run.stepId}#${finding.id}`,
+            kind === "pr269" && approveD2 ? "D2" : "accept",
+          ]),
+        ),
+      );
+      return [kind, resolveCase(kind, runs, { verdicts, duplicates: [] }).results];
+    }),
+  );
+  return {
+    cases,
+    problems: [],
+    pass: Object.values(cases)
+      .flat()
+      .every((run) => run.pass),
+  };
+};
+
 describe("computeOutcome", () => {
+  it.each([true, false])("waits for the tenth G1 run's settlement when its validity is %s", (valid) => {
+    const series = measured()
+      .filter((line) => !(line.type === "settled" && line.stepId === "pr269-10"))
+      .map((line) =>
+        line.type === "record" && line.stepId === "pr269-10"
+          ? { ...line, valid, reasons: valid ? [] : ["timeout"] }
+          : line,
+      );
+    const outcome = computeOutcome(series, { handRead: { pass: true } });
+    expect(outcome.state).toMatchObject({
+      next: null,
+      ended: null,
+      waitingFor: expect.stringMatching(/settlement.*pr269-10.*reconcile/u),
+    });
+    expect(outcome.verdict).toMatch(/^in progress — settlement/u);
+    expect(outcome.m269).toBeNull();
+    expect(outcome.lowerBound).toBeNull();
+    expect(computeOutcome([...series, settled("pr269-10", 0.15)], { handRead: handReadFor(series) }).verdict).toBe(
+      "ADMITTED (pending G5)",
+    );
+  });
+
+  it("applies the cost gate after the final settlement, and the budget stop even while settlement is pending", () => {
+    const series = measured({ m247: 0.15, m269: 0.1 }).filter(
+      (line) => !(line.type === "settled" && line.stepId === "pr269-10"),
+    );
+    expect(computeOutcome(series, { handRead: { pass: true } }).verdict).toMatch(/^in progress — settlement/u);
+    const settledOutcome = computeOutcome([...series, settled("pr269-10", 0.8)], { handRead: { pass: true } });
+    expect(settledOutcome.verdict).toBe("NOT ADMITTED (cost)");
+    expect(settledOutcome.m269).toBeCloseTo(0.17, 10);
+    expect(settledOutcome.lowerBound.total).toBeGreaterThan(10);
+    expect(computeOutcome(series, { counterNow: 103.7, handRead: { pass: true } }).verdict).toBe("INCOMPLETE (budget)");
+  });
+
+  it("requires a final #269 cost mean even when terminal records have no unsettled starts", () => {
+    const series = measured().filter((line) => !line.stepId?.startsWith("pr269-"));
+    for (let i = 1; i <= 10; i += 1) series.push(record(`pr269-${String(i).padStart(2, "0")}`, "pr269"));
+    const outcome = computeOutcome(series, { handRead: { pass: true } });
+    expect(outcome.m269).toBeNull();
+    expect(outcome.state.ended).toBeNull();
+    expect(outcome.verdict).toMatch(/^in progress — settlement of the #269 runs/u);
+  });
+
+  it.each(["clean-05", "g3"])("requires settlement of earlier paid step %s before final admission", (stepId) => {
+    const series = measured().filter((line) => !(line.type === "settled" && line.stepId === stepId));
+    const outcome = computeOutcome(series, { handRead: { pass: true } });
+    expect(outcome.m247).not.toBeNull();
+    expect(outcome.m269).not.toBeNull();
+    expect(outcome.state.ended).toBeNull();
+    expect(outcome.state.waitingFor).toContain(stepId);
+    expect(outcome.verdict).toMatch(/^in progress — settlement/u);
+  });
+
   it("a fully measured series waits for the hand-read, with cost provisional", () => {
     const outcome = computeOutcome(measured(), { counterNow: 102 });
     expect(outcome.verdict).toBe("measured — hand-read pending");
@@ -482,13 +567,101 @@ describe("computeOutcome", () => {
   });
 
   it("a passing hand-read makes it ADMITTED (pending G5) — never ADMITTED outright", () => {
-    expect(computeOutcome(measured(), { handRead: { pass: true } }).verdict).toBe("ADMITTED (pending G5)");
-    expect(computeOutcome(measured(), { handRead: { pass: false } }).verdict).toBe("NOT ADMITTED (hand-read)");
+    const series = measured();
+    expect(computeOutcome(series, { handRead: handReadFor(series) }).verdict).toBe("ADMITTED (pending G5)");
+    expect(computeOutcome(series, { handRead: handReadFor(series, { approveD2: false }) }).verdict).toBe(
+      "NOT ADMITTED (hand-read)",
+    );
+  });
+
+  it.each([
+    ["bare pass boolean", () => ({ pass: true })],
+    ["null evidence", () => null],
+    ["empty case results", () => ({ cases: { pr247: [], pr269: [] }, problems: [], pass: true })],
+    ["missing case", (handRead) => ({ ...handRead, cases: { pr269: handRead.cases.pr269 } })],
+    [
+      "missing run",
+      (handRead) => ({ ...handRead, cases: { ...handRead.cases, pr269: handRead.cases.pr269.slice(1) } }),
+    ],
+    [
+      "extra run",
+      (handRead) => {
+        handRead.cases.pr269.push({ ...handRead.cases.pr269[0], stepId: "dry-269" });
+        return handRead;
+      },
+    ],
+    [
+      "duplicate run",
+      (handRead) => {
+        handRead.cases.pr269.push(handRead.cases.pr269[0]);
+        return handRead;
+      },
+    ],
+    [
+      "stale artifact hash",
+      (handRead) => {
+        handRead.cases.pr269[0].reviewSha256 = "c".repeat(64);
+        return handRead;
+      },
+    ],
+    [
+      "missing artifact hash",
+      (handRead) => {
+        delete handRead.cases.pr269[0].reviewSha256;
+        return handRead;
+      },
+    ],
+    [
+      "resolver problem",
+      (handRead) => ({ ...handRead, problems: ["stored review.json differs from its recorded sha256"] }),
+    ],
+    [
+      "D2 absent despite a pass flag",
+      (handRead) => {
+        handRead.cases.pr269[0].d2 = 0;
+        return handRead;
+      },
+    ],
+    [
+      "wrong finding count",
+      (handRead) => {
+        handRead.cases.pr269[0].n = 0;
+        return handRead;
+      },
+    ],
+    ["inconsistent overall pass", (handRead) => ({ ...handRead, pass: false })],
+  ])("keeps %s pending instead of admitting or treating it as a measured candidate failure", (_label, change) => {
+    const series = measured();
+    const handRead = change(handReadFor(series));
+    const outcome = computeOutcome(series, { handRead });
+    expect(outcome.verdict).toBe("measured — hand-read evidence invalid; regenerate with `resolve`");
+    expect(outcome.gates["hand-read"]).toBe("pending (invalid evidence)");
+    expect(outcome.handReadProblems.length).toBeGreaterThan(0);
+    expect(renderOutcome(outcome, { at: "t" })).toContain("Hand-read evidence:");
+  });
+
+  it("requires evidence for valid runs only, including zero-finding #247 runs", () => {
+    const series = measured().map((line) =>
+      line.type === "record" && line.stepId === "pr269-10" ? { ...line, valid: false, reasons: ["timeout"] } : line,
+    );
+    const handRead = handReadFor(series);
+    expect(handRead.cases.pr247).toHaveLength(2);
+    expect(handRead.cases.pr247.every((run) => run.n === 0)).toBe(true);
+    expect(handRead.cases.pr269).toHaveLength(9);
+    expect(computeOutcome(series, { handRead }).verdict).toBe("ADMITTED (pending G5)");
+  });
+
+  it("accepts complete resolver coverage even when its run order differs", () => {
+    const series = measured();
+    const handRead = handReadFor(series);
+    handRead.cases.pr269.reverse();
+    expect(computeOutcome(series, { handRead }).verdict).toBe("ADMITTED (pending G5)");
   });
 
   it("the initial projection above $10.00 alone never fails cost; the lower bound above it does", () => {
     // m247 0.118, m269 0.155 → provisional $10.09, lower bound $8.79.
-    const provisional = computeOutcome(measured({ m247: 0.118, m269: 0.155 }), { handRead: { pass: true } });
+    const series = measured({ m247: 0.118, m269: 0.155 });
+    const provisional = computeOutcome(series, { handRead: handReadFor(series) });
     expect(provisional.provisional.total).toBeGreaterThan(10);
     expect(provisional.verdict).toBe("ADMITTED (pending G5)");
     // Lower bound 7.95 + 0.8 + 1.29753 = $10.04753, with A6 passed and $1.70 spent.

@@ -3,7 +3,7 @@ change_id: finder-glm-5-3
 title: "Measure glm-5.3 (reasoning low) as the ai-review finder, live PR probe included"
 status: implementing
 created: 2026-10-11
-updated: 2026-10-13
+updated: 2026-10-14
 archived_at: null
 ---
 

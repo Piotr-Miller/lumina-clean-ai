@@ -94,7 +94,18 @@ describe("resolveCase", () => {
     const runs = [run("pr247-01", [])];
     const { results, problems } = resolveCase("pr247", runs, sheetFor("pr247", runs, {}));
     expect(problems).toEqual([]);
-    expect(results).toEqual([{ stepId: "pr247-01", n: 0, rejected: 0, unresolved: 0, allowed: 0, d2: 0, pass: true }]);
+    expect(results).toEqual([
+      {
+        stepId: "pr247-01",
+        reviewSha256: "a".repeat(64),
+        n: 0,
+        rejected: 0,
+        unresolved: 0,
+        allowed: 0,
+        d2: 0,
+        pass: true,
+      },
+    ]);
   });
 
   it("#269 without a D2 fails, even with every finding accepted", () => {
@@ -188,7 +199,14 @@ describe("main — sheet and resolve on a recorded series", () => {
     writeFileSync(join(dir, "hand-read-269.md"), fill(sheet269, { "pr269-01#F1": "D2" }));
     const out = join(dir, "result.json");
     expect(main(["resolve", ...common, "--sheets-dir", dir, "--out", out], { log })).toBe(0);
-    expect(JSON.parse(readFileSync(out, "utf8"))).toMatchObject({ pass: true, problems: [] });
+    expect(JSON.parse(readFileSync(out, "utf8"))).toMatchObject({
+      pass: true,
+      problems: [],
+      cases: {
+        pr247: [{ stepId: "pr247-01", reviewSha256: sha256(files["pr247-01"]) }],
+        pr269: [{ stepId: "pr269-01", reviewSha256: sha256(files["pr269-01"]) }],
+      },
+    });
   });
 
   it("refuses a stored review.json that differs from its recorded sha256", () => {

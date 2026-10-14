@@ -239,7 +239,7 @@ export function classifyRun({ exitCode, signal, stderr, review }) {
     if (step.model === null || !ACCEPTED_MODEL.test(step.model)) reasons.push("model-mismatch");
   }
   if (reasons.length === 0) reasons.push(`exit-${String(exitCode)}`);
-  return { valid: false, artifact: false, reasons: [...new Set(reasons)], requests: null, log };
+  return { valid: false, artifact: null, reasons: [...new Set(reasons)], requests: null, log };
 }
 
 /**
@@ -347,7 +347,7 @@ export function meanSettledCost(series, kind) {
  * Returns `{ next, ended, waitingFor }`: `next` is the step kind that may run
  * (`clean`, `g3`, `regrade`, `pr247`, `pr269`) or null; `ended` is the
  * series' terminal state (`FAIL (<gate>)`, `INCOMPLETE (budget)`, or
- * `measured` when every step ran); `waitingFor` names an owner action.
+ * `measured` when every step ran and settled); `waitingFor` names an owner action.
  */
 export function scheduleState(series) {
   const budgetStop = series.find((line) => line.type === "budget_stop");
@@ -401,6 +401,15 @@ export function scheduleState(series) {
   const pr269 = records(series, "pr269");
   if (pr269.filter((record) => !record.valid).length >= 2) return { next: null, ended: "FAIL (G1)", waitingFor: null };
   if (pr269.length < 10) return { next: "pr269", ended: null, waitingFor: null };
+  const unsettled = unsettledSteps(series);
+  if (unsettled.length > 0)
+    return {
+      next: null,
+      ended: null,
+      waitingFor: `settlement of step(s) ${unsettled.join(", ")} (\`reconcile\`)`,
+    };
+  if (meanSettledCost(series, "pr269") === null)
+    return { next: null, ended: null, waitingFor: "settlement of the #269 runs (`reconcile`)" };
   return { next: null, ended: "measured", waitingFor: null };
 }
 
@@ -429,6 +438,75 @@ export function admit(series, kind, counterNow) {
 
 // --- Outcome ----------------------------------------------------------------------
 
+/** Bind saved resolver results to every current valid run and check their per-run verdicts. */
+function checkHandRead(series, handRead) {
+  const problems = [];
+  const pending = () => ({ pass: null, problems });
+  if (handRead === undefined) return pending();
+  if (typeof handRead !== "object" || handRead === null || Array.isArray(handRead)) {
+    problems.push("expected a resolver result object");
+    return pending();
+  }
+  if (!Array.isArray(handRead.problems) || handRead.problems.length > 0)
+    problems.push("resolver problems are missing or unresolved");
+  const cases = handRead.cases;
+  const kinds = ["pr247", "pr269"];
+  if (typeof cases !== "object" || cases === null || Array.isArray(cases)) {
+    problems.push("resolver case results are missing");
+    return pending();
+  }
+  for (const kind of Object.keys(cases)) if (!kinds.includes(kind)) problems.push(`unexpected hand-read case ${kind}`);
+  const passes = [];
+  for (const kind of kinds) {
+    const expected = records(series, kind).filter((record) => record.valid === true);
+    const byId = new Map(expected.map((record) => [record.stepId, record]));
+    if (expected.length === 0) problems.push(`${kind}: no valid runs to classify yet`);
+    if (byId.size !== expected.length) problems.push(`${kind}: duplicate run IDs in the series`);
+    const results = cases[kind];
+    if (!Array.isArray(results)) {
+      problems.push(`${kind}: case results missing`);
+      continue;
+    }
+    const seen = new Set();
+    for (const result of results) {
+      const id = result?.stepId;
+      const record = byId.get(id);
+      if (record === undefined) {
+        problems.push(`${kind}: result for a run outside the current valid set (${String(id)})`);
+        continue;
+      }
+      if (seen.has(id)) problems.push(`${kind}: duplicate result for ${id}`);
+      seen.add(id);
+      if (!/^[a-f0-9]{64}$/u.test(String(record.reviewSha256)) || result.reviewSha256 !== record.reviewSha256)
+        problems.push(`${id}: review.json sha256 missing or differs from the current series`);
+      if (!Array.isArray(record.findings) || result.n !== record.findings.length)
+        problems.push(`${id}: finding count differs from the published findings`);
+      if (
+        ![result.n, result.rejected, result.unresolved, result.allowed, result.d2].every(
+          (value) => Number.isSafeInteger(value) && value >= 0,
+        )
+      ) {
+        problems.push(`${id}: invalid hand-read counts`);
+        continue;
+      }
+      if (
+        result.allowed !== Math.ceil(0.05 * result.n) ||
+        result.unresolved > result.rejected ||
+        result.rejected + result.d2 > result.n ||
+        (kind === "pr247" && result.d2 !== 0)
+      )
+        problems.push(`${id}: inconsistent hand-read counts`);
+      const pass = result.rejected <= result.allowed && (kind !== "pr269" || result.d2 >= 1);
+      if (result.pass !== pass) problems.push(`${id}: pass flag disagrees with rejection/D2 results`);
+      passes.push(pass);
+    }
+    for (const id of byId.keys()) if (!seen.has(id)) problems.push(`${kind}: missing result for ${id}`);
+  }
+  const pass = passes.every(Boolean);
+  if (handRead.pass !== pass) problems.push("overall pass flag disagrees with per-run results");
+  return problems.length === 0 ? { pass, problems } : pending();
+}
+
 /**
  * The automatic outcome (plan Phase 5 §6, Phase 6 §4): each gate's verdict,
  * validity per run, m247, m269, the provisional projection and the pre-G5
@@ -437,6 +515,7 @@ export function admit(series, kind, counterNow) {
  */
 export function computeOutcome(series, { counterNow, handRead } = {}) {
   const state = scheduleState(series);
+  const checkedHandRead = checkHandRead(series, handRead);
   const spend = seriesSpend(series, counterNow);
   const runs = series
     .filter((line) => line.type === "record")
@@ -483,7 +562,14 @@ export function computeOutcome(series, { counterNow, handRead } = {}) {
         : `${String(pr269.filter((r) => r.valid).length)}/${String(pr269.length)} valid — ${
             pr269.filter((r) => !r.valid).length >= 2 ? "FAIL" : pr269.length === 10 ? "PASS" : "in progress"
           }`,
-    "hand-read": handRead === undefined ? "pending" : handRead.pass ? "PASS" : "FAIL",
+    "hand-read":
+      checkedHandRead.pass === null
+        ? checkedHandRead.problems.length > 0
+          ? "pending (invalid evidence)"
+          : "pending"
+        : checkedHandRead.pass
+          ? "PASS"
+          : "FAIL",
     cost:
       lowerBound === null || state.ended !== "measured"
         ? "provisional"
@@ -498,9 +584,13 @@ export function computeOutcome(series, { counterNow, handRead } = {}) {
     verdict = `NOT ADMITTED (${state.ended.replace(/^FAIL \((.*)\)$/u, "$1")})`;
   } else if (state.ended === "measured" && lowerBound !== null && exceedsLimit(lowerBound.total)) {
     verdict = "NOT ADMITTED (cost)";
-  } else if (state.ended === "measured" && handRead !== undefined) {
-    verdict = handRead.pass ? "ADMITTED (pending G5)" : "NOT ADMITTED (hand-read)";
-  } else if (state.ended === "measured") verdict = "measured — hand-read pending";
+  } else if (state.ended === "measured" && checkedHandRead.pass !== null) {
+    verdict = checkedHandRead.pass ? "ADMITTED (pending G5)" : "NOT ADMITTED (hand-read)";
+  } else if (state.ended === "measured")
+    verdict =
+      checkedHandRead.problems.length > 0
+        ? "measured — hand-read evidence invalid; regenerate with `resolve`"
+        : "measured — hand-read pending";
   else verdict = `in progress — ${state.waitingFor ?? `next step: ${String(state.next)}`}`;
 
   return {
@@ -513,6 +603,7 @@ export function computeOutcome(series, { counterNow, handRead } = {}) {
     lowerBound,
     spend: { ...spend, cap: BUDGET.cap, pause: BUDGET.pause, overshoot },
     state,
+    handReadProblems: checkedHandRead.problems,
   };
 }
 
@@ -539,6 +630,7 @@ export function renderOutcome(outcome, { at }) {
     `- Provisional projection (I = ${usd(IMPL_REVIEW_COST)}): ${usd(outcome.provisional?.total)}.`,
     `- Pre-G5 lower bound (I = ${usd(IMPL_REVIEW_COST / 2)}): ${usd(outcome.lowerBound?.total)}.`,
     `- T ${usd(outcome.spend.t)} (counter delta ${usd(outcome.spend.counterDelta)}, settled ${usd(outcome.spend.settledTotal)}) against the $${outcome.spend.pause.toFixed(2)} pause and the $${outcome.spend.cap.toFixed(2)} cap${outcome.spend.overshoot > 0 ? `; overshoot ${usd(outcome.spend.overshoot)}` : ""}.`,
+    ...outcome.handReadProblems.map((problem) => `- Hand-read evidence: ${problem}.`),
   ];
   return lines.join("\n");
 }

@@ -175,6 +175,7 @@ export function resolveCase(caseKey, runs, { verdicts, duplicates }) {
     const pass = rejected <= allowed && (!spec.d2 || d2 >= 1);
     return {
       stepId: run.stepId,
+      reviewSha256: run.reviewSha256,
       n,
       rejected,
       unresolved: rows.filter((row) => row.verdict === "unresolved").length,

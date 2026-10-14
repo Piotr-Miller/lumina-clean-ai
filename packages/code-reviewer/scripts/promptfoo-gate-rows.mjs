@@ -146,10 +146,10 @@ export function checkRow(raw) {
     rowError: typeof raw?.error === "string" ? raw.error : null,
     providers,
     providerMismatch,
-    invalidated: providerMismatch.length > 0,
+    invalidated: requests.length === 0 || providerMismatch.length > 0,
     models,
     modelMismatch,
-    modelInvalid: modelMismatch.length > 0,
+    modelInvalid: requests.length === 0 || modelMismatch.length > 0,
     requestReasoning,
     // At least one request body, and every one carrying exactly the decided shape.
     reasoningShapeOk:
@@ -333,6 +333,7 @@ export function summarizeRows(rows, extraProblems = []) {
     failedRun: false,
     pass:
       g3.pass &&
+      finderErrorRows.length === 0 &&
       invalidatedRows.length === 0 &&
       modelRows.length === 0 &&
       shapeRows.length === 0 &&

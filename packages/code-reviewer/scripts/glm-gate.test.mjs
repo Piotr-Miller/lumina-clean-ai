@@ -9,7 +9,7 @@ import { dirname, join } from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { EXPECTED_CONFIGURATION_LINE } from "./glm-gate-core.mjs";
+import { EXPECTED_CONFIGURATION_LINE, meanSettledCost, seriesSpend } from "./glm-gate-core.mjs";
 import { describeManifest, main, PACKAGE_DIR, readSeries, REPO_ROOT, sealedFileList } from "./glm-gate.mjs";
 
 const CHANGE = "context/changes/finder-glm-5-3";
@@ -270,7 +270,7 @@ describe("run", () => {
     );
   });
 
-  it("a run with no review.json records artifact:false with its reasons, stays unsettled, and blocks the next step until reconcile", async () => {
+  it("a run with no review.json records artifact:null with its reasons, stays unsettled, and blocks the next step until reconcile", async () => {
     const stderr = `${STDERR}Finder output rejected (reason=length, request=finalization, provider=Z.AI, finish=length, no format repair attempted): v\n`;
     const { world, deps, lines, setCounter } = await ready({
       runCli: fakeCli({ review: undefined, exitCode: 1, stderr }),
@@ -279,7 +279,7 @@ describe("run", () => {
     const record = seriesOf(world).find((line) => line.type === "record");
     expect(record).toMatchObject({
       valid: false,
-      artifact: false,
+      artifact: null,
       reasons: ["finder-output:length"],
       cost: { complete: false },
     });
@@ -381,6 +381,42 @@ describe("reconcile", () => {
     await main(["run", "--case", "clean", "--run-id", "clean-01"], ctx.deps);
     return { world, ...ctx };
   };
+
+  const afterTelemetrySettlement = async () => {
+    const world = setup();
+    const ctx = depsFor(world);
+    expect(await main(["preflight"], ctx.deps)).toBe(0);
+    expect(await main(["run", "--case", "clean", "--run-id", "clean-01"], ctx.deps)).toBe(0);
+    expect(await main(["continue", "--for", "probe", "--note", "go"], ctx.deps)).toBe(0);
+    ctx.deps.runCli = fakeCli({ review: reviewJson({ judgeTelemetry: { attempts: 1 } }) });
+    // The counter still reads T0 when clean-02 starts, although clean-01 is settled at $0.03.
+    expect(await main(["run", "--case", "clean", "--run-id", "clean-02"], ctx.deps)).toBe(0);
+    return { world, ...ctx };
+  };
+
+  it("does not charge a delayed telemetry-settled run again when settling the next run", async () => {
+    const { world, deps, setCounter } = await afterTelemetrySettlement();
+    setCounter(100.09); // Earlier $0.03 plus the incomplete run's $0.06 have now appeared.
+    expect(await main(["reconcile"], deps)).toBe(0);
+    const series = seriesOf(world);
+    const settlement = series.find((line) => line.type === "settled" && line.stepId === "clean-02");
+    expect(settlement.source).toBe("counter");
+    expect(settlement.cost).toBeCloseTo(0.06, 10);
+    expect(seriesSpend(series, 100.09).settledTotal).toBeCloseTo(0.09, 10);
+    expect(meanSettledCost(series, "clean")).toBeCloseTo(0.045, 10);
+  });
+
+  it.each([100.02, 100.034])(
+    "keeps the next run unsettled when cumulative usage %s has not caught up with attributed and known costs",
+    async (counter) => {
+      const { world, deps, setCounter } = await afterTelemetrySettlement();
+      setCounter(counter);
+      expect(await main(["reconcile"], deps)).toBe(1);
+      const series = seriesOf(world);
+      expect(series.findLast((line) => line.type === "reconcile").status).toBe("unsettled");
+      expect(series.filter((line) => line.type === "settled").map((line) => line.stepId)).toEqual(["clean-01"]);
+    },
+  );
 
   it("refuses reads less than 180 s apart", async () => {
     const { deps, lines } = await unsettledRun();
