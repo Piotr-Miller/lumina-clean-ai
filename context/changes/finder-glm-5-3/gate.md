@@ -561,7 +561,11 @@ _End of Amendment 1._
 - **Command:**
   `sed -n '/^### Amendment 1 — operator checks before paid steps (2026-10-14)$/,/^_End of Amendment 1\._$/p' gate.md | sha256sum`
   after `npx prettier --check gate.md` passed.
-- **Pushed:** recorded below once the push has happened, before T0.
+- **Pushed:** commit `docs(finder-glm-5-3): Amendment 1, operator checks before paid steps (p4)` to
+  `origin/feat/finder-glm-5-3`; GitHub push time **2026-10-14T20:43:56Z**
+  (`GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-glm-5-3`: `push`, its `after` equal
+  to that commit). Its committed `gate.md` reproduces the sha256 above. Pre-push hook: typecheck and 418/418 unit
+  tests passed. Recorded before T0 or any paid call.
 
 ## Results
 
