@@ -1118,7 +1118,7 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [ ] 1.8 Owner confirms screening-config.md is sufficient and non-sensitive
+- [x] 1.8 Owner confirms screening-config.md is sufficient and non-sensitive — accepted at 4432a70cb499ffd1e9e455bcd79d78dfeac55bd2
 
 ### Phase 2: Configure for glm-5.3 and close the gaps
 
