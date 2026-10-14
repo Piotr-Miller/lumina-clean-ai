@@ -1146,7 +1146,7 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [ ] 2.7 Owner reads the configuration and step lines from a stubbed run
+- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — accepted at f2ccfddd25b5483cec2ea02237adaf2620eef86d
 
   Observed through the real CLI, pipeline, reviewer, judge and response observer with stubbed HTTP:
 
@@ -1222,6 +1222,26 @@ decides. Every later push to the ready PR is another paid review and is ledgered
   in cli.test.ts, which call runReviewCli itself with a rejecting pipeline; no real-CLI run produced one. Nothing
   between the SDK and the CLI rewraps the error (retry.ts rethrows it unchanged; pipeline.ts does not catch and
   re-throw it), so the untested part is whether a real response raises those classes, not the summary decision.
+
+  Re-check after `f2ccfdd` (2026-10-14), which moved the step-summary decision into `publicErrorSummary`
+  (`retry.ts`) and applied it to a failed implementation review in `comment.md`. Five runs of the real CLI
+  (`tsx src/review-pr.ts`, dummy key, preloaded `fetch`, the same diff, source root and plan) at both `eb5ea06` and
+  `f2ccfdd`:
+  - The HTTP 402 stub, the dry-run stub with `--source-root`, and the judge-prose wrapper: stderr, the step summary
+    and stdout (output directory normalized) are byte-identical between the two revisions, including the
+    configuration line and both `kind=` step lines above.
+  - The dry-run stub plus `--plan-file`, with the impl-review request (the only one carrying the plan) answered
+    HTTP 402 with the same body: exit 0 at both. `comment.md` differs in one line only: at `eb5ea06`
+    `…skipped: Insufficient credits QX402-BODY-SENTINEL-9d41.`, at `f2ccfdd`
+    `…skipped: AI_APICallError: api error: status=402 (provider message only in the job log).` The stderr line
+    `impl review: FAILED (Insufficient credits QX402-BODY-SENTINEL-9d41) (no usage reported)` is identical at both.
+    `review.json` carries `error` (the message) and `publicError` (the summary).
+  - The dry-run stub plus `--plan-file`, unwrapped: the impl-review request gets the judge's canned answer, which
+    fails its schema; exit 0 at both. `comment.md` again differs in one line only, from
+    `No object generated: response did not match schema.` to
+    `AI_NoObjectGeneratedError: SDK error (message only in the job log)`.
+
+  No live API calls.
 
 ### Phase 3: Build the measurement tooling
 
