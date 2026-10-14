@@ -1,4 +1,4 @@
-import { APICallError, NoObjectGeneratedError } from "ai";
+import { AISDKError, APICallError, NoObjectGeneratedError } from "ai";
 
 // The user's retry rule as pure code: retry exactly once, per pass, and only
 // for transient failures. Both passes run their agents with `maxRetries: 0`
@@ -59,6 +59,48 @@ export function apiErrorStatus(error: unknown): number | undefined {
     if ("lastError" in current) queue.push(current.lastError);
   }
   return undefined;
+}
+
+/**
+ * Whether an SDK error sits anywhere in the failure's chain — the same walk
+ * as `apiErrorStatus`. An SDK message can quote model output with no HTTP
+ * status attached (TypeValidationError's `Value:`, JSONParseError's `Text:`,
+ * RetryError repeating its last error), so public surfaces treat any SDK
+ * error as unsafe to quote rather than listing the classes that are.
+ */
+function hasSdkError(error: unknown): boolean {
+  const seen = new Set<object>();
+  const queue: unknown[] = [error];
+  while (queue.length > 0 && seen.size < 16) {
+    const current = queue.shift();
+    if (typeof current !== "object" || current === null || seen.has(current)) continue;
+    seen.add(current);
+    if (AISDKError.isInstance(current)) return true;
+    if ("cause" in current) queue.push(current.cause);
+    if ("lastError" in current) queue.push(current.lastError);
+  }
+  return false;
+}
+
+export const errorLabel = (error: unknown): string => {
+  const name = errorName(error);
+  return name === undefined || name === "" ? String(error) : name;
+};
+
+/**
+ * What a public surface — the step summary, the PR comment — may say about a
+ * failure. An APICallError's message is the provider's response body text and
+ * any other SDK error may quote model output, so either shows only its label
+ * and status; the message stays in the job log. A non-SDK error keeps its
+ * message, which never quotes the response (change `finder-glm-5-3`, owner
+ * decisions 2026-10-14). `label` lets a caller escape the name for its surface.
+ */
+export function publicErrorSummary(error: unknown, label = errorLabel(error)): string {
+  const status = apiErrorStatus(error);
+  if (status !== undefined)
+    return `${label}: api error: status=${String(status)} (provider message only in the job log)`;
+  if (hasSdkError(error)) return `${label}: SDK error (message only in the job log)`;
+  return error instanceof Error ? error.message : String(error);
 }
 
 // Pre-retry delay policy: an immediate 429 retry usually lands in the same

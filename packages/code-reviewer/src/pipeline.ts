@@ -11,7 +11,7 @@ import {
 import { createJudge, type Judge, type JudgeCallOptions, type JudgeOptions } from "./judge.js";
 import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
 import { asStepCost, asStepProvider, MISSING_RESPONSE_FIELDS } from "./provider-metadata.js";
-import { withOneRetry } from "./retry.js";
+import { publicErrorSummary, withOneRetry } from "./retry.js";
 import {
   createReviewer,
   type FinderRequestMeta,
@@ -798,7 +798,11 @@ async function runImplReviewPass(
     });
   } catch (error) {
     return withTelemetry({
-      implReview: { status: "failed", error: error instanceof Error ? error.message : String(error) },
+      implReview: {
+        status: "failed",
+        error: error instanceof Error ? error.message : String(error),
+        publicError: publicErrorSummary(error),
+      },
     });
   }
 }

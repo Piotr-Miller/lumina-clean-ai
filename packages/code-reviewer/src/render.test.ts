@@ -230,10 +230,31 @@ describe("renderStickyComment implementation-review section", () => {
   });
 
   it("renders the failed state and says the code review is unaffected", () => {
-    const comment = renderStickyComment(result({ implReview: { status: "failed", error: "provider exploded" } }));
+    const comment = renderStickyComment(
+      result({ implReview: { status: "failed", error: "provider exploded", publicError: "provider exploded" } }),
+    );
     expect(comment).toContain("Implementation review — ⚠️ could not complete");
     expect(comment).toContain("provider exploded");
     expect(comment).toContain("The code review above is unaffected.");
+  });
+
+  // Owner decision 2026-10-14 (change `finder-glm-5-3`): `error` can carry the
+  // provider's response body or quoted model output, so the comment shows
+  // `publicError` only.
+  it("shows the failed block's publicError and never its error (MODEL-SENTINEL)", () => {
+    const comment = renderStickyComment(
+      result({
+        implReview: {
+          status: "failed",
+          error: "Type validation failed: Value: {MODEL-SENTINEL}",
+          publicError: "AI_TypeValidationError: SDK error (message only in the job log)",
+        },
+      }),
+    );
+    expect(comment).toContain(
+      "The implementation review failed and was skipped: AI_TypeValidationError: SDK error (message only in the job log).",
+    );
+    expect(comment).not.toContain("MODEL-SENTINEL");
   });
 
   it("renders the reviewed state with verdict, plan path, findings, and grade table", () => {

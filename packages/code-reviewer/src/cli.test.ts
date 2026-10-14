@@ -713,7 +713,11 @@ describe("runReviewCli implementation-review telemetry line", () => {
       [],
       {},
       io,
-      okPipeline(pipelineResult({ implReview: { status: "failed", error: "provider exploded" } })),
+      okPipeline(
+        pipelineResult({
+          implReview: { status: "failed", error: "provider exploded", publicError: "provider exploded" },
+        }),
+      ),
     );
     expect(code).toBe(0);
     expect(io.errors.find((error) => error.startsWith("impl review:"))).toBe(
@@ -1239,5 +1243,61 @@ describe("a quoted <think is not inline reasoning, but a rejected text quoting i
     expect(stderr).toContain(`reason=inline-reasoning chars=${String(rejected.length)}`);
     expect(stderr).not.toContain("REASONING-SENTINEL");
     expect(io.appended.get("summary.md") ?? "").not.toContain("REASONING-SENTINEL");
+  });
+});
+
+// Owner decision 2026-10-14 (change `finder-glm-5-3`): the PR comment is a
+// public surface, so a failed implementation review shows there only what the
+// step summary would — the class and HTTP status of an SDK error. The provider
+// message stays in the job log and review.json.
+describe("a failed implementation review keeps provider text out of comment.md", () => {
+  it("an HTTP 402 on the impl-review request: comment.md names the status, stderr keeps the BODY-SENTINEL", async () => {
+    const planMarker = "IMPL-PLAN-MARKER";
+    const stub = e2eWire([{ content: VALID_REVIEW_TEXT, finish: "stop", provider: "Z.AI", cost: 0.001 }]);
+    const implBodies: string[] = [];
+    // Only the impl-review request carries the plan; it gets a 402 whose body
+    // the provider turns into the APICallError message.
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const body = typeof init?.body === "string" ? init.body : "";
+      if (!body.includes(planMarker)) return stub.fetch(input, init);
+      implBodies.push(body);
+      return Promise.resolve(
+        new Response(JSON.stringify({ error: { message: "Insufficient credits BODY-SENTINEL", code: 402 } }), {
+          status: 402,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    });
+    const io = fakeIo({
+      readFile: (path) =>
+        path === "pr.diff"
+          ? E2E_DIFF
+          : path === "plan.md"
+            ? `# Plan\n\n${planMarker}\n`
+            : "export const a = 1; // file context",
+    });
+    const code = await runReviewCli(
+      ["--diff-file", "pr.diff", "--plan-file", "plan.md"],
+      { GITHUB_STEP_SUMMARY: "summary.md", PLAN_PATH: "plan.md" },
+      io,
+      realPipeline,
+    );
+    // An advisory pass: its failure is not the run's.
+    expect(code).toBe(0);
+    expect(implBodies.length).toBeGreaterThan(0);
+
+    const commentMd = io.files.get(join(".review-out", "comment.md")) ?? "";
+    expect(commentMd).toContain(
+      "The implementation review failed and was skipped: AI_APICallError: api error: status=402 (provider message only in the job log).",
+    );
+    expect(commentMd).not.toContain("BODY-SENTINEL");
+    // The job log keeps the message, and review.json carries both texts.
+    expect(io.errors.find((line) => line.startsWith("impl review: FAILED"))).toContain("BODY-SENTINEL");
+    const written = JSON.parse(io.files.get(join(".review-out", "review.json")) ?? "{}") as PipelineResult;
+    expect(written.implReview).toEqual({
+      status: "failed",
+      error: "Insufficient credits BODY-SENTINEL",
+      publicError: "AI_APICallError: api error: status=402 (provider message only in the job log)",
+    });
   });
 });

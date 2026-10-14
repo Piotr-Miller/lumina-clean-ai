@@ -495,6 +495,11 @@ number | null}>`. `value` is `null` exactly when `source` is `missing`, so a mis
   `TypeValidationError` quotes `Value: <JSON>` and `JSONParseError` quotes `Text: <text>`, so their messages can
   carry model output (owner decision 2026-10-14; the MODEL-SENTINEL tests failed before the fix). A non-SDK
   failure, `FinderOutputError` included, keeps its message, which never quotes the response.
+- **PR comment on a failed implementation review (owner decision 2026-10-14):** the same rule as the step summary,
+  from one shared function (`publicErrorSummary` in `retry.ts`). The failed block carries `publicError`, the only
+  text `comment.md` shows; `error` keeps the full message for the stderr `impl review: FAILED` line and
+  `review.json`. Before the fix, a stubbed HTTP 402 on the impl-review request put the provider body into
+  `comment.md`. It landed before the Phase 4 seal, because the seal covers every `packages/code-reviewer/src/**/*.ts`.
 - **Schema:** retry attempts are included. No text field exists.
 
 ### Success Criteria:
@@ -1141,7 +1146,7 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — accepted at eb5ea063faa79344efd73c6badf02f0088a332b3
+- [ ] 2.7 Owner reads the configuration and step lines from a stubbed run
 
   Observed through the real CLI, pipeline, reviewer, judge and response observer with stubbed HTTP:
 

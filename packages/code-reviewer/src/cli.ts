@@ -1,12 +1,10 @@
 import { join } from "node:path";
 
-import { AISDKError } from "ai";
-
 import { FINDER_REASONING, resolveFinderProviderRouting, resolveModels, type FinderProviderRouting } from "./config.js";
 import { containsInlineReasoning } from "./output-repair.js";
 import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
-import { apiErrorStatus } from "./retry.js";
+import { apiErrorStatus, errorLabel, publicErrorSummary } from "./retry.js";
 import type { PipelineResult, Reported } from "./schemas.js";
 import { createDiffScopedSourceForDiff } from "./source-provider.js";
 
@@ -293,32 +291,6 @@ function parseTimeoutEnv(env: CliEnv, name: string): number | undefined {
   return value;
 }
 
-/**
- * Whether an SDK error sits anywhere in the failure's chain — the same walk
- * as `apiErrorStatus`. An SDK message can quote model output with no HTTP
- * status attached (TypeValidationError's `Value:`, JSONParseError's `Text:`,
- * RetryError repeating its last error), so the step summary treats any SDK
- * error as unsafe to quote rather than listing the classes that are.
- */
-function hasSdkError(error: unknown): boolean {
-  const seen = new Set<object>();
-  const queue: unknown[] = [error];
-  while (queue.length > 0 && seen.size < 16) {
-    const current = queue.shift();
-    if (typeof current !== "object" || current === null || seen.has(current)) continue;
-    seen.add(current);
-    if (AISDKError.isInstance(current)) return true;
-    if ("cause" in current) queue.push(current.cause);
-    if ("lastError" in current) queue.push(current.lastError);
-  }
-  return false;
-}
-
-const errorLabel = (error: unknown): string =>
-  typeof error === "object" && error !== null && "name" in error && typeof error.name === "string" && error.name !== ""
-    ? error.name
-    : String(error);
-
 /** Actions run URL when the standard env triple is present; omitted locally. */
 function resolveRunUrl(env: CliEnv): string | undefined {
   const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID } = env;
@@ -481,13 +453,7 @@ export async function runReviewCli(
     // (owner decision 2026-10-14, Manual 2.7 re-check). Any other SDK error
     // may quote model output, so it shows only its class (change
     // `finder-glm-5-3`, owner decision 2026-10-14).
-    const label = escapeControl(errorLabel(error));
-    const summary =
-      status !== undefined
-        ? `${label}: api error: status=${String(status)} (provider message only in the job log)`
-        : hasSdkError(error)
-          ? `${label}: SDK error (message only in the job log)`
-          : message;
+    const summary = publicErrorSummary(error, escapeControl(errorLabel(error)));
     const summaryPath = env.GITHUB_STEP_SUMMARY;
     if (summaryPath) io.appendFile(summaryPath, `\n## AI review failed\n\n${summary}\n`);
     return 1;

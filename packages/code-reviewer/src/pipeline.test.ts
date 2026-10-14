@@ -1,4 +1,11 @@
-import { APICallError, type ProviderMetadata, type StepResult, type ToolSet } from "ai";
+import {
+  APICallError,
+  JSONParseError,
+  TypeValidationError,
+  type ProviderMetadata,
+  type StepResult,
+  type ToolSet,
+} from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_JUDGE_MODEL, DEFAULT_MODEL } from "./config.js";
@@ -1002,11 +1009,61 @@ describe("runReviewPipeline implementation-review pass", () => {
         retrySleep: () => Promise.resolve(),
       },
     });
-    expect(result.implReview).toEqual({ status: "failed", error: "provider exploded" });
+    // A non-SDK error keeps its message in the comment too.
+    expect(result.implReview).toEqual({
+      status: "failed",
+      error: "provider exploded",
+      publicError: "provider exploded",
+    });
     // The code review survived whole.
     expect(result.verdict).toBe("passed");
     expect(result.summary).toBe("judge summary");
     expect(result.scores).toBeDefined();
+  });
+
+  // Owner decision 2026-10-14 (change `finder-glm-5-3`): the PR comment is
+  // public, so it gets the step summary's rule. An APICallError's message is
+  // the provider's response body and any other SDK error may quote model
+  // output, so `publicError` — the only text comment.md shows — names the
+  // class and status. `error` keeps the message for the job log and review.json.
+  const typeValidation = () =>
+    new TypeValidationError({ value: { summary: "MODEL-SENTINEL" }, cause: new Error("expected array") });
+  it.each([
+    [
+      "an APICallError",
+      () =>
+        new APICallError({
+          message: "Insufficient credits MODEL-SENTINEL",
+          url: "u",
+          requestBodyValues: {},
+          statusCode: 402,
+          responseBody: '{"error":"MODEL-SENTINEL"}',
+        }),
+      "AI_APICallError: api error: status=402 (provider message only in the job log)",
+    ],
+    ["a TypeValidationError", typeValidation, "AI_TypeValidationError: SDK error (message only in the job log)"],
+    [
+      "a JSONParseError",
+      () => new JSONParseError({ text: "{MODEL-SENTINEL", cause: new Error("bad") }),
+      "AI_JSONParseError: SDK error (message only in the job log)",
+    ],
+    [
+      "a wrapper whose message repeats an SDK error",
+      () => {
+        const inner = typeValidation();
+        return new Error(inner.message, { cause: inner });
+      },
+      "Error: SDK error (message only in the job log)",
+    ],
+  ])("keeps the message of %s out of the failed block's publicError (MODEL-SENTINEL)", async (_label, make, shown) => {
+    const error = make();
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: { ...twoPasses, implReviewer: () => Promise.reject(error), retrySleep: () => Promise.resolve() },
+    });
+    expect(result.implReview).toEqual({ status: "failed", error: error.message, publicError: shown });
+    expect(error.message).toContain("MODEL-SENTINEL");
   });
 
   // Construction throws on an unresolvable API key — that is a failure of this

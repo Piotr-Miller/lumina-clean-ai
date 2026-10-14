@@ -352,7 +352,10 @@ export interface ImplReviewTelemetry {
  */
 export type ImplReviewBlock =
   | ({ status: "reviewed"; planPath?: string } & ImplReviewResult)
-  | { status: "failed"; error: string }
+  // `error` is the full message, for the job log and review.json; it can carry
+  // provider or model text. `publicError` is the only text comment.md shows
+  // (`publicErrorSummary`; change `finder-glm-5-3`, owner decision 2026-10-14).
+  | { status: "failed"; error: string; publicError: string }
   | { status: "skipped"; reason: string };
 
 // --- Implementation review (third pass) ---

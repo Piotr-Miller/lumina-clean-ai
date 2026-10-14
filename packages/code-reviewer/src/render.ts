@@ -149,7 +149,7 @@ function renderImplReviewSection(result: PipelineResult): string[] {
       "",
       "#### Implementation review — ⚠️ could not complete",
       "",
-      `The implementation review failed and was skipped: ${sanitizeInline(block.error)}. The code review above is unaffected.`,
+      `The implementation review failed and was skipped: ${sanitizeInline(block.publicError)}. The code review above is unaffected.`,
     ];
   }
 
