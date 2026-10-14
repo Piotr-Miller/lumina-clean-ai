@@ -1141,7 +1141,7 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — accepted at d04c66fa6ea251f2dc0d6fe558e0eee247a5fd5b
+- [x] 2.7 Owner reads the configuration and step lines from a stubbed run — accepted at eb5ea063faa79344efd73c6badf02f0088a332b3
 
   Observed through the real CLI, pipeline, reviewer, judge and response observer with stubbed HTTP:
 
@@ -1186,6 +1186,37 @@ decides. Every later push to the ready PR is another paid review and is ledgered
   Apart from `kind=`, the two lines are byte-identical. The runner's `parseCliStderr` reads them as
   `kind: "step"` and `kind: "finalization"`. `kind` comes from the code's closed union, never from the response.
   No live API calls.
+
+  Re-check after `eb5ea06` (2026-10-14), which changed the step summary for SDK errors without an HTTP status.
+  Three runs of the real CLI (`tsx src/review-pr.ts`) with a dummy key and a preloaded `fetch` that refuses every
+  URL except the chat endpoint:
+  - The HTTP 402 stub above, same body: exit 1, no stdout, no `review.json`. stderr and the step summary
+    (`AI_APICallError: api error: status=402 (provider message only in the job log)`) are identical to the
+    `20a3127` re-check. The sentinel is only on the stderr message line.
+  - The dry-run stub (`scripts/glm-gate-dry-run-stub.mjs`) with `--source-root`: exit 0. The configuration line and
+    both `kind=` step lines above are byte-identical.
+  - The new branch: the dry-run stub plus a wrapper that answers each judge request (the one carrying
+    `response_format`) with HTTP 200 whose message content is the prose
+    `I think this PR looks fine overall. MODEL-SENTINEL-7c2e`, with no JSON object. The SDK raised
+    `AI_NoObjectGeneratedError` (no HTTP status). The judge was retried once, then the run exited 1:
+
+    ```text
+    finder configuration: model=z-ai/glm-5.3 reasoning=low providers=z-ai,fireworks,together
+    retrying judge after AI_NoObjectGeneratedError in 0ms
+    No object generated: could not parse the response.
+    rejected output (AI_NoObjectGeneratedError, provider=Anthropic, finish=stop, 55 chars): I think this PR looks fine overall. MODEL-SENTINEL-7c2e
+    ```
+
+    Step summary: `## AI review failed` followed by
+    `AI_NoObjectGeneratedError: SDK error (message only in the job log)`. The sentinel appears only on the
+    stderr-only rejected-output line, never in the step summary or on stdout. No `api error:` line.
+
+  No live API calls.
+
+  Limit: a quoting SDK error (TypeValidationError, JSONParseError) is covered only by the three MODEL-SENTINEL tests
+  in cli.test.ts, which call runReviewCli itself with a rejecting pipeline; no real-CLI run produced one. Nothing
+  between the SDK and the CLI rewraps the error (retry.ts rethrows it unchanged; pipeline.ts does not catch and
+  re-throw it), so the untested part is whether a real response raises those classes, not the summary decision.
 
 ### Phase 3: Build the measurement tooling
 
