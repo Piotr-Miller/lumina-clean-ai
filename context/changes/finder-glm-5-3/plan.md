@@ -1137,7 +1137,7 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [ ] 3.5 Owner accepts the sheet format
+- [x] 3.5 Owner accepts the sheet format — accepted at 674fb79d2ecf79553b0e5f83dbd0856f7f2e8d34
 
 ### Phase 4: Pre-registration and seal
 
