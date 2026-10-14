@@ -61,9 +61,11 @@ course skills, but it is _strictly worse_ as a recovery path, for three reasons:
    configured once (§2.2), so an AI agent can complete a recovery unattended — it cannot
    complete `10x auth`.
 2. **It cannot restore the local extensions.** `10x-archive` step 6, the `10x-impl-review`
-   mutation step and `SKILL.user.md` exist in no upstream bundle. The package's recovery payload
-   carries all three; a fetch would silently give you skills that look right and have had their
-   local behaviour stripped. (This is exactly why §3.1 exists — and why it does **not** apply
+   mutation step and `SKILL.user.md` exist in no upstream bundle. Since `1.11.0` the package no
+   longer installs `10x-archive` or `10x-impl-review`: Millrune's `rune-archive` (tracker sync and
+   `gh issue close`) and `rune-impl-review` (the conditional mutation check) carry that behaviour
+   instead. A fetch would silently give you course skills that look right and have had their local
+   behaviour stripped. (This is exactly why §3.1 exists — and why it does **not** apply
    after a package install.)
 3. **It hands you an unadapted `.agents/` tree.** The package ships both trees already adapted,
    so the whole §3 re-sync is unnecessary after an install.
@@ -140,9 +142,9 @@ including how to rotate a leaked token. Nothing in this repository reads or prin
 Then install, at the exact pinned version — never a moving dist-tag:
 
 ```bash
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.10.0 -- ai-toolkit setup --check   # diagnose only, writes nothing
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.10.0 -- ai-toolkit setup --dry-run # plan, writes nothing
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.10.0 -- ai-toolkit setup
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.11.0 -- ai-toolkit setup --check   # diagnose only, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.11.0 -- ai-toolkit setup --dry-run # plan, writes nothing
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.11.0 -- ai-toolkit setup
 ```
 
 The version to use is the one in [`.ai-toolkit/config.json`](../../.ai-toolkit/config.json).
@@ -163,20 +165,21 @@ tracked on purpose. Every installed path is gitignored; if anything else shows u
 ### 2.3 Verify the restore
 
 ```bash
-npm exec --yes --package=@piotr-miller/ai-toolkit@1.10.0 -- ai-toolkit status
+npm exec --yes --package=@piotr-miller/ai-toolkit@1.11.0 -- ai-toolkit status
 npm run check:skills                          # public parity — the three tracked skills
 ```
 
 ✅ `status` reports every target `unchanged` and exits `0`; it is the check that names an edited
 or missing file, and it exits `2` rather than `0` when it could not see everything (the full
 local checker it replaced was retired in #213 — see §4). `check:skills` ends `OK: no drift …`.
-Then confirm the three local extensions survived — these are the ones no CLI fetch can restore, so
-they are the point of installing from the package rather than re-fetching:
+Then confirm the two local extensions arrived — no CLI fetch can restore them, so they are the
+point of installing from the package rather than re-fetching. Since `1.11.0` they ship in Millrune,
+whose `rune-archive` and `rune-impl-review` replace `10x-archive` and `10x-impl-review` (the package
+no longer installs those two, nor `10x-impl-review/SKILL.user.md`):
 
 ```bash
-grep -l "gh issue close" .claude/skills/10x-archive/SKILL.md
-grep -li stryker .claude/skills/10x-impl-review/SKILL.md
-ls .claude/skills/10x-impl-review/SKILL.user.md
+grep -l "gh issue close" .claude/skills/rune-archive/SKILL.md
+grep -li stryker .claude/skills/rune-impl-review/SKILL.md
 ls .claude/skills/rune-plan/SKILL.md .agents/skills/rune-archive/SKILL.md   # Millrune arrived in both trees
 ```
 
@@ -414,7 +417,7 @@ this workspace's greps in §2.3 passing.
 - **The package is the durable copy, not this workspace.** Anything gitignored here survives only
   because `@piotr-miller/ai-toolkit` ships it. Carry every fetch or hand-edit back into the
   package (§3.5) — a workspace-only change is one `rm -rf` from gone.
-- **Always name an exact version.** `ai-toolkit@1.10.0`, never a dist-tag, in evidence, in
+- **Always name an exact version.** `ai-toolkit@1.11.0`, never a dist-tag, in evidence, in
   scripts, and in anything you paste into an issue. A moving tag makes a record unreproducible.
 - The **upstream README is authoritative** for CLI install/usage:
   <https://raw.githubusercontent.com/przeprogramowani/10x-cli/refs/heads/master/README.md>
