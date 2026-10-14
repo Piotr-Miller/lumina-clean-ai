@@ -50,6 +50,8 @@ archived_at: null
 
 2026-10-14: owner decision — on a provider error (an `APICallError` with a status in the chain), the step summary shows only `<error name>: api error: status=<n>`; the provider message stays on stderr. Found by the stubbed 402 re-check of Manual 2.7 (the body sentinel reached the summary); plan.md Phase 2 § 6 Contract, 2.7 evidence.
 
+2026-10-14: owner decision — any other SDK error in the failure's chain (an `AISDKError` without a status) puts only `<error name>: SDK error (message only in the job log)` in the step summary, because `TypeValidationError` and `JSONParseError` quote model output in their messages (ai@7.0.52); non-SDK errors, `FinderOutputError` included, keep their message; stderr unchanged. Three MODEL-SENTINEL tests in `cli.test.ts` failed before the fix; plan.md Phase 2 § 6 Contract.
+
 2026-10-14: re-confirmed 2.7 — was reopened (last accepted at b6afeb193255ff875a53e0e9254d68942c3f5730); accepted at 20a312796062d07948ea0af8d9b78789b2105d19. Explicit owner confirmation through `/rune-implement` after the stubbed HTTP 402 re-check (conditions a–c met at that revision); recording preflight returned `recordable`.
 
 2026-10-14: confirmed 1.8 — accepted at 4432a70cb499ffd1e9e455bcd79d78dfeac55bd2 (`screening-config.md` unchanged since 9782f38). Explicit owner confirmation after an agent check of the surface: no key, token or absolute path in the file; all 16 listed sha256 match the raw artifacts in `~/.cache/finder-glm-5-3/screening/`; the three-line delta matches `9c85aa2:packages/code-reviewer/evals/finder-provider.ts` at lines 31, 134 and 487; the three wrappers differ only in import and log path; the wire-log response counts, costs and reasoning tokens match the per-pass totals.

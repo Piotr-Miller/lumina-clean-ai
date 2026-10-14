@@ -489,8 +489,12 @@ number | null}>`. `value` is `null` exactly when `source` is `missing`, so a mis
 - **Step summary on a provider error (owner decision 2026-10-14):** when the failure's chain carries an
   `APICallError` with a status, `$GITHUB_STEP_SUMMARY` gets only
   `<error name>: api error: status=<n> (provider message only in the job log)`. The error message, which is the
-  provider's response body text, stays on the stderr message line only. Every other failure keeps its message in the summary. Found by the stubbed 402 run of Manual
-  2.7: the body sentinel reached the summary.
+  provider's response body text, stays on the stderr message line only. Found by the stubbed 402 run of Manual
+  2.7: the body sentinel reached the summary. Any other SDK error in the chain (an `AISDKError`, same
+  `cause`/`lastError` walk) gets only `<error name>: SDK error (message only in the job log)`: in ai@7.0.52
+  `TypeValidationError` quotes `Value: <JSON>` and `JSONParseError` quotes `Text: <text>`, so their messages can
+  carry model output (owner decision 2026-10-14; the MODEL-SENTINEL tests failed before the fix). A non-SDK
+  failure, `FinderOutputError` included, keeps its message, which never quotes the response.
 - **Schema:** retry attempts are included. No text field exists.
 
 ### Success Criteria:

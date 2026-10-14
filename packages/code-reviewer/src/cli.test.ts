@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { APICallError, NoObjectGeneratedError } from "ai";
+import { APICallError, JSONParseError, NoObjectGeneratedError, TypeValidationError } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -226,6 +226,46 @@ describe("runReviewCli api error status line", () => {
     expect(summary).toContain("api error: status=402");
     expect(summary).not.toContain("BODY-SENTINEL");
     expect(io.errors).toEqual([CONFIG_LINE, "Insufficient credits BODY-SENTINEL", "api error: status=402"]);
+  });
+
+  // Owner decision 2026-10-14 (change `finder-glm-5-3`): an SDK error WITHOUT
+  // an HTTP status can quote model output in its message — TypeValidationError
+  // embeds `Value: <JSON>`, JSONParseError `Text: <text>`, RetryError its last
+  // error's message — so the step summary carries only the class for any SDK
+  // error in the chain. stderr keeps the message line.
+  const typeValidation = () =>
+    new TypeValidationError({ value: { summary: "MODEL-SENTINEL" }, cause: new Error("expected array") });
+  it.each([
+    ["a TypeValidationError", typeValidation, "AI_TypeValidationError"],
+    [
+      "a JSONParseError",
+      () => new JSONParseError({ text: "{MODEL-SENTINEL", cause: new Error("bad") }),
+      "AI_JSONParseError",
+    ],
+    [
+      "a wrapper whose message repeats an SDK error",
+      () => {
+        const inner = typeValidation();
+        return new Error(inner.message, { cause: inner });
+      },
+      "Error",
+    ],
+  ])("keeps the message of %s out of the step summary (MODEL-SENTINEL)", async (_label, make, label) => {
+    const io = fakeIo();
+    const error = make();
+    expect(await runReviewCli([], { GITHUB_STEP_SUMMARY: "summary.md" }, io, vi.fn().mockRejectedValue(error))).toBe(1);
+    const summary = io.appended.get("summary.md") ?? "";
+    expect(summary).toContain("## AI review failed");
+    expect(summary).toContain(`${label}: SDK error (message only in the job log)`);
+    expect(summary).not.toContain("MODEL-SENTINEL");
+    // stderr keeps the message (a JSONParseError adds its stderr-only rejected-output line).
+    expect(io.errors.slice(0, 2)).toEqual([CONFIG_LINE, error.message]);
+  });
+
+  it("keeps a non-SDK error's own message in the step summary", async () => {
+    const io = fakeIo();
+    await runReviewCli([], { GITHUB_STEP_SUMMARY: "summary.md" }, io, vi.fn().mockRejectedValue(new Error("boom")));
+    expect(io.appended.get("summary.md")).toBe("\n## AI review failed\n\nboom\n");
   });
 
   it.each([
