@@ -27,6 +27,7 @@ import {
   renderOutcome,
   runCost,
   scheduleState,
+  meanSettledCost,
   seriesSpend,
   stepEstimate,
 } from "./glm-gate-core.mjs";
@@ -182,16 +183,63 @@ describe("classifyRun — validity per reason", () => {
     expect(classifyRun({ exitCode: 1, signal: null, stderr }).reasons).toEqual(["provider-mismatch", "model-mismatch"]);
   });
 
-  it("an auth or credit failure is named", () => {
-    expect(classifyRun({ exitCode: 1, signal: null, stderr: "HTTP 402 Payment Required" }).reasons).toContain(
-      "openrouter-auth-or-credit",
-    );
+  it("a missing API key is a local configuration error, not auth/credit", () => {
+    const result = classifyRun({ exitCode: 1, signal: null, stderr: "OPENROUTER_API_KEY is missing" });
+    expect(result.reasons).toContain("local-config:missing-api-key");
+    expect(result.authCredit).toBeNull();
   });
 
   it("exit 0 without a review.json is invalid", () => {
     expect(classifyRun({ exitCode: 0, signal: null, stderr: STDERR_OK, review: undefined }).reasons).toContain(
       "no-review-json",
     );
+  });
+});
+
+// Owner decision 2026-10-14: a 401/402 is CONFIRMED only by the CLI's status line.
+describe("auth/credit — confirmed only by the CLI's status line", () => {
+  const failed = (lines) =>
+    classifyRun({ exitCode: 1, signal: null, stderr: [EXPECTED_CONFIGURATION_LINE, ...lines].join("\n") });
+
+  it.each([401, 402])("a status line %i is a confirmed auth/credit failure", (status) => {
+    const result = failed(["No auth credentials found", `api error: status=${String(status)}`]);
+    expect(result.authCredit).toBe("confirmed");
+    expect(result.reasons).toEqual(expect.arrayContaining([`api-error:${String(status)}`, "auth-or-credit-confirmed"]));
+  });
+
+  it("a status line 429 is an ordinary invalid run", () => {
+    const result = failed(["Rate limit exceeded", "api error: status=429"]);
+    expect(result.authCredit).toBeNull();
+    expect(result.reasons).toContain("api-error:429");
+    expect(result.valid).toBe(false);
+  });
+
+  it.each(["Insufficient credits", "HTTP 402 Payment Required", "Unauthorized"])(
+    "text alone (%s) is only suspected: an invalid, unsettled run",
+    (text) => {
+      const result = failed([text]);
+      expect(result.authCredit).toBe("suspected");
+      expect(result.reasons).toContain("auth-or-credit-suspected");
+      expect(runCost(undefined, result.log).complete).toBe(false);
+    },
+  );
+
+  it("negative control: 'can only afford 401 tokens' with no status line is NOT confirmed", () => {
+    const result = failed(["This request can only afford 401 tokens"]);
+    expect(result.authCredit).not.toBe("confirmed");
+    expect(result.reasons).not.toContain("auth-or-credit-confirmed");
+  });
+
+  it("a status line inside a rejected model output does not count, and its text raises no suspicion", () => {
+    const result = failed([
+      "rejected output (FinderOutputError, provider=Z.AI, finish=stop, 40 chars): Unauthorized payment",
+    ]);
+    expect(result.authCredit).toBeNull();
+  });
+
+  it("a suspected run's telemetry is never complete, even with a review", () => {
+    const log = parseCliStderr(`${STDERR_OK}\nInsufficient credits`);
+    expect(runCost(review(), log).complete).toBe(false);
   });
 });
 
@@ -319,6 +367,71 @@ describe("admission — T + P, the $3.00 pause, the $3.50 cap", () => {
 });
 
 // --- Schedule ---------------------------------------------------------------------
+
+// Owner decision 2026-10-14: a confirmed 401/402 stops every paid step as
+// INCOMPLETE (auth/credit); it is not a sample, and only a dated-amendment
+// resumption — one per stop — lets the series go on.
+describe("scheduleState — auth/credit stop", () => {
+  const confirmed = (stepId, kind) =>
+    ran(stepId, kind, 0.001, false, { authCredit: "confirmed", reasons: ["auth-or-credit-confirmed"] });
+  const resume = { type: "continue", for: "auth-credit", amendment: "gate.md Amendment 1", note: "credit topped up" };
+
+  it("stops the series, and does not consume a G2 sample", () => {
+    const series = [t0(), ...confirmed("clean-01", "clean")];
+    expect(scheduleState(series)).toMatchObject({ next: null, ended: "INCOMPLETE (auth/credit)" });
+    // After the owner's resumption, the next clean run is G2-01 again.
+    expect(scheduleState([...series, resume]).next).toBe("clean");
+    const after = [...series, resume, ...ran("clean-02", "clean", 0.02)];
+    expect(scheduleState(after).waitingFor).toMatch(/G2-01 probe/u);
+  });
+
+  it("does not consume a #247 or a G1 sample, nor enter m247", () => {
+    const base = [t0(), ...g2Passed(), ...g3Passed()];
+    const stopped = [...base, ...confirmed("pr247-01", "pr247"), resume, ...ran("pr247-02", "pr247", 0.08)];
+    expect(scheduleState(stopped).next).toBe("pr247");
+    expect(meanSettledCost([...stopped, ...ran("pr247-03", "pr247", 0.1)], "pr247")).toBeCloseTo(0.09, 10);
+    const g1 = [
+      ...base,
+      ...ran("pr247-01", "pr247", 0.08),
+      ...ran("pr247-02", "pr247", 0.08),
+      ...ran("pr269-01", "pr269", 0.15, false),
+      ...confirmed("pr269-02", "pr269"),
+    ];
+    expect(scheduleState(g1).ended).toBe("INCOMPLETE (auth/credit)");
+    expect(scheduleState([...g1, resume]).next).toBe("pr269");
+  });
+
+  it("needs one resumption per stop — no automatic replacement", () => {
+    const series = [t0(), ...confirmed("clean-01", "clean"), resume, ...confirmed("clean-02", "clean")];
+    expect(scheduleState(series).ended).toBe("INCOMPLETE (auth/credit)");
+  });
+
+  it("a G3 step stopped by a confirmed finder 401/402 is not a G3 result; after resumption G3 runs again", () => {
+    const series = [
+      t0(),
+      ...g2Passed(),
+      started("g3", "g3"),
+      g3Line({ failedRun: true, authCredit: true, problems: ["x"] }),
+      settled("g3", 0.05),
+    ];
+    expect(scheduleState(series).ended).toBe("INCOMPLETE (auth/credit)");
+    expect(scheduleState([...series, resume]).next).toBe("g3");
+  });
+
+  it("a suspected run is an ordinary invalid run: it fails G2", () => {
+    const series = [t0(), ...ran("clean-01", "clean", 0.01, false, { authCredit: "suspected" })];
+    expect(scheduleState(series).ended).toBe("FAIL (G2)");
+  });
+
+  it("the outcome names the stop, and the run as not a sample; its cost still counts toward T", () => {
+    const series = [t0(100), ...confirmed("clean-01", "clean")];
+    const outcome = computeOutcome(series, { counterNow: 100.001 });
+    expect(outcome.verdict).toBe("INCOMPLETE (auth/credit)");
+    expect(outcome.runs[0]).toMatchObject({ sample: false });
+    expect(outcome.spend.settledTotal).toBeCloseTo(0.001, 10);
+    expect(renderOutcome(outcome, { at: "t" })).toContain("no — auth/credit stop, not a sample");
+  });
+});
 
 describe("scheduleState — the sealed order and its stops", () => {
   it("runs G2-01 alone, then waits for the owner's probe confirmation", () => {

@@ -43,7 +43,7 @@ export {
 } from "./prompts.js";
 export type { ImplReviewPromptInput, JudgePromptInput } from "./prompts.js";
 export { MAX_RENDERED_FINDINGS, renderStickyComment, STICKY_MARKER } from "./render.js";
-export { isRetryableError, withOneRetry } from "./retry.js";
+export { apiErrorStatus, isRetryableError, withOneRetry } from "./retry.js";
 export { createReviewer } from "./reviewer.js";
 export type { ReviewCallOptions, Reviewer, ReviewerOptions, SourceProvider } from "./reviewer.js";
 export { assignFindingIds, CRITERIA, validateJudgeReferences } from "./scorecard.js";

@@ -1,8 +1,9 @@
-import { APICallError, NoObjectGeneratedError } from "ai";
+import { APICallError, NoObjectGeneratedError, RetryError } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
 import { FinderOutputError } from "./output-repair.js";
 import {
+  apiErrorStatus,
   isRetryableError,
   MAX_RETRY_DELAY_MS,
   RATE_LIMIT_DELAY_MS,
@@ -284,5 +285,46 @@ describe("withOneRetry", () => {
     const onRetry = vi.fn();
     await expect(withOneRetry(() => Promise.reject(apiError(401)), { onRetry })).rejects.toBeInstanceOf(APICallError);
     expect(onRetry).not.toHaveBeenCalled();
+  });
+});
+
+// Change `finder-glm-5-3`, owner decision 2026-10-14: a 401/402 is confirmed
+// only by an APICallError's typed status, found anywhere in the cause chain —
+// never by message text.
+describe("apiErrorStatus", () => {
+  const api = (statusCode: number, message = `HTTP ${String(statusCode)}`) =>
+    new APICallError({ message, url: "u", requestBodyValues: {}, statusCode });
+
+  it.each([401, 402, 429, 503])("reads %i off a top-level APICallError", (status) => {
+    expect(apiErrorStatus(api(status))).toBe(status);
+  });
+
+  it("finds an APICallError wrapped in an Error's cause", () => {
+    expect(apiErrorStatus(new Error("finder failed", { cause: api(402) }))).toBe(402);
+  });
+
+  it("finds a RetryError's lastError", () => {
+    const retry = new RetryError({
+      message: "retries exhausted",
+      reason: "maxRetriesExceeded",
+      errors: [api(429), api(401)],
+    });
+    expect(apiErrorStatus(retry)).toBe(401);
+  });
+
+  it.each([
+    ["a non-API error", new Error("boom")],
+    ["a message that merely mentions 401", new Error("can only afford 401 tokens")],
+    ["a DOMException timeout", new DOMException("budget", "TimeoutError")],
+    ["a non-object", "HTTP 402"],
+  ])("is undefined for %s", (_label, error) => {
+    expect(apiErrorStatus(error)).toBeUndefined();
+  });
+
+  it("survives a cyclic cause chain", () => {
+    const a = new Error("a");
+    const b = new Error("b", { cause: a });
+    (a as { cause?: unknown }).cause = b;
+    expect(apiErrorStatus(a)).toBeUndefined();
   });
 });

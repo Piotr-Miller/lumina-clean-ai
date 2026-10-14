@@ -561,6 +561,64 @@ describe("summarizeRows", () => {
   });
 });
 
+// Owner decision 2026-10-14: a confirmed OpenRouter 401/402 — the finder
+// error's typed status — stops the series; it is not a G3 result.
+describe("auth/credit on G3 rows", () => {
+  const authError = (row, status) =>
+    withMetadata(
+      providerError(row, `HTTP ${String(status)} from the provider`),
+      status === undefined ? {} : { finderErrorStatus: status },
+    );
+
+  it.each([401, 402])("a finder %i on any row is INCOMPLETE (auth/credit), not a G3 result", (status) => {
+    const rows = fullRun();
+    rows[6] = authError(rows[6], status);
+    const summary = summarizeRows(check(rows));
+    expect(summary).toMatchObject({ failedRun: true, authCredit: true });
+    expect(summary.authCreditRows).toEqual([{ testIdx: 7, case: "cross-hunk", status }]);
+    expect(summary.problems[0]).toMatch(
+      new RegExp(`confirmed OpenRouter ${String(status)} .* INCOMPLETE \\(auth/credit\\)`, "u"),
+    );
+    expect(summary.g3).toBeUndefined();
+  });
+
+  it("outranks a row-count problem", () => {
+    const rows = fullRun().slice(1);
+    rows[0] = authError(rows[0], 402);
+    expect(summarizeRows(check(rows))).toMatchObject({ failedRun: true, authCredit: true });
+  });
+
+  it("a 429 status is an ordinary finder error", () => {
+    const rows = fullRun();
+    rows[0] = authError(rows[0], 429);
+    const summary = summarizeRows(check(rows));
+    expect(summary.failedRun).toBe(false);
+    expect(summary.authCreditRows).toEqual([]);
+    expect(summary.finderErrorRows).toHaveLength(1);
+  });
+
+  it("'401' in the error text without a recorded status is not confirmed", () => {
+    const rows = fullRun();
+    rows[0] = providerError(rows[0], "can only afford 401 tokens");
+    const summary = summarizeRows(check(rows));
+    expect(summary.authCreditRows).toEqual([]);
+    expect(summary.failedRun).toBe(false);
+    expect(summary.pass).toBe(false);
+  });
+
+  it("a grader 401 stays a grader error (re-grade path), never auth/credit", () => {
+    const rows = fullRun();
+    rows[4] = withGrading(rows[4], [
+      component("issue_recall"),
+      graderErrorComponent("flaw_unsafe_html", "HTTP 401 Unauthorized"),
+    ]);
+    const summary = summarizeRows(check(rows));
+    expect(summary).toMatchObject({ failedRun: true, graderError: true });
+    expect(summary.authCreditRows).toEqual([]);
+    expect(summary.authCredit).toBeUndefined();
+  });
+});
+
 describe("checkExport and describeSummary", () => {
   it("checks an export end to end and names the verdict", () => {
     const { rows, summary } = checkExport({ results: { results: fullRun() } });

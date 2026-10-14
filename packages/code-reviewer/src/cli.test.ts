@@ -1,6 +1,6 @@
 import { join } from "node:path";
 
-import { NoObjectGeneratedError } from "ai";
+import { APICallError, NoObjectGeneratedError } from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -172,6 +172,45 @@ describe("runReviewCli exit codes", () => {
     expect(code).toBe(1);
     expect(io.errors.at(0)).toContain("REVIEW_FINDER_TIMEOUT_MS");
     expect(pipeline).not.toHaveBeenCalled();
+  });
+});
+
+// Change `finder-glm-5-3`, owner decision 2026-10-14: the HTTP status of a
+// failed provider call is printed as metadata, so the measurement runner can
+// confirm a 401/402 from it alone — never from message text.
+describe("runReviewCli api error status line", () => {
+  const api = (statusCode: number) =>
+    new APICallError({
+      message: "provider said no; body text stays out",
+      url: "u",
+      requestBodyValues: {},
+      statusCode,
+      responseBody: '{"error":"BODY-SENTINEL"}',
+    });
+
+  it.each([401, 402, 429])(
+    "prints `api error: status=%i` for an APICallError, and no response text",
+    async (status) => {
+      const io = fakeIo();
+      expect(await runReviewCli([], {}, io, vi.fn().mockRejectedValue(api(status)))).toBe(1);
+      expect(io.errors).toContain(`api error: status=${String(status)}`);
+      expect(io.errors.join("\n")).not.toContain("BODY-SENTINEL");
+    },
+  );
+
+  it("finds the status through a wrapped cause", async () => {
+    const io = fakeIo();
+    await runReviewCli([], {}, io, vi.fn().mockRejectedValue(new Error("wrapped", { cause: api(402) })));
+    expect(io.errors).toContain("api error: status=402");
+  });
+
+  it.each([
+    ["a non-API error", new Error("boom")],
+    ["a message that mentions 401", new Error("This request can only afford 401 tokens")],
+  ])("prints no status line for %s", async (_label, error) => {
+    const io = fakeIo();
+    await runReviewCli([], {}, io, vi.fn().mockRejectedValue(error));
+    expect(io.errors.some((line) => line.startsWith("api error:"))).toBe(false);
   });
 });
 

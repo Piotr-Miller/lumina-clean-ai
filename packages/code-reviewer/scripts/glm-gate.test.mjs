@@ -373,6 +373,58 @@ describe("run", () => {
   });
 });
 
+// Owner decision 2026-10-14: a confirmed OpenRouter 401/402 stops the series.
+describe("auth/credit stop", () => {
+  const stopped = async (stderrTail = "api error: status=402\n") => {
+    const world = setup();
+    const ctx = depsFor(world, {
+      runCli: fakeCli({ review: undefined, exitCode: 1, stderr: `${STDERR}Insufficient credits\n${stderrTail}` }),
+    });
+    await main(["preflight"], ctx.deps);
+    const code = await main(["run", "--case", "clean", "--run-id", "clean-01"], ctx.deps);
+    return { world, code, ...ctx };
+  };
+
+  it("a confirmed 402 exits 5, is recorded, and blocks every further paid step", async () => {
+    const { world, code, deps, lines } = await stopped();
+    expect(code).toBe(5);
+    expect(lines.at(-1)).toMatch(/^AUTH\/CREDIT STOP: clean-01 \(clean\) — confirmed OpenRouter 402/u);
+    const record = seriesOf(world).find((line) => line.type === "record");
+    expect(record).toMatchObject({ authCredit: "confirmed", valid: false });
+    // No probe is evaluated on a run that is not a sample.
+    expect(seriesOf(world).some((line) => line.type === "probe")).toBe(false);
+    expect(await main(["run", "--case", "clean", "--run-id", "clean-02"], deps)).toBe(2);
+    expect(lines.at(-1)).toMatch(/the series has ended: INCOMPLETE \(auth\/credit\)/u);
+    expect(deps.runCli).toHaveBeenCalledTimes(1);
+  });
+
+  it("resumes only under a dated amendment, once per stop", async () => {
+    const { deps, lines, setCounter } = await stopped();
+    expect(await main(["continue", "--for", "auth-credit", "--note", "topped up"], deps)).toBe(2);
+    expect(lines.at(-1)).toMatch(/REFUSED \(no amendment\)/u);
+    expect(
+      await main(
+        ["continue", "--for", "auth-credit", "--amendment", "gate.md Amendment 1 (sha256 …)", "--note", "topped up"],
+        deps,
+      ),
+    ).toBe(0);
+    expect(await main(["continue", "--for", "auth-credit", "--amendment", "again", "--note", "n"], deps)).toBe(2);
+    expect(lines.at(-1)).toMatch(/no auth\/credit stop/u);
+    // The stopped run's cost still has to settle before the next paid step.
+    setCounter(100.001);
+    expect(await main(["reconcile"], deps)).toBe(0);
+    deps.runCli = fakeCli();
+    expect(await main(["run", "--case", "clean", "--run-id", "clean-02"], deps)).toBe(0);
+    expect(lines.at(-1)).toMatch(/G2-01 PROBE OK/u);
+  });
+
+  it("text without a status line is suspected: an ordinary invalid run, not a stop", async () => {
+    const { world, code } = await stopped("");
+    expect(code).toBe(1);
+    expect(seriesOf(world).find((line) => line.type === "record")).toMatchObject({ authCredit: "suspected" });
+  });
+});
+
 describe("reconcile", () => {
   const unsettledRun = async () => {
     const world = setup();

@@ -223,3 +223,27 @@ describe("FinderProvider production retry", () => {
     expect(doGenerate).toHaveBeenCalledTimes(2); // finalization + its one format repair, no re-roll
   });
 });
+
+// Change finder-glm-5-3, owner decision 2026-10-14: the row carries the typed
+// HTTP status of a finder error, never a status read from message text.
+describe("FinderProvider error status", () => {
+  it.each([401, 402])("records a finder %i from the APICallError's statusCode", async (statusCode) => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockRejectedValue(new APICallError({ message: "no", url: "u", requestBodyValues: {}, statusCode })),
+    });
+    const response = await call(retrying());
+    expect(response.error).toBeDefined();
+    expect(metadataOf(response).finderErrorStatus).toBe(statusCode);
+  });
+
+  it("records no status for an error whose message merely mentions 401", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi.fn().mockRejectedValue(new Error("can only afford 401 tokens")),
+    });
+    const response = await call(retrying());
+    expect(response.error).toContain("401");
+    expect("finderErrorStatus" in metadataOf(response)).toBe(false);
+  });
+});

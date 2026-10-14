@@ -4,6 +4,7 @@ import { FINDER_REASONING, resolveFinderProviderRouting, resolveModels, type Fin
 import { containsInlineReasoning } from "./output-repair.js";
 import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
+import { apiErrorStatus } from "./retry.js";
 import type { PipelineResult, Reported } from "./schemas.js";
 import { createDiffScopedSourceForDiff } from "./source-provider.js";
 
@@ -438,6 +439,12 @@ export async function runReviewCli(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     io.logError(message);
+    // Metadata only: the HTTP status of the failed provider call, from the
+    // error's typed APICallError (cause chain included) — never response or
+    // model text. The measurement runner reads 401/402 off this line alone
+    // (change `finder-glm-5-3`, owner decision 2026-10-14).
+    const status = apiErrorStatus(error);
+    if (status !== undefined) io.logError(`api error: status=${String(status)}`);
     // stderr only: the rejected text is untrusted, so it stays out of the
     // step summary below as well as out of comment.md.
     const rejected = formatRejectedOutputLine(error, lastObservedProvider);

@@ -31,7 +31,8 @@
 // Nothing committed ever carries an absolute path.
 //
 // Exit codes: 0 done / valid run, 1 invalid run or a failed check, 2 refusal
-// or usage (nothing spent), 4 budget stop (nothing spent; the series ends
+// or usage (nothing spent), 5 a CONFIRMED OpenRouter 401/402 (the series stops
+// INCOMPLETE (auth/credit); not a sample), 4 budget stop (nothing spent; the series ends
 // INCOMPLETE (budget)). Every exit prints one line naming state, subject and way out.
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -45,6 +46,7 @@ import { load } from "js-yaml";
 
 import {
   admit,
+  authCreditStopped,
   classifyRun,
   computeOutcome,
   EXPECTED_CONFIGURATION_LINE,
@@ -483,7 +485,14 @@ async function commandRun(flags, deps) {
   }
   // An interrupted run is invalid whatever it left behind: the run did not finish on its own.
   const classification = child.interrupted
-    ? { valid: false, artifact: null, reasons: ["interrupted"], requests: null, log: parseCliStderr(child.stderr) }
+    ? {
+        valid: false,
+        artifact: null,
+        reasons: ["interrupted"],
+        requests: null,
+        authCredit: null,
+        log: parseCliStderr(child.stderr),
+      }
     : classifyRun({ exitCode: child.exitCode, signal: child.signal, stderr: child.stderr, review });
   const cost = runCost(classification.artifact ? review : undefined, classification.log);
   let reviewSha256 = null;
@@ -504,6 +513,8 @@ async function commandRun(flags, deps) {
     valid: classification.valid,
     artifact: classification.artifact,
     reasons: classification.reasons,
+    // "confirmed" (a 401/402 on the CLI's status line) stops the series; "suspected" (text only) does not.
+    authCredit: classification.authCredit,
     configurationOk,
     models: review?.models ?? null,
     verdict: classification.artifact ? review.verdict : null,
@@ -526,10 +537,20 @@ async function commandRun(flags, deps) {
     });
   }
 
+  if (record.authCredit === "confirmed") {
+    deps.log(
+      `AUTH/CREDIT STOP: ${stepId} (${caseKey}) — confirmed OpenRouter ${classification.log.apiStatuses.join("/")}; the series stops INCOMPLETE (auth/credit). Not a sample; its cost counts toward T (\`reconcile\` it). Resume only under a dated amendment recorded before further spending: \`continue --for auth-credit --amendment <ref> --note <text>\`.`,
+    );
+    return 5;
+  }
+
+  // G2-01 is the first clean SAMPLE: a run stopped by a confirmed 401/402 is not one.
   let probeNote = "";
   if (
     caseKey === "clean" &&
-    readSeries(context.series).filter((line) => line.type === "record" && line.kind === "clean").length === 1
+    readSeries(context.series).filter(
+      (line) => line.type === "record" && line.kind === "clean" && !authCreditStopped(line),
+    ).length === 1
   ) {
     const problems = probeProblems(record);
     appendLine(context.series, { type: "probe", stepId, at: ended.toISOString(), problems });
@@ -557,7 +578,11 @@ async function commandG3(flags, deps) {
   if (context.dryRun) refuse("no dry run for G3", "g3", "G3 calls promptfoo's grader; test it with the hermetic tests");
   const regrade = flags.regrade === true;
   const kind = regrade ? "regrade" : "g3";
-  const stepId = regrade ? "g3-regrade" : "g3";
+  // Unique even when G3 runs again after an owner-resumed auth/credit stop.
+  const base = regrade ? "g3-regrade" : "g3";
+  const usedIds = new Set(readSeries(context.series).map((line) => line.stepId));
+  let stepId = base;
+  for (let k = 2; usedIds.has(stepId); k += 1) stepId = `${base}-r${String(k)}`;
   checkEnvironment(deps);
   const series = readSeries(context.series);
   checkManifest(context, deps, { required: true });
@@ -638,6 +663,12 @@ async function commandG3(flags, deps) {
   deps.log(
     `G3 ${regrade ? "RE-GRADE " : ""}RECORDED: ${relative(context.repoRoot, context.g3Rows)} — UNSETTLED (grading cost is not in the export); run \`reconcile\` before the next paid step.`,
   );
+  if (checked.summary.authCredit === true) {
+    deps.log(
+      `AUTH/CREDIT STOP: ${stepId} — a confirmed OpenRouter 401/402 on a finder row; the series stops INCOMPLETE (auth/credit). Not a G3 result; its cost counts toward T. Resume only under a dated amendment: \`continue --for auth-credit --amendment <ref> --note <text>\`.`,
+    );
+    return 5;
+  }
   return !checked.summary.failedRun && checked.summary.pass ? 0 : 1;
 }
 
@@ -743,16 +774,26 @@ async function commandReconcile(flags, deps) {
 
 async function commandContinue(flags, deps) {
   const context = contextFor(flags, deps);
-  if (flags.for !== "probe" && flags.for !== "pause")
-    refuse("bad --for", String(flags.for), "use --for probe or --for pause");
+  if (flags.for !== "probe" && flags.for !== "pause" && flags.for !== "auth-credit")
+    refuse("bad --for", String(flags.for), "use --for probe, --for pause or --for auth-credit");
   if (typeof flags.note !== "string" || flags.note.trim() === "")
     refuse("no note", "continue", "record the owner's words with --note");
   const series = readSeries(context.series);
-  if (series.some((line) => line.type === "continue" && line.for === flags.for)) {
+  if (flags.for !== "auth-credit" && series.some((line) => line.type === "continue" && line.for === flags.for)) {
     refuse("already recorded", `continue --for ${flags.for}`, "each go-ahead is recorded once");
   }
-  if (flags.for === "probe") {
-    const clean = series.filter((line) => line.type === "record" && line.kind === "clean");
+  if (flags.for === "auth-credit") {
+    // One resumption per confirmed 401/402 stop, and only under a dated amendment (owner decision 2026-10-14).
+    if (scheduleState(series).ended !== "INCOMPLETE (auth/credit)")
+      refuse("no auth/credit stop", "continue --for auth-credit", "only a confirmed 401/402 stop takes this go-ahead");
+    if (typeof flags.amendment !== "string" || flags.amendment.trim() === "")
+      refuse(
+        "no amendment",
+        "continue --for auth-credit",
+        "name the dated, hashed gate.md amendment that authorizes resuming, with --amendment",
+      );
+  } else if (flags.for === "probe") {
+    const clean = series.filter((line) => line.type === "record" && line.kind === "clean" && !authCreditStopped(line));
     if (clean.length !== 1) refuse("no probe to confirm", "G2-01", "the probe is the first clean run, and only it");
   } else {
     if (unsettledSteps(series).length > 0) refuse("unsettled", "pause", "reconcile first, then continue");
@@ -762,6 +803,7 @@ async function commandContinue(flags, deps) {
   appendLine(context.series, {
     type: "continue",
     for: flags.for,
+    ...(flags.for === "auth-credit" ? { amendment: flags.amendment } : {}),
     note: flags.note,
     at: deps.now().toISOString(),
     by: "owner",

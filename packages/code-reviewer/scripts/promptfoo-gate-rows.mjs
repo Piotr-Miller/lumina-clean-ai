@@ -155,6 +155,13 @@ export function checkRow(raw) {
     reasoningShapeOk:
       requestReasoning.length > 0 && requestReasoning.every((value) => isDeepStrictEqual(value, DECIDED_REASONING)),
     inlineReasoning: metadata.finderFailureReason === "inline-reasoning",
+    // A CONFIRMED auth/credit failure: the finder error's typed HTTP status,
+    // recorded by the adapter from the APICallError — never read from message
+    // text (owner decision 2026-10-14). A "401" in the error text alone is an
+    // ordinary finder error.
+    finderErrorStatus: typeof metadata.finderErrorStatus === "number" ? metadata.finderErrorStatus : null,
+    authCredit:
+      finderErrorOf(raw) !== null && (metadata.finderErrorStatus === 401 || metadata.finderErrorStatus === 402),
     retries,
     steps: metadata.steps ?? null,
     toolCalls: metadata.toolCalls ?? null,
@@ -271,6 +278,7 @@ export function summarizeRows(rows, extraProblems = []) {
     .filter((r) => !r.reasoningShapeOk)
     .map((r) => ({ ...rowRef(r), requestReasoning: r.requestReasoning }));
   const inlineReasoningRows = rows.filter((r) => r.inlineReasoning).map(rowRef);
+  const authCreditRows = rows.filter((r) => r.authCredit).map((r) => ({ ...rowRef(r), status: r.finderErrorStatus }));
   const finderErrorRows = rows
     .filter((r) => r.finderError !== null)
     .map((r) => ({ ...rowRef(r), error: r.finderError }));
@@ -287,6 +295,7 @@ export function summarizeRows(rows, extraProblems = []) {
     modelRows,
     shapeRows,
     inlineReasoningRows,
+    authCreditRows,
     finderErrorRows,
     graderErrorRows,
     regradedRows,
@@ -299,6 +308,23 @@ export function summarizeRows(rows, extraProblems = []) {
     },
     latency: latencies.length === 0 ? null : { median: median(latencies), max: Math.max(...latencies) },
   };
+
+  // A confirmed OpenRouter 401/402 on a finder row prevents the measurement:
+  // not a gate result, and the series stops INCOMPLETE (auth/credit) for the
+  // owner (owner decision 2026-10-14). It outranks every other problem.
+  if (authCreditRows.length > 0) {
+    return {
+      failedRun: true,
+      authCredit: true,
+      problems: [
+        `confirmed OpenRouter ${[...new Set(authCreditRows.map((r) => String(r.status)))].join("/")} on finder row(s) testIdx ${authCreditRows
+          .map((r) => String(r.testIdx))
+          .join(", ")} — INCOMPLETE (auth/credit), not a gate result`,
+        ...problems,
+      ],
+      ...base,
+    };
+  }
 
   if (problems.length > 0) return { failedRun: true, problems, ...base };
 
@@ -385,6 +411,7 @@ export function describeSummary(summary) {
     ["MODEL rows (no reported accepted model; fail on their own)", summary.modelRows],
     ["REASONING-SHAPE rows (fail on their own)", summary.shapeRows],
     ["INLINE-REASONING rows (fail on their own)", summary.inlineReasoningRows],
+    ["AUTH/CREDIT rows (confirmed 401/402; INCOMPLETE)", summary.authCreditRows],
     ["finder-error rows", summary.finderErrorRows],
     ["GRADER-ERROR rows", summary.graderErrorRows],
     ["re-graded rows (once, Amendment A1)", summary.regradedRows],

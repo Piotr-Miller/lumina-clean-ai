@@ -39,6 +39,28 @@ export function isRetryableError(error: unknown): boolean {
   return false;
 }
 
+/**
+ * The HTTP status of the provider call behind a failure: the first
+ * APICallError carrying a numeric `statusCode`, found by walking the error,
+ * its `cause` chain and a RetryError's `lastError` (change `finder-glm-5-3`,
+ * owner decision 2026-10-14). Only the typed status counts — never message
+ * text, which can mention "401" for any reason. Undefined when no
+ * APICallError carries one. Cycles and deep chains are cut off.
+ */
+export function apiErrorStatus(error: unknown): number | undefined {
+  const seen = new Set<object>();
+  const queue: unknown[] = [error];
+  while (queue.length > 0 && seen.size < 16) {
+    const current = queue.shift();
+    if (typeof current !== "object" || current === null || seen.has(current)) continue;
+    seen.add(current);
+    if (APICallError.isInstance(current) && typeof current.statusCode === "number") return current.statusCode;
+    if ("cause" in current) queue.push(current.cause);
+    if ("lastError" in current) queue.push(current.lastError);
+  }
+  return undefined;
+}
+
 // Pre-retry delay policy: an immediate 429 retry usually lands in the same
 // rate-limit window, so the single retry waits a bounded, header-aware delay.
 export const MAX_RETRY_DELAY_MS = 30_000;

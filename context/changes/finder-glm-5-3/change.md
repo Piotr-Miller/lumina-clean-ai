@@ -43,3 +43,7 @@ archived_at: null
 2026-10-11: owner decision during `/rune-plan-review`, F5 — add mixed-condition test requirements for step, finalization and repair responses containing `<think>REASONING-SENTINEL</think>` with `finishReason: "length"`. The attempt fails without retry; the sentinel must be absent from stderr and step summary regardless of guard ordering.
 
 2026-10-13: owner decision — G3 rows include production's single retry, prove the reasoning shape by wire capture of each finder request's `reasoning` key, and fail on a request without a provider-reported accepted model; plan.md Phase 3 § 2 (G3 rows) Contract.
+
+2026-10-14: owner decision — a confirmed OpenRouter HTTP 401/402 (the CLI's typed `api error: status=<n>` line; for G3, the finder error's typed status) stops the series INCOMPLETE (auth/credit), is not a G2, #247 or G1 sample, and resumes only under a dated amendment; auth/credit text without a status is only suspected (invalid, unsettled); a grader 401/402 stays a grader error; plan.md § Definitions "auth/credit stop", Phase 3 §1 runner contract, Phase 4 Stops, Testing Strategy.
+
+2026-10-14: reopened 2.7 — was accepted at b6afeb193255ff875a53e0e9254d68942c3f5730; changed: packages/code-reviewer/src/cli.ts

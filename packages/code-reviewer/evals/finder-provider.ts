@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import type { ApiProvider, CallApiContextParams, ProviderOptions, ProviderResponse } from "promptfoo";
 
 import {
+  apiErrorStatus,
   buildInstructions,
   buildPrompt,
   createDiffScopedSourceForDiff,
@@ -155,6 +156,13 @@ export interface FinderTelemetry {
   retries: FinderRetry[];
   /** Why the finder refused a response (`FinderOutputError.reason`) on the error path; absent otherwise. */
   finderFailureReason?: string;
+  /**
+   * The HTTP status of the provider call behind a finder error, from its typed
+   * APICallError (cause chain included) — never from message text. G3 reads a
+   * 401/402 here as a confirmed auth/credit stop (change `finder-glm-5-3`,
+   * owner decision 2026-10-14). Absent when no APICallError carries one.
+   */
+  finderErrorStatus?: number;
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
@@ -365,6 +373,8 @@ export default class FinderProvider implements ApiProvider {
       ) {
         telemetry.finderFailureReason = error.reason;
       }
+      const status = apiErrorStatus(error);
+      if (status !== undefined) telemetry.finderErrorStatus = status;
       // Telemetry rides the error path too: a row that died after burning four
       // tool-loop steps cost real money, and "how far did it get" is the whole
       // question for a model that fails structured output.

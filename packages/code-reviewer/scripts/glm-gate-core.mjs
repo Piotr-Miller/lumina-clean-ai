@@ -139,8 +139,18 @@ const STEP_LINE = /^finder step (\d+): .* provider=(\S+) finish=(\S+) model=(\S+
 const RETRY_LINE = /^retrying (finder|judge|impl-review) after (\S+) in (\d+)ms$/u;
 const FINDER_REJECTED = /Finder output rejected \(reason=([a-z-]+), (?:request=([a-z]+(?::\d+)?), )?/u;
 const CONFIGURATION_PREFIX = "finder configuration: ";
-const AUTH_OR_CREDIT =
-  /\b(401|402)\b|Unauthorized|Payment Required|Insufficient credits|insufficient_quota|User not found|No auth credentials|OPENROUTER_API_KEY is missing/iu;
+// Owner decision 2026-10-14: a 401/402 is CONFIRMED only by the CLI's own
+// `api error: status=<n>` line, which carries the typed APICallError status.
+// Text alone is never confirmation: OpenRouter's auth/credit phrasings without
+// that line make a run SUSPECTED (unsettled, still an ordinary invalid run).
+const API_STATUS_LINE = /^api error: status=(\d{3})$/u;
+const AUTH_CREDIT_STATUSES = Object.freeze([401, 402]);
+const SUSPECTED_AUTH_OR_CREDIT =
+  /Unauthorized|Payment Required|Insufficient credits|insufficient_quota|User not found|No auth credentials|requires more credits|can only afford/iu;
+// A local configuration error, not an OpenRouter answer.
+const MISSING_KEY = /OPENROUTER_API_KEY is missing/u;
+// Model text the CLI may print on a rejected output; never scanned for suspicion.
+const REJECTED_OUTPUT_PREFIX = "rejected output (";
 const TIMEOUT = /TimeoutError|exceeded its \d+ ms budget|aborted due to timeout/iu;
 
 /**
@@ -169,12 +179,24 @@ export function parseCliStderr(stderr) {
     if (retry) retries.push({ pass: retry[1], error: retry[2], delayMs: Number(retry[3]) });
   }
   const rejected = FINDER_REJECTED.exec(stderr);
+  const apiStatuses = lines.flatMap((line) => {
+    const match = API_STATUS_LINE.exec(line);
+    return match ? [Number(match[1])] : [];
+  });
+  const scanned = lines.filter((line) => !line.startsWith(REJECTED_OUTPUT_PREFIX)).join("\n");
+  const authCredit = apiStatuses.some((status) => AUTH_CREDIT_STATUSES.includes(status))
+    ? "confirmed"
+    : SUSPECTED_AUTH_OR_CREDIT.test(scanned)
+      ? "suspected"
+      : null;
   return {
     configurationLines,
     steps,
     retries,
     finderRefusal: rejected ? { reason: rejected[1], request: rejected[2] ?? null } : null,
-    authOrCredit: AUTH_OR_CREDIT.test(stderr),
+    apiStatuses,
+    authCredit,
+    missingKey: MISSING_KEY.test(scanned),
     timeout: TIMEOUT.test(stderr),
   };
 }
@@ -223,14 +245,24 @@ export function classifyRun({ exitCode, signal, stderr, review }) {
     if (review?.models?.finder !== FINDER_MODEL) reasons.push("finder-model-mismatch");
     const requests = Array.isArray(review?.finderTelemetry?.requests) ? review.finderTelemetry.requests : [];
     reasons.push(...requestProblems(requests));
-    return { valid: reasons.length === 0, artifact: true, reasons: [...new Set(reasons)], requests, log };
+    return {
+      valid: reasons.length === 0,
+      artifact: true,
+      reasons: [...new Set(reasons)],
+      requests,
+      authCredit: null,
+      log,
+    };
   }
 
   // No artifact: the reasons come from stderr only.
   if (signal !== null && signal !== undefined) reasons.push(`signal-${String(signal)}`);
   if (exitCode !== 0 && exitCode !== 1) reasons.push(`cli-crash-exit-${String(exitCode)}`);
   if (exitCode === 0) reasons.push("no-review-json");
-  if (log.authOrCredit) reasons.push("openrouter-auth-or-credit");
+  for (const status of log.apiStatuses) reasons.push(`api-error:${String(status)}`);
+  if (log.authCredit === "confirmed") reasons.push("auth-or-credit-confirmed");
+  if (log.authCredit === "suspected") reasons.push("auth-or-credit-suspected");
+  if (log.missingKey) reasons.push("local-config:missing-api-key");
   if (log.finderRefusal !== null) reasons.push(`finder-output:${log.finderRefusal.reason}`);
   if (log.timeout) reasons.push("timeout");
   if (log.finderRefusal === null && log.retries.some((retry) => retry.pass === "judge")) reasons.push("judge-error");
@@ -239,7 +271,14 @@ export function classifyRun({ exitCode, signal, stderr, review }) {
     if (step.model === null || !ACCEPTED_MODEL.test(step.model)) reasons.push("model-mismatch");
   }
   if (reasons.length === 0) reasons.push(`exit-${String(exitCode)}`);
-  return { valid: false, artifact: null, reasons: [...new Set(reasons)], requests: null, log };
+  return {
+    valid: false,
+    artifact: null,
+    reasons: [...new Set(reasons)],
+    requests: null,
+    authCredit: log.authCredit,
+    log,
+  };
 }
 
 /**
@@ -252,7 +291,9 @@ export function runCost(review, log) {
   const finder = typeof review?.finderTelemetry?.cost === "number" ? review.finderTelemetry.cost : null;
   const judge = typeof review?.judgeTelemetry?.cost === "number" ? review.judgeTelemetry.cost : null;
   const timeoutRetry = log.retries.some((retry) => /timeout/iu.test(retry.error));
+  // A suspected auth/credit failure is never settled from telemetry: only the counter can say what it cost.
   const complete =
+    log.authCredit === null &&
     review !== undefined &&
     requests.length > 0 &&
     requests.every((request) => typeof request.cost === "number") &&
@@ -325,13 +366,29 @@ export function stepEstimate(series, kind) {
   return costs.length === 0 ? FIRST_STEP_ESTIMATE[kind] : 2 * Math.max(...costs);
 }
 
-const records = (series, kind) => series.filter((line) => line.type === "record" && line.kind === kind);
-const g3Records = (series) => series.filter((line) => line.type === "g3");
+/**
+ * A step stopped by a CONFIRMED OpenRouter 401/402 (owner decision
+ * 2026-10-14): recorded, its cost counted toward T, but never a G2, #247 or
+ * G1 sample and never a G3 result.
+ */
+export const authCreditStopped = (line) =>
+  (line.type === "record" && line.authCredit === "confirmed") ||
+  (line.type === "g3" && line.summary?.authCredit === true);
+
+/** Sample runs of a case: every record except one stopped by a confirmed 401/402. */
+const records = (series, kind) =>
+  series.filter((line) => line.type === "record" && line.kind === kind && !authCreditStopped(line));
+const g3Records = (series) => series.filter((line) => line.type === "g3" && !authCreditStopped(line));
 const continued = (series, reason) => series.some((line) => line.type === "continue" && line.for === reason);
 
-/** Mean settled cost of the executed runs of a case; null while any is unsettled or none ran. */
+/**
+ * Mean settled cost of the executed runs of a case; null while any is
+ * unsettled or none ran. A run stopped by a confirmed 401/402 is not a sample
+ * and stays out of the mean (its cost still counts toward T).
+ */
 export function meanSettledCost(series, kind) {
-  const steps = startedSteps(series).filter((line) => line.kind === kind);
+  const stopped = new Set(series.filter(authCreditStopped).map((line) => line.stepId));
+  const steps = startedSteps(series).filter((line) => line.kind === kind && !stopped.has(line.stepId));
   if (steps.length === 0) return null;
   const costs = steps.map((line) => settledLine(series, line.stepId)?.cost);
   if (costs.some((cost) => typeof cost !== "number")) return null;
@@ -346,7 +403,8 @@ export function meanSettledCost(series, kind) {
  *
  * Returns `{ next, ended, waitingFor }`: `next` is the step kind that may run
  * (`clean`, `g3`, `regrade`, `pr247`, `pr269`) or null; `ended` is the
- * series' terminal state (`FAIL (<gate>)`, `INCOMPLETE (budget)`, or
+ * series' terminal state (`FAIL (<gate>)`, `INCOMPLETE (budget)`,
+ * `INCOMPLETE (auth/credit)` until the owner resumes, or
  * `measured` when every step ran and settled); `waitingFor` names an owner action.
  */
 export function scheduleState(series) {
@@ -362,6 +420,12 @@ export function scheduleState(series) {
   if (blocking !== undefined) {
     return { next: null, ended: null, waitingFor: `step ${blocking.stepId} started and has no record` };
   }
+  // A confirmed OpenRouter 401/402 stops every further paid step until the
+  // owner resumes under a dated amendment (`continue --for auth-credit`), one
+  // resumption per stop. No automatic replacement.
+  const stops = series.filter(authCreditStopped).length;
+  const resumes = series.filter((line) => line.type === "continue" && line.for === "auth-credit").length;
+  if (stops > resumes) return { next: null, ended: "INCOMPLETE (auth/credit)", waitingFor: null };
 
   // G2: clean × 5, all valid with findings: [].
   const clean = records(series, "clean");
@@ -519,7 +583,13 @@ export function computeOutcome(series, { counterNow, handRead } = {}) {
   const spend = seriesSpend(series, counterNow);
   const runs = series
     .filter((line) => line.type === "record")
-    .map((line) => ({ stepId: line.stepId, kind: line.kind, valid: line.valid, reasons: line.reasons }));
+    .map((line) => ({
+      stepId: line.stepId,
+      kind: line.kind,
+      valid: line.valid,
+      reasons: line.reasons,
+      sample: !authCreditStopped(line),
+    }));
   const m247 = meanSettledCost(series, "pr247");
   const m269 = meanSettledCost(series, "pr269");
   const provisional = m247 !== null && m269 !== null ? projectMonthly({ m247, m269, I: IMPL_REVIEW_COST }) : null;
@@ -580,6 +650,7 @@ export function computeOutcome(series, { counterNow, handRead } = {}) {
 
   let verdict;
   if (state.ended === "INCOMPLETE (budget)" || overshoot > 0) verdict = "INCOMPLETE (budget)";
+  else if (state.ended === "INCOMPLETE (auth/credit)") verdict = "INCOMPLETE (auth/credit)";
   else if (state.ended !== null && state.ended !== "measured") {
     verdict = `NOT ADMITTED (${state.ended.replace(/^FAIL \((.*)\)$/u, "$1")})`;
   } else if (state.ended === "measured" && lowerBound !== null && exceedsLimit(lowerBound.total)) {
@@ -623,7 +694,8 @@ export function renderOutcome(outcome, { at }) {
     "| Run | Case | Valid | Reasons |",
     "| --- | ---- | ----- | ------- |",
     ...outcome.runs.map(
-      (run) => `| ${run.stepId} | ${run.kind} | ${run.valid ? "yes" : "no"} | ${run.reasons.join(", ") || "—"} |`,
+      (run) =>
+        `| ${run.stepId} | ${run.kind} | ${run.valid ? "yes" : run.sample ? "no" : "no — auth/credit stop, not a sample"} | ${run.reasons.join(", ") || "—"} |`,
     ),
     "",
     `- m247 ${usd(outcome.m247)}, m269 ${usd(outcome.m269)}.`,
