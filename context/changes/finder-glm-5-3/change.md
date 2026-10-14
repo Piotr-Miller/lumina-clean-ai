@@ -71,3 +71,11 @@ archived_at: null
 2026-10-14: re-confirmed 2.7 — was reopened (last accepted at eb5ea063faa79344efd73c6badf02f0088a332b3); accepted at f2ccfddd25b5483cec2ea02237adaf2620eef86d. Explicit owner confirmation after the stubbed real-CLI re-check of f2ccfdd against eb5ea06 (five cases: stderr, step summary and stdout byte-identical; `comment.md` differs only in the failed impl-review line, which no longer carries the provider body); recording preflight returned `recordable`.
 
 2026-10-14: pre-registration approved by the owner as written (A1–A8 and the five plan- and tooling-chosen terms) and sealed — sha256 of § Pre-registration `1a34e2efa74771898d986c74f060fabf9b3d272816fd85ac10877aad2ea802f3`, taken 2026-10-14T20:16:36Z; GitHub push time 2026-10-14T20:17:37Z; annotated tag `finder-glm-5-3/seal`. Record: gate.md § Pre-registration seal. The seal authorizes no spending: Phase 5 waits for the owner's authorization after the free preflight.
+
+2026-10-14: confirmed 4.4 and 4.5 — accepted at 593407e04569e9af5535a0a6acec932dff0f90e7. Explicit owner confirmation through `/rune-implement`: 4.4, the pre-registration (A1–A8 and the five plan- and tooling-chosen terms) was approved as written before the hash was taken; 4.5, the seal does not by itself authorize Phase 5 (gate.md § Pre-registration §10). Recording preflight returned `recordable` for both. Both rows declare the whole `gate.md` as their surface, so the Phase 5 write to § Results will make them stale; the approval itself stays recorded in gate.md § Pre-registration seal.
+
+2026-10-14: reopened 4.4 — was accepted at 593407e04569e9af5535a0a6acec932dff0f90e7; changed: context/changes/finder-glm-5-3/gate.md
+
+2026-10-14: reopened 4.5 — was accepted at 593407e04569e9af5535a0a6acec932dff0f90e7; changed: context/changes/finder-glm-5-3/gate.md
+
+2026-10-14: owner decision — Amendment 1 (operator checks before paid steps) lands the Phase 4 review triage F1–F3: an operator env/.env check before `preflight` and every paid step, default paths only, and no stale G3 export. Renamed from `A1` before hashing; sha256 `2ee697fbd063324ced4a2336cc538243b8b1ec1ec887f0cbd335116c30739787`, taken 2026-10-14T20:43:19Z; pushed before T0. No sealed file changed, so the manifest pin stands. Record: gate.md § Amendments.

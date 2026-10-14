@@ -507,7 +507,61 @@ section is part of the hashed bytes.
 
 ## Amendments
 
-None.
+### Amendment 1 — operator checks before paid steps (2026-10-14)
+
+Decided by the owner on 2026-10-14 in the triage of `reviews/impl-review-phase-4-593407e.md`, before T0 and before
+any paid call of this change. It changes no sealed file, so the manifest pin of §1 is unchanged. Every rule it does
+not name stays as sealed.
+
+1. **Forbidden environment (F1; amends §1 "Forbidden environment" and §6 "Refusals").**
+   - What the runner enforces: it refuses while any of the ten names holds a value that is non-empty **after
+     trimming whitespace**, in the shell or in `packages/code-reviewer/.env` (`forbiddenEnvSet`,
+     `scripts/glm-gate-core.mjs`). A whitespace-only value is not refused. The CLI does not trim it, so the run
+     changes what it measures or exits 1, and it is recorded as an invalid run. An empty value is harmless,
+     because every reader falls back on `||`. `preflight --manifest-only` does not check the environment.
+   - §1's rule that none of the ten "may be set" stands. The operator enforces the part the runner does not.
+     Before `preflight` and before each paid step (`run`, `g3`, `g3 --regrade`), in the shell that runs it, from
+     the repository root, both commands print nothing:
+
+     ```
+     env | grep -E '^(OPENROUTER_(REVIEW_MODEL|FINDER_PROVIDERS|MODEL|JUDGE_MODEL|IMPL_REVIEW_MODEL|REQUIRE_PARAMETERS)|REVIEW_(FINDER_MAX_STEPS|FINDER_TIMEOUT_MS|JUDGE_TIMEOUT_MS|IMPL_REVIEW_TIMEOUT_MS))='
+     grep -E '^\s*(export\s+)?(OPENROUTER_(REVIEW_MODEL|FINDER_PROVIDERS|MODEL|JUDGE_MODEL|IMPL_REVIEW_MODEL|REQUIRE_PARAMETERS)|REVIEW_(FINDER_MAX_STEPS|FINDER_TIMEOUT_MS|JUDGE_TIMEOUT_MS|IMPL_REVIEW_TIMEOUT_MS))=' packages/code-reviewer/.env
+     ```
+
+2. **Default paths only (F2; amends §5 "Admission" and §6 "Refusals").**
+   - What the runner enforces: its manifest, input, order, id-reuse and T0 checks read the paths it is given.
+     Every subcommand accepts `--manifest`, `--series`, `--results`, `--g3-rows` and `--gate`, and with one of them
+     a paid step checks against another manifest or another ledger. No `started` line records which paths were
+     used.
+   - The operator runs `preflight`, `run`, `g3`, `g3 --regrade`, `reconcile`, `continue` and `outcome` without
+     any of these five flags. Each step then uses the sealed `gate-manifest.json`, `gate.md`, `gate/series.jsonl`,
+     `gate/results/` and `gate/g3-rows.json` of this change folder. `--inputs`, `--cache`, `GLM_GATE_INPUTS` and
+     `GLM_GATE_CACHE` stay allowed, because the inputs are checked by sha256 wherever they are read from.
+   - The same holds for the hand-read (§8): `glm-gate-sheet.mjs sheet` and `resolve` run without `--series`,
+     `--results`, `--out-dir` or `--sheets-dir`, so the sheets are written to and read from
+     `hand-read-247.md` and `hand-read-269.md` in this change folder. `resolve --out` and `outcome --hand-read`
+     stay allowed; `outcome` checks the resolver's runs, sha256 values and finding counts against the ledger.
+
+3. **No stale G3 export (F3; amends §3 G3 and §4 step 3).**
+   - What the runner does: `g3` writes promptfoo's export to the fixed `<cache>/g3/g3.export.json`, and
+     `g3 --regrade` to `<cache>/g3/g3-regrade.export.json`. It deletes neither first, and it records promptfoo's
+     exit code without acting on it. If promptfoo ends without writing an export, an earlier file at that path is
+     read back and recorded as this step's result.
+   - Before `g3`, neither file may exist. Before `g3 --regrade`, `g3-regrade.export.json` may not exist. When a
+     step is repeated after a resumption (§6 "Auth/credit"), the earlier files are moved aside first, and the
+     resumption's amendment names where they went. On 2026-10-14 no `<cache>/g3/` directory existed.
+
+_End of Amendment 1._
+
+- **Approved by the owner:** 2026-10-14, as written, after one rename before hashing: the heading `A1` became
+  `Amendment 1`, so it cannot be confused with assumption A1 of §11 or with `finder-model-swap`'s Amendment A1.
+  The triage decisions in `reviews/impl-review-phase-4-593407e.md` still call it A1.
+- **sha256 of Amendment 1** (45 lines): **`2ee697fbd063324ced4a2336cc538243b8b1ec1ec887f0cbd335116c30739787`**
+- **Hashed at:** 2026-10-14T20:43:19Z
+- **Command:**
+  `sed -n '/^### Amendment 1 — operator checks before paid steps (2026-10-14)$/,/^_End of Amendment 1\._$/p' gate.md | sha256sum`
+  after `npx prettier --check gate.md` passed.
+- **Pushed:** recorded below once the push has happened, before T0.
 
 ## Results
 
