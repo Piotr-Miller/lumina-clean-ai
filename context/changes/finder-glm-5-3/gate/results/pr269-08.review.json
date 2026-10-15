@@ -67,7 +67,12 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "Several minor edge-case gaps exist: an unguarded dict access that will raise an unhelpful KeyError on malformed manifests (F1), an unhandled promise rejection that surfaces a raw stack trace instead of the documented tidy failure mode (F2), a missing presence check on one side of a baseline comparison that crashes with a raw TypeError (F5), and a dead/misleading conditional branch in sidecar recording (F6). None of these are logic-breaking in the happy path and all are confined to auxiliary tooling scripts rather than production code, but they represent real failure-mode gaps against the scripts' own stated 'fail loudly with a reason' contracts.",
-      "findingIds": ["F1", "F2", "F5", "F6"]
+      "findingIds": [
+        "F1",
+        "F2",
+        "F5",
+        "F6"
+      ]
     },
     "idiomaticity": {
       "score": 8,
@@ -77,22 +82,33 @@
     "complexity": {
       "score": 6,
       "justification": "The manifest schema is independently parsed in three separate places (contact-sheet.py, harness.ts, measure-hue-shares.py), creating duplication risk if the schema evolves (F1), and build_photo recomputes exposure stats twice unnecessarily (F4). These are accidental complexity/duplication concerns in otherwise straightforward scripts.",
-      "findingIds": ["F1", "F4"]
+      "findingIds": [
+        "F1",
+        "F4"
+      ]
     },
     "test_risk_coverage": {
       "score": 7,
       "justification": "No findings directly flag missing or superficial tests; PR metadata reports passing typecheck, 418 unit tests, and lint. However, the uncaught edge cases found (F1, F2, F5) suggest these failure paths were not exercised by tests, which is a mild risk-coverage gap for a harness whose job is to fail gracefully on bad input.",
-      "findingIds": ["F1", "F2", "F5"]
+      "findingIds": [
+        "F1",
+        "F2",
+        "F5"
+      ]
     },
     "documentation": {
       "score": 8,
       "justification": "No findings indicate missing or misleading documentation of intent; the one documentation-adjacent issue (F6) is about a misleading code comment/behavior in a log field rather than absent documentation, and the PR includes extensive archive/plan documentation per its metadata.",
-      "findingIds": ["F6"]
+      "findingIds": [
+        "F6"
+      ]
     },
     "security_safety": {
       "score": 7,
       "justification": "Only one security-tagged finding exists (F3): unescaped caption interpolation in locally generated HTML reports, explicitly noted as not exploitable given the trusted, local nature of the run records. No secret leakage or untrusted-input handling issues were identified.",
-      "findingIds": ["F3"]
+      "findingIds": [
+        "F3"
+      ]
     }
   },
   "verdict": "passed",

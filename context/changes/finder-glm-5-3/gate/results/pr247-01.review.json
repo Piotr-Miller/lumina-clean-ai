@@ -66,12 +66,19 @@
     "implementation_correctness": {
       "score": 4,
       "justification": "Multiple correctness defects were found across both scripts: prefix matching silently fails on full UUIDs (F2), stale output files can mask missing jobs (F4), the dimension census's core safety claim ('never fetches a whole image') is not actually enforced and a too-small read range plus printing CONFIRMED despite unreadable>0 can produce misleading conclusions (F5), and the JPEG marker scanner can desynchronize on 0xFF padding/TEM markers (F6). These are not catastrophic failures but they undermine the scripts' stated purpose of producing a trustworthy census and reliable downloads.",
-      "findingIds": ["F2", "F4", "F5", "F6"]
+      "findingIds": [
+        "F2",
+        "F4",
+        "F5",
+        "F6"
+      ]
     },
     "idiomaticity": {
       "score": 7,
       "justification": "No significant idiom or convention violations were flagged beyond a single nit (F1) noting inconsistency between the two sibling scripts' input-guard coverage.",
-      "findingIds": ["F1"]
+      "findingIds": [
+        "F1"
+      ]
     },
     "complexity": {
       "score": 7,
@@ -81,17 +88,27 @@
     "test_risk_coverage": {
       "score": 3,
       "justification": "No tests are evidenced for these scripts, and the review surfaced real, risk-relevant bugs (prefix matching, stale-file masking, unenforced range-read safety contract, marker desync) that automated or even basic manual verification should have caught given the scripts' stated purpose of producing a reliable production census.",
-      "findingIds": ["F2", "F4", "F5", "F6"]
+      "findingIds": [
+        "F2",
+        "F4",
+        "F5",
+        "F6"
+      ]
     },
     "documentation": {
       "score": 5,
       "justification": "The PR advertises a clear safety contract in script headers (no writes, ranged reads only, key never logged), which is good intent, but F5 shows the documented 'never fetches a whole image' guarantee is not actually enforced in code, making the documentation inaccurate on a safety-relevant point.",
-      "findingIds": ["F5"]
+      "findingIds": [
+        "F5"
+      ]
     },
     "security_safety": {
       "score": 5,
       "justification": "F3 notes error paths around the signed URL and download are unguarded, risking a stack trace that could echo a signed URL (low severity, short TTL) and departing from the script's own no-stack-trace contract; F5 shows the 'never fetch whole image' safety claim can be silently violated if the server ignores the Range header. Both are real but minor/nit-level gaps rather than exploitable flaws.",
-      "findingIds": ["F3", "F5"]
+      "findingIds": [
+        "F3",
+        "F5"
+      ]
     }
   },
   "verdict": "failed",

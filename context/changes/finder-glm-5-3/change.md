@@ -91,3 +91,5 @@ archived_at: null
 2026-10-15: reopened 4.4 — was accepted at 36156104d39257b16422547b1bbb82aef8e27752; changed: context/changes/finder-glm-5-3/gate.md (Phase 5 § Results: automatic outcome and run notes; the sealed sections are byte-identical, sha256 unchanged)
 
 2026-10-15: reopened 4.5 — was accepted at 36156104d39257b16422547b1bbb82aef8e27752; changed: context/changes/finder-glm-5-3/gate.md (Phase 5 § Results)
+
+2026-10-15: owner decision — the lint-staged `prettier --write` reformatted 11 `review.json` copies and `g3-rows.json` in 87f1318, so their bytes no longer matched the sha256 the gate ledger records. The original bytes are restored and the recorded hashes are never re-pinned. `.prettierignore` gets exactly the two paths of this change (`gate/results/`, `gate/g3-rows.json`) with a comment, and AGENTS.md describes the exception as protection of measurement artifacts that require identical bytes. A generic `context/changes/*/gate/…` glob was rejected: it would exempt future files without assessing them.

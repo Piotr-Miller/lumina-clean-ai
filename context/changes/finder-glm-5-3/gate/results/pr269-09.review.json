@@ -65,22 +65,33 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "Several concrete correctness bugs were found in the tooling (F2 contact-sheet aspect distortion, F4 missing-id crash instead of documented exit 1, F5 --compare mode dying on load-time file reads before dispatch), but all are confined to auxiliary experiment scripts that the PR explicitly states do not touch production engine/API/DB behavior, limiting blast radius.",
-      "findingIds": ["F2", "F4", "F5"]
+      "findingIds": [
+        "F2",
+        "F4",
+        "F5"
+      ]
     },
     "idiomaticity": {
       "score": 7,
       "justification": "Minor style issues only: dead/unreachable branch in bread-spike.ts (F6) and duplicated constants/logic across two stats scripts (F1) that should be centralized in the existing shared harness module. Neither suggests the code fights language/project conventions broadly.",
-      "findingIds": ["F6", "F1"]
+      "findingIds": [
+        "F6",
+        "F1"
+      ]
     },
     "complexity": {
       "score": 7,
       "justification": "The duplication flagged in F1 (field lists, percentile sets, tolerance logic repeated between browser-stats.ts and desktop-stats.ts) adds avoidable accidental complexity and drift risk, but no finding suggests the overall design is over-engineered or hard to follow.",
-      "findingIds": ["F1"]
+      "findingIds": [
+        "F1"
+      ]
     },
     "test_risk_coverage": {
       "score": 5,
       "justification": "F3 identifies that the most fragile, outcome-determining logic in the PR — the bilinear sampler reproducing Chromium's drawImage rounding, which the docstring itself says flipped a key experiment result — ships with no golden/regression test, leaving the riskiest numeric path uncovered despite the large test suite passing overall.",
-      "findingIds": ["F3"]
+      "findingIds": [
+        "F3"
+      ]
     },
     "documentation": {
       "score": 8,

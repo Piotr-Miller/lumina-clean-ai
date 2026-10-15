@@ -66,22 +66,34 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "Core harness logic appears functional per PR's own validation (typecheck, tests, parity checks passing), but findings identify real correctness gaps: desktop-stats.ts's compare() lacks a guard for missing baseline entries (throws instead of clean exit) and unnecessarily loads all photo inputs even for pure JSON comparisons (F4); the spike script's polling loop has no timeout or ok-check, risking infinite hangs or unhandled crashes on transient errors (F5, F6). These are minor-severity and confined to auxiliary tooling/spike scripts, not production engine code.",
-      "findingIds": ["F4", "F5", "F6"]
+      "findingIds": [
+        "F4",
+        "F5",
+        "F6"
+      ]
     },
     "idiomaticity": {
       "score": 7,
       "justification": "Only a nit-level inconsistency was flagged: scripts use relative ../../src/ imports instead of the repo's @/* alias convention, with no indication this breaks anything, just a stylistic deviation worth a comment or fix (F1).",
-      "findingIds": ["F1"]
+      "findingIds": [
+        "F1"
+      ]
     },
     "complexity": {
       "score": 7,
       "justification": "The two comparison scripts duplicate the STAT_FIELDS/PERCENTILES/tolerance comparison logic nearly verbatim despite already sharing a harness module, creating a maintainability risk if the parity definitions drift apart (F2). This is a nit-level simplification opportunity rather than a structural complexity problem.",
-      "findingIds": ["F2"]
+      "findingIds": [
+        "F2"
+      ]
     },
     "test_risk_coverage": {
       "score": 6,
       "justification": "The PR reports a passing broader test suite (418 tests), but the findings surface risky, untested edge paths within the new scripts themselves: a missing-baseline-id case that throws ungracefully (F4), and an unbounded polling loop with no timeout or error handling for a long-running external call (F5, F6). These risky paths in new tooling code don't appear to be covered by targeted tests.",
-      "findingIds": ["F4", "F5", "F6"]
+      "findingIds": [
+        "F4",
+        "F5",
+        "F6"
+      ]
     },
     "documentation": {
       "score": 8,
@@ -91,7 +103,9 @@
     "security_safety": {
       "score": 7,
       "justification": "One security-tagged nit was found: inconsistent HTML escaping in a local report-generation script (captions unescaped while image src is escaped), but the data source is local maintainer-generated content with no untrusted-input exposure, so blast radius is described as nil (F3).",
-      "findingIds": ["F3"]
+      "findingIds": [
+        "F3"
+      ]
     }
   },
   "verdict": "passed",

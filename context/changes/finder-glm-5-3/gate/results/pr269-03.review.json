@@ -67,7 +67,12 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "Several minor correctness bugs were found in the research tooling: desktop-stats.ts lacks a symmetric check for missing baseline entries causing an unhandled throw instead of the documented exit(1) (F4), the licensed-photo loading order causes --compare to crash on machines without private test data (F5), a resource leak when upload succeeds but response lacks a URL (F6), and a silent NaN output edge case in the hue-share measurement script (F1). None are catastrophic since this is experiment/analysis tooling with no production impact, but they represent real edge-case gaps in scripts whose purpose is reproducible measurement.",
-      "findingIds": ["F1", "F4", "F5", "F6"]
+      "findingIds": [
+        "F1",
+        "F4",
+        "F5",
+        "F6"
+      ]
     },
     "idiomaticity": {
       "score": 7,
@@ -82,17 +87,24 @@
     "test_risk_coverage": {
       "score": 5,
       "justification": "F3 identifies that the intricate bilinear sampler code — which directly gates a documented gamma decision boundary — has no unit tests, relying only on an ad-hoc, hard-to-run browser comparison; similarly the exposure_stats conventions are untested. This is a meaningful risk-weighted coverage gap in code explicitly called out as precision-sensitive.",
-      "findingIds": ["F3"]
+      "findingIds": [
+        "F3"
+      ]
     },
     "documentation": {
       "score": 7,
       "justification": "No findings call out missing or unclear documentation of intent; the PR body itself is thorough about scope, decisions, and validation. Minor correctness issues (e.g., exit-code mismatches in F4/F5) suggest documented behavior doesn't always match implementation, slightly tempering the score.",
-      "findingIds": ["F4", "F5"]
+      "findingIds": [
+        "F4",
+        "F5"
+      ]
     },
     "security_safety": {
       "score": 7,
       "justification": "F2 notes inconsistent HTML escaping discipline in contact-sheet.py captions, but the finding itself assesses practical risk as nil given trusted data sources (Replicate output and frozen manifest); it's flagged as a latent pattern risk rather than an active vulnerability.",
-      "findingIds": ["F2"]
+      "findingIds": [
+        "F2"
+      ]
     }
   },
   "verdict": "passed",

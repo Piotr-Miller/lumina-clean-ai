@@ -11,3 +11,13 @@
 # exactly the freeze violation guarded in fabrication-grade.mjs
 # (assertGroundTruthFrozen) — that one cost a paid measurement arm.
 context/archive/
+
+# Measurement artifacts of the active change finder-glm-5-3 that must keep
+# identical bytes: the gate ledger (gate/series.jsonl) records the sha256 of
+# every review.json copy and of g3-rows.json, and the hand-read resolver
+# refuses a copy whose bytes changed. The runner writes them with
+# JSON.stringify, which is not Prettier's layout; a lint-staged
+# `prettier --write` reformatted them once (2026-10-15) and broke the pins.
+# Redundant once the change is archived (context/archive/ above).
+context/changes/finder-glm-5-3/gate/results/
+context/changes/finder-glm-5-3/gate/g3-rows.json

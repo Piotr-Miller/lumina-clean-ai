@@ -54,12 +54,17 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "Two minor correctness gaps exist in auxiliary tooling: contact-sheet.py's resize can silently upscale the original image, violating its own documented matched-size contract (F1), and desktop-stats.ts compare() can throw an unhandled TypeError on a malformed/partial baseline instead of the documented clean exit path (F3). Both are edge-case failures in non-production scripts rather than core logic breaks, but they do contradict explicit documented behavior.",
-      "findingIds": ["F1", "F3"]
+      "findingIds": [
+        "F1",
+        "F3"
+      ]
     },
     "idiomaticity": {
       "score": 7,
       "justification": "Only a minor stylistic nit was flagged: dead-code ternary logic in bread-spike.ts implies a distinction (data URI vs path) that can never occur (F4). No broader convention violations were reported.",
-      "findingIds": ["F4"]
+      "findingIds": [
+        "F4"
+      ]
     },
     "complexity": {
       "score": 8,
@@ -69,12 +74,16 @@
     "test_risk_coverage": {
       "score": 5,
       "justification": "The PR's stated motivation is avoiding unreproducible measurement numbers, yet the hand-rolled point_bilinear resampler and exposure_stats routines—whose rounding and thresholds directly affect reported clipRatio—have no automated tests (F2), despite the risk-weighted testing expectation this PR itself seems to validate against. This is a meaningful coverage gap for the specific risky logic the PR touches.",
-      "findingIds": ["F2"]
+      "findingIds": [
+        "F2"
+      ]
     },
     "documentation": {
       "score": 7,
       "justification": "Documentation is largely adequate per the findings, with only a minor nit that the run-record sidecar's stored output path becomes stale once files are relocated, without a note clarifying this (F5). No broader documentation gaps were raised.",
-      "findingIds": ["F5"]
+      "findingIds": [
+        "F5"
+      ]
     },
     "security_safety": {
       "score": 9,

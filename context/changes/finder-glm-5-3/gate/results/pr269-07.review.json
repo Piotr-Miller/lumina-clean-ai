@@ -57,12 +57,18 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "Two minor correctness gaps exist in the tooling (F2: sidecar glob pattern misses non-PNG outputs, silently breaking the documented failure guarantee; F4: unhandled TypeError instead of a graceful exit when a baseline id is missing), plus a harmless dead-code condition (F5). These are edge-case robustness issues in auxiliary measurement/archival scripts rather than production-path bugs, but they do undercut documented guarantees.",
-      "findingIds": ["F2", "F4", "F5"]
+      "findingIds": [
+        "F2",
+        "F4",
+        "F5"
+      ]
     },
     "idiomaticity": {
       "score": 7,
       "justification": "Minor deviation from the project's path-alias convention across several script files (F1), flagged as a nit; no other idiomaticity concerns were raised.",
-      "findingIds": ["F1"]
+      "findingIds": [
+        "F1"
+      ]
     },
     "complexity": {
       "score": 8,
@@ -72,17 +78,24 @@
     "test_risk_coverage": {
       "score": 6,
       "justification": "The PR reports passing unit tests overall, but the findings surface untested edge cases in the new scripts (missing baseline id crash in F4, mismatched sidecar extension in F2) that risk-weighted coverage should have caught given these are the failure paths the scripts are documented to guard against.",
-      "findingIds": ["F2", "F4"]
+      "findingIds": [
+        "F2",
+        "F4"
+      ]
     },
     "documentation": {
       "score": 7,
       "justification": "F1 notes ambiguity about how these scripts are type-checked given non-standard import paths, which could mislead readers about safety guarantees; otherwise no major documentation gaps were flagged.",
-      "findingIds": ["F1"]
+      "findingIds": [
+        "F1"
+      ]
     },
     "security_safety": {
       "score": 8,
       "justification": "Only a low-severity nit (F3) regarding inconsistent HTML escaping of self-generated caption text in a report generator; the reviewer explicitly notes risk is low since the data is self-generated, not untrusted external input.",
-      "findingIds": ["F3"]
+      "findingIds": [
+        "F3"
+      ]
     }
   },
   "verdict": "passed",

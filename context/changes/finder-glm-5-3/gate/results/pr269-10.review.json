@@ -46,7 +46,11 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "All identified issues are minor/nit severity confined to auxiliary measurement/debug scripts (not production code): a rounding mismatch in the offline harness (F2) could shift diagnostic numbers, a missing baseline guard (F3) could cause an unhandled crash instead of a clean exit, and dead/misleading code (F4) is cosmetic. None represent broken core logic or regressions in production behavior, but they do represent real correctness gaps in the tooling meant to catch drift.",
-      "findingIds": ["F2", "F3", "F4"]
+      "findingIds": [
+        "F2",
+        "F3",
+        "F4"
+      ]
     },
     "idiomaticity": {
       "score": 8,
@@ -56,17 +60,25 @@
     "complexity": {
       "score": 8,
       "justification": "No findings indicate over-engineering or unnecessary complexity; the dead-code branch in F4 is a minor nit rather than a structural complexity problem.",
-      "findingIds": ["F4"]
+      "findingIds": [
+        "F4"
+      ]
     },
     "test_risk_coverage": {
       "score": 7,
       "justification": "No findings explicitly call out missing or inadequate tests for the risky paths (e.g., the rounding behavior in F2 or the baseline guard in F3), though the existence of these latent bugs suggests test coverage for those specific paths could be stronger. PR metadata reports a large passing test suite, but it's unclear if it covers these particular tooling edge cases.",
-      "findingIds": ["F2", "F3"]
+      "findingIds": [
+        "F2",
+        "F3"
+      ]
     },
     "documentation": {
       "score": 5,
       "justification": "Two findings directly concern documentation accuracy: F1 notes the exposure() docstring overstates ROI-convention support, and F2 notes a docstring claim about matching JS arithmetic that isn't actually true given the rounding mismatch. These are real documentation/intent mismatches, though confined to comments in auxiliary scripts rather than core API docs.",
-      "findingIds": ["F1", "F2"]
+      "findingIds": [
+        "F1",
+        "F2"
+      ]
     },
     "security_safety": {
       "score": 9,

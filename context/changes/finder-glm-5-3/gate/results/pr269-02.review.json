@@ -47,7 +47,10 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "Two minor correctness findings: the 'Original' row's diagnostics are computed via a different method than documented (F2), and a missing symmetric guard in desktop-stats.ts lets a malformed baseline crash with a TypeError instead of the promised exit-1 diagnostic (F4). Both affect internal experiment tooling rather than production behavior, but are real correctness gaps against the stated contracts.",
-      "findingIds": ["F2", "F4"]
+      "findingIds": [
+        "F2",
+        "F4"
+      ]
     },
     "idiomaticity": {
       "score": 8,
@@ -62,17 +65,23 @@
     "test_risk_coverage": {
       "score": 5,
       "justification": "F3 identifies that a hand-rolled sampling function directly determining tuning outcomes (shown to flip a key metric across a guard threshold) has zero pinned tests, which is a meaningful risk-coverage gap for logic that materially affects the experiment's conclusions.",
-      "findingIds": ["F3"]
+      "findingIds": [
+        "F3"
+      ]
     },
     "documentation": {
       "score": 6,
       "justification": "F2 shows a discrepancy between the module's documented diagnostic method and what is actually computed for the 'Original' row, which could mislead readers comparing diagnostics across rows; otherwise no other documentation gaps are noted.",
-      "findingIds": ["F2"]
+      "findingIds": [
+        "F2"
+      ]
     },
     "security_safety": {
       "score": 7,
       "justification": "F1 flags unescaped caption interpolation in an HTML report generator; currently low risk since inputs are machine-generated, but a malformed record could inject markup. This is a nit-level, low-likelihood issue in an internal tool, not a direct vulnerability under current usage.",
-      "findingIds": ["F1"]
+      "findingIds": [
+        "F1"
+      ]
     }
   },
   "verdict": "passed",

@@ -8,10 +8,14 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI"],
+      "providers": [
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -49,10 +53,14 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI"],
+      "providers": [
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -90,10 +98,14 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI"],
+      "providers": [
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -131,10 +143,14 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI"],
+      "providers": [
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -176,10 +192,14 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI"],
+      "providers": [
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -221,10 +241,16 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI", "Z.AI"],
+      "providers": [
+        "Z.AI",
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3", "z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -270,10 +296,18 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI", "Z.AI", "Z.AI"],
+      "providers": [
+        "Z.AI",
+        "Z.AI",
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3", "z-ai/glm-5.3", "z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -322,10 +356,18 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI", "Z.AI", "Z.AI"],
+      "providers": [
+        "Z.AI",
+        "Z.AI",
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3", "z-ai/glm-5.3", "z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -374,10 +416,18 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI", "Z.AI", "Z.AI"],
+      "providers": [
+        "Z.AI",
+        "Z.AI",
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3", "z-ai/glm-5.3", "z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -426,10 +476,16 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI", "Z.AI"],
+      "providers": [
+        "Z.AI",
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3", "z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -472,10 +528,16 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI", "Z.AI"],
+      "providers": [
+        "Z.AI",
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3", "z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -518,10 +580,16 @@
       "provider": "candidate-glm-5.3",
       "finderError": null,
       "rowError": null,
-      "providers": ["Z.AI", "Z.AI"],
+      "providers": [
+        "Z.AI",
+        "Z.AI"
+      ],
       "providerMismatch": [],
       "invalidated": false,
-      "models": ["z-ai/glm-5.3", "z-ai/glm-5.3"],
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
       "modelMismatch": [],
       "modelInvalid": false,
       "requestReasoning": [
@@ -607,7 +675,10 @@
             "flaw_cross_hunk_contract": 3
           },
           "failed": [],
-          "diagnostic": ["tool_required", "flaw_cross_hunk_contract"]
+          "diagnostic": [
+            "tool_required",
+            "flaw_cross_hunk_contract"
+          ]
         },
         "clean": {
           "counts": {

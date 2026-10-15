@@ -67,7 +67,11 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "The two scripts largely do what they claim, but several real correctness gaps exist: a filename collision silently overwrites files and skews reported totals (F2), the 'missing' check can be fooled by stale files from prior runs (F3), and the PNG/JPEG header parsers can raise unhandled exceptions that would crash the whole census loop on a single malformed object (F4). None of these are catastrophic, but they are genuine logic/edge-case gaps in diagnostic tooling meant to be trustworthy.",
-      "findingIds": ["F2", "F3", "F4"]
+      "findingIds": [
+        "F2",
+        "F3",
+        "F4"
+      ]
     },
     "idiomaticity": {
       "score": 7,
@@ -82,17 +86,25 @@
     "test_risk_coverage": {
       "score": 3,
       "justification": "There is no evidence of any test coverage for these scripts, and the findings expose exactly the kind of risky, silent-failure paths that would benefit from tests: malformed image headers crashing the loop (F4), a ranged GET that can silently balloon into full downloads (F5), and a verdict message that can mislead downstream decisions when some jobs are unreadable (F6). These are the riskiest parts of the diagnostic logic and they ship unverified.",
-      "findingIds": ["F4", "F5", "F6"]
+      "findingIds": [
+        "F4",
+        "F5",
+        "F6"
+      ]
     },
     "documentation": {
       "score": 5,
       "justification": "The PR states a clear safety contract in the script headers (no writes, ranged-only GETs, key never logged), but F5 shows the documented 'never fetches a whole image' guarantee is not actually enforced, meaning the documentation overstates the behavior to a reader who trusts it.",
-      "findingIds": ["F5"]
+      "findingIds": [
+        "F5"
+      ]
     },
     "security_safety": {
       "score": 5,
       "justification": "No credential leakage or injection-style vulnerability was found, but F5 identifies that the script's own stated safety contract (ranged GET only, never a full image fetch) is unenforced, which is a meaningful safety-contract gap for scripts explicitly designed around minimizing data exposure/bandwidth from production image stores.",
-      "findingIds": ["F5"]
+      "findingIds": [
+        "F5"
+      ]
     }
   },
   "verdict": "passed",

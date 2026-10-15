@@ -67,7 +67,12 @@
     "implementation_correctness": {
       "score": 6,
       "justification": "Several minor/nit correctness gaps exist: hardcoded JPEG content type regardless of actual format (F1), a glob pattern that silently drops non-PNG sidecar files from the contact sheet (F2), an unhandled TypeError that could crash desktop-stats.ts in violation of its documented exit contract (F4), and a failed-download path that doesn't set a non-zero exit code (F6). None are severe bugs in production logic (this PR touches only experiment tooling), but they are real edge-case gaps in the harness's correctness guarantees.",
-      "findingIds": ["F1", "F2", "F4", "F6"]
+      "findingIds": [
+        "F1",
+        "F2",
+        "F4",
+        "F6"
+      ]
     },
     "idiomaticity": {
       "score": 8,
@@ -77,17 +82,25 @@
     "complexity": {
       "score": 8,
       "justification": "No findings indicate unnecessary complexity or convoluted design; the one performance-related nit (holding many file handles open) is a minor inefficiency rather than a complexity/architecture problem.",
-      "findingIds": ["F3"]
+      "findingIds": [
+        "F3"
+      ]
     },
     "test_risk_coverage": {
       "score": 5,
       "justification": "The findings surface multiple risky paths that aren't guarded or exercised: a silent data-loss case in contact-sheet collection (F2), an unhandled exception path contradicting the documented exit contract (F4), and a failure path that doesn't propagate exit status (F6). These are exactly the kind of risky branches that should have explicit coverage or guards, and their absence surfaced only via code review rather than tests.",
-      "findingIds": ["F2", "F4", "F6"]
+      "findingIds": [
+        "F2",
+        "F4",
+        "F6"
+      ]
     },
     "documentation": {
       "score": 6,
       "justification": "One finding shows a comment overstating the guarantee of a cleanup step, which could mislead future readers about when uploaded files are actually deleted relative to prediction completion.",
-      "findingIds": ["F5"]
+      "findingIds": [
+        "F5"
+      ]
     },
     "security_safety": {
       "score": 9,
