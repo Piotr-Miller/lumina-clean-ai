@@ -1273,15 +1273,15 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Automated
 
-- [ ] 5.1 Preflight and the series
-- [ ] 5.2 G3 rows
-- [ ] 5.3 Automatic outcome recorded
-- [ ] 5.4 Settled spend within the cap
+- [x] 5.1 Preflight and the series
+- [x] 5.2 G3 rows
+- [x] 5.3 Automatic outcome recorded
+- [x] 5.4 Settled spend within the cap
 
 #### Manual
 
 - [ ] 5.5 Owner authorizes the paid series
-- [ ] 5.6 Owner decides at the $3.00 pause
+- [-] 5.6 Owner decides at the $3.00 pause — n/a: the plan's condition "if it is reached" resolved the other way; the series ended at T $1.379003 < $3.00 (gate/series.jsonl, series check 2026-10-15T14:26:51Z)
 - [ ] 5.7 Owner confirms the G2-01 probe
 
 ### Phase 6: Hand-read and outcome

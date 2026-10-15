@@ -1,0 +1,174 @@
+{
+  "summary": "This PR archives the S-17 Bread calibration experiment and adds a measurement/reporting harness, explicitly touching no production code paths. The reviewer's findings are limited to nits and minor issues in the auxiliary scripts: an inconsistent sidecar-file naming convention that could silently hide non-PNG outputs from the contact sheet (F2), an unguarded missing-baseline-id case that could crash instead of cleanly exiting (F4), a non-standard import alias pattern raising type-checking scope questions (F1), inconsistent HTML escaping of self-generated captions (F3), and one harmless piece of dead code (F5). None of these affect production behavior, and the PR's own validation (typecheck, 418 tests, lint, parity checks) passed. Given the low severity and tooling-only scope of all findings, the change is acceptable to merge with light follow-up recommended on the two minor correctness items.",
+  "findings": [
+    {
+      "file": "scripts/s17/auto-values.ts",
+      "startLine": 11,
+      "endLine": 13,
+      "severity": "nit",
+      "category": "documentation",
+      "description": "Imports use ../../src/lib/... rather than the @/* alias mandated by repo rules; the same pattern appears in browser-stats.ts, desktop-stats.ts, and harness.ts. If scripts/ is intentionally outside the tsconfig alias scope these files also escape the root tsc/eslint graph, so typos (e.g. a missing LumaStats field) surface only at runtime.",
+      "suggestion": "Either include scripts/ in the alias/tsconfig scope, or add a header note stating how these files are type-checked (e.g. 'run npx tsx, not in the root tsc graph').",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 98,
+      "endLine": 106,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "collect() discovers run records via d.glob(\"*.png.json\"), but bread-spike.ts writes its sidecar as `${dest}.json` where dest's extension comes from the output URL pathname — which may be .jpg, .webp, etc., not only .png. A run with a non-PNG-named output is silently invisible on the sheet instead of being reported, undercutting the documented 'exit 1 on a missing output' guarantee.",
+      "suggestion": "Either glob *.json and filter to records with a sibling image file, or pin the sidecar suffix to .png.json in bread-spike.ts so the two scripts agree.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 121,
+      "endLine": 123,
+      "severity": "nit",
+      "category": "security",
+      "description": "figure() HTML-escapes src but interpolates caption raw. Captions contain manifest paths and prediction_ids from run records (self-generated, so risk is low), but escaping the caption makes the invariant uniform and costs nothing.",
+      "suggestion": "Apply html.escape(caption) inside figure(), or escape the interpolated fragments at each call site.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 116,
+      "endLine": 122,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "compare() assumes base[id] exists for every tuning entry. If the baseline file is stale and missing one of the six ids, auto(a) throws an unhandled TypeError instead of the documented 'exit 1: the comparison could not run' behaviour. Ids present in the baseline but absent from entries are also silently ignored.",
+      "suggestion": "Guard the missing-id case (and optionally the extra-id case), printing a message naming the id and file before process.exit(1).",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 245,
+      "endLine": 250,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "The sidecar guard run.imageLabel.startsWith(\"data:\") is dead code: for local inputs imageLabel is always localPath (never the data URI), so the \"(data URI)\" branch can never fire. It happens to be harmless — recording the local path is more useful — but the condition suggests an intent the code doesn't have.",
+      "suggestion": "Simplify to input: run.imageLabel (or record the transport field, which already conveys data-uri vs upload vs url).",
+      "id": "F5"
+    }
+  ],
+  "preDedupFindingCount": 5,
+  "scores": {
+    "implementation_correctness": {
+      "score": 6,
+      "justification": "Two minor correctness gaps exist in the tooling (F2: sidecar glob pattern misses non-PNG outputs, silently breaking the documented failure guarantee; F4: unhandled TypeError instead of a graceful exit when a baseline id is missing), plus a harmless dead-code condition (F5). These are edge-case robustness issues in auxiliary measurement/archival scripts rather than production-path bugs, but they do undercut documented guarantees.",
+      "findingIds": ["F2", "F4", "F5"]
+    },
+    "idiomaticity": {
+      "score": 7,
+      "justification": "Minor deviation from the project's path-alias convention across several script files (F1), flagged as a nit; no other idiomaticity concerns were raised.",
+      "findingIds": ["F1"]
+    },
+    "complexity": {
+      "score": 8,
+      "justification": "No findings indicate unnecessary complexity or convoluted design; the issues raised are about missing guards/edge-case handling rather than structural over-engineering.",
+      "findingIds": []
+    },
+    "test_risk_coverage": {
+      "score": 6,
+      "justification": "The PR reports passing unit tests overall, but the findings surface untested edge cases in the new scripts (missing baseline id crash in F4, mismatched sidecar extension in F2) that risk-weighted coverage should have caught given these are the failure paths the scripts are documented to guard against.",
+      "findingIds": ["F2", "F4"]
+    },
+    "documentation": {
+      "score": 7,
+      "justification": "F1 notes ambiguity about how these scripts are type-checked given non-standard import paths, which could mislead readers about safety guarantees; otherwise no major documentation gaps were flagged.",
+      "findingIds": ["F1"]
+    },
+    "security_safety": {
+      "score": 8,
+      "justification": "Only a low-severity nit (F3) regarding inconsistent HTML escaping of self-generated caption text in a report generator; the reviewer explicitly notes risk is low since the data is self-generated, not untrusted external input.",
+      "findingIds": ["F3"]
+    }
+  },
+  "verdict": "passed",
+  "verdictReason": "All findings are nit or minor severity affecting auxiliary experiment/tooling scripts rather than production engine, API, or database behavior as stated in the PR; no finding rises to a blocking correctness, security, or design flaw.",
+  "diffStats": {
+    "files": 17,
+    "additions": 1238,
+    "deletions": 21
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 3,
+    "toolCalls": 0,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 1991,
+          "source": "reported"
+        },
+        "cost": 0.017765
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 0,
+          "source": "reported"
+        },
+        "cost": 0.00967648
+      },
+      {
+        "kind": "repair",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 0,
+          "source": "reported"
+        },
+        "cost": 0.0048916
+      }
+    ],
+    "inputTokens": 42627,
+    "outputTokens": 4265,
+    "totalTokens": 46892,
+    "cost": 0.03233308
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 4936,
+    "outputTokens": 1475,
+    "totalTokens": 6411,
+    "cost": 0.024622
+  }
+}

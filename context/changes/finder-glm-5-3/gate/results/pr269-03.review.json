@@ -1,0 +1,184 @@
+{
+  "summary": "This PR archives the S-17 Bread calibration experiment and adds supporting measurement/analysis scripts, explicitly touching no production engine, API, or database behavior. The reviewer's findings are confined to nit/minor issues in the experiment tooling: a few unhandled edge cases (NaN output, missing baseline checks, load-order crash, upload-cleanup leak) and one notable test gap around an intricate numerical sampler that underpins a documented gamma decision boundary, plus a low-risk inconsistent-escaping pattern in a report generator. None of these findings rise to a severity that threatens correctness of the shipped decision or introduces exploitable risk, making this a reasonably solid, low-stakes archival PR with some polish opportunities in the newly added scripts' robustness and test coverage.",
+  "findings": [
+    {
+      "file": "scripts/measure-hue-shares.py",
+      "startLine": 151,
+      "endLine": 152,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "ROI coordinates are floored with no clamping or emptiness check; a small ROI on a small image can produce `right == left`, so `pct` returns 0.0 but `mean` becomes NaN and prints `mean RGB nan nan nan` — silently useless output from a script whose selling point is reproducible numbers.",
+      "suggestion": "Guard `right > left and bottom > top` (and optionally validate the ROI against the manifest's roi_convention) before slicing.",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 167,
+      "endLine": 172,
+      "severity": "nit",
+      "category": "security",
+      "description": "`figure()` escapes `src` but the captions interpolate `record['prediction_id']`, sizes and entry data into HTML unescaped. Values come from Replicate and the frozen manifest so the practical risk is nil, but the mixed escaping discipline invites injection the moment someone adds a free-form field to a run record.",
+      "suggestion": "Escape all interpolated caption values with `html.escape()` (or build captions from escaped parts consistently).",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 74,
+      "endLine": 97,
+      "severity": "minor",
+      "category": "testing",
+      "description": "`point_bilinear` is intricate numerical code whose stated purpose is to match Chromium's canvas sampler within one 1/255 bin — it directly guards the S17-04 clipRatio boundary that flips Cloud gamma 1.10↔1.50 — yet it has no unit test; parity is validated only by the ad-hoc browser-stats run requiring Playwright and the licensed photos. Similarly `exposure_stats`' V≥0.90/any=255 conventions in measure-hue-shares.py are untested.",
+      "suggestion": "Add a table-driven test with synthetic inputs (known 2×2 taps, rounding at exactly .5, degenerate 1-px dimensions, upscale case) pinning the sampler's contract cheaply.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 105,
+      "endLine": 111,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "In `compare`, `b` (new download) is checked for presence but `a = base[id]` is not; a baseline missing a tuning id makes `auto(a)` throw a TypeError instead of the documented exit status 1 for unexpected shapes.",
+      "suggestion": "Add a symmetric check: `if (!a) { console.error(`${id}: missing from baseline`); process.exit(1); }`.",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 143,
+      "endLine": 154,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The licensed-photo loading loop runs at module top level (lines 143-150, with a `throw` on hash mismatch) before `argv` is inspected for `--compare` (152-154). `--compare` is an offline analysis of a download against a baseline, but on a machine without the private `test-photos` it crashes with an unhandled ENOENT/throw instead of running the comparison.",
+      "suggestion": "Handle `--compare` before loading the photos, and make the manifest-mismatch path `process.exit(1)` rather than `throw`.",
+      "id": "F5"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 191,
+      "endLine": 194,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "When an upload succeeds but the response lacks `urls.get`, `localInput` exits before the `ImageInput` is constructed, so the `finally` in `main` never deletes `file.id` — the uploaded input leaks in the Replicate account despite the documented cleanup-after-run promise. The same holds for any throw between upload success and the try/finally.",
+      "suggestion": "Attempt the delete (or at least always report the file id as the exit does) inside a try/finally scoped around post-upload handling, e.g. catch the no-URL case, call deleteUpload with a synthesized ImageInput, then exit.",
+      "id": "F6"
+    }
+  ],
+  "preDedupFindingCount": 6,
+  "scores": {
+    "implementation_correctness": {
+      "score": 6,
+      "justification": "Several minor correctness bugs were found in the research tooling: desktop-stats.ts lacks a symmetric check for missing baseline entries causing an unhandled throw instead of the documented exit(1) (F4), the licensed-photo loading order causes --compare to crash on machines without private test data (F5), a resource leak when upload succeeds but response lacks a URL (F6), and a silent NaN output edge case in the hue-share measurement script (F1). None are catastrophic since this is experiment/analysis tooling with no production impact, but they represent real edge-case gaps in scripts whose purpose is reproducible measurement.",
+      "findingIds": ["F1", "F4", "F5", "F6"]
+    },
+    "idiomaticity": {
+      "score": 7,
+      "justification": "No findings flagged non-idiomatic code, framework misuse, or style deviations from project conventions; deductions are driven by correctness and testing gaps rather than idiomaticity concerns.",
+      "findingIds": []
+    },
+    "complexity": {
+      "score": 7,
+      "justification": "No findings indicate over-engineering or unnecessary complexity; the issues raised (missing guards, ordering bugs, leaks) are localized logic gaps rather than structural complexity problems.",
+      "findingIds": []
+    },
+    "test_risk_coverage": {
+      "score": 5,
+      "justification": "F3 identifies that the intricate bilinear sampler code — which directly gates a documented gamma decision boundary — has no unit tests, relying only on an ad-hoc, hard-to-run browser comparison; similarly the exposure_stats conventions are untested. This is a meaningful risk-weighted coverage gap in code explicitly called out as precision-sensitive.",
+      "findingIds": ["F3"]
+    },
+    "documentation": {
+      "score": 7,
+      "justification": "No findings call out missing or unclear documentation of intent; the PR body itself is thorough about scope, decisions, and validation. Minor correctness issues (e.g., exit-code mismatches in F4/F5) suggest documented behavior doesn't always match implementation, slightly tempering the score.",
+      "findingIds": ["F4", "F5"]
+    },
+    "security_safety": {
+      "score": 7,
+      "justification": "F2 notes inconsistent HTML escaping discipline in contact-sheet.py captions, but the finding itself assesses practical risk as nil given trusted data sources (Replicate output and frozen manifest); it's flagged as a latent pattern risk rather than an active vulnerability.",
+      "findingIds": ["F2"]
+    }
+  },
+  "verdict": "passed",
+  "verdictReason": "All findings are nit or minor severity affecting non-production research/calibration tooling with no production engine, API, or data impact; the most notable gap (F3, untested sampler) and a few edge-case correctness bugs (F1, F4, F5, F6) are real but limited in blast radius and already offset by passing CI gates and broad test suite per PR metadata.",
+  "diffStats": {
+    "files": 17,
+    "additions": 1238,
+    "deletions": 21
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 3,
+    "toolCalls": 3,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 3110,
+          "source": "reported"
+        },
+        "cost": 0.0193798
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 1402,
+          "source": "reported"
+        },
+        "cost": 0.0253988
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 10,
+          "source": "reported"
+        },
+        "cost": 0.01596188
+      }
+    ],
+    "inputTokens": 72316,
+    "outputTokens": 6498,
+    "totalTokens": 78814,
+    "cost": 0.06074048
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 5245,
+    "outputTokens": 1963,
+    "totalTokens": 7208,
+    "cost": 0.03012
+  }
+}

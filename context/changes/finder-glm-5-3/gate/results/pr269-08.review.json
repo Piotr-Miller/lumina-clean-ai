@@ -1,0 +1,202 @@
+{
+  "summary": "This PR archives the S-17 Bread calibration experiment and adds measurement/harness scripts, touching no production behavior. The reviewer's findings are all minor or nit severity: a few unguarded edge-case accesses that would crash with unhelpful errors instead of the scripts' intended graceful failure messages (F1, F2, F5), a dead/misleading conditional in sidecar logging (F6), a non-exploitable unescaped HTML interpolation in a locally-generated report (F3), and a redundant computation (F4). There is also a noted duplication risk from parsing the same manifest schema independently in three places (F1). None of these rise to the level of broken core logic, security exposure, or missing documentation, and the change is scoped to internal tooling with passing CI gates reported in the PR metadata.metadata.",
+  "findings": [
+    {
+      "file": "scripts/measure-hue-shares.py",
+      "startLine": 122,
+      "endLine": 122,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "manifest_roi does `entry[\"diagnostic_content_roi\"]` without checking the key; a manifest entry lacking that field raises an unhelpful KeyError, at odds with the script's own fail-loudly-with-a-reason ethos. This is also the third independent loader of the s17-benchmark.json schema (here, contact-sheet.py, and s17/harness.ts), so a manifest schema change must be replicated in all three.",
+      "suggestion": "Check the field and `sys.exit` with an error naming the id and missing field; consider a single shared manifest loader if the schema is expected to evolve.",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/s17/browser-stats.ts",
+      "startLine": 140,
+      "endLine": 146,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "A failure inside `page.evaluate` (fetch 404, decode failure) rejects the promise, so the script exits via unhandled rejection with a stack trace rather than the tidy status-1 \"the check could not run\" the docstring promises. The exit code coincidentally matches; the output does not.",
+      "suggestion": "Wrap the per-entry evaluate in try/catch, print a one-line reason, and `process.exit(1)`.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 120,
+      "endLine": 124,
+      "severity": "nit",
+      "category": "security",
+      "description": "`figure()` escapes `src` but interpolates `caption` unescaped into HTML; `prediction_id` is third-party API data flowing into the caption. Not exploitable here (local, trusted run records), but escaping costs nothing.",
+      "suggestion": "Apply `html.escape(caption)` (or escape the interpolated fields) in figure().",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 136,
+      "endLine": 140,
+      "severity": "nit",
+      "category": "performance",
+      "description": "build_photo computes exposure_stats twice per output image — once via `diagnostics()` and again for the markdown row — over full-resolution arrays.",
+      "suggestion": "Have diagnostics() return the raw values and reuse them in the markdown branch.",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 105,
+      "endLine": 106,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "In compare(), `const a = base[id]` is used without a presence check — only the download side (`b`) is validated. A baseline that predates a tuning id (or an older bare `{ id: stats }` baseline missing an entry) crashes with a raw TypeError from `auto(undefined)` instead of the documented \"exit 1, comparison could not run\" path.",
+      "suggestion": "Mirror the `!b` check: `if (!a) { console.error(`${id}: missing from baseline ${baselinePath}`); process.exit(1); }`",
+      "id": "F5"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 241,
+      "endLine": 241,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The sidecar's `input: run.imageLabel.startsWith(\"data:\") ? \"(data URI)\" : run.imageLabel` is a dead branch: `imageLabel` is the local file path for local inputs (the data URI lives in `input.image`), so the `\"(data URI)\"` arm is unreachable and misleadingly suggests inline inputs are redacted when they are recorded in full. The sidecar otherwise correctly records `input_sha256`, which contact-sheet.py relies on.",
+      "suggestion": "Drop the ternary and record a stable field, e.g. base `input` on `run.input.transport` (\"data-uri\"/\"upload\"/\"url\") or keep the path plus the input_sha256 that downstream consumers key on.",
+      "id": "F6"
+    }
+  ],
+  "preDedupFindingCount": 6,
+  "scores": {
+    "implementation_correctness": {
+      "score": 6,
+      "justification": "Several minor edge-case gaps exist: an unguarded dict access that will raise an unhelpful KeyError on malformed manifests (F1), an unhandled promise rejection that surfaces a raw stack trace instead of the documented tidy failure mode (F2), a missing presence check on one side of a baseline comparison that crashes with a raw TypeError (F5), and a dead/misleading conditional branch in sidecar recording (F6). None of these are logic-breaking in the happy path and all are confined to auxiliary tooling scripts rather than production code, but they represent real failure-mode gaps against the scripts' own stated 'fail loudly with a reason' contracts.",
+      "findingIds": ["F1", "F2", "F5", "F6"]
+    },
+    "idiomaticity": {
+      "score": 8,
+      "justification": "No findings call out idiom violations, unconventional patterns, or style mismatches with surrounding code; the issues raised are about correctness/robustness and duplication rather than how idiomatically the code is written.",
+      "findingIds": []
+    },
+    "complexity": {
+      "score": 6,
+      "justification": "The manifest schema is independently parsed in three separate places (contact-sheet.py, harness.ts, measure-hue-shares.py), creating duplication risk if the schema evolves (F1), and build_photo recomputes exposure stats twice unnecessarily (F4). These are accidental complexity/duplication concerns in otherwise straightforward scripts.",
+      "findingIds": ["F1", "F4"]
+    },
+    "test_risk_coverage": {
+      "score": 7,
+      "justification": "No findings directly flag missing or superficial tests; PR metadata reports passing typecheck, 418 unit tests, and lint. However, the uncaught edge cases found (F1, F2, F5) suggest these failure paths were not exercised by tests, which is a mild risk-coverage gap for a harness whose job is to fail gracefully on bad input.",
+      "findingIds": ["F1", "F2", "F5"]
+    },
+    "documentation": {
+      "score": 8,
+      "justification": "No findings indicate missing or misleading documentation of intent; the one documentation-adjacent issue (F6) is about a misleading code comment/behavior in a log field rather than absent documentation, and the PR includes extensive archive/plan documentation per its metadata.",
+      "findingIds": ["F6"]
+    },
+    "security_safety": {
+      "score": 7,
+      "justification": "Only one security-tagged finding exists (F3): unescaped caption interpolation in locally generated HTML reports, explicitly noted as not exploitable given the trusted, local nature of the run records. No secret leakage or untrusted-input handling issues were identified.",
+      "findingIds": ["F3"]
+    }
+  },
+  "verdict": "passed",
+  "verdictReason": "All findings are minor or nit-level robustness/duplication/dead-code issues confined to internal experiment tooling scripts, with no production engine, API, or database changes and no exploitable security issues; the PR's stated validation (typecheck, 418 tests, lint) passed.",
+  "diffStats": {
+    "files": 17,
+    "additions": 1238,
+    "deletions": 21
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 4,
+    "toolCalls": 3,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 1293,
+          "source": "reported"
+        },
+        "cost": 0.011253
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 109,
+          "source": "reported"
+        },
+        "cost": 0.0090864
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 3533,
+          "source": "reported"
+        },
+        "cost": 0.0266058
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 285,
+          "source": "reported"
+        },
+        "cost": 0.01386668
+      }
+    ],
+    "inputTokens": 88803,
+    "outputTokens": 7072,
+    "totalTokens": 95875,
+    "cost": 0.06081188
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 5156,
+    "outputTokens": 1790,
+    "totalTokens": 6946,
+    "cost": 0.028212
+  }
+}

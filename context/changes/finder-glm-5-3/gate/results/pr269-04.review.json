@@ -1,0 +1,202 @@
+{
+  "summary": "This PR archives the S-17 Bread calibration experiment and adds associated measurement/harness tooling, explicitly avoiding any production engine, API, or database changes. The reviewer's findings are limited to minor and nit-level issues in the auxiliary scripts: a hardcoded image content type, a glob pattern that could silently drop non-PNG sidecar files, a documentation overstatement about cleanup timing, an unhandled exception path that violates a documented exit contract, a file-handle inefficiency in contact sheet building, and a missing exit code on a failed download. None of these affect core correctness of the experiment's conclusions or introduce security risk, but they do represent some untested edge cases in the tooling that would benefit from hardening before reuse in future calibration rounds.",
+  "findings": [
+    {
+      "file": "scripts/s17/browser-stats.ts",
+      "startLine": 132,
+      "endLine": 132,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "Every photo is served with contentType \"image/jpeg\" regardless of its actual format. Browser sniffing usually saves this, but the harness's whole purpose is byte-reproducible browser decoding; a declared-correct content type is the safer guarantee.",
+      "suggestion": "Serve the content type from the manifest entry's file extension (or detect from magic bytes).",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 86,
+      "endLine": 86,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "collect() globs only `*.png.json`, but bread-spike.ts derives the sidecar filename from `extname(new URL(url).pathname) || \".png\"`, so a non-PNG model output produces e.g. `<id>.jpg.json`, which the glob silently never matches. The run then vanishes from the contact sheet with no foreign/skip note — a calibration input can go missing without any signal.",
+      "suggestion": "Glob `*.json` in collect() (filtering by record shape / input_sha256 presence), or pin the sidecar extension to `.png` in the spike writer.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 146,
+      "endLine": 148,
+      "severity": "nit",
+      "category": "performance",
+      "description": "build_photo opens every run output image simultaneously (`[(r, Image.open(...)) for r in runs]`) and keeps the file handles open through the whole sheet build. Fine for tens of runs, wasteful and fd-risky for larger sweeps.",
+      "suggestion": "Load each image eagerly (`.load()`/copy) and close it, or open inside a `with` at point of use.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 111,
+      "endLine": 113,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The documented exit contract promises 1 on an unexpected shape, but if the baseline lacks an id, `const a = base[id]` is undefined and `auto(a)` / `a.clipRatio` throws an unhandled TypeError, crashing with a stack trace and exit code 1 from the runtime rather than the intended clean error message (or worse, masking the real problem).",
+      "suggestion": "Guard `base[id]` (and missing fields in the legacy bare-object baseline shape) and `process.exit(1)` with a clear message, matching the docstring's contract.",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 83,
+      "endLine": 88,
+      "severity": "nit",
+      "category": "documentation",
+      "description": "The comment says the uploaded file is deleted \"only after the output is saved\", but the finally block also runs when runPrediction returns early (create failed) or throws mid-poll, deleting the uploaded input while the prediction may still be non-terminal. Harmless in practice (a created prediction retains its input), but the comment overstates the guarantee.",
+      "suggestion": "Reword the comment to \"best effort, after the run reaches its end\" or restrict deletion to terminal-and-saved paths.",
+      "id": "F5"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 223,
+      "endLine": 226,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "A failed output download in saveOutput logs the error and returns without setting process.exitCode, so the script exits 0 after a paid prediction whose only artifact is the (expiring) Replicate output URL. Every other failure path in the script exits non-zero.",
+      "suggestion": "Set process.exitCode = 1 before returning from the !res.ok branch in saveOutput.",
+      "id": "F6"
+    }
+  ],
+  "preDedupFindingCount": 6,
+  "scores": {
+    "implementation_correctness": {
+      "score": 6,
+      "justification": "Several minor/nit correctness gaps exist: hardcoded JPEG content type regardless of actual format (F1), a glob pattern that silently drops non-PNG sidecar files from the contact sheet (F2), an unhandled TypeError that could crash desktop-stats.ts in violation of its documented exit contract (F4), and a failed-download path that doesn't set a non-zero exit code (F6). None are severe bugs in production logic (this PR touches only experiment tooling), but they are real edge-case gaps in the harness's correctness guarantees.",
+      "findingIds": ["F1", "F2", "F4", "F6"]
+    },
+    "idiomaticity": {
+      "score": 8,
+      "justification": "No findings flag unidiomatic patterns, framework misuse, or style deviations; the code appears consistent with surrounding conventions.",
+      "findingIds": []
+    },
+    "complexity": {
+      "score": 8,
+      "justification": "No findings indicate unnecessary complexity or convoluted design; the one performance-related nit (holding many file handles open) is a minor inefficiency rather than a complexity/architecture problem.",
+      "findingIds": ["F3"]
+    },
+    "test_risk_coverage": {
+      "score": 5,
+      "justification": "The findings surface multiple risky paths that aren't guarded or exercised: a silent data-loss case in contact-sheet collection (F2), an unhandled exception path contradicting the documented exit contract (F4), and a failure path that doesn't propagate exit status (F6). These are exactly the kind of risky branches that should have explicit coverage or guards, and their absence surfaced only via code review rather than tests.",
+      "findingIds": ["F2", "F4", "F6"]
+    },
+    "documentation": {
+      "score": 6,
+      "justification": "One finding shows a comment overstating the guarantee of a cleanup step, which could mislead future readers about when uploaded files are actually deleted relative to prediction completion.",
+      "findingIds": ["F5"]
+    },
+    "security_safety": {
+      "score": 9,
+      "justification": "No findings indicate injected secrets, unsafe handling of untrusted input, or new attack surface; this is an internal experiment/calibration harness with no reported security issues.",
+      "findingIds": []
+    }
+  },
+  "verdict": "passed",
+  "verdictReason": "All findings are minor or nit-level correctness/documentation/performance issues confined to an experimental measurement harness that explicitly changes no production behavior; none rise to a severity or breadth that would block merging an archival PR with passing CI gates.",
+  "diffStats": {
+    "files": 17,
+    "additions": 1238,
+    "deletions": 21
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 4,
+    "toolCalls": 2,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 1774,
+          "source": "reported"
+        },
+        "cost": 0.0132462
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 6,
+          "source": "reported"
+        },
+        "cost": 0.009087
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 481,
+          "source": "reported"
+        },
+        "cost": 0.0125166
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 472,
+          "source": "reported"
+        },
+        "cost": 0.01397688
+      }
+    ],
+    "inputTokens": 88759,
+    "outputTokens": 4445,
+    "totalTokens": 93204,
+    "cost": 0.04882668
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 5097,
+    "outputTokens": 1895,
+    "totalTokens": 6992,
+    "cost": 0.029144
+  }
+}

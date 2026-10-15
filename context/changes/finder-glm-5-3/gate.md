@@ -570,4 +570,83 @@ _End of Amendment 1._
 ## Results
 
 <!-- glm-gate:outcome:start -->
+
+_Automatic outcome, written by `scripts/glm-gate.mjs outcome` at 2026-10-15T14:26:52.078Z._
+
+**Verdict:** measured — hand-read pending
+
+| Gate             | Result               |
+| ---------------- | -------------------- |
+| G2               | PASS                 |
+| G3               | PASS                 |
+| reliability #247 | PASS                 |
+| A6               | PASS                 |
+| G1               | 9/10 valid — PASS    |
+| hand-read        | pending              |
+| cost             | provisional until G5 |
+
+| Run      | Case  | Valid | Reasons |
+| -------- | ----- | ----- | ------- |
+| g2-01    | clean | yes   | —       |
+| g2-02    | clean | yes   | —       |
+| g2-03    | clean | yes   | —       |
+| g2-04    | clean | yes   | —       |
+| g2-05    | clean | yes   | —       |
+| pr247-01 | pr247 | yes   | —       |
+| pr247-02 | pr247 | yes   | —       |
+| pr269-01 | pr269 | yes   | —       |
+| pr269-02 | pr269 | yes   | —       |
+| pr269-03 | pr269 | yes   | —       |
+| pr269-04 | pr269 | yes   | —       |
+| pr269-05 | pr269 | yes   | —       |
+| pr269-06 | pr269 | no    | exit-1  |
+| pr269-07 | pr269 | yes   | —       |
+| pr269-08 | pr269 | yes   | —       |
+| pr269-09 | pr269 | yes   | —       |
+| pr269-10 | pr269 | yes   | —       |
+
+- m247 $0.059289, m269 $0.102397.
+- Provisional projection (I = $0.199620): $6.556540.
+- Pre-G5 lower bound (I = $0.099810): $5.259010.
+- T $1.379003 (counter delta $1.379003, settled $1.379003) against the $3.00 pause and the $3.50 cap.
+
 <!-- glm-gate:outcome:end -->
+
+### Run notes (Phase 5, 2026-10-14/15)
+
+Written by the agent from the ledger and the console logs in `<cache>/runs/`. They explain the automatic outcome
+above and change nothing in it.
+
+- **Preflight and authorization.** T0 $57.603079 (2026-10-14T20:47:59Z). Endpoints: Z.AI and Fireworks status 0,
+  Together status −2 (uptime 93.3 %). Before G2-01 the owner set a credit limit on the series key at $61.103079,
+  verified through `GET /api/v1/key` at 2026-10-14T20:54:44Z (`limit_remaining` $3.50, no reset). Amendment 1's
+  operator checks printed nothing before the preflight and before every paid step.
+- **Probe.** G2-01 passed every probe check, and the owner confirmed it (`continue --for probe`, 21:00:11Z) before
+  G2-02.
+- **Served configuration.** All 50 finder requests of the 17 CLI runs and all 22 finder requests of the 12 G3 rows
+  were served by Z.AI, each with the reported model `z-ai/glm-5.3`. The CLI runs made 32 loop steps, 17
+  finalizations and 1 format repair. There were no retries and no `length` finishes. Reported reasoning tokens per
+  request: median 189, maximum 4,978.
+- **G3.** 12 rows, no grader error, so no re-grade. Every required metric 3/3; cross-hunk `tool_required` and
+  `flaw_cross_hunk_contract` 3/3 (diagnostic). Settled from the counter at $0.141896: finder telemetry $0.065366,
+  the rest grading.
+- **pr269-06, the one invalid run: a technical judge failure.** The finder made 4 requests (3 loop steps and the
+  finalization), all Z.AI, `z-ai/glm-5.3`, `finish=stop`, with no rejection and no repair. The run then ended with
+  `No output generated.`, the AI SDK's `NoOutputGeneratedError`, and wrote no `review.json`.
+  - In a run without a plan file, only the judge uses structured output (`Output.object`, `src/judge.ts:72`). The
+    finder parses its own text, so it cannot raise that error.
+  - `withOneRetry` does not retry that error. The run is invalid under owner decision 6, and its cost counts in
+    m269.
+  - The ledger's reason is only `exit-1`, because the runner names a judge error only after a judge retry line. The
+    log does not say why the judge produced no output.
+  - Settled from the counter at $0.228943; the finder's own share is not separately known.
+- **Final settlement.** The first `reconcile` after the last run took 2026-10-14T21:41:47Z to 2026-10-15T14:23:51Z.
+  The host was suspended in between, and that check reported the counter still moving. The second check, at
+  2026-10-15T14:26:51Z, found it stable: counter delta $1.379003 = settled $1.379003 = T.
+- **Hand-read input.** Every finding of the valid runs is `minor` or `nit`.
+  - #247: 6 + 6 findings.
+  - #269: 48 findings over 9 valid runs.
+  - **pr269-02 has no finding that mentions `bread-spike.ts`, `localInput`, `deleteUpload`, `urls.get` or
+    `uploadedFileId` in any field.**
+
+  This is a count, not a classification.

@@ -1,0 +1,164 @@
+{
+  "summary": "This PR archives the S-17 Bread calibration experiment, adding measurement/reporting scripts and experiment records without touching production code, consistent with validation (typecheck, 418 tests, lint, parity checks) all passing. The reviewer's findings are limited to minor/nit issues in the auxiliary tooling: an unescaped HTML caption field in the contact-sheet generator (low risk, nit), a diagnostic computed on sRGB-converted pixels diverging from the documented 'encoded values' method for the original row, a missing test for a hand-rolled bilinear sampler that materially affects tuning outcomes, and a missing symmetric guard in desktop-stats.ts that could crash instead of gracefully exiting on a malformed baseline. None of these affect shipped production behavior, and all are fixable follow-ups appropriate for an internal experiment-closure PR.",
+  "findings": [
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 119,
+      "endLine": 122,
+      "severity": "nit",
+      "category": "style",
+      "description": "`figure()` escapes `src` but interpolates the caption (prediction_id, sizes, diagnostics) into the HTML unescaped; all values are currently machine-generated, but a malformed run record would render arbitrary markup into the sheet.",
+      "suggestion": "Apply `html.escape(caption)` (or escape the interpolated fields) in `figure()`.",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 136,
+      "endLine": 140,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The 'Original' row's exposure diagnostics are computed on the ICC-converted sRGB pixels from `original_rgb()`, while the module docstring (and `measure-hue-shares.py`'s method definition) fixes diagnostics as 'the file's encoded values'. For tuning photos with embedded P3/Adobe RGB profiles, the original's V≥0.90 / any=255 / mean values are silently measured by a different method than the output rows they sit next to.",
+      "suggestion": "Either measure the original's encoded values (decode without the sRGB conversion for the diagnostic pass) or document in the docstring and the sheet caption that the original is diagnosed after sRGB conversion for comparability.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 65,
+      "endLine": 90,
+      "severity": "minor",
+      "category": "testing",
+      "description": "`point_bilinear` implements hand-rolled sampling geometry (clip, floor, edge clamping at sw-1, round-half-up) and the script's own docstring records that the filter choice flips S17-04's clipRatio across the 0.005 guard (Cloud gamma 1.50 vs 1.10) — this function directly decides tuning values, yet no test pins even one known input/output pair or the 'small bright points survive' property it exists to provide.",
+      "suggestion": "Add a small test with a known source/size pair asserting exact output bytes, plus a synthetic bright-point case demonstrating the no-prefilter property, so a refactor cannot silently change the sampler.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 105,
+      "endLine": 110,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The docstring promises exit 1 with a diagnostic on an 'unexpected shape' comparison input, but `compare()` only guards a missing id in the download (`if (!b)`); `const a = base[id]` is read unguarded, so a baseline lacking one of the tuning ids crashes with a TypeError instead of the promised exit-1 message.",
+      "suggestion": "Add the symmetric `if (!a) { console.error(id + ': missing from ' + baselinePath); process.exit(1); }` before computing `autoA`/`sideA`.",
+      "id": "F4"
+    }
+  ],
+  "preDedupFindingCount": 4,
+  "scores": {
+    "implementation_correctness": {
+      "score": 6,
+      "justification": "Two minor correctness findings: the 'Original' row's diagnostics are computed via a different method than documented (F2), and a missing symmetric guard in desktop-stats.ts lets a malformed baseline crash with a TypeError instead of the promised exit-1 diagnostic (F4). Both affect internal experiment tooling rather than production behavior, but are real correctness gaps against the stated contracts.",
+      "findingIds": ["F2", "F4"]
+    },
+    "idiomaticity": {
+      "score": 8,
+      "justification": "No findings raise idiomaticity concerns; the issues reported are about correctness, testing, and documentation rather than style or convention mismatches.",
+      "findingIds": []
+    },
+    "complexity": {
+      "score": 8,
+      "justification": "No findings indicate over-engineering or unnecessary complexity; the hand-rolled bilinear sampler (F3) is flagged for lack of tests, not for being overly complex.",
+      "findingIds": []
+    },
+    "test_risk_coverage": {
+      "score": 5,
+      "justification": "F3 identifies that a hand-rolled sampling function directly determining tuning outcomes (shown to flip a key metric across a guard threshold) has zero pinned tests, which is a meaningful risk-coverage gap for logic that materially affects the experiment's conclusions.",
+      "findingIds": ["F3"]
+    },
+    "documentation": {
+      "score": 6,
+      "justification": "F2 shows a discrepancy between the module's documented diagnostic method and what is actually computed for the 'Original' row, which could mislead readers comparing diagnostics across rows; otherwise no other documentation gaps are noted.",
+      "findingIds": ["F2"]
+    },
+    "security_safety": {
+      "score": 7,
+      "justification": "F1 flags unescaped caption interpolation in an HTML report generator; currently low risk since inputs are machine-generated, but a malformed record could inject markup. This is a nit-level, low-likelihood issue in an internal tool, not a direct vulnerability under current usage.",
+      "findingIds": ["F1"]
+    }
+  },
+  "verdict": "passed",
+  "verdictReason": "All findings are nit/minor severity confined to internal experiment tooling (contact-sheet generation, decode utility, stats comparison) with no production engine, API, or database impact per the PR description; none rise to a severity that would block archival of a closed, non-shipping experiment.",
+  "diffStats": {
+    "files": 17,
+    "additions": 1238,
+    "deletions": 21
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 3,
+    "toolCalls": 2,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 1930,
+          "source": "reported"
+        },
+        "cost": 0.0140646
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 2571,
+          "source": "reported"
+        },
+        "cost": 0.023722
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 75,
+          "source": "reported"
+        },
+        "cost": 0.01032988
+      }
+    ],
+    "inputTokens": 64402,
+    "outputTokens": 6147,
+    "totalTokens": 70549,
+    "cost": 0.04811648
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 4772,
+    "outputTokens": 1509,
+    "totalTokens": 6281,
+    "cost": 0.024634
+  }
+}

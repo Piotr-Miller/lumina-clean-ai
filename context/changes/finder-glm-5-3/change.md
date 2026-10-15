@@ -3,7 +3,7 @@ change_id: finder-glm-5-3
 title: "Measure glm-5.3 (reasoning low) as the ai-review finder, live PR probe included"
 status: implementing
 created: 2026-10-11
-updated: 2026-10-14
+updated: 2026-10-15
 archived_at: null
 ---
 
@@ -79,3 +79,15 @@ archived_at: null
 2026-10-14: reopened 4.5 — was accepted at 593407e04569e9af5535a0a6acec932dff0f90e7; changed: context/changes/finder-glm-5-3/gate.md
 
 2026-10-14: owner decision — Amendment 1 (operator checks before paid steps) lands the Phase 4 review triage F1–F3: an operator env/.env check before `preflight` and every paid step, default paths only, and no stale G3 export. Renamed from `A1` before hashing; sha256 `2ee697fbd063324ced4a2336cc538243b8b1ec1ec887f0cbd335116c30739787`, taken 2026-10-14T20:43:19Z; pushed before T0. No sealed file changed, so the manifest pin stands. Record: gate.md § Amendments.
+
+2026-10-14: re-confirmed 4.4 — was reopened (last accepted at 593407e04569e9af5535a0a6acec932dff0f90e7); accepted at 36156104d39257b16422547b1bbb82aef8e27752. Explicit owner confirmation through `/rune-implement` after Amendment 1 and its push record landed; the sha256 of § Pre-registration is unchanged (`1a34e2ef…802f3`). Recording preflight returned `recordable`.
+
+2026-10-14: re-confirmed 4.5 — was reopened (last accepted at 593407e04569e9af5535a0a6acec932dff0f90e7); accepted at 36156104d39257b16422547b1bbb82aef8e27752. Explicit owner confirmation: neither the seal nor Amendment 1 authorizes spending. Recording preflight returned `recordable`.
+
+2026-10-14: owner authorized the paid series as sealed, after reading the free preflight (T0 $57.603079 at 2026-10-14T20:47:59Z; Z.AI and Fireworks status 0, Together status −2), starting with G2-01. Before it, the owner set a credit limit on the series key (`sk-or-v1-168...eeb`) at $61.103079; verified 2026-10-14T20:54:44Z through `GET /api/v1/key`: `limit_remaining` $3.50, `limit_reset` null. Manual 5.5 is recorded once `gate/series.jsonl` is committed.
+
+2026-10-14: owner confirmed the G2-01 probe (valid run, 0 findings; both finder requests Z.AI, reported model `z-ai/glm-5.3`, reported reasoning tokens 14 and 0, reported cost; $0.022154 settled from telemetry) and asked to run the series in the sealed order, stopping only at sealed stops. Recorded in the ledger as `continue --for probe`. Manual 5.7 is recorded once `gate/series.jsonl` and `gate/results/` are committed.
+
+2026-10-15: reopened 4.4 — was accepted at 36156104d39257b16422547b1bbb82aef8e27752; changed: context/changes/finder-glm-5-3/gate.md (Phase 5 § Results: automatic outcome and run notes; the sealed sections are byte-identical, sha256 unchanged)
+
+2026-10-15: reopened 4.5 — was accepted at 36156104d39257b16422547b1bbb82aef8e27752; changed: context/changes/finder-glm-5-3/gate.md (Phase 5 § Results)
