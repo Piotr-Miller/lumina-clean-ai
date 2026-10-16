@@ -191,7 +191,7 @@ describe("each pass requests its own routing", () => {
 describe("each pass requests its own reasoning", () => {
   it("finder: exactly FINDER_REASONING, and no extraBody", () => {
     createReviewer({ apiKey: "k" });
-    expect(captured.at(-1)?.settings?.reasoning).toEqual({ enabled: true, effort: "low" });
+    expect(captured.at(-1)?.settings?.reasoning).toEqual({ enabled: true, effort: "high" });
     expect(captured.at(-1)?.settings).not.toHaveProperty("extraBody");
   });
 

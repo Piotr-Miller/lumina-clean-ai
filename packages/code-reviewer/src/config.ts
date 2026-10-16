@@ -3,7 +3,9 @@
 // embedder) must be able to import the barrel side-effect-free; only demo.ts
 // may exit the process.
 
-// The finder production runs (change `finder-glm-5-3`, under its sealed gate).
+// The finder production runs (change `finder-glm-5-3-high`, under its sealed
+// gate; its predecessor `finder-glm-5-3` measured the same model at the `low`
+// effort).
 // The OPENROUTER_REVIEW_MODEL repository variable must be UNSET, not set to
 // match: it overrides this constant in resolveModels(), so while it exists a
 // change to this line changes nothing in CI, and a stale value (it still named
@@ -119,15 +121,17 @@ export function resolveProviderRouting(): { require_parameters: true } | undefin
  * The finder's reasoning setting, sent on EVERY finder request — each
  * gathering-loop step, the finalization and the format repair — and on no
  * judge or implementation-review request (owner decision 2 of change
- * `finder-glm-5-3`). Through the typed `reasoning` model setting, never
- * `extraBody`, which the provider spreads last and would override it.
+ * `finder-glm-5-3`). The effort is `high`, the owner decision of change
+ * `finder-glm-5-3-high`, measured under that change's sealed gate: `low`
+ * failed its predecessor's gate. Through the typed `reasoning` model setting,
+ * never `extraBody`, which the provider spreads last and would override it.
  *
  * Reasoning counts against MAX_OUTPUT_TOKENS: there is no separate reasoning
  * cap, and a request that hits the shared cap fails the attempt (reviewer.ts).
  * The reasoning TEXT never leaves the wire — the reviewer reads only `.text`,
  * and a text opening with inline `<think>` fails the attempt.
  */
-export const FINDER_REASONING = { enabled: true, effort: "low" } as const;
+export const FINDER_REASONING = { enabled: true, effort: "high" } as const;
 
 /**
  * The OpenRouter endpoints the finder may be routed to, in preference order:

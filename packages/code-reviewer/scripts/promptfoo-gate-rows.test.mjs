@@ -173,9 +173,10 @@ describe("checkRow — what fails a row", () => {
   it.each([
     ["no request body recorded", []],
     ["a body without the key", [DECIDED_REASONING, null]],
-    ["another effort", [{ enabled: true, effort: "high" }]],
+    ["the predecessor's effort low", [{ enabled: true, effort: "low" }]],
+    ["the provider-default effort max", [{ enabled: true, effort: "max" }]],
     ["reasoning switched off", [{ enabled: false }]],
-    ["an extra key", [{ enabled: true, effort: "low", exclude: true }]],
+    ["an extra key", [{ enabled: true, effort: "high", exclude: true }]],
   ])("the reasoning shape fails closed on %s", (_label, requestReasoning) => {
     expect(checkRow(withMetadata(rawRow("js-loop"), { requestReasoning })).reasoningShapeOk).toBe(false);
   });

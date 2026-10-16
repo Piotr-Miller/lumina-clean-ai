@@ -2,7 +2,8 @@
 // --import), never by a paid step. It replaces globalThis.fetch with canned
 // OpenRouter chat-completion answers, so the REAL production CLI — finder,
 // judge, telemetry, review.json, comment.md — runs end to end with no key and
-// no network (change `finder-glm-5-3`, plan.md Phase 3 "stubbed dry run").
+// no network (the runner of change `finder-glm-5-3-high`; built by change
+// `finder-glm-5-3`, its plan.md Phase 3 "stubbed dry run").
 // Every other URL is refused, so a dry run can never spend.
 //
 // The answers carry what a paid run's would: `model`, `provider`, cost and

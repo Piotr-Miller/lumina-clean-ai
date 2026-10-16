@@ -1,5 +1,6 @@
-// Hand-read sheet and resolver for change `finder-glm-5-3` (plan.md Phase 3
-// §3; owner decision 1). Every published finding of every valid #247 and #269
+// Hand-read sheet and resolver for change `finder-glm-5-3-high`, built by
+// change `finder-glm-5-3` (its plan.md Phase 3 §3; owner decision 1). Every
+// published finding of every valid #247 and #269
 // run gets one row — no cross-run deduplication — and the OWNER classifies
 // it. The agent may pre-flag a D2 candidate; it never classifies.
 //
@@ -24,7 +25,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const PACKAGE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(PACKAGE_DIR, "..", "..");
-const CHANGE_DIR = join(REPO_ROOT, "context", "changes", "finder-glm-5-3");
+const CHANGE_DIR = join(REPO_ROOT, "context", "changes", "finder-glm-5-3-high");
 
 export const SHEET_CASES = Object.freeze({
   pr247: { pr: "247", file: "hand-read-247.md", d2: false },

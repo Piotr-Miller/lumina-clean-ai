@@ -91,9 +91,9 @@ describe("reasoningKeyOf", () => {
   });
 
   it("returns a copy of the key's value", () => {
-    expect(reasoningKeyOf(JSON.stringify({ reasoning: { enabled: true, effort: "low" }, messages: [] }))).toEqual({
+    expect(reasoningKeyOf(JSON.stringify({ reasoning: { enabled: true, effort: "high" }, messages: [] }))).toEqual({
       enabled: true,
-      effort: "low",
+      effort: "high",
     });
   });
 });

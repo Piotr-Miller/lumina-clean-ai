@@ -1,10 +1,11 @@
-// Turns the G3 promptfoo export of change `finder-glm-5-3` into checked gate
-// rows and the G3 verdict (plan.md Phase 3 §2). Ported from `finder-model-swap`
-// (commit 29b15b8) and amended:
+// Turns the G3 promptfoo export of change `finder-glm-5-3-high` into checked
+// gate rows and the G3 verdict. Built by change `finder-glm-5-3` (its plan.md
+// Phase 3 §2), ported from `finder-model-swap` (commit 29b15b8) and amended:
 //
 // - A3's `reasoningLeak` is inverted. glm-5.3 reasons by design, so a row is
 //   checked for the DECIDED reasoning shape — every outgoing finder request
-//   body carried `reasoning: {enabled: true, effort: "low"}`, captured on the
+//   body carries `reasoning: {enabled: true, effort: "high"}` (DECIDED_REASONING;
+//   the predecessor decided `low`), captured on the
 //   wire by evals/finder-provider.ts — and for no inline reasoning (a
 //   FinderOutputError with reason `inline-reasoning`). Owner decision
 //   2026-10-13.

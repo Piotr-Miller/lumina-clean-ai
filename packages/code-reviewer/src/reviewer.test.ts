@@ -245,13 +245,13 @@ describe("two-stage finder on the wire (owner condition 1, Amendment A3)", () =>
 
   // Decision 2 of change `finder-glm-5-3`: exactly this reasoning object on
   // every finder request, nothing merged into it, and the decided routing.
-  it("every request — loop, finalization and repair — carries reasoning effort low and the finder routing", async () => {
+  it("every request — loop, finalization and repair — carries reasoning effort high and the finder routing", async () => {
     const stub = openRouterStub([toolCall, answer("draft"), answer('{"summary": 1}'), answer(VALID_REVIEW_TEXT)]);
     const reviewer = createReviewer({ apiKey: "test-key", source: () => FILE_CONTENT, maxSteps: 2, fetch: stub.fetch });
     await reviewer.review(UNIT);
     expect(stub.bodies).toHaveLength(4);
     for (const body of stub.bodies) {
-      expect(body.reasoning).toStrictEqual({ enabled: true, effort: "low" });
+      expect(body.reasoning).toStrictEqual({ enabled: true, effort: "high" });
       expect("include_reasoning" in body).toBe(false);
       expect(body.provider).toEqual({
         order: ["z-ai", "fireworks", "together"],

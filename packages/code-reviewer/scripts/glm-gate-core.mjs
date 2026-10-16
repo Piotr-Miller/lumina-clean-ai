@@ -1,10 +1,15 @@
-// Pure core of the measurement runner for change `finder-glm-5-3` (plan.md
-// Phase 3 §1 and §4). Everything here is a function of its arguments: no
-// file, network or process access, so the series can be replayed and every
-// rule tested hermetically. scripts/glm-gate.mjs does the I/O.
+// Pure core of the measurement runner for change `finder-glm-5-3-high`, built
+// by change `finder-glm-5-3` (its plan.md Phase 3 §1 and §4). Everything here
+// is a function of its arguments: no file, network or process access, so the
+// series can be replayed and every rule tested hermetically.
+// scripts/glm-gate.mjs does the I/O.
 //
-// The rules restate plan.md § Definitions and § Phase 4/5, which the
-// pre-registration (gate.md) seals. A change here is a change to the gate.
+// The rules restate the predecessor's plan.md § Definitions and § Phase 4/5,
+// as its sealed gate (its archived gate.md) fixed them, with the deltas of
+// this change's plan.md § Definitions; this change's pre-registration
+// (gate.md) seals them. References below to plan.md, gate.md, owner decisions
+// and A1–A8 are the predecessor's unless they say otherwise. A change here is
+// a change to the gate.
 
 // --- What is measured ------------------------------------------------------------
 
@@ -21,12 +26,12 @@ export const ACCEPTED_MODEL = /^z-ai\/glm-5\.3(-\d{8})?$/u;
 /** Listed providers (§ Definitions): the served names the finder's routing may reach. */
 export const LISTED_PROVIDERS = Object.freeze(["Z.AI", "Fireworks", "Together"]);
 
-/** The reasoning body every finder request carries (owner decision 2). */
-export const DECIDED_REASONING = Object.freeze({ enabled: true, effort: "low" });
+/** The reasoning body every finder request carries (owner decision 2; effort `high` per change `finder-glm-5-3-high`). */
+export const DECIDED_REASONING = Object.freeze({ enabled: true, effort: "high" });
 
 /** The line the CLI prints once per run, from the constants its requests use (plan Phase 2 §6). */
 export const EXPECTED_CONFIGURATION_LINE =
-  "finder configuration: model=z-ai/glm-5.3 reasoning=low providers=z-ai,fireworks,together";
+  "finder configuration: model=z-ai/glm-5.3 reasoning=high providers=z-ai,fireworks,together";
 
 /**
  * Environment variables that would make a local run differ from production's

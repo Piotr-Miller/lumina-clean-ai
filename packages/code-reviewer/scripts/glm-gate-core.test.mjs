@@ -1,5 +1,6 @@
-// Hermetic tests for the pure core of the finder-glm-5-3 runner (plan.md
-// Phase 3 §1 and §4; Testing Strategy "Runner").
+// Hermetic tests for the pure core of the finder-glm-5-3-high runner, built by
+// change `finder-glm-5-3` (its plan.md Phase 3 §1 and §4; Testing Strategy
+// "Runner").
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -140,7 +141,8 @@ describe("classifyRun — validity per reason", () => {
   });
 
   it("a configuration line that is missing or not the decided one is invalid", () => {
-    expect(classify({ stderr: STDERR_OK.replace("reasoning=low", "reasoning=high") }).reasons).toContain(
+    // The predecessor's decided effort is now the wrong one.
+    expect(classify({ stderr: STDERR_OK.replace("reasoning=high", "reasoning=low") }).reasons).toContain(
       "configuration-mismatch",
     );
     expect(classify({ stderr: "" }).reasons).toContain("configuration-mismatch");

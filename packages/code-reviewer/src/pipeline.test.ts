@@ -1535,7 +1535,7 @@ describe("only the finder requests reasoning (all three passes on a stubbed wire
     expect(finder).toHaveLength(1);
     expect(judge).toHaveLength(1);
     expect(implReview.length).toBeGreaterThanOrEqual(1);
-    for (const body of finder) expect(body.reasoning).toStrictEqual({ enabled: true, effort: "low" });
+    for (const body of finder) expect(body.reasoning).toStrictEqual({ enabled: true, effort: "high" });
     for (const body of [...judge, ...implReview]) {
       expect("reasoning" in body).toBe(false);
       expect("include_reasoning" in body).toBe(false);

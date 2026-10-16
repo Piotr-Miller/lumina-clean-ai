@@ -300,8 +300,9 @@ export function createReviewer(options: ReviewerOptions = {}) {
     // reports 0, which is exactly the blind spot #119 shipped with. Free:
     // accounting adds response fields, not tokens.
     usage: { include: true },
-    // Owner decision 2 of change `finder-glm-5-3`: reasoning at effort low on
-    // every finder request. The typed setting, and no `extraBody` at all: the
+    // Owner decision 2 of change `finder-glm-5-3`: reasoning on every finder
+    // request, at effort high (change `finder-glm-5-3-high`; low failed the
+    // predecessor's gate). The typed setting, and no `extraBody` at all: the
     // provider spreads `extraBody` last, so one would override this. The wire
     // test pins the exact body.
     reasoning: FINDER_REASONING,

@@ -1,5 +1,6 @@
-// Hermetic tests for the finder-glm-5-3 runner's I/O (plan.md Phase 3 §1,
-// Testing Strategy "Runner" and "Integration Tests"): a throwaway repository
+// Hermetic tests for the finder-glm-5-3-high runner's I/O, built by change
+// `finder-glm-5-3` (its plan.md Phase 3 §1, Testing Strategy "Runner" and
+// "Integration Tests"): a throwaway repository
 // tree, a fake CLI, counter and clock — no network, no key. The last test runs
 // the REAL production CLI against the dry-run stub.
 import { spawn } from "node:child_process";
@@ -12,7 +13,7 @@ import { describe, expect, it, vi } from "vitest";
 import { EXPECTED_CONFIGURATION_LINE, meanSettledCost, seriesSpend } from "./glm-gate-core.mjs";
 import { describeManifest, main, PACKAGE_DIR, readSeries, REPO_ROOT, sealedFileList } from "./glm-gate.mjs";
 
-const CHANGE = "context/changes/finder-glm-5-3";
+const CHANGE = "context/changes/finder-glm-5-3-high";
 const SEALED = [
   "packages/code-reviewer/package.json",
   "packages/code-reviewer/package-lock.json",

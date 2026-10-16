@@ -43,7 +43,7 @@ afterEach(() => {
 });
 
 /** The line every run that reaches the pipeline prints first-hand, before any request. */
-const CONFIG_LINE = "finder configuration: model=z-ai/glm-5.3 reasoning=low providers=z-ai,fireworks,together";
+const CONFIG_LINE = "finder configuration: model=z-ai/glm-5.3 reasoning=high providers=z-ai,fireworks,together";
 
 const scores = (): Scores =>
   Object.fromEntries(
@@ -602,7 +602,7 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     vi.stubEnv("OPENROUTER_FINDER_PROVIDERS", "together");
     const io = fakeIo();
     expect(await runReviewCli([], {}, io, okPipeline())).toBe(0);
-    expect(io.errors).toEqual(["finder configuration: model=acme/other?forged reasoning=low providers=together"]);
+    expect(io.errors).toEqual(["finder configuration: model=acme/other?forged reasoning=high providers=together"]);
   });
 
   // Phase 2 review F6: the CLI resolves the finder routing ONCE and hands that
@@ -619,7 +619,7 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         warn.mock.calls.filter(([message]) => String(message).includes("OPENROUTER_FINDER_PROVIDERS")),
       ).toHaveLength(1);
       expect(io.errors).toContain(
-        "finder configuration: model=z-ai/glm-5.3 reasoning=low providers=z-ai,fireworks,together",
+        "finder configuration: model=z-ai/glm-5.3 reasoning=high providers=z-ai,fireworks,together",
       );
       const finder = stub.bodies.filter((body) => !("response_format" in body));
       expect(finder).toHaveLength(1);
@@ -1141,7 +1141,7 @@ describe("decision 2 end to end: reasoning never leaves the wire", () => {
   });
 
   // § 1: the judge's request carries no reasoning, while every finder request does.
-  it("the judge's wire body carries no reasoning; every finder body carries effort low", async () => {
+  it("the judge's wire body carries no reasoning; every finder body carries effort high", async () => {
     const stub = e2eWire([{ content: VALID_REVIEW_TEXT, finish: "stop", provider: "Z.AI" }]);
     expect(await runReviewCli(["--diff-file", "pr.diff"], {}, e2eIo(), realPipeline)).toBe(0);
     const judge = stub.bodies.filter((body) => "response_format" in body);
@@ -1152,7 +1152,7 @@ describe("decision 2 end to end: reasoning never leaves the wire", () => {
       expect("reasoning" in body).toBe(false);
       expect("include_reasoning" in body).toBe(false);
     }
-    for (const body of finder) expect(body.reasoning).toStrictEqual({ enabled: true, effort: "low" });
+    for (const body of finder) expect(body.reasoning).toStrictEqual({ enabled: true, effort: "high" });
   });
 });
 

@@ -61,8 +61,9 @@ providers:
     label: mid-glm-5.2
     config:
       model: z-ai/glm-5.2
-  # Change `finder-glm-5-3` (its sealed gate, G3): glm-5.3 on the two-stage
-  # finder at reasoning effort low, routed by the finder's own default list
+  # Change `finder-glm-5-3-high` (its sealed gate, G3; the predecessor
+  # `finder-glm-5-3` ran the same row at the `low` effort): glm-5.3 on the two-stage
+  # finder at reasoning effort high, routed by the finder's own default list
   # (z-ai, fireworks, together). Run alone, on the four registered cases only:
   # --filter-providers '^candidate-glm-5\.3$' (scripts/glm-gate.mjs g3).
   - id: file://./finder-provider.ts

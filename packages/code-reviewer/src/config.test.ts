@@ -161,8 +161,9 @@ describe("DEFAULT_FINDER_PROVIDERS", () => {
 });
 
 describe("FINDER_REASONING", () => {
-  // Decision 2: effort low, enabled — the exact object every finder request sends.
-  it("is reasoning enabled at effort low", () => {
-    expect(FINDER_REASONING).toEqual({ enabled: true, effort: "low" });
+  // Decision 2, at effort high (change `finder-glm-5-3-high`), enabled — the
+  // exact object every finder request sends.
+  it("is reasoning enabled at effort high", () => {
+    expect(FINDER_REASONING).toEqual({ enabled: true, effort: "high" });
   });
 });

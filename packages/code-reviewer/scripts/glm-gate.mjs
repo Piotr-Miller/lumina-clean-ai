@@ -1,9 +1,11 @@
-// Measurement runner for change `finder-glm-5-3` (plan.md Phase 3 §1; A1). A
-// thin layer over the PRODUCTION CLI: every run is `npm run review` with the
-// arguments action.yml passes, and every paid step is admitted, recorded and
-// settled in one append-only JSONL series — whether it succeeds, fails or is
-// interrupted. Every refusal happens BEFORE anything is spent. The rules live
-// in scripts/glm-gate-core.mjs; this file does the I/O.
+// Measurement runner for change `finder-glm-5-3-high`, built by change
+// `finder-glm-5-3` (its plan.md Phase 3 §1; A1). A thin layer over the
+// PRODUCTION CLI: every run is `npm run review` with the arguments action.yml
+// passes, and every paid step is admitted, recorded and settled in one
+// append-only JSONL series — whether it succeeds, fails or is interrupted.
+// Every refusal happens BEFORE anything is spent. The rules live in
+// scripts/glm-gate-core.mjs; this file does the I/O. References below to
+// plan.md, gate.md and A1–A8 are the predecessor's unless they say otherwise.
 //
 // Subcommands (from packages/code-reviewer, plain `node`):
 //   preflight [--manifest-only]        Free. T0 and glm-5.3 endpoint status, every input and
@@ -25,8 +27,8 @@
 // CLI runs with scripts/glm-gate-dry-run-stub.mjs preloaded and the series is
 // written under the cache, never into the change folder.
 //
-// Paths: series, results and g3-rows in context/changes/finder-glm-5-3/gate/;
-// console logs and exports under ~/.cache/finder-glm-5-3/ (GLM_GATE_CACHE);
+// Paths: series, results and g3-rows in context/changes/finder-glm-5-3-high/gate/;
+// console logs and exports under ~/.cache/finder-glm-5-3-high/ (GLM_GATE_CACHE);
 // frozen #247/#269 inputs under ~/.cache/finder-sonnet-gate/ (GLM_GATE_INPUTS).
 // Nothing committed ever carries an absolute path.
 //
@@ -68,7 +70,7 @@ import { buildRegradeConfig, selectGraderErrorRows } from "./promptfoo-regrade-c
 
 export const PACKAGE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const REPO_ROOT = resolve(PACKAGE_DIR, "..", "..");
-const CHANGE = "context/changes/finder-glm-5-3";
+const CHANGE = "context/changes/finder-glm-5-3-high";
 const KEY_URL = "https://openrouter.ai/api/v1/key";
 const ENDPOINTS_URL = "https://openrouter.ai/api/v1/models/z-ai/glm-5.3/endpoints";
 const REGRADE_CONFIG = "evals/glm-5.3.regrade.json";
@@ -156,7 +158,7 @@ export function inputFingerprint(caseKey, context) {
 /** The manifest of the current tree: sealed file hashes, input fingerprints, the expected configuration line. */
 export function describeManifest(context) {
   return {
-    change: "finder-glm-5-3",
+    change: "finder-glm-5-3-high",
     files: sealedFileHashes(context.repoRoot),
     inputs: Object.fromEntries(RUN_CASES.map((caseKey) => [caseKey, inputFingerprint(caseKey, context)])),
     configurationLine: EXPECTED_CONFIGURATION_LINE,
@@ -267,7 +269,7 @@ function parseFlags(argv) {
 function contextFor(flags, deps) {
   const dryRun = flags["dry-run"] === true;
   const changeDir = join(deps.repoRoot, CHANGE);
-  const cache = resolve(flags.cache ?? deps.env.GLM_GATE_CACHE ?? join(homedir(), ".cache", "finder-glm-5-3"));
+  const cache = resolve(flags.cache ?? deps.env.GLM_GATE_CACHE ?? join(homedir(), ".cache", "finder-glm-5-3-high"));
   const base = dryRun ? join(cache, "dry-run") : join(changeDir, "gate");
   return {
     dryRun,

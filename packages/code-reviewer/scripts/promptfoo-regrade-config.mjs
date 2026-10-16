@@ -1,8 +1,9 @@
 // Builds the promptfoo config that re-grades the STORED finder output of the
 // grader-error rows of one export, with no finder call. Ported unchanged in
 // behaviour from `finder-model-swap` (commit 29b15b8) for change
-// `finder-glm-5-3` (plan.md Phase 3 §2): a grader error is not a candidate
-// failure (finder-model-swap gate.md Amendment A1).
+// `finder-glm-5-3` (its plan.md Phase 3 §2), and used by the runner of change
+// `finder-glm-5-3-high`: a grader error is not a candidate failure
+// (finder-model-swap gate.md Amendment A1).
 //
 // Free: it reads files and writes one. The re-grade run it prepares is paid
 // (grader only); scripts/glm-gate.mjs `g3 --regrade` runs it under the
