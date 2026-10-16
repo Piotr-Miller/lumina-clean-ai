@@ -1299,21 +1299,21 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 - [x] 6.3 Owner classifies every finding — accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a
 - [x] 6.4 Owner approves each D2 match — accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a
-- [ ] 6.5 Owner records the outcome and next decision
+- [x] 6.5 Owner records the outcome and next decision — accepted at 72ee9c4dbf441ed6239541be95d861f56ebaa604
 
 ### Phase 7: Restore AI review and run G5
 
 #### Automated
 
-- [ ] 7.1 No `false &&` remains
-- [ ] 7.2 Stale-pointer grep clean or justified
-- [ ] 7.3 Sealed files unchanged since the seal
-- [ ] 7.4 Variable deleted
-- [ ] 7.5 G5 run recorded
-- [ ] 7.6 PR CI green
+- [-] 7.1 No `false &&` remains — n/a: plan Phase 6 § 2 runs Phase 7 only on `ADMITTED (pending G5)`; the outcome is `NOT ADMITTED (hand-read)` (gate.md § Results, 2026-10-16); owner decision 2026-10-16
+- [-] 7.2 Stale-pointer grep clean or justified — n/a: plan Phase 6 § 2 runs Phase 7 only on `ADMITTED (pending G5)`; the outcome is `NOT ADMITTED (hand-read)` (gate.md § Results, 2026-10-16); owner decision 2026-10-16
+- [-] 7.3 Sealed files unchanged since the seal — n/a: plan Phase 6 § 2 runs Phase 7 only on `ADMITTED (pending G5)`; the outcome is `NOT ADMITTED (hand-read)` (gate.md § Results, 2026-10-16); owner decision 2026-10-16
+- [-] 7.4 Variable deleted — n/a: plan Phase 6 § 2 runs Phase 7 only on `ADMITTED (pending G5)`; the outcome is `NOT ADMITTED (hand-read)` (gate.md § Results, 2026-10-16); owner decision 2026-10-16
+- [-] 7.5 G5 run recorded — n/a: plan Phase 6 § 2 runs Phase 7 only on `ADMITTED (pending G5)`; the outcome is `NOT ADMITTED (hand-read)` (gate.md § Results, 2026-10-16); owner decision 2026-10-16
+- [-] 7.6 PR CI green — n/a: plan Phase 6 § 2 runs Phase 7 only on `ADMITTED (pending G5)`; the outcome is `NOT ADMITTED (hand-read)` (gate.md § Results, 2026-10-16); owner decision 2026-10-16
 
 #### Manual
 
-- [ ] 7.7 Owner deletes the variable, marks ready, adds ai-cr:review
-- [ ] 7.8 Owner reads G5 and decides on the merge
-- [ ] 7.9 Evidence pointers written with master SHAs after the merge
+- [-] 7.7 Owner deletes the variable, marks ready, adds ai-cr:review — n/a: plan Phase 6 § 2 runs Phase 7 only on `ADMITTED (pending G5)`; the outcome is `NOT ADMITTED (hand-read)` (gate.md § Results, 2026-10-16); owner decision 2026-10-16
+- [-] 7.8 Owner reads G5 and decides on the merge — n/a: plan Phase 6 § 2 runs Phase 7 only on `ADMITTED (pending G5)`; the outcome is `NOT ADMITTED (hand-read)` (gate.md § Results, 2026-10-16); owner decision 2026-10-16
+- [-] 7.9 Evidence pointers written with master SHAs after the merge — n/a: plan Phase 6 § 2 runs Phase 7 only on `ADMITTED (pending G5)`; the outcome is `NOT ADMITTED (hand-read)` (gate.md § Results, 2026-10-16); owner decision 2026-10-16

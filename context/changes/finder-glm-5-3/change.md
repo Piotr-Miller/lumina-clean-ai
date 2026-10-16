@@ -1,7 +1,7 @@
 ---
 change_id: finder-glm-5-3
 title: "Measure glm-5.3 (reasoning low) as the ai-review finder, live PR probe included"
-status: implementing
+status: implemented
 created: 2026-10-11
 updated: 2026-10-16
 archived_at: null
@@ -121,3 +121,7 @@ archived_at: null
 2026-10-16: re-confirmed 5.5 — was reopened (last accepted at aa33e97015600ac3455ccf8e0274fa66d2c9dc0d); accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a. The owner upholds the historical authorization of the executed series; it is not consent to any new paid run. Recording preflight returned `recordable`.
 
 2026-10-16: re-confirmed 5.7 — was reopened (last accepted at aa33e97015600ac3455ccf8e0274fa66d2c9dc0d); accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a. The owner upholds the G2-01 probe confirmation; the appended `sheet` lines did not change the probe's evidence. Recording preflight returned `recordable`.
+
+2026-10-16: owner decision (6.5) — outcome: `NOT ADMITTED (hand-read)` for glm-5.3 at `effort: low` (gate.md § Results, automatic outcome 2026-10-16T16:04:53Z): eight of the nine valid #269 runs have no D2 match. Per plan Phase 6 § 2, Phase 7 does not run, AI review stays disabled, PR #292 is closed unmerged (on the owner's confirmation; the branch is kept) and the next step is `/rune-archive` with `outcome: not admitted`. This sealed gate is not reopened for another effort. Follow-up: a **new change** measures glm-5.3 at `effort: high` under its own pre-registration and seal, branched from `feat/finder-glm-5-3` (the two-stage finder and the gate tooling are not on master), starting with a fixture screening at `high` (reasoning tokens, latency against the 300 s timeout, cost per row against the cost gate's headroom of about 1.87× the measured `low` runs) before any series is sealed.
+
+2026-10-16: confirmed 6.5 — accepted at 72ee9c4dbf441ed6239541be95d861f56ebaa604. Explicit owner confirmation through `/rune-implement` of the outcome and next decision recorded above (same date); recording preflight returned `recordable`.
