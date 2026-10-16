@@ -922,10 +922,16 @@ export function screeningStepId(series, kind) {
   return `s${kind.slice(2)}-${pad2(done + 1)}`;
 }
 
-/** P for the screening (H3): the largest settled cost of this kind so far, else the first-step estimate. */
+/**
+ * P for the screening (H3): the largest settled cost of this kind's sample
+ * runs so far, else the first-step estimate. A run stopped by a confirmed
+ * 401/402 is not a sample (§ Definitions) and never sets P: its cost says
+ * nothing about what the next run of the kind will cost.
+ */
 export function screeningEstimate(series, kind) {
+  const stopped = new Set(series.filter(authCreditStopped).map((line) => line.stepId));
   const costs = startedSteps(series)
-    .filter((line) => line.kind === kind)
+    .filter((line) => line.kind === kind && !stopped.has(line.stepId))
     .map((line) => settledLine(series, line.stepId)?.cost)
     .filter((cost) => typeof cost === "number");
   return costs.length === 0 ? SCREENING_FIRST_ESTIMATE[kind] : Math.max(...costs);
@@ -1025,10 +1031,16 @@ export function screeningPauseOf(line) {
     const summary = line.summary ?? {};
     for (const row of summary.authCreditRows ?? [])
       causes["auth-credit"].push(rowCause(row, `confirmed OpenRouter ${String(row.status)}`));
+    // A row whose finder failed before any request completed reports no
+    // provider and no model at all: that is its finder error, an invalid row,
+    // not a mismatch (a CLI run without requests is invalid-run too).
+    const failedEarly = new Set((summary.finderErrorRows ?? []).map((row) => row.testIdx));
+    const unreported = (row, values) => (values ?? []).length === 0 && failedEarly.has(row.testIdx);
     for (const row of summary.invalidatedRows ?? [])
-      causes.mismatch.push(rowCause(row, `providers ${JSON.stringify(row.providers)}`));
+      if (!unreported(row, row.providers))
+        causes.mismatch.push(rowCause(row, `providers ${JSON.stringify(row.providers)}`));
     for (const row of summary.modelRows ?? [])
-      causes.mismatch.push(rowCause(row, `models ${JSON.stringify(row.models)}`));
+      if (!unreported(row, row.models)) causes.mismatch.push(rowCause(row, `models ${JSON.stringify(row.models)}`));
     for (const row of summary.graderErrorRows ?? [])
       causes["grader-error"].push(
         rowCause(row, `grader error (${row.errors.map((e) => firstLine(e.reason)).join("; ")})`),
@@ -1108,20 +1120,25 @@ export function screeningState(series) {
   const warnings = screeningResults(series).flatMap(warningsOf);
   const base = { fired, warnings, next: null, nextStepId: null, ended: null, waitingFor: null, pause: null };
   if (fired.length > 0) return { ...base, ended: fired[0].label };
+  const blocking = startedSteps(series).find(
+    (line) => !screeningResults(series).some((result) => result.stepId === line.stepId),
+  );
+  if (blocking !== undefined) return { ...base, waitingFor: `step ${blocking.stepId} started and has no record` };
+  // After a #269 run the D2 line comes first, then any pause (owner decision
+  // 2026-10-16) — and before an end by budget too: `outcome` counts an
+  // undecided D2 as no match, so ending first would turn a decision never
+  // asked for into STOP (d). Recording it is free.
+  const undecided = screeningResults(series).find(
+    (line) => line.type === "record" && line.kind === "pr269" && d2LineFor(series, line.stepId) === undefined,
+  );
+  if (undecided !== undefined) return { ...base, waitingFor: d2Wait(undecided, { screening: true }) };
   if (
     series.some((line) => line.type === "budget_stop") ||
     seriesSpend(series).settledTotal - SCREENING_BUDGET.cap > EPSILON
   )
     return { ...base, ended: "INCOMPLETE (budget)" };
-  const blocking = startedSteps(series).find(
-    (line) => !screeningResults(series).some((result) => result.stepId === line.stepId),
-  );
-  if (blocking !== undefined) return { ...base, waitingFor: `step ${blocking.stepId} started and has no record` };
 
   for (const line of screeningResults(series)) {
-    // After a #269 run the D2 line comes first, then any pause (owner decision 2026-10-16).
-    if (line.type === "record" && line.kind === "pr269" && d2LineFor(series, line.stepId) === undefined)
-      return { ...base, waitingFor: d2Wait(line, { screening: true }) };
     const pause = screeningPauseOf(line);
     if (pause !== null && !screeningContinued(series, line.stepId, pause.reason)) {
       const settle = unsettledSteps(series).includes(line.stepId) ? "`reconcile --screening`, then " : "";

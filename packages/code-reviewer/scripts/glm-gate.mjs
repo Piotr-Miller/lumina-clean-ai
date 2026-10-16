@@ -395,6 +395,32 @@ const counterNow = async (context, deps) => (context.dryRun ? 0 : deps.readCount
 
 const errorLine = (error) => (error instanceof Error ? error.message.split("\n")[0] : String(error));
 
+/**
+ * An error's class, never its message: Node's file-system messages carry
+ * absolute paths (`ENOENT: …, open '/home/…'`), and what this names is
+ * written into committed files (plan § Desired End State: no absolute path).
+ */
+const errorClass = (error) =>
+  typeof error?.code === "string" ? error.code : error instanceof Error ? error.name : typeof error;
+
+class UnusableExport extends Error {}
+
+/**
+ * A promptfoo export read back for the row checker. A failure names the file
+ * by its shown path and the error's class only: the problem is recorded in
+ * the rows file, the ledger and the outcome block, all of them committed.
+ */
+function readExport(context, path) {
+  try {
+    return JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    throw new UnusableExport(`${shown(context, path)} (${errorClass(error)})`);
+  }
+}
+
+const unusableExport = (error) =>
+  `no usable export: ${error instanceof UnusableExport ? error.message : errorClass(error)}`;
+
 /** The screened tree now: its manifest and that manifest's sha256. Refuses when an input is unreadable. */
 function screenedTree(context) {
   let manifest;
@@ -911,16 +937,9 @@ async function commandG3(flags, deps) {
 
   let checked;
   try {
-    const read = (path) => JSON.parse(readFileSync(path, "utf8"));
-    checked = checkExport(read(exportPath), regrade ? read(regradeExport) : undefined);
+    checked = checkExport(readExport(context, exportPath), regrade ? readExport(context, regradeExport) : undefined);
   } catch (error) {
-    checked = {
-      rows: [],
-      summary: {
-        failedRun: true,
-        problems: [`no usable export: ${error instanceof Error ? error.message : String(error)}`],
-      },
-    };
+    checked = { rows: [], summary: { failedRun: true, problems: [unusableExport(error)] } };
   }
   mkdirSync(dirname(context.g3Rows), { recursive: true });
   writeFileSync(context.g3Rows, `${JSON.stringify(checked, null, 2)}\n`);
@@ -996,12 +1015,9 @@ async function commandFixtures(flags, deps) {
   writeFileSync(join(context.work, `${stepId}.stderr.log`), child.stderr);
   let checked;
   try {
-    checked = checkExport(JSON.parse(readFileSync(exportPath, "utf8")), undefined, { repeats: 1 });
+    checked = checkExport(readExport(context, exportPath), undefined, { repeats: 1 });
   } catch (error) {
-    checked = {
-      rows: [],
-      summary: { failedRun: true, repeats: 1, problems: [`no usable export: ${errorLine(error)}`] },
-    };
+    checked = { rows: [], summary: { failedRun: true, repeats: 1, problems: [unusableExport(error)] } };
   }
   const rowsPath = join(context.results, `${stepId}.fixture-rows.json`);
   mkdirSync(context.results, { recursive: true });

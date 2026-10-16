@@ -25,3 +25,13 @@ Predecessor: finder-glm-5-3
 2026-10-16: owner decision — Phase 2 open choices: a confirmed 401/402 on `sfix` / `s247-01` gives one rerun after `continue`; an invalid #269 run needs `d2 --not-applicable` and then `continue` with the reason `waitingFor` names; invalid fixture rows pause (still samples, no rerun); every paid screening step records and checks the describeManifest sha256 against the last preflight before the first paid step; plan.md § Definitions (screening pause, m247 / m269 (screening)) and Phase 2 § 1 (Run ids, 401/402 on a one-step kind, Pauses, Screened tree).
 
 2026-10-16: reopened 1.8 — was accepted at 40217a6c07d3cef418cedcaebeb3720db1df6fdf; changed: packages/code-reviewer/scripts/glm-gate-core.mjs
+
+2026-10-16: re-confirmed 1.8 — was accepted at 40217a6c07d3cef418cedcaebeb3720db1df6fdf; accepted at 4211102d9bc71fffeb48bc61048f9b163611a447
+
+2026-10-16: reopened 2.6 — was accepted at 4211102d9bc71fffeb48bc61048f9b163611a447; changed: packages/code-reviewer/scripts/glm-gate.mjs
+
+2026-10-16: reopened 1.8 — was accepted at 4211102d9bc71fffeb48bc61048f9b163611a447; changed: packages/code-reviewer/scripts/glm-gate-core.mjs
+
+2026-10-16: owner decision (impl-review phase 2, F3) — H3: the screening's P counts sample runs only; a run stopped by a confirmed 401/402 never sets P (plan.md H3, Testing Strategy "Budget").
+
+2026-10-16: owner decision (impl-review phase 2, F5) — a confirmed 401/402 on `sfix` / `s247-…` gives one rerun per stop, each after its own `continue` (`sfix-03`, `s247-03`, …); plan.md § Definitions (m247 / m269 (screening)) and Phase 2 § 1.

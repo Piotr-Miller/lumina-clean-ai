@@ -548,6 +548,18 @@ describe("Amendment 1 as code", () => {
     expect(await main(["g3"], deps)).toBe(1); // The fake promptfoo writes no export: a failed run, but it ran.
     expect(deps.runCommand).toHaveBeenCalledTimes(1);
   });
+
+  it("records a missing export by its shown path and error class, never Node's message with its absolute path", async () => {
+    const { world, deps } = await atG3();
+    expect(await main(["g3"], deps)).toBe(1);
+    const rows = readFileSync(join(world.repoRoot, CHANGE, "gate/g3-rows.json"), "utf8");
+    const ledger = readFileSync(join(world.repoRoot, CHANGE, "gate/series.jsonl"), "utf8");
+    expect(JSON.parse(rows).summary.problems).toEqual(["no usable export: <cache>/g3/g3.export.json (ENOENT)"]);
+    for (const text of [rows, ledger]) {
+      expect(text).not.toContain(world.root);
+      expect(text).not.toMatch(/no such file or directory/u);
+    }
+  });
 });
 
 // Finder-pass timing (this change's plan.md Phase 2 §5, H11).
@@ -576,6 +588,20 @@ describe("finder-pass timing", () => {
     expect(finalization).toMatchObject({ kind: "finalization" });
     expect(result.exitAtMs).toBeGreaterThanOrEqual(finalization.atMs);
     expect(JSON.stringify(result.timedLines)).not.toMatch(/getFileContext|not timed/u);
+  });
+
+  it("spawnCommand reads CRLF lines and a last line without a newline, which it times at the exit", async () => {
+    const script = [
+      "const w = (s) => process.stderr.write(s);",
+      `w(${JSON.stringify(`${CONFIG}\r\n`)});`,
+      `setTimeout(() => w(${JSON.stringify("retrying finder after TimeoutError in 150ms\r\n")}), 100);`,
+      `setTimeout(() => w(${JSON.stringify(stepLine("finalization", 9))}), 200);`,
+      "setTimeout(() => process.exit(0), 300);",
+    ].join("\n");
+    const result = await spawnCommand(process.execPath, ["-e", script], process.env, PACKAGE_DIR, { echo: false });
+    expect(result.timedLines.map((line) => line.type)).toEqual(["configuration", "retry", "step"]);
+    expect(result.timedLines[1]).toMatchObject({ delayMs: 150 });
+    expect(result.timedLines[2]).toMatchObject({ kind: "finalization", atMs: result.exitAtMs });
   });
 
   it("the run record carries each attempt's step offsets, elapsed time and failure, and no line text", async () => {

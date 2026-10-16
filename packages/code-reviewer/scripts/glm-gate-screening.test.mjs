@@ -356,6 +356,17 @@ describe("pauses (owner decisions 2026-10-16)", () => {
       "testIdx 4 (clean): finder error: Finder output rejected (reason=parse, request=finalization)",
     ],
     [
+      "a finder error before any request (no provider or model reported)",
+      {
+        pass: false,
+        invalidatedRows: [{ testIdx: 3, case: "react", providers: [] }],
+        modelRows: [{ testIdx: 3, case: "react", models: [] }],
+        finderErrorRows: [{ testIdx: 3, case: "react", error: "Bad Gateway" }],
+      },
+      "invalid-run",
+      "testIdx 3 (react): finder error: Bad Gateway",
+    ],
+    [
       "a wrong reasoning shape",
       {
         pass: false,
@@ -378,6 +389,21 @@ describe("pauses (owner decisions 2026-10-16)", () => {
       expect(screeningState([...series, go("sfix", reason)])).toMatchObject({ next: "pr247", nextStepId: "s247-01" });
     },
   );
+
+  it("a row that reported an unlisted provider stays a mismatch, its finder error listed beside it", () => {
+    const series = [
+      pre(),
+      ...fix({
+        pass: false,
+        invalidatedRows: [{ testIdx: 3, case: "react", providers: ["Novita"] }],
+        finderErrorRows: [{ testIdx: 3, case: "react", error: "Bad Gateway" }],
+      }),
+    ];
+    expect(screeningState(series).pause).toMatchObject({
+      reason: "mismatch",
+      causes: ['testIdx 3 (react): providers ["Novita"]', "testIdx 3 (react): finder error: Bad Gateway (invalid-run)"],
+    });
+  });
 
   it("a fixtures step whose metrics miss is informational: no pause", () => {
     const state = screeningState([pre(), ...fix({ pass: false, g3: { pass: false, cases: {} } })]);
@@ -427,6 +453,22 @@ describe("budget (H3): T_s + P ≤ $0.75", () => {
       d2("s269-01"),
     ];
     expect(admitScreening(cheaper, "pr269", 100.4)).toMatchObject({ admit: true });
+  });
+
+  it("P counts sample runs only: a run stopped by a confirmed 401/402 never lowers it", () => {
+    const stopped = { ...INVALID, authCredit: "confirmed", reasons: ["auth-or-credit-confirmed"] };
+    // s269-01 is not a sample: T_s = $0.60, P stays at the $0.30 first estimate, and s269-02 is refused.
+    const series = [
+      pre(),
+      ...fix({}, { cost: 0.3 }),
+      ...run("s247-01", "pr247", 0.299),
+      ...run("s269-01", "pr269", 0.001, stopped),
+      d2("s269-01", "not-applicable"),
+    ];
+    expect(admitScreening(series, "pr269", 100.6)).toMatchObject({ admit: false, budgetStop: true, p: 0.3 });
+    // The same for the rerun of a one-step kind: sfix-02 after a 401/402 on sfix.
+    const fixtures = [pre(), ...fix({ authCredit: true }, { cost: 0.001 }), go("sfix", "auth-credit")];
+    expect(admitScreening(fixtures, "fixtures", 100.001).p).toBe(0.1);
   });
 
   it("refuses any step while one is unsettled", () => {
@@ -503,6 +545,15 @@ describe("outcome edges and precedence", () => {
     expect(outcome.verdict).toBe("STOP (d: no D2 in s269-02)");
     expect(outcome.spend.overshoot).toBeCloseTo(0.02, 10);
     expect(renderScreeningOutcome(outcome, { at: "t" })).toMatch(/overshoot \$0\.020000/u);
+  });
+
+  it("a valid #269 run that takes T_s above $0.75 waits for its D2 line before the screening ends", () => {
+    const over = [pre(), ...fix(), ...run("s247-01", "pr247", 0.05), ...run("s269-01", "pr269", 0.65)];
+    const state = screeningState(over);
+    expect(state).toMatchObject({ ended: null, waitingFor: expect.stringMatching(/the owner's d2 line for s269-01/u) });
+    expect(screeningState([...over, d2("s269-01")]).ended).toBe("INCOMPLETE (budget)");
+    expect(computeScreeningOutcome([...over, d2("s269-01")]).verdict).toBe("INCOMPLETE (budget)");
+    expect(computeScreeningOutcome([...over, d2("s269-01", "no-match")]).verdict).toBe("STOP (d: no D2 in s269-01)");
   });
 
   it("on one #269 run, the cost line says it is information only: (c) is decided on both runs", () => {
@@ -794,6 +845,31 @@ describe("fixtures --screening", () => {
     expect(deps.runCommand).not.toHaveBeenCalled();
   });
 
+  it("records a missing export by its shown path and error class: no absolute path in any committed file", async () => {
+    const world = setup();
+    const { deps, lines } = depsFor(world, {
+      runCommand: vi.fn(async () => ({ exitCode: 1, signal: null, stdout: "", stderr: "", interrupted: false })),
+    });
+    write(
+      join(world.repoRoot, CHANGE, "screening.md"),
+      "# Screening\n\n## Results\n\n<!-- glm-screen:outcome:start -->\n<!-- glm-screen:outcome:end -->\n",
+    );
+    await main(["preflight", S], deps);
+    expect(await main(["fixtures", S], deps)).toBe(1);
+    expect(lines.join("\n")).toMatch(
+      /SCREENING PAUSED: .*invalid-run: failed export: no usable export: <cache>\/screening\/sfix\.export\.json \(ENOENT\)/u,
+    );
+    expect(await main(["outcome", S, "--write"], deps)).toBe(0);
+    const committed = ["screening/results/sfix.fixture-rows.json", "screening/series.jsonl", "screening.md"].map(
+      (path) => readFileSync(join(world.repoRoot, CHANGE, path), "utf8"),
+    );
+    expect(committed[2]).toContain("no usable export: <cache>/screening/sfix.export.json (ENOENT)");
+    for (const text of committed) {
+      expect(text).not.toContain(world.root);
+      expect(text).not.toMatch(/no such file or directory/u);
+    }
+  });
+
   it("refuses while its export file exists (Amendment 1 as code)", async () => {
     const world = setup();
     const { deps, lines } = depsFor(world);
@@ -974,6 +1050,32 @@ describe("continue --screening", () => {
   });
 });
 
+describe("stop rule (b) through the runner: the run's own terminal error, retry lines aside", () => {
+  const retried = `${STDERR}retrying finder after TimeoutError in 2000ms\n`;
+
+  it("a finder timeout the retry recovered, then another failure, records terminalTimeout false: no STOP (b)", async () => {
+    const { world, deps } = await afterFixtures();
+    deps.runCli = fakeCli({ review: undefined, exitCode: 1, stderr: `${retried}APICallError: Bad Gateway\n` });
+    expect(await main(["run", S, "--case", "pr247", "--run-id", "s247-01"], deps)).toBe(1);
+    const series = ledgerOf(world);
+    expect(series.find((line) => line.type === "record")).toMatchObject({ valid: false, terminalTimeout: false });
+    expect(screeningState(series)).toMatchObject({ ended: null, fired: [], pause: { reason: "invalid-run" } });
+  });
+
+  it("a finder timeout after the retry records terminalTimeout true: STOP (b)", async () => {
+    const { world, deps } = await afterFixtures();
+    deps.runCli = fakeCli({
+      review: undefined,
+      exitCode: 1,
+      stderr: `${retried}TimeoutError: The finder pass exceeded its 300000 ms budget\n`,
+    });
+    expect(await main(["run", S, "--case", "pr247", "--run-id", "s247-01"], deps)).toBe(1);
+    const series = ledgerOf(world);
+    expect(series.find((line) => line.type === "record")).toMatchObject({ terminalTimeout: true });
+    expect(screeningState(series).ended).toBe("STOP (b: finder timeout after retry)");
+  });
+});
+
 describe("outcome --screening", () => {
   it("writes the outcome between the screening.md markers", async () => {
     const { world, deps } = await afterFixtures();
@@ -1002,10 +1104,16 @@ describe("separation from the gate", () => {
   it("the screening never reads or writes the gate ledger, and a gate step ignores screening records", async () => {
     const { world, deps } = await afterFixtures();
     await main(["run", S, "--case", "pr247", "--run-id", "s247-01"], deps);
-    expect(existsSync(join(world.repoRoot, CHANGE, "gate/series.jsonl"))).toBe(false);
-    // The gate has its own T0 and order: its first step is still G2-01, and it refuses without a manifest.
-    expect(await main(["run", "--case", "clean", "--run-id", "clean-01"], deps)).toBe(2);
-    expect(existsSync(join(world.repoRoot, CHANGE, "gate/series.jsonl"))).toBe(false);
+    const gateLedger = join(world.repoRoot, CHANGE, "gate/series.jsonl");
+    expect(existsSync(gateLedger)).toBe(false);
+    // Sealed, the gate runs beside the screening ledger from its own T0 and order: G2-01 first, at T = 0.
+    const { repoRoot, inputsDir, git } = world;
+    write(join(repoRoot, CHANGE, "gate-manifest.json"), JSON.stringify(describeManifest({ repoRoot, inputsDir, git })));
+    expect(await main(["preflight"], deps)).toBe(0);
+    expect(await main(["run", "--case", "clean", "--run-id", "clean-01"], deps)).toBe(0);
+    const gate = readSeries(gateLedger);
+    expect(gate.every((line) => line.stepId === undefined || line.stepId === "clean-01")).toBe(true);
+    expect(gate.find((line) => line.type === "started").admission).toMatchObject({ t: 0, settled: 0 });
     expect(ledgerOf(world).every((line) => line.stepId === undefined || /^s(fix|247|269)/u.test(line.stepId))).toBe(
       true,
     );
