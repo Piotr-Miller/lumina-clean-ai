@@ -571,9 +571,9 @@ _End of Amendment 1._
 
 <!-- glm-gate:outcome:start -->
 
-_Automatic outcome, written by `scripts/glm-gate.mjs outcome` at 2026-10-15T14:26:52.078Z._
+_Automatic outcome, written by `scripts/glm-gate.mjs outcome` at 2026-10-16T16:04:53.489Z._
 
-**Verdict:** measured — hand-read pending
+**Verdict:** NOT ADMITTED (hand-read)
 
 | Gate             | Result               |
 | ---------------- | -------------------- |
@@ -582,7 +582,7 @@ _Automatic outcome, written by `scripts/glm-gate.mjs outcome` at 2026-10-15T14:2
 | reliability #247 | PASS                 |
 | A6               | PASS                 |
 | G1               | 9/10 valid — PASS    |
-| hand-read        | pending              |
+| hand-read        | FAIL                 |
 | cost             | provisional until G5 |
 
 | Run      | Case  | Valid | Reasons |
@@ -625,13 +625,14 @@ above and change nothing in it.
   G2-02.
 - **Served configuration.** All 50 finder requests of the 17 CLI runs and all 22 finder requests of the 12 G3 rows
   were served by Z.AI, each with the reported model `z-ai/glm-5.3`. The CLI runs made 32 loop steps, 17
-  finalizations and 1 format repair. There were no retries and no `length` finishes. Reported reasoning tokens per
-  request: median 189, maximum 4,978.
+  finalizations and 1 format repair. There were no retries and no `length` finishes. Across the 50 CLI finder
+  requests, reported reasoning tokens per request: median 153, maximum 4,978.
 - **G3.** 12 rows, no grader error, so no re-grade. Every required metric 3/3; cross-hunk `tool_required` and
   `flaw_cross_hunk_contract` 3/3 (diagnostic). Settled from the counter at $0.141896: finder telemetry $0.065366,
   the rest grading.
 - **pr269-06, the one invalid run: a technical judge failure.** The finder made 4 requests (3 loop steps and the
-  finalization), all Z.AI, `z-ai/glm-5.3`, `finish=stop`, with no rejection and no repair. The run then ended with
+  finalization), all Z.AI, `z-ai/glm-5.3`, with two `tool-calls` finishes followed by two `stop` finishes,
+  with no rejection and no repair. The run then ended with
   `No output generated.`, the AI SDK's `NoOutputGeneratedError`, and wrote no `review.json`.
   - In a run without a plan file, only the judge uses structured output (`Output.object`, `src/judge.ts:72`). The
     finder parses its own text, so it cannot raise that error.
@@ -650,3 +651,44 @@ above and change nothing in it.
     `uploadedFileId` in any field.**
 
   This is a count, not a classification.
+
+### Hand-read (Phase 6, 2026-10-15/16)
+
+Written by the agent from the resolver's output. It explains the hand-read row of the automatic outcome above and
+changes nothing in it. The verdicts are the owner's (§8 step 2); the agent proposed one D2 match, pr269-03#F6, and
+classified nothing.
+
+- **Sheets.** `glm-gate-sheet.mjs sheet` wrote `hand-read-247.md` and `hand-read-269.md` at
+  2026-10-15T18:24:48.038Z, run without path flags (Amendment 1 §2). Prettier then formatted both before any verdict
+  was filled (owner decision 2026-10-15, plan Phase 6 § 1). The ledger's two `sheet` lines record the sha256 of the
+  **generated** bytes (pr247 `5825aa35…f33ca4`, pr269 `9d6b3d82…681393`); formatting and the verdicts changed the
+  committed bytes after that. No code reads those hashes: `resolve` parses the verdicts regardless of table layout
+  and checks each run's stored `review.json` against its sha256 in the ledger.
+- **Verdicts.** All 60 findings classified, none unresolved.
+  - #247: 12 accept.
+  - #269: 42 accept, 5 reject (pr269-01#F2, pr269-04#F3, pr269-05#F1, pr269-05#F5, pr269-10#F1), 1 D2
+    (pr269-03#F6).
+- **Resolver.** `glm-gate-sheet.mjs resolve` at 2026-10-16T16:04:35Z, without path flags: no problems (every row
+  matched a published finding of a valid run, every `review.json` matched its sha256), `HAND-READ: FAIL`. Its JSON
+  went to a local file through `--out` and is not committed; `outcome --write --hand-read` read it at
+  2026-10-16T16:04:53Z and accepted its runs, sha256 values and finding counts against the ledger.
+
+| Run      | N   | Rejected | Allowed | D2  | Pass |
+| -------- | --- | -------- | ------- | --- | ---- |
+| pr247-01 | 6   | 0        | 1       | —   | yes  |
+| pr247-02 | 6   | 0        | 1       | —   | yes  |
+| pr269-01 | 6   | 1        | 1       | 0   | no   |
+| pr269-02 | 4   | 0        | 1       | 0   | no   |
+| pr269-03 | 6   | 0        | 1       | 1   | yes  |
+| pr269-04 | 6   | 1        | 1       | 0   | no   |
+| pr269-05 | 5   | 2        | 1       | 0   | no   |
+| pr269-07 | 5   | 0        | 1       | 0   | no   |
+| pr269-08 | 6   | 0        | 1       | 0   | no   |
+| pr269-09 | 6   | 0        | 1       | 0   | no   |
+| pr269-10 | 4   | 1        | 1       | 0   | no   |
+
+- **Why the gate fails.** Both #247 runs pass. Eight of the nine valid #269 runs have no owner-approved D2 match,
+  which §2 requires of every valid #269 run; pr269-05 also exceeds its allowance (2 rejected > 1). Under §7 rule 5
+  the outcome is `NOT ADMITTED (hand-read)`.
+- **Cost** stays as recorded above and played no part in the label: the pre-G5 lower bound is $5.259010. The key
+  counter read by `outcome` left T at $1.379003.
