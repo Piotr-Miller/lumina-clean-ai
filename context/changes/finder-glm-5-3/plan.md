@@ -1270,8 +1270,8 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [ ] 4.4 Owner approves the pre-registration including A1–A8
-- [ ] 4.5 Owner confirms the seal does not authorize Phase 5
+- [x] 4.4 Owner approves the pre-registration including A1–A8 — accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a
+- [x] 4.5 Owner confirms the seal does not authorize Phase 5 — accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a
 
 ### Phase 5: The paid series
 
@@ -1284,21 +1284,21 @@ decides. Every later push to the ready PR is another paid review and is ledgered
 
 #### Manual
 
-- [ ] 5.5 Owner authorizes the paid series
+- [x] 5.5 Owner authorizes the paid series — accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a
 - [-] 5.6 Owner decides at the $3.00 pause — n/a: the plan's condition "if it is reached" resolved the other way; the series ended at T $1.379003 < $3.00 (gate/series.jsonl, series check 2026-10-15T14:26:51Z)
-- [ ] 5.7 Owner confirms the G2-01 probe
+- [x] 5.7 Owner confirms the G2-01 probe — accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a
 
 ### Phase 6: Hand-read and outcome
 
 #### Automated
 
-- [x] 6.1 Sheets generated from the recorded series
-- [x] 6.2 Per-run results computed
+- [x] 6.1 Sheets generated from the recorded series — c07b12a
+- [x] 6.2 Per-run results computed — c07b12a
 
 #### Manual
 
-- [ ] 6.3 Owner classifies every finding
-- [ ] 6.4 Owner approves each D2 match
+- [x] 6.3 Owner classifies every finding — accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a
+- [x] 6.4 Owner approves each D2 match — accepted at c07b12a49ae556bf62f13df29a1b5c7498f5540a
 - [ ] 6.5 Owner records the outcome and next decision
 
 ### Phase 7: Restore AI review and run G5
