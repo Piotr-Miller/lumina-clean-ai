@@ -1,8 +1,11 @@
 import { join } from "node:path";
 
+import { FINDER_REASONING, resolveFinderProviderRouting, resolveModels, type FinderProviderRouting } from "./config.js";
+import { containsInlineReasoning } from "./output-repair.js";
 import { runReviewPipeline, type FinderStepInfo, type PipelineInput } from "./pipeline.js";
 import { renderStickyComment } from "./render.js";
-import type { PipelineResult } from "./schemas.js";
+import { apiErrorStatus, errorLabel, publicErrorSummary } from "./retry.js";
+import type { PipelineResult, Reported } from "./schemas.js";
 import { createDiffScopedSourceForDiff } from "./source-provider.js";
 
 // The CLI's whole contract, extracted injectable so tests can pin the exact
@@ -101,16 +104,128 @@ const formatRange = (call: { startLine?: number; endLine?: number }): string =>
 // property (C0 + DEL + C1) so no control literal appears in the source.
 const logSafePath = (path: string): string => path.replace(/\p{Cc}/gu, "?");
 
-// One stderr line per finder loop step — in an Actions log this is the only
-// live evidence of what the tool loop fetched and spent.
+// `missing`, never a stand-in: a value the provider did not report must not
+// read like one it did (assumption A3 of change `finder-glm-5-3`).
+const reportedField = <T extends string | number>(field: Reported<T>): string =>
+  field.source === "missing" ? "missing" : logSafePath(String(field.value));
+
+// One stderr line per finder request — in an Actions log this is the only
+// live evidence of what the tool loop fetched and spent. `kind` says which
+// request it was: the finalization and the repair also print as `finder
+// step N`, and a failed run uploads no review.json to tell them apart. `model`
+// and `reasoning` (the reasoning-token count) come from the raw response, so
+// the served model and the volume of reasoning are visible without any model
+// text.
 const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
   const calls =
     info.fileContextCalls.length === 0
       ? "no getFileContext call"
       : info.fileContextCalls.map((call) => `getFileContext ${logSafePath(call.path)}${formatRange(call)}`).join(", ");
   const usage = `tokens in=${tokenCount(info.usage.inputTokens)} out=${tokenCount(info.usage.outputTokens)} total=${tokenCount(info.usage.totalTokens)}`;
-  return `finder step ${String(index)}: ${calls} (${usage})`;
+  // The provider slug comes from the response, not from us — escaped like the
+  // path for the same reason. `?` when OpenRouter did not report one. `kind`
+  // is ours (a closed union), so it needs no escaping.
+  const route = `kind=${info.kind} provider=${info.provider === undefined ? "?" : logSafePath(info.provider)} finish=${logSafePath(info.finishReason)}`;
+  const served = `model=${reportedField(info.model)} reasoning=${reportedField(info.reasoningTokens)}`;
+  return `finder step ${String(index)}: ${calls} (${usage}) ${route} ${served}`;
 };
+
+/**
+ * The finder's configuration, once per run, from the same resolvers and
+ * constant the requests use — so a run log states which model, reasoning
+ * effort and endpoint list the finder asked for before any request is made.
+ * The model may come from an environment variable, so it is escaped. The CLI
+ * passes the routing it hands the pipeline, so it is resolved (and a malformed
+ * OPENROUTER_FINDER_PROVIDERS warned about) once per run.
+ */
+export const formatFinderConfigurationLine = (
+  routing: FinderProviderRouting = resolveFinderProviderRouting(),
+): string =>
+  `finder configuration: model=${logSafePath(resolveModels().reviewModel)} reasoning=${FINDER_REASONING.effort} ` +
+  `providers=${routing.order.join(",")}`;
+
+/** How much of a rejected model output reaches the log. */
+export const REJECTED_OUTPUT_CAP_CHARS = 2_000;
+export const REJECTED_OUTPUT_TRUNCATION_MARKER = "[...rejected output truncated at 2,000 chars]";
+
+// Visible escapes rather than logSafePath's "?": the rejected text is usually
+// multi-line JSON, and the reader needs to see where the lines broke. Either
+// way no control character reaches the log, so the untrusted text cannot
+// forge or restyle log lines.
+const escapeControl = (text: string): string =>
+  text.replace(/\p{Cc}/gu, (char) => {
+    if (char === "\n") return "\\n";
+    if (char === "\r") return "\\r";
+    if (char === "\t") return "\\t";
+    return `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`;
+  });
+
+const stringField = (error: object, key: string): string | undefined =>
+  key in error && typeof (error as Record<string, unknown>)[key] === "string"
+    ? ((error as Record<string, unknown>)[key] as string)
+    : undefined;
+
+/**
+ * The text a model produced and the pipeline rejected, as one stderr line —
+ * so an outage can be attributed from the run log alone (change
+ * `finder-serialization-outage`: 35 failed runs logged only "could not parse
+ * the response", never what the model had sent).
+ *
+ * Reads any error carrying a string `text` — the finder's `FinderOutputError`,
+ * the judge's `NoObjectGeneratedError` — plus its `finishReason` and `provider`
+ * where present. `undefined` when the error carries no text — an abort or an
+ * auth error never produced output. An empty text is still reported: "the
+ * model sent nothing" is a finding.
+ *
+ * `fallbackProvider` is the upstream of the last request the CLI observed. It
+ * fills in only when the error carries no provider of its own: the SDK's
+ * `NoObjectGeneratedError` has no provider field, and its `response.body` is
+ * left empty unless the call opts into `include.responseBody` (ai@7.0.52,
+ * index.js:5896), so without it the one line meant to attribute a judge
+ * failure would always read `provider=?`. The last observed request is the
+ * one that produced the rejected text: a pass throws right after its own last
+ * step, so no other request can come between them.
+ *
+ * Labelled by the error's class, not by pass: the pipeline rethrows the raw
+ * error, and the class is what the log can state without guessing.
+ *
+ * The text is untrusted model output and the log is public: capped at
+ * REJECTED_OUTPUT_CAP_CHARS and control characters escaped. It goes to stderr
+ * only — never into comment.md or the step summary.
+ *
+ * A text carrying `<think` ANYWHERE is NEVER shown, whatever error carries it
+ * and whichever guard classified the failure — a truncated response, or a
+ * quoted `<think` the reviewer accepted and the parser then rejected, is
+ * checked too: the line then ends `reason=inline-reasoning chars=<n>` instead
+ * of the text (owner decision 2 of change `finder-glm-5-3`). Broader than the
+ * reviewer's rejection check (a LEADING `<think`) on purpose.
+ */
+export function formatRejectedOutputLine(error: unknown, fallbackProvider?: string): string | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const text = stringField(error, "text");
+  if (text === undefined) return undefined;
+  const own = stringField(error, "provider");
+  const provider = own === undefined || own === "" ? fallbackProvider : own;
+  const finish = stringField(error, "finishReason");
+  const label = escapeControl(errorLabel(error));
+  const route = `provider=${provider === undefined || provider === "" ? "?" : escapeControl(provider)}, finish=${
+    finish === undefined ? "?" : escapeControl(finish)
+  }`;
+  // A FinderOutputError refused for inline reasoning no longer holds its text
+  // (it is ""), only its length; any other text carrying `<think` is hidden too.
+  if (stringField(error, "reason") === "inline-reasoning" || containsInlineReasoning(text)) {
+    const kept = (error as Record<string, unknown>).chars;
+    const chars = typeof kept === "number" ? kept : text.length;
+    return `rejected output (${label}, ${route}): reason=inline-reasoning chars=${String(chars)}`;
+  }
+  let shown = text;
+  if (text.length > REJECTED_OUTPUT_CAP_CHARS) {
+    // Never end on half a surrogate pair.
+    shown = text.slice(0, REJECTED_OUTPUT_CAP_CHARS).replace(/[\uD800-\uDBFF]$/u, "");
+    shown += REJECTED_OUTPUT_TRUNCATION_MARKER;
+  }
+  return `rejected output (${label}, ${route}, ${String(text.length)} chars): ${escapeControl(shown)}`;
+}
 
 // One stderr line for the whole third pass — in an Actions log this is the
 // only live evidence that the pass ran and what it cost. Cost is printed only
@@ -176,11 +291,6 @@ function parseTimeoutEnv(env: CliEnv, name: string): number | undefined {
   return value;
 }
 
-const errorLabel = (error: unknown): string =>
-  typeof error === "object" && error !== null && "name" in error && typeof error.name === "string" && error.name !== ""
-    ? error.name
-    : String(error);
-
 /** Actions run URL when the standard env triple is present; omitted locally. */
 function resolveRunUrl(env: CliEnv): string | undefined {
   const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID } = env;
@@ -195,6 +305,10 @@ export async function runReviewCli(
   io: CliIo,
   pipeline: typeof runReviewPipeline = runReviewPipeline,
 ): Promise<0 | 1> {
+  // The upstream of the most recent observed request, for the rejected-output
+  // line (see formatRejectedOutputLine). Reset on every observation, so a
+  // request without a reported provider never inherits an older one's.
+  let lastObservedProvider: string | undefined;
   try {
     const args = parseArgs(argv);
     const diff = args.diffFile === undefined ? io.readStdin() : io.readFile(args.diffFile);
@@ -230,6 +344,7 @@ export async function runReviewCli(
           finderMaxSteps,
           onFinderStep: (info) => {
             stepIndex += 1;
+            lastObservedProvider = info.provider;
             io.logError(formatFinderStepLine(stepIndex, info));
           },
         };
@@ -262,18 +377,27 @@ export async function runReviewCli(
       }
     }
 
+    const timeouts = {
+      finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
+      judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
+      implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
+    };
+    const projectReviewContext =
+      args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile);
+
+    // Once per run, after every input is validated and before the first
+    // request, so the line describes a run that actually started.
+    const finderProviderRouting = resolveFinderProviderRouting();
+    io.logError(formatFinderConfigurationLine(finderProviderRouting));
     const result = await pipeline({
       diff,
+      finderProviderRouting,
       ...sourceInputs,
       ...planInput,
       prTitle: env.PR_TITLE,
       prBody: env.PR_BODY,
-      timeouts: {
-        finderTimeoutMs: parseTimeoutEnv(env, "REVIEW_FINDER_TIMEOUT_MS"),
-        judgeTimeoutMs: parseTimeoutEnv(env, "REVIEW_JUDGE_TIMEOUT_MS"),
-        implReviewTimeoutMs: parseTimeoutEnv(env, "REVIEW_IMPL_REVIEW_TIMEOUT_MS"),
-      },
-      projectReviewContext: args.projectContextFile === undefined ? undefined : io.readFile(args.projectContextFile),
+      timeouts,
+      projectReviewContext,
       // CI policy, not a library default: the pass costs ~9.47x the code review
       // it accompanies, and a red code review means the diff is about to change.
       implReviewGate: "code-review-passed",
@@ -285,7 +409,12 @@ export async function runReviewCli(
       // A repaired run is otherwise indistinguishable from a clean one; this
       // line is how persistent model drift stays visible in the Actions log.
       onOutputRepair: ({ reason }) => {
-        io.logError(`finder output repaired after strict-parse failure: ${reason}`);
+        io.logError(`finder format repair requested after strict-parse failure: ${reason}`);
+      },
+      // Silent on purpose: it only remembers the judge's upstream, so a judge
+      // parse failure can name its endpoint in the rejected-output line.
+      onJudgeStep: (info) => {
+        lastObservedProvider = info.provider;
       },
       onJudgeOutputRepair: ({ reason }) => {
         io.logError(`judge output repaired after strict-parse failure: ${reason}`);
@@ -309,8 +438,24 @@ export async function runReviewCli(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     io.logError(message);
+    // Metadata only: the HTTP status of the failed provider call, from the
+    // error's typed APICallError (cause chain included) — never response or
+    // model text. The measurement runner reads 401/402 off this line alone
+    // (change `finder-glm-5-3`, owner decision 2026-10-14).
+    const status = apiErrorStatus(error);
+    if (status !== undefined) io.logError(`api error: status=${String(status)}`);
+    // stderr only: the rejected text is untrusted, so it stays out of the
+    // step summary below as well as out of comment.md.
+    const rejected = formatRejectedOutputLine(error, lastObservedProvider);
+    if (rejected !== undefined) io.logError(rejected);
+    // An APICallError's message is the provider's response body text, so the
+    // step summary shows only its metadata — the message stays on stderr above
+    // (owner decision 2026-10-14, Manual 2.7 re-check). Any other SDK error
+    // may quote model output, so it shows only its class (change
+    // `finder-glm-5-3`, owner decision 2026-10-14).
+    const summary = publicErrorSummary(error, escapeControl(errorLabel(error)));
     const summaryPath = env.GITHUB_STEP_SUMMARY;
-    if (summaryPath) io.appendFile(summaryPath, `\n## AI review failed\n\n${message}\n`);
+    if (summaryPath) io.appendFile(summaryPath, `\n## AI review failed\n\n${summary}\n`);
     return 1;
   }
 }

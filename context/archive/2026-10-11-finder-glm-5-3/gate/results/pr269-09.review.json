@@ -1,0 +1,247 @@
+{
+  "summary": "This PR archives the S-17 Bread calibration experiment, adding measurement harness scripts and experiment records without touching production engine, API, or database behavior. The reviewer found no critical or security issues; instead, a handful of minor correctness bugs in auxiliary tooling (contact-sheet aspect distortion, compare-mode crash paths violating the tool's own exit-code contract) and small style/duplication nits (shared constants duplicated between two stats scripts, one dead code branch). The most notable risk is F3: the bilinear sampler reproducing Chromium's drawImage behavior — explicitly called out as having previously flipped an experiment result — lacks a golden-pixel regression test despite being the most fragile, consequential logic in the diff. Given the non-production scope, passing validation gates per the PR metadata, and the minor severity of all findings, the change is acceptable to merge as archival/tooling work, though the identified gaps should be tracked for follow-up.",
+  "findings": [
+    {
+      "file": "scripts/s17/browser-stats.ts",
+      "startLine": 43,
+      "endLine": 56,
+      "severity": "nit",
+      "category": "style",
+      "description": "`STAT_FIELDS`/`FIELDS`, the `PERCENTILES` set, and the tolerance/bin-rounding logic are duplicated between `browser-stats.ts` and `desktop-stats.ts`; the two will drift when the LumaStats shape or a threshold changes.",
+      "suggestion": "Move the field list and percentile set into `scripts/s17/harness.ts` next to the existing shared record shapes.",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 147,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "`original.resize(target, ...)` forces the original into the exact pixel box of the smallest Bread output. The `note` on line 143 only fires when outputs differ from each other; if a single output's aspect ratio differs from the source's, the original is silently distorted on the sheet the maintainer tunes from — the artifact where aspect distortion is most misleading.",
+      "suggestion": "Compare the original's aspect ratio to `target`; on mismatch either letterbox or print a warning alongside the existing size note.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 77,
+      "endLine": 96,
+      "severity": "minor",
+      "category": "testing",
+      "description": "`point_bilinear` (and the jpeg-draft pipeline around it) hand-reproduces Chromium's `drawImage` sampler, including floor-half-up rounding. The docstring itself records that small sampler differences flipped S17-04 across the 0.005 clip guard (Cloud gamma 1.50 vs 1.10). This is exactly the kind of fragile numeric behavior that deserves a golden test, yet the diff adds none — a future cleanup of the rounding or a Pillow drift would go unnoticed.",
+      "suggestion": "Add a small golden-pixel test: a stored small source image plus expected sampled output array (captured from a verified run), asserted against `point_bilinear` and the jpeg-draft path.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 116,
+      "endLine": 126,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "`compare()` verifies each baseline id exists in the download, but not the reverse: if the baseline lacks an id, `a` is `undefined` and `auto(a)` throws a TypeError instead of exiting 1 with a message naming the id — violating the tool's own exit-status contract (1 = comparison could not run).",
+      "suggestion": "Check `if (!a) { console.error(`${id}: missing from ${baselinePath}`); process.exit(1); }` before calling `auto(a)`.",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 145,
+      "endLine": 155,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "`--compare` mode is dispatched at module scope (line 155), but lines 145–150 already read and hash every licensed tuning photo at load time and throw on mismatch or missing files. Since `test-photos/private/` is gitignored, `--compare <download.json>` on any machine without the inputs dies with an unhandled throw instead of the documented \"exit 1, comparison could not run\" behavior.",
+      "suggestion": "Move the photo loading loop after the `--compare` dispatch (or gate it behind a `serve` code path) so compare mode needs only the baseline and download files.",
+      "id": "F5"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 243,
+      "severity": "nit",
+      "category": "style",
+      "description": "`run.imageLabel.startsWith(\"data:\")` is dead code: `imageLabel` is always the local path or a remote URL, never a data URI, so the ternary's first branch can never be taken.",
+      "suggestion": "Drop the ternary and record `run.imageLabel` directly (the local path is the more useful record anyway).",
+      "id": "F6"
+    }
+  ],
+  "preDedupFindingCount": 6,
+  "scores": {
+    "implementation_correctness": {
+      "score": 6,
+      "justification": "Several concrete correctness bugs were found in the tooling (F2 contact-sheet aspect distortion, F4 missing-id crash instead of documented exit 1, F5 --compare mode dying on load-time file reads before dispatch), but all are confined to auxiliary experiment scripts that the PR explicitly states do not touch production engine/API/DB behavior, limiting blast radius.",
+      "findingIds": [
+        "F2",
+        "F4",
+        "F5"
+      ]
+    },
+    "idiomaticity": {
+      "score": 7,
+      "justification": "Minor style issues only: dead/unreachable branch in bread-spike.ts (F6) and duplicated constants/logic across two stats scripts (F1) that should be centralized in the existing shared harness module. Neither suggests the code fights language/project conventions broadly.",
+      "findingIds": [
+        "F6",
+        "F1"
+      ]
+    },
+    "complexity": {
+      "score": 7,
+      "justification": "The duplication flagged in F1 (field lists, percentile sets, tolerance logic repeated between browser-stats.ts and desktop-stats.ts) adds avoidable accidental complexity and drift risk, but no finding suggests the overall design is over-engineered or hard to follow.",
+      "findingIds": [
+        "F1"
+      ]
+    },
+    "test_risk_coverage": {
+      "score": 5,
+      "justification": "F3 identifies that the most fragile, outcome-determining logic in the PR — the bilinear sampler reproducing Chromium's drawImage rounding, which the docstring itself says flipped a key experiment result — ships with no golden/regression test, leaving the riskiest numeric path uncovered despite the large test suite passing overall.",
+      "findingIds": [
+        "F3"
+      ]
+    },
+    "documentation": {
+      "score": 8,
+      "justification": "No findings call out missing or misleading documentation; the PR body indicates substantial archival documentation (plan, decision record, roadmap/issue updates). The one note-related gap (F2) is a correctness/behavior issue rather than a documentation gap, so it is not scored here.",
+      "findingIds": []
+    },
+    "security_safety": {
+      "score": 9,
+      "justification": "No findings identify any security, secret-handling, or untrusted-input vulnerability; private tuning photos are gitignored and the changes are confined to internal experiment tooling.",
+      "findingIds": []
+    }
+  },
+  "verdict": "passed",
+  "verdictReason": "All findings are minor or nit-level issues confined to auxiliary experiment/archival tooling with no production impact, and the PR's stated validation (typecheck, 418 tests, lint, parity checks) passed; the one notable gap is missing test coverage for a fragile numeric sampler (F3), which should be addressed but does not by itself warrant failing the change.",
+  "diffStats": {
+    "files": 17,
+    "additions": 1238,
+    "deletions": 21
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 6,
+    "toolCalls": 5,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 2266,
+          "source": "reported"
+        },
+        "cost": 0.0155342
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 117,
+          "source": "reported"
+        },
+        "cost": 0.0108404
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 12,
+          "source": "reported"
+        },
+        "cost": 0.007053
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 0,
+          "source": "reported"
+        },
+        "cost": 0.00676248
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 3976,
+          "source": "reported"
+        },
+        "cost": 0.05455756
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 0,
+          "source": "reported"
+        },
+        "cost": 0.01293328
+      }
+    ],
+    "inputTokens": 139775,
+    "outputTokens": 8155,
+    "totalTokens": 147930,
+    "cost": 0.10768092
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 5181,
+    "outputTokens": 2093,
+    "totalTokens": 7274,
+    "cost": 0.031292
+  }
+}

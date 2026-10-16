@@ -1,0 +1,178 @@
+{
+  "summary": "This PR commits two previously ephemeral production diagnostic scripts (`prod-fetch-results.py` and `prod-result-dimensions.py`) so they are reproducible rather than living only in a /tmp session. The review surfaced only nit/minor findings: inconsistent key-shape validation between the two scripts, a filename collision that can overwrite saved results and skew counts, a 'missing' check that can be fooled by stale output files, unguarded struct unpacking and fragile JPEG marker scanning that can crash the census loop on malformed data, an unenforced range-fetch safety contract that could silently download full images, and a 'CONFIRMED' verdict message that doesn't account for unreadable jobs. None of these are critical or security-exploitable, but together they weaken the reliability of diagnostic output these scripts are meant to produce, and there is no test coverage exercising any of these risky paths.",
+  "findings": [
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 49,
+      "endLine": 52,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "The key guard here only rejects angle-bracket placeholders, while the sibling script `prod-result-dimensions.py` also rejects anon/publishable keys by shape. A wrong key type produces a confusing PostgREST error rather than a clear one.",
+      "suggestion": "Copy the `KEY.count('.') == 2 or KEY.startswith('sb_secret_')` shape check from prod-result-dimensions.py for consistency.",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 81,
+      "endLine": 85,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "Two jobs sharing an 8-character id prefix both write `{short}-{date}.png`; the second silently overwrites the first while `found` counts both, so the reported totals and files on disk can disagree.",
+      "suggestion": "Include more of the job id (or a collision check) in the destination filename.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 88,
+      "endLine": 93,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The `missing` check re-derives matches from `os.listdir(OUT)` filename prefixes. A stale file from a previous run (or any coincidentally-prefixed file) suppresses the warning even when the current run saved nothing, and the 'NOT found in the jobs table' message mis-describes failures that are actually prefix mismatches.",
+      "suggestion": "Track matched prefixes during the loop (`matched = {short for j in jobs if ...}`) and compute `missing = [w for w in WANTED if w not in matched]` instead of scanning the output directory.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 84,
+      "endLine": 101,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "Header parsers can raise instead of returning None: the PNG branch does `struct.unpack('>II', raw[16:24])` without a length check (a short ranged response crashes the census loop with struct.error), and the JPEG scanner treats 0xFF fill bytes as a length-bearing marker, desyncing the scan. Since the whole loop has no try/except around parsing, one malformed object aborts the entire census.",
+      "suggestion": "Validate `len(raw) >= 24` before the PNG unpack, handle JPEG 0xFF fill bytes, and wrap the `dimensions()` call in the existing unreadable path so a parse failure counts as unreadable rather than crashing.",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 118,
+      "endLine": 126,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The docstring's contract — 'never fetches a whole image' — is not enforced. The ranged GET sends `Range: bytes=0-2047` but never checks `r.status == 206` or truncates the read; a server/proxy that ignores Range means `r.read()` downloads every full-size image.",
+      "suggestion": "Check `r.status == 206` (or cap the read to 2048 bytes) and treat a full-body 200 as an error/unknown rather than proceeding.",
+      "id": "F5"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 138,
+      "endLine": 141,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The '=> CONFIRMED: no production job has ever exercised Cloud AI at a real phone's resolution' verdict fires whenever `downscaled == 0 and passed > 0`, even if many jobs were unreadable. Since this output is intended as evidence for S-17, an unqualified confirmation with a blind spot is misleading.",
+      "suggestion": "Gate the CONFIRMED message on `unreadable == 0`, or include the unreadable count in the message (e.g. 'confirmed for N readable of M jobs').",
+      "id": "F6"
+    }
+  ],
+  "preDedupFindingCount": 6,
+  "scores": {
+    "implementation_correctness": {
+      "score": 6,
+      "justification": "The two scripts largely do what they claim, but several real correctness gaps exist: a filename collision silently overwrites files and skews reported totals (F2), the 'missing' check can be fooled by stale files from prior runs (F3), and the PNG/JPEG header parsers can raise unhandled exceptions that would crash the whole census loop on a single malformed object (F4). None of these are catastrophic, but they are genuine logic/edge-case gaps in diagnostic tooling meant to be trustworthy.",
+      "findingIds": [
+        "F2",
+        "F3",
+        "F4"
+      ]
+    },
+    "idiomaticity": {
+      "score": 7,
+      "justification": "No findings flag unidiomatic Python or framework misuse; the issues raised are logic/robustness problems rather than style or convention violations, so idiomaticity is assumed to be reasonable for this kind of ops script.",
+      "findingIds": []
+    },
+    "complexity": {
+      "score": 7,
+      "justification": "No findings indicate over-engineering or unnecessary structure; the scripts appear to be straightforwardly scoped for their diagnostic purpose, with issues being missing edge-case handling rather than excess complexity.",
+      "findingIds": []
+    },
+    "test_risk_coverage": {
+      "score": 3,
+      "justification": "There is no evidence of any test coverage for these scripts, and the findings expose exactly the kind of risky, silent-failure paths that would benefit from tests: malformed image headers crashing the loop (F4), a ranged GET that can silently balloon into full downloads (F5), and a verdict message that can mislead downstream decisions when some jobs are unreadable (F6). These are the riskiest parts of the diagnostic logic and they ship unverified.",
+      "findingIds": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    "documentation": {
+      "score": 5,
+      "justification": "The PR states a clear safety contract in the script headers (no writes, ranged-only GETs, key never logged), but F5 shows the documented 'never fetches a whole image' guarantee is not actually enforced, meaning the documentation overstates the behavior to a reader who trusts it.",
+      "findingIds": [
+        "F5"
+      ]
+    },
+    "security_safety": {
+      "score": 5,
+      "justification": "No credential leakage or injection-style vulnerability was found, but F5 identifies that the script's own stated safety contract (ranged GET only, never a full image fetch) is unenforced, which is a meaningful safety-contract gap for scripts explicitly designed around minimizing data exposure/bandwidth from production image stores.",
+      "findingIds": [
+        "F5"
+      ]
+    }
+  },
+  "verdict": "passed",
+  "verdictReason": "All findings are nit or minor severity affecting diagnostic/ops scripts rather than production application logic; the issues (filename collisions, stale-file masking, unhandled parse exceptions, an unenforced range-fetch contract, and an overstated verdict message) are real but narrow in blast radius and fixable with small follow-ups.",
+  "diffStats": {
+    "files": 2,
+    "additions": 234,
+    "deletions": 0
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 2,
+    "toolCalls": 0,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 2583,
+          "source": "reported"
+        },
+        "cost": 0.01605876
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 0,
+          "source": "reported"
+        },
+        "cost": 0.00612784
+      }
+    ],
+    "inputTokens": 10427,
+    "outputTokens": 4212,
+    "totalTokens": 14639,
+    "cost": 0.022186599999999997
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 5260,
+    "outputTokens": 2365,
+    "totalTokens": 7625,
+    "cost": 0.03417
+  }
+}

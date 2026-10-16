@@ -1,10 +1,19 @@
-import { APICallError, type StepResult, type ToolSet } from "ai";
+import {
+  APICallError,
+  JSONParseError,
+  TypeValidationError,
+  type ProviderMetadata,
+  type StepResult,
+  type ToolSet,
+} from "ai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DEFAULT_JUDGE_MODEL, DEFAULT_MODEL } from "./config.js";
 import {
   BODY_CAP_CHARS,
   BODY_TRUNCATION_MARKER,
+  asStepCost,
+  asStepProvider,
   capDiff,
   computeDiffStats,
   computeFileSegments,
@@ -21,9 +30,12 @@ import {
   runReviewPipeline,
   type FinderStepInfo,
 } from "./pipeline.js";
+import { openRouterStub, VALID_REVIEW_TEXT, type WireBody } from "./openrouter-stub.js";
+import { FinderOutputError } from "./output-repair.js";
 import { type JudgePromptInput } from "./prompts.js";
 import { RATE_LIMIT_DELAY_MS, TRANSIENT_DELAY_MS } from "./retry.js";
-import type { ReviewerOptions } from "./reviewer.js";
+import { MISSING_RESPONSE_FIELDS, type ReportedResponseFields } from "./provider-metadata.js";
+import { createReviewer, type FinderRequestMeta, type ReviewerOptions } from "./reviewer.js";
 import { CRITERIA } from "./scorecard.js";
 import type {
   Finding,
@@ -45,6 +57,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 const finding = (overrides: Partial<Finding>): Finding => ({
@@ -389,6 +402,28 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
     expect(onRetry).not.toHaveBeenCalled();
   });
 
+  it("fails fast on the finder's FinderOutputError: one pass, no retry, no judge", async () => {
+    const formatError = new FinderOutputError({ text: "prose", validationError: "v", repaired: true });
+    const finder = vi.fn().mockRejectedValue(formatError);
+    const judge = vi.fn();
+    const onRetry = vi.fn();
+    await expect(runReviewPipeline({ diff: SMALL_DIFF, onRetry, deps: { finder, judge } })).rejects.toBe(formatError);
+    expect(finder).toHaveBeenCalledTimes(1);
+    expect(onRetry).not.toHaveBeenCalled();
+    expect(judge).not.toHaveBeenCalled();
+  });
+
+  it("still retries a rate-limited finder pass once (429)", async () => {
+    const { calls, sleep } = recordingSleep();
+    const finder = vi.fn().mockRejectedValueOnce(apiError(429)).mockResolvedValueOnce({ summary: "s", findings: [] });
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: { finder, judge: () => Promise.resolve(judgeResult()), retrySleep: sleep },
+    });
+    expect(finder).toHaveBeenCalledTimes(2);
+    expectInJitterRange(calls.at(0), RATE_LIMIT_DELAY_MS);
+  });
+
   it("fails fast on a non-retryable finder error (single attempt)", async () => {
     const authError = apiError(401);
     const finder = vi.fn().mockRejectedValue(authError);
@@ -478,16 +513,19 @@ describe("runReviewPipeline (hermetic, deps-injected)", () => {
   });
 });
 
-// Partial step shapes cast once: the pipeline only reads toolCalls and usage.
+// Partial step shapes cast once: the pipeline only reads toolCalls, usage,
+// providerMetadata and finishReason.
 const finderStep = (over: {
   toolCalls?: { toolName: string; input: unknown }[];
   usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
   providerMetadata?: unknown;
+  finishReason?: string;
 }): StepResult<ToolSet> =>
   ({
     toolCalls: over.toolCalls ?? [],
     usage: over.usage ?? {},
     providerMetadata: over.providerMetadata,
+    finishReason: over.finishReason ?? "stop",
   }) as unknown as StepResult<ToolSet>;
 
 /** Shorthand for the provider bag OpenRouter fills under usage accounting. */
@@ -536,6 +574,71 @@ describe("describeFinderStep", () => {
   ])("degrades to no cost on %s", (_label, providerMetadata) => {
     expect("cost" in describeFinderStep(finderStep({ providerMetadata }))).toBe(false);
   });
+
+  it("names the serving upstream and how the step ended", () => {
+    const info = describeFinderStep(
+      finderStep({ providerMetadata: { openrouter: { provider: "Novita" } }, finishReason: "tool-calls" }),
+    );
+    expect(info.provider).toBe("Novita");
+    expect(info.finishReason).toBe("tool-calls");
+  });
+
+  it("omits the provider key entirely when OpenRouter reported none, but still reports finishReason", () => {
+    // Absent, never "" or "unknown": either would read as a real endpoint slug.
+    const info = describeFinderStep(finderStep({ finishReason: "length" }));
+    expect("provider" in info).toBe(false);
+    expect(info.finishReason).toBe("length");
+  });
+
+  it.each([
+    ["metadata from another provider", { anthropic: { provider: "Novita" } }],
+    ["an openrouter bag with no provider", { openrouter: { usage: { cost: 0.1 } } }],
+    ["a non-string provider", { openrouter: { provider: 42 } }],
+    ["an empty provider", { openrouter: { provider: "" } }],
+    ["a null openrouter bag", { openrouter: null }],
+  ])("degrades to no provider on %s", (_label, providerMetadata) => {
+    expect("provider" in describeFinderStep(finderStep({ providerMetadata }))).toBe(false);
+  });
+
+  // Phase 2 review F6: the telemetry's provider comes from the RAW response, the
+  // same place as model and reasoning tokens — not from the SDK's metadata.
+  it("carries the raw response's reported provider, and missing without request metadata", () => {
+    const reported = { value: "Z.AI", source: "reported" as const };
+    const info = describeFinderStep(finderStep({ providerMetadata: { openrouter: { provider: "Fireworks" } } }), {
+      kind: "finalization",
+      reported: {
+        provider: reported,
+        model: { value: null, source: "missing" },
+        reasoningTokens: { value: null, source: "missing" },
+      },
+    });
+    expect(info.reportedProvider).toEqual(reported);
+    expect(info.provider).toBe("Fireworks");
+    expect(describeFinderStep(finderStep({})).reportedProvider).toEqual({ value: null, source: "missing" });
+  });
+});
+
+describe("asStepProvider", () => {
+  it("reads the slug next to the usage-accounting bag without disturbing asStepCost", () => {
+    const metadata = { openrouter: { provider: "DeepInfra", usage: { cost: 0.002 } } } as unknown as ProviderMetadata;
+    expect(asStepProvider(metadata)).toBe("DeepInfra");
+    expect(asStepCost(metadata)).toBe(0.002);
+  });
+
+  it("returns undefined for absent metadata", () => {
+    expect(asStepProvider(undefined)).toBeUndefined();
+  });
+});
+
+/** What the real reviewer hands onStepEnd next to each step: the request kind and the raw response's fields. */
+const servedBy = (provider: string, reasoningTokens: number): ReportedResponseFields => ({
+  model: { value: "z-ai/glm-5.3", source: "reported" },
+  provider: { value: provider, source: "reported" },
+  reasoningTokens: { value: reasoningTokens, source: "reported" },
+});
+const stepMeta = (reported: ReportedResponseFields = MISSING_RESPONSE_FIELDS): FinderRequestMeta => ({
+  kind: "step",
+  reported,
 });
 
 describe("runReviewPipeline finder source + telemetry seam", () => {
@@ -581,7 +684,9 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
     let attempt = 0;
     const createFinder = vi.fn().mockImplementation((options: ReviewerOptions) => ({
       review: () => {
-        for (const step of attemptSteps) options.onStepEnd?.(step);
+        for (const [index, step] of attemptSteps.entries()) {
+          options.onStepEnd?.(step, stepMeta(servedBy(attempt === 0 ? "Z.AI" : "Together", 10 * (index + 1))));
+        }
         attempt += 1;
         return attempt === 1 ? Promise.reject(apiError(503)) : Promise.resolve({ summary: "s", findings: [] });
       },
@@ -596,12 +701,28 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
     });
     // 2 steps × 2 attempts: real spend — steps deliberately exceeds the
     // per-attempt cap of 2 (the SDK's stepNumber resets on the retry attempt).
+    const request = (attemptNumber: 1 | 2, provider: string, reasoningTokens: number) => ({
+      kind: "step",
+      attempt: attemptNumber,
+      provider: { value: provider, source: "reported" },
+      model: { value: "z-ai/glm-5.3", source: "reported" },
+      finishReason: "stop",
+      reasoningTokens: { value: reasoningTokens, source: "reported" },
+      cost: null,
+    });
     expect(result.finderTelemetry).toEqual({
       steps: 4,
       toolCalls: 2,
       inputTokens: 440,
       outputTokens: 80,
       totalTokens: 520,
+      // One entry per request, the retry's included and labelled as attempt 2.
+      requests: [
+        request(1, "Z.AI", 10),
+        request(1, "Z.AI", 20),
+        request(2, "Together", 10),
+        request(2, "Together", 20),
+      ],
     });
     expect(infos).toHaveLength(4);
     expect(infos.at(0)?.fileContextCalls).toEqual([{ path: "src/a.ts", startLine: 1, endLine: 40 }]);
@@ -620,8 +741,8 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
       }) as unknown as StepResult<ToolSet>;
     const createFinder = vi.fn().mockImplementation((options: ReviewerOptions) => ({
       review: () => {
-        options.onStepEnd?.(withCostStep(0.004));
-        options.onStepEnd?.(withCostStep(0.006));
+        options.onStepEnd?.(withCostStep(0.004), stepMeta());
+        options.onStepEnd?.(withCostStep(0.006), stepMeta());
         return Promise.resolve({ summary: "s", findings: [] });
       },
     }));
@@ -640,7 +761,7 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
     } as unknown as StepResult<ToolSet>;
     const createFinder = vi.fn().mockImplementation((options: ReviewerOptions) => ({
       review: () => {
-        options.onStepEnd?.(bareStep);
+        options.onStepEnd?.(bareStep, stepMeta());
         return Promise.resolve({ summary: "s", findings: [] });
       },
     }));
@@ -683,6 +804,27 @@ describe("runReviewPipeline finder source + telemetry seam", () => {
       totalTokens: 96,
       cost: 0.03,
     });
+  });
+
+  it("reports each judge step's provider and finish through onJudgeStep, absent when unreported", async () => {
+    const seen: unknown[] = [];
+    const judgeStep = (providerMetadata: unknown): StepResult<ToolSet> =>
+      ({ toolCalls: [], usage: {}, providerMetadata, finishReason: "stop" }) as unknown as StepResult<ToolSet>;
+    await runReviewPipeline({
+      diff: SMALL_DIFF,
+      onJudgeStep: (info) => seen.push(info),
+      deps: {
+        finder: () => Promise.resolve({ summary: "s", findings: [] }),
+        createJudge: (options) => ({
+          judge: () => {
+            options.onStepEnd?.(judgeStep({ openrouter: { provider: "Venice" } }));
+            options.onStepEnd?.(judgeStep({ openrouter: { provider: 7 } }));
+            return Promise.resolve(judgeResult());
+          },
+        }),
+      },
+    });
+    expect(seen).toEqual([{ provider: "Venice", finishReason: "stop" }, { finishReason: "stop" }]);
   });
 
   it("omits judgeTelemetry entirely for an injected judge that never constructs", async () => {
@@ -867,11 +1009,61 @@ describe("runReviewPipeline implementation-review pass", () => {
         retrySleep: () => Promise.resolve(),
       },
     });
-    expect(result.implReview).toEqual({ status: "failed", error: "provider exploded" });
+    // A non-SDK error keeps its message in the comment too.
+    expect(result.implReview).toEqual({
+      status: "failed",
+      error: "provider exploded",
+      publicError: "provider exploded",
+    });
     // The code review survived whole.
     expect(result.verdict).toBe("passed");
     expect(result.summary).toBe("judge summary");
     expect(result.scores).toBeDefined();
+  });
+
+  // Owner decision 2026-10-14 (change `finder-glm-5-3`): the PR comment is
+  // public, so it gets the step summary's rule. An APICallError's message is
+  // the provider's response body and any other SDK error may quote model
+  // output, so `publicError` — the only text comment.md shows — names the
+  // class and status. `error` keeps the message for the job log and review.json.
+  const typeValidation = () =>
+    new TypeValidationError({ value: { summary: "MODEL-SENTINEL" }, cause: new Error("expected array") });
+  it.each([
+    [
+      "an APICallError",
+      () =>
+        new APICallError({
+          message: "Insufficient credits MODEL-SENTINEL",
+          url: "u",
+          requestBodyValues: {},
+          statusCode: 402,
+          responseBody: '{"error":"MODEL-SENTINEL"}',
+        }),
+      "AI_APICallError: api error: status=402 (provider message only in the job log)",
+    ],
+    ["a TypeValidationError", typeValidation, "AI_TypeValidationError: SDK error (message only in the job log)"],
+    [
+      "a JSONParseError",
+      () => new JSONParseError({ text: "{MODEL-SENTINEL", cause: new Error("bad") }),
+      "AI_JSONParseError: SDK error (message only in the job log)",
+    ],
+    [
+      "a wrapper whose message repeats an SDK error",
+      () => {
+        const inner = typeValidation();
+        return new Error(inner.message, { cause: inner });
+      },
+      "Error: SDK error (message only in the job log)",
+    ],
+  ])("keeps the message of %s out of the failed block's publicError (MODEL-SENTINEL)", async (_label, make, shown) => {
+    const error = make();
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: PLAN,
+      deps: { ...twoPasses, implReviewer: () => Promise.reject(error), retrySleep: () => Promise.resolve() },
+    });
+    expect(result.implReview).toEqual({ status: "failed", error: error.message, publicError: shown });
+    expect(error.message).toContain("MODEL-SENTINEL");
   });
 
   // Construction throws on an unresolvable API key — that is a failure of this
@@ -1215,5 +1407,138 @@ describe("finder unit carries no truncation channel (r5 note reverted)", () => {
     });
     expect(sink.unit).toEqual({ kind: "diff", diff: SMALL_DIFF });
     expect(result.diffTruncated).toBe(false);
+  });
+});
+
+// The finalization and the format repair are provider requests of their own,
+// so telemetry must count them — otherwise finderTelemetry.cost understates
+// the pass by exactly the requests the two-stage design added, and the G4 cost
+// gate measures something false (change finder-serialization-outage).
+describe("finder telemetry covers the finalization and the repair (real reviewer, stubbed wire)", () => {
+  const runWithStub = async (
+    responses: Parameters<typeof openRouterStub>[0],
+    extra: { source?: () => string } = {},
+  ) => {
+    const stub = openRouterStub(responses);
+    const steps: FinderStepInfo[] = [];
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      ...extra,
+      onFinderStep: (info) => steps.push(info),
+      deps: {
+        createFinder: (options) => createReviewer({ ...options, apiKey: "test-key", fetch: stub.fetch }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    return { result, steps, requests: stub.bodies.length };
+  };
+
+  it("tool-less: the finalization and the repair are two steps, both priced", async () => {
+    const { result, steps, requests } = await runWithStub([
+      { content: '{"summary": 1}', finish: "stop", provider: "Novita", cost: 0.001 },
+      { content: VALID_REVIEW_TEXT, finish: "stop", provider: "Novita", cost: 0.002 },
+    ]);
+    expect(requests).toBe(2);
+    expect(result.finderTelemetry?.steps).toBe(2);
+    expect(result.finderTelemetry?.cost).toBeCloseTo(0.003, 10);
+    expect(steps.map((step) => step.provider)).toEqual(["Novita", "Novita"]);
+  });
+
+  it("with a source: every loop step, the finalization and the repair are counted", async () => {
+    const { result, requests } = await runWithStub(
+      [
+        {
+          toolCalls: [{ id: "c1", name: "getFileContext", arguments: { path: "src/a.ts" } }],
+          finish: "tool_calls",
+          cost: 0.001,
+        },
+        { content: "draft", finish: "stop", cost: 0.001 },
+        { content: '{"summary": 1}', finish: "stop", cost: 0.001 },
+        { content: VALID_REVIEW_TEXT, finish: "stop", cost: 0.001 },
+      ],
+      { source: () => "ctx" },
+    );
+    expect(requests).toBe(4);
+    expect(result.finderTelemetry).toMatchObject({ steps: 4, toolCalls: 1 });
+    expect(result.finderTelemetry?.cost).toBeCloseTo(0.004, 10);
+  });
+});
+
+describe("finder requests in review.json (real reviewer, stubbed wire)", () => {
+  it("records each request's kind, attempt and reported fields — a missing model stays missing", async () => {
+    const stub = openRouterStub([
+      { content: '{"summary": 1}', finish: "stop", provider: "Z.AI", model: null, cost: 0.001 },
+      { content: VALID_REVIEW_TEXT, finish: "stop", provider: "Together", reasoningTokens: 17, cost: 0.002 },
+    ]);
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      deps: {
+        createFinder: (options) => createReviewer({ ...options, apiKey: "test-key", fetch: stub.fetch }),
+        judge: () => Promise.resolve(judgeResult()),
+      },
+    });
+    expect(result.finderTelemetry?.requests).toEqual([
+      {
+        kind: "finalization",
+        attempt: 1,
+        provider: { value: "Z.AI", source: "reported" },
+        // NOT the requested id the SDK would substitute.
+        model: { value: null, source: "missing" },
+        finishReason: "stop",
+        reasoningTokens: { value: null, source: "missing" },
+        cost: 0.001,
+      },
+      {
+        kind: "repair",
+        attempt: 1,
+        provider: { value: "Together", source: "reported" },
+        model: { value: "z-ai/glm-5.3", source: "reported" },
+        finishReason: "stop",
+        reasoningTokens: { value: 17, source: "reported" },
+        cost: 0.002,
+      },
+    ]);
+  });
+});
+
+// Decision 2 on the wire: reasoning on the finder only. The two strict-schema
+// passes run their real factories against a stubbed global fetch, so their
+// request bodies are captured exactly as the SDK serializes them.
+describe("only the finder requests reasoning (all three passes on a stubbed wire)", () => {
+  it("the judge and implementation-review bodies carry no reasoning key", async () => {
+    const judgeAnswer = JSON.stringify({
+      scores: Object.fromEntries(CRITERIA.map(({ key }) => [key, { score: "8", justification: "j", findingIds: [] }])),
+      verdict: "passed",
+      verdictReason: "fine",
+      summary: "judged",
+    });
+    const schemaName = (body: WireBody): string | undefined =>
+      (body.response_format as { json_schema?: { name?: string } } | undefined)?.json_schema?.name;
+    const stub = openRouterStub((body) =>
+      schemaName(body) === "judge_scorecard"
+        ? { content: judgeAnswer, finish: "stop" }
+        : // The finder's answer; the implementation review's fails its parse, which
+          // the pass turns into a failed block — its request body is what counts.
+          { content: VALID_REVIEW_TEXT, finish: "stop" },
+    );
+    vi.stubGlobal("fetch", stub.fetch);
+    const result = await runReviewPipeline({
+      diff: SMALL_DIFF,
+      plan: { text: "## Plan\n\nDo the thing." },
+      overrides: { apiKey: "test-key" },
+      deps: { retrySleep: () => Promise.resolve() },
+    });
+    expect(result.implReview?.status).toBeDefined();
+    const finder = stub.bodies.filter((body) => schemaName(body) === undefined);
+    const judge = stub.bodies.filter((body) => schemaName(body) === "judge_scorecard");
+    const implReview = stub.bodies.filter((body) => ![undefined, "judge_scorecard"].includes(schemaName(body)));
+    expect(finder).toHaveLength(1);
+    expect(judge).toHaveLength(1);
+    expect(implReview.length).toBeGreaterThanOrEqual(1);
+    for (const body of finder) expect(body.reasoning).toStrictEqual({ enabled: true, effort: "high" });
+    for (const body of [...judge, ...implReview]) {
+      expect("reasoning" in body).toBe(false);
+      expect("include_reasoning" in body).toBe(false);
+    }
   });
 });

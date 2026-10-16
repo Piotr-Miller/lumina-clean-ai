@@ -1,4 +1,4 @@
-import { APICallError, NoObjectGeneratedError } from "ai";
+import { AISDKError, APICallError, NoObjectGeneratedError } from "ai";
 
 // The user's retry rule as pure code: retry exactly once, per pass, and only
 // for transient failures. Both passes run their agents with `maxRetries: 0`
@@ -14,11 +14,20 @@ const errorName = (error: unknown): string | undefined =>
 /**
  * Transient-failure classifier: timeout aborts (the AI SDK aborts timed-out
  * calls with a DOMException named `TimeoutError` — NOT an Error subclass, so
- * we match by name), APICallError with HTTP 429 or 5xx, and structured-output
- * schema mismatches (`NoObjectGeneratedError` — matched via the SDK's typed
- * `isInstance`, never by message; the finder flaked its schema on 2 of 7 live
- * runs and one re-roll is the designed recovery). External cancellations
- * (plain `AbortError`) and config/auth errors are never retryable.
+ * we match by name; the finder's whole-review budget aborts with the same
+ * name), APICallError with HTTP 429 or 5xx, and structured-output schema
+ * mismatches (`NoObjectGeneratedError` — matched via the SDK's typed
+ * `isInstance`, never by message). External cancellations (plain
+ * `AbortError`) and config/auth errors are never retryable.
+ *
+ * `NoObjectGeneratedError` now comes only from the JUDGE (and the
+ * implementation review), which still use provider-side structured output. The
+ * finder parses its own output since change `finder-serialization-outage` and
+ * fails with `FinderOutputError`, which is deliberately NOT retryable: its one
+ * format repair took over the re-roll's role, and the frame saw both attempts of
+ * the old re-roll fail identically on every post-break run. It fails every
+ * condition below as written, so the classifier needs no case for it — the
+ * test pins that.
  */
 export function isRetryableError(error: unknown): boolean {
   if (errorName(error) === "TimeoutError") return true;
@@ -28,6 +37,70 @@ export function isRetryableError(error: unknown): boolean {
     return status === 429 || (status !== undefined && status >= 500);
   }
   return false;
+}
+
+/**
+ * The HTTP status of the provider call behind a failure: the first
+ * APICallError carrying a numeric `statusCode`, found by walking the error,
+ * its `cause` chain and a RetryError's `lastError` (change `finder-glm-5-3`,
+ * owner decision 2026-10-14). Only the typed status counts — never message
+ * text, which can mention "401" for any reason. Undefined when no
+ * APICallError carries one. Cycles and deep chains are cut off.
+ */
+export function apiErrorStatus(error: unknown): number | undefined {
+  const seen = new Set<object>();
+  const queue: unknown[] = [error];
+  while (queue.length > 0 && seen.size < 16) {
+    const current = queue.shift();
+    if (typeof current !== "object" || current === null || seen.has(current)) continue;
+    seen.add(current);
+    if (APICallError.isInstance(current) && typeof current.statusCode === "number") return current.statusCode;
+    if ("cause" in current) queue.push(current.cause);
+    if ("lastError" in current) queue.push(current.lastError);
+  }
+  return undefined;
+}
+
+/**
+ * Whether an SDK error sits anywhere in the failure's chain — the same walk
+ * as `apiErrorStatus`. An SDK message can quote model output with no HTTP
+ * status attached (TypeValidationError's `Value:`, JSONParseError's `Text:`,
+ * RetryError repeating its last error), so public surfaces treat any SDK
+ * error as unsafe to quote rather than listing the classes that are.
+ */
+function hasSdkError(error: unknown): boolean {
+  const seen = new Set<object>();
+  const queue: unknown[] = [error];
+  while (queue.length > 0 && seen.size < 16) {
+    const current = queue.shift();
+    if (typeof current !== "object" || current === null || seen.has(current)) continue;
+    seen.add(current);
+    if (AISDKError.isInstance(current)) return true;
+    if ("cause" in current) queue.push(current.cause);
+    if ("lastError" in current) queue.push(current.lastError);
+  }
+  return false;
+}
+
+export const errorLabel = (error: unknown): string => {
+  const name = errorName(error);
+  return name === undefined || name === "" ? String(error) : name;
+};
+
+/**
+ * What a public surface — the step summary, the PR comment — may say about a
+ * failure. An APICallError's message is the provider's response body text and
+ * any other SDK error may quote model output, so either shows only its label
+ * and status; the message stays in the job log. A non-SDK error keeps its
+ * message, which never quotes the response (change `finder-glm-5-3`, owner
+ * decisions 2026-10-14). `label` lets a caller escape the name for its surface.
+ */
+export function publicErrorSummary(error: unknown, label = errorLabel(error)): string {
+  const status = apiErrorStatus(error);
+  if (status !== undefined)
+    return `${label}: api error: status=${String(status)} (provider message only in the job log)`;
+  if (hasSdkError(error)) return `${label}: SDK error (message only in the job log)`;
+  return error instanceof Error ? error.message : String(error);
 }
 
 // Pre-retry delay policy: an immediate 429 retry usually lands in the same

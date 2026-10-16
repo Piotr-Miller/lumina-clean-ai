@@ -1,7 +1,9 @@
-import { APICallError, NoObjectGeneratedError } from "ai";
+import { APICallError, NoObjectGeneratedError, RetryError } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
+import { FinderOutputError } from "./output-repair.js";
 import {
+  apiErrorStatus,
   isRetryableError,
   MAX_RETRY_DELAY_MS,
   RATE_LIMIT_DELAY_MS,
@@ -71,6 +73,17 @@ describe("isRetryableError", () => {
 
   it("never retries an external cancellation (plain AbortError)", () => {
     expect(isRetryableError(new DOMException("aborted", "AbortError"))).toBe(false);
+  });
+
+  it("never retries the finder's FinderOutputError, repaired or not", () => {
+    expect(isRetryableError(new FinderOutputError({ text: "", validationError: "v", repaired: false }))).toBe(false);
+    expect(isRetryableError(new FinderOutputError({ text: "{", validationError: "v", repaired: true }))).toBe(false);
+    // Truncation and inline reasoning fail the attempt (change finder-glm-5-3).
+    for (const reason of ["length", "inline-reasoning"] as const) {
+      expect(isRetryableError(new FinderOutputError({ text: "", reason, validationError: "v", repaired: false }))).toBe(
+        false,
+      );
+    }
   });
 
   it("retries a structured-output schema mismatch (NoObjectGeneratedError)", () => {
@@ -185,6 +198,48 @@ describe("withOneRetry", () => {
     expect(calls).toEqual([]);
   });
 
+  // The finder's format failure is terminal: its one format repair already
+  // took the re-roll's place, and a re-roll of the whole pass failed
+  // identically on every post-break run (change finder-serialization-outage).
+  it("never retries the finder's FinderOutputError: exactly one pass, no sleep", async () => {
+    const { calls, sleep } = recordingSleep();
+    const onRetry = vi.fn();
+    const error = new FinderOutputError({ text: "prose", validationError: "v", repaired: true });
+    const fn = vi.fn().mockRejectedValue(error);
+    await expect(withOneRetry(fn, { sleep, onRetry })).rejects.toBe(error);
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual([]);
+    expect(onRetry).not.toHaveBeenCalled();
+  });
+
+  // Owner decision 2 of change `finder-glm-5-3`: a truncated response and one
+  // carrying inline reasoning fail the ATTEMPT — withOneRetry must not turn
+  // them into a second paid pass.
+  it.each([
+    ["a truncated step", { kind: "step", index: 1 }, "length"],
+    ["a truncated finalization", { kind: "finalization" }, "length"],
+    ["a truncated repair", { kind: "repair" }, "length"],
+    ["inline reasoning in a step", { kind: "step", index: 2 }, "inline-reasoning"],
+    ["inline reasoning in the finalization", { kind: "finalization" }, "inline-reasoning"],
+    ["inline reasoning in the repair", { kind: "repair" }, "inline-reasoning"],
+  ] as const)("never retries %s: exactly one pass, no sleep", async (_label, request, reason) => {
+    const { calls, sleep } = recordingSleep();
+    const onRetry = vi.fn();
+    const error = new FinderOutputError({
+      text: "",
+      finishReason: "length",
+      reason,
+      request,
+      validationError: "v",
+      repaired: request.kind === "repair",
+    });
+    const fn = vi.fn().mockRejectedValue(error);
+    await expect(withOneRetry(fn, { sleep, onRetry })).rejects.toBe(error);
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual([]);
+    expect(onRetry).not.toHaveBeenCalled();
+  });
+
   it("retries a schema mismatch immediately: no sleep call at all", async () => {
     const { calls, sleep } = recordingSleep();
     const fn = vi.fn().mockRejectedValueOnce(schemaMismatchError()).mockResolvedValueOnce("recovered");
@@ -230,5 +285,46 @@ describe("withOneRetry", () => {
     const onRetry = vi.fn();
     await expect(withOneRetry(() => Promise.reject(apiError(401)), { onRetry })).rejects.toBeInstanceOf(APICallError);
     expect(onRetry).not.toHaveBeenCalled();
+  });
+});
+
+// Change `finder-glm-5-3`, owner decision 2026-10-14: a 401/402 is confirmed
+// only by an APICallError's typed status, found anywhere in the cause chain —
+// never by message text.
+describe("apiErrorStatus", () => {
+  const api = (statusCode: number, message = `HTTP ${String(statusCode)}`) =>
+    new APICallError({ message, url: "u", requestBodyValues: {}, statusCode });
+
+  it.each([401, 402, 429, 503])("reads %i off a top-level APICallError", (status) => {
+    expect(apiErrorStatus(api(status))).toBe(status);
+  });
+
+  it("finds an APICallError wrapped in an Error's cause", () => {
+    expect(apiErrorStatus(new Error("finder failed", { cause: api(402) }))).toBe(402);
+  });
+
+  it("finds a RetryError's lastError", () => {
+    const retry = new RetryError({
+      message: "retries exhausted",
+      reason: "maxRetriesExceeded",
+      errors: [api(429), api(401)],
+    });
+    expect(apiErrorStatus(retry)).toBe(401);
+  });
+
+  it.each([
+    ["a non-API error", new Error("boom")],
+    ["a message that merely mentions 401", new Error("can only afford 401 tokens")],
+    ["a DOMException timeout", new DOMException("budget", "TimeoutError")],
+    ["a non-object", "HTTP 402"],
+  ])("is undefined for %s", (_label, error) => {
+    expect(apiErrorStatus(error)).toBeUndefined();
+  });
+
+  it("survives a cyclic cause chain", () => {
+    const a = new Error("a");
+    const b = new Error("b", { cause: a });
+    (a as { cause?: unknown }).cause = b;
+    expect(apiErrorStatus(a)).toBeUndefined();
   });
 });

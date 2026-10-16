@@ -1,0 +1,180 @@
+{
+  "summary": "This PR archives the S-17 Bread calibration experiment, adding measurement harness and experiment-record tooling without touching production engine, API, or database behavior. The reviewer's findings are all minor or nit severity: two correctness edge cases (potential upscaling violating a documented contract in contact-sheet.py, and an unguarded baseline lookup that could throw instead of cleanly exiting in desktop-stats.ts), a missing-test gap for a risky custom resampler and exposure-stats logic that directly feeds the clipRatio metric central to this PR's purpose, and two cosmetic/documentation nits (dead code ternary, a stale path note). None of these affect production systems or introduce security risk, making this a reasonably clean, low-risk archival change with room for improvement in test coverage of its new measurement logic.",
+  "findings": [
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 146,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "`original.resize(target, Image.LANCZOS)` can upscale the original when it is smaller than the smallest output, breaking the docstring's matched-size contract ('An output is never enlarged; ... all are downscaled to the smallest') and the per-page 'every image at W×H' caption for the original figure.",
+      "suggestion": "Guard with a conditional resize and a visible note (like the differing-output-sizes note) when the original must be enlarged, or explicitly document that the original may be upscaled.",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/s17/decode-inputs.py",
+      "startLine": 69,
+      "endLine": 93,
+      "severity": "minor",
+      "category": "testing",
+      "description": "point_bilinear — a hand-rolled canvas-emulating resampler whose rounding/support details directly move clipRatio across the 0.005 guard (per the module docstring) — has no automated tests, despite this PR existing because unreproducible numbers burned the team. Same for exposure_stats in scripts/measure-hue-shares.py (lines 124-129), whose denominators and thresholds are easy to silently regress.",
+      "suggestion": "Add small golden tests against fixed arrays (e.g. a known 4x4→2x2 point_bilinear case with the half-up rounding, an all-255 region asserting any=255 = 100%). They pin the method cheaply and match the repo's risk-weighted testing bar.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 104,
+      "endLine": 110,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "compare() validates that the download contains each tuning id, but never checks the baseline side. With an old/partial baseline or a user-supplied --baseline file, `base[id]` is undefined and `auto(a)` / `a.clipRatio` throws a raw TypeError instead of the documented clean exit-1 'comparison could not run' path.",
+      "suggestion": "Add a mirrored `if (!a) { console.error(...); process.exit(1); }` check next to the existing `!b` check.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 241,
+      "severity": "nit",
+      "category": "style",
+      "description": "`run.imageLabel.startsWith(\"data:\") ? \"(data URI)\" : run.imageLabel` is dead code: imageLabel is `localPath ?? input.image`, so it is either a filesystem path or a remote URL, never a `data:` string. The guard implies a distinction that cannot occur.",
+      "suggestion": "Drop the ternary and record the label (or transport) directly.",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 243,
+      "severity": "nit",
+      "category": "documentation",
+      "description": "The run-record sidecar stores `output_file: dest` as an absolute OS-temp path. Once outputs are moved into the run directories contact-sheet.py scans (the documented workflow), that path is stale and misleading.",
+      "suggestion": "Drop the field or note in the header comment that it records the location at run time only; the sha256s are the durable identifiers.",
+      "id": "F5"
+    }
+  ],
+  "preDedupFindingCount": 5,
+  "scores": {
+    "implementation_correctness": {
+      "score": 6,
+      "justification": "Two minor correctness gaps exist in auxiliary tooling: contact-sheet.py's resize can silently upscale the original image, violating its own documented matched-size contract (F1), and desktop-stats.ts compare() can throw an unhandled TypeError on a malformed/partial baseline instead of the documented clean exit path (F3). Both are edge-case failures in non-production scripts rather than core logic breaks, but they do contradict explicit documented behavior.",
+      "findingIds": [
+        "F1",
+        "F3"
+      ]
+    },
+    "idiomaticity": {
+      "score": 7,
+      "justification": "Only a minor stylistic nit was flagged: dead-code ternary logic in bread-spike.ts implies a distinction (data URI vs path) that can never occur (F4). No broader convention violations were reported.",
+      "findingIds": [
+        "F4"
+      ]
+    },
+    "complexity": {
+      "score": 8,
+      "justification": "No findings indicate unnecessary complexity, over-engineering, or tangled logic; the reported issues are about missing edge-case handling and tests, not structural complexity.",
+      "findingIds": []
+    },
+    "test_risk_coverage": {
+      "score": 5,
+      "justification": "The PR's stated motivation is avoiding unreproducible measurement numbers, yet the hand-rolled point_bilinear resampler and exposure_stats routines—whose rounding and thresholds directly affect reported clipRatio—have no automated tests (F2), despite the risk-weighted testing expectation this PR itself seems to validate against. This is a meaningful coverage gap for the specific risky logic the PR touches.",
+      "findingIds": [
+        "F2"
+      ]
+    },
+    "documentation": {
+      "score": 7,
+      "justification": "Documentation is largely adequate per the findings, with only a minor nit that the run-record sidecar's stored output path becomes stale once files are relocated, without a note clarifying this (F5). No broader documentation gaps were raised.",
+      "findingIds": [
+        "F5"
+      ]
+    },
+    "security_safety": {
+      "score": 9,
+      "justification": "No security, secret-handling, or untrusted-input findings were reported; this is an internal experiment-archival PR touching no production engine, API, or database behavior per the PR metadata.",
+      "findingIds": []
+    }
+  },
+  "verdict": "passed",
+  "verdictReason": "All findings are minor or nit-level issues confined to auxiliary measurement/archival scripts rather than production code, with no security concerns and no criterion falling below 4; the missing tests for the resampling logic (F2) are the most notable gap but don't block the archival purpose of this PR.",
+  "diffStats": {
+    "files": 17,
+    "additions": 1238,
+    "deletions": 21
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 3,
+    "toolCalls": 2,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 2063,
+          "source": "reported"
+        },
+        "cost": 0.0146366
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 869,
+          "source": "reported"
+        },
+        "cost": 0.01801
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 56,
+          "source": "reported"
+        },
+        "cost": 0.01225448
+      }
+    ],
+    "inputTokens": 67093,
+    "outputTokens": 4560,
+    "totalTokens": 71653,
+    "cost": 0.044901079999999996
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 4881,
+    "outputTokens": 1647,
+    "totalTokens": 6528,
+    "cost": 0.026232
+  }
+}

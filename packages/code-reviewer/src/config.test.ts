@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  DEFAULT_FINDER_PROVIDERS,
   DEFAULT_IMPL_REVIEW_MODEL,
   DEFAULT_JUDGE_MODEL,
   DEFAULT_MODEL,
+  FINDER_REASONING,
   resolveConfig,
   resolveModels,
 } from "./config.js";
@@ -29,12 +31,12 @@ describe("resolveModels — finder chain", () => {
 
   // Literal, not a tautology: the assertion above passes whatever the constant
   // says, so it could not catch the checked-in default drifting away from the
-  // model production actually runs. These pin the strings themselves — the
-  // finder default must equal the OPENROUTER_REVIEW_MODEL repository variable,
-  // because it is what takes over when that variable is unset or cleared
-  // (impl-review-phase-4 F1). Update these ONLY together with that variable.
-  it("defaults the finder to the model production runs", () => {
-    expect(DEFAULT_MODEL).toBe("z-ai/glm-4.6");
+  // model production is meant to run. These pin the strings themselves. The
+  // finder's is the model change `finder-glm-5-3` gated; production runs it
+  // only while the OPENROUTER_REVIEW_MODEL repository variable is UNSET, which
+  // overrides it otherwise. Change it only through a gated measurement.
+  it("defaults the finder to the gated model", () => {
+    expect(DEFAULT_MODEL).toBe("z-ai/glm-5.3");
   });
 
   it("defaults the judge to the model production runs", () => {
@@ -146,5 +148,22 @@ describe("resolveConfig", () => {
     expect(config.model).toBe("env/legacy");
     expect(config.reviewModel).toBe("env/legacy");
     expect(config.judgeModel).toBe("env/judge");
+  });
+});
+
+describe("DEFAULT_FINDER_PROVIDERS", () => {
+  // Pinned like DEFAULT_MODEL: this list decides where every production finder
+  // request may go (decision 4 of change `finder-glm-5-3`) — change it only
+  // alongside a measurement.
+  it("is the decided Z.AI / Fireworks / Together list", () => {
+    expect(DEFAULT_FINDER_PROVIDERS).toEqual(["z-ai", "fireworks", "together"]);
+  });
+});
+
+describe("FINDER_REASONING", () => {
+  // Decision 2, at effort high (change `finder-glm-5-3-high`), enabled — the
+  // exact object every finder request sends.
+  it("is reasoning enabled at effort high", () => {
+    expect(FINDER_REASONING).toEqual({ enabled: true, effort: "high" });
   });
 });

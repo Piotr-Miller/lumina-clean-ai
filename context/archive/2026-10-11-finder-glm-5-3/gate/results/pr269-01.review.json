@@ -1,0 +1,197 @@
+{
+  "summary": "This PR adds measurement/harness tooling and archives the S-17 Bread calibration experiment without touching production engine, Auto recommendation, API, or database code. The reviewer's findings are limited to nits and minor issues: a missing error guard and unnecessary photo-loading in one comparison script, an unbounded/unchecked polling loop in a spike script, duplicated comparison logic across two scripts, an import-style inconsistency, and inconsistent HTML escaping in a local-only report generator. None of these findings indicate broken core logic, security exposure beyond negligible local-file risk, or missing documentation, and the PR's own validation (typecheck, 418 tests, lint, parity checks) passed. The change is low-risk, well-scoped tooling/archival work suitable to merge, with the identified minor issues worth addressing in follow-up polish rather than blocking.",
+  "findings": [
+    {
+      "file": "scripts/s17/auto-values.ts",
+      "startLine": 12,
+      "endLine": 13,
+      "severity": "nit",
+      "category": "style",
+      "description": "Imports use relative paths into ../../src/ rather than the repo's @/* alias convention (same in browser-stats.ts, desktop-stats.ts, harness.ts). If tsx resolves the tsconfig paths, the alias should be used; if not, a note is warranted so the relative paths aren't 'fixed' into breakage later.",
+      "suggestion": "Switch to @/lib/engines/... imports if tsx honors tsconfig paths, otherwise add a one-line comment in harness.ts explaining why relative paths are required.",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/s17/browser-stats.ts",
+      "startLine": 160,
+      "endLine": 190,
+      "severity": "nit",
+      "category": "style",
+      "description": "The STAT_FIELDS/PERCENTILES/bin-rounding comparison and the params-check block are duplicated nearly verbatim in desktop-stats.ts's compare(). The two scripts already share harness.ts; if the two parity definitions drift, the auditability these scripts exist to provide silently degrades.",
+      "suggestion": "Extract a shared compareStats(offline, next) helper (alongside STAT_FIELDS and the tolerance constants) into harness.ts and use it from both scripts.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/s17/contact-sheet.py",
+      "startLine": 151,
+      "endLine": 165,
+      "severity": "nit",
+      "category": "security",
+      "description": "Captions interpolate record['prediction_id'], entry['path'], and the size-mismatch note into HTML without html.escape, while figure() escapes src. All inputs are local maintainer-generated files so the blast radius is nil, but escaping is applied inconsistently within the same page.",
+      "suggestion": "html.escape the caption strings built in build_photo, or route all caption text through a helper that escapes.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/s17/desktop-stats.ts",
+      "startLine": 98,
+      "endLine": 101,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "In compare(), `const a = base[id]` is used without a check while the download side is checked. With --baseline <older-file> (the reader explicitly supports the older bare { id: stats } shape) a missing id throws a TypeError instead of the documented clean exit 1. Additionally, the module-level photo-loading loop runs before argument handling, so even a pure --compare of two JSON files requires all licensed inputs to be present on disk.",
+      "suggestion": "Guard `if (!a)` with the same exit-1 message as the download side, and skip loading/hashing the photo inputs when --compare is given.",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 124,
+      "endLine": 131,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The prediction polling loop has no timeout backstop and no poll.ok check: a prediction stuck in a non-terminal state, a non-2xx poll whose body parses to a prediction without a terminal status, or a fetch that keeps failing will spin forever. This matches the repo's explicit red flag about waits on external services without a timeout covering every non-terminal state.",
+      "suggestion": "Cap the loop (e.g. 10 minutes), check poll.ok, and exit non-zero naming the prediction id and its manual-cancel URL.",
+      "id": "F5"
+    },
+    {
+      "file": "scripts/spikes/bread-spike.ts",
+      "startLine": 129,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "A transient network error or HTTP error during polling throws an unhandled stack trace instead of the script's normal error reporting, and no record of any kind is written for a prediction that may still be billing. The finally block in main does clean up the upload, so the impact is a bad failure mode, not a leak.",
+      "suggestion": "Wrap the poll fetch, check poll.ok, and print a readable error (prediction id, status) before exiting non-zero.",
+      "id": "F6"
+    }
+  ],
+  "preDedupFindingCount": 6,
+  "scores": {
+    "implementation_correctness": {
+      "score": 6,
+      "justification": "Core harness logic appears functional per PR's own validation (typecheck, tests, parity checks passing), but findings identify real correctness gaps: desktop-stats.ts's compare() lacks a guard for missing baseline entries (throws instead of clean exit) and unnecessarily loads all photo inputs even for pure JSON comparisons (F4); the spike script's polling loop has no timeout or ok-check, risking infinite hangs or unhandled crashes on transient errors (F5, F6). These are minor-severity and confined to auxiliary tooling/spike scripts, not production engine code.",
+      "findingIds": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    "idiomaticity": {
+      "score": 7,
+      "justification": "Only a nit-level inconsistency was flagged: scripts use relative ../../src/ imports instead of the repo's @/* alias convention, with no indication this breaks anything, just a stylistic deviation worth a comment or fix (F1).",
+      "findingIds": [
+        "F1"
+      ]
+    },
+    "complexity": {
+      "score": 7,
+      "justification": "The two comparison scripts duplicate the STAT_FIELDS/PERCENTILES/tolerance comparison logic nearly verbatim despite already sharing a harness module, creating a maintainability risk if the parity definitions drift apart (F2). This is a nit-level simplification opportunity rather than a structural complexity problem.",
+      "findingIds": [
+        "F2"
+      ]
+    },
+    "test_risk_coverage": {
+      "score": 6,
+      "justification": "The PR reports a passing broader test suite (418 tests), but the findings surface risky, untested edge paths within the new scripts themselves: a missing-baseline-id case that throws ungracefully (F4), and an unbounded polling loop with no timeout or error handling for a long-running external call (F5, F6). These risky paths in new tooling code don't appear to be covered by targeted tests.",
+      "findingIds": [
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    "documentation": {
+      "score": 8,
+      "justification": "No documentation-related findings were raised against the diff, and the PR body itself is thorough, explaining scope, validation performed, and what was deliberately left unfinished. No evidence of opaque or under-explained non-obvious decisions in the reviewed code.",
+      "findingIds": []
+    },
+    "security_safety": {
+      "score": 7,
+      "justification": "One security-tagged nit was found: inconsistent HTML escaping in a local report-generation script (captions unescaped while image src is escaped), but the data source is local maintainer-generated content with no untrusted-input exposure, so blast radius is described as nil (F3).",
+      "findingIds": [
+        "F3"
+      ]
+    }
+  },
+  "verdict": "passed",
+  "verdictReason": "All findings are nit or minor severity, confined to auxiliary experiment-measurement scripts and a spike script rather than production code, with no critical correctness, security, or regression issues; the PR explicitly changes no production engine/API/database behavior.",
+  "diffStats": {
+    "files": 17,
+    "additions": 1238,
+    "deletions": 21
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 3,
+    "toolCalls": 2,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "tool-calls",
+        "reasoningTokens": {
+          "value": 1029,
+          "source": "reported"
+        },
+        "cost": 0.03139572
+      },
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 541,
+          "source": "reported"
+        },
+        "cost": 0.0148188
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 96,
+          "source": "reported"
+        },
+        "cost": 0.03369096
+      }
+    ],
+    "inputTokens": 64947,
+    "outputTokens": 3498,
+    "totalTokens": 68445,
+    "cost": 0.07990548
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 5163,
+    "outputTokens": 2274,
+    "totalTokens": 7437,
+    "cost": 0.033066
+  }
+}

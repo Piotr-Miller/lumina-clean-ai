@@ -1,15 +1,49 @@
 import { join } from "node:path";
 
-import { describe, expect, it, vi } from "vitest";
+import { APICallError, JSONParseError, NoObjectGeneratedError, TypeValidationError } from "ai";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { runReviewCli, type CliEnv, type CliIo } from "./cli.js";
-import type { PipelineInput } from "./pipeline.js";
+import {
+  formatRejectedOutputLine,
+  REJECTED_OUTPUT_CAP_CHARS,
+  REJECTED_OUTPUT_TRUNCATION_MARKER,
+  runReviewCli,
+  type CliEnv,
+  type CliIo,
+} from "./cli.js";
+import { openRouterStub, VALID_REVIEW_TEXT, type StubCompletion, type WireBody } from "./openrouter-stub.js";
+import { FinderOutputError, parseFinderOutput } from "./output-repair.js";
+import { runReviewPipeline, type PipelineInput } from "./pipeline.js";
 import { CRITERIA } from "./scorecard.js";
 import type { ImplGrades, PipelineResult, Scores } from "./schemas.js";
 
 // Hermetic process-contract tests (impl-review-phase-1 F6): everything the
 // composite action consumes — exit codes, artifacts, env wiring — pinned
 // without spawning a subprocess.
+
+// A pass-through spy on the finder's parser, so the end-to-end tests below can
+// read exactly what was parsed. Everything else is the real module.
+vi.mock("./output-repair.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./output-repair.js")>();
+  return { ...actual, parseFinderOutput: vi.fn(actual.parseFinderOutput) };
+});
+
+// The finder-configuration line reads the same env the requests do, so the
+// developer's shell must not leak into it.
+beforeEach(() => {
+  vi.stubEnv("OPENROUTER_REVIEW_MODEL", undefined);
+  vi.stubEnv("OPENROUTER_MODEL", undefined);
+  vi.stubEnv("OPENROUTER_FINDER_PROVIDERS", undefined);
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+  vi.mocked(parseFinderOutput).mockClear();
+});
+
+/** The line every run that reaches the pipeline prints first-hand, before any request. */
+const CONFIG_LINE = "finder configuration: model=z-ai/glm-5.3 reasoning=high providers=z-ai,fireworks,together";
 
 const scores = (): Scores =>
   Object.fromEntries(
@@ -92,7 +126,7 @@ describe("runReviewCli exit codes", () => {
     const failing = vi.fn().mockRejectedValue(new Error("provider exploded"));
     const code = await runReviewCli([], { GITHUB_STEP_SUMMARY: "summary.md" }, io, failing);
     expect(code).toBe(1);
-    expect(io.errors).toEqual(["provider exploded"]);
+    expect(io.errors).toEqual([CONFIG_LINE, "provider exploded"]);
     expect(io.appended.get("summary.md")).toContain("## AI review failed");
     expect(io.appended.get("summary.md")).toContain("provider exploded");
   });
@@ -128,7 +162,7 @@ describe("runReviewCli exit codes", () => {
       },
     });
     expect(await runReviewCli([], {}, io, okPipeline())).toBe(1);
-    expect(io.errors.at(0)).toBe("disk full");
+    expect(io.errors).toEqual([CONFIG_LINE, "disk full"]);
   });
 
   it("returns 1 for an invalid timeout env value before invoking the pipeline", async () => {
@@ -138,6 +172,109 @@ describe("runReviewCli exit codes", () => {
     expect(code).toBe(1);
     expect(io.errors.at(0)).toContain("REVIEW_FINDER_TIMEOUT_MS");
     expect(pipeline).not.toHaveBeenCalled();
+  });
+});
+
+// Change `finder-glm-5-3`, owner decision 2026-10-14: the HTTP status of a
+// failed provider call is printed as metadata, so the measurement runner can
+// confirm a 401/402 from it alone — never from message text.
+describe("runReviewCli api error status line", () => {
+  const api = (statusCode: number) =>
+    new APICallError({
+      message: "provider said no; body text stays out",
+      url: "u",
+      requestBodyValues: {},
+      statusCode,
+      responseBody: '{"error":"BODY-SENTINEL"}',
+    });
+
+  it.each([401, 402, 429])(
+    "prints `api error: status=%i` for an APICallError, and no response text",
+    async (status) => {
+      const io = fakeIo();
+      expect(await runReviewCli([], {}, io, vi.fn().mockRejectedValue(api(status)))).toBe(1);
+      expect(io.errors).toContain(`api error: status=${String(status)}`);
+      expect(io.errors.join("\n")).not.toContain("BODY-SENTINEL");
+    },
+  );
+
+  it("finds the status through a wrapped cause", async () => {
+    const io = fakeIo();
+    await runReviewCli([], {}, io, vi.fn().mockRejectedValue(new Error("wrapped", { cause: api(402) })));
+    expect(io.errors).toContain("api error: status=402");
+  });
+
+  // Owner decision 2026-10-14 (Manual 2.7 re-check): an APICallError's message
+  // is the provider's response body text, so the step summary — which outlives
+  // the job log — carries only its metadata. stderr keeps the message line.
+  it.each([
+    ["an APICallError", (error: APICallError) => error],
+    ["a wrapper whose message repeats it", (error: APICallError) => new Error(error.message, { cause: error })],
+  ])("keeps the provider message of %s out of the step summary (BODY-SENTINEL)", async (_label, wrap) => {
+    const io = fakeIo();
+    const error = new APICallError({
+      message: "Insufficient credits BODY-SENTINEL",
+      url: "u",
+      requestBodyValues: {},
+      statusCode: 402,
+      responseBody: '{"error":{"code":402,"message":"Insufficient credits BODY-SENTINEL"}}',
+    });
+    const failing = vi.fn().mockRejectedValue(wrap(error));
+    expect(await runReviewCli([], { GITHUB_STEP_SUMMARY: "summary.md" }, io, failing)).toBe(1);
+    const summary = io.appended.get("summary.md") ?? "";
+    expect(summary).toContain("## AI review failed");
+    expect(summary).toContain("api error: status=402");
+    expect(summary).not.toContain("BODY-SENTINEL");
+    expect(io.errors).toEqual([CONFIG_LINE, "Insufficient credits BODY-SENTINEL", "api error: status=402"]);
+  });
+
+  // Owner decision 2026-10-14 (change `finder-glm-5-3`): an SDK error WITHOUT
+  // an HTTP status can quote model output in its message — TypeValidationError
+  // embeds `Value: <JSON>`, JSONParseError `Text: <text>`, RetryError its last
+  // error's message — so the step summary carries only the class for any SDK
+  // error in the chain. stderr keeps the message line.
+  const typeValidation = () =>
+    new TypeValidationError({ value: { summary: "MODEL-SENTINEL" }, cause: new Error("expected array") });
+  it.each([
+    ["a TypeValidationError", typeValidation, "AI_TypeValidationError"],
+    [
+      "a JSONParseError",
+      () => new JSONParseError({ text: "{MODEL-SENTINEL", cause: new Error("bad") }),
+      "AI_JSONParseError",
+    ],
+    [
+      "a wrapper whose message repeats an SDK error",
+      () => {
+        const inner = typeValidation();
+        return new Error(inner.message, { cause: inner });
+      },
+      "Error",
+    ],
+  ])("keeps the message of %s out of the step summary (MODEL-SENTINEL)", async (_label, make, label) => {
+    const io = fakeIo();
+    const error = make();
+    expect(await runReviewCli([], { GITHUB_STEP_SUMMARY: "summary.md" }, io, vi.fn().mockRejectedValue(error))).toBe(1);
+    const summary = io.appended.get("summary.md") ?? "";
+    expect(summary).toContain("## AI review failed");
+    expect(summary).toContain(`${label}: SDK error (message only in the job log)`);
+    expect(summary).not.toContain("MODEL-SENTINEL");
+    // stderr keeps the message (a JSONParseError adds its stderr-only rejected-output line).
+    expect(io.errors.slice(0, 2)).toEqual([CONFIG_LINE, error.message]);
+  });
+
+  it("keeps a non-SDK error's own message in the step summary", async () => {
+    const io = fakeIo();
+    await runReviewCli([], { GITHUB_STEP_SUMMARY: "summary.md" }, io, vi.fn().mockRejectedValue(new Error("boom")));
+    expect(io.appended.get("summary.md")).toBe("\n## AI review failed\n\nboom\n");
+  });
+
+  it.each([
+    ["a non-API error", new Error("boom")],
+    ["a message that mentions 401", new Error("This request can only afford 401 tokens")],
+  ])("prints no status line for %s", async (_label, error) => {
+    const io = fakeIo();
+    await runReviewCli([], {}, io, vi.fn().mockRejectedValue(error));
+    expect(io.errors.some((line) => line.startsWith("api error:"))).toBe(false);
   });
 });
 
@@ -206,7 +343,7 @@ describe("runReviewCli input routing and pipeline wiring", () => {
       text: "content of plan.md",
       path: "context/changes/x/plan.md",
     });
-    expect(io.errors).toEqual(["plan supplied: context/changes/x/plan.md (18 chars)"]);
+    expect(io.errors).toEqual(["plan supplied: context/changes/x/plan.md (18 chars)", CONFIG_LINE]);
   });
 
   it("omits the plan path when PLAN_PATH is unset — content alone is still a usable plan", async () => {
@@ -223,7 +360,7 @@ describe("runReviewCli input routing and pipeline wiring", () => {
     const io = fakeIo({ readFile: () => "   \n" });
     expect(await runReviewCli(["--plan-file", "plan.md"], {}, io, pipeline)).toBe(0);
     expect(inputOf(pipeline).plan).toBeUndefined();
-    expect(io.errors).toEqual(["plan file is empty — treated as no plan"]);
+    expect(io.errors).toEqual(["plan file is empty — treated as no plan", CONFIG_LINE]);
   });
 
   // PLAN_PATH is attacker-reachable (the PR body can name the plan), so a
@@ -236,14 +373,14 @@ describe("runReviewCli input routing and pipeline wiring", () => {
   });
 
   // The whole feature must be inert until a plan is passed: no flag, no plan
-  // key, no extra stderr, and a review.json byte-identical to the pre-feature
-  // shape (no planTruncated).
+  // key, no extra stderr (the finder-configuration line is every run's), and a
+  // review.json byte-identical to the pre-feature shape (no planTruncated).
   it("stays byte-identical to the legacy invocation when --plan-file is absent", async () => {
     const pipeline = okPipeline();
     const io = fakeIo();
     await runReviewCli([], {}, io, pipeline);
     expect(inputOf(pipeline).plan).toBeUndefined();
-    expect(io.errors).toEqual([]);
+    expect(io.errors).toEqual([CONFIG_LINE]);
     expect(io.files.get(join(".review-out", "review.json"))).not.toContain("planTruncated");
   });
 
@@ -256,7 +393,11 @@ describe("runReviewCli input routing and pipeline wiring", () => {
     });
     expect(await runReviewCli([], {}, io, pipeline)).toBe(0);
     // Rounded ms; a non-Error throw falls back to its string form.
-    expect(io.errors).toEqual(["retrying finder after TimeoutError in 2000ms", "retrying judge after boom in 10500ms"]);
+    expect(io.errors).toEqual([
+      CONFIG_LINE,
+      "retrying finder after TimeoutError in 2000ms",
+      "retrying judge after boom in 10500ms",
+    ]);
   });
 
   it("links the Actions run in comment.md when the env triple is present", async () => {
@@ -359,15 +500,38 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     expect(code).toBe(0);
   });
 
-  it("writes one monotonic stderr line per finder step with targets and tokens", async () => {
+  // Reported request fields as the reviewer hands them on (A3): a value only
+  // when the raw response carried one.
+  const reported = <T>(value: T) => ({ value, source: "reported" as const });
+  const missing = { value: null, source: "missing" as const };
+  const served = {
+    kind: "step" as const,
+    reportedProvider: reported("Fireworks"),
+    model: reported("z-ai/glm-5.3"),
+    reasoningTokens: reported(212),
+  };
+
+  it("writes one monotonic stderr line per finder request with its kind, targets, tokens, model and reasoning volume", async () => {
     const io = fakeIo({ readStdin: () => DIFF });
     const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
       input.onFinderStep?.({
         fileContextCalls: [{ path: "src/a.ts", startLine: 10, endLine: 80 }],
         toolCalls: 1,
         usage: { inputTokens: 100, outputTokens: 10, totalTokens: 110 },
+        provider: "Fireworks",
+        finishReason: "tool-calls",
+        ...served,
       });
-      input.onFinderStep?.({ fileContextCalls: [], toolCalls: 0, usage: {} });
+      input.onFinderStep?.({
+        fileContextCalls: [],
+        toolCalls: 0,
+        usage: {},
+        finishReason: "stop",
+        kind: "finalization",
+        reportedProvider: missing,
+        model: missing,
+        reasoningTokens: missing,
+      });
       input.onFinderStep?.({
         fileContextCalls: [
           { path: "src/a.ts", startLine: 5 },
@@ -375,18 +539,39 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         ],
         toolCalls: 2,
         usage: { totalTokens: 50 },
+        provider: "Z.AI",
+        finishReason: "length",
+        kind: "step",
+        reportedProvider: reported("Z.AI"),
+        model: reported("z-ai/glm-5.3-20261001"),
+        reasoningTokens: reported(0),
+      });
+      input.onFinderStep?.({
+        fileContextCalls: [],
+        toolCalls: 0,
+        usage: { totalTokens: 7 },
+        provider: "Together",
+        finishReason: "stop",
+        ...served,
+        kind: "repair",
+        reportedProvider: reported("Together"),
       });
       return Promise.resolve(pipelineResult());
     });
     expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
     expect(io.errors).toEqual([
-      "finder step 1: getFileContext src/a.ts:10-80 (tokens in=100 out=10 total=110)",
-      "finder step 2: no getFileContext call (tokens in=? out=? total=?)",
-      "finder step 3: getFileContext src/a.ts:5-end, getFileContext src/a.ts:1-8 (tokens in=? out=? total=50)",
+      CONFIG_LINE,
+      "finder step 1: getFileContext src/a.ts:10-80 (tokens in=100 out=10 total=110) kind=step provider=Fireworks finish=tool-calls model=z-ai/glm-5.3 reasoning=212",
+      // Nothing reported → "?" / "missing", never a guessed slug, the requested id or a 0.
+      "finder step 2: no getFileContext call (tokens in=? out=? total=?) kind=finalization provider=? finish=stop model=missing reasoning=missing",
+      // A REPORTED zero stays a zero.
+      "finder step 3: getFileContext src/a.ts:5-end, getFileContext src/a.ts:1-8 (tokens in=? out=? total=50) kind=step provider=Z.AI finish=length model=z-ai/glm-5.3-20261001 reasoning=0",
+      // The kind tells a finalization or repair apart from a loop step with no tool call.
+      "finder step 4: no getFileContext call (tokens in=? out=? total=7) kind=repair provider=Together finish=stop model=z-ai/glm-5.3 reasoning=212",
     ]);
   });
 
-  it("strips control characters from the model-chosen path in the step line (impl-review F4)", async () => {
+  it("strips control characters from the model-chosen path and the reported fields in the step line (impl-review F4)", async () => {
     // An injection-steered model could otherwise embed a newline or an ANSI
     // escape to forge or restyle telemetry lines in the Actions log.
     const io = fakeIo({ readStdin: () => DIFF });
@@ -395,13 +580,57 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         fileContextCalls: [{ path: "src/a.ts\n\u001b[31mfinder step 99: forged\u007f" }],
         toolCalls: 1,
         usage: { totalTokens: 10 },
+        provider: "evil\nfinder step 98: forged",
+        finishReason: "stop",
+        ...served,
+        reportedProvider: reported("evil\nfinder step 98: forged"),
+        model: reported("z-ai/glm-5.3\nfinder step 97: forged"),
       });
       return Promise.resolve(pipelineResult());
     });
     expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
     expect(io.errors).toEqual([
-      "finder step 1: getFileContext src/a.ts??[31mfinder step 99: forged? (tokens in=? out=? total=10)",
+      CONFIG_LINE,
+      "finder step 1: getFileContext src/a.ts??[31mfinder step 99: forged? (tokens in=? out=? total=10) kind=step provider=evil?finder step 98: forged finish=stop model=z-ai/glm-5.3?finder step 97: forged reasoning=212",
     ]);
+  });
+
+  // Printed once, before any request, from the same resolvers the request
+  // uses — so an override that reaches the finder shows up here too.
+  it("prints the finder configuration once per run, following the env the requests read", async () => {
+    vi.stubEnv("OPENROUTER_REVIEW_MODEL", "acme/other\nforged");
+    vi.stubEnv("OPENROUTER_FINDER_PROVIDERS", "together");
+    const io = fakeIo();
+    expect(await runReviewCli([], {}, io, okPipeline())).toBe(0);
+    expect(io.errors).toEqual(["finder configuration: model=acme/other?forged reasoning=high providers=together"]);
+  });
+
+  // Phase 2 review F6: the CLI resolves the finder routing ONCE and hands that
+  // object to both the configuration line and the requests, so a malformed list
+  // warns once and the line cannot disagree with the wire.
+  it("a malformed OPENROUTER_FINDER_PROVIDERS warns once per run, and the line matches the finder's wire routing", async () => {
+    vi.stubEnv("OPENROUTER_FINDER_PROVIDERS", "Bad Slug");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const stub = e2eWire([{ content: VALID_REVIEW_TEXT, finish: "stop", provider: "Z.AI" }]);
+      const io = e2eIo();
+      expect(await runReviewCli(["--diff-file", "pr.diff"], {}, io, realPipeline)).toBe(0);
+      expect(
+        warn.mock.calls.filter(([message]) => String(message).includes("OPENROUTER_FINDER_PROVIDERS")),
+      ).toHaveLength(1);
+      expect(io.errors).toContain(
+        "finder configuration: model=z-ai/glm-5.3 reasoning=high providers=z-ai,fireworks,together",
+      );
+      const finder = stub.bodies.filter((body) => !("response_format" in body));
+      expect(finder).toHaveLength(1);
+      expect((finder[0] as { provider?: { order?: unknown } }).provider?.order).toEqual([
+        "z-ai",
+        "fireworks",
+        "together",
+      ]);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("mentions --source-root in the usage message", async () => {
@@ -484,7 +713,11 @@ describe("runReviewCli implementation-review telemetry line", () => {
       [],
       {},
       io,
-      okPipeline(pipelineResult({ implReview: { status: "failed", error: "provider exploded" } })),
+      okPipeline(
+        pipelineResult({
+          implReview: { status: "failed", error: "provider exploded", publicError: "provider exploded" },
+        }),
+      ),
     );
     expect(code).toBe(0);
     expect(io.errors.find((error) => error.startsWith("impl review:"))).toBe(
@@ -522,7 +755,7 @@ describe("runReviewCli implementation-review telemetry line", () => {
 describe("runReviewCli cost summary line (criterion 4.8)", () => {
   const withCosts = (over: Partial<PipelineResult>) =>
     pipelineResult({
-      finderTelemetry: { steps: 1, toolCalls: 0, inputTokens: 100, cost: 0.01 },
+      finderTelemetry: { steps: 1, toolCalls: 0, inputTokens: 100, cost: 0.01, requests: [] },
       judgeTelemetry: { attempts: 1, inputTokens: 50, cost: 0.03 },
       ...over,
     });
@@ -548,7 +781,7 @@ describe("runReviewCli cost summary line (criterion 4.8)", () => {
   it("omits the ratio when a baseline cost is missing", async () => {
     const io = fakeIo();
     const result = pipelineResult({
-      finderTelemetry: { steps: 1, toolCalls: 0 },
+      finderTelemetry: { steps: 1, toolCalls: 0, requests: [] },
       implReviewTelemetry: { attempts: 1, cost: 0.08 },
     });
     await runReviewCli([], {}, io, okPipeline(result));
@@ -561,5 +794,510 @@ describe("runReviewCli cost summary line (criterion 4.8)", () => {
     const io = fakeIo();
     await runReviewCli([], {}, io, okPipeline(pipelineResult()));
     expect(costLine(io)).toBeUndefined();
+  });
+});
+
+// The SDK's own error class, built the way generateText/ToolLoopAgent build it
+// when a structured output fails to parse — the shape every post-2026-09-20
+// finder failure took.
+const noObject = (text: string | undefined, finishReason: "stop" | "length" = "stop"): NoObjectGeneratedError =>
+  new NoObjectGeneratedError({
+    message: "No object generated: could not parse the response.",
+    text,
+    response: { id: "r", timestamp: new Date(0), modelId: "z-ai/glm-4.6" },
+    usage: {
+      inputTokens: undefined,
+      inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },
+      outputTokens: undefined,
+      outputTokenDetails: { textTokens: undefined, reasoningTokens: undefined },
+      totalTokens: undefined,
+    },
+    finishReason,
+  });
+
+describe("formatRejectedOutputLine", () => {
+  it("names the error class, the finish reason and the length, and shows the text", () => {
+    expect(formatRejectedOutputLine(noObject('Here is my review: {"summary": "x"}'))).toBe(
+      'rejected output (AI_NoObjectGeneratedError, provider=?, finish=stop, 35 chars): Here is my review: {"summary": "x"}',
+    );
+  });
+
+  it("reads provider and finishReason off any error that carries them (the Phase 2 finder error)", () => {
+    const error = Object.assign(new Error("format"), {
+      name: "FinderOutputError",
+      text: "prose",
+      provider: "Novita",
+      finishReason: "length",
+    });
+    expect(formatRejectedOutputLine(error)).toBe(
+      "rejected output (FinderOutputError, provider=Novita, finish=length, 5 chars): prose",
+    );
+  });
+
+  it("caps the text at REJECTED_OUTPUT_CAP_CHARS with a visible marker, reporting the full length", () => {
+    const line = formatRejectedOutputLine(noObject("a".repeat(REJECTED_OUTPUT_CAP_CHARS + 500))) ?? "";
+    expect(line).toContain(`${String(REJECTED_OUTPUT_CAP_CHARS + 500)} chars): `);
+    expect(line.endsWith(`${"a".repeat(REJECTED_OUTPUT_CAP_CHARS)}${REJECTED_OUTPUT_TRUNCATION_MARKER}`)).toBe(true);
+    expect(line).not.toContain("a".repeat(REJECTED_OUTPUT_CAP_CHARS + 1));
+  });
+
+  it("leaves a text of exactly the cap uncut and unmarked", () => {
+    const line = formatRejectedOutputLine(noObject("b".repeat(REJECTED_OUTPUT_CAP_CHARS))) ?? "";
+    expect(line).not.toContain(REJECTED_OUTPUT_TRUNCATION_MARKER);
+    expect(line.endsWith("b".repeat(REJECTED_OUTPUT_CAP_CHARS))).toBe(true);
+  });
+
+  it("never ends the cut on half a surrogate pair", () => {
+    const text = `${"c".repeat(REJECTED_OUTPUT_CAP_CHARS - 1)}😀tail`;
+    const line = formatRejectedOutputLine(noObject(text)) ?? "";
+    expect(line.endsWith(`${"c".repeat(REJECTED_OUTPUT_CAP_CHARS - 1)}${REJECTED_OUTPUT_TRUNCATION_MARKER}`)).toBe(
+      true,
+    );
+  });
+
+  it("escapes newlines and ANSI/control characters so the untrusted text cannot forge log lines", () => {
+    const line =
+      formatRejectedOutputLine(noObject('{\n  "a": 1\r\n}\t\u001b[31mfinder step 9: forged\u007f\u0085')) ?? "";
+    expect(line).not.toMatch(/\p{Cc}/u);
+    expect(line).toContain('{\\n  "a": 1\\r\\n}\\t\\u001b[31mfinder step 9: forged\\u007f\\u0085');
+  });
+
+  it("escapes control characters in the provider and finish fields too", () => {
+    const error = Object.assign(new Error("x"), { text: "t", provider: "a\nb", finishReason: "s\u001b" });
+    expect(formatRejectedOutputLine(error)).toBe(
+      "rejected output (Error, provider=a\\nb, finish=s\\u001b, 1 chars): t",
+    );
+  });
+
+  it("still reports an empty text — 'the model sent nothing' is a finding", () => {
+    expect(formatRejectedOutputLine(noObject("", "length"))).toBe(
+      "rejected output (AI_NoObjectGeneratedError, provider=?, finish=length, 0 chars): ",
+    );
+  });
+
+  // T1 (follow-ups/review-fixes.md): the SDK's error carries no provider, so
+  // the upstream of the last observed request fills in — and only then.
+  it("fills the provider from the last observed request when the error carries none", () => {
+    expect(formatRejectedOutputLine(noObject("x"), "Venice")).toBe(
+      "rejected output (AI_NoObjectGeneratedError, provider=Venice, finish=stop, 1 chars): x",
+    );
+  });
+
+  it("prefers the error's own provider over the fallback", () => {
+    const error = Object.assign(new Error("f"), { name: "FinderOutputError", text: "p", provider: "Novita" });
+    expect(formatRejectedOutputLine(error, "Venice")).toContain("provider=Novita,");
+  });
+
+  it("escapes control characters in the fallback provider too", () => {
+    expect(formatRejectedOutputLine(noObject("x"), "a\u001bb")).toContain("provider=a\\u001bb,");
+  });
+
+  it.each([
+    ["an error without text (abort, auth)", new Error("401 Unauthorized")],
+    ["a NoObjectGeneratedError whose text is undefined", noObject(undefined)],
+    ["a DOMException timeout", new DOMException("timed out", "TimeoutError")],
+    ["a non-object throw", "boom"],
+    ["null", null],
+    ["a non-string text field", Object.assign(new Error("x"), { text: 42 })],
+  ])("returns undefined for %s", (_label, error) => {
+    expect(formatRejectedOutputLine(error)).toBeUndefined();
+  });
+});
+
+describe("runReviewCli rejected-output line", () => {
+  it("prints the rejected text on stderr after the message, and keeps it out of the step summary", async () => {
+    const io = fakeIo();
+    const failing = vi.fn().mockRejectedValue(noObject('I found no issues.\n{"findings": []}'));
+    const code = await runReviewCli([], { GITHUB_STEP_SUMMARY: "summary.md" }, io, failing);
+    expect(code).toBe(1);
+    expect(io.errors).toEqual([
+      CONFIG_LINE,
+      "No object generated: could not parse the response.",
+      'rejected output (AI_NoObjectGeneratedError, provider=?, finish=stop, 35 chars): I found no issues.\\n{"findings": []}',
+    ]);
+    expect(io.appended.get("summary.md")).not.toContain("I found no issues");
+    expect(io.files.size).toBe(0);
+  });
+
+  it("attributes a judge parse failure to the judge step's provider, reported via onJudgeStep", async () => {
+    const io = fakeIo();
+    const failing = vi.fn((input: PipelineInput) => {
+      input.onJudgeStep?.({ provider: "Venice", finishReason: "stop" });
+      return Promise.reject(noObject("{bad"));
+    });
+    expect(await runReviewCli([], {}, io, failing as never)).toBe(1);
+    expect(io.errors.at(-1)).toBe(
+      "rejected output (AI_NoObjectGeneratedError, provider=Venice, finish=stop, 4 chars): {bad",
+    );
+  });
+
+  it("keeps provider=? when the last observed request reported none, never an older request's slug", async () => {
+    const io = fakeIo();
+    const failing = vi.fn((input: PipelineInput) => {
+      input.onJudgeStep?.({ provider: "Venice", finishReason: "stop" });
+      input.onJudgeStep?.({ finishReason: "stop" }); // malformed or absent metadata
+      return Promise.reject(noObject("{bad"));
+    });
+    await runReviewCli([], {}, io, failing);
+    expect(io.errors.at(-1)).toContain("provider=?,");
+  });
+
+  it("adds no line for a failure that carried no model output", async () => {
+    const io = fakeIo();
+    expect(await runReviewCli([], {}, io, vi.fn().mockRejectedValue(new Error("provider exploded")))).toBe(1);
+    expect(io.errors).toEqual([CONFIG_LINE, "provider exploded"]);
+  });
+});
+
+// --- Through the real CLI, pipeline, reviewer and judge, on a stubbed wire ---
+//
+// The global fetch is stubbed, so every pass makes real SDK requests: the
+// finder through its response observer, the judge through the provider's
+// default fetch. A body carrying `response_format` is the judge's.
+
+const E2E_DIFF = [
+  "diff --git a/src/a.ts b/src/a.ts",
+  "--- a/src/a.ts",
+  "+++ b/src/a.ts",
+  "@@ -1 +1 @@",
+  "+export const a = 1;",
+].join("\n");
+
+const wireJudgeAnswer = (): StubCompletion => ({
+  content: JSON.stringify({
+    scores: Object.fromEntries(CRITERIA.map(({ key }) => [key, { score: "8", justification: "j", findingIds: [] }])),
+    verdict: "passed",
+    verdictReason: "fine",
+    summary: "judged",
+  }),
+  finish: "stop",
+  provider: "Anthropic",
+  cost: 0.01,
+});
+
+/** Finder answers in order; the judge answer for any body with `response_format`. */
+const e2eWire = (finder: StubCompletion[], judge: StubCompletion = wireJudgeAnswer()) => {
+  let next = 0;
+  const stub = openRouterStub((body: WireBody) => {
+    if ("response_format" in body) return judge;
+    const answer = finder[Math.min(next, finder.length - 1)];
+    next += 1;
+    return answer;
+  });
+  vi.stubGlobal("fetch", stub.fetch);
+  return stub;
+};
+
+const realPipeline = (input: PipelineInput) =>
+  runReviewPipeline({ ...input, overrides: { apiKey: "test-key" }, deps: { retrySleep: () => Promise.resolve() } });
+
+const e2eIo = () =>
+  fakeIo({
+    readFile: (path) => (path === "pr.diff" ? E2E_DIFF : "export const a = 1; // file context"),
+  });
+
+const isFinalization = (body: WireBody): boolean => !("response_format" in body) && !("tools" in body);
+
+describe("decision 2 end to end: reasoning never leaves the wire", () => {
+  // § 4 of the plan. Every response — loop steps, finalization, judge — carries
+  // reasoning in both provider fields; none of it may reach the transcript,
+  // the parser, the log, review.json or comment.md.
+  it("REASONING-SENTINEL-7f3a never leaves the wire: absent from transcript, parser input, stderr, review.json, comment.md", async () => {
+    const sentinel = "REASONING-SENTINEL-7f3a";
+    const thinking = { reasoning: sentinel, reasoningDetailsText: sentinel, reasoningTokens: 41 } as const;
+    const stub = e2eWire(
+      [
+        {
+          toolCalls: [{ id: "c1", name: "getFileContext", arguments: { path: "src/a.ts" } }],
+          finish: "tool_calls",
+          provider: "Z.AI",
+          cost: 0.001,
+          ...thinking,
+        },
+        { content: "draft: nothing serious", finish: "stop", provider: "Fireworks", cost: 0.001, ...thinking },
+        { content: VALID_REVIEW_TEXT, finish: "stop", provider: "Together", cost: 0.001, ...thinking },
+      ],
+      { ...wireJudgeAnswer(), ...thinking },
+    );
+    const io = e2eIo();
+    const code = await runReviewCli(
+      ["--diff-file", "pr.diff", "--source-root", "root"],
+      { GITHUB_STEP_SUMMARY: "summary.md" },
+      io,
+      realPipeline,
+    );
+    expect(code).toBe(0);
+
+    // The run really carried reasoning on the wire.
+    expect(stub.bodies).toHaveLength(4);
+    const finalization = stub.bodies.filter(isFinalization);
+    expect(finalization).toHaveLength(1);
+    // 1. The transcript — the finalization request is built from it.
+    expect(JSON.stringify(finalization)).not.toContain(sentinel);
+    expect(JSON.stringify(finalization)).toContain("draft: nothing serious");
+    // 2. The parser input.
+    const parsed = vi.mocked(parseFinderOutput).mock.calls.map(([text]) => text);
+    expect(parsed).toEqual([VALID_REVIEW_TEXT]);
+    // 3. stderr, and the step summary.
+    expect(io.errors.join("\n")).not.toContain(sentinel);
+    expect(io.appended.get("summary.md") ?? "").not.toContain(sentinel);
+    // 4. review.json and 5. comment.md.
+    const reviewJson = io.files.get(join(".review-out", "review.json")) ?? "";
+    const commentMd = io.files.get(join(".review-out", "comment.md")) ?? "";
+    expect(reviewJson).not.toBe("");
+    expect(commentMd).not.toBe("");
+    expect(reviewJson).not.toContain(sentinel);
+    expect(commentMd).not.toContain(sentinel);
+
+    // What review.json DOES carry: the volume of reasoning per request, its provider and model.
+    const result = JSON.parse(reviewJson) as PipelineResult;
+    expect(result.finderTelemetry?.requests.map((request) => [request.kind, request.provider.value])).toEqual([
+      ["step", "Z.AI"],
+      ["step", "Fireworks"],
+      ["finalization", "Together"],
+    ]);
+    for (const request of result.finderTelemetry?.requests ?? []) {
+      expect(request).toMatchObject({
+        attempt: 1,
+        model: { value: "z-ai/glm-5.3", source: "reported" },
+        reasoningTokens: { value: 41, source: "reported" },
+        cost: 0.001,
+      });
+      expect(Object.keys(request).sort()).toEqual([
+        "attempt",
+        "cost",
+        "finishReason",
+        "kind",
+        "model",
+        "provider",
+        "reasoningTokens",
+      ]);
+    }
+    expect(io.errors).toContain(
+      "finder step 1: getFileContext src/a.ts (tokens in=10 out=5 total=15) kind=step provider=Z.AI finish=tool-calls model=z-ai/glm-5.3 reasoning=41",
+    );
+    // Through the real reviewer, each line names its request as review.json does.
+    const kinds = io.errors
+      .filter((line) => line.startsWith("finder step "))
+      .map((line) => /kind=(\S+)/u.exec(line)?.[1]);
+    expect(kinds).toEqual(["step", "step", "finalization"]);
+  });
+
+  // Phase 2 review F4: the attempt label and each request's reported fields
+  // through the REAL reviewer and fetch observer, across the pipeline's retry.
+  it("a retried finder run labels attempt 1 and attempt 2 requests, each with its own reported fields", async () => {
+    const tool = (id: string): StubCompletion => ({
+      toolCalls: [{ id, name: "getFileContext", arguments: { path: "src/a.ts" } }],
+      finish: "tool_calls",
+      provider: "Z.AI",
+      reasoningTokens: 11,
+    });
+    const stub = e2eWire([
+      // Attempt 1: two loop steps, then its finalization fails with a 502 (below).
+      tool("c1"),
+      { content: "draft one", finish: "stop", provider: "Fireworks", reasoningTokens: 12 },
+      // Attempt 2.
+      { ...tool("c2"), provider: "Together", model: "z-ai/glm-5.3-20261001", reasoningTokens: 21 },
+      { content: "draft two", finish: "stop", provider: "Z.AI", reasoningTokens: 22 },
+      { content: VALID_REVIEW_TEXT, finish: "stop", provider: "Fireworks", reasoningTokens: 23 },
+    ]);
+    let finderRequests = 0;
+    vi.stubGlobal("fetch", (url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(typeof init?.body === "string" ? init.body : "{}") as WireBody;
+      if (!("response_format" in body)) {
+        finderRequests += 1;
+        if (finderRequests === 3) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ error: { message: "upstream unavailable", code: 502 } }), {
+              status: 502,
+              headers: { "content-type": "application/json" },
+            }),
+          );
+        }
+      }
+      return stub.fetch(url, init);
+    });
+    const io = e2eIo();
+    expect(await runReviewCli(["--diff-file", "pr.diff", "--source-root", "root"], {}, io, realPipeline)).toBe(0);
+    expect(finderRequests).toBe(6);
+
+    const result = JSON.parse(io.files.get(join(".review-out", "review.json")) ?? "{}") as PipelineResult;
+    // The failed request reported nothing and is not a step; everything else is kept, attempt 1 included.
+    expect(
+      result.finderTelemetry?.requests.map((request) => [
+        request.kind,
+        request.attempt,
+        request.provider.value,
+        request.model.value,
+        request.reasoningTokens.value,
+      ]),
+    ).toEqual([
+      ["step", 1, "Z.AI", "z-ai/glm-5.3", 11],
+      ["step", 1, "Fireworks", "z-ai/glm-5.3", 12],
+      ["step", 2, "Together", "z-ai/glm-5.3-20261001", 21],
+      ["step", 2, "Z.AI", "z-ai/glm-5.3", 22],
+      ["finalization", 2, "Fireworks", "z-ai/glm-5.3", 23],
+    ]);
+  });
+
+  // § 1: the judge's request carries no reasoning, while every finder request does.
+  it("the judge's wire body carries no reasoning; every finder body carries effort high", async () => {
+    const stub = e2eWire([{ content: VALID_REVIEW_TEXT, finish: "stop", provider: "Z.AI" }]);
+    expect(await runReviewCli(["--diff-file", "pr.diff"], {}, e2eIo(), realPipeline)).toBe(0);
+    const judge = stub.bodies.filter((body) => "response_format" in body);
+    const finder = stub.bodies.filter((body) => !("response_format" in body));
+    expect(judge).toHaveLength(1);
+    expect(finder).toHaveLength(1);
+    for (const body of judge) {
+      expect("reasoning" in body).toBe(false);
+      expect("include_reasoning" in body).toBe(false);
+    }
+    for (const body of finder) expect(body.reasoning).toStrictEqual({ enabled: true, effort: "high" });
+  });
+});
+
+// Review F5 of `/rune-plan-review`: a response that is BOTH truncated and
+// carries inline reasoning fails the attempt without a retry, at each request
+// kind, and its text reaches neither stderr nor the step summary — whichever
+// guard classifies it first.
+describe("inline reasoning together with finish=length fails without retry and stays out of the log", () => {
+  const MIXED = "<think>REASONING-SENTINEL</think>";
+  const mixed: StubCompletion = { content: MIXED, finish: "length", provider: "Z.AI" };
+
+  it.each([
+    ["a stage-1 step (REASONING-SENTINEL)", [mixed], true, 1],
+    ["the finalization (REASONING-SENTINEL)", [mixed], false, 1],
+    ["the repair (REASONING-SENTINEL)", [{ content: '{"summary": 1}', finish: "stop" as const }, mixed], false, 2],
+  ] as const)("%s", async (_label, finder, withSource, requests) => {
+    const stub = e2eWire([...finder]);
+    const io = e2eIo();
+    const argv = ["--diff-file", "pr.diff", ...(withSource ? ["--source-root", "root"] : [])];
+    expect(await runReviewCli(argv, { GITHUB_STEP_SUMMARY: "summary.md" }, io, realPipeline)).toBe(1);
+    // Exactly one attempt's requests: no retry, no judge.
+    expect(stub.bodies).toHaveLength(requests);
+    const stderr = io.errors.join("\n");
+    expect(stderr).not.toContain("REASONING-SENTINEL");
+    expect(stderr).toContain("reason=inline-reasoning chars=33");
+    expect(stderr).toContain("FinderOutputError");
+    expect(io.appended.get("summary.md") ?? "").not.toContain("REASONING-SENTINEL");
+    expect(io.files.size).toBe(0);
+  });
+
+  it("the rejected-output line redacts a REASONING-SENTINEL text even when the error was classified as truncation", () => {
+    const error = new FinderOutputError({
+      text: MIXED,
+      finishReason: "length",
+      reason: "length",
+      request: { kind: "finalization" },
+      validationError: "v",
+      repaired: false,
+    });
+    expect(formatRejectedOutputLine(error)).toBe(
+      "rejected output (FinderOutputError, provider=?, finish=length): reason=inline-reasoning chars=33",
+    );
+    // An inline-reasoning error holds no text (review F2); the line still says why, and how long it was.
+    const inline = new FinderOutputError({
+      text: MIXED,
+      finishReason: "length",
+      reason: "inline-reasoning",
+      request: { kind: "finalization" },
+      validationError: "v",
+      repaired: false,
+    });
+    expect(formatRejectedOutputLine(inline)).toBe(
+      "rejected output (FinderOutputError, provider=?, finish=length): reason=inline-reasoning chars=33",
+    );
+    // Any error class, not just the finder's.
+    expect(formatRejectedOutputLine(noObject(`x <THINK>REASONING-SENTINEL`))).toBe(
+      "rejected output (AI_NoObjectGeneratedError, provider=?, finish=stop): reason=inline-reasoning chars=27",
+    );
+  });
+});
+
+// Phase 2 review F1: rejection and redaction are separate checks. Only a LEADING
+// `<think` fails the attempt, so a review quoting the guard is published; a
+// `<think` ANYWHERE keeps a rejected text out of the log.
+describe("a quoted <think is not inline reasoning, but a rejected text quoting it is still never printed", () => {
+  it("a correct review quoting <think in its summary is parsed, judged and published (exit 0)", async () => {
+    const quoted = JSON.stringify({ summary: "the guard matches /<think/iu anywhere", findings: [] });
+    const stub = e2eWire([{ content: quoted, finish: "stop", provider: "Z.AI" }]);
+    const io = e2eIo();
+    expect(await runReviewCli(["--diff-file", "pr.diff"], {}, io, realPipeline)).toBe(0);
+    // The finder's answer reached the parser and the judge ran on it.
+    expect(vi.mocked(parseFinderOutput).mock.calls.map(([text]) => text)).toEqual([quoted]);
+    expect(stub.bodies.filter((body) => "response_format" in body)).toHaveLength(1);
+    expect(io.files.get(join(".review-out", "review.json")) ?? "").not.toBe("");
+  });
+
+  it("a REASONING-SENTINEL quoted mid-text in an unparsable answer fails as parse, and stderr redacts it", async () => {
+    const rejected = "no review here, only a quote: <think>REASONING-SENTINEL";
+    const stub = e2eWire([{ content: rejected, finish: "stop", provider: "Z.AI" }]);
+    const io = e2eIo();
+    expect(
+      await runReviewCli(["--diff-file", "pr.diff"], { GITHUB_STEP_SUMMARY: "summary.md" }, io, realPipeline),
+    ).toBe(1);
+    // No `{`: no repair, no retry, no judge.
+    expect(stub.bodies).toHaveLength(1);
+    const stderr = io.errors.join("\n");
+    expect(stderr).toContain("reason=parse");
+    expect(stderr).toContain(`reason=inline-reasoning chars=${String(rejected.length)}`);
+    expect(stderr).not.toContain("REASONING-SENTINEL");
+    expect(io.appended.get("summary.md") ?? "").not.toContain("REASONING-SENTINEL");
+  });
+});
+
+// Owner decision 2026-10-14 (change `finder-glm-5-3`): the PR comment is a
+// public surface, so a failed implementation review shows there only what the
+// step summary would — the class and HTTP status of an SDK error. The provider
+// message stays in the job log and review.json.
+describe("a failed implementation review keeps provider text out of comment.md", () => {
+  it("an HTTP 402 on the impl-review request: comment.md names the status, stderr keeps the BODY-SENTINEL", async () => {
+    const planMarker = "IMPL-PLAN-MARKER";
+    const stub = e2eWire([{ content: VALID_REVIEW_TEXT, finish: "stop", provider: "Z.AI", cost: 0.001 }]);
+    const implBodies: string[] = [];
+    // Only the impl-review request carries the plan; it gets a 402 whose body
+    // the provider turns into the APICallError message.
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const body = typeof init?.body === "string" ? init.body : "";
+      if (!body.includes(planMarker)) return stub.fetch(input, init);
+      implBodies.push(body);
+      return Promise.resolve(
+        new Response(JSON.stringify({ error: { message: "Insufficient credits BODY-SENTINEL", code: 402 } }), {
+          status: 402,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+    });
+    const io = fakeIo({
+      readFile: (path) =>
+        path === "pr.diff"
+          ? E2E_DIFF
+          : path === "plan.md"
+            ? `# Plan\n\n${planMarker}\n`
+            : "export const a = 1; // file context",
+    });
+    const code = await runReviewCli(
+      ["--diff-file", "pr.diff", "--plan-file", "plan.md"],
+      { GITHUB_STEP_SUMMARY: "summary.md", PLAN_PATH: "plan.md" },
+      io,
+      realPipeline,
+    );
+    // An advisory pass: its failure is not the run's.
+    expect(code).toBe(0);
+    expect(implBodies.length).toBeGreaterThan(0);
+
+    const commentMd = io.files.get(join(".review-out", "comment.md")) ?? "";
+    expect(commentMd).toContain(
+      "The implementation review failed and was skipped: AI_APICallError: api error: status=402 (provider message only in the job log).",
+    );
+    expect(commentMd).not.toContain("BODY-SENTINEL");
+    // The job log keeps the message, and review.json carries both texts.
+    expect(io.errors.find((line) => line.startsWith("impl review: FAILED"))).toContain("BODY-SENTINEL");
+    const written = JSON.parse(io.files.get(join(".review-out", "review.json")) ?? "{}") as PipelineResult;
+    expect(written.implReview).toEqual({
+      status: "failed",
+      error: "Insufficient credits BODY-SENTINEL",
+      publicError: "AI_APICallError: api error: status=402 (provider message only in the job log)",
+    });
   });
 });

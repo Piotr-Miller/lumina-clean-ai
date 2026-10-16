@@ -1,0 +1,693 @@
+{
+  "rows": [
+    {
+      "id": "727c11ad-04e2-4edd-9986-751ad19bfacd",
+      "testIdx": 0,
+      "case": "js-loop",
+      "description": "Finds the material defects in a small JavaScript loop",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 1,
+      "toolCalls": 0,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.0030124,
+      "latencyMs": 3346,
+      "metrics": {
+        "schema_validity": true,
+        "issue_recall": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "4bd44e3a-20f7-4d16-8016-17ff6ed2c0b0",
+      "testIdx": 1,
+      "case": "js-loop",
+      "description": "Finds the material defects in a small JavaScript loop",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 1,
+      "toolCalls": 0,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.0013248,
+      "latencyMs": 3945,
+      "metrics": {
+        "schema_validity": true,
+        "issue_recall": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "c746a3f5-0463-41c2-99b7-e5c76c63fbf7",
+      "testIdx": 2,
+      "case": "js-loop",
+      "description": "Finds the material defects in a small JavaScript loop",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 1,
+      "toolCalls": 0,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.001536,
+      "latencyMs": 4518,
+      "metrics": {
+        "schema_validity": true,
+        "issue_recall": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "594d695f-24df-4247-93a2-9108d4a20cee",
+      "testIdx": 3,
+      "case": "react",
+      "description": "React 16->19 class-to-function migration with three planted flaws (post-change lines - 24 lost cleanup, 25 stale closure, 39 unsafe HTML)",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 1,
+      "toolCalls": 0,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.0065174,
+      "latencyMs": 15416,
+      "metrics": {
+        "schema_validity": true,
+        "issue_recall": true,
+        "flaw_stale_closure": true,
+        "flaw_lost_cleanup": true,
+        "flaw_unsafe_html": true,
+        "review_fails": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "65d7d500-671e-4b0b-9de7-f5408df1b40a",
+      "testIdx": 4,
+      "case": "react",
+      "description": "React 16->19 class-to-function migration with three planted flaws (post-change lines - 24 lost cleanup, 25 stale closure, 39 unsafe HTML)",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 1,
+      "toolCalls": 0,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.00303028,
+      "latencyMs": 12732,
+      "metrics": {
+        "schema_validity": true,
+        "issue_recall": true,
+        "flaw_stale_closure": true,
+        "flaw_lost_cleanup": true,
+        "flaw_unsafe_html": true,
+        "review_fails": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "4371c13a-12b4-4812-8f15-b8e1d32260bb",
+      "testIdx": 5,
+      "case": "react",
+      "description": "React 16->19 class-to-function migration with three planted flaws (post-change lines - 24 lost cleanup, 25 stale closure, 39 unsafe HTML)",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI",
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 2,
+      "toolCalls": 0,
+      "repairs": 1,
+      "costComplete": true,
+      "finderCost": 0.00720908,
+      "latencyMs": 19435,
+      "metrics": {
+        "schema_validity": true,
+        "issue_recall": true,
+        "flaw_stale_closure": true,
+        "flaw_lost_cleanup": true,
+        "flaw_unsafe_html": true,
+        "review_fails": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "4698fd5f-16fe-4b40-8064-17534c4f58a2",
+      "testIdx": 6,
+      "case": "cross-hunk",
+      "description": "Cross-hunk contract violation, knowable only by reading outside the hunk (post-change line 58)",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI",
+        "Z.AI",
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 3,
+      "toolCalls": 1,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.01224352,
+      "latencyMs": 26773,
+      "metrics": {
+        "schema_validity": true,
+        "issue_recall": true,
+        "tool_calls": true,
+        "tool_required": true,
+        "flaw_cross_hunk_contract": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "e8a4a9e4-2bc1-4dd0-a74d-2ba804e9cfcf",
+      "testIdx": 7,
+      "case": "cross-hunk",
+      "description": "Cross-hunk contract violation, knowable only by reading outside the hunk (post-change line 58)",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI",
+        "Z.AI",
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 3,
+      "toolCalls": 1,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.01233484,
+      "latencyMs": 34841,
+      "metrics": {
+        "schema_validity": true,
+        "issue_recall": true,
+        "tool_calls": true,
+        "tool_required": true,
+        "flaw_cross_hunk_contract": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "0cac35ed-5ffc-404c-8ee9-347a094d4074",
+      "testIdx": 8,
+      "case": "cross-hunk",
+      "description": "Cross-hunk contract violation, knowable only by reading outside the hunk (post-change line 58)",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI",
+        "Z.AI",
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 3,
+      "toolCalls": 1,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.00966684,
+      "latencyMs": 31172,
+      "metrics": {
+        "schema_validity": true,
+        "issue_recall": true,
+        "tool_calls": true,
+        "tool_required": true,
+        "flaw_cross_hunk_contract": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "461afc2c-32c5-4e6d-a4a8-d41965cb1af2",
+      "testIdx": 9,
+      "case": "clean",
+      "description": "Defect-free mechanical rename, tool-enabled — measures manufactured findings, not recall",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI",
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 2,
+      "toolCalls": 0,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.00439412,
+      "latencyMs": 10677,
+      "metrics": {
+        "schema_validity": true,
+        "no_false_alarms": true,
+        "tool_calls": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "9b8fd4f4-2d6a-4edc-9685-74d5661982ee",
+      "testIdx": 10,
+      "case": "clean",
+      "description": "Defect-free mechanical rename, tool-enabled — measures manufactured findings, not recall",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI",
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 2,
+      "toolCalls": 0,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.0018947999999999999,
+      "latencyMs": 8801,
+      "metrics": {
+        "schema_validity": true,
+        "no_false_alarms": true,
+        "tool_calls": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    },
+    {
+      "id": "678bcc86-78de-4b90-b907-76b946f6b681",
+      "testIdx": 11,
+      "case": "clean",
+      "description": "Defect-free mechanical rename, tool-enabled — measures manufactured findings, not recall",
+      "provider": "candidate-glm-5.3",
+      "finderError": null,
+      "rowError": null,
+      "providers": [
+        "Z.AI",
+        "Z.AI"
+      ],
+      "providerMismatch": [],
+      "invalidated": false,
+      "models": [
+        "z-ai/glm-5.3",
+        "z-ai/glm-5.3"
+      ],
+      "modelMismatch": [],
+      "modelInvalid": false,
+      "requestReasoning": [
+        {
+          "enabled": true,
+          "effort": "low"
+        },
+        {
+          "enabled": true,
+          "effort": "low"
+        }
+      ],
+      "reasoningShapeOk": true,
+      "inlineReasoning": false,
+      "finderErrorStatus": null,
+      "authCredit": false,
+      "retries": [],
+      "steps": 2,
+      "toolCalls": 0,
+      "repairs": 0,
+      "costComplete": true,
+      "finderCost": 0.0022024,
+      "latencyMs": 9778,
+      "metrics": {
+        "schema_validity": true,
+        "no_false_alarms": true,
+        "tool_calls": true
+      },
+      "graderError": false,
+      "graderErrors": [],
+      "graderErrorMetrics": [],
+      "regraded": false,
+      "regradeOf": null
+    }
+  ],
+  "summary": {
+    "failedRun": false,
+    "pass": true,
+    "rowCount": 12,
+    "retryCount": 0,
+    "invalidatedRows": [],
+    "modelRows": [],
+    "shapeRows": [],
+    "inlineReasoningRows": [],
+    "authCreditRows": [],
+    "finderErrorRows": [],
+    "graderErrorRows": [],
+    "regradedRows": [],
+    "cost": {
+      "total": 0.06536648,
+      "median": 0.0037121999999999997,
+      "max": 0.01233484,
+      "incompleteRows": 0
+    },
+    "latency": {
+      "median": 11704.5,
+      "max": 34841
+    },
+    "g3": {
+      "pass": true,
+      "cases": {
+        "js-loop": {
+          "counts": {
+            "issue_recall": 3
+          },
+          "failed": [],
+          "diagnostic": []
+        },
+        "react": {
+          "counts": {
+            "issue_recall": 3,
+            "review_fails": 3,
+            "flaw_stale_closure": 3,
+            "flaw_lost_cleanup": 3,
+            "flaw_unsafe_html": 3
+          },
+          "failed": [],
+          "diagnostic": []
+        },
+        "cross-hunk": {
+          "counts": {
+            "tool_required": 3,
+            "flaw_cross_hunk_contract": 3
+          },
+          "failed": [],
+          "diagnostic": [
+            "tool_required",
+            "flaw_cross_hunk_contract"
+          ]
+        },
+        "clean": {
+          "counts": {
+            "no_false_alarms": 3
+          },
+          "failed": [],
+          "diagnostic": []
+        }
+      }
+    }
+  }
+}

@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import type { ApiProvider, CallApiContextParams, ProviderOptions, ProviderResponse } from "promptfoo";
 
 import {
+  apiErrorStatus,
   buildInstructions,
   buildPrompt,
   createDiffScopedSourceForDiff,
@@ -13,14 +14,58 @@ import {
   DEFAULT_FINDER_TIMEOUT_MS,
   describeFinderStep,
   lensSchema,
+  withOneRetry,
   type Lens,
   type ReviewUnit,
   type SourceProvider,
 } from "../src/index.js";
+import type { FinderRequestTelemetry } from "../src/schemas.js";
 
 interface FinderProviderConfig {
   lens?: unknown;
   model?: unknown;
+}
+
+/**
+ * Test seams. promptfoo passes none, so the real retry delay and the global
+ * fetch apply.
+ */
+export interface FinderProviderDeps {
+  retrySleep?: (ms: number) => Promise<void>;
+  random?: () => number;
+  /** What the wire capture forwards to; the global fetch when absent. */
+  fetch?: typeof fetch;
+}
+
+/** One production retry that happened inside a row (see `FinderTelemetry.retries`). */
+export interface FinderRetry {
+  /** `APICallError-<status>`, `timeout`, or the error's name — never its message. */
+  error: string;
+  delayMs: number;
+}
+
+const retryClass = (error: unknown): string => {
+  if (typeof error !== "object" || error === null) return typeof error;
+  if ("statusCode" in error && typeof error.statusCode === "number") return `APICallError-${String(error.statusCode)}`;
+  if ("name" in error && error.name === "TimeoutError") return "timeout";
+  return "name" in error && typeof error.name === "string" ? error.name : "unknown";
+};
+
+/**
+ * The `reasoning` key of one outgoing request body, and nothing else from it
+ * (change `finder-glm-5-3`, owner decision 2026-10-13: G3 proves the reasoning
+ * shape on the wire). `null` when the body carried no such key or was not JSON.
+ * The value is copied, so no reference into the body survives.
+ */
+export function reasoningKeyOf(body: unknown): unknown {
+  if (typeof body !== "string") return null;
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (typeof parsed !== "object" || parsed === null || !("reasoning" in parsed)) return null;
+    return JSON.parse(JSON.stringify(parsed.reasoning)) as unknown;
+  } catch {
+    return null;
+  }
 }
 
 /** Fixture roots are authored relative to THIS directory, not the cwd promptfoo happens to run in. */
@@ -68,8 +113,64 @@ export interface FinderTelemetry {
   deliveredPaths: string[];
   /** Paths whose call came back as a refusal / empty / out-of-range answer. */
   refusedPaths: string[];
-  /** Envelope repairs (see output-repair.ts) — a per-run model-drift signal. */
+  /**
+   * Format-repair REQUESTS (see reviewer.ts): the finalization failed the strict
+   * parse and one repair call was sent, whether or not it then succeeded — a
+   * per-run model-drift signal. Before change `finder-serialization-outage` this
+   * counted envelope repairs done in code, so values from before and after it
+   * are not comparable.
+   */
   repairs: number;
+  /**
+   * The upstream that served each observed request, in order — every
+   * gathering-loop step, the finalization and the repair. `null` where
+   * OpenRouter reported none: a missing slug must stay visibly missing, never
+   * become the endpoint the run was pinned to. A pinned gate compares every
+   * entry with its pin, so a silent fallback cannot pass as the pinned endpoint.
+   */
+  stepProviders: (string | null)[];
+  /**
+   * Whether each observed request carried a provider-reported cost, in the same
+   * order. G4 rejects an attempt with any `false` here: a partially priced
+   * attempt would understate its cost rather than fail visibly.
+   */
+  stepCostReported: boolean[];
+  /**
+   * Every finder request in order, BOTH tries of the production retry
+   * included: its kind, its try, and what its RAW response reported — the
+   * provider, the model and the reasoning-token count, each `missing` rather
+   * than a stand-in (change `finder-glm-5-3`, A3). Metadata only: no text.
+   */
+  requests: FinderRequestTelemetry[];
+  /**
+   * The `reasoning` key of every outgoing finder request body, captured on the
+   * wire, in order; `null` for a body without one. Failed HTTP requests are
+   * included, so this can be longer than `requests`.
+   */
+  requestReasoning: unknown[];
+  /**
+   * Production's single transient retry, when it fired: one entry with the
+   * error class and the wait. The per-request lists above then cover the
+   * requests of BOTH tries, so cost and the provider checks include the retry.
+   */
+  retries: FinderRetry[];
+  /** Why the finder refused a response (`FinderOutputError.reason`) on the error path; absent otherwise. */
+  finderFailureReason?: string;
+  /**
+   * The HTTP status of the provider call behind a finder error, from its typed
+   * APICallError (cause chain included) — never from message text. G3 reads a
+   * 401/402 here as a confirmed auth/credit stop (change `finder-glm-5-3`,
+   * owner decision 2026-10-14). Absent when no APICallError carries one.
+   */
+  finderErrorStatus?: number;
+  /**
+   * The class of the error that ended the row, in `retries`' vocabulary
+   * (`timeout`, `APICallError-<status>`, or the error's name) — never its
+   * message. With at least one retry, `timeout` here is a finder timeout after
+   * the retry: stop rule (b) of change `finder-glm-5-3-high`'s screening.
+   * Absent on success.
+   */
+  finderErrorClass?: string;
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
@@ -83,8 +184,10 @@ export default class FinderProvider implements ApiProvider {
   private readonly providerId: string;
   private readonly model: string;
   private readonly lens: Lens;
+  private readonly deps: FinderProviderDeps;
 
-  constructor(options: ProviderOptions) {
+  constructor(options: ProviderOptions, deps: FinderProviderDeps = {}) {
+    this.deps = deps;
     const config = (options.config ?? {}) as FinderProviderConfig;
     if (typeof config.model !== "string" || config.model.length === 0) {
       throw new Error("finder-provider requires a non-empty config.model");
@@ -117,6 +220,11 @@ export default class FinderProvider implements ApiProvider {
       deliveredPaths: [],
       refusedPaths: [],
       repairs: 0,
+      stepProviders: [],
+      stepCostReported: [],
+      requests: [],
+      requestReasoning: [],
+      retries: [],
     };
 
     // Tool-enablement is PER CASE (a var), not per model (provider config):
@@ -152,10 +260,13 @@ export default class FinderProvider implements ApiProvider {
       }
     }
 
-    // Must mirror what createReviewer will actually send: with a source active
-    // the system prompt carries the tool instructions, and a viewer showing
-    // the tool-less variant would be reporting a prompt that never ran.
-    const actualPrompt = JSON.stringify([
+    // The prompt the viewer shows is the one that FORMATS the JSON — the
+    // finalization request, including the real gathering transcript — captured
+    // from the reviewer as sent. The loop prompt must mirror what createReviewer
+    // sends too: with a source active its system prompt carries the tool
+    // instructions, and a viewer showing the tool-less variant would be
+    // reporting a prompt that never ran.
+    const loopPrompt = [
       {
         role: "system",
         content: buildInstructions(this.lens, {
@@ -164,7 +275,22 @@ export default class FinderProvider implements ApiProvider {
         }),
       },
       { role: "user", content: buildPrompt(unit) },
-    ]);
+    ];
+    let finalizationPrompt: { system: string; prompt: string } | undefined;
+    // An attempt that died before finalization must not display the loop
+    // prompt as if it had produced the JSON: it says so, and shows the loop
+    // prompt under its own name. Tool-less reviews have no loop at all.
+    const actualPrompt = (): string =>
+      finalizationPrompt === undefined
+        ? JSON.stringify({
+            finalizationReached: false,
+            note: "The review ended before the finalization request, so no JSON-formatting prompt was sent.",
+            ...(source === undefined ? {} : { loopPrompt }),
+          })
+        : JSON.stringify([
+            { role: "system", content: finalizationPrompt.system },
+            { role: "user", content: finalizationPrompt.prompt },
+          ]);
 
     // Promptfoo's own field names, which are NOT the AI SDK's: prompt /
     // completion / total, plus numRequests (one provider call per loop step).
@@ -179,38 +305,91 @@ export default class FinderProvider implements ApiProvider {
       metadata: { lens: this.lens, model: this.model, toolEnabled: source !== undefined, ...telemetry },
     });
 
+    // Which try of the production retry is running; set by the call below.
+    let attempt: 1 | 2 = 1;
+    // Records the `reasoning` key of each outgoing body, then forwards it
+    // unchanged. Resolved per request, so a test's stubbed global applies.
+    const wire: typeof fetch = (input, init) => {
+      telemetry.requestReasoning.push(reasoningKeyOf(init?.body));
+      return (this.deps.fetch ?? globalThis.fetch)(input, init);
+    };
+
     try {
-      // Deliberately one provider attempt: repeated --no-cache runs should
-      // expose schema flakes instead of hiding them behind pipeline retries.
       const reviewer = createReviewer({
         model: this.model,
+        fetch: wire,
         lens: this.lens,
         projectContext,
         // The tool-less cost ceiling is a contract: a step cap only ever
         // accompanies a live source (mirrors the pipeline).
         ...(source === undefined ? {} : { source, maxSteps: DEFAULT_FINDER_MAX_STEPS }),
-        onStepEnd: (step) => {
-          const info = describeFinderStep(step);
+        onStepEnd: (step, request) => {
+          const info = describeFinderStep(step, request);
           telemetry.steps += 1;
           telemetry.toolCalls += info.toolCalls;
           telemetry.inputTokens = sum(telemetry.inputTokens, info.usage.inputTokens);
           telemetry.outputTokens = sum(telemetry.outputTokens, info.usage.outputTokens);
           telemetry.totalTokens = sum(telemetry.totalTokens, info.usage.totalTokens);
           telemetry.cost = sum(telemetry.cost, info.cost);
+          telemetry.stepProviders.push(info.provider ?? null);
+          telemetry.stepCostReported.push(info.cost !== undefined);
+          telemetry.requests.push({
+            kind: info.kind,
+            attempt,
+            provider: info.reportedProvider,
+            model: info.model,
+            finishReason: info.finishReason,
+            reasoningTokens: info.reasoningTokens,
+            cost: info.cost ?? null,
+          });
         },
         onOutputRepair: () => {
           telemetry.repairs += 1;
         },
+        onFinalizationPrompt: (prompt) => {
+          finalizationPrompt = prompt;
+        },
       });
-      const result = await reviewer.review(unit, { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS });
-      return { output: JSON.stringify(result), prompt: actualPrompt, ...report() };
+      // One row = one production pass, including the pipeline's single
+      // transient retry (429, 5xx, timeout; change `finder-glm-5-3`, owner
+      // decision 2026-10-13, as `finder-model-swap` gate.md §4). Format
+      // failures stay exposed: FinderOutputError is never retried, so repeated
+      // --no-cache runs still show them.
+      let tries = 0;
+      const result = await withOneRetry(
+        () => {
+          tries += 1;
+          attempt = tries === 1 ? 1 : 2;
+          return reviewer.review(unit, { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS });
+        },
+        {
+          sleep: this.deps.retrySleep,
+          random: this.deps.random,
+          onRetry: (error, delayMs) => telemetry.retries.push({ error: retryClass(error), delayMs }),
+        },
+      );
+      return { output: JSON.stringify(result), prompt: actualPrompt(), ...report() };
     } catch (error) {
+      // The refusal's class (`parse`, `length`, `inline-reasoning`) — never its text.
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        error.name === "FinderOutputError" &&
+        "reason" in error &&
+        typeof error.reason === "string"
+      ) {
+        telemetry.finderFailureReason = error.reason;
+      }
+      const status = apiErrorStatus(error);
+      if (status !== undefined) telemetry.finderErrorStatus = status;
+      telemetry.finderErrorClass = retryClass(error);
       // Telemetry rides the error path too: a row that died after burning four
       // tool-loop steps cost real money, and "how far did it get" is the whole
       // question for a model that fails structured output.
       return {
         error: error instanceof Error ? error.message : String(error),
-        prompt: actualPrompt,
+        prompt: actualPrompt(),
         ...report(),
       };
     }

@@ -1,0 +1,67 @@
+{
+  "change": "finder-glm-5-3",
+  "files": {
+    ".github/actions/ai-review/action.yml": "259903d5014c1dbe3e7029b40d1c6978f27ced48259630decff8e47e41d5357c",
+    ".github/ai-review-rules.md": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+    "packages/code-reviewer/evals/assertions.mjs": "a000e355f50fe78eb614ab2c6373564bcfd2375ee3451cf8863eedff737d8425",
+    "packages/code-reviewer/evals/finder-provider.ts": "415e44a6f6bb8fdcfb08682c145f6a87a8ee0a6720ecf9c84140a1a2a56988b0",
+    "packages/code-reviewer/evals/fixtures/clean-change.diff": "8b326f6db0622096194e79a12dab7500c35eb6af5a7ba16f6f194f15607108cd",
+    "packages/code-reviewer/evals/fixtures/clean-change/src/lib/format-bytes.ts": "1d8f4d5c428d3d322b17bae7ad2e0e5e9e1d2143bd4a42667bf1255ef82c44da",
+    "packages/code-reviewer/evals/fixtures/cross-hunk.diff": "c69d0d265fb3efd4039a142a05dbb33bede98f67db4ca5ddf940d3ce77b1c4c2",
+    "packages/code-reviewer/evals/fixtures/cross-hunk/src/lib/engines/canvas-helpers.ts": "e261b8764d306095d8464c41beb23927a3afeacf16b0737a39c1a5cbe8847a50",
+    "packages/code-reviewer/evals/fixtures/hardening-defended.diff": "e5f3a56a82d16d7c1b8c659da2d0eb9b9ab7a633f15bd242cf85f9a87bdce5db",
+    "packages/code-reviewer/evals/fixtures/hardening-vulnerable.diff": "a4709f60d4101a668b61449e2543bf401e760477ae39355d381356100ccb2622",
+    "packages/code-reviewer/evals/fixtures/react-migration.diff": "7f4a7372968f440043596333a873ab05526af1f09da104e03d7f790702fa0fa0",
+    "packages/code-reviewer/evals/promptfooconfig.yaml": "40563b820bbcad3c42f83e9e8d7d7efcecd6f33638aff2cae0577114391d4171",
+    "packages/code-reviewer/evals/review-result.schema.json": "8d727c7af6c8ec4f4c627ab4e21cbd91f8e93954264085286f8e8f0b4f5c34e8",
+    "packages/code-reviewer/package-lock.json": "86cefe183869164a815621621323c71bf66e7aff60958d09e9caf3183a38cb01",
+    "packages/code-reviewer/package.json": "1f602421fddde577d2094886e8e8eedddf995210fcae6e5598455013c8b43c38",
+    "packages/code-reviewer/scripts/glm-gate-core.mjs": "c6660b0ba2e02e5b9917125592e1e1f856371efcaaf4b5d6fa35fdd68369b444",
+    "packages/code-reviewer/scripts/glm-gate-dry-run-stub.mjs": "00da70cf80a5338d3f6edf2e2d9a072c5cc8f6203587967f9f6c72b13ae4d289",
+    "packages/code-reviewer/scripts/glm-gate-sheet.mjs": "b7daa2fa7933daa22c831a9b6d96bcf26d328bd38d10ce4c8ff6ea451959c5b2",
+    "packages/code-reviewer/scripts/glm-gate.mjs": "897c9d964c483805f577f7bdfb94ce56ac565a92ddfed8e7834a13081808e523",
+    "packages/code-reviewer/scripts/promptfoo-gate-rows.mjs": "85b608b1ab845dcde2b2ec829fc327f1e80795ce0584f486594350b5b786d89e",
+    "packages/code-reviewer/scripts/promptfoo-regrade-config.mjs": "5361b2811aec7ce5bb419a7923718001b8640943b5f4d051da7a71c48ab6f023",
+    "packages/code-reviewer/src/cli.ts": "2d36d78114ad0d914d527134cf582367403eba516e13279bf95f2d4e33c7f022",
+    "packages/code-reviewer/src/config.ts": "332e7c9e73d58accf130402fc672ed793320292077a027d8c83b2b37b77e72e4",
+    "packages/code-reviewer/src/demo.ts": "66e8f5e31b8d8995fccad6c321d72e5fc3d2b2bd8074288c8e7d538d4e154b28",
+    "packages/code-reviewer/src/findings.ts": "8a7e16d0c6ca0d7a6b7fe38a31316ccd64570c992f1b8add235a62c4904cc59a",
+    "packages/code-reviewer/src/impl-reviewer.ts": "2cca1820eeae4e5287680119135285c984fbac55f907cace522bbb004074a827",
+    "packages/code-reviewer/src/index.ts": "2d811b83bc6e94d403ba6cf97ecad944335df1463330e226ead602a9592816b3",
+    "packages/code-reviewer/src/judge.ts": "8f5fafa5a2781ea49b5322382b30e68c583c3aca8833b2e682c5af8547fe1742",
+    "packages/code-reviewer/src/openrouter-stub.ts": "b865c227dd280d8668edc7150108a2c0be1019dd54ad46682d2919d162761683",
+    "packages/code-reviewer/src/output-repair.ts": "f73a0749b1a79d00752b2e4c2adc35876e35a5ffc52c5afb9fd64dba9be563ae",
+    "packages/code-reviewer/src/pipeline.ts": "c8b7e8c90e6cb2a8a95c52868fa0a7d2ed822c80080ec9a51b8c306fc4816dc1",
+    "packages/code-reviewer/src/prompts.ts": "71befb526a0072d4a26331e221b456689034e118fd8b66a30afe3e969f21aabd",
+    "packages/code-reviewer/src/provider-metadata.ts": "999d2b67ea7ff0892fd52b32729c8d92eafc659594af16897e6811971c66cc0c",
+    "packages/code-reviewer/src/render.ts": "2282822c0ba61a77e5e361cadefad8786fed9fe57b7eeaa0c9cb5ed5e05f48a4",
+    "packages/code-reviewer/src/retry.ts": "5c2b6492caee0ee6a61f19845ea41389b3997a46e224918d14fb1f68a6ce548c",
+    "packages/code-reviewer/src/review-pr.ts": "9dab0328b77571985595dd3ac353a92e632e80bf0534be17eba7fefe704454ad",
+    "packages/code-reviewer/src/reviewer.ts": "6d0693753bf65489e62cec1173009eefc8ddc2af246108b51a899f578b2179e9",
+    "packages/code-reviewer/src/schemas.ts": "ac25a58f0b3bea40818da2b1a2d20796532576970d3b6ca9b4ccf7d47046fad8",
+    "packages/code-reviewer/src/scorecard.ts": "ad366db07305c67281c7297fe2a542906e9e691833f4d0353601bc0ab7b7f0c4",
+    "packages/code-reviewer/src/source-provider.ts": "ddba64c72f4ef2ade2fcf4f4f3c63c50013e464df8a594487fc05399fcbe4c42"
+  },
+  "inputs": {
+    "clean": {
+      "diff": "8b326f6db0622096194e79a12dab7500c35eb6af5a7ba16f6f194f15607108cd",
+      "rules": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+      "meta": null
+    },
+    "pr247": {
+      "diff": "21973af35cc39f60488935583a85baf894a6c1a9b51069d16de86e701b5dc2e1",
+      "rules": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+      "meta": "ec66879c3e33027ee2096677a4da060f5e68645c1fa3752ed376638cd9a24ff2",
+      "head": "dec09f8d77b2f1ee45073c194d6cd8239a7d35c7",
+      "clean": true
+    },
+    "pr269": {
+      "diff": "1e4ec0882371989122f9e4254c93c4df1f51826a4f57dbfe04139175177e550f",
+      "rules": "34d5fcacb550713a2bbf819b332191fc6626d52412168e0fe9b4ac3feb9cb48f",
+      "meta": "00b7b21bd2d48b73442796a257feafc21689a296584ba1989b6f406374da82e7",
+      "head": "fca2778742ec0bc02a84f42b23bf639fc32c7ad1",
+      "clean": true
+    }
+  },
+  "configurationLine": "finder configuration: model=z-ai/glm-5.3 reasoning=low providers=z-ai,fireworks,together"
+}

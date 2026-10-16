@@ -1,0 +1,182 @@
+{
+  "summary": "This PR commits two previously ephemeral production diagnostic scripts with a stated safety contract (no writes, ranged reads, key never logged) and reasonable intent, but the review found a cluster of minor-to-nit correctness bugs: job-id prefix matching can silently fail on full UUIDs, stale output files can mask genuinely missing jobs, the dimension census's 'never fetch a whole image' guarantee is not actually enforced and its JPEG header scanner can desync, and error handling around signed-URL downloads is less robust than the sibling script's. None of these are severe security exploits, but collectively they weaken trust in the scripts' core claims, and there is no test coverage to catch such regressions going forward.",
+  "findings": [
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 50,
+      "endLine": 53,
+      "severity": "nit",
+      "category": "style",
+      "description": "This script lacks the localhost/127.0.0.1 URL check and the service-role key shape check (`KEY.count('.') == 2 or KEY.startswith('sb_secret_')`) that its sibling has, so it can run against a local stack or with an anon key and produce confusing 403s.",
+      "suggestion": "Copy the two extra guards from prod-result-dimensions.py for consistency between the pair.",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 69,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "Matching uses `j[\"id\"][:8] not in WANTED`, but the docstring advertises 'any job-id prefixes'; a user passing a full UUID silently matches nothing and the script reports all jobs missing.",
+      "suggestion": "Either truncate each argument to 8 chars or compare with `j[\"id\"].startswith(w)` and document the accepted prefix length.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 74,
+      "endLine": 84,
+      "severity": "minor",
+      "category": "security",
+      "description": "The signed-URL call and the download loop are not wrapped in the error handling the jobs query gets. On an HTTPError the traceback prints the failing request URL — for the download that includes the signed-URL token (300 s TTL, low risk, but the file's own contract says nothing signed should be logged) — and for `api()` failures the user gets a raw stack trace instead of the script's die() style.",
+      "suggestion": "Wrap the sign and download calls in try/except like the jobs query, catching HTTPError/URLError and reporting via die() or a per-job warning without echoing the URL.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 86,
+      "endLine": 90,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "`missing` is computed by listing the output directory and matching filename prefixes, so a leftover file from a previous run (or from a different WANTED set) satisfies the check and suppresses the 'NOT found in the jobs table' message incorrectly.",
+      "suggestion": "Track the matched prefixes during the loop (e.g. `matched = {short for j in jobs if ...}`) and compute `missing = [w for w in WANTED if w not in matched]`.",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 98,
+      "endLine": 113,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The script claims it 'never fetches a whole image', but urllib will happily read a 200 response where the server ignored the Range header; `raw = r.read()` then downloads the entire object, so the safety contract is unenforced. Also, 2048 bytes is often too small for phone JPEGs whose EXIF (with embedded thumbnail) precedes the SOF marker, causing them to fall into 'header not recognised' — and the final CONFIRMED verdict is printed even when `unreadable > 0`, so systematic false-unreadables can silently skew the census conclusion.",
+      "suggestion": "Check `r.status == 206` (or cap the read, e.g. `r.read(32768)`), increase the range to 16–32 KiB, and only print CONFIRMED when `unreadable == 0` (otherwise flag the conclusion as provisional).",
+      "id": "F5"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 118,
+      "endLine": 130,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "The JPEG byte scanner doesn't handle 0xFF padding followed by 0x00 or TEM (0x01), and a literal 0xFF marker byte falls into the length-skip branch with a garbage length, desynchronizing the scan. Fine for well-formed files, but the census conclusion rests on this parser.",
+      "suggestion": "Skip 0xFF fill bytes and marker 0x01 explicitly, and bail out of the loop when the segment length read would take `i` past the buffer instead of continuing with garbage.",
+      "id": "F6"
+    }
+  ],
+  "preDedupFindingCount": 6,
+  "scores": {
+    "implementation_correctness": {
+      "score": 4,
+      "justification": "Multiple correctness defects were found across both scripts: prefix matching silently fails on full UUIDs (F2), stale output files can mask missing jobs (F4), the dimension census's core safety claim ('never fetches a whole image') is not actually enforced and a too-small read range plus printing CONFIRMED despite unreadable>0 can produce misleading conclusions (F5), and the JPEG marker scanner can desynchronize on 0xFF padding/TEM markers (F6). These are not catastrophic failures but they undermine the scripts' stated purpose of producing a trustworthy census and reliable downloads.",
+      "findingIds": [
+        "F2",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    "idiomaticity": {
+      "score": 7,
+      "justification": "No significant idiom or convention violations were flagged beyond a single nit (F1) noting inconsistency between the two sibling scripts' input-guard coverage.",
+      "findingIds": [
+        "F1"
+      ]
+    },
+    "complexity": {
+      "score": 7,
+      "justification": "No findings indicate over-engineering or unnecessary complexity; the issues raised are logic/edge-case bugs rather than structural complexity problems.",
+      "findingIds": []
+    },
+    "test_risk_coverage": {
+      "score": 3,
+      "justification": "No tests are evidenced for these scripts, and the review surfaced real, risk-relevant bugs (prefix matching, stale-file masking, unenforced range-read safety contract, marker desync) that automated or even basic manual verification should have caught given the scripts' stated purpose of producing a reliable production census.",
+      "findingIds": [
+        "F2",
+        "F4",
+        "F5",
+        "F6"
+      ]
+    },
+    "documentation": {
+      "score": 5,
+      "justification": "The PR advertises a clear safety contract in script headers (no writes, ranged reads only, key never logged), which is good intent, but F5 shows the documented 'never fetches a whole image' guarantee is not actually enforced in code, making the documentation inaccurate on a safety-relevant point.",
+      "findingIds": [
+        "F5"
+      ]
+    },
+    "security_safety": {
+      "score": 5,
+      "justification": "F3 notes error paths around the signed URL and download are unguarded, risking a stack trace that could echo a signed URL (low severity, short TTL) and departing from the script's own no-stack-trace contract; F5 shows the 'never fetch whole image' safety claim can be silently violated if the server ignores the Range header. Both are real but minor/nit-level gaps rather than exploitable flaws.",
+      "findingIds": [
+        "F3",
+        "F5"
+      ]
+    }
+  },
+  "verdict": "failed",
+  "verdictReason": "Several correctness bugs undermine the scripts' core guarantees (unenforced range-read safety claim, prefix-matching and stale-file masking bugs, fragile JPEG parsing) and there is no test coverage catching any of this, which together fall below the bar despite the issues being individually minor/nit severity.",
+  "diffStats": {
+    "files": 2,
+    "additions": 234,
+    "deletions": 0
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 2,
+    "toolCalls": 0,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 813,
+          "source": "reported"
+        },
+        "cost": 0.0134278
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 0,
+          "source": "reported"
+        },
+        "cost": 0.011961
+      }
+    ],
+    "inputTokens": 10372,
+    "outputTokens": 2470,
+    "totalTokens": 12842,
+    "cost": 0.0253888
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 5316,
+    "outputTokens": 2620,
+    "totalTokens": 7936,
+    "cost": 0.036832
+  }
+}
