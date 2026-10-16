@@ -163,6 +163,14 @@ export interface FinderTelemetry {
    * owner decision 2026-10-14). Absent when no APICallError carries one.
    */
   finderErrorStatus?: number;
+  /**
+   * The class of the error that ended the row, in `retries`' vocabulary
+   * (`timeout`, `APICallError-<status>`, or the error's name) — never its
+   * message. With at least one retry, `timeout` here is a finder timeout after
+   * the retry: stop rule (b) of change `finder-glm-5-3-high`'s screening.
+   * Absent on success.
+   */
+  finderErrorClass?: string;
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
@@ -375,6 +383,7 @@ export default class FinderProvider implements ApiProvider {
       }
       const status = apiErrorStatus(error);
       if (status !== undefined) telemetry.finderErrorStatus = status;
+      telemetry.finderErrorClass = retryClass(error);
       // Telemetry rides the error path too: a row that died after burning four
       // tool-loop steps cost real money, and "how far did it get" is the whole
       // question for a model that fails structured output.

@@ -210,6 +210,45 @@ describe("FinderProvider production retry", () => {
     expect(doGenerate).toHaveBeenCalledTimes(2);
   });
 
+  // Stop rule (b) of change finder-glm-5-3-high's screening, on fixture rows:
+  // a retry, then a terminal finder error of class `timeout`.
+  const finderTimeout = () => new DOMException("The finder pass exceeded its 300000 ms budget", "TimeoutError");
+
+  it("a timeout, then a timeout on the retry: one retry and a terminal error of class timeout", async () => {
+    currentModel = new MockLanguageModelV3({ doGenerate: vi.fn().mockRejectedValue(finderTimeout()) });
+    const response = await call(retrying());
+    expect(response.error).toContain("exceeded its 300000 ms budget");
+    const metadata = metadataOf(response);
+    expect(metadata.retries.map((retry) => retry.error)).toEqual(["timeout"]);
+    expect(metadata.finderErrorClass).toBe("timeout");
+  });
+
+  it("a 5xx, then a timeout on the retry: the terminal class is timeout", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new APICallError({ message: "HTTP 503", url: "u", requestBodyValues: {}, statusCode: 503 }),
+      )
+      .mockRejectedValueOnce(finderTimeout());
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const metadata = metadataOf(await call(retrying()));
+    expect(metadata.retries.map((retry) => retry.error)).toEqual(["APICallError-503"]);
+    expect(metadata.finderErrorClass).toBe("timeout");
+  });
+
+  it("a timeout the retry recovers leaves no terminal class: only the retry records it", async () => {
+    const doGenerate = vi
+      .fn()
+      .mockRejectedValueOnce(finderTimeout())
+      .mockResolvedValueOnce(generation(VALID, priced("Z.AI", 0.002)));
+    currentModel = new MockLanguageModelV3({ doGenerate });
+    const response = await call(retrying());
+    expect(response.error).toBeUndefined();
+    const metadata = metadataOf(response);
+    expect(metadata.retries.map((retry) => retry.error)).toEqual(["timeout"]);
+    expect("finderErrorClass" in metadata).toBe(false);
+  });
+
   it("never retries a FinderOutputError, so format failures stay exposed", async () => {
     const doGenerate = vi
       .fn()
@@ -236,6 +275,19 @@ describe("FinderProvider error status", () => {
     const response = await call(retrying());
     expect(response.error).toBeDefined();
     expect(metadataOf(response).finderErrorStatus).toBe(statusCode);
+  });
+
+  it("records the class of the error that ended the row, never its message", async () => {
+    currentModel = new MockLanguageModelV3({
+      doGenerate: vi
+        .fn()
+        .mockRejectedValue(
+          new APICallError({ message: "secret body", url: "u", requestBodyValues: {}, statusCode: 402 }),
+        ),
+    });
+    const metadata = metadataOf(await call(retrying()));
+    expect(metadata.finderErrorClass).toBe("APICallError-402");
+    expect(JSON.stringify(metadata)).not.toContain("secret body");
   });
 
   it("records no status for an error whose message merely mentions 401", async () => {

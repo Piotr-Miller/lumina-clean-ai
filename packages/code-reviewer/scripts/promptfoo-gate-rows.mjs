@@ -36,6 +36,12 @@
 // re-graded once (scripts/promptfoo-regrade-config.mjs, then `--regrade`). A
 // second grader error ends the run for an owner decision.
 //
+// The screening of change `finder-glm-5-3-high` (its plan.md Phase 2 §1) runs
+// the same four cases once (`{repeats: 1}`) and reads three more lists off the
+// summary: rows whose finder request ended `length` (stop rule (a)), rows whose
+// finder timed out after the retry (stop rule (b)), and rows whose first-try
+// timeout the retry recovered (a warning). None of them changes G3's verdict.
+//
 // Exit code: 0 when G3 passes and no row fails on its own, 1 when anything
 // fails or the run is not a gate result, 2 on a usage error.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -164,6 +170,11 @@ export function checkRow(raw) {
     authCredit:
       finderErrorOf(raw) !== null && (metadata.finderErrorStatus === 401 || metadata.finderErrorStatus === 402),
     retries,
+    // Each finder request's finish reason, in order (stop rule (a) of the screening).
+    finishReasons: requests.map((request) => (typeof request?.finishReason === "string" ? request.finishReason : null)),
+    finderFailureReason: typeof metadata.finderFailureReason === "string" ? metadata.finderFailureReason : null,
+    // The class of the error that ended the row (`timeout`, `APICallError-<status>`, a name), never its text.
+    finderErrorClass: typeof metadata.finderErrorClass === "string" ? metadata.finderErrorClass : null,
     steps: metadata.steps ?? null,
     toolCalls: metadata.toolCalls ?? null,
     repairs: metadata.repairs ?? null,
@@ -254,22 +265,34 @@ const median = (values) => {
 
 const rowRef = (r) => ({ testIdx: r.testIdx, case: r.case });
 
+/** A finder request of the row ended `length`, or the finder refused its output for that reason. */
+const lengthRow = (r) => (r.finishReasons ?? []).includes("length") || r.finderFailureReason === "length";
+
+/** The finder timed out after the adapter's retry: at least one retry, and a terminal error of class `timeout`. */
+const timeoutAfterRetryRow = (r) =>
+  r.finderError !== null && (r.retries ?? []).length > 0 && r.finderErrorClass === "timeout";
+
+/** A first-try timeout that the retry recovered: a warning, never a stop. */
+const recoveredTimeoutRow = (r) =>
+  (r.retries ?? []).some((retry) => retry?.error === "timeout") && !timeoutAfterRetryRow(r);
+
 /**
  * G3 over the checked rows, plus the per-row results that fail on their own.
  * A row with a finder error, a provider or model mismatch, a wrong reasoning
  * shape, inline reasoning or a grader error counts for none of its case's
  * metrics. Grader-error rows make the run a failed run.
  */
-export function summarizeRows(rows, extraProblems = []) {
+export function summarizeRows(rows, extraProblems = [], { repeats = REPEATS } = {}) {
   const problems = [...extraProblems];
-  if (rows.length !== EXPECTED_ROWS) problems.push(`${String(rows.length)} rows, expected ${String(EXPECTED_ROWS)}`);
+  const expectedRows = CASES.length * repeats;
+  if (rows.length !== expectedRows) problems.push(`${String(rows.length)} rows, expected ${String(expectedRows)}`);
   const unknown = rows.filter((r) => r.case === null);
   if (unknown.length > 0) problems.push(`${String(unknown.length)} row(s) outside the four registered cases`);
   const otherLabel = rows.filter((r) => r.provider !== G3_PROVIDER_LABEL);
   if (otherLabel.length > 0) problems.push(`${String(otherLabel.length)} row(s) not from ${G3_PROVIDER_LABEL}`);
   for (const c of CASES) {
     const count = rows.filter((r) => r.case === c.key).length;
-    if (count !== REPEATS) problems.push(`case ${c.key}: ${String(count)} rows, expected ${String(REPEATS)}`);
+    if (count !== repeats) problems.push(`case ${c.key}: ${String(count)} rows, expected ${String(repeats)}`);
   }
 
   const allRetries = rows.flatMap((r) => r.retries ?? []);
@@ -290,6 +313,7 @@ export function summarizeRows(rows, extraProblems = []) {
   const costs = rows.map((r) => r.finderCost).filter((cost) => typeof cost === "number");
   const latencies = rows.map((r) => r.latencyMs).filter((v) => typeof v === "number");
   const base = {
+    repeats,
     rowCount: rows.length,
     retryCount: allRetries.length,
     invalidatedRows,
@@ -300,6 +324,9 @@ export function summarizeRows(rows, extraProblems = []) {
     finderErrorRows,
     graderErrorRows,
     regradedRows,
+    lengthRows: rows.filter(lengthRow).map(rowRef),
+    timeoutRows: rows.filter(timeoutAfterRetryRow).map(rowRef),
+    recoveredTimeoutRows: rows.filter(recoveredTimeoutRow).map(rowRef),
     // Information only: G3 has no cost criterion; the monthly projection is the cost gate.
     cost: {
       total: costs.reduce((sum, cost) => sum + cost, 0),
@@ -351,7 +378,7 @@ export function summarizeRows(rows, extraProblems = []) {
     for (const metric of [...c.required, ...(c.diagnostic ?? [])]) {
       counts[metric] = caseRows.filter((r) => rowOk(r) && r.metrics[metric] === true).length;
     }
-    const failed = c.required.filter((metric) => counts[metric] !== REPEATS);
+    const failed = c.required.filter((metric) => counts[metric] !== repeats);
     if (failed.length > 0) g3.pass = false;
     g3.cases[c.key] = { counts, failed, diagnostic: c.diagnostic ?? [] };
   }
@@ -377,8 +404,8 @@ export function exportRows(exportJson) {
   return rows;
 }
 
-/** Checked rows (merged with a re-grade when given) and their summary. */
-export function checkExport(exportJson, regradeJson) {
+/** Checked rows (merged with a re-grade when given) and their summary; `repeats` is 3 for G3, 1 for the screening. */
+export function checkExport(exportJson, regradeJson, { repeats = REPEATS } = {}) {
   let rows = exportRows(exportJson).map((raw) => checkRow(raw));
   let problems = [];
   if (regradeJson !== undefined) {
@@ -387,12 +414,17 @@ export function checkExport(exportJson, regradeJson) {
       exportRows(regradeJson).map((raw) => checkRow(raw)),
     ));
   }
-  return { rows, summary: summarizeRows(rows, problems) };
+  return { rows, summary: summarizeRows(rows, problems, { repeats }) };
 }
 
-/** The human-readable lines for one checked export. */
+/**
+ * The human-readable lines for one checked export. A runner's minimal summary
+ * of an unusable export (`failedRun` and `problems` only) is described too:
+ * it carries no row lists and no cost.
+ */
 export function describeSummary(summary) {
   const lines = [];
+  const repeats = summary.repeats ?? REPEATS;
   if (summary.failedRun) {
     lines.push(`FAILED RUN, not a gate result: ${summary.problems.join("; ")}`);
   } else {
@@ -400,7 +432,7 @@ export function describeSummary(summary) {
       const counts = Object.entries(c.counts)
         .map(
           ([metric, k]) =>
-            `${metric} ${String(k)}/${String(REPEATS)}${c.diagnostic.includes(metric) ? " (diagnostic)" : ""}`,
+            `${metric} ${String(k)}/${String(repeats)}${c.diagnostic.includes(metric) ? " (diagnostic)" : ""}`,
         )
         .join(", ");
       lines.push(`G3 ${key}: ${counts || "-"}`);
@@ -416,10 +448,15 @@ export function describeSummary(summary) {
     ["finder-error rows", summary.finderErrorRows],
     ["GRADER-ERROR rows", summary.graderErrorRows],
     ["re-graded rows (once, Amendment A1)", summary.regradedRows],
+    ["LENGTH rows (a finder request ended `length`)", summary.lengthRows],
+    ["TIMEOUT rows (the finder timed out after its retry)", summary.timeoutRows],
+    ["recovered-timeout rows (the retry recovered a timeout; warning)", summary.recoveredTimeoutRows],
   ];
-  for (const [label, list] of lists) if (list.length > 0) lines.push(`${label}: ${JSON.stringify(list)}`);
+  for (const [label, list] of lists) if ((list ?? []).length > 0) lines.push(`${label}: ${JSON.stringify(list)}`);
   lines.push(
-    `retries: ${String(summary.retryCount)}; finder cost total $${summary.cost.total.toFixed(6)} (rows without complete cost: ${String(summary.cost.incompleteRows)}; information only)`,
+    summary.cost === undefined
+      ? "retries and finder cost: not in the export (no usable rows)"
+      : `retries: ${String(summary.retryCount)}; finder cost total $${summary.cost.total.toFixed(6)} (rows without complete cost: ${String(summary.cost.incompleteRows)}; information only)`,
   );
   return lines;
 }

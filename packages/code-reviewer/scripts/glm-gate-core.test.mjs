@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 
 import { load } from "js-yaml";
 import { describe, expect, it } from "vitest";
-import { resolveCase } from "./glm-gate-sheet.mjs";
+import { ledgerD2Of, resolveCase } from "./glm-gate-sheet.mjs";
 
 import {
   a6Stops,
@@ -16,6 +16,7 @@ import {
   EXPECTED_CONFIGURATION_LINE,
   exceedsLimit,
   finalProjection,
+  finderTiming,
   forbiddenEnvSet,
   G3_CASE_FILTER,
   G3_PROVIDER_FILTER,
@@ -31,6 +32,7 @@ import {
   meanSettledCost,
   seriesSpend,
   stepEstimate,
+  timedLineOf,
 } from "./glm-gate-core.mjs";
 
 // --- Fixtures ---------------------------------------------------------------------
@@ -102,6 +104,16 @@ const g2Passed = () => [
   ...ran("clean-05", "clean", 0.02),
 ];
 const g3Passed = () => [started("g3", "g3"), g3Line({ failedRun: false, pass: true }), settled("g3", 0.3)];
+/** The owner's d2 line for a #269 run (owner decision 2026-10-16): every #269 record waits for one. */
+const d2 = (stepId, decision = "match", matches = ["F1"]) =>
+  decision === "not-applicable"
+    ? { type: "d2", stepId, decision, note: "n", by: "owner" }
+    : { type: "d2", stepId, decision, matches: decision === "match" ? matches : [], note: "n", by: "owner" };
+/** A #269 run with its d2 line: a match for a valid run, not-applicable for an invalid one. */
+const ran269 = (stepId, cost, valid = true, over = {}) => [
+  ...ran(stepId, "pr269", cost, valid, over),
+  d2(stepId, valid ? "match" : "not-applicable"),
+];
 
 // --- Classification -----------------------------------------------------------------
 
@@ -260,7 +272,15 @@ describe("parseCliStderr", () => {
     );
     // The kind is read off the line: a failed run has no review.json to say which request was which.
     expect(parsed.steps).toEqual([
-      { step: 1, kind: "step", provider: null, finishReason: "tool-calls", model: null, reasoningTokens: null },
+      {
+        step: 1,
+        kind: "step",
+        provider: null,
+        finishReason: "tool-calls",
+        model: null,
+        reasoningTokens: null,
+        outputTokens: 1,
+      },
       {
         step: 2,
         kind: "finalization",
@@ -268,6 +288,7 @@ describe("parseCliStderr", () => {
         finishReason: "stop",
         model: "z-ai/glm-5.3",
         reasoningTokens: 7,
+        outputTokens: 1,
       },
       {
         step: 3,
@@ -276,11 +297,110 @@ describe("parseCliStderr", () => {
         finishReason: "stop",
         model: "z-ai/glm-5.3",
         reasoningTokens: 0,
+        outputTokens: 1,
       },
     ]);
     expect(parsed.retries).toEqual([{ pass: "finder", error: "APICallError", delayMs: 10_000 }]);
     expect(parsed.finderRefusal).toEqual({ reason: "inline-reasoning", request: "step:2" });
     expect(JSON.stringify(parsed)).not.toContain("chars=33");
+  });
+});
+
+// This change's plan.md Phase 2 §5 (H11) and §1 rule (b).
+describe("parseCliStderr — output tokens and the terminal timeout", () => {
+  const step = (tokens, kind = "step") =>
+    `finder step 1: getFileContext src/a.ts (tokens ${tokens}) kind=${kind} provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=5`;
+
+  it("keeps each step line's out= count as outputTokens, null when the CLI printed ?", () => {
+    const parsed = parseCliStderr([step("in=9 out=2048 total=2057"), step("in=9 out=? total=?")].join("\n"));
+    expect(parsed.steps.map((s) => s.outputTokens)).toEqual([2048, null]);
+  });
+
+  it("reads the line's own tokens group, not a path that imitates one", () => {
+    const line =
+      "finder step 1: getFileContext src/(tokens in=1 out=999 total=2) kind=step.ts (tokens in=3 out=7 total=10) kind=finalization provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=5";
+    expect(parseCliStderr(line).steps).toEqual([expect.objectContaining({ kind: "finalization", outputTokens: 7 })]);
+  });
+
+  it("a retry line alone is not a terminal timeout, although the old flag matches it", () => {
+    const parsed = parseCliStderr("retrying finder after TimeoutError in 2000ms");
+    expect(parsed.timeout).toBe(true);
+    expect(parsed.terminalTimeout).toBe(false);
+  });
+
+  it("the run's own timeout error is a terminal timeout", () => {
+    const parsed = parseCliStderr(
+      ["retrying finder after AI_APICallError in 10000ms", "The finder pass exceeded its 300000 ms budget"].join("\n"),
+    );
+    expect(parsed.terminalTimeout).toBe(true);
+  });
+
+  it.each([
+    ["a step line naming a file", step("in=1 out=1 total=2").replace("src/a.ts", "src/TimeoutError.ts")],
+    ["a rejected output", "rejected output (FinderOutputError, provider=Z.AI, finish=stop): exceeded its 5 ms budget"],
+    ["a finder refusal", "Finder output rejected (reason=parse, request=finalization): TimeoutError in the text"],
+  ])("model-chosen or model text in %s is never a terminal timeout", (_label, line) => {
+    expect(parseCliStderr(line).terminalTimeout).toBe(false);
+  });
+});
+
+describe("finderTiming — per attempt, from the lines' arrival (H11)", () => {
+  const CONFIG = { type: "configuration" };
+  const stepAt = (atMs, kind = "step") => ({ atMs, type: "step", kind });
+
+  it("classifies only the configuration line, finder step lines and `retrying finder` lines", () => {
+    expect(timedLineOf(EXPECTED_CONFIGURATION_LINE)).toEqual({ type: "configuration" });
+    expect(timedLineOf(STDERR_OK.split("\n")[1])).toEqual({ type: "step", kind: "step" });
+    expect(timedLineOf("retrying finder after TimeoutError in 2000ms")).toEqual({ type: "retry", delayMs: 2000 });
+    expect(timedLineOf("retrying judge after AI_NoObjectGeneratedError in 4000ms")).toBeNull();
+    expect(timedLineOf("review cost: finder=$0.01")).toBeNull();
+  });
+
+  it("one attempt that reached its finalization ends at its last step line, the repair included", () => {
+    const timing = finderTiming(
+      [{ atMs: 100, ...CONFIG }, stepAt(1100), stepAt(5100, "finalization"), stepAt(6100, "repair")],
+      9000,
+    );
+    expect(timing).toEqual({
+      finderStepOffsetsMs: [[1000, 5000, 6000]],
+      finderElapsedMs: [6000],
+      finderAttemptFailed: [false],
+    });
+  });
+
+  it("attempt 2 starts at its retry line plus the delay; a retried attempt ends at the retry line, failed", () => {
+    const timing = finderTiming(
+      [
+        { atMs: 0, ...CONFIG },
+        stepAt(40_000),
+        { atMs: 300_000, type: "retry", delayMs: 2000 },
+        stepAt(312_000),
+        stepAt(330_000, "finalization"),
+      ],
+      400_000,
+    );
+    expect(timing).toEqual({
+      finderStepOffsetsMs: [[40_000], [10_000, 28_000]],
+      finderElapsedMs: [300_000, 28_000],
+      finderAttemptFailed: [true, false],
+    });
+  });
+
+  it("a last attempt without a finalization step ends at the process exit, failed", () => {
+    const timing = finderTiming(
+      [{ atMs: 0, ...CONFIG }, { atMs: 300_000, type: "retry", delayMs: 2000 }, stepAt(310_000)],
+      602_500,
+    );
+    expect(timing.finderElapsedMs).toEqual([300_000, 300_500]);
+    expect(timing.finderAttemptFailed).toEqual([true, true]);
+  });
+
+  it("no configuration line: one attempt of unknown length", () => {
+    expect(finderTiming([stepAt(10)], 50)).toEqual({
+      finderStepOffsetsMs: [[]],
+      finderElapsedMs: [null],
+      finderAttemptFailed: [true],
+    });
   });
 });
 
@@ -415,11 +535,13 @@ describe("scheduleState — auth/credit stop", () => {
       ...base,
       ...ran("pr247-01", "pr247", 0.08),
       ...ran("pr247-02", "pr247", 0.08),
-      ...ran("pr269-01", "pr269", 0.15, false),
+      ...ran269("pr269-01", 0.15, false),
       ...confirmed("pr269-02", "pr269"),
     ];
     expect(scheduleState(g1).ended).toBe("INCOMPLETE (auth/credit)");
-    expect(scheduleState([...g1, resume]).next).toBe("pr269");
+    // The stopped #269 run still takes its d2 line (`not-applicable`) before the next paid step.
+    expect(scheduleState([...g1, resume]).waitingFor).toMatch(/^the owner's d2 line for pr269-02 .*--not-applicable/u);
+    expect(scheduleState([...g1, resume, d2("pr269-02", "not-applicable")]).next).toBe("pr269");
   });
 
   it("needs one resumption per stop — no automatic replacement", () => {
@@ -528,10 +650,10 @@ describe("scheduleState — the sealed order and its stops", () => {
       ...ran("pr247-01", "pr247", 0.08),
       ...ran("pr247-02", "pr247", 0.08),
     ];
-    const two = [...base, ...ran("pr269-01", "pr269", 0.15, false), ...ran("pr269-02", "pr269", 0.15, false)];
+    const two = [...base, ...ran269("pr269-01", 0.15, false), ...ran("pr269-02", "pr269", 0.15, false)];
     expect(scheduleState(two).ended).toBe("FAIL (G1)");
     const ten = [...base];
-    for (let i = 1; i <= 10; i += 1) ten.push(...ran(`pr269-${String(i)}`, "pr269", 0.15, i !== 3));
+    for (let i = 1; i <= 10; i += 1) ten.push(...ran269(`pr269-${String(i)}`, 0.15, i !== 3));
     expect(scheduleState(ten).ended).toBe("measured");
   });
 
@@ -599,16 +721,25 @@ const measured = ({ m247 = 0.08, m269 = 0.15 } = {}) => {
   ];
   for (let i = 1; i <= 10; i += 1)
     series.push(
-      ...ran(`pr269-${String(i).padStart(2, "0")}`, "pr269", m269, true, {
+      ...ran269(`pr269-${String(i).padStart(2, "0")}`, m269, true, {
         reviewSha256: "b".repeat(64),
-        findings: [{ id: "F1", file: "scripts/spikes/bread-spike.ts" }],
+        findings: [
+          { id: "F1", file: "scripts/spikes/bread-spike.ts" },
+          { id: "F2", file: "src/a.ts" },
+          { id: "F3", file: "src/b.ts" },
+        ],
       }),
     );
   return series;
 };
 
-/** Real resolver output, with synthetic owner verdicts for this fixture's findings. */
-const handReadFor = (series, { approveD2 = true } = {}) => {
+/**
+ * Real resolver output, with synthetic owner verdicts for this fixture's
+ * findings: the ledger's D2 rows as `D2`, every other finding `accept` (or
+ * `reject` with `rejectOthers`, which fails a #269 run of three findings).
+ */
+const handReadFor = (series, { rejectOthers = false } = {}) => {
+  const ledgerD2 = ledgerD2Of(series);
   const cases = Object.fromEntries(
     ["pr247", "pr269"].map((kind) => {
       const runs = series.filter((line) => line.type === "record" && line.kind === kind && line.valid);
@@ -616,11 +747,15 @@ const handReadFor = (series, { approveD2 = true } = {}) => {
         runs.flatMap((run) =>
           run.findings.map((finding) => [
             `${run.stepId}#${finding.id}`,
-            kind === "pr269" && approveD2 ? "D2" : "accept",
+            kind === "pr269" && ledgerD2.get(run.stepId)?.matches?.includes(finding.id)
+              ? "D2"
+              : rejectOthers
+                ? "reject"
+                : "accept",
           ]),
         ),
       );
-      return [kind, resolveCase(kind, runs, { verdicts, duplicates: [] }).results];
+      return [kind, resolveCase(kind, runs, { verdicts, duplicates: [] }, { ledgerD2 }).results];
     }),
   );
   return {
@@ -639,7 +774,9 @@ describe("computeOutcome", () => {
       .map((line) =>
         line.type === "record" && line.stepId === "pr269-10"
           ? { ...line, valid, reasons: valid ? [] : ["timeout"] }
-          : line,
+          : line.type === "d2" && line.stepId === "pr269-10" && !valid
+            ? d2("pr269-10", "not-applicable")
+            : line,
       );
     const outcome = computeOutcome(series, { handRead: { pass: true } });
     expect(outcome.state).toMatchObject({
@@ -669,7 +806,10 @@ describe("computeOutcome", () => {
 
   it("requires a final #269 cost mean even when terminal records have no unsettled starts", () => {
     const series = measured().filter((line) => !line.stepId?.startsWith("pr269-"));
-    for (let i = 1; i <= 10; i += 1) series.push(record(`pr269-${String(i).padStart(2, "0")}`, "pr269"));
+    for (let i = 1; i <= 10; i += 1) {
+      const stepId = `pr269-${String(i).padStart(2, "0")}`;
+      series.push(record(stepId, "pr269"), d2(stepId));
+    }
     const outcome = computeOutcome(series, { handRead: { pass: true } });
     expect(outcome.m269).toBeNull();
     expect(outcome.state.ended).toBeNull();
@@ -695,6 +835,7 @@ describe("computeOutcome", () => {
       "reliability #247": "PASS",
       A6: "PASS",
       cost: "provisional until G5",
+      G5: "pending (Phase 7)",
     });
     expect(outcome.gates.G1).toBe("10/10 valid — PASS");
     expect(outcome.m247).toBeCloseTo(0.08, 10);
@@ -703,9 +844,10 @@ describe("computeOutcome", () => {
   it("a passing hand-read makes it ADMITTED (pending G5) — never ADMITTED outright", () => {
     const series = measured();
     expect(computeOutcome(series, { handRead: handReadFor(series) }).verdict).toBe("ADMITTED (pending G5)");
-    expect(computeOutcome(series, { handRead: handReadFor(series, { approveD2: false }) }).verdict).toBe(
-      "NOT ADMITTED (hand-read)",
-    );
+    // Two rejections among three findings exceed ceil(0.05 × 3) = 1: the hand-read fails, D2 notwithstanding.
+    const failing = computeOutcome(series, { handRead: handReadFor(series, { rejectOthers: true }) });
+    expect(failing.verdict).toBe("NOT ADMITTED (hand-read)");
+    expect(failing.gates.G5).toBe("not measured");
   });
 
   it.each([
@@ -776,7 +918,11 @@ describe("computeOutcome", () => {
 
   it("requires evidence for valid runs only, including zero-finding #247 runs", () => {
     const series = measured().map((line) =>
-      line.type === "record" && line.stepId === "pr269-10" ? { ...line, valid: false, reasons: ["timeout"] } : line,
+      line.type === "record" && line.stepId === "pr269-10"
+        ? { ...line, valid: false, reasons: ["timeout"] }
+        : line.type === "d2" && line.stepId === "pr269-10"
+          ? d2("pr269-10", "not-applicable")
+          : line,
     );
     const handRead = handReadFor(series);
     expect(handRead.cases.pr247).toHaveLength(2);
@@ -825,14 +971,17 @@ describe("computeOutcome", () => {
 // --- Environment and G3 command ---------------------------------------------------
 
 describe("environment and the G3 command", () => {
-  it("names every forbidden variable that is set, ignoring empty ones", () => {
+  // Amendment 1 as code (this change's plan.md H8): present at all is set.
+  it("names every forbidden variable that is present, empty and whitespace-only values included", () => {
     expect(
       forbiddenEnvSet({
         OPENROUTER_REVIEW_MODEL: "z-ai/glm-4.6",
         OPENROUTER_FINDER_PROVIDERS: " ",
+        REVIEW_FINDER_TIMEOUT_MS: "",
         OPENROUTER_API_KEY: "k",
       }),
-    ).toEqual(["OPENROUTER_REVIEW_MODEL"]);
+    ).toEqual(["OPENROUTER_REVIEW_MODEL", "OPENROUTER_FINDER_PROVIDERS", "REVIEW_FINDER_TIMEOUT_MS"]);
+    expect(forbiddenEnvSet({ OPENROUTER_API_KEY: "k" })).toEqual([]);
   });
 
   it("the G3 command selects exactly the four registered cases of the real config, and only the candidate", () => {
@@ -850,6 +999,13 @@ describe("environment and the G3 command", () => {
       .map((provider) => provider.label)
       .filter((label) => new RegExp(G3_PROVIDER_FILTER, "u").test(label));
     expect(providers).toEqual(["candidate-glm-5.3"]);
+  });
+
+  it("the screening's fixtures step is the same command with --repeat 1", () => {
+    const args = g3EvalArgs("x.json", { repeat: 1 });
+    const at = args.indexOf("--repeat") + 1;
+    expect(args[at]).toBe("1");
+    expect([...args.slice(0, at), "3", ...args.slice(at + 1)]).toEqual(g3EvalArgs("x.json"));
   });
 
   it("is the plan's exact invocation", () => {

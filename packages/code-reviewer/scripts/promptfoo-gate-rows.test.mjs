@@ -642,9 +642,83 @@ describe("checkExport and describeSummary", () => {
     expect(summary.regradedRows).toHaveLength(1);
   });
 
+  it("describes the runner's minimal summary of an unusable export without throwing", () => {
+    const lines = describeSummary({ failedRun: true, problems: ["no usable export: ENOENT"] });
+    expect(lines[0]).toBe("FAILED RUN, not a gate result: no usable export: ENOENT");
+    expect(lines.at(-1)).toMatch(/not in the export/u);
+  });
+
   it("names a failed run as not a gate result", () => {
     const { summary } = checkExport({ results: { results: fullRun().slice(2) } });
     expect(describeSummary(summary)[0]).toMatch(/^FAILED RUN, not a gate result/u);
+  });
+});
+
+// The screening of change finder-glm-5-3-high (plan.md Phase 2 §1): the same
+// four cases once, plus the rows stop rules (a) and (b) read.
+describe("the screening's fixture step — repeats: 1", () => {
+  const oneRun = () => {
+    nextId = 0;
+    return CASES.map((c) => rawRow(c.key));
+  };
+
+  it("four rows, one per case, are a complete run at repeats 1, and the counts read k/1", () => {
+    const { summary } = checkExport({ results: { results: oneRun() } }, undefined, { repeats: 1 });
+    expect(summary).toMatchObject({ failedRun: false, pass: true, repeats: 1, rowCount: 4 });
+    expect(summary.g3.cases.react.counts.flaw_unsafe_html).toBe(1);
+    expect(describeSummary(summary)).toContain("G3 js-loop: issue_recall 1/1");
+  });
+
+  it("the sealed G3 path still requires 12 rows and three repeats", () => {
+    const { summary } = checkExport({ results: { results: oneRun() } });
+    expect(summary.failedRun).toBe(true);
+    expect(summary.problems.join(" ")).toMatch(/4 rows, expected 12/u);
+    expect(summary.repeats).toBe(3);
+  });
+
+  it.each([
+    [
+      "a request finishing length",
+      (row) =>
+        withMetadata(row, { requests: [request("finalization", "Z.AI", "z-ai/glm-5.3", { finishReason: "length" })] }),
+    ],
+    [
+      "a length refusal with no step telemetry",
+      (row) =>
+        withMetadata(providerError(row, "Finder output rejected (reason=length)"), {
+          finderFailureReason: "length",
+          requests: [],
+        }),
+    ],
+  ])("lists %s as a length row (stop rule (a))", (_label, change) => {
+    const rows = oneRun();
+    rows[1] = change(rows[1]);
+    const { summary } = checkExport({ results: { results: rows } }, undefined, { repeats: 1 });
+    expect(summary.lengthRows).toEqual([{ testIdx: 2, case: "react" }]);
+  });
+
+  it.each([
+    ["a timeout on both tries", [{ error: "timeout", delayMs: 2000 }]],
+    ["a 5xx, then a timeout on the retry", [{ error: "APICallError-503", delayMs: 10_000 }]],
+  ])("lists %s as a timeout row (stop rule (b))", (_label, retries) => {
+    const rows = oneRun();
+    rows[2] = withMetadata(providerError(rows[2], "The finder pass exceeded its 300000 ms budget"), {
+      retries,
+      finderErrorClass: "timeout",
+    });
+    const { summary } = checkExport({ results: { results: rows } }, undefined, { repeats: 1 });
+    expect(summary.timeoutRows).toEqual([{ testIdx: 3, case: "cross-hunk" }]);
+    expect(summary.recoveredTimeoutRows).toEqual([]);
+  });
+
+  it("a terminal timeout without a retry is not (b); a recovered timeout is only a warning row", () => {
+    const rows = oneRun();
+    rows[0] = withMetadata(providerError(rows[0], "TimeoutError"), { retries: [], finderErrorClass: "timeout" });
+    rows[3] = withMetadata(rows[3], { retries: [{ error: "timeout", delayMs: 2000 }] });
+    const { summary } = checkExport({ results: { results: rows } }, undefined, { repeats: 1 });
+    expect(summary.timeoutRows).toEqual([]);
+    expect(summary.recoveredTimeoutRows).toEqual([{ testIdx: 4, case: "clean" }]);
+    expect(describeSummary(summary).join("\n")).toMatch(/recovered-timeout rows/u);
   });
 });
 

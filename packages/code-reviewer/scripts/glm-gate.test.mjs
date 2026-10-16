@@ -11,7 +11,15 @@ import { dirname, join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 import { EXPECTED_CONFIGURATION_LINE, meanSettledCost, seriesSpend } from "./glm-gate-core.mjs";
-import { describeManifest, main, PACKAGE_DIR, readSeries, REPO_ROOT, sealedFileList } from "./glm-gate.mjs";
+import {
+  describeManifest,
+  main,
+  PACKAGE_DIR,
+  readSeries,
+  REPO_ROOT,
+  sealedFileList,
+  spawnCommand,
+} from "./glm-gate.mjs";
 
 const CHANGE = "context/changes/finder-glm-5-3-high";
 const SEALED = [
@@ -285,7 +293,15 @@ describe("run", () => {
       cost: { complete: false },
     });
     expect(record.requests).toEqual([
-      { step: 1, kind: "step", provider: "Z.AI", finishReason: "stop", model: "z-ai/glm-5.3", reasoningTokens: 10 },
+      {
+        step: 1,
+        kind: "step",
+        provider: "Z.AI",
+        finishReason: "stop",
+        model: "z-ai/glm-5.3",
+        reasoningTokens: 10,
+        outputTokens: 1,
+      },
     ]);
     expect(lines.at(-1)).toMatch(/INVALID RUN \(finder-output:length\)/u);
     expect(lines.at(-1)).toMatch(/G2-01 PROBE FAILED/u);
@@ -426,6 +442,189 @@ describe("auth/credit stop", () => {
   });
 });
 
+// Amendment 1 of the predecessor's gate.md as code (this change's plan.md Phase 2 §4, H8).
+describe("Amendment 1 as code", () => {
+  it.each([
+    [
+      "an empty value in .env",
+      (world) => write(join(world.repoRoot, "packages/code-reviewer/.env"), "REVIEW_FINDER_MAX_STEPS=\n"),
+      {},
+    ],
+    [
+      "a whitespace-only value in .env",
+      (world) => write(join(world.repoRoot, "packages/code-reviewer/.env"), 'OPENROUTER_MODEL="  "\n'),
+      {},
+    ],
+    ["an empty value in the shell", () => undefined, { OPENROUTER_REVIEW_MODEL: "" }],
+  ])("refuses a forbidden variable with %s", async (_label, arrange, env) => {
+    const world = setup();
+    arrange(world);
+    const { deps, lines } = depsFor(world);
+    deps.env = { ...deps.env, ...env };
+    expect(await main(["preflight"], deps)).toBe(2);
+    expect(lines[0]).toMatch(
+      /REFUSED \(environment overrides production defaults\): (REVIEW_FINDER_MAX_STEPS|OPENROUTER_MODEL|OPENROUTER_REVIEW_MODEL)/u,
+    );
+    expect(deps.readCounter).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["--series", "/tmp/elsewhere.jsonl"],
+    ["--results", "/tmp/results"],
+    ["--g3-rows", "/tmp/rows.json"],
+    ["--manifest", "/tmp/manifest.json"],
+    ["--gate", "/tmp/gate.md"],
+  ])("refuses %s without --dry-run, before anything is read or run", async (flag, value) => {
+    const world = setup();
+    const { deps, lines } = depsFor(world);
+    await main(["preflight"], deps);
+    expect(await main(["run", "--case", "clean", "--run-id", "clean-01", flag, value], deps)).toBe(2);
+    expect(lines.at(-1)).toMatch(new RegExp(`REFUSED \\(path override without --dry-run\\): ${flag}`, "u"));
+    expect(deps.runCli).not.toHaveBeenCalled();
+  });
+
+  it("allows a path flag with --dry-run", async () => {
+    const world = setup();
+    const { deps } = depsFor(world);
+    const series = join(world.root, "elsewhere", "series.jsonl");
+    expect(await main(["run", "--case", "clean", "--run-id", "dry-1", "--dry-run", "--series", series], deps)).toBe(0);
+    expect(readSeries(series).some((line) => line.type === "record")).toBe(true);
+  });
+
+  const atG3 = async () => {
+    const world = setup();
+    const ctx = depsFor(world);
+    const gateSeries = join(world.repoRoot, CHANGE, "gate/series.jsonl");
+    // A series that has reached G3: preflight, then G2 passed and settled.
+    await main(["preflight"], ctx.deps);
+    const lines = [];
+    for (let i = 1; i <= 5; i += 1) {
+      const id = `clean-0${String(i)}`;
+      lines.push(
+        { type: "started", stepId: id, kind: "clean" },
+        { type: "record", stepId: id, kind: "clean", valid: true, findings: [], reasons: [] },
+        { type: "settled", stepId: id, cost: 0.02 },
+      );
+      if (i === 1) lines.push({ type: "continue", for: "probe" });
+    }
+    writeFileSync(
+      gateSeries,
+      `${readFileSync(gateSeries, "utf8")}${lines.map((line) => JSON.stringify(line)).join("\n")}\n`,
+    );
+    return { world, ...ctx };
+  };
+
+  it.each([
+    ["g3", ["g3"], "g3.export.json"],
+    ["g3 --regrade", ["g3", "--regrade"], "g3-regrade.export.json"],
+  ])("%s refuses while its export file exists, naming it", async (_label, argv, file) => {
+    const { world, deps, lines } = await atG3();
+    if (argv.includes("--regrade")) {
+      // The re-grade is next only after a grader-error G3 run.
+      const gateSeries = join(world.repoRoot, CHANGE, "gate/series.jsonl");
+      const g3 = [
+        { type: "started", stepId: "g3", kind: "g3" },
+        { type: "g3", stepId: "g3", kind: "g3", summary: { failedRun: true, graderError: true } },
+        { type: "settled", stepId: "g3", cost: 0.3 },
+      ];
+      writeFileSync(
+        gateSeries,
+        `${readFileSync(gateSeries, "utf8")}${g3.map((line) => JSON.stringify(line)).join("\n")}\n`,
+      );
+    }
+    write(join(world.cache, "g3", file), "{}");
+    expect(await main(argv, deps)).toBe(2);
+    expect(lines.at(-1)).toMatch(
+      new RegExp(
+        `REFUSED \\(export already exists\\): <cache>/g3/${file.replaceAll(".", "\\.")} — .*move it away`,
+        "u",
+      ),
+    );
+    expect(deps.runCommand).not.toHaveBeenCalled();
+  });
+
+  it("g3 runs when no export is left over", async () => {
+    const { deps } = await atG3();
+    expect(await main(["g3"], deps)).toBe(1); // The fake promptfoo writes no export: a failed run, but it ran.
+    expect(deps.runCommand).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Finder-pass timing (this change's plan.md Phase 2 §5, H11).
+describe("finder-pass timing", () => {
+  const CONFIG = EXPECTED_CONFIGURATION_LINE;
+  const stepLine = (kind, out) =>
+    `finder step 1: no getFileContext call (tokens in=1 out=${String(out)} total=9) kind=${kind} provider=Z.AI finish=stop model=z-ai/glm-5.3 reasoning=4`;
+
+  it("spawnCommand notes when each timed line arrives — a split line with its completing chunk — and the exit", async () => {
+    // A child that writes stderr in delayed chunks, one line split in two.
+    const script = [
+      "const w = (s) => process.stderr.write(s);",
+      `w(${JSON.stringify(`${CONFIG}\n`)});`,
+      `setTimeout(() => w(${JSON.stringify(stepLine("step", 7).slice(0, 40))}), 100);`,
+      `setTimeout(() => w(${JSON.stringify(`${stepLine("step", 7).slice(40)}\nnot timed\n`)}), 250);`,
+      `setTimeout(() => w(${JSON.stringify("retrying finder after TimeoutError in 150ms\n")}), 400);`,
+      `setTimeout(() => w(${JSON.stringify(`${stepLine("finalization", 9)}\n`)}), 700);`,
+      "setTimeout(() => process.exit(0), 800);",
+    ].join("\n");
+    const result = await spawnCommand(process.execPath, ["-e", script], process.env, PACKAGE_DIR, { echo: false });
+    expect(result.exitCode).toBe(0);
+    expect(result.timedLines.map((line) => line.type)).toEqual(["configuration", "step", "retry", "step"]);
+    const [config, step, retry, finalization] = result.timedLines;
+    expect(step.atMs - config.atMs).toBeGreaterThanOrEqual(240); // the chunk that completed the line, not the first
+    expect(retry).toMatchObject({ delayMs: 150 });
+    expect(finalization).toMatchObject({ kind: "finalization" });
+    expect(result.exitAtMs).toBeGreaterThanOrEqual(finalization.atMs);
+    expect(JSON.stringify(result.timedLines)).not.toMatch(/getFileContext|not timed/u);
+  });
+
+  it("the run record carries each attempt's step offsets, elapsed time and failure, and no line text", async () => {
+    const world = setup();
+    const timedLines = [
+      { atMs: 1000, type: "configuration" },
+      { atMs: 5000, type: "step", kind: "step" },
+      { atMs: 301_000, type: "retry", delayMs: 2000 },
+      { atMs: 320_000, type: "step", kind: "finalization" },
+    ];
+    const runCli = vi.fn(async (args) => {
+      write(join(args[args.indexOf("--out-dir") + 1], "review.json"), JSON.stringify(reviewJson()));
+      return {
+        exitCode: 0,
+        signal: null,
+        stdout: "",
+        stderr: STDERR,
+        interrupted: false,
+        timedLines,
+        exitAtMs: 330_000,
+      };
+    });
+    const { deps } = depsFor(world, { runCli });
+    await main(["preflight"], deps);
+    expect(await main(["run", "--case", "clean", "--run-id", "clean-01"], deps)).toBe(0);
+    const record = seriesOf(world).find((line) => line.type === "record");
+    expect(record).toMatchObject({
+      finderStepOffsetsMs: [[4000], [17_000]],
+      finderElapsedMs: [300_000, 17_000],
+      finderAttemptFailed: [true, false],
+      steps: [expect.objectContaining({ outputTokens: 1 })],
+      terminalTimeout: false,
+    });
+    expect(JSON.stringify(record)).not.toMatch(/no getFileContext call|finder configuration/u);
+  });
+
+  it("a CLI run without timing (a fake) records null timing, never a guessed one", async () => {
+    const world = setup();
+    const { deps } = depsFor(world);
+    await main(["preflight"], deps);
+    await main(["run", "--case", "clean", "--run-id", "clean-01"], deps);
+    expect(seriesOf(world).find((line) => line.type === "record")).toMatchObject({
+      finderStepOffsetsMs: null,
+      finderElapsedMs: null,
+      finderAttemptFailed: null,
+    });
+  });
+});
+
 describe("reconcile", () => {
   const unsettledRun = async () => {
     const world = setup();
@@ -527,7 +726,7 @@ describe("usage", () => {
     const world = setup();
     const { deps, lines } = depsFor(world);
     expect(await main(["bogus"], deps)).toBe(2);
-    expect(lines[0]).toMatch(/one of preflight, run, g3, reconcile, continue, outcome, manifest/u);
+    expect(lines[0]).toMatch(/one of preflight, run, g3, fixtures, reconcile, continue, d2, outcome, manifest/u);
   });
 });
 

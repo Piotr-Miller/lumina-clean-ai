@@ -106,8 +106,8 @@ or changed terms are below.
 | reasoning shape         | Every finder request carries exactly `reasoning: {enabled: true, effort: "high"}`; judge and impl-review requests carry none. Configuration line: `finder configuration: model=z-ai/glm-5.3 reasoning=high providers=z-ai,fireworks,together`                                                                                                            | user (`change.md`)                                                      | Repair request included                                                                                                                                                                                                                                                                                                                                                                           | 1.1 (wire tests), 1.5 (dry run)                         |
 | screening               | Before any pre-registration: G3's four fixture cases × 1 (promptfoo) + #247 × 1 + #269 × 2 through the production CLI, on the frozen inputs                                                                                                                                                                                                              | user (2026-10-16)                                                       | Screening runs are **not** gate samples and never enter m247 / m269 of the gate                                                                                                                                                                                                                                                                                                                   | `glm-gate-screening.test.mjs`                           |
 | screening stop          | Any of: **(a)** a finder request ends `length`; **(b)** a screening run is invalid because the finder timed out after its retry; **(c)** 53·m247 + 8·m269 + 13·$0.199620 > $10.00, i.e. 53·m247 + 8·m269 > $7.404940, from settled costs (finder + judge, retries included); **(d)** a valid screening #269 run has no owner-approved D2 match           | user (2026-10-16) + plan (H4, H6, review F2)                            | A first-attempt timeout the retry recovers is a **warning**, not a stop; its cost counts. Equality in (c) does not stop. An undecided D2 counts as no match. (a) and (b) also apply to fixture rows (H6). (c) can already stop after #247 if 53·m247 alone > $7.404940 (H4). With no valid #269 run, (d) is untested: the screening ends `INCONCLUSIVE (no valid #269 run)`, not `GO` (review F2) | `glm-gate-screening.test.mjs`                           |
-| screening pause         | A confirmed 401/402, a provider or model mismatch, or a grader error pauses the screening for an owner decision, as in the gate. Any other invalid screening run pauses too (H5)                                                                                                                                                                         | user (2026-10-16) + plan (H5)                                           | A pause is not a stop; the owner's `continue --screening --for <reason>` resumes; cost counts                                                                                                                                                                                                                                                                                                     | `glm-gate-screening.test.mjs`                           |
-| m247 / m269 (screening) | m247 = the settled cost of the one #247 screening run; m269 = the mean settled cost of the two #269 screening runs, valid and invalid; finder + judge, retries included                                                                                                                                                                                  | user (2026-10-16) + plan (review F2)                                    | An unsettled run blocks (c) until `reconcile --screening` settles it. A run stopped by a confirmed 401/402 is not a sample and stays out, as in the gate; it is not replaced (review F2)                                                                                                                                                                                                          | `glm-gate-screening.test.mjs`                           |
+| screening pause         | A confirmed 401/402, a provider or model mismatch, or a grader error pauses the screening for an owner decision, as in the gate. Any other invalid screening run pauses too (H5)                                                                                                                                                                         | user (2026-10-16) + plan (H5)                                           | A pause is not a stop; the owner's `continue --screening --for <reason>` resumes; cost counts. The reason must be the one `waitingFor` names; after an invalid #269 run its `d2 --not-applicable` line comes first; the paused step settles first (owner decision 2026-10-16; Phase 2 § 1 "Pauses")                                                                                               | `glm-gate-screening.test.mjs`                           |
+| m247 / m269 (screening) | m247 = the settled cost of the one #247 screening run; m269 = the mean settled cost of the two #269 screening runs, valid and invalid; finder + judge, retries included                                                                                                                                                                                  | user (2026-10-16) + plan (review F2)                                    | An unsettled run blocks (c) until `reconcile --screening` settles it. A run stopped by a confirmed 401/402 is not a sample and stays out, as in the gate; a #269 run is not replaced (review F2). A stopped `s247-01` (or `sfix`) runs once more after the owner's `continue`; an invalid run is still a sample (owner decision 2026-10-16)                                                       | `glm-gate-screening.test.mjs`                           |
 | D2 match                | Unchanged from `context/archive/2026-10-11-finder-glm-5-3/plan.md:76`: a finding cites `bread-spike.ts` within `localInput`'s upload path or `main`'s cleanup **and** claims the uploaded file is not deleted (or leaks) on the missing-URL exit. Cleanup only in `finally` is not a match                                                               | user (2026-10-16)                                                       | A run with no finding citing `bread-spike.ts` has no match                                                                                                                                                                                                                                                                                                                                        | owner, per run                                          |
 | D2 candidates           | Every finding of the run whose `file` contains `bread-spike.ts`, or whose description or suggestion mentions `bread-spike.ts`, `localInput`, `deleteUpload`, `urls.get` or `uploadedFileId`. The agent lists **all** of them, including those it judges not to match, each with a recommendation; it filters nothing                                     | user (2026-10-16, b) + plan (term set from the predecessor's run notes) | The owner may approve a finding outside the list; it is recorded as `listed: false`                                                                                                                                                                                                                                                                                                               | `glm-gate-d2.test.mjs`                                  |
 | D2 decision             | The owner's decision for one valid #269 run (screening or gate): `match` with the approved finding ids, or `no-match`. It is recorded in the ledger before the next run starts, and it is final: the full hand-read does not revisit it                                                                                                                  | user (2026-10-16, a)                                                    | An invalid #269 run gets the owner's `not-applicable` (`d2 --not-applicable`), which is not a D2 decision and counts for nothing (H7)                                                                                                                                                                                                                                                             | `glm-gate-d2.test.mjs`                                  |
@@ -413,7 +413,8 @@ settlement, without a manifest or the sealed order (H1–H6).
   - `--screening` switches the ledger to `context/changes/finder-glm-5-3-high/screening/series.jsonl`, results to
     `screening/results/`, fixture rows to `screening/results/fixture-rows.json`, and console logs and exports to
     `<cache>/screening/`.
-  - Run ids are `s247-01`, `s269-01`, `s269-02`; the fixtures step is `sfix`.
+  - Run ids are `s247-01`, `s269-01`, `s269-02`; the fixtures step is `sfix`. After a confirmed 401/402 stops `sfix`
+    or `s247-01`, the owner's `continue` admits `sfix-02` / `s247-02` (owner decision 2026-10-16).
 - **Subcommands** (all with `--screening`):
   - `preflight`: T0_s, endpoint status, the input fingerprints of `pr247` and `pr269`, the sha256 of
     `describeManifest`, the git `HEAD`, forbidden environment refused. No manifest required.
@@ -433,10 +434,26 @@ settlement, without a manifest or the sealed order (H1–H6).
     ends `INCONCLUSIVE (no valid #269 run)`. That is not a stop: the owner decides.
   - A run stopped by a confirmed 401/402 is not a sample and stays out of m269, as in the gate. It is not replaced;
     the run ids stay `s269-01` and `s269-02`.
+  - **401/402 on a one-step kind (owner decision 2026-10-16).** A confirmed 401/402 on `sfix` or `s247-01` is not a
+    sample either, but the screening needs one sample of each: after the owner's `continue`, that kind runs once
+    more, under admission. Only a confirmed 401/402 gives a rerun. An invalid fixture row or an invalid run is still a
+    sample (as an invalid #269 run is in m269): after the owner's `continue`, the screening goes on, with no
+    `sfix-02`.
   - A step that ends with T_s above $0.75 records its overshoot and ends the screening `INCOMPLETE (budget)`. The
     owner decides.
   - `waitingFor` names a pause (401/402 confirmed, provider or model mismatch, grader error, other invalid run) or a
     D2 decision.
+  - **Pauses (owner decision 2026-10-16).**
+    - A fixtures step pauses on a confirmed 401/402, a provider or model mismatch, a grader error, and, as H5 treats
+      CLI runs, on an invalid row: a failed export (wrong row count or label), a wrong reasoning shape, inline
+      reasoning, or any other finder error. A missed metric alone is informational. `waitingFor` names each row
+      and its cause.
+    - `continue --screening --for <reason>` takes the reason `waitingFor` reports for that step (`auth-credit`,
+      `mismatch`, `grader-error` or `invalid-run`) and refuses any other.
+    - After an invalid #269 run, the D2 line comes first: `continue --screening` refuses while that run's
+      `d2 --not-applicable` line is missing. Both are recorded.
+    - `continue --screening` refuses while the paused step is unsettled (the owner decision for a failed export,
+      applied to every pause by the plan, since admission refuses an unsettled step anyway).
 - **Rule (b)** is decided on metadata only:
   - **CLI run:** artifact-less; at least one `retrying finder after <any class>` line; no `retrying judge` line; and
     the timeout pattern matches stderr once every `retrying …` line is removed. `parseCliStderr`'s `timeout` flag is
@@ -446,6 +463,13 @@ settlement, without a manifest or the sealed order (H1–H6).
   - A timeout retry followed by a valid artifact is a `warning`. A recovered finder timeout followed by another
     failure (for example a technical judge failure) is that failure's pause (H5), with the warning recorded.
 - **Admission** is H3; a refusal writes `budget_stop` and exits 4, with nothing spent.
+- **Screened tree (owner decision 2026-10-16).**
+  - The baseline is the `describeManifest` sha256 of the last screening preflight before the first paid step. From
+    that step on it is frozen. A fix made before any spending needs only a new preflight.
+  - Every paid step writes the sha256 it ran on into the ledger, and refuses before spending when it differs from
+    the baseline, naming the files and inputs that differ.
+  - A stubbed test runs the whole sequence (`sfix`, `s247-01`, `s269-01`, `s269-02`) and finds the same sha256 at
+    every step, including the frozen worktrees' `clean` flag: the screening does not move the hash itself.
 - **Row checker.** `checkExport` takes `{repeats}` (default `REPEATS`, 3). The fixture step uses 1; the sealed G3
   path is unchanged.
 
@@ -1091,13 +1115,13 @@ No manifest file changes.
 
 #### Automated
 
-- [x] 1.1 Package tests pass
-- [x] 1.2 Typecheck and lint
-- [x] 1.3 Repo formatting
-- [x] 1.4 No `low` pin left
-- [x] 1.5 No path to the archived change in the tooling or the ignore list
-- [x] 1.6 Stubbed dry run prints the `high` configuration line
-- [ ] 1.7 Branch pushed, draft PR open, PR CI green
+- [x] 1.1 Package tests pass — 40217a6
+- [x] 1.2 Typecheck and lint — 40217a6
+- [x] 1.3 Repo formatting — 40217a6
+- [x] 1.4 No `low` pin left — 40217a6
+- [x] 1.5 No path to the archived change in the tooling or the ignore list — 40217a6
+- [x] 1.6 Stubbed dry run prints the `high` configuration line — 40217a6
+- [x] 1.7 Branch pushed, draft PR open, PR CI green — 40217a6
 
 #### Manual
 
@@ -1107,11 +1131,11 @@ No manifest file changes.
 
 #### Automated
 
-- [ ] 2.1 New screening tests pass
-- [ ] 2.2 New D2 tests pass
-- [ ] 2.3 Whole package passes
-- [ ] 2.4 Typecheck, lint, format
-- [ ] 2.5 Stubbed screening end to end
+- [x] 2.1 New screening tests pass
+- [x] 2.2 New D2 tests pass
+- [x] 2.3 Whole package passes
+- [x] 2.4 Typecheck, lint, format
+- [x] 2.5 Stubbed screening end to end
 
 #### Manual
 

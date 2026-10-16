@@ -10,6 +10,12 @@
 // (gate.md) seals them. References below to plan.md, gate.md, owner decisions
 // and A1–A8 are the predecessor's unless they say otherwise. A change here is
 // a change to the gate.
+//
+// This change's plan.md Phase 2 adds: the screening's pure state
+// (`screeningState`, § "Screening"), the D2 decision per #269 run with its
+// pause and early stop (owner decision 2026-10-16 (a)–(d)), D2 taken from the
+// ledger at hand-read, Amendment 1's forbidden-variable rule, and the
+// finder-pass timing (H11).
 
 // --- What is measured ------------------------------------------------------------
 
@@ -52,9 +58,12 @@ export const FORBIDDEN_ENV = Object.freeze([
   "REVIEW_IMPL_REVIEW_TIMEOUT_MS",
 ]);
 
-/** Names of FORBIDDEN_ENV set to a non-empty value in `env`. */
-export const forbiddenEnvSet = (env) =>
-  FORBIDDEN_ENV.filter((name) => typeof env[name] === "string" && env[name].trim() !== "");
+/**
+ * Names of FORBIDDEN_ENV present in `env` at all, whatever the value — empty
+ * and whitespace-only included: the sealed gate's "may be set", as Amendment
+ * 1's operator greps enforced it (this change's plan.md H8).
+ */
+export const forbiddenEnvSet = (env) => FORBIDDEN_ENV.filter((name) => typeof env[name] === "string");
 
 // --- G3 --------------------------------------------------------------------------
 
@@ -64,8 +73,12 @@ export const G3_PROVIDER_FILTER = "^candidate-glm-5\\.3$";
 /** The four registered cases (finder-model-swap gate.md §4), matched by description prefix. */
 export const G3_CASE_FILTER = "^(Finds the material|React 16->19|Cross-hunk contract|Defect-free mechanical rename)";
 
-/** The exact G3 command (plan Phase 3 §1), as arguments to `npm`. */
-export const g3EvalArgs = (exportPath) => [
+/**
+ * The exact G3 command (plan Phase 3 §1), as arguments to `npm`. The
+ * screening's fixtures step is the same command with `{repeat: 1}` (this
+ * change's plan.md Phase 2 §1).
+ */
+export const g3EvalArgs = (exportPath, { repeat = 3 } = {}) => [
   "run",
   "eval",
   "--",
@@ -75,7 +88,7 @@ export const g3EvalArgs = (exportPath) => [
   "-j",
   "1",
   "--repeat",
-  "3",
+  String(repeat),
   "--filter-providers",
   G3_PROVIDER_FILTER,
   "--filter-pattern",
@@ -142,8 +155,10 @@ export function finalProjection({ m247, m269, g5ImplReviewCost }) {
 
 // `kind` (owner decision 2026-10-14) names the request, so a run without
 // review.json still tells the finalization and the repair from a loop step.
+// The lazy prefix finds the line's own `(tokens …)` group: a model-chosen path
+// cannot fake it, because only the real tail matches the fields up to `$`.
 const STEP_LINE =
-  /^finder step (\d+): .* kind=(step|finalization|repair) provider=(\S+) finish=(\S+) model=(\S+) reasoning=(\S+)$/u;
+  /^finder step (\d+): .*?(?:\(tokens in=\S+ out=(\S+) total=\S+\) )?kind=(step|finalization|repair) provider=(\S+) finish=(\S+) model=(\S+) reasoning=(\S+)$/u;
 const RETRY_LINE = /^retrying (finder|judge|impl-review) after (\S+) in (\d+)ms$/u;
 const FINDER_REJECTED = /Finder output rejected \(reason=([a-z-]+), (?:request=([a-z]+(?::\d+)?), )?/u;
 const CONFIGURATION_PREFIX = "finder configuration: ";
@@ -160,6 +175,7 @@ const MISSING_KEY = /OPENROUTER_API_KEY is missing/u;
 // Model text the CLI may print on a rejected output; never scanned for suspicion.
 const REJECTED_OUTPUT_PREFIX = "rejected output (";
 const TIMEOUT = /TimeoutError|exceeded its \d+ ms budget|aborted due to timeout/iu;
+const FINDER_REJECTED_PREFIX = "Finder output rejected (";
 
 /**
  * What the CLI's stderr says about a run, metadata only: the configuration
@@ -177,11 +193,13 @@ export function parseCliStderr(stderr) {
     if (step) {
       steps.push({
         step: Number(step[1]),
-        kind: step[2],
-        provider: step[3] === "?" ? null : step[3],
-        finishReason: step[4],
-        model: step[5] === "missing" ? null : step[5],
-        reasoningTokens: step[6] === "missing" ? null : Number(step[6]),
+        kind: step[3],
+        provider: step[4] === "?" ? null : step[4],
+        finishReason: step[5],
+        model: step[6] === "missing" ? null : step[6],
+        reasoningTokens: step[7] === "missing" ? null : Number(step[7]),
+        // The request's output tokens, against the 16,384-token cap (H11); reasoning is only part of them.
+        outputTokens: step[2] === undefined || step[2] === "?" ? null : Number(step[2]),
       });
     }
     const retry = RETRY_LINE.exec(line);
@@ -193,6 +211,19 @@ export function parseCliStderr(stderr) {
     return match ? [Number(match[1])] : [];
   });
   const scanned = lines.filter((line) => !line.startsWith(REJECTED_OUTPUT_PREFIX)).join("\n");
+  // The run's own terminal timeout (stop rule (b) of the screening): the
+  // pattern on every line except the retry lines, which name the error they
+  // retried, and the lines that can carry model-chosen or model text.
+  const terminal = lines
+    .filter(
+      (line) =>
+        !line.startsWith("retrying ") &&
+        !line.startsWith(REJECTED_OUTPUT_PREFIX) &&
+        !line.startsWith(FINDER_REJECTED_PREFIX) &&
+        !line.startsWith(CONFIGURATION_PREFIX) &&
+        !STEP_LINE.test(line),
+    )
+    .join("\n");
   const authCredit = apiStatuses.some((status) => AUTH_CREDIT_STATUSES.includes(status))
     ? "confirmed"
     : SUSPECTED_AUTH_OR_CREDIT.test(scanned)
@@ -207,6 +238,59 @@ export function parseCliStderr(stderr) {
     authCredit,
     missingKey: MISSING_KEY.test(scanned),
     timeout: TIMEOUT.test(stderr),
+    terminalTimeout: TIMEOUT.test(terminal),
+  };
+}
+
+// --- Finder-pass timing (this change's plan.md H11) --------------------------------
+
+/**
+ * What one stderr line is to the finder-pass timing, or null: the
+ * configuration line, a finder step line (with its kind), or a `retrying
+ * finder` line (with its delay). Metadata only: the line's text is not kept.
+ */
+export function timedLineOf(line) {
+  if (line.startsWith(CONFIGURATION_PREFIX)) return { type: "configuration" };
+  const step = STEP_LINE.exec(line);
+  if (step) return { type: "step", kind: step[3] };
+  const retry = RETRY_LINE.exec(line);
+  if (retry && retry[1] === "finder") return { type: "retry", delayMs: Number(retry[3]) };
+  return null;
+}
+
+/**
+ * Each finder attempt's timing from the arrival offsets of its lines (H11).
+ * Attempt 1 starts at the configuration line; a retried attempt starts at its
+ * `retrying finder` line plus that line's delay, because the retry sleeps
+ * first. An attempt ends at the next `retrying finder` line (failed); else at
+ * its last step line when it reached a finalization step; else at the process
+ * exit (failed). Informational: the code's own 300 s abort decides.
+ */
+export function finderTiming(timedLines, exitAtMs) {
+  const startIndex = timedLines.findIndex((line) => line.type === "configuration");
+  if (startIndex === -1) return { finderStepOffsetsMs: [[]], finderElapsedMs: [null], finderAttemptFailed: [true] };
+  const attempts = [];
+  const begin = (start) => ({ start, steps: [], lastStepAt: null, finalization: false });
+  let current = begin(timedLines[startIndex].atMs);
+  for (const line of timedLines.slice(startIndex + 1)) {
+    if (line.type === "step") {
+      current.steps.push(line.atMs - current.start);
+      current.lastStepAt = line.atMs;
+      if (line.kind === "finalization") current.finalization = true;
+    } else if (line.type === "retry") {
+      attempts.push({ ...current, end: line.atMs, failed: true });
+      current = begin(line.atMs + line.delayMs);
+    }
+  }
+  attempts.push(
+    current.finalization
+      ? { ...current, end: current.lastStepAt, failed: false }
+      : { ...current, end: exitAtMs ?? null, failed: true },
+  );
+  return {
+    finderStepOffsetsMs: attempts.map((attempt) => attempt.steps),
+    finderElapsedMs: attempts.map((attempt) => (attempt.end === null ? null : attempt.end - attempt.start)),
+    finderAttemptFailed: attempts.map((attempt) => attempt.failed),
   };
 }
 
@@ -382,7 +466,7 @@ export function stepEstimate(series, kind) {
  */
 export const authCreditStopped = (line) =>
   (line.type === "record" && line.authCredit === "confirmed") ||
-  (line.type === "g3" && line.summary?.authCredit === true);
+  ((line.type === "g3" || line.type === "fixtures") && line.summary?.authCredit === true);
 
 /** Sample runs of a case: every record except one stopped by a confirmed 401/402. */
 const records = (series, kind) =>
@@ -404,6 +488,51 @@ export function meanSettledCost(series, kind) {
   return costs.reduce((sum, cost) => sum + cost, 0) / costs.length;
 }
 
+// --- D2, decided per #269 run (owner decision 2026-10-16 (a)–(d)) ----------------
+
+/** The file D2 lives in, and the terms that make a finding a D2 candidate (this change's plan.md § Definitions). */
+export const D2_FILE = "bread-spike.ts";
+export const D2_TERMS = Object.freeze([D2_FILE, "localInput", "deleteUpload", "urls.get", "uploadedFileId"]);
+
+/**
+ * A D2 candidate: its `file` contains `bread-spike.ts`, or its description or
+ * suggestion mentions one of D2_TERMS. The one predicate behind `d2 --list`
+ * and the sheet's `D2?` flag, so the two never disagree. Never a decision:
+ * the agent lists every candidate and the owner decides.
+ */
+export function isD2Candidate(finding) {
+  if (typeof finding !== "object" || finding === null) return false;
+  if (typeof finding.file === "string" && finding.file.includes(D2_FILE)) return true;
+  return [finding.description, finding.suggestion].some(
+    (text) => typeof text === "string" && D2_TERMS.some((term) => text.includes(term)),
+  );
+}
+
+/** The owner's `d2` line for one run, if any (at most one per run). */
+export const d2LineFor = (series, stepId) => series.find((line) => line.type === "d2" && line.stepId === stepId);
+
+/** The valid #269 sample runs, in ledger order. */
+const valid269 = (series) => records(series, "pr269").filter((record) => record.valid === true);
+
+/** The first valid #269 run the owner decided `no-match` for: the D2 early stop. */
+export const firstD2NoMatch = (series) =>
+  valid269(series).find((record) => d2LineFor(series, record.stepId)?.decision === "no-match");
+
+/** What the D2 pause waits for, with the command that ends it. */
+export function d2Wait(record, { screening = false } = {}) {
+  const d2 = `d2${screening ? " --screening" : ""} --run ${record.stepId}`;
+  return record.valid === true && !authCreditStopped(record)
+    ? `the owner's d2 line for ${record.stepId} (\`${d2} --list\`, then \`${d2} --match <F-id>[,…] --note <text>\` or \`--none --note <text>\`)`
+    : `the owner's d2 line for ${record.stepId} (an invalid run: \`${d2} --not-applicable --note <text>\`)`;
+}
+
+/** A `d2` line in words, for the outcome tables. */
+export function describeD2(line) {
+  if (line === undefined) return "pending";
+  if (line.decision === "match") return `match (${line.matches.join(", ")})`;
+  return line.decision;
+}
+
 /**
  * Where the sealed order stands (plan Phase 4 "Run order" and "Stops"):
  * G2-01 alone as the probe, G2-02..05, G3 (and its one re-grade), #247 × 2
@@ -412,7 +541,7 @@ export function meanSettledCost(series, kind) {
  *
  * Returns `{ next, ended, waitingFor }`: `next` is the step kind that may run
  * (`clean`, `g3`, `regrade`, `pr247`, `pr269`) or null; `ended` is the
- * series' terminal state (`FAIL (<gate>)`, `INCOMPLETE (budget)`,
+ * series' terminal state (`FAIL (<gate>)` — `FAIL (D2)` included —, `INCOMPLETE (budget)`,
  * `INCOMPLETE (auth/credit)` until the owner resumes, or
  * `measured` when every step ran and settled); `waitingFor` names an owner action.
  */
@@ -473,6 +602,14 @@ export function scheduleState(series) {
   // G1: #269 × 10, ≥ 9 valid — decided as soon as a second run is invalid.
   const pr269 = records(series, "pr269");
   if (pr269.filter((record) => !record.valid).length >= 2) return { next: null, ended: "FAIL (G1)", waitingFor: null };
+  // D2 per run (owner decision 2026-10-16 (a), (c), (d)): the first `no-match`
+  // ends the series, and every #269 record waits for its d2 line — a decision
+  // for a valid run, `not-applicable` for an invalid one — before any paid step.
+  if (firstD2NoMatch(series) !== undefined) return { next: null, ended: "FAIL (D2)", waitingFor: null };
+  const undecided = series.find(
+    (line) => line.type === "record" && line.kind === "pr269" && d2LineFor(series, line.stepId) === undefined,
+  );
+  if (undecided !== undefined) return { next: null, ended: null, waitingFor: d2Wait(undecided) };
   if (pr269.length < 10) return { next: "pr269", ended: null, waitingFor: null };
   const unsettled = unsettledSteps(series);
   if (unsettled.length > 0)
@@ -511,7 +648,12 @@ export function admit(series, kind, counterNow) {
 
 // --- Outcome ----------------------------------------------------------------------
 
-/** Bind saved resolver results to every current valid run and check their per-run verdicts. */
+/**
+ * Bind saved resolver results to every current valid run and check their
+ * per-run verdicts. A #269 run's D2 count must equal the owner's `d2` line in
+ * the ledger: the full hand-read does not revisit D2 (owner decision
+ * 2026-10-16 (a)).
+ */
 function checkHandRead(series, handRead) {
   const problems = [];
   const pending = () => ({ pass: null, problems });
@@ -569,6 +711,15 @@ function checkHandRead(series, handRead) {
         (kind === "pr247" && result.d2 !== 0)
       )
         problems.push(`${id}: inconsistent hand-read counts`);
+      if (kind === "pr269") {
+        const d2 = d2LineFor(series, id);
+        const approved = d2?.decision === "match" ? d2.matches.length : 0;
+        if (d2 === undefined) problems.push(`${id}: no D2 decision in the ledger`);
+        else if (result.d2 !== approved)
+          problems.push(
+            `${id}: D2 count ${String(result.d2)} differs from the ledger's ${String(approved)} approved match(es)`,
+          );
+      }
       const pass = result.rejected <= result.allowed && (kind !== "pr269" || result.d2 >= 1);
       if (result.pass !== pass) problems.push(`${id}: pass flag disagrees with rejection/D2 results`);
       passes.push(pass);
@@ -598,6 +749,7 @@ export function computeOutcome(series, { counterNow, handRead } = {}) {
       valid: line.valid,
       reasons: line.reasons,
       sample: !authCreditStopped(line),
+      d2: line.kind === "pr269" ? describeD2(d2LineFor(series, line.stepId)) : null,
     }));
   const m247 = meanSettledCost(series, "pr247");
   const m269 = meanSettledCost(series, "pr269");
@@ -609,6 +761,9 @@ export function computeOutcome(series, { counterNow, handRead } = {}) {
   const pr247 = records(series, "pr247");
   const pr269 = records(series, "pr269");
   const lastG3 = g3Records(series).at(-1);
+  // The D2 early stop (owner decision 2026-10-16 (c)): the gates it leaves
+  // undecided are `not measured`, never passed.
+  const d2Stop = state.ended === "FAIL (D2)" ? firstD2NoMatch(series) : undefined;
   const gates = {
     G2:
       clean.length === 0
@@ -639,27 +794,38 @@ export function computeOutcome(series, { counterNow, handRead } = {}) {
       pr269.length === 0
         ? "not run"
         : `${String(pr269.filter((r) => r.valid).length)}/${String(pr269.length)} valid — ${
-            pr269.filter((r) => !r.valid).length >= 2 ? "FAIL" : pr269.length === 10 ? "PASS" : "in progress"
+            d2Stop !== undefined
+              ? "stopped by D2"
+              : pr269.filter((r) => !r.valid).length >= 2
+                ? "FAIL"
+                : pr269.length === 10
+                  ? "PASS"
+                  : "in progress"
           }`,
     "hand-read":
-      checkedHandRead.pass === null
-        ? checkedHandRead.problems.length > 0
-          ? "pending (invalid evidence)"
-          : "pending"
-        : checkedHandRead.pass
-          ? "PASS"
-          : "FAIL",
+      d2Stop !== undefined
+        ? `FAIL (no D2 match in ${d2Stop.stepId})`
+        : checkedHandRead.pass === null
+          ? checkedHandRead.problems.length > 0
+            ? "pending (invalid evidence)"
+            : "pending"
+          : checkedHandRead.pass
+            ? "PASS"
+            : "FAIL",
     cost:
-      lowerBound === null || state.ended !== "measured"
-        ? "provisional"
-        : exceedsLimit(lowerBound.total)
-          ? "FAIL (pre-G5 lower bound)"
-          : "provisional until G5",
+      d2Stop !== undefined
+        ? "not measured"
+        : lowerBound === null || state.ended !== "measured"
+          ? "provisional"
+          : exceedsLimit(lowerBound.total)
+            ? "FAIL (pre-G5 lower bound)"
+            : "provisional until G5",
   };
 
   let verdict;
   if (state.ended === "INCOMPLETE (budget)" || overshoot > 0) verdict = "INCOMPLETE (budget)";
   else if (state.ended === "INCOMPLETE (auth/credit)") verdict = "INCOMPLETE (auth/credit)";
+  else if (state.ended === "FAIL (D2)") verdict = "NOT ADMITTED (hand-read)";
   else if (state.ended !== null && state.ended !== "measured") {
     verdict = `NOT ADMITTED (${state.ended.replace(/^FAIL \((.*)\)$/u, "$1")})`;
   } else if (state.ended === "measured" && lowerBound !== null && exceedsLimit(lowerBound.total)) {
@@ -672,6 +838,8 @@ export function computeOutcome(series, { counterNow, handRead } = {}) {
         ? "measured — hand-read evidence invalid; regenerate with `resolve`"
         : "measured — hand-read pending";
   else verdict = `in progress — ${state.waitingFor ?? `next step: ${String(state.next)}`}`;
+  // G5 runs only after ADMITTED (pending G5) (plan Phase 7): a verdict that rules it out leaves it unmeasured.
+  gates.G5 = /^(NOT ADMITTED|INCOMPLETE \(budget\))/u.test(verdict) ? "not measured" : "pending (Phase 7)";
 
   return {
     verdict,
@@ -700,11 +868,11 @@ export function renderOutcome(outcome, { at }) {
     "| ---- | ------ |",
     ...Object.entries(outcome.gates).map(([gate, result]) => `| ${gate} | ${result} |`),
     "",
-    "| Run | Case | Valid | Reasons |",
-    "| --- | ---- | ----- | ------- |",
+    "| Run | Case | Valid | D2 | Reasons |",
+    "| --- | ---- | ----- | -- | ------- |",
     ...outcome.runs.map(
       (run) =>
-        `| ${run.stepId} | ${run.kind} | ${run.valid ? "yes" : run.sample ? "no" : "no — auth/credit stop, not a sample"} | ${run.reasons.join(", ") || "—"} |`,
+        `| ${run.stepId} | ${run.kind} | ${run.valid ? "yes" : run.sample ? "no" : "no — auth/credit stop, not a sample"} | ${run.d2 ?? "—"} | ${run.reasons.join(", ") || "—"} |`,
     ),
     "",
     `- m247 ${usd(outcome.m247)}, m269 ${usd(outcome.m269)}.`,
@@ -712,6 +880,406 @@ export function renderOutcome(outcome, { at }) {
     `- Pre-G5 lower bound (I = ${usd(IMPL_REVIEW_COST / 2)}): ${usd(outcome.lowerBound?.total)}.`,
     `- T ${usd(outcome.spend.t)} (counter delta ${usd(outcome.spend.counterDelta)}, settled ${usd(outcome.spend.settledTotal)}) against the $${outcome.spend.pause.toFixed(2)} pause and the $${outcome.spend.cap.toFixed(2)} cap${outcome.spend.overshoot > 0 ? `; overshoot ${usd(outcome.spend.overshoot)}` : ""}.`,
     ...outcome.handReadProblems.map((problem) => `- Hand-read evidence: ${problem}.`),
+  ];
+  return lines.join("\n");
+}
+
+// --- Screening (this change's plan.md Phase 2 §1; owner decisions 2026-10-16) ------
+//
+// The paid screening before any pre-registration: G3's four fixture cases × 1
+// (`sfix`), #247 × 1 (`s247-01`), #269 × 2 (`s269-01`, `s269-02`), in that
+// order (H2), on its own ledger and T0 with the gate's classification and
+// settlement. Screening runs are never gate samples.
+
+export const SCREENING_KINDS = Object.freeze(["fixtures", "pr247", "pr269"]);
+
+/** The screening's budget: T_s + P ≤ $0.75 (owner decision 4; H3). */
+export const SCREENING_BUDGET = Object.freeze({ cap: 0.75 });
+
+/** First-step P per kind (H3); afterwards P = the largest settled cost of that kind (1 ×, not the gate's 2 ×). */
+export const SCREENING_FIRST_ESTIMATE = Object.freeze({ fixtures: 0.1, pr247: 0.15, pr269: 0.3 });
+
+/** Stop rule (c): 53·m247 + 8·m269 above $10.00 − 13·$0.199620 = $7.404940 stops; equality does not. */
+export const SCREENING_COST_BOUND = COST_LIMIT - COST_WEIGHTS.implReview * IMPL_REVIEW_COST;
+const exceedsScreeningBound = (value) => value - SCREENING_COST_BOUND > EPSILON;
+
+/** The #269 runs the screening executes (H2); a run stopped by a confirmed 401/402 is not replaced. */
+export const SCREENING_PR269_RUNS = 2;
+
+const screeningResults = (series) => series.filter((line) => line.type === "record" || line.type === "fixtures");
+const pad2 = (n) => String(n).padStart(2, "0");
+
+/**
+ * The id the next step of a kind takes: `sfix`, then `sfix-02` after a
+ * confirmed 401/402 (owner decision 2026-10-16); `s247-01`, `s247-02`;
+ * `s269-01`, `s269-02`.
+ */
+export function screeningStepId(series, kind) {
+  const done = startedSteps(series).filter((line) => line.kind === kind).length;
+  if (kind === "fixtures") return done === 0 ? "sfix" : `sfix-${pad2(done + 1)}`;
+  return `s${kind.slice(2)}-${pad2(done + 1)}`;
+}
+
+/** P for the screening (H3): the largest settled cost of this kind so far, else the first-step estimate. */
+export function screeningEstimate(series, kind) {
+  const costs = startedSteps(series)
+    .filter((line) => line.kind === kind)
+    .map((line) => settledLine(series, line.stepId)?.cost)
+    .filter((cost) => typeof cost === "number");
+  return costs.length === 0 ? SCREENING_FIRST_ESTIMATE[kind] : Math.max(...costs);
+}
+
+/**
+ * Admission for a paid screening step (H3): refused while any step is
+ * unsettled; a step whose T_s + P exceeds $0.75 is not started and ends the
+ * screening INCOMPLETE (budget). Equality admits.
+ */
+export function admitScreening(series, kind, counterNow) {
+  const unsettled = unsettledSteps(series);
+  const spend = seriesSpend(series, counterNow);
+  const p = screeningEstimate(series, kind);
+  const base = {
+    kind,
+    t: spend.t,
+    p,
+    cap: SCREENING_BUDGET.cap,
+    counterDelta: spend.counterDelta,
+    settled: spend.settledTotal,
+  };
+  if (unsettled.length > 0) return { ...base, admit: false, refusal: `unsettled step(s) ${unsettled.join(", ")}` };
+  if (spend.t + p - SCREENING_BUDGET.cap > EPSILON) return { ...base, admit: false, budgetStop: true };
+  return { ...base, admit: true };
+}
+
+/**
+ * The screened tree's baseline (owner decision 2026-10-16): the last
+ * screening preflight before the first paid step. From that step on it is
+ * frozen; a later preflight never moves it.
+ */
+export function screeningBaseline(series) {
+  const firstStart = series.findIndex((line) => line.type === "started");
+  const before = firstStart === -1 ? series : series.slice(0, firstStart);
+  return before.findLast((line) => line.type === "preflight" && typeof line.treeSha256 === "string");
+}
+
+/** Stop rule (a): a finder request of the step ended `length` (a fixture row's included, H6). */
+function lengthHit(line) {
+  if (line.type === "fixtures") return (line.summary?.lengthRows ?? []).length > 0;
+  const finishes = [...(line.requests ?? []), ...(line.steps ?? [])].map((request) => request?.finishReason);
+  return (
+    finishes.includes("length") || (line.reasons ?? []).some((r) => r === "length" || r === "finder-output:length")
+  );
+}
+
+/**
+ * Stop rule (b), on metadata only: an artifact-less CLI run with at least one
+ * `retrying finder` line, no `retrying judge` line, no finder-output refusal,
+ * and a timeout in its own terminal error; or a fixture row whose finder
+ * timed out after the adapter's retry (H6).
+ */
+function timedOutAfterRetry(line) {
+  if (line.type === "fixtures") return (line.summary?.timeoutRows ?? []).length > 0;
+  const retries = line.retries ?? [];
+  return (
+    line.artifact !== true &&
+    retries.some((retry) => retry.pass === "finder") &&
+    !retries.some((retry) => retry.pass === "judge") &&
+    !(line.reasons ?? []).some((reason) => reason.startsWith("finder-output:")) &&
+    line.terminalTimeout === true
+  );
+}
+
+/** A first-attempt finder timeout the retry recovered: a warning; its cost counts. */
+function warningsOf(line) {
+  if (line.type === "fixtures") {
+    return (line.summary?.recoveredTimeoutRows ?? []).map(
+      (row) =>
+        `${line.stepId} testIdx ${String(row.testIdx)} (${String(row.case)}): a finder timeout recovered by the retry (its cost counts)`,
+    );
+  }
+  const recovered = (line.retries ?? []).some((retry) => retry.pass === "finder" && /timeout/iu.test(retry.error));
+  return recovered && !timedOutAfterRetry(line)
+    ? [`${line.stepId}: a finder timeout recovered by the retry (its cost counts)`]
+    : [];
+}
+
+const PAUSE_REASONS = Object.freeze(["auth-credit", "mismatch", "grader-error", "invalid-run"]);
+const MISMATCH_REASONS = new Set(["provider-mismatch", "model-mismatch", "finder-model-mismatch"]);
+const firstLine = (text) => String(text).split("\n")[0].slice(0, 120);
+const rowCause = (row, cause) => `testIdx ${String(row.testIdx)} (${String(row.case)}): ${cause}`;
+
+/**
+ * The owner decision a step pauses for (owner decisions 2026-10-16), or
+ * null: `{ reason, causes }`, the reason being the first of PAUSE_REASONS that
+ * applies and `causes` every cause, so none is hidden. A fixtures step pauses
+ * on a confirmed 401/402, a mismatch, a grader error, or an invalid row (a
+ * failed export, a wrong reasoning shape, inline reasoning, any other finder
+ * error); a missed metric alone is informational. A CLI run pauses when it is
+ * invalid (H5).
+ */
+export function screeningPauseOf(line) {
+  const causes = { "auth-credit": [], mismatch: [], "grader-error": [], "invalid-run": [] };
+  if (line.type === "fixtures") {
+    const summary = line.summary ?? {};
+    for (const row of summary.authCreditRows ?? [])
+      causes["auth-credit"].push(rowCause(row, `confirmed OpenRouter ${String(row.status)}`));
+    for (const row of summary.invalidatedRows ?? [])
+      causes.mismatch.push(rowCause(row, `providers ${JSON.stringify(row.providers)}`));
+    for (const row of summary.modelRows ?? [])
+      causes.mismatch.push(rowCause(row, `models ${JSON.stringify(row.models)}`));
+    for (const row of summary.graderErrorRows ?? [])
+      causes["grader-error"].push(
+        rowCause(row, `grader error (${row.errors.map((e) => firstLine(e.reason)).join("; ")})`),
+      );
+    for (const row of summary.shapeRows ?? [])
+      causes["invalid-run"].push(rowCause(row, "reasoning shape not the decided one"));
+    for (const row of summary.inlineReasoningRows ?? []) causes["invalid-run"].push(rowCause(row, "inline reasoning"));
+    const stopped = new Set((summary.authCreditRows ?? []).map((row) => row.testIdx));
+    for (const row of summary.finderErrorRows ?? [])
+      if (!stopped.has(row.testIdx)) causes["invalid-run"].push(rowCause(row, `finder error: ${firstLine(row.error)}`));
+    if (summary.failedRun === true && summary.authCredit !== true && summary.graderError !== true)
+      for (const problem of summary.problems ?? []) causes["invalid-run"].push(`failed export: ${firstLine(problem)}`);
+  } else if (line.valid !== true) {
+    if (line.authCredit === "confirmed") causes["auth-credit"].push("confirmed OpenRouter 401/402");
+    const reasons = line.reasons ?? [];
+    for (const reason of reasons) (MISMATCH_REASONS.has(reason) ? causes.mismatch : causes["invalid-run"]).push(reason);
+    if (reasons.length === 0) causes["invalid-run"].push("invalid run");
+  }
+  const reason = PAUSE_REASONS.find((key) => causes[key].length > 0);
+  if (reason === undefined) return null;
+  return {
+    reason,
+    causes: PAUSE_REASONS.flatMap((key) => causes[key].map((cause) => (key === reason ? cause : `${cause} (${key})`))),
+  };
+}
+
+const screeningContinued = (series, stepId, reason) =>
+  series.some((line) => line.type === "continue" && line.stepId === stepId && line.for === reason);
+
+/** Every stop rule that holds on `series`, one entry per rule: `{ rule, label, steps }`. */
+function stopsHolding(series) {
+  const holding = new Map();
+  const add = (rule, label, stepId) => {
+    const entry = holding.get(rule) ?? { rule, label, steps: [] };
+    if (!entry.steps.includes(stepId)) entry.steps.push(stepId);
+    holding.set(rule, entry);
+  };
+  for (const line of screeningResults(series)) {
+    if (lengthHit(line)) add("a", "STOP (a: length)", line.stepId);
+    if (timedOutAfterRetry(line)) add("b", "STOP (b: finder timeout after retry)", line.stepId);
+  }
+  // (c) from settled costs: after #247 settles, 53·m247 alone (H4); once both
+  // #269 runs are recorded and settled, 53·m247 + 8·m269.
+  const m247 = meanSettledCost(series, "pr247");
+  if (m247 !== null) {
+    const pr269Done = series.filter((line) => line.type === "record" && line.kind === "pr269").length;
+    const m269 = pr269Done >= SCREENING_PR269_RUNS ? meanSettledCost(series, "pr269") : null;
+    const total = COST_WEIGHTS.pr247 * m247 + (m269 === null ? 0 : COST_WEIGHTS.pr269 * m269);
+    if (exceedsScreeningBound(total)) add("c", "STOP (c: cost)", m269 === null ? "53·m247 (H4)" : "53·m247 + 8·m269");
+  }
+  for (const record of valid269(series)) {
+    if (d2LineFor(series, record.stepId)?.decision === "no-match")
+      add("d", holding.has("d") ? holding.get("d").label : `STOP (d: no D2 in ${record.stepId})`, record.stepId);
+  }
+  return [...holding.values()];
+}
+
+/** Every stop rule that holds, in the order they first held; `ended` takes the first. */
+function firedStops(series) {
+  const firstHeld = new Map();
+  for (let i = 1; i <= series.length; i += 1)
+    for (const stop of stopsHolding(series.slice(0, i))) if (!firstHeld.has(stop.rule)) firstHeld.set(stop.rule, i);
+  return stopsHolding(series).sort((x, y) => (firstHeld.get(x.rule) ?? Infinity) - (firstHeld.get(y.rule) ?? Infinity));
+}
+
+/**
+ * Where the screening stands (plan Phase 2 §1). Pure.
+ *
+ * Returns `{ next, nextStepId, ended, fired, waitingFor, pause, warnings }`.
+ * `ended`: a STOP label when any stop rule fired (the first to fire; `fired`
+ * lists all), else `INCOMPLETE (budget)`, else `INCONCLUSIVE (no valid #269
+ * run)` or `GO` once every step ran and settled, else null. `waitingFor`
+ * names a D2 decision or a pause; `pause` is `{ stepId, reason, causes }`
+ * for the step whose `continue` is due.
+ */
+export function screeningState(series) {
+  const fired = firedStops(series);
+  const warnings = screeningResults(series).flatMap(warningsOf);
+  const base = { fired, warnings, next: null, nextStepId: null, ended: null, waitingFor: null, pause: null };
+  if (fired.length > 0) return { ...base, ended: fired[0].label };
+  if (
+    series.some((line) => line.type === "budget_stop") ||
+    seriesSpend(series).settledTotal - SCREENING_BUDGET.cap > EPSILON
+  )
+    return { ...base, ended: "INCOMPLETE (budget)" };
+  const blocking = startedSteps(series).find(
+    (line) => !screeningResults(series).some((result) => result.stepId === line.stepId),
+  );
+  if (blocking !== undefined) return { ...base, waitingFor: `step ${blocking.stepId} started and has no record` };
+
+  for (const line of screeningResults(series)) {
+    // After a #269 run the D2 line comes first, then any pause (owner decision 2026-10-16).
+    if (line.type === "record" && line.kind === "pr269" && d2LineFor(series, line.stepId) === undefined)
+      return { ...base, waitingFor: d2Wait(line, { screening: true }) };
+    const pause = screeningPauseOf(line);
+    if (pause !== null && !screeningContinued(series, line.stepId, pause.reason)) {
+      const settle = unsettledSteps(series).includes(line.stepId) ? "`reconcile --screening`, then " : "";
+      return {
+        ...base,
+        pause: { stepId: line.stepId, ...pause },
+        waitingFor: `owner decision at ${line.stepId} (${pause.reason}: ${pause.causes.join("; ")}) — ${settle}\`continue --screening --for ${pause.reason} --note <text>\``,
+      };
+    }
+  }
+
+  // H2. A step stopped by a confirmed 401/402 is not a sample: `sfix` and
+  // `s247-01` run once more after the owner's continue; #269 is not replaced.
+  const fixtures = series.filter((line) => line.type === "fixtures" && !authCreditStopped(line));
+  const step = (kind) => ({ ...base, next: kind, nextStepId: screeningStepId(series, kind) });
+  if (fixtures.length === 0) return step("fixtures");
+  if (records(series, "pr247").length === 0) return step("pr247");
+  if (series.filter((line) => line.type === "record" && line.kind === "pr269").length < SCREENING_PR269_RUNS)
+    return step("pr269");
+  const unsettled = unsettledSteps(series);
+  if (unsettled.length > 0)
+    return { ...base, waitingFor: `settlement of step(s) ${unsettled.join(", ")} (\`reconcile --screening\`)` };
+  if (valid269(series).length === 0) return { ...base, ended: "INCONCLUSIVE (no valid #269 run)" };
+  return { ...base, ended: "GO" };
+}
+
+/**
+ * The screening's outcome (plan Phase 2 §1 and Phase 3 §2). At `outcome` an
+ * undecided D2 counts as no match (owner decision 2026-10-16, stop rule (d));
+ * it is listed after every decided stop and named as undecided. A step that
+ * ended with T_s above $0.75 gives INCOMPLETE (budget), its overshoot
+ * recorded — unless a stop fired, which takes precedence.
+ */
+export function computeScreeningOutcome(series, { counterNow } = {}) {
+  const state = screeningState(series);
+  const fired = [...state.fired];
+  const undecided = valid269(series).filter((record) => d2LineFor(series, record.stepId) === undefined);
+  if (undecided.length > 0 && !fired.some((stop) => stop.rule === "d")) {
+    fired.push({
+      rule: "d",
+      label: `STOP (d: no D2 in ${undecided[0].stepId})`,
+      steps: undecided.map((record) => record.stepId),
+      undecided: true,
+    });
+  }
+  const spend = seriesSpend(series, counterNow);
+  const overshoot = spend.t - SCREENING_BUDGET.cap > EPSILON ? spend.t - SCREENING_BUDGET.cap : 0;
+  let verdict;
+  if (fired.length > 0) verdict = fired[0].label;
+  else if (state.ended === "INCOMPLETE (budget)" || overshoot > 0) verdict = "INCOMPLETE (budget)";
+  else if (state.ended !== null) verdict = state.ended;
+  else verdict = `in progress — ${state.waitingFor ?? `next step: ${String(state.nextStepId)}`}`;
+
+  const m247 = meanSettledCost(series, "pr247");
+  const m269 = meanSettledCost(series, "pr269");
+  const steps = screeningResults(series).map((line) => {
+    // Output tokens come off the stderr step lines: review.json's request telemetry carries none.
+    const outputs = (line.steps ?? []).map((step) => step.outputTokens).filter((value) => typeof value === "number");
+    return {
+      stepId: line.stepId,
+      kind: line.kind,
+      valid: line.type === "record" ? line.valid : null,
+      sample: !authCreditStopped(line),
+      reasons: line.type === "record" ? line.reasons : [],
+      pause: screeningPauseOf(line),
+      d2: line.kind === "pr269" ? describeD2(d2LineFor(series, line.stepId)) : null,
+      finderElapsedMs: line.finderElapsedMs ?? null,
+      finderAttemptFailed: line.finderAttemptFailed ?? null,
+      maxOutputTokens: outputs.length === 0 ? null : Math.max(...outputs),
+      fixtures: line.type === "fixtures" ? line.summary : null,
+    };
+  });
+  return {
+    verdict,
+    fired,
+    warnings: state.warnings,
+    state,
+    steps,
+    m247,
+    m269,
+    bound: {
+      limit: SCREENING_COST_BOUND,
+      total: m247 === null ? null : COST_WEIGHTS.pr247 * m247 + (m269 === null ? 0 : COST_WEIGHTS.pr269 * m269),
+      complete: m247 !== null && m269 !== null,
+    },
+    spend: { ...spend, cap: SCREENING_BUDGET.cap, overshoot },
+  };
+}
+
+const fixturesInWords = (summary) => {
+  if (summary === null || summary === undefined) return "—";
+  if (summary.failedRun) return `not a result: ${(summary.problems ?? []).map(firstLine).join("; ")}`;
+  return Object.entries(summary.g3?.cases ?? {})
+    .map(
+      ([key, c]) =>
+        `${key} ${Object.entries(c.counts)
+          .map(([metric, k]) => `${metric} ${String(k)}/${String(summary.repeats ?? 1)}`)
+          .join(", ")}`,
+    )
+    .join("; ");
+};
+
+const elapsedInWords = (step) =>
+  step.finderElapsedMs === null
+    ? "—"
+    : step.finderElapsedMs
+        .map(
+          (ms, i) =>
+            `${ms === null ? "?" : `${String(Math.round(ms / 1000))} s`}${step.finderAttemptFailed?.[i] ? " (failed)" : ""}`,
+        )
+        .join("; ");
+
+/** The `screening.md` § Results block for a screening outcome. Markdown, no absolute paths. */
+export function renderScreeningOutcome(outcome, { at }) {
+  const lines = [
+    `_Automatic screening outcome, written by \`scripts/glm-gate.mjs outcome --screening\` at ${at}._`,
+    "",
+    `**Outcome:** ${outcome.verdict}`,
+    "",
+    `- Stop rules that hold: ${
+      outcome.fired.length === 0
+        ? "none"
+        : outcome.fired
+            .map(
+              (stop) =>
+                `${stop.label} — ${stop.steps.join(", ")}${stop.undecided ? " (D2 undecided: counted as no match)" : ""}`,
+            )
+            .join("; ")
+    }.`,
+    `- Warnings: ${outcome.warnings.length === 0 ? "none" : outcome.warnings.join("; ")}.`,
+    ...(outcome.state.waitingFor === null ? [] : [`- Waiting for: ${outcome.state.waitingFor}.`]),
+    "",
+    "| Step | Kind | Valid | D2 | Finder attempts | Max output tokens | Reasons / pause |",
+    "| ---- | ---- | ----- | -- | --------------- | ----------------- | --------------- |",
+    ...outcome.steps.map((step) => {
+      const valid =
+        step.kind === "fixtures"
+          ? "—"
+          : step.valid
+            ? "yes"
+            : step.sample
+              ? "no"
+              : "no — auth/credit stop, not a sample";
+      const why = [
+        ...step.reasons,
+        ...(step.pause === null ? [] : [`pause ${step.pause.reason}: ${step.pause.causes.join("; ")}`]),
+      ];
+      return `| ${step.stepId} | ${step.kind} | ${valid} | ${step.d2 ?? "—"} | ${elapsedInWords(step)} | ${step.maxOutputTokens === null ? "—" : `${String(step.maxOutputTokens)} / 16384`} | ${why.join(", ") || "—"} |`;
+    }),
+    "",
+    `- m247 ${usd(outcome.m247)}, m269 ${usd(outcome.m269)}: ${
+      outcome.bound.total === null
+        ? "53·m247 + 8·m269 not computed yet"
+        : `${outcome.bound.complete ? "53·m247 + 8·m269" : "53·m247 alone (H4)"} = ${usd(outcome.bound.total)}`
+    } against ${usd(outcome.bound.limit)} (stop rule (c) above it).`,
+    `- T_s ${usd(outcome.spend.t)} (counter delta ${usd(outcome.spend.counterDelta)}, settled ${usd(outcome.spend.settledTotal)}) against the $${outcome.spend.cap.toFixed(2)} cap${outcome.spend.overshoot > 0 ? `; overshoot ${usd(outcome.spend.overshoot)}` : ""}.`,
+    ...outcome.steps
+      .filter((step) => step.kind === "fixtures")
+      .map((step) => `- Fixtures ${step.stepId} (informational): ${fixturesInWords(step.fixtures)}.`),
   ];
   return lines.join("\n");
 }
