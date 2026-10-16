@@ -907,6 +907,8 @@ const exceedsScreeningBound = (value) => value - SCREENING_COST_BOUND > EPSILON;
 export const SCREENING_PR269_RUNS = 2;
 
 const screeningResults = (series) => series.filter((line) => line.type === "record" || line.type === "fixtures");
+/** The #269 runs recorded so far, a confirmed-401/402 one included (it is not replaced). */
+const pr269Done = (series) => series.filter((line) => line.type === "record" && line.kind === "pr269").length;
 const pad2 = (n) => String(n).padStart(2, "0");
 
 /**
@@ -1072,8 +1074,7 @@ function stopsHolding(series) {
   // #269 runs are recorded and settled, 53·m247 + 8·m269.
   const m247 = meanSettledCost(series, "pr247");
   if (m247 !== null) {
-    const pr269Done = series.filter((line) => line.type === "record" && line.kind === "pr269").length;
-    const m269 = pr269Done >= SCREENING_PR269_RUNS ? meanSettledCost(series, "pr269") : null;
+    const m269 = pr269Done(series) >= SCREENING_PR269_RUNS ? meanSettledCost(series, "pr269") : null;
     const total = COST_WEIGHTS.pr247 * m247 + (m269 === null ? 0 : COST_WEIGHTS.pr269 * m269);
     if (exceedsScreeningBound(total)) add("c", "STOP (c: cost)", m269 === null ? "53·m247 (H4)" : "53·m247 + 8·m269");
   }
@@ -1204,7 +1205,9 @@ export function computeScreeningOutcome(series, { counterNow } = {}) {
     bound: {
       limit: SCREENING_COST_BOUND,
       total: m247 === null ? null : COST_WEIGHTS.pr247 * m247 + (m269 === null ? 0 : COST_WEIGHTS.pr269 * m269),
-      complete: m247 !== null && m269 !== null,
+      // Stop rule (c) is decided on the mean of both #269 runs; on fewer, the total is information only.
+      pr269Runs: series.filter((line) => line.type === "record" && line.kind === "pr269").length,
+      decided: m247 !== null && m269 !== null && pr269Done(series) >= SCREENING_PR269_RUNS,
     },
     spend: { ...spend, cap: SCREENING_BUDGET.cap, overshoot },
   };
@@ -1274,7 +1277,11 @@ export function renderScreeningOutcome(outcome, { at }) {
     `- m247 ${usd(outcome.m247)}, m269 ${usd(outcome.m269)}: ${
       outcome.bound.total === null
         ? "53·m247 + 8·m269 not computed yet"
-        : `${outcome.bound.complete ? "53·m247 + 8·m269" : "53·m247 alone (H4)"} = ${usd(outcome.bound.total)}`
+        : outcome.m269 === null
+          ? `53·m247 alone (H4) = ${usd(outcome.bound.total)}`
+          : outcome.bound.decided
+            ? `53·m247 + 8·m269 = ${usd(outcome.bound.total)}`
+            : `53·m247 + 8·m269 = ${usd(outcome.bound.total)} on ${String(outcome.bound.pr269Runs)} of ${String(SCREENING_PR269_RUNS)} #269 runs (information only: stop rule (c) is decided on both)`
     } against ${usd(outcome.bound.limit)} (stop rule (c) above it).`,
     `- T_s ${usd(outcome.spend.t)} (counter delta ${usd(outcome.spend.counterDelta)}, settled ${usd(outcome.spend.settledTotal)}) against the $${outcome.spend.cap.toFixed(2)} cap${outcome.spend.overshoot > 0 ? `; overshoot ${usd(outcome.spend.overshoot)}` : ""}.`,
     ...outcome.steps

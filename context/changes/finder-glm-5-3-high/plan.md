@@ -1131,11 +1131,11 @@ No manifest file changes.
 
 #### Automated
 
-- [x] 2.1 New screening tests pass
-- [x] 2.2 New D2 tests pass
-- [x] 2.3 Whole package passes
-- [x] 2.4 Typecheck, lint, format
-- [x] 2.5 Stubbed screening end to end
+- [x] 2.1 New screening tests pass — 4b6fca3
+- [x] 2.2 New D2 tests pass — 4b6fca3
+- [x] 2.3 Whole package passes — 4b6fca3
+- [x] 2.4 Typecheck, lint, format — 4b6fca3
+- [x] 2.5 Stubbed screening end to end — 4b6fca3
 
 #### Manual
 

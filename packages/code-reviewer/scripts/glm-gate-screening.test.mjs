@@ -505,6 +505,24 @@ describe("outcome edges and precedence", () => {
     expect(renderScreeningOutcome(outcome, { at: "t" })).toMatch(/overshoot \$0\.020000/u);
   });
 
+  it("on one #269 run, the cost line says it is information only: (c) is decided on both runs", () => {
+    const series = [
+      pre(),
+      ...fix(),
+      ...run("s247-01", "pr247", 0.06),
+      ...run("s269-01", "pr269", 0.16),
+      d2("s269-01", "no-match"),
+    ];
+    const text = renderScreeningOutcome(computeScreeningOutcome(series), { at: "t" });
+    expect(text).toMatch(
+      /53·m247 \+ 8·m269 = \$4\.460000 on 1 of 2 #269 runs \(information only: stop rule \(c\) is decided on both\)/u,
+    );
+    const h4 = renderScreeningOutcome(computeScreeningOutcome([pre(), ...fix(), ...run("s247-01", "pr247", 0.06)]), {
+      at: "t",
+    });
+    expect(h4).toMatch(/53·m247 alone \(H4\) = \$3\.180000/u);
+  });
+
   it("renders GO with every step, the cost bound and T_s, and no absolute path", () => {
     const text = renderScreeningOutcome(computeScreeningOutcome(throughGo()), { at: "2026-10-16T00:00:00Z" });
     expect(text).toContain("**Outcome:** GO");
