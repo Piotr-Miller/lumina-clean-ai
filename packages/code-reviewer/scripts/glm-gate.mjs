@@ -29,9 +29,9 @@
 // `--screening` (this change's plan.md Phase 2 §1) runs the screening instead
 // of the gate, on its own ledger, results and T0: `preflight`, `fixtures`
 // (G3's four cases × 1), `run --case pr247|pr269`, `reconcile`, `continue
-// --for auth-credit|mismatch|grader-error|invalid-run`, `d2` and `outcome
-// [--write]` (into screening.md). No manifest; instead every paid step checks
-// and records the screened tree's sha256 (owner decision 2026-10-16).
+// --for fixture-retry|auth-credit|mismatch|grader-error|invalid-run`, `d2` and
+// `outcome [--write]` (into screening.md). No manifest; instead every paid step
+// checks and records the screened tree's sha256 (owner decision 2026-10-16).
 //
 // `--dry-run` (preflight, run, d2, outcome): no key, no network, no manifest
 // required; the CLI runs with scripts/glm-gate-dry-run-stub.mjs preloaded and
@@ -1145,7 +1145,13 @@ async function commandReconcile(flags, deps) {
   return 0;
 }
 
-const SCREENING_CONTINUE_REASONS = Object.freeze(["auth-credit", "mismatch", "grader-error", "invalid-run"]);
+const SCREENING_CONTINUE_REASONS = Object.freeze([
+  "fixture-retry",
+  "auth-credit",
+  "mismatch",
+  "grader-error",
+  "invalid-run",
+]);
 
 async function commandContinue(flags, deps) {
   const context = contextFor(flags, deps);

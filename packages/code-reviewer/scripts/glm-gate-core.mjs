@@ -889,7 +889,10 @@ export function renderOutcome(outcome, { at }) {
 // The paid screening before any pre-registration: G3's four fixture cases × 1
 // (`sfix`), #247 × 1 (`s247-01`), #269 × 2 (`s269-01`, `s269-02`), in that
 // order (H2), on its own ledger and T0 with the gate's classification and
-// settlement. Screening runs are never gate samples.
+// settlement. Screening runs are never gate samples. The owner's amendments of
+// 2026-10-17 (screening.md § Rules): a first fixture `length` or timeout row
+// pauses for one more fixtures attempt (H6), and a #269 run stopped by a
+// confirmed 401/402 is replaced, once per stop (O4).
 
 export const SCREENING_KINDS = Object.freeze(["fixtures", "pr247", "pr269"]);
 
@@ -903,18 +906,24 @@ export const SCREENING_FIRST_ESTIMATE = Object.freeze({ fixtures: 0.1, pr247: 0.
 export const SCREENING_COST_BOUND = COST_LIMIT - COST_WEIGHTS.implReview * IMPL_REVIEW_COST;
 const exceedsScreeningBound = (value) => value - SCREENING_COST_BOUND > EPSILON;
 
-/** The #269 runs the screening executes (H2); a run stopped by a confirmed 401/402 is not replaced. */
+/**
+ * The #269 sample runs the screening needs (H2). A run stopped by a confirmed
+ * 401/402 is not a sample and is replaced, once per stop, after the owner's
+ * continue (O4 as amended, owner decision 2026-10-17).
+ */
 export const SCREENING_PR269_RUNS = 2;
 
 const screeningResults = (series) => series.filter((line) => line.type === "record" || line.type === "fixtures");
-/** The #269 runs recorded so far, a confirmed-401/402 one included (it is not replaced). */
-const pr269Done = (series) => series.filter((line) => line.type === "record" && line.kind === "pr269").length;
+/** The #269 sample runs recorded so far: a run stopped by a confirmed 401/402 is not one. */
+const pr269Done = (series) => records(series, "pr269").length;
 const pad2 = (n) => String(n).padStart(2, "0");
 
 /**
- * The id the next step of a kind takes: `sfix`, then `sfix-02` after a
- * confirmed 401/402 (owner decision 2026-10-16); `s247-01`, `s247-02`;
- * `s269-01`, `s269-02`.
+ * The id the next step of a kind takes, numbered in order of starting:
+ * `sfix`, then `sfix-02` after a confirmed 401/402 (owner decision
+ * 2026-10-16) or a first fixture `length` / timeout row (H6 as amended, owner
+ * decision 2026-10-17); `s247-01`, `s247-02`; `s269-01`, `s269-02`, and
+ * `s269-03` after a confirmed 401/402 on a #269 run (O4 as amended).
  */
 export function screeningStepId(series, kind) {
   const done = startedSteps(series).filter((line) => line.kind === kind).length;
@@ -997,6 +1006,18 @@ function timedOutAfterRetry(line) {
   );
 }
 
+/** A fixtures step with a row that trips stop rule (a) or (b). */
+const fixtureFailure = (line) => line.type === "fixtures" && (lengthHit(line) || timedOutAfterRetry(line));
+
+/**
+ * H6 as amended (owner decision 2026-10-17): the first fixtures step with a
+ * `length` row or a row whose finder timed out after the adapter's retry does
+ * not stop the screening. It pauses for the owner (`fixture-retry`), who may
+ * grant one more fixtures attempt; the same on any later fixtures step stops
+ * (a) or (b). CLI runs keep (a) and (b) at once. Returns that step's id.
+ */
+const firstFixtureFailureId = (series) => series.find(fixtureFailure)?.stepId;
+
 /** A first-attempt finder timeout the retry recovered: a warning; its cost counts. */
 function warningsOf(line) {
   if (line.type === "fixtures") {
@@ -1011,7 +1032,7 @@ function warningsOf(line) {
     : [];
 }
 
-const PAUSE_REASONS = Object.freeze(["auth-credit", "mismatch", "grader-error", "invalid-run"]);
+const PAUSE_REASONS = Object.freeze(["fixture-retry", "auth-credit", "mismatch", "grader-error", "invalid-run"]);
 const MISMATCH_REASONS = new Set(["provider-mismatch", "model-mismatch", "finder-model-mismatch"]);
 const firstLine = (text) => String(text).split("\n")[0].slice(0, 120);
 const rowCause = (row, cause) => `testIdx ${String(row.testIdx)} (${String(row.case)}): ${cause}`;
@@ -1023,12 +1044,21 @@ const rowCause = (row, cause) => `testIdx ${String(row.testIdx)} (${String(row.c
  * on a confirmed 401/402, a mismatch, a grader error, or an invalid row (a
  * failed export, a wrong reasoning shape, inline reasoning, any other finder
  * error); a missed metric alone is informational. A CLI run pauses when it is
- * invalid (H5).
+ * invalid (H5). With `fixtureRetry` — the screening's first fixtures step with
+ * a `length` or timeout row (H6 as amended) — those rows pause for
+ * `fixture-retry`, ahead of every other reason.
  */
-export function screeningPauseOf(line) {
-  const causes = { "auth-credit": [], mismatch: [], "grader-error": [], "invalid-run": [] };
+export function screeningPauseOf(line, { fixtureRetry = false } = {}) {
+  const causes = { "fixture-retry": [], "auth-credit": [], mismatch: [], "grader-error": [], "invalid-run": [] };
   if (line.type === "fixtures") {
     const summary = line.summary ?? {};
+    if (fixtureRetry) {
+      const more = "one more fixtures attempt (H6)";
+      for (const row of summary.lengthRows ?? [])
+        causes["fixture-retry"].push(rowCause(row, `a finder request ended \`length\` — ${more}`));
+      for (const row of summary.timeoutRows ?? [])
+        causes["fixture-retry"].push(rowCause(row, `the finder timed out after the adapter's retry — ${more}`));
+    }
     for (const row of summary.authCreditRows ?? [])
       causes["auth-credit"].push(rowCause(row, `confirmed OpenRouter ${String(row.status)}`));
     // A row whose finder failed before any request completed reports no
@@ -1070,6 +1100,10 @@ export function screeningPauseOf(line) {
 const screeningContinued = (series, stepId, reason) =>
   series.some((line) => line.type === "continue" && line.stepId === stepId && line.for === reason);
 
+/** A step's pause within its series: the first fixtures failure pauses for `fixture-retry` (H6 as amended). */
+const pauseIn = (series, line) =>
+  screeningPauseOf(line, { fixtureRetry: line.type === "fixtures" && line.stepId === firstFixtureFailureId(series) });
+
 /** Every stop rule that holds on `series`, one entry per rule: `{ rule, label, steps }`. */
 function stopsHolding(series) {
   const holding = new Map();
@@ -1078,7 +1112,10 @@ function stopsHolding(series) {
     if (!entry.steps.includes(stepId)) entry.steps.push(stepId);
     holding.set(rule, entry);
   };
+  // H6 as amended: the first fixtures step with such a row pauses instead.
+  const retried = firstFixtureFailureId(series);
   for (const line of screeningResults(series)) {
+    if (line.type === "fixtures" && line.stepId === retried) continue;
     if (lengthHit(line)) add("a", "STOP (a: length)", line.stepId);
     if (timedOutAfterRetry(line)) add("b", "STOP (b: finder timeout after retry)", line.stepId);
   }
@@ -1139,7 +1176,7 @@ export function screeningState(series) {
     return { ...base, ended: "INCOMPLETE (budget)" };
 
   for (const line of screeningResults(series)) {
-    const pause = screeningPauseOf(line);
+    const pause = pauseIn(series, line);
     if (pause !== null && !screeningContinued(series, line.stepId, pause.reason)) {
       const settle = unsettledSteps(series).includes(line.stepId) ? "`reconcile --screening`, then " : "";
       return {
@@ -1150,14 +1187,18 @@ export function screeningState(series) {
     }
   }
 
-  // H2. A step stopped by a confirmed 401/402 is not a sample: `sfix` and
-  // `s247-01` run once more after the owner's continue; #269 is not replaced.
-  const fixtures = series.filter((line) => line.type === "fixtures" && !authCreditStopped(line));
+  // H2. A step stopped by a confirmed 401/402 is not a sample: it runs once
+  // more after the owner's continue, a #269 run included (O4 as amended). The
+  // first fixtures step with a `length` or timeout row is not counted either:
+  // the owner's `fixture-retry` continue admits one more attempt (H6 as amended).
+  const retried = firstFixtureFailureId(series);
+  const fixtures = series.filter(
+    (line) => line.type === "fixtures" && !authCreditStopped(line) && line.stepId !== retried,
+  );
   const step = (kind) => ({ ...base, next: kind, nextStepId: screeningStepId(series, kind) });
   if (fixtures.length === 0) return step("fixtures");
   if (records(series, "pr247").length === 0) return step("pr247");
-  if (series.filter((line) => line.type === "record" && line.kind === "pr269").length < SCREENING_PR269_RUNS)
-    return step("pr269");
+  if (pr269Done(series) < SCREENING_PR269_RUNS) return step("pr269");
   const unsettled = unsettledSteps(series);
   if (unsettled.length > 0)
     return { ...base, waitingFor: `settlement of step(s) ${unsettled.join(", ")} (\`reconcile --screening\`)` };
@@ -1203,7 +1244,7 @@ export function computeScreeningOutcome(series, { counterNow } = {}) {
       valid: line.type === "record" ? line.valid : null,
       sample: !authCreditStopped(line),
       reasons: line.type === "record" ? line.reasons : [],
-      pause: screeningPauseOf(line),
+      pause: pauseIn(series, line),
       d2: line.kind === "pr269" ? describeD2(d2LineFor(series, line.stepId)) : null,
       finderElapsedMs: line.finderElapsedMs ?? null,
       finderAttemptFailed: line.finderAttemptFailed ?? null,
@@ -1222,8 +1263,8 @@ export function computeScreeningOutcome(series, { counterNow } = {}) {
     bound: {
       limit: SCREENING_COST_BOUND,
       total: m247 === null ? null : COST_WEIGHTS.pr247 * m247 + (m269 === null ? 0 : COST_WEIGHTS.pr269 * m269),
-      // Stop rule (c) is decided on the mean of both #269 runs; on fewer, the total is information only.
-      pr269Runs: series.filter((line) => line.type === "record" && line.kind === "pr269").length,
+      // Stop rule (c) is decided on the mean of both #269 sample runs; on fewer, the total is information only.
+      pr269Runs: pr269Done(series),
       decided: m247 !== null && m269 !== null && pr269Done(series) >= SCREENING_PR269_RUNS,
     },
     spend: { ...spend, cap: SCREENING_BUDGET.cap, overshoot },

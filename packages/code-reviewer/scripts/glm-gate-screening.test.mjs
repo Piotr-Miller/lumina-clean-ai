@@ -163,12 +163,6 @@ describe("stop rule (a): a finder request ends `length`", () => {
     expect(state.ended).toBe("STOP (a: length)");
     expect(state.fired).toEqual([{ rule: "a", label: "STOP (a: length)", steps: ["s269-01"] }]);
   });
-
-  it("stops on a fixture row (H6)", () => {
-    expect(screeningState([pre(), ...fix({ lengthRows: [{ testIdx: 2, case: "react" }] })]).ended).toBe(
-      "STOP (a: length)",
-    );
-  });
 });
 
 describe("stop rule (b): the finder timed out after its retry", () => {
@@ -180,12 +174,6 @@ describe("stop rule (b): the finder timed out after its retry", () => {
   ])("stops on %s (artifact-less run)", (_label, retries) => {
     const steps = run("s269-01", "pr269", null, { ...INVALID, reasons: ["timeout"], retries, terminalTimeout: true });
     expect(screeningState([...base, ...steps]).ended).toBe("STOP (b: finder timeout after retry)");
-  });
-
-  it("stops on a fixture row whose finder timed out after the adapter's retry (H6)", () => {
-    expect(screeningState([pre(), ...fix({ timeoutRows: [{ testIdx: 3, case: "cross-hunk" }] })]).ended).toBe(
-      "STOP (b: finder timeout after retry)",
-    );
   });
 
   it("a timeout the retry recovers, with a valid artifact, is only a warning; its cost counts", () => {
@@ -220,6 +208,100 @@ describe("stop rule (b): the finder timed out after its retry", () => {
   });
 });
 
+// H6 as amended (owner decision 2026-10-17): on fixture rows, (a) and (b) stop
+// only on the extra attempt; the first fixtures step that shows one pauses.
+describe("H6: a first fixture `length` or timeout row pauses for one more fixtures attempt", () => {
+  const LENGTH = { lengthRows: [{ testIdx: 2, case: "react" }] };
+  const TIMEOUT = { timeoutRows: [{ testIdx: 3, case: "cross-hunk" }] };
+
+  it.each([
+    [
+      "a `length` finish",
+      LENGTH,
+      "testIdx 2 (react): a finder request ended `length` — one more fixtures attempt (H6)",
+      "STOP (a: length)",
+    ],
+    [
+      "a timeout after the adapter's retry",
+      TIMEOUT,
+      "testIdx 3 (cross-hunk): the finder timed out after the adapter's retry — one more fixtures attempt (H6)",
+      "STOP (b: finder timeout after retry)",
+    ],
+  ])(
+    "%s on sfix pauses for fixture-retry; after continue sfix-02 runs; the same in sfix-02 stops",
+    (_l, over, cause, stop) => {
+      const first = [pre(), ...fix(over)];
+      const state = screeningState(first);
+      expect(state).toMatchObject({ ended: null, fired: [], pause: { stepId: "sfix", reason: "fixture-retry" } });
+      expect(state.pause.causes).toEqual([cause]);
+      expect(state.waitingFor).toContain("`continue --screening --for fixture-retry --note <text>`");
+      const granted = [...first, go("sfix", "fixture-retry")];
+      expect(screeningState(granted)).toMatchObject({ ended: null, next: "fixtures", nextStepId: "sfix-02" });
+      const again = screeningState([...granted, ...fix(over, { stepId: "sfix-02" })]);
+      expect(again.ended).toBe(stop);
+      expect(again.fired).toEqual([expect.objectContaining({ label: stop, steps: ["sfix-02"] })]);
+    },
+  );
+
+  it("the row's finder error is listed beside it, and the pause names fixture-retry", () => {
+    const series = [
+      pre(),
+      ...fix({ ...LENGTH, pass: false, finderErrorRows: [{ testIdx: 2, case: "react", error: "finish=length" }] }),
+    ];
+    expect(screeningState(series).pause).toMatchObject({
+      reason: "fixture-retry",
+      causes: [
+        "testIdx 2 (react): a finder request ended `length` — one more fixtures attempt (H6)",
+        "testIdx 2 (react): finder error: finish=length (invalid-run)",
+      ],
+    });
+  });
+
+  it("a clean extra attempt lets the screening go on to #247; both attempts' costs count", () => {
+    const series = [
+      pre(),
+      ...fix(LENGTH, { cost: 0.07 }),
+      go("sfix", "fixture-retry"),
+      ...fix({}, { stepId: "sfix-02", cost: 0.05 }),
+    ];
+    expect(screeningState(series)).toMatchObject({ ended: null, fired: [], next: "pr247", nextStepId: "s247-01" });
+    expect(seriesSpend(series).settledTotal).toBeCloseTo(0.12, 10);
+  });
+
+  it("the extra attempt is admitted under H3: P is the settled cost of the first attempt", () => {
+    const series = [pre(), ...fix(TIMEOUT, { cost: 0.3 }), go("sfix", "fixture-retry")];
+    expect(admitScreening(series, "fixtures", 100.5)).toMatchObject({ admit: false, budgetStop: true, p: 0.3 });
+    expect(admitScreening(series, "fixtures", 100.3)).toMatchObject({ admit: true, p: 0.3 });
+  });
+
+  it("the allowance is one: a `length` row on any later fixtures step stops", () => {
+    const series = [
+      pre(),
+      ...fix(TIMEOUT),
+      go("sfix", "fixture-retry"),
+      ...fix(
+        {
+          ...LENGTH,
+          failedRun: true,
+          authCredit: true,
+          authCreditRows: [{ testIdx: 1, case: "js-loop", status: 402 }],
+        },
+        { stepId: "sfix-02" },
+      ),
+    ];
+    expect(screeningState(series).ended).toBe("STOP (a: length)");
+  });
+
+  it("CLI runs keep stop rule (a) at once: a `length` on s247-01 stops with no pause", () => {
+    const steps = run("s247-01", "pr247", 0.06, {
+      valid: false,
+      reasons: ["length"],
+      requests: [{ finishReason: "length" }],
+    });
+    expect(screeningState([pre(), ...fix(), ...steps])).toMatchObject({ ended: "STOP (a: length)", pause: null });
+  });
+});
+
 describe("stop rule (c): 53·m247 + 8·m269 > $7.404940 from settled costs", () => {
   it("is $10.00 − 13·$0.199620", () => {
     expect(SCREENING_COST_BOUND).toBeCloseTo(7.40494, 9);
@@ -247,6 +329,23 @@ describe("stop rule (c): 53·m247 + 8·m269 > $7.404940 from settled costs", () 
     expect(screeningState(first)).toMatchObject({ ended: null, nextStepId: "s269-02" });
     // The mean of $0.50 and $0.01 gives 5.30 + 2.04 = $7.34: no stop.
     expect(screeningState([...first, ...run("s269-02", "pr269", 0.01), d2("s269-02")]).ended).toBe("GO");
+  });
+
+  it("waits for two #269 SAMPLE runs: a run stopped by a confirmed 401/402 is not one (O4 as amended)", () => {
+    const stopped = { ...INVALID, authCredit: "confirmed", reasons: ["auth-or-credit-confirmed"] };
+    const series = [
+      pre(),
+      ...fix(),
+      ...run("s247-01", "pr247", 0.1),
+      ...run("s269-01", "pr269", 0.001, stopped),
+      d2("s269-01", "not-applicable"),
+      go("s269-01", "auth-credit"),
+      ...run("s269-02", "pr269", 0.5),
+      d2("s269-02"),
+    ];
+    // 53·0.1 + 8·0.5 = $9.30 on s269-02 alone: not decided while s269-03 is missing.
+    expect(screeningState(series)).toMatchObject({ ended: null, fired: [], nextStepId: "s269-03" });
+    expect(computeScreeningOutcome(series).bound).toMatchObject({ pr269Runs: 1, decided: false });
   });
 });
 
@@ -497,19 +596,36 @@ describe("outcome edges and precedence", () => {
     expect(screeningState(series).ended).toBe("INCONCLUSIVE (no valid #269 run)");
   });
 
-  it("a confirmed-402 #269 run stays out of m269 and is not replaced", () => {
+  it("a confirmed-402 #269 run stays out of m269 and is replaced after its d2 line and the owner's continue (O4 as amended)", () => {
+    const stopped = { ...INVALID, authCredit: "confirmed", reasons: ["auth-or-credit-confirmed"] };
+    const head = [pre(), ...fix(), ...run("s247-01", "pr247", 0.06), ...run("s269-01", "pr269", 0.001, stopped)];
+    expect(screeningState(head).waitingFor).toMatch(/d2 line for s269-01 \(an invalid run/u);
+    const paused = [...head, d2("s269-01", "not-applicable")];
+    expect(screeningState(paused).pause).toMatchObject({ stepId: "s269-01", reason: "auth-credit" });
+    const series = [...paused, go("s269-01", "auth-credit"), ...run("s269-02", "pr269", 0.2), d2("s269-02")];
+    expect(screeningState(series)).toMatchObject({ ended: null, next: "pr269", nextStepId: "s269-03" });
+    const done = [...series, ...run("s269-03", "pr269", 0.3), d2("s269-03")];
+    expect(screeningState(done).ended).toBe("GO");
+    const outcome = computeScreeningOutcome(done);
+    expect(outcome.m269).toBeCloseTo(0.25, 10);
+    expect(outcome.bound).toMatchObject({ pr269Runs: 2, decided: true });
+    expect(admitScreening(paused.concat(go("s269-01", "auth-credit")), "pr269", 100.07).p).toBe(0.3);
+  });
+
+  it("the replacement is per stop: a confirmed 402 on the replacement gives another after its own continue", () => {
+    const stopped = { ...INVALID, authCredit: "confirmed", reasons: ["auth-or-credit-confirmed"] };
     const series = [
       pre(),
       ...fix(),
       ...run("s247-01", "pr247", 0.06),
-      ...run("s269-01", "pr269", 0.001, { ...INVALID, authCredit: "confirmed", reasons: ["auth-or-credit-confirmed"] }),
+      ...run("s269-01", "pr269", 0.001, stopped),
       d2("s269-01", "not-applicable"),
       go("s269-01", "auth-credit"),
-      ...run("s269-02", "pr269", 0.2),
-      d2("s269-02"),
+      ...run("s269-02", "pr269", 0.001, stopped),
+      d2("s269-02", "not-applicable"),
     ];
-    expect(screeningState(series).ended).toBe("GO");
-    expect(computeScreeningOutcome(series).m269).toBeCloseTo(0.2, 10);
+    expect(screeningState(series).pause).toMatchObject({ stepId: "s269-02", reason: "auth-credit" });
+    expect(screeningState([...series, go("s269-02", "auth-credit")])).toMatchObject({ nextStepId: "s269-03" });
   });
 
   it("a no-match with (c) exceeded lists both, the first to fire leading", () => {
@@ -1022,6 +1138,30 @@ describe("continue --screening", () => {
     expect(lines.at(-1)).toMatch(/SCREENING: the next step is s269-01/u);
     expect(await main(["continue", S, "--for", "mismatch", "--note", "again"], deps)).toBe(2);
     expect(lines.at(-1)).toMatch(/REFUSED \(no screening pause\)/u);
+  });
+
+  it("a first fixture `length` row pauses sfix for fixture-retry; after reconcile and continue, sfix-02 runs on its own export", async () => {
+    const world = setup();
+    const lengthExport = fixturesExport();
+    lengthExport.results.results[1].response.metadata.requests[0].finishReason = "length";
+    const { deps, lines, setCounter } = depsFor(world, { runCommand: fakePromptfoo(lengthExport) });
+    expect(await main(["preflight", S], deps)).toBe(0);
+    expect(await main(["fixtures", S], deps)).toBe(1);
+    expect(lines.join("\n")).toMatch(
+      /SCREENING PAUSED: waiting for owner decision at sfix \(fixture-retry: testIdx 2 \(react\): a finder request ended `length`/u,
+    );
+    expect(await main(["continue", S, "--for", "fixture-retry", "--note", "go"], deps)).toBe(2);
+    expect(lines.at(-1)).toMatch(/REFUSED \(unsettled\): sfix/u);
+    setCounter(100.05);
+    expect(await main(["reconcile", S], deps)).toBe(0);
+    expect(await main(["continue", S, "--for", "fixture-retry", "--note", "owner: one more attempt"], deps)).toBe(0);
+    expect(lines.at(-1)).toMatch(/SCREENING: the next step is sfix-02 \(fixtures\)/u);
+    deps.runCommand = fakePromptfoo();
+    expect(await main(["fixtures", S], deps)).toBe(0);
+    const [, args] = deps.runCommand.mock.calls[0];
+    expect(args[args.indexOf("--output") + 1]).toBe(join(world.cache, "screening", "sfix-02.export.json"));
+    expect(existsSync(join(world.repoRoot, CHANGE, "screening/results/sfix-02.fixture-rows.json"))).toBe(true);
+    expect(lines.at(-1)).toMatch(/SCREENING: the next step is s247-01/u);
   });
 
   it("refuses while the paused step is unsettled", async () => {

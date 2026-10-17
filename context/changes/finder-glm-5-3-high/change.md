@@ -3,7 +3,7 @@ change_id: finder-glm-5-3-high
 title: "Measure glm-5.3 at reasoning effort high as the ai-review finder"
 status: implementing
 created: 2026-10-16
-updated: 2026-10-16
+updated: 2026-10-17
 archived_at: null
 ---
 
@@ -35,3 +35,13 @@ Predecessor: finder-glm-5-3
 2026-10-16: owner decision (impl-review phase 2, F3) — H3: the screening's P counts sample runs only; a run stopped by a confirmed 401/402 never sets P (plan.md H3, Testing Strategy "Budget").
 
 2026-10-16: owner decision (impl-review phase 2, F5) — a confirmed 401/402 on `sfix` / `s247-…` gives one rerun per stop, each after its own `continue` (`sfix-03`, `s247-03`, …); plan.md § Definitions (m247 / m269 (screening)) and Phase 2 § 1.
+
+2026-10-17: re-confirmed 1.8 — was accepted at 4211102d9bc71fffeb48bc61048f9b163611a447; accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85
+
+2026-10-17: re-confirmed 2.6 — was accepted at 4211102d9bc71fffeb48bc61048f9b163611a447; accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85
+
+2026-10-17: owner decision (Phase 3, screening rules) — confirmed H1–H5, H7 and O1–O8 as written in `screening.md` § Rules, O7 with a note; amended H6 and, for fixture rows only, stop rules (a)/(b): the first fixtures step with a `length` row or a timeout after the adapter's retry pauses for `fixture-retry`, then the whole fixtures step runs once more (`sfix-02`) under H3, and a repeat stops; amended O4: a #269 run stopped by a confirmed 401/402 is replaced, once per stop, after its `d2 --not-applicable` line and the owner's `continue` (ids continue `s269-02`, `s269-03`, …). The runner was changed before any spend (`glm-gate-core.mjs`, `glm-gate.mjs`, tests); plan.md § Definitions (screening stop, m247 / m269 (screening)), H6, Phase 2 § 1, Testing Strategy.
+
+2026-10-17: reopened 1.8 — was accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85; changed: packages/code-reviewer/scripts/glm-gate-core.mjs
+
+2026-10-17: reopened 2.6 — was accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85; changed: packages/code-reviewer/scripts/glm-gate-core.mjs, packages/code-reviewer/scripts/glm-gate.mjs
