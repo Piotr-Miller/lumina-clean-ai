@@ -1147,7 +1147,7 @@ No manifest file changes.
 
 #### Manual
 
-- [ ] 1.8 Owner reads the stubbed configuration and step lines
+- [x] 1.8 Owner reads the stubbed configuration and step lines — accepted at 49e2ccdb0e8f63dc8de078cbd02c19f7d0db40e8
 
 ### Phase 2: Screening ledger and the D2 instrument
 
@@ -1161,78 +1161,78 @@ No manifest file changes.
 
 #### Manual
 
-- [ ] 2.6 Owner accepts the D2 listing, proposal and screening outcome formats
+- [x] 2.6 Owner accepts the D2 listing, proposal and screening outcome formats — accepted at 49e2ccdb0e8f63dc8de078cbd02c19f7d0db40e8
 
 ### Phase 3: The screening
 
 #### Automated
 
-- [x] 3.1 Screening rules pushed before any screening spend
-- [x] 3.2 The screening steps, in order, under admission
-- [x] 3.3 Every screening step settled and T_s ≤ $0.75
-- [x] 3.4 Screening outcome recorded
+- [x] 3.1 Screening rules pushed before any screening spend — 49e2ccd
+- [x] 3.2 The screening steps, in order, under admission — 49e2ccd
+- [x] 3.3 Every screening step settled and T_s ≤ $0.75 — 49e2ccd
+- [x] 3.4 Screening outcome recorded — 49e2ccd
 
 #### Manual
 
-- [ ] 3.5 Owner authorizes the screening spend
+- [x] 3.5 Owner authorizes the screening spend — accepted at 49e2ccdb0e8f63dc8de078cbd02c19f7d0db40e8
 - [-] 3.6 Owner records a D2 decision for each valid screening #269 run — n/a: no valid screening #269 run exists; the screening ended STOP (c: cost) when s247-01 settled (53·m247 = $7.417286 > $7.404940, H4), before s269-01 started (screening.md § Results)
 - [-] 3.7 Owner decides at any screening pause — n/a: no screening pause occurred; sfix and s247-01 neither paused nor failed, and the screening ended STOP (c: cost) (screening.md § Results)
-- [ ] 3.8 Owner records GO or STOP
+- [x] 3.8 Owner records GO or STOP — accepted at 49e2ccdb0e8f63dc8de078cbd02c19f7d0db40e8
 
 ### Phase 4: Pre-registration and seal
 
 #### Automated
 
-- [ ] 4.1 Pre-registration formatted
-- [ ] 4.2 Manifest matches the tree
-- [ ] 4.3 Seal commit, push and tag
+- [-] 4.1 Pre-registration formatted — n/a: Phase 4 runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 4.2 Manifest matches the tree — n/a: Phase 4 runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 4.3 Seal commit, push and tag — n/a: Phase 4 runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
 
 #### Manual
 
-- [ ] 4.4 Owner approves the pre-registration including H7–H9 and the first-step P values
-- [ ] 4.5 Owner confirms the seal does not authorize Phase 5
+- [-] 4.4 Owner approves the pre-registration including H7–H9 and the first-step P values — n/a: Phase 4 runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 4.5 Owner confirms the seal does not authorize Phase 5 — n/a: Phase 4 runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
 
 ### Phase 5: The paid series
 
 #### Automated
 
-- [ ] 5.1 Preflight and the series
-- [ ] 5.2 G3 rows
-- [ ] 5.3 Automatic outcome recorded
-- [ ] 5.4 Settled spend within the cap
+- [-] 5.1 Preflight and the series — n/a: the paid series needs Phase 4's seal, which runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 5.2 G3 rows — n/a: the paid series needs Phase 4's seal, which runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 5.3 Automatic outcome recorded — n/a: the paid series needs Phase 4's seal, which runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 5.4 Settled spend within the cap — n/a: the paid series needs Phase 4's seal, which runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
 
 #### Manual
 
-- [ ] 5.5 Owner authorizes the paid series
-- [ ] 5.6 Owner confirms the G2-01 probe
-- [ ] 5.7 Owner decides at the $3.00 pause
-- [ ] 5.8 Owner records a D2 decision for every valid #269 run
+- [-] 5.5 Owner authorizes the paid series — n/a: the paid series needs Phase 4's seal, which runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 5.6 Owner confirms the G2-01 probe — n/a: the paid series needs Phase 4's seal, which runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 5.7 Owner decides at the $3.00 pause — n/a: the paid series needs Phase 4's seal, which runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 5.8 Owner records a D2 decision for every valid #269 run — n/a: the paid series needs Phase 4's seal, which runs only after GO; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
 
 ### Phase 6: Hand-read and outcome
 
 #### Automated
 
-- [ ] 6.1 Sheets generated from the recorded series
-- [ ] 6.2 Per-run results computed
+- [-] 6.1 Sheets generated from the recorded series — n/a: the hand-read needs the Phase 5 series, which never ran; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 6.2 Per-run results computed — n/a: the hand-read needs the Phase 5 series, which never ran; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
 
 #### Manual
 
-- [ ] 6.3 Owner classifies every non-D2 finding
-- [ ] 6.4 Owner records the outcome and next decision
+- [-] 6.3 Owner classifies every non-D2 finding — n/a: the hand-read needs the Phase 5 series, which never ran; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
+- [-] 6.4 Owner records the outcome and next decision — n/a: the hand-read needs the Phase 5 series, which never ran; the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes)
 
 ### Phase 7: Restore AI review and run G5
 
 #### Automated
 
-- [ ] 7.1 No `false &&` remains
-- [ ] 7.2 Stale-pointer grep clean or justified
-- [ ] 7.3 Sealed files unchanged since the seal
-- [ ] 7.4 Variable deleted
-- [ ] 7.5 G5 run recorded
-- [ ] 7.6 PR CI green
+- [-] 7.1 No `false &&` remains — n/a: Phase 7 runs only after ADMITTED (pending G5); the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes), so AI review stays off
+- [-] 7.2 Stale-pointer grep clean or justified — n/a: Phase 7 runs only after ADMITTED (pending G5); the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes), so AI review stays off
+- [-] 7.3 Sealed files unchanged since the seal — n/a: Phase 7 runs only after ADMITTED (pending G5); the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes), so AI review stays off
+- [-] 7.4 Variable deleted — n/a: Phase 7 runs only after ADMITTED (pending G5); the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes), so AI review stays off
+- [-] 7.5 G5 run recorded — n/a: Phase 7 runs only after ADMITTED (pending G5); the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes), so AI review stays off
+- [-] 7.6 PR CI green — n/a: Phase 7 runs only after ADMITTED (pending G5); the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes), so AI review stays off
 
 #### Manual
 
-- [ ] 7.7 Owner deletes the variable, marks ready, adds ai-cr:review
-- [ ] 7.8 Owner reads G5 and decides on the merge
-- [ ] 7.9 Evidence pointers written with master SHAs after the merge
+- [-] 7.7 Owner deletes the variable, marks ready, adds ai-cr:review — n/a: Phase 7 runs only after ADMITTED (pending G5); the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes), so AI review stays off
+- [-] 7.8 Owner reads G5 and decides on the merge — n/a: Phase 7 runs only after ADMITTED (pending G5); the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes), so AI review stays off
+- [-] 7.9 Evidence pointers written with master SHAs after the merge — n/a: Phase 7 runs only after ADMITTED (pending G5); the screening ended STOP (c: cost) (screening.md § Results); owner decision 2026-10-17 to close out as STOP (change.md § Notes), so AI review stays off

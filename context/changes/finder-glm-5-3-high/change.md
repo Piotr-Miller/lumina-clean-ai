@@ -1,7 +1,7 @@
 ---
 change_id: finder-glm-5-3-high
 title: "Measure glm-5.3 at reasoning effort high as the ai-review finder"
-status: implementing
+status: implemented
 created: 2026-10-16
 updated: 2026-10-17
 archived_at: null
@@ -47,3 +47,9 @@ Predecessor: finder-glm-5-3
 2026-10-17: reopened 2.6 — was accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85; changed: packages/code-reviewer/scripts/glm-gate-core.mjs, packages/code-reviewer/scripts/glm-gate.mjs
 
 2026-10-17: owner decision — acknowledge STOP (c: cost) under the agreed H4 rule: 53·m247 = $7.417286 > $7.404940. Not admitted under this screening protocol; no pre-registration. Fixtures passed all informational metrics. #269/D2 were not measured, so their quality remains unresolved. Next step: /rune-archive and close the draft PR unmerged. (Screening record: `screening.md` § Results; T_s $0.208963 of $0.75.)
+
+2026-10-17: re-confirmed 1.8 — was accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85; accepted at 49e2ccdb0e8f63dc8de078cbd02c19f7d0db40e8
+
+2026-10-17: re-confirmed 2.6 — was accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85; accepted at 49e2ccdb0e8f63dc8de078cbd02c19f7d0db40e8
+
+2026-10-17: owner decision — close out as STOP: every Phase 4–7 row of plan.md Progress is marked n/a (Phase 4 runs only after GO, Phase 7 only after ADMITTED (pending G5)); status → implemented; next `/rune-archive` (outcome: not admitted (screening)) and the draft PR closes unmerged.
