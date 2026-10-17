@@ -1,10 +1,11 @@
 ---
 change_id: finder-glm-5-3-high
 title: "Measure glm-5.3 at reasoning effort high as the ai-review finder"
-status: impl_reviewed
+status: archived
+outcome: completed
 created: 2026-10-16
 updated: 2026-10-17
-archived_at: null
+archived_at: 2026-10-17T20:51:13Z
 ---
 
 ## Notes
