@@ -45,3 +45,5 @@ Predecessor: finder-glm-5-3
 2026-10-17: reopened 1.8 — was accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85; changed: packages/code-reviewer/scripts/glm-gate-core.mjs
 
 2026-10-17: reopened 2.6 — was accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85; changed: packages/code-reviewer/scripts/glm-gate-core.mjs, packages/code-reviewer/scripts/glm-gate.mjs
+
+2026-10-17: owner decision — acknowledge STOP (c: cost) under the agreed H4 rule: 53·m247 = $7.417286 > $7.404940. Not admitted under this screening protocol; no pre-registration. Fixtures passed all informational metrics. #269/D2 were not measured, so their quality remains unresolved. Next step: /rune-archive and close the draft PR unmerged. (Screening record: `screening.md` § Results; T_s $0.208963 of $0.75.)

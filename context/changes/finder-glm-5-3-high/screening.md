@@ -179,6 +179,15 @@ amendments above) and are given as planned and as amended.
 _Written after the push: a commit cannot contain its own push time. Nothing above this heading changes after the
 push._
 
+- **Rules commit:** `feat(finder-glm-5-3-high): The screening — rules and the owner's H6/O4 amendments before
+spending (p3)`, on `origin/feat/finder-glm-5-3-high` (branch SHA `9376d1a` at the push; a rebase merge rewrites
+  it, so the subject and the push time identify it). It also carries the runner changes the amendments need.
+  Pre-push hook: typecheck and 418/418 unit tests passed.
+- **GitHub push time: 2026-10-17T18:46:02Z.** Source:
+  `GET /repos/Piotr-Miller/lumina-clean-ai/activity?ref=refs/heads/feat/finder-glm-5-3-high`, event `push`, actor
+  `Piotr-Miller`, its `after` equal to the rules commit. `git ls-remote` showed that commit as the branch head.
+- Recorded before `preflight --screening`, before T0_s and before any paid call of the screening.
+
 ## Order
 
 H2, from `packages/code-reviewer`, with no path flag (they are refused without `--dry-run`, H8):
@@ -237,6 +246,69 @@ row or timeout after the retry, `continue --screening --for fixture-retry` admit
 
 <!-- glm-screen:outcome:start -->
 
-_Not run yet._
+_Automatic screening outcome, written by `scripts/glm-gate.mjs outcome --screening` at 2026-10-17T19:09:03.442Z._
+
+**Outcome:** STOP (c: cost)
+
+- Stop rules that hold: STOP (c: cost) — 53·m247 (H4).
+- Warnings: none.
+
+| Step    | Kind     | Valid | D2  | Finder attempts | Max output tokens | Reasons / pause |
+| ------- | -------- | ----- | --- | --------------- | ----------------- | --------------- |
+| sfix    | fixtures | —     | —   | —               | —                 | —               |
+| s247-01 | pr247    | yes   | —   | 168 s           | 11663 / 16384     | —               |
+
+- m247 $0.139949, m269 —: 53·m247 alone (H4) = $7.417286 against $7.404940 (stop rule (c) above it).
+- T_s $0.208963 (counter delta $0.208963, settled $0.208963) against the $0.75 cap.
+- Fixtures sfix (informational): js-loop issue_recall 1/1; react issue_recall 1/1, review_fails 1/1, flaw_stale_closure 1/1, flaw_lost_cleanup 1/1, flaw_unsafe_html 1/1; cross-hunk tool_required 1/1, flaw_cross_hunk_contract 1/1; clean no_false_alarms 1/1.
 
 <!-- glm-screen:outcome:end -->
+
+### Run notes (2026-10-17)
+
+Written by the agent from the ledger (`screening/series.jsonl`) and the committed `screening/results/` files the ledger
+pins. They explain the automatic outcome above and change nothing in it.
+
+- **Preflight and authorization.** T0_s $59.186398 at 2026-10-17T18:46:36Z, `HEAD` the rules commit, screened tree
+  sha256 `9452f93d6cc021c8d16567c103df2817fffa7364a8e3aaffa380074ee09cb97b`, frozen inputs unchanged, environment
+  clean. Endpoints: Z.AI (`z-ai/fp8`), Fireworks (`fireworks`, `fireworks/fast`) and Together all status 0, 30-minute
+  uptime 100 %. T0_s equals the plan's pre-spike reading $58.982082 plus the spike's $0.204316, so the spike had
+  settled. The owner authorized the spend and set the key's limit at $59.936398 = usage(T0_s) + $0.75, verified
+  through `GET /api/v1/key` at 2026-10-17T18:52:34Z (`limit_remaining` $0.749999607, no reset), before `sfix`.
+- **Order.** `sfix` started 18:52:51Z, `s247-01` 18:58:26Z. The screening ended when `s247-01` settled; `s269-01` and
+  `s269-02` never started, so no D2 decision and no pause arose.
+- **Served configuration.** All ten finder requests (eight on the fixture rows, two in `s247-01`) were served by Z.AI
+  with the reported model `z-ai/glm-5.3`. Every fixture request body carried `{enabled: true, effort: "high"}`;
+  `s247-01` printed the configuration line with `reasoning=high`. No retry, no repair, no `length` finish and no
+  timeout.
+- **`s247-01` per request.**
+  - Loop step 1, no tool call: finish `stop`, 10,272 reasoning tokens, 11,663 output tokens.
+  - Finalization: finish `stop`, 4,737 reasoning tokens, 6,293 output tokens.
+  - The largest output, 11,663, is 71 % of the 16,384-token cap. For comparison, the largest reasoning count on any
+    #269 step at `low` was 4,978 (plan § Current State).
+- **`s247-01` timing.** One finder attempt, 167,829 ms against its 300,000 ms budget, not failed. Whole run, judge
+  included, 208,587 ms. 11 findings, verdict `failed`; every finding is outside this screening's decisions (D2
+  concerns #269 only).
+- **Fixture rows (informational).** js-loop 1 request, 8.9 s; react 1 request, 34.7 s; cross-hunk 3 requests with 1
+  tool call, 40.9 s; clean 3 requests with 1 tool call, 16.3 s. Every metric 1/1. The rows file records no
+  per-request token counts.
+- **Costs.**
+  - `sfix` settled from the counter at $0.069015: finder telemetry $0.043063, the remaining $0.025952 grading.
+  - `s247-01` settled from telemetry at $0.139949: finder $0.094443, judge $0.045506.
+  - m247 = $0.139949; m269 not measured. 53·m247 = $7.417286, which exceeds $7.404940 by $0.012346: stop rule (c),
+    through H4. No later run can lower that bound.
+  - At `low` the predecessor's two #247 runs cost finder $0.025389 / $0.022187 (mean $0.023788) and judge $0.036832
+    / $0.034170 (mean $0.035501), on 6 findings each (`context/archive/2026-10-11-finder-glm-5-3/gate/series.jsonl`).
+    Here the finder cost 3.97 × its `low` mean, against the about 2.9 × the plan estimated the cost gate leaves (plan
+    § Current State, "Cost headroom"). The judge cost 1.28 × its `low` mean, on 11 findings: the plan's assumption
+    that the judge's cost does not depend on the effort does not hold, because its cost follows the findings it is
+    given.
+  - The margin is small and n = 1. At the `low` mean judge cost, 53·m247 would have been $6.887021, under the bound;
+    the stop comes from the finder's cost and the judge's larger input together. Neither changes the outcome: (c)
+    is decided on settled costs, finder and judge included (rule 2 (c)).
+- **Spend.** T_s $0.208963: counter delta and settled costs both $0.208963, stable across the two reads of the check
+  ending 2026-10-17T19:08:53Z. The first check, ending 19:05:44Z, still saw the counter moving. Within the $0.75 cap;
+  $0.541037 of the screening budget is unspent.
+- **Warnings.** None.
+- **What follows.** A fired stop is final (O2): it is not handed to the owner as an open GO/STOP question. The owner
+  records it in `change.md` (plan Phase 3 § 3).

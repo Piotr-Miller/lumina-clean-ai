@@ -1,0 +1,238 @@
+{
+  "summary": "This PR commits two previously-ephemeral production diagnostic scripts, which is valuable for reproducibility, but the reviewed findings show the implementations don't fully live up to their own documented contracts: job-id prefix matching is broken, the 'missing' report can be fooled by stale files, the JPEG dimension parser has an unhandled fill-byte case, and most critically the job-list fetch has no pagination safeguard, meaning the headline 'CONFIRMED' census conclusion used for an engineering decision could be based on a silently truncated dataset. The core dimension-parsing logic, despite being deterministic and consequential, ships with no tests. Combined with documentation that promises stronger safety/behavior guarantees than the code delivers, this change needs fixes before it should be trusted as the source of truth it's intended to be.",
+  "findings": [
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 53,
+      "endLine": 53,
+      "severity": "nit",
+      "category": "security",
+      "description": "die() prints KEY[:24] + \"...\" in the placeholder-check branch, contradicting the docstring's \"never stored, logged or printed\" contract. The branch normally fires only on pasted placeholder text, but if a real key ever contained an angle bracket, real secret material would be printed. The same pattern exists at scripts/prod-result-dimensions.py line 57.",
+      "suggestion": "Print a fixed redaction marker (e.g. \"a value containing '<'\") instead of echoing key material.",
+      "id": "F1"
+    },
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 77,
+      "endLine": 78,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The docstring (line 8) promises \"it takes any job-id prefixes as arguments\", but the code compares j[\"id\"][:8] against each argument for exact equality. Passing a shorter prefix (e.g. \"bcff\") matches nothing and the script reports the job as NOT found in the jobs table.",
+      "suggestion": "Use `short.startswith(w) for w in WANTED` (and accept arguments of at least one character) so genuine prefixes work.",
+      "id": "F2"
+    },
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 84,
+      "endLine": 84,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "The output filename is hardcoded with a .png extension, but prod-result-dimensions.py explicitly handles JPEG results, so this script can write JPEG bytes into a .png file.",
+      "suggestion": "Derive the extension from the magic bytes (or the result_path) instead of hardcoding .png.",
+      "id": "F3"
+    },
+    {
+      "file": "scripts/prod-fetch-results.py",
+      "startLine": 90,
+      "endLine": 93,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The `missing` report is computed from os.listdir(OUT), which includes files from previous runs and anything else in a user-supplied OUT_DIR. A job absent from the database is silently reported as found if a stale file with that prefix exists, defeating the script's own error reporting.",
+      "suggestion": "Track which WANTED prefixes were matched inside the loop and report the difference between WANTED and the matched set, not the directory contents.",
+      "id": "F4"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 62,
+      "endLine": 63,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "The localhost guard is dead code: the regex on line 59 already rejects any URL that is not https://<ref>.supabase.co, so lines 62-63 can never fire and give false confidence. Conversely, prod-fetch-results.py lacks both this guard and the key-format check (KEY.count(\".\") == 2 or sb_secret_ prefix) its sibling has, so the two scripts' preflight validation has drifted apart.",
+      "suggestion": "Drop the unreachable guard and factor the shared preflight (URL and key checks) into one place so both scripts validate identically, or port the key-format check to prod-fetch-results.py.",
+      "id": "F5"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 70,
+      "endLine": 72,
+      "severity": "nit",
+      "category": "style",
+      "description": "The extra_headers parameter of api() is never used by any caller.",
+      "suggestion": "Remove the parameter (and the headers.update line) until a caller actually needs it, or use it for the Range request so the signing and fetching paths share one helper.",
+      "id": "F6"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 80,
+      "endLine": 98,
+      "severity": "minor",
+      "category": "testing",
+      "description": "dimensions() is pure, deterministic, and drives every verdict in the census, yet has no tests. The JPEG marker walk (SOF ranges, exclusions, fill bytes, segment-length skipping) and the PNG IHDR offset are exactly the kind of byte-level logic that regresses invisibly and would silently corrupt the recorded census.",
+      "suggestion": "Add a small table-driven test module covering: PNG, baseline JPEG, JPEG with EXIF/App segments, JPEG with fill bytes before SOF, and an unrecognised header returning None.",
+      "id": "F7"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 86,
+      "endLine": 98,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The JPEG marker walk mishandles fill bytes: when raw[i] == 0xFF, the parser reads m = raw[i+1]; if that byte is also 0xFF (consecutive fill bytes, permitted by the JPEG spec before a marker), the code falls through to `i += 2 + struct.unpack(...)` and skips a garbage \"length\", potentially jumping past the SOF marker and returning None. Those jobs land in the `unreadable` bucket and skew the census.",
+      "suggestion": "Handle m == 0xFF explicitly with `i += 1; continue`.",
+      "id": "F8"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 102,
+      "endLine": 103,
+      "severity": "major",
+      "category": "correctness",
+      "description": "The job list is fetched with no pagination and no truncation detection. PostgREST silently caps responses at the project's max-rows setting (Supabase default 1000), so past that point the script sees only the oldest 1000 rows, prints \"{len(jobs)} stored jobs\" as if complete, and can emit the line 139 \"CONFIRMED: no production job has ever exercised Cloud AI at a real phone's resolution\" over a truncated corpus. Since this output is recorded into context/changes/cloud-quality-below-local/result-dimensions-census.md and drives the S-17 decision, a silent false negative is the worst failure mode this tool can have.",
+      "suggestion": "Paginate with limit/offset (or request Prefer: count=exact and verify the returned count), or at minimum refuse to print the CONFIRMED verdict when len(jobs) equals the server's row cap.",
+      "id": "F9"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 116,
+      "endLine": 119,
+      "severity": "minor",
+      "category": "correctness",
+      "description": "The safety contract (lines 15-17) says the script \"never fetches a whole image\" via a ranged GET, but the code never verifies the server honored the Range header. If the storage backend responds with 200 instead of 206, r.read() downloads every full-resolution result, silently violating the stated contract.",
+      "suggestion": "After opening the response, check `r.status != 206` (or absence of a Content-Range header) and skip/die rather than reading the body.",
+      "id": "F10"
+    },
+    {
+      "file": "scripts/prod-result-dimensions.py",
+      "startLine": 131,
+      "endLine": 132,
+      "severity": "nit",
+      "category": "correctness",
+      "description": "A result whose long edge is exactly 1536px is classified as \"DOWNSCALED (source was larger)\" by the >= CAP comparison, but a source of exactly 1536 passes through uncapped and yields exactly 1536, so the boundary case is mislabeled (the docstring's own table at lines 10-11 has the same ambiguity).",
+      "suggestion": "Use > CAP for the downscaled verdict, or note the 1536-exact ambiguity in the verdict text.",
+      "id": "F11"
+    }
+  ],
+  "preDedupFindingCount": 11,
+  "scores": {
+    "implementation_correctness": {
+      "score": 3,
+      "justification": "Several concrete bugs undermine the scripts' stated purpose: prefix matching uses exact equality instead of startswith, so the documented 'any job-id prefix' feature silently fails (F2); the missing-report is derived from stale directory contents rather than actual matches, masking failures (F4); a major pagination gap means the census tool can silently operate on a truncated row set while still printing a 'CONFIRMED' verdict that feeds a real engineering decision (F9); the JPEG parser mishandles fill bytes and can misclassify readable images as unreadable (F8); extension is hardcoded regardless of actual format (F3); and a boundary case in the downscale verdict is mislabeled (F11). These are not edge-case nits — several defeat the tool's own stated guarantees.",
+      "findingIds": [
+        "F2",
+        "F3",
+        "F4",
+        "F8",
+        "F9",
+        "F11"
+      ]
+    },
+    "idiomaticity": {
+      "score": 6,
+      "justification": "No findings point to unidiomatic style beyond a vestigial unused parameter on the api() helper; otherwise the code appears to follow consistent script conventions, with no complaints raised about language/framework fit.",
+      "findingIds": [
+        "F6"
+      ]
+    },
+    "complexity": {
+      "score": 6,
+      "justification": "The implementation is reasonably simple for a diagnostic script, but preflight validation has drifted between the two sibling scripts rather than being shared/factored (F5), and there's a dead, false-confidence-inducing guard plus an unused parameter adding small amounts of avoidable complexity (F5, F6).",
+      "findingIds": [
+        "F5",
+        "F6"
+      ]
+    },
+    "test_risk_coverage": {
+      "score": 2,
+      "justification": "The dimensions() function is pure, deterministic, byte-level parsing logic that drives every verdict in a production census, yet it has zero tests (F7) — and a real bug in that exact logic already exists undetected (F8). For a tool whose output is recorded as evidence for a design decision, this is a significant coverage gap on the highest-risk code path.",
+      "findingIds": [
+        "F7",
+        "F8"
+      ]
+    },
+    "documentation": {
+      "score": 3,
+      "justification": "The header docstrings make explicit safety and behavior promises — keys 'never stored, logged or printed', 'any job-id prefix' accepted, and 'never fetches a whole image' — that the implementation does not actually guarantee (F1, F2, F10). Misleading documentation that overstates guarantees is more harmful than simply absent documentation, since readers and future maintainers will rely on contracts the code doesn't enforce.",
+      "findingIds": [
+        "F1",
+        "F2",
+        "F10"
+      ]
+    },
+    "security_safety": {
+      "score": 5,
+      "justification": "The scripts are designed to keep production service-role keys out of agent sessions and avoid full-image downloads, but the Range-header honor is never verified, so the stated 'never fetches a whole image' safety contract can silently be violated (F10), and a corner case could echo partial key material contrary to the no-print guarantee (F1). These are edge-case rather than directly exploitable issues, but they undercut safety claims made prominently in the PR description.",
+      "findingIds": [
+        "F1",
+        "F10"
+      ]
+    }
+  },
+  "verdict": "failed",
+  "verdictReason": "Multiple correctness defects undermine the scripts' core purpose (broken prefix matching, stale-directory-based missing reports, unpaginated queries that can silently truncate the dataset feeding a real production decision), and the highest-risk parsing logic has no test coverage despite an already-present bug in exactly that logic; documentation also overstates safety guarantees the code doesn't fully enforce.",
+  "diffStats": {
+    "files": 2,
+    "additions": 234,
+    "deletions": 0
+  },
+  "diffTruncated": false,
+  "offDiffFindingPaths": [],
+  "bodyTruncated": false,
+  "droppedFindingIdRefs": 0,
+  "models": {
+    "finder": "z-ai/glm-5.3",
+    "judge": "anthropic/claude-sonnet-5"
+  },
+  "finderTelemetry": {
+    "steps": 2,
+    "toolCalls": 0,
+    "requests": [
+      {
+        "kind": "step",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 10272,
+          "source": "reported"
+        },
+        "cost": 0.0579602
+      },
+      {
+        "kind": "finalization",
+        "attempt": 1,
+        "provider": {
+          "value": "Z.AI",
+          "source": "reported"
+        },
+        "model": {
+          "value": "z-ai/glm-5.3",
+          "source": "reported"
+        },
+        "finishReason": "stop",
+        "reasoningTokens": {
+          "value": 4737,
+          "source": "reported"
+        },
+        "cost": 0.0364826
+      }
+    ],
+    "inputTokens": 11026,
+    "outputTokens": 17956,
+    "totalTokens": 28982,
+    "cost": 0.0944428
+  },
+  "judgeTelemetry": {
+    "attempts": 1,
+    "inputTokens": 6528,
+    "outputTokens": 3245,
+    "totalTokens": 9773,
+    "cost": 0.045506
+  }
+}

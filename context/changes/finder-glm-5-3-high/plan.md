@@ -1167,16 +1167,16 @@ No manifest file changes.
 
 #### Automated
 
-- [ ] 3.1 Screening rules pushed before any screening spend
-- [ ] 3.2 The screening steps, in order, under admission
-- [ ] 3.3 Every screening step settled and T_s ≤ $0.75
-- [ ] 3.4 Screening outcome recorded
+- [x] 3.1 Screening rules pushed before any screening spend
+- [x] 3.2 The screening steps, in order, under admission
+- [x] 3.3 Every screening step settled and T_s ≤ $0.75
+- [x] 3.4 Screening outcome recorded
 
 #### Manual
 
 - [ ] 3.5 Owner authorizes the screening spend
-- [ ] 3.6 Owner records a D2 decision for each valid screening #269 run
-- [ ] 3.7 Owner decides at any screening pause
+- [-] 3.6 Owner records a D2 decision for each valid screening #269 run — n/a: no valid screening #269 run exists; the screening ended STOP (c: cost) when s247-01 settled (53·m247 = $7.417286 > $7.404940, H4), before s269-01 started (screening.md § Results)
+- [-] 3.7 Owner decides at any screening pause — n/a: no screening pause occurred; sfix and s247-01 neither paused nor failed, and the screening ended STOP (c: cost) (screening.md § Results)
 - [ ] 3.8 Owner records GO or STOP
 
 ### Phase 4: Pre-registration and seal
