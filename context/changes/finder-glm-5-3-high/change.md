@@ -1,7 +1,7 @@
 ---
 change_id: finder-glm-5-3-high
 title: "Measure glm-5.3 at reasoning effort high as the ai-review finder"
-status: implemented
+status: impl_reviewed
 created: 2026-10-16
 updated: 2026-10-17
 archived_at: null
@@ -53,3 +53,5 @@ Predecessor: finder-glm-5-3
 2026-10-17: re-confirmed 2.6 — was accepted at d60aac996b4c8600c27a8e0d95bae615ec473f85; accepted at 49e2ccdb0e8f63dc8de078cbd02c19f7d0db40e8
 
 2026-10-17: owner decision — close out as STOP: every Phase 4–7 row of plan.md Progress is marked n/a (Phase 4 runs only after GO, Phase 7 only after ADMITTED (pending G5)); status → implemented; next `/rune-archive` (outcome: not admitted (screening)) and the draft PR closes unmerged.
+
+2026-10-17: full implementation review at `7dcb3e7` — APPROVED, one low-impact observation F1 (`reviews/impl-review-7dcb3e7.md`). Owner chose to fix it: the sheet's dry-run write guard now resolves symlinks for every write destination, including generated sheet files; new temporary-file regression cases first failed, then passed. Package verification: 1,207 tests, typecheck and lint passed. Acceptance script: all four confirmed rows remain current; reopened: none. This post-STOP fix changes a manifest input (`glm-gate-sheet.mjs`); the recorded screening tree and its pinned artifacts are unchanged historical evidence, and no additional paid measurement was run. Fix and review records remain uncommitted as carry.

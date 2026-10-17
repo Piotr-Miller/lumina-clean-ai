@@ -28,8 +28,8 @@
 // Exit codes: 0 done (`resolve`: every run passes), 1 a run fails or the
 // inputs disagree, 2 usage or refusal.
 import { createHash } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve, sep } from "node:path";
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { isD2Candidate } from "./glm-gate-core.mjs";
@@ -282,9 +282,26 @@ function parseFlags(argv) {
 /** Path overrides: a dry run's, never the hand-read's (Amendment 1 as code, this change's plan.md H8). */
 const PATH_FLAGS = Object.freeze(["series", "results", "out-dir", "sheets-dir"]);
 
-const insideChange = (path) => path === CHANGE_DIR || path.startsWith(`${CHANGE_DIR}${sep}`);
+/** Resolve existing ancestors too: a new destination may sit below a directory symlink. */
+const canonicalWritePath = (path) => {
+  try {
+    return realpathSync(path);
+  } catch (error) {
+    // An existing dangling symlink has no canonical target: refuse rather than treating it as a new file.
+    if (error.code !== "ENOENT" || lstatSync(path, { throwIfNoEntry: false }) !== undefined) throw error;
+    const parent = dirname(path);
+    if (parent === path) throw error;
+    return join(canonicalWritePath(parent), basename(path));
+  }
+};
 
-export function main(argv, { log = console.log, now = () => new Date() } = {}) {
+const insideChange = (path, protectedDir) => {
+  const target = canonicalWritePath(path);
+  const root = canonicalWritePath(protectedDir);
+  return target === root || target.startsWith(`${root}${sep}`);
+};
+
+export function main(argv, { log = console.log, now = () => new Date(), protectedDir = CHANGE_DIR } = {}) {
   const [command, ...rest] = argv;
   const flags = parseFlags(rest);
   if (flags === undefined || (command !== "sheet" && command !== "resolve")) {
@@ -310,15 +327,26 @@ export function main(argv, { log = console.log, now = () => new Date() } = {}) {
       command === "sheet"
         ? [
             ["--out-dir", outDir],
+            ...Object.values(SHEET_CASES).map(({ file }) => ["--out-dir", join(outDir, file)]),
             ["--series", seriesPath],
           ]
         : flags.out === undefined
           ? []
           : [["--out", resolve(flags.out)]];
-    const inside = writes.filter(([, path]) => insideChange(path)).map(([flag]) => flag);
-    if (inside.length > 0) {
+    const inside = new Set();
+    for (const [flag, path] of writes) {
+      try {
+        if (insideChange(path, protectedDir)) inside.add(flag);
+      } catch (error) {
+        log(
+          `REFUSED (cannot resolve dry-run write path): ${flag} (${error.code ?? error.name}) — choose a scratch destination with resolvable parent directories and symlinks.`,
+        );
+        return 2;
+      }
+    }
+    if (inside.size > 0) {
       log(
-        `REFUSED (dry run writing into the change folder): ${inside.join(", ")} — a dry run writes outside context/changes/finder-glm-5-3-high/: point it at a scratch directory.`,
+        `REFUSED (dry run writing into the change folder): ${[...inside].join(", ")} — a dry run writes outside context/changes/finder-glm-5-3-high/: point it at a scratch directory.`,
       );
       return 2;
     }

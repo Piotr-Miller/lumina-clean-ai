@@ -2,7 +2,16 @@
 // `finder-glm-5-3` (plan.md Phase 3 §3, Testing Strategy "Resolver"), with
 // change `finder-glm-5-3-high`'s D2 from the ledger and its --dry-run (its
 // plan.md Phase 2 §3 and §4).
-import { existsSync, mkdtempSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+  mkdirSync,
+  rmSync,
+  symlinkSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -327,5 +336,91 @@ describe("main — sheet and resolve on a recorded series", () => {
     expect(lines[0]).toMatch(new RegExp(`REFUSED \\(dry run writing into the change folder\\): ${flag}`, "u"));
     expect(existsSync(join(CHANGE_DIR, "hand-read-269.md"))).toBe(false);
     expect(existsSync(join(CHANGE_DIR, "result.json"))).toBe(false);
+  });
+
+  it.each([
+    ["sheet directory alias", "sheet", "--out-dir", "directory"],
+    ["new nested sheet directory below an alias", "sheet", "--out-dir", "nested-directory"],
+    ["ledger file alias", "sheet", "--series", "file"],
+    ["new ledger below a directory alias", "sheet", "--series", "nested-file"],
+    ["resolver output file alias", "resolve", "--out", "file"],
+    ["new resolver output below an alias", "resolve", "--out", "nested-file"],
+    ["dangling output alias", "resolve", "--out", "dangling-file"],
+    ["first sheet file alias", "sheet", "--out-dir", "hand-read-247.md"],
+    ["second sheet file alias", "sheet", "--out-dir", "hand-read-269.md"],
+  ])("a dry run preserves the protected files through %s", (_label, command, flag, kind) => {
+    const dir = mkdtempSync(join(tmpdir(), "glm-sheet-symlink-"));
+    try {
+      const protectedDir = join(dir, "protected");
+      const outDir = join(dir, "out");
+      mkdirSync(protectedDir);
+      mkdirSync(outDir);
+      const sentinel = join(protectedDir, "evidence.jsonl");
+      writeFileSync(sentinel, '{"type":"sentinel"}\n');
+      const alias = join(dir, "alias");
+      let target;
+      if (kind === "directory" || kind === "nested-directory" || kind === "nested-file") {
+        symlinkSync(protectedDir, alias, "junction");
+        target = kind === "directory" ? alias : join(alias, "new", "nested", "output");
+      } else if (kind.startsWith("hand-read-")) {
+        symlinkSync(sentinel, join(outDir, kind), "file");
+        target = outDir;
+      } else {
+        symlinkSync(kind === "dangling-file" ? join(protectedDir, "missing.json") : sentinel, alias, "file");
+        target = alias;
+      }
+      const series = join(dir, "series.jsonl");
+      writeFileSync(series, "");
+      const lines = [];
+      const args = [
+        command,
+        "--dry-run",
+        "--series",
+        series,
+        "--results",
+        dir,
+        "--out-dir",
+        outDir,
+        "--sheets-dir",
+        outDir,
+        flag,
+        target,
+      ];
+      expect(main(args, { log: (line) => lines.push(line), protectedDir })).toBe(2);
+      expect(lines[0]).toMatch(
+        /REFUSED \((?:dry run writing into the change folder|cannot resolve dry-run write path)\)/u,
+      );
+      expect(lines[0]).toContain(flag);
+      expect(readFileSync(sentinel, "utf8")).toBe('{"type":"sentinel"}\n');
+      expect(readdirSync(protectedDir)).toEqual(["evidence.jsonl"]);
+      expect(readFileSync(series, "utf8")).toBe("");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("allows a symlink to a scratch directory with a similar prefix", () => {
+    const dir = mkdtempSync(join(tmpdir(), "glm-sheet-symlink-"));
+    try {
+      const protectedDir = join(dir, "protected");
+      const outside = join(dir, "protected-scratch");
+      mkdirSync(protectedDir);
+      mkdirSync(outside);
+      const alias = join(dir, "alias");
+      symlinkSync(outside, alias, "junction");
+      const series = join(dir, "series.jsonl");
+      writeFileSync(series, "");
+      expect(
+        main(["sheet", "--dry-run", "--series", series, "--out-dir", join(alias, "new", "sheets")], {
+          protectedDir,
+          log: () => undefined,
+        }),
+      ).toBe(0);
+      expect(existsSync(join(outside, "new", "sheets", "hand-read-247.md"))).toBe(true);
+      expect(existsSync(join(outside, "new", "sheets", "hand-read-269.md"))).toBe(true);
+      expect(readdirSync(protectedDir)).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
