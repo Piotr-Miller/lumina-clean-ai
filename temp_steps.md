@@ -1,10 +1,171 @@
 # temp_steps.md — immediate next steps
 
-> Refreshed 2026-10-05 (finder-verification measured, decided and archived: none admitted). Previously 2026-10-04 (sealed after Phases 0–3) and 2026-10-03 (after #274; finder-model-swap archived; finder-verification opened and researched). **Short-lived by design**: this is the next-few-actions
+> Refreshed 2026-10-17, late (finder-glm-5-3-high archived, not admitted (screening); PR #295 closed unmerged;
+> `advisory-review-analysis` opened on its own branch).
+> Previously 2026-10-14 (finder-glm-5-3: Phases 1–3 implemented, Phase 4 next), 2026-10-11 (Phases 1–2 implemented, Phase 2 awaiting review), 2026-10-05 (finder-verification measured, decided and archived: none admitted), 2026-10-04 (sealed after Phases 0–3) and 2026-10-03 (after #274; finder-model-swap archived; finder-verification opened and researched). **Short-lived by design**: this is the next-few-actions
 > list and the **only** such list. `context/foundation/roadmap.md` stays authoritative for scope,
 > including parked work. Delete this file once the list is empty.
 
-## Resume point — session of 2026-10-05 (after archiving `finder-verification`)
+## Resume point — session of 2026-10-17 (`finder-glm-5-3-high` archived; `advisory-review-analysis` opened)
+
+Nothing is lost by a restart: **every commit is on `origin`**. The only working-tree content, this file and the
+new change's `change.md`, was committed and pushed on `chore/advisory-review-analysis`. AI review is still off on
+`master`.
+
+**Change `finder-glm-5-3-high` is archived** at `context/archive/2026-10-16-finder-glm-5-3-high/` (outcome
+`completed`; archive commit `6d5a09a`, sync record `0cbf03e`, `sync: none`).
+
+- **Result: not admitted (screening).** `STOP (c: cost)` after the single #247 run `s247-01`, under the rules
+  pushed before any spend: 53·m247 = $7.417286 > $7.404940, on the #247 part alone, before the 8·m269 term. #269
+  and D2 were not measured. Screening spend T_s $0.208963 of the $0.75 cap. Fixtures passed every informational
+  metric.
+- **Full implementation review:** APPROVED at `7dcb3e7`. Its one observation F1 (a symlink got past the sheet's
+  dry-run write guard) is fixed in `2ffe24b`: 10 new tests, 9 of them red before the fix; package 1,207/1,207.
+- **PR #295 closed unmerged**, with a comment. Branch `feat/finder-glm-5-3-high` = `0cbf03e` on `origin`. The gate
+  tooling stays off `master` on purpose. F1 has nothing to land on there: `master` has no `glm-gate-*` file.
+- **Owner's corrections (2026-10-17):**
+  - The failed gates were not only the D2 threshold: luna had 19 of 20 distinct #269 findings rejected.
+  - "Missed by $0.012" understates it: the stop fired on the #247 term alone.
+  - The old STOP stands. New criteria apply to fresh cases.
+
+**Keep both branches. They hold the only copies of the glm-5.3 evidence. Neither is merged, so their SHAs are
+stable.**
+
+- `feat/finder-glm-5-3` = `ac6bbb1`: archive `context/archive/2026-10-11-finder-glm-5-3/`, NOT ADMITTED (hand-read).
+- `feat/finder-glm-5-3-high` = `0cbf03e`.
+
+**New change `advisory-review-analysis`** (status `new`):
+
+- **Branch:** `chore/advisory-review-analysis`, from `origin/master` `b517e54`. Upstream is set to its own remote
+  branch, never `master`.
+- **Scope:**
+  - **$0 for new model calls.**
+  - From the recorded results, count concrete bugs worth a fix, false alarms, duplicates and minor remarks.
+  - **Output:** a recommendation of one candidate, or of ending the work, plus proposed criteria for a possible
+    on-demand pilot.
+  - D2 becomes a reported weakness, not a veto.
+- **Main question:** glm-5.3 low.
+  - Recorded results: the owner accepted 55 of 60 published findings (#247 12; #269 42 + D2; 5 rejected). D2 was
+    found in 1 of 9 valid #269 runs. Provisional cost $6.556540/month.
+  - Source: `git show origin/feat/finder-glm-5-3:context/archive/2026-10-11-finder-glm-5-3/gate.md`, § Hand-read and
+    line 609.
+  - **How many accepted findings actually justified a fix?** 55/60 accepted does not settle that.
+- **Budget context:** the OpenRouter key limit is $59.936398, and about $5.60 of account credit is left.
+
+**Next actions, in order:**
+
+1. **Owner:** in a fresh session on `chore/advisory-review-analysis`, run `/rune-research advisory-review-analysis`.
+2. **Agent (research, no model calls):** count per candidate, from the recorded hand-reads, concrete bugs, false
+   alarms, duplicates and minor remarks. Propose a "worth the author's time" classification. The archives record
+   only accept/reject.
+3. **Owner:** decide which accepted findings were worth a fix.
+4. **Agent:** `/rune-plan advisory-review-analysis`. It writes the recommendation and the pilot criteria before any
+   spend; the owner's suggestion is 5 new PRs, on demand only, a $2 cap, glm-5.3 low first.
+5. **Owner:** decide on the paid pilot, or end the work.
+
+---
+
+## Resume point — session of 2026-10-14 (SUPERSEDED by the 2026-10-17 section above; kept for history)
+
+(`finder-glm-5-3`, after Phase 3 and its acceptance)
+
+**Change `finder-glm-5-3`** (status `implementing`, branch `feat/finder-glm-5-3`, draft PR #292). Plan: 7 phases,
+**3 implemented**. **$0.00 spent**; nothing paid has run (the paid series is Phase 5), and AI review is still off
+on `master`.
+
+- **Local `HEAD` = `origin` = `895f92e`** (pushed 2026-10-14; 2.7 re-confirmed at `f2ccfdd`, recorded in
+  `895f92e`). Nothing is unpushed. PR CI on `f2ccfdd` green (run 38625690941: `ci`, `code-reviewer`, `integration`,
+  `e2e`); CI on `895f92e` green too (run 38626497400; bookkeeping only, no code).
+- **Phase 3** (measurement tooling): `965ae3d`, `1b8622c`; review NEEDS ATTENTION, fixes F1–F5 in `674fb79`
+  (`reviews/impl-review-phase-3-1b8622c.md`). After that, owner decisions on 2026-10-14:
+  - `8cf9194`: a confirmed OpenRouter 401/402 (the CLI's `api error: status=<n>` line) stops the series
+    INCOMPLETE (auth/credit). Text without the typed status is only "suspected".
+  - `20a3127`: on a provider error, the step summary shows only `<error name>: api error: status=<n>`. The
+    provider's message (response body text) stays on the stderr message line. A stubbed 402 run through the real
+    CLI found the body text in the summary.
+  - `d04c66f`: the CLI step line prints `kind=step|finalization|repair`, and the runner records it for a run
+    without `review.json`. `58be5e4` records the decision, the 2.7 reopen and its re-confirmation.
+  - `eb5ea06`: any other SDK error in the chain (no HTTP status) shows only
+    `<error name>: SDK error (message only in the job log)` in the step summary — `TypeValidationError` /
+    `JSONParseError` quote model output.
+  - `f2ccfdd` (finding 3): the same rule now covers the PR comment. A failed implementation review shows in
+    `comment.md` only `publicError` (from `publicErrorSummary` in `retry.ts`, now shared with the step summary);
+    `error` keeps the full message for the stderr `impl review: FAILED` line and `review.json`. Before the fix, a
+    stubbed 402 on the impl-review request put the provider body into `comment.md`. Landed before the Phase 4
+    seal, which covers every `packages/code-reviewer/src/**/*.ts`.
+- **Reviews:** Phase 1 APPROVED; Phase 2 NEEDS ATTENTION (fixes `b6afeb1`); Phase 3 NEEDS ATTENTION (fixes
+  `674fb79`). `8cf9194`, `20a3127`, `d04c66f`, `eb5ea06` and `f2ccfdd` have had no phase review.
+- **Manual acceptance (all current):**
+  - 1.8 accepted at `4432a70`;
+  - 2.7 accepted at `f2ccfdd` (reopened by its `cli.ts` change; re-checked through the real CLI against `eb5ea06`,
+    five stubbed cases, stderr / step summary / stdout byte-identical; evidence in plan.md Progress);
+  - 3.5 accepted at `674fb79`.
+  - The manual checks of Phases 4–7 are pending.
+
+**Uncommitted:** only this file.
+
+**Next actions, in order:**
+
+1. **Done 2026-10-14:** `kind=` on the CLI step line (`d04c66f`), SDK error text out of the step summary
+   (`eb5ea06`), 2.7 re-confirmed and recorded (`58be5e4`, `cc59ccd`).
+2. **Done 2026-10-14 (`f2ccfdd`): finding 3 fixed before the seal.** Test-first: 4 MODEL-SENTINEL cases in
+   `pipeline.test.ts`, 1 in `render.test.ts` and a stubbed 402 end to end in `cli.test.ts` failed, then passed.
+   Deliberate breaks turned them red again. Vitest 1046/1046, tsc, eslint, prettier clean, REASONING-SENTINEL 7/7.
+   PR CI green (run 38625690941).
+3. **Done 2026-10-14 (`895f92e`):** 2.7 re-confirmed at `f2ccfdd` after the reopen; pushed.
+4. **Done 2026-10-14:** CI on `895f92e` green (run 38626497400: `ci`, `code-reviewer`, `integration`, `e2e`).
+5. **Agent:** `/rune-implement finder-glm-5-3 phase 4` (pre-registration and seal). It is still free; Phase 5 is
+   the first paid one. From the seal on, no `packages/code-reviewer/src/**/*.ts` may change until G5 is done.
+
+Still observed, not acted on: the SDK may print `[openrouter] Some reasoning_details entries were removed because
+they were missing signatures…` to stderr. It carries no model text; whether real glm-5.3 responses trigger it is
+unknown.
+
+---
+
+## Resume point — session of 2026-10-11 (SUPERSEDED by the 2026-10-14 section above; kept for history)
+
+**Change `finder-glm-5-3`** (`context/changes/finder-glm-5-3/`, status `implementing`, branch
+`feat/finder-glm-5-3`, draft PR #292). Plan: 7 phases. **$0.00 spent**; nothing paid has run, and AI review is
+still off on `master`.
+
+- **Phase 1** (port of the two-stage finder and its routing): `9782f38`, pushed, PR CI green, phase review
+  APPROVED (`reviews/impl-review-phase-1-9782f38.md`, now committed).
+- **Phase 2** (configure for glm-5.3 and close the gaps): **`64fad61`, pushed to `origin` 2026-10-11** (PR #292
+  CI runs on it). All automated rows 2.1–2.6 pass: vitest 747/747, tsc and eslint 0, the
+  `REASONING-SENTINEL` tests 6/6, no `enabled: false` left, root prettier clean, and the 12 stale-pointer grep hits
+  are all deliberately kept (listed in the commit body). Two negative controls (redaction removed, reasoning
+  leaked into the transcript) turned the sentinel tests red; both files were restored.
+  - What it does: finder default `z-ai/glm-5.3`, `reasoning: {enabled: true, effort: "low"}` on every finder
+    request and on no judge or impl-review request, routing `z-ai,fireworks,together`; `finish=length` and inline
+    `<think` fail the attempt at every request kind without a retry; `review.json` `finderTelemetry.requests` per
+    request (kind, attempt, provider, model, finish, reasoning tokens, cost — only provider-reported values,
+    otherwise `missing`); a `finder configuration:` stderr line; the CLI never prints a text containing `<think`.
+
+**Uncommitted:** only `context/changes/finder-glm-5-3/plan.md` (the Phase 2 Progress SHA write-back
+`— 64fad61`). It is the workflow's carried edit and rides with the next commit; nothing else is dirty.
+
+**Next actions, in order:**
+
+1. **Owner:** in a fresh session, run `/rune-impl-review @context/changes/finder-glm-5-3/plan.md phase 2` (the
+   owner chose "review this phase first"). It reviews `64fad61`.
+2. **Owner:** confirm Manual **2.7** (the `finder configuration:` and step lines show model, provider and
+   reasoning volume without model text) or leave it pending. Manual **1.8** (`screening-config.md` sufficient and
+   non-sensitive) is also still pending.
+3. **Owner, decide before the Phase 4 seal:** add `kind=` to the CLI step line? Today the finalization prints as
+   `finder step N`, so Phase 3's runner can tell it apart from loop steps only by position when a failed run
+   leaves no `review.json`. Free now, frozen after the seal.
+4. **Owner:** check that PR #292's CI (`ci`, `integration`, `e2e`, `code-reviewer`) is green on `64fad61`.
+5. **Agent:** `/rune-implement finder-glm-5-3 phase 3` — runner, G3 row checker, hand-read sheet, cost
+   projection; still all free and hermetic.
+
+Observed, not acted on: the SDK itself may print `[openrouter] Some reasoning_details entries were removed
+because they were missing signatures…` to stderr. It carries no model text; whether real glm-5.3 responses
+trigger it is unknown.
+
+---
+
+## Resume point — session of 2026-10-05 (SUPERSEDED by the 2026-10-11 section above; kept for history)
 
 **`finder-verification` is archived** at `context/archive/2026-10-03-finder-verification/` (outcome
 `completed`; archive commit `6a99445`, sync record `39e7859`, pushed 2026-10-05T18:40:57Z). Its result is
