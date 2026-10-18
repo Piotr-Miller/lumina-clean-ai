@@ -41,7 +41,7 @@ Cloud AI ops cost real Replicate money and are protected by a **global daily cap
 ## 4. Immutability and freezes
 
 - **Never write under `context/archive/`.** If a resolved target path starts with `context/archive/`,
-  abort with: "This change is archived. Open a new change with `/10x-new` instead."
+  abort with: "This change is archived. Open a new change with `/rune-new` instead."
 - Correcting a record inside `context/archive/` does **not** correct `context/foundation/roadmap.md`.
   If a fact changed, the live tracking file is the one to fix.
 - A frozen bar stays frozen for the run. Hash it, and **check the hash before spending**, not after —
