@@ -34,7 +34,7 @@ Listed existing labels (`gh label list`) — only GitHub defaults existed, so ro
 gh label create roadmap        --color 5319e7 --description "Roadmap item from context/foundation/roadmap.md" --force
 gh label create foundation     --color 1d76db --description "Cross-cutting enabler (F-NN)"                     --force
 gh label create slice          --color 0e8a16 --description "Vertical user-visible slice (S-NN)"              --force
-gh label create "status:ready" --color 1a7f37 --description "Prerequisites met; ready for /10x-plan"          --force
+gh label create "status:ready" --color 1a7f37 --description "Prerequisites met; ready for /rune-plan"         --force
 gh label create "status:proposed" --color fbca04 --description "Awaiting prerequisites"                       --force
 gh label create "north-star"   --color d93f0b --description "Validation milestone"                            --force
 ```
@@ -221,5 +221,5 @@ Issue state is kept in sync as roadmap items archive (see "Reproduce / extend" n
 - Re-running label creation is safe (`--force`).
 - If the roadmap changes, prefer editing existing issues (`gh issue edit <n> --body-file …`)
   over creating duplicates; match on the Roadmap ID / Change ID in the title and body.
-- `/10x-archive` is the canonical writer that flips roadmap items to `done`; keep the
+- `/rune-archive` is the canonical writer that flips roadmap items to `done`; keep the
   issue state in sync with the roadmap's `Status` when an item is archived.
