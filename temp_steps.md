@@ -1,16 +1,47 @@
 # temp_steps.md — immediate next steps
 
-> Refreshed 2026-10-17, late (finder-glm-5-3-high archived, not admitted (screening); PR #295 closed unmerged;
-> `advisory-review-analysis` opened on its own branch).
+> Refreshed 2026-10-19 (`advisory-review-analysis`: close-out implemented; #235 closed as not planned; archive next).
 > Previously 2026-10-14 (finder-glm-5-3: Phases 1–3 implemented, Phase 4 next), 2026-10-11 (Phases 1–2 implemented, Phase 2 awaiting review), 2026-10-05 (finder-verification measured, decided and archived: none admitted), 2026-10-04 (sealed after Phases 0–3) and 2026-10-03 (after #274; finder-model-swap archived; finder-verification opened and researched). **Short-lived by design**: this is the next-few-actions
 > list and the **only** such list. `context/foundation/roadmap.md` stays authoritative for scope,
 > including parked work. Delete this file once the list is empty.
 
-## Resume point — session of 2026-10-17 (`finder-glm-5-3-high` archived; `advisory-review-analysis` opened)
+## Resume point — session of 2026-10-19 (`advisory-review-analysis`: close-out implemented; archive next)
 
-Nothing is lost by a restart: **every commit is on `origin`**. The only working-tree content, this file and the
-new change's `change.md`, was committed and pushed on `chore/advisory-review-analysis`. AI review is still off on
-`master`.
+**Branch:** `chore/advisory-review-analysis`. Phases 1–3 are committed and pushed through `82776c5`, verified on
+`origin`. Their phase reviews are APPROVED. No paid model evaluation ran; `ai-review` stays disabled.
+
+**The close-out is implemented.** [#235 is closed as not planned](https://github.com/Piotr-Miller/lumina-clean-ai/issues/235).
+The [closing comment](https://github.com/Piotr-Miller/lumina-clean-ai/issues/235#issuecomment-6276864332), posted by
+Piotr-Miller on 2026-10-19, exactly matches `context/changes/advisory-review-analysis/issue-235-comment.md`.
+Its root-cause and close-out links were verified at pushed commit `82776c5`. The date, reason and comment URL
+are recorded in `close-out.md` § Tracker. On resume, the agent found the issue already closed and made no
+duplicate GitHub mutation. The Phase 4 and epilogue commits are local; this run made no push.
+
+**Next action:** `/rune-archive advisory-review-analysis`, outcome `completed`, after any requested final
+implementation review. A new owner decision and change are required for any pilot.
+
+**Human acceptance: 0 of 5 recorded.** Rows 1.3, 2.5, 2.6, 3.7 and 4.5 remain pending. The earlier agent reviews
+do not record human acceptance; 4.5 also requires the owner to read the posted comment and its permalink.
+These checks do not block implementation or archive with outcome `completed`.
+
+---
+
+## Resume point — session of 2026-10-19 (`advisory-review-analysis`: research and decisions complete; superseded)
+
+On `chore/advisory-review-analysis`, research and the owner-delegated decisions are written but **uncommitted**:
+`change.md`, `research.md`, `worth-fix-sheet.md` and this resume file. Their hashes are in
+`.git/rune/advisory-review-analysis.carry`. AI review is still off on `master`. No paid evaluation ran.
+
+The owner asked Codex to fill **Owner**, decide whether W2 counts and select the pilot direction. Decisions:
+
+- Only W1 counts: **0/55** accepted glm-5.3 low findings. Optional W2: **20/55**, with `269-I12` moved to W3
+  because both rounding rules agree on all 18 frozen inputs.
+- `247-I5` (`KEY[:24]`) is W1, raised by other candidates; D2 stays W2. The three disputed accepts are FA.
+- **End the work; no paid pilot now.** `/rune-plan` should formalize close-out and carry the key-printing fix as a
+  concrete follow-up. If a later decision reopens a pilot: five new product-behaviour-changing PRs, glm-5.3 low,
+  locally from a `feat/finder-glm-5-3` worktree; count only W1 not already caught by CI or `/rune-impl-review`.
+
+Detailed rationale: `context/changes/advisory-review-analysis/worth-fix-sheet.md`, Delegated owner decisions.
 
 **Change `finder-glm-5-3-high` is archived** at `context/archive/2026-10-16-finder-glm-5-3-high/` (outcome
 `completed`; archive commit `6d5a09a`, sync record `0cbf03e`, `sync: none`).
@@ -34,7 +65,7 @@ stable.**
 - `feat/finder-glm-5-3` = `ac6bbb1`: archive `context/archive/2026-10-11-finder-glm-5-3/`, NOT ADMITTED (hand-read).
 - `feat/finder-glm-5-3-high` = `0cbf03e`.
 
-**New change `advisory-review-analysis`** (status `new`):
+**Change `advisory-review-analysis`** (status `preparing`):
 
 - **Branch:** `chore/advisory-review-analysis`, from `origin/master` `b517e54`. Upstream is set to its own remote
   branch, never `master`.
@@ -54,14 +85,13 @@ stable.**
 
 **Next actions, in order:**
 
-1. **Owner:** in a fresh session on `chore/advisory-review-analysis`, run `/rune-research advisory-review-analysis`.
-2. **Agent (research, no model calls):** count per candidate, from the recorded hand-reads, concrete bugs, false
-   alarms, duplicates and minor remarks. Propose a "worth the author's time" classification. The archives record
-   only accept/reject.
-3. **Owner:** decide which accepted findings were worth a fix.
-4. **Agent:** `/rune-plan advisory-review-analysis`. It writes the recommendation and the pilot criteria before any
-   spend; the owner's suggestion is 5 new PRs, on demand only, a $2 cap, glm-5.3 low first.
-5. **Owner:** decide on the paid pilot, or end the work.
+1. **Done 2026-10-19:** research from the recorded evidence, with no paid model calls.
+2. **Done 2026-10-19:** proposed classifications in `research.md` and `worth-fix-sheet.md`.
+3. **Done 2026-10-19, delegated by the owner to Codex:** all 41 Owner cells filled; threshold and pilot direction
+   recorded in the sheet. The adopted W2 count is 20/55; the original proposal was 21/55.
+4. **Agent:** `/rune-plan advisory-review-analysis` to formalize ending the work, keep `ai-review` off and carry
+   `247-I5` as a concrete follow-up. Include dormant pilot criteria only as a fallback for a later decision.
+5. **Direction selected:** end the work without a paid pilot. A later paid pilot would be a new decision.
 
 ---
 
