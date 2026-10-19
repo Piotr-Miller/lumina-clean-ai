@@ -237,7 +237,10 @@ sys.exit(1 if bad else 0)
 
 - The diff of both scripts touches only the placeholder branch. The new `found:` text still tells the maintainer what
   is wrong without showing any part of the key — surface: `scripts/prod-fetch-results.py`,
-  `scripts/prod-result-dimensions.py`.
+  `scripts/prod-result-dimensions.py`
+
+(owner decision 2026-10-19: the period after each Manual surface list in this plan was removed, so the acceptance
+script can record a confirmation; no criterion text changed.)
 
 **Implementation Note**: Manual checks are acceptance. `/rune-implement` commits a phase once its automated
 verification passes, then asks the human about these; a pending manual check is reported, not a blocker for the next
@@ -344,8 +347,10 @@ dormant tooling. Make that pattern a prior for the next frame, research, plan or
 
 - The owner reads `close-out.md`. The decision, the adopted numbers and the dormant pilot criteria match the
   decisions of 2026-10-19, and the eligibility recipe gives the stated answers for the Definitions examples —
-  surface: `context/changes/advisory-review-analysis/close-out.md`.
-- The owner reads the new lesson and keeps or rewords it — surface: `context/foundation/lessons.md`.
+  surface: `context/changes/advisory-review-analysis/close-out.md`
+- The owner reads the new lesson and keeps or rewords it — surface: `context/foundation/lessons.md`
+
+(owner decision 2026-10-19: trailing period after both surface lists removed; see Phase 1.)
 
 ---
 
@@ -412,7 +417,9 @@ agent does not "fix" or rely on a job that is deliberately off.
 #### Manual Verification:
 
 - The owner reads both edits. Neither suggests that removing `false &&` is enough to bring the review back, and both
-  name the change rather than a path that moves on archive — surface: `.github/workflows/review.yml`, `AGENTS.md`.
+  name the change rather than a path that moves on archive — surface: `.github/workflows/review.yml`, `AGENTS.md`
+
+(owner decision 2026-10-19: trailing period after the surface list removed; see Phase 1.)
 
 ---
 
@@ -473,7 +480,9 @@ the repository, so it carries a permalink.
 #### Manual Verification:
 
 - The owner approves the #235 comment text before it is posted, and later reads the posted comment and its permalink
-  — surface: `context/changes/advisory-review-analysis/close-out.md`.
+  — surface: `context/changes/advisory-review-analysis/close-out.md`
+
+(owner decision 2026-10-19: trailing period after the surface list removed; see Phase 1.)
 
 ---
 
@@ -519,8 +528,8 @@ the repository, so it carries a permalink.
 
 #### Automated
 
-- [x] 1.1 The key-echo check passes for both scripts and both key-error paths
-- [x] 1.2 Both scripts still parse
+- [x] 1.1 The key-echo check passes for both scripts and both key-error paths — c6d3d18
+- [x] 1.2 Both scripts still parse — c6d3d18
 
 #### Manual
 
@@ -530,10 +539,10 @@ the repository, so it carries a permalink.
 
 #### Automated
 
-- [ ] 2.1 `close-out.md` exists and has its pilot section
-- [ ] 2.2 The research follow-up is appended
-- [ ] 2.3 The ledger has exactly one more entry
-- [ ] 2.4 The touched Markdown is formatted
+- [x] 2.1 `close-out.md` exists and has its pilot section
+- [x] 2.2 The research follow-up is appended
+- [x] 2.3 The ledger has exactly one more entry
+- [x] 2.4 The touched Markdown is formatted
 
 #### Manual
 

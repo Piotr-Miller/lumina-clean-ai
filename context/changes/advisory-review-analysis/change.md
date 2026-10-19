@@ -29,3 +29,7 @@ lesson; dormant-pilot eligibility is path-based (a non-test file under `src/`, `
 `supabase/migrations/`; refactors count). The owner then confirmed plan assumptions A1–A3 as written (`plan.md`
 § Implementation Approach): repository settings, package and branches stay; "same defect" is the owner's call;
 ≥ 1 uncaught W1 in five eligible PRs → consider re-enabling, 0 → stays ended.
+
+2026-10-19: owner decision — drop the trailing period after the five Manual surface declarations (1.3, 2.5, 2.6,
+3.7, 4.5) so the acceptance script can record confirmations; no criterion text changed; plan.md § Phase 1–4 Manual
+Verification.
