@@ -33,3 +33,14 @@ lesson; dormant-pilot eligibility is path-based (a non-test file under `src/`, `
 2026-10-19: owner decision — drop the trailing period after the five Manual surface declarations (1.3, 2.5, 2.6,
 3.7, 4.5) so the acceptance script can record confirmations; no criterion text changed; plan.md § Phase 1–4 Manual
 Verification.
+
+2026-10-19: earlier Phase 4 preparation — `origin/chore/advisory-review-analysis` was verified at
+`82776c53591e071bf6d2215f5e83a2299fe362c7`, containing Phases 1–3. The exact #235 closing comment is drafted in
+`issue-235-comment.md`; posting and closure were left awaiting owner approval. No GitHub mutation was made by the
+agent during that preparation.
+
+2026-10-19: Phase 4 resumed — #235 was already `CLOSED NOT_PLANNED` (closed at 20:41:42 UTC), with Piotr-Miller's
+20:41:41 UTC comment exactly matching `issue-235-comment.md`. Verified the published close-out and root-cause
+links at pushed commit `82776c5`; recorded the date, reason and comment URL in `close-out.md` § Tracker. No
+duplicate GitHub mutation was made. `temp_steps.md` now points to archive with outcome `completed`. Human
+acceptance rows 1.3, 2.5, 2.6, 3.7 and 4.5 remain pending.

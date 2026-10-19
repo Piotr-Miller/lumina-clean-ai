@@ -553,12 +553,12 @@ the repository, so it carries a permalink.
 
 #### Automated
 
-- [x] 3.1 Only comment lines of `review.yml` change
-- [x] 3.2 The guard still holds
-- [x] 3.3 The workflow still parses
-- [x] 3.4 Both documents name the change
-- [x] 3.5 The stale claims are gone
-- [x] 3.6 Repository formatting stays clean
+- [x] 3.1 Only comment lines of `review.yml` change — 82776c5
+- [x] 3.2 The guard still holds — 82776c5
+- [x] 3.3 The workflow still parses — 82776c5
+- [x] 3.4 Both documents name the change — 82776c5
+- [x] 3.5 The stale claims are gone — 82776c5
+- [x] 3.6 Repository formatting stays clean — 82776c5
 
 #### Manual
 
@@ -568,10 +568,10 @@ the repository, so it carries a permalink.
 
 #### Automated
 
-- [ ] 4.1 (paid) Close #235 as not planned with the approved comment
-- [ ] 4.2 The issue reads closed, not planned
-- [ ] 4.3 The resume file names the archive step
-- [ ] 4.4 The resume file is formatted
+- [x] 4.1 (paid) Close #235 as not planned with the approved comment
+- [x] 4.2 The issue reads closed, not planned
+- [x] 4.3 The resume file names the archive step
+- [x] 4.4 The resume file is formatted
 
 #### Manual
 

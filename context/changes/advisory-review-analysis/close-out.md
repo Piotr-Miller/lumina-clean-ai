@@ -187,5 +187,13 @@ Proposal A3. The reopening change confirms or replaces it before sealing.
 
 ## Tracker
 
-Not filled yet. Phase 4 closes #235 as not planned, after the branch is pushed, and records here the date, the reason
-and the URL of the closing comment.
+**2026-10-19: [#235](https://github.com/Piotr-Miller/lumina-clean-ai/issues/235) closed as not planned**, following
+the decision above. GitHub reports `CLOSED NOT_PLANNED`, closed at `2026-10-19T20:41:42Z`.
+
+- **Closing comment:** [posted by Piotr-Miller at 20:41:41 UTC](https://github.com/Piotr-Miller/lumina-clean-ai/issues/235#issuecomment-6276864332).
+  Its body exactly matches the saved [`issue-235-comment.md`](issue-235-comment.md).
+- **Published record:** [close-out at pushed commit `82776c5`](https://github.com/Piotr-Miller/lumina-clean-ai/blob/82776c53591e071bf6d2215f5e83a2299fe362c7/context/changes/advisory-review-analysis/close-out.md).
+  The branch was verified at that full commit, containing Phases 1–3; both links in the comment resolve to the
+  committed evidence.
+- **Resume reconciliation:** the comment and closure already existed when Phase 4 resumed. The agent verified
+  them without posting a duplicate comment or closing the issue again. Human acceptance row 4.5 remains pending.
