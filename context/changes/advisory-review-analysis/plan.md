@@ -539,10 +539,10 @@ the repository, so it carries a permalink.
 
 #### Automated
 
-- [x] 2.1 `close-out.md` exists and has its pilot section
-- [x] 2.2 The research follow-up is appended
-- [x] 2.3 The ledger has exactly one more entry
-- [x] 2.4 The touched Markdown is formatted
+- [x] 2.1 `close-out.md` exists and has its pilot section — a654a59
+- [x] 2.2 The research follow-up is appended — a654a59
+- [x] 2.3 The ledger has exactly one more entry — a654a59
+- [x] 2.4 The touched Markdown is formatted — a654a59
 
 #### Manual
 
@@ -553,12 +553,12 @@ the repository, so it carries a permalink.
 
 #### Automated
 
-- [ ] 3.1 Only comment lines of `review.yml` change
-- [ ] 3.2 The guard still holds
-- [ ] 3.3 The workflow still parses
-- [ ] 3.4 Both documents name the change
-- [ ] 3.5 The stale claims are gone
-- [ ] 3.6 Repository formatting stays clean
+- [x] 3.1 Only comment lines of `review.yml` change
+- [x] 3.2 The guard still holds
+- [x] 3.3 The workflow still parses
+- [x] 3.4 Both documents name the change
+- [x] 3.5 The stale claims are gone
+- [x] 3.6 Repository formatting stays clean
 
 #### Manual
 
