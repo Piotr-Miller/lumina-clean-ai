@@ -20,11 +20,14 @@ jobs:
     # Guards (requirements): same-repo head (fork PRs skip — secret safety),
     # not draft, labeled-events pass ONLY for ai-cr:review (any other label
     # would burn a review run), and bot-authored PRs skip.
-    # TEMPORARILY OFF (2026-10-04, owner decision R11): the finder has failed
-    # every run since 2026-09-20 (Venice ignores response_format) and no
-    # replacement passed its gates. Change `finder-verification` measures a
-    # verified finder; the change that deploys a finder which passes those
-    # gates removes the `false &&` line below. Remove only that line.
+    # OFF since 2026-10-04 (owner decision R11): the finder had failed every
+    # run since 2026-09-20 (Venice ignores response_format). The search for a
+    # replacement finder ended on 2026-10-19 without one: change
+    # `advisory-review-analysis` found 0 of 55 accepted glm-5.3 low findings
+    # worth a fix (see that change's close-out.md). Bringing this job back
+    # needs a new owner decision and a new change that seals its pilot
+    # criteria first; deleting the `false &&` line below is not, on its own,
+    # a re-entry.
     if: >-
       false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
@@ -217,8 +220,9 @@ jobs:
           # a content effect: 20 consecutive successes from 2026-09-08 to 2026-09-13,
           # then 5 consecutive failures on 2026-09-20 across prose AND code. So the
           # root cause sits in the finder model (vars.OPENROUTER_REVIEW_MODEL,
-          # currently z-ai/glm-4.6) or its provider, and the lever for that is a
-          # one-command variable swap, not this pathspec. Do NOT raise
+          # currently z-ai/glm-4.6) or its provider, not in this pathspec. No
+          # replacement finder passed its gates, so there is no model to swap in,
+          # and the job is off (see the `if:` comment above). Do NOT raise
           # REVIEW_FINDER_MAX_STEPS expecting relief either: on a synced-skill-tree
           # diff a bigger budget only buys more duplicate reads.
           #
