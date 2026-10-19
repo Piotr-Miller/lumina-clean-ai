@@ -8,7 +8,8 @@ topic: "Is advisory AI review worth continuing? What the recorded finder results
 tags: [research, ai-review, code-reviewer, finder, glm-5.3, hand-read, cost]
 status: complete
 last_updated: 2026-10-19
-last_updated_by: Codex (delegated step-3 decisions; original research retained)
+last_updated_by: Claude Code (claude-opus-5-5), /rune-implement advisory-review-analysis phase 2
+last_updated_note: "Added the adopted owner-delegated decisions"
 ---
 
 # Research: is advisory AI review worth continuing?
@@ -433,3 +434,44 @@ All `scripts/…` references are at the PR heads and unchanged on `origin/master
    - the `TypeError` path of `269-I1`, inferred from the code and not run.
 7. **The workload weights.** 53/8/13 overstate a code-changing month. Any pilot cost estimate should use eligible PRs
    only.
+
+## Follow-up Research 2026-10-19: adopted decisions
+
+Appended by `/rune-implement` (Phase 2 of [`plan.md`](plan.md)) after the owner-delegated decisions of 2026-10-19
+were adopted. Nothing above this section was rewritten; only the frontmatter's `last_updated_by` and
+`last_updated_note` changed. The previous `last_updated_by` was "Codex (delegated step-3 decisions; original
+research retained)". **Where this section and the proposals above disagree, this section is the last word.** The
+decisions and their rationale are in
+[`worth-fix-sheet.md` § Delegated owner decisions](worth-fix-sheet.md#delegated-owner-decisions--2026-10-19); the
+close-out that acts on them is [`close-out.md`](close-out.md).
+
+### Deltas against the proposals
+
+| Item                                                                                            | Proposed above                                                 | Adopted                                                | What it changes in this report                                                                                                                         |
+| ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `269-I12` (`round()` vs `Math.round`)                                                           | W2 (borderline W3)                                             | **W3**                                                 | glm-5.3 low, of the 55 accepted: W2 **20/55** (not 21/55), W3 **32/55** (not 31/55). Distinct issues: 0 W1 / 9 W2 / 19 W3 / 7 FA (not 10 W2 / 18 W3)   |
+| `247-I5` (`KEY[:24]`)                                                                           | W2, borderline W1                                              | **W1**                                                 | "W1 0 for every candidate" no longer holds: glm-5.3 high and sonnet-5 low raised it. It still holds for glm-5.3 low, which never raised it             |
+| The three disputed accepts (`pr247-01#F3` = `247-I20`; `pr269-03#F5`, `pr269-09#F5` = `269-I2`) | FA                                                             | **FA**                                                 | None: FA stays 3/55 of the accepted, 8/60 of all findings                                                                                              |
+| D2 (`269-I8`)                                                                                   | W2                                                             | **W2**                                                 | None: D2 stays a reported weakness, not a veto                                                                                                         |
+| Threshold                                                                                       | open (Open Questions 2)                                        | **Only W1 counts as worth a fix**                      | The headline is **0/55** accepted glm-5.3 low findings worth a fix; W2 is optional and stays out of it                                                 |
+| Direction                                                                                       | ending the work, or a glm-5.3 low pilot (§ What this supports) | **End the work; no paid pilot; `ai-review` stays off** | CI and `/rune-impl-review` remain the review path. A later pilot needs a new owner decision and a new change; its draft criteria are in `close-out.md` |
+
+### Statements above that these deltas supersede
+
+- Original research summary, item 1: the table's W2 21 and W3 31 (all 60 and of the 55 accepted) and its 10 W2 /
+  18 W3 distinct issues.
+- Original research summary, item 3: the W1 column of 0 for glm-5.3 high and sonnet-5, and the sentence that leaves
+  `247-I5` to the owner.
+- § Detailed Findings 1, #269: "0 W1, 15 W2, 26 W3, 7 FA" is now 0 W1, 14 W2, 27 W3, 7 FA, and `I12` leaves the list
+  of distinct W2 issues.
+- § Detailed Findings 2: the glm-5.3 low row's W2 21 and W3 31, the W1 0 of the glm-5.3 high and sonnet-5 low rows,
+  and the footnote that counts `247-I5` as W2.
+
+The § Step 3 decisions section near the top already stated these deltas in prose; this section lists them in one
+place, at the end, where the research skill's follow-up convention puts them.
+
+### What stays open
+
+Open Questions 4–7 are not answered by the close-out. They do not block it, because no pilot runs. Questions 4
+(overlap with CI and `/rune-impl-review`) and 5 (credit, key limit and the CI secret's key) are carried into
+`close-out.md` § Dormant pilot criteria as prerequisites of any reopened pilot.
