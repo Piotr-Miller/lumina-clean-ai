@@ -568,10 +568,10 @@ the repository, so it carries a permalink.
 
 #### Automated
 
-- [x] 4.1 (paid) Close #235 as not planned with the approved comment
-- [x] 4.2 The issue reads closed, not planned
-- [x] 4.3 The resume file names the archive step
-- [x] 4.4 The resume file is formatted
+- [x] 4.1 (paid) Close #235 as not planned with the approved comment — dfe4135
+- [x] 4.2 The issue reads closed, not planned — dfe4135
+- [x] 4.3 The resume file names the archive step — dfe4135
+- [x] 4.4 The resume file is formatted — dfe4135
 
 #### Manual
 
