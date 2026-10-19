@@ -228,7 +228,7 @@ describe.each(TREES)("gauntlet-loop skill contract (%s)", (tree) => {
     expect(skill).toMatch(/\.github\/workflows\//);
     expect(skill).toMatch(/test-plan\.md`? §4/);
     // Hard rule shared by every skill in this repo, quoted verbatim.
-    expect(skill).toContain("This change is archived. Open a new change with `/10x-new` instead.");
+    expect(skill).toContain("This change is archived. Open a new change with `/rune-new` instead.");
   });
 
   it("resolves every reference file it points at", () => {

@@ -1,6 +1,6 @@
 ---
 name: gauntlet-loop
-description: "Run a Gauntlet Loop against this repository — an authoring-time improvement loop in which a lead agent splits a goal into independently judgeable pieces, and every piece gets a builder plus a SEPARATE critic with fresh context that inspects the real output, blind A/B-compares it with a concrete reference bar, names the single biggest remaining gap, and sends it back. Use when the user says gauntlet loop / gauntlet / pętla gauntlet, or asks to keep improving something until it beats a reference, to iterate against a comparison instead of stopping at the first decent result, or to raise the quality bar on the landing page, the enhance UI, the local engine's output, the guides, or the code-reviewer prompts. NOT a CI gate, not a bug hunt, and not a replacement for /10x-plan, /10x-implement, or /10x-tdd."
+description: "Run a Gauntlet Loop against this repository — an authoring-time improvement loop in which a lead agent splits a goal into independently judgeable pieces, and every piece gets a builder plus a SEPARATE critic with fresh context that inspects the real output, blind A/B-compares it with a concrete reference bar, names the single biggest remaining gap, and sends it back. Use when the user says gauntlet loop / gauntlet / pętla gauntlet, or asks to keep improving something until it beats a reference, to iterate against a comparison instead of stopping at the first decent result, or to raise the quality bar on the landing page, the enhance UI, the local engine's output, the guides, or the code-reviewer prompts. NOT a CI gate, not a bug hunt, and not a replacement for /rune-plan, /rune-implement, or /10x-tdd."
 metadata:
   tags: gauntlet-loop, quality-bar, critic, blind-ab, subagents, iteration, luminaclean
 ---
@@ -22,7 +22,7 @@ reference.
 
 **Don't use it** when:
 
-- There is no inspectable artifact yet, or the goal itself is unclear → `/10x-frame`, then `/10x-plan`.
+- There is no inspectable artifact yet, or the goal itself is unclear → `/rune-frame`, then `/rune-plan`.
 - The problem is a defect with a known expected value → that is a test: `/10x-tdd`, or `/code-review`
   for a bug hunt. A critic is a taste instrument, not an oracle.
 - You are tempted to wire a critic into CI. **Do not.** `context/foundation/test-plan.md` §4 records a
@@ -169,7 +169,7 @@ Update the workbench **as you go**, so the user can watch from a phone instead o
 twenty minutes.
 
 **Never write anywhere under `context/archive/`.** If a resolved target path starts with
-`context/archive/`, abort with: "This change is archived. Open a new change with `/10x-new` instead."
+`context/archive/`, abort with: "This change is archived. Open a new change with `/rune-new` instead."
 
 ## Step 6 — Smoothing pass
 
@@ -186,7 +186,7 @@ Stop at the agreed condition, or when improvements stop mattering. Then report, 
 - every assumption the loop made that the user has not confirmed.
 
 **Do not commit and do not push** (global rule: commits and pushes are the user's). Leave the branch,
-the working tree, and the workbench; let the user decide whether this becomes a PR or feeds `/10x-plan`.
+the working tree, and the workbench; let the user decide whether this becomes a PR or feeds `/rune-plan`.
 
 ## Guardrails
 
