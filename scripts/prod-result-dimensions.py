@@ -54,7 +54,8 @@ if not KEY:
     die("SUPABASE_SERVICE_ROLE_KEY is not set", "empty",
         "Dashboard -> Project Settings -> API Keys -> service_role (click Reveal), then paste it into the command.")
 if "<" in KEY or ">" in KEY:
-    die("SUPABASE_SERVICE_ROLE_KEY still contains a placeholder", KEY[:24] + "...",
+    die("SUPABASE_SERVICE_ROLE_KEY still contains a placeholder",
+        f"{len(KEY)} chars, still containing < or >",
         "replace the whole <service role key> placeholder, angle brackets included, with the real key.")
 if not re.match(r"^https://[a-z0-9-]+\.supabase\.(co|in)$", URL):
     die("SUPABASE_URL is not a Supabase project URL", URL,

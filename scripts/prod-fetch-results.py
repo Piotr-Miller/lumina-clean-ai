@@ -50,7 +50,8 @@ if not KEY:
     die("SUPABASE_SERVICE_ROLE_KEY is not set", "empty",
         "use the same key you ran the census with.")
 if "<" in KEY or ">" in KEY:
-    die("SUPABASE_SERVICE_ROLE_KEY still contains a placeholder", KEY[:24] + "...",
+    die("SUPABASE_SERVICE_ROLE_KEY still contains a placeholder",
+        f"{len(KEY)} chars, still containing < or >",
         "replace the whole placeholder, angle brackets included.")
 if not re.match(r"^https://[a-z0-9-]+\.supabase\.(co|in)$", URL):
     die("SUPABASE_URL is not a Supabase project URL", URL, "it must look like https://<project-ref>.supabase.co")
