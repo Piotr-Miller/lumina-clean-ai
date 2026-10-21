@@ -1,10 +1,11 @@
 ---
 change_id: ai-review-reenable
 title: "Re-enable advisory AI review with the ported finder serialization fix"
-status: implemented
+status: archived
+outcome: completed
 created: 2026-10-21
 updated: 2026-10-21
-archived_at: null
+archived_at: 2026-10-21T18:56:28Z
 ---
 
 ## Notes
