@@ -416,21 +416,21 @@ The finder is now 2–N requests per review, with one wall-clock budget for the 
 
 #### Automated
 
-- [x] 1.1 The two directories are byte-identical to the branch tip
-- [x] 1.2 Package lint passes
-- [x] 1.3 Package typecheck passes
-- [x] 1.4 Package tests pass
-- [x] 1.5 Repository formatting stays clean
+- [x] 1.1 The two directories are byte-identical to the branch tip — d720d8f
+- [x] 1.2 Package lint passes — d720d8f
+- [x] 1.3 Package typecheck passes — d720d8f
+- [x] 1.4 Package tests pass — d720d8f
+- [x] 1.5 Repository formatting stays clean — d720d8f
 
 ### Phase 2: T2, a bounded log of each finder request's text (test-first)
 
 #### Automated
 
-- [ ] 2.1 The new tests fail first and then pass
-- [ ] 2.2 Package lint passes
-- [ ] 2.3 Package typecheck passes
-- [ ] 2.4 Package tests pass
-- [ ] 2.5 The log line is not written to the comment or the review JSON
+- [x] 2.1 The new tests fail first and then pass
+- [x] 2.2 Package lint passes
+- [x] 2.3 Package typecheck passes
+- [x] 2.4 Package tests pass
+- [x] 2.5 The log line is not written to the comment or the review JSON
 
 ### Phase 3: Correct the pointers that hold either way
 

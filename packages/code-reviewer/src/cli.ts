@@ -115,6 +115,31 @@ const formatFinderStepLine = (index: number, info: FinderStepInfo): string => {
   return `finder step ${String(index)}: ${calls} (${usage}) ${route}`;
 };
 
+/**
+ * T2: the request's own model text, as one stderr line right after its step
+ * line — so a `findings: []` can be attributed to stage 1 or to the
+ * finalization from the public log, without a temporary runner. An empty text
+ * says so explicitly: "the model sent nothing" must not look like a missing
+ * line. Untrusted and public: capped at FINDER_TEXT_CAP_CHARS with a marker
+ * (the count is the original length) and control characters escaped visibly.
+ */
+const formatFinderTextLine = (index: number, text: string): string => {
+  const prefix = `finder step ${String(index)} text:`;
+  if (text === "") return `${prefix} empty (0 chars)`;
+  const { shown, truncated } = capText(text, FINDER_TEXT_CAP_CHARS);
+  return `${prefix} ${String(text.length)} chars "${escapeControl(shown)}"${truncated ? ` ${FINDER_TEXT_TRUNCATION_MARKER}` : ""}`;
+};
+
+/** Cut `text` at `cap` UTF-16 units, never ending on half a surrogate pair. */
+const capText = (text: string, cap: number): { shown: string; truncated: boolean } =>
+  text.length > cap
+    ? { shown: text.slice(0, cap).replace(/[\uD800-\uDBFF]$/u, ""), truncated: true }
+    : { shown: text, truncated: false };
+
+/** How much of one finder request's own text reaches the log (T2). */
+export const FINDER_TEXT_CAP_CHARS = 2_000;
+export const FINDER_TEXT_TRUNCATION_MARKER = "[...finder text truncated at 2,000 chars]";
+
 /** How much of a rejected model output reaches the log. */
 export const REJECTED_OUTPUT_CAP_CHARS = 2_000;
 export const REJECTED_OUTPUT_TRUNCATION_MARKER = "[...rejected output truncated at 2,000 chars]";
@@ -171,12 +196,8 @@ export function formatRejectedOutputLine(error: unknown, fallbackProvider?: stri
   const own = stringField(error, "provider");
   const provider = own === undefined || own === "" ? fallbackProvider : own;
   const finish = stringField(error, "finishReason");
-  let shown = text;
-  if (text.length > REJECTED_OUTPUT_CAP_CHARS) {
-    // Never end on half a surrogate pair.
-    shown = text.slice(0, REJECTED_OUTPUT_CAP_CHARS).replace(/[\uD800-\uDBFF]$/u, "");
-    shown += REJECTED_OUTPUT_TRUNCATION_MARKER;
-  }
+  const capped = capText(text, REJECTED_OUTPUT_CAP_CHARS);
+  const shown = capped.truncated ? `${capped.shown}${REJECTED_OUTPUT_TRUNCATION_MARKER}` : capped.shown;
   const route = `provider=${provider === undefined || provider === "" ? "?" : escapeControl(provider)}, finish=${
     finish === undefined ? "?" : escapeControl(finish)
   }`;
@@ -275,19 +296,30 @@ export async function runReviewCli(
     const diff = args.diffFile === undefined ? io.readStdin() : io.readFile(args.diffFile);
     if (diff.trim() === "") throw new Error("Empty diff — nothing to review.");
 
-    // Diff-scoped file-context source, opt-in via --source-root. The
-    // allowlist derives from the FULL diff read above — capDiff truncation
-    // happens later inside the pipeline, and a truncated allowlist would
-    // refuse legitimate requests. Absent flag → empty spread: no source, no
-    // maxSteps, no step telemetry — byte-identical to the legacy invocation.
-    let sourceInputs: Pick<PipelineInput, "source" | "finderMaxSteps" | "onFinderStep"> = {};
+    // Step telemetry for EVERY finder request, with or without a source: a
+    // tool-less review still sends the finalization and maybe a format
+    // repair, and their text is what attributes an empty review (T2,
+    // plan-review F1 of change `ai-review-reenable`). CLI-maintained
+    // monotonic index: the SDK's stepNumber resets to 0 on the retry attempt,
+    // which would make the log lie about real spend.
+    let stepIndex = 0;
+    const onFinderStep: NonNullable<PipelineInput["onFinderStep"]> = (info) => {
+      stepIndex += 1;
+      lastObservedProvider = info.provider;
+      io.logError(formatFinderStepLine(stepIndex, info));
+      io.logError(formatFinderTextLine(stepIndex, info.text));
+    };
+
+    // Diff-scoped file-context source, opt-in via --source-root. Absent flag →
+    // no source and no maxSteps: the tool-less review of the legacy
+    // invocation (its stderr now carries the step and text lines above).
+    let sourceInputs: Pick<PipelineInput, "source" | "finderMaxSteps"> = {};
     if (args.sourceRoot !== undefined) {
       // The allowlist derives from the FULL diff read above — capDiff
       // truncation happens later inside the pipeline, and a truncated
       // allowlist would refuse legitimate requests. `undefined` back means the
       // diff has no post-change paths (e.g. deletions only), so there is
-      // nothing the tool could serve: empty spread, no source, no maxSteps, no
-      // step telemetry — byte-identical to the legacy invocation.
+      // nothing the tool could serve: no source, no maxSteps.
       const source = createDiffScopedSourceForDiff({
         diff,
         root: args.sourceRoot,
@@ -296,19 +328,7 @@ export async function runReviewCli(
         isRegularFile: io.isRegularFile,
       });
       if (source !== undefined) {
-        const finderMaxSteps = parseMaxStepsEnv(env) ?? DEFAULT_FINDER_MAX_STEPS;
-        // CLI-maintained monotonic index: the SDK's stepNumber resets to 0 on
-        // the retry attempt, which would make the log lie about real spend.
-        let stepIndex = 0;
-        sourceInputs = {
-          source,
-          finderMaxSteps,
-          onFinderStep: (info) => {
-            stepIndex += 1;
-            lastObservedProvider = info.provider;
-            io.logError(formatFinderStepLine(stepIndex, info));
-          },
-        };
+        sourceInputs = { source, finderMaxSteps: parseMaxStepsEnv(env) ?? DEFAULT_FINDER_MAX_STEPS };
       }
     }
 
@@ -341,6 +361,7 @@ export async function runReviewCli(
     const result = await pipeline({
       diff,
       ...sourceInputs,
+      onFinderStep,
       ...planInput,
       prTitle: env.PR_TITLE,
       prBody: env.PR_BODY,
