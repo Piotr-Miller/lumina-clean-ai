@@ -1,10 +1,11 @@
 ---
 change_id: advisory-review-analysis
 title: "Judge from recorded results whether advisory AI review is worth continuing"
-status: impl_reviewed
+status: archived
+outcome: completed
 created: 2026-10-17
 updated: 2026-10-21
-archived_at: null
+archived_at: 2026-10-21T16:28:15Z
 ---
 
 ## Notes
