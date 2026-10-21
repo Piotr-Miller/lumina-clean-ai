@@ -533,7 +533,7 @@ the repository, so it carries a permalink.
 
 #### Manual
 
-- [ ] 1.3 The diff touches only the placeholder branch and the message still guides without showing the key
+- [x] 1.3 The diff touches only the placeholder branch and the message still guides without showing the key — accepted at 22751060c956cf5d21a07c2d564f2ccb70b73ce4
 
 ### Phase 2: Record the close-out
 
@@ -546,8 +546,8 @@ the repository, so it carries a permalink.
 
 #### Manual
 
-- [ ] 2.5 The owner reads `close-out.md`: decision, numbers and pilot criteria match 2026-10-19
-- [ ] 2.6 The owner reads the new lesson
+- [x] 2.5 The owner reads `close-out.md`: decision, numbers and pilot criteria match 2026-10-19 — accepted at 22751060c956cf5d21a07c2d564f2ccb70b73ce4
+- [x] 2.6 The owner reads the new lesson — accepted at 22751060c956cf5d21a07c2d564f2ccb70b73ce4
 
 ### Phase 3: Correct the live pointers
 
@@ -562,7 +562,7 @@ the repository, so it carries a permalink.
 
 #### Manual
 
-- [ ] 3.7 The owner reads both edits: no suggestion that removing `false &&` suffices
+- [x] 3.7 The owner reads both edits: no suggestion that removing `false &&` suffices — accepted at 22751060c956cf5d21a07c2d564f2ccb70b73ce4
 
 ### Phase 4: Close the tracker issue and refresh the resume file
 
@@ -575,4 +575,4 @@ the repository, so it carries a permalink.
 
 #### Manual
 
-- [ ] 4.5 The owner approves the #235 comment text before posting and reads the result
+- [x] 4.5 The owner approves the #235 comment text before posting and reads the result — accepted at 22751060c956cf5d21a07c2d564f2ccb70b73ce4
