@@ -68,14 +68,78 @@ export interface FinderTelemetry {
   deliveredPaths: string[];
   /** Paths whose call came back as a refusal / empty / out-of-range answer. */
   refusedPaths: string[];
-  /** Envelope repairs (see output-repair.ts) — a per-run model-drift signal. */
+  /**
+   * Format-repair REQUESTS (see reviewer.ts): the finalization failed the strict
+   * parse and one repair call was sent, whether or not it then succeeded — a
+   * per-run model-drift signal. Before change `finder-serialization-outage` this
+   * counted envelope repairs done in code, so values from before and after it
+   * are not comparable.
+   */
   repairs: number;
+  /**
+   * The upstream that served each observed request, in order — every
+   * gathering-loop step, the finalization and the repair. `null` where
+   * OpenRouter reported none: a missing slug must stay visibly missing, never
+   * become the endpoint the run was pinned to. A pinned gate compares every
+   * entry with its pin, so a silent fallback cannot pass as the pinned endpoint.
+   */
+  stepProviders: (string | null)[];
+  /**
+   * Whether each observed request carried a provider-reported cost, in the same
+   * order. G4 rejects an attempt with any `false` here: a partially priced
+   * attempt would understate its cost rather than fail visibly.
+   */
+  stepCostReported: boolean[];
+  /**
+   * Reasoning tokens each observed request reported through the SDK's usage,
+   * in the same order; `null` where the request reported none. Every finder
+   * request is sent with reasoning disabled (Amendment A3), so any positive
+   * entry means the parameter did not take effect on that request.
+   */
+  stepReasoningTokens: (number | null)[];
+  /**
+   * The same count as OpenRouter reported it in its own usage block
+   * (`completion_tokens_details.reasoning_tokens`), in the same order; `null`
+   * where absent or malformed. A second channel, not a duplicate: the gate
+   * runner (`scripts/finder-gate.mjs`) reads both, and so does this adapter.
+   */
+  stepOpenRouterReasoningTokens: (number | null)[];
+  /**
+   * Length of the reasoning TEXT each request returned, in the same order; 0
+   * when none. A3 rejects reasoning tokens OR reasoning text, and a response
+   * can carry text while reporting zero or no reasoning tokens — a token-only
+   * check would record it as clean (impl-review-phase-4 F1).
+   */
+  stepReasoningTextChars: number[];
+  /**
+   * True when ANY request reported reasoning on ANY channel above. The gate
+   * fails such an attempt: it did not run the measured request shape.
+   */
+  reasoningLeak: boolean;
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
   /** Provider-reported spend, summed across steps; absent when unreported. */
   cost?: number;
 }
+
+/**
+ * OpenRouter's own reasoning-token count out of the provider metadata bag,
+ * narrowed hop by hop with the same discipline as `asStepCost`: the bag is
+ * typed `Record<string, JSONObject>` and promises no shape. Absent or
+ * non-finite → `null`, never a fabricated 0.
+ */
+export const asOpenRouterReasoningTokens = (metadata: unknown): number | null => {
+  if (typeof metadata !== "object" || metadata === null || !("openrouter" in metadata)) return null;
+  const openrouter: unknown = metadata.openrouter;
+  if (typeof openrouter !== "object" || openrouter === null || !("usage" in openrouter)) return null;
+  const usage: unknown = openrouter.usage;
+  if (typeof usage !== "object" || usage === null || !("completionTokensDetails" in usage)) return null;
+  const details: unknown = usage.completionTokensDetails;
+  if (typeof details !== "object" || details === null || !("reasoningTokens" in details)) return null;
+  const tokens: unknown = details.reasoningTokens;
+  return typeof tokens === "number" && Number.isFinite(tokens) ? tokens : null;
+};
 
 const sum = (a: number | undefined, b: number | undefined): number | undefined => (b === undefined ? a : (a ?? 0) + b);
 
@@ -117,6 +181,12 @@ export default class FinderProvider implements ApiProvider {
       deliveredPaths: [],
       refusedPaths: [],
       repairs: 0,
+      stepProviders: [],
+      stepCostReported: [],
+      stepReasoningTokens: [],
+      stepOpenRouterReasoningTokens: [],
+      stepReasoningTextChars: [],
+      reasoningLeak: false,
     };
 
     // Tool-enablement is PER CASE (a var), not per model (provider config):
@@ -152,10 +222,13 @@ export default class FinderProvider implements ApiProvider {
       }
     }
 
-    // Must mirror what createReviewer will actually send: with a source active
-    // the system prompt carries the tool instructions, and a viewer showing
-    // the tool-less variant would be reporting a prompt that never ran.
-    const actualPrompt = JSON.stringify([
+    // The prompt the viewer shows is the one that FORMATS the JSON — the
+    // finalization request, including the real gathering transcript — captured
+    // from the reviewer as sent. The loop prompt must mirror what createReviewer
+    // sends too: with a source active its system prompt carries the tool
+    // instructions, and a viewer showing the tool-less variant would be
+    // reporting a prompt that never ran.
+    const loopPrompt = [
       {
         role: "system",
         content: buildInstructions(this.lens, {
@@ -164,7 +237,22 @@ export default class FinderProvider implements ApiProvider {
         }),
       },
       { role: "user", content: buildPrompt(unit) },
-    ]);
+    ];
+    let finalizationPrompt: { system: string; prompt: string } | undefined;
+    // An attempt that died before finalization must not display the loop
+    // prompt as if it had produced the JSON: it says so, and shows the loop
+    // prompt under its own name. Tool-less reviews have no loop at all.
+    const actualPrompt = (): string =>
+      finalizationPrompt === undefined
+        ? JSON.stringify({
+            finalizationReached: false,
+            note: "The review ended before the finalization request, so no JSON-formatting prompt was sent.",
+            ...(source === undefined ? {} : { loopPrompt }),
+          })
+        : JSON.stringify([
+            { role: "system", content: finalizationPrompt.system },
+            { role: "user", content: finalizationPrompt.prompt },
+          ]);
 
     // Promptfoo's own field names, which are NOT the AI SDK's: prompt /
     // completion / total, plus numRequests (one provider call per loop step).
@@ -180,8 +268,8 @@ export default class FinderProvider implements ApiProvider {
     });
 
     try {
-      // Deliberately one provider attempt: repeated --no-cache runs should
-      // expose schema flakes instead of hiding them behind pipeline retries.
+      // Deliberately one pipeline attempt: repeated --no-cache runs should
+      // expose format failures instead of hiding them behind pipeline retries.
       const reviewer = createReviewer({
         model: this.model,
         lens: this.lens,
@@ -197,20 +285,34 @@ export default class FinderProvider implements ApiProvider {
           telemetry.outputTokens = sum(telemetry.outputTokens, info.usage.outputTokens);
           telemetry.totalTokens = sum(telemetry.totalTokens, info.usage.totalTokens);
           telemetry.cost = sum(telemetry.cost, info.cost);
+          telemetry.stepProviders.push(info.provider ?? null);
+          telemetry.stepCostReported.push(info.cost !== undefined);
+          const sdkReasoning = step.usage.outputTokenDetails.reasoningTokens ?? null;
+          const openRouterReasoning = asOpenRouterReasoningTokens(step.providerMetadata);
+          const reasoningTextChars = step.reasoningText?.length ?? 0;
+          telemetry.stepReasoningTokens.push(sdkReasoning);
+          telemetry.stepOpenRouterReasoningTokens.push(openRouterReasoning);
+          telemetry.stepReasoningTextChars.push(reasoningTextChars);
+          if ((sdkReasoning ?? 0) > 0 || (openRouterReasoning ?? 0) > 0 || reasoningTextChars > 0) {
+            telemetry.reasoningLeak = true;
+          }
         },
         onOutputRepair: () => {
           telemetry.repairs += 1;
         },
+        onFinalizationPrompt: (prompt) => {
+          finalizationPrompt = prompt;
+        },
       });
       const result = await reviewer.review(unit, { timeoutMs: DEFAULT_FINDER_TIMEOUT_MS });
-      return { output: JSON.stringify(result), prompt: actualPrompt, ...report() };
+      return { output: JSON.stringify(result), prompt: actualPrompt(), ...report() };
     } catch (error) {
       // Telemetry rides the error path too: a row that died after burning four
       // tool-loop steps cost real money, and "how far did it get" is the whole
       // question for a model that fails structured output.
       return {
         error: error instanceof Error ? error.message : String(error),
-        prompt: actualPrompt,
+        prompt: actualPrompt(),
         ...report(),
       };
     }

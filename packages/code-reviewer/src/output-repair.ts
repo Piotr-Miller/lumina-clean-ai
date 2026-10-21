@@ -2,119 +2,128 @@ import { NoObjectGeneratedError, Output } from "ai";
 
 import { judgeOutputSchema, reviewResultSchema, type JudgeOutputWire, type ReviewResult } from "./schemas.js";
 
-// Envelope repair for the finder's structured output.
+// --- The finder's parser ---
 //
-// WHY: glm-4.6 running TOOL-ACTIVE drifts off `reviewResultSchema` in three
-// ways at once — it emits a bare findings ARRAY instead of the wrapped
-// object, names the path field `path` (the getFileContext tool's own input
-// field) instead of `file`, and reaches for a report-style severity ladder
-// (`WARNING`, `OBSERVATION`) instead of the enum. The findings themselves are
-// well-formed; only the envelope is wrong, so the whole paid review died on a
-// shape nit. Tool-less runs of the same diff pass, which is why this only
-// began failing once --source-root shipped.
+// WHY it is ours: since 2026-09-20 the only endpoint OpenRouter routed a
+// `json_schema` request to for glm-4.6 (Venice) stopped applying
+// `response_format`, and 35/35 finder runs failed to parse
+// (context/changes/finder-serialization-outage/frame.md). The finder therefore
+// no longer asks the provider for structured output: the format is carried in
+// the prompt, and this parser is the only thing that decides whether the
+// response is a review.
 //
-// The canonical `reviewResultSchema` stays STRICT — it is the vocabulary the
-// judge, the evals (`review-result.schema.json`, additionalProperties: false)
-// and every future orchestrator speak. Leniency lives here instead, at the
-// single boundary where an untrusted model response enters, and every repair
-// is re-validated against that same strict schema: a repair that doesn't
-// produce a schema-valid result rethrows the original error rather than
-// inventing data.
+// History: this file used to hold an ENVELOPE REPAIR for the finder
+// (`repairReviewResultShape` / `tolerantReviewOutput`). glm-4.6 running
+// tool-active under `response_format` drifted into a bare array, `path` for
+// `file`, and a `WARNING`/`OBSERVATION` ladder, and the repair rescued those by
+// synthesizing a summary and mapping the words onto the enum. It is gone on
+// the owner's decision (change `finder-serialization-outage`, condition 3):
+// the only thing code may remove is the WRAPPER — a markdown fence or prose
+// around exactly one object. Anything else is a failure, which goes to one
+// model-side format repair (reviewer.ts) and then to FinderOutputError.
 
-/** Marker used when the model returned findings with no summary at all. */
-export const REPAIRED_SUMMARY_PLACEHOLDER = "(model returned findings without a summary)";
-
-// Report-style ladders the model borrows from prose (our own impl-review
-// documents ride along in reviewed diffs and use exactly these words). Mapped
-// conservatively onto the canonical enum; anything unrecognized is left as-is
-// so validation still rejects it.
-const SEVERITY_SYNONYMS: Record<string, string> = {
-  blocker: "critical",
-  error: "critical",
-  high: "major",
-  warning: "major",
-  medium: "major",
-  low: "minor",
-  observation: "minor",
-  info: "nit",
-  suggestion: "nit",
+// V8 phrases one JSON.parse failure as `Unexpected token 'x', "<the input>" is
+// not valid JSON` — it quotes the rejected text. The reason travels into
+// FinderOutputError's message, which the CLI prints raw and also writes to the
+// step summary, where the rejected text must never go. So the quote is dropped,
+// control characters are neutralised (the text is untrusted and the log public)
+// and the length is capped. Position-style messages carry no text and pass
+// through.
+const MAX_REASON_CHARS = 300;
+const capReason = (reason: string): string =>
+  reason.length > MAX_REASON_CHARS ? `${reason.slice(0, MAX_REASON_CHARS)}…` : reason;
+const describeJsonParseError = (error: unknown): string => {
+  const message = error instanceof Error ? error.message : String(error);
+  const withoutQuote = message.replace(/, ".*" is not valid JSON$/su, " (the object is not valid JSON)");
+  return capReason(withoutQuote.replace(/\p{Cc}/gu, "?"));
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-// `path` is the getFileContext input field; a tool-carrying model conflates it
-// with the finding's `file`. Only fills `file` when it is actually absent, so
-// a model that sends both keeps its own value.
-function repairFinding(value: unknown): unknown {
-  if (!isRecord(value)) return value;
-  const repaired = { ...value };
-  if (typeof repaired.file !== "string" && typeof repaired.path === "string") {
-    repaired.file = repaired.path;
-    delete repaired.path;
-  }
-  if (typeof repaired.severity === "string") {
-    const lowered = repaired.severity.toLowerCase();
-    repaired.severity = SEVERITY_SYNONYMS[lowered] ?? lowered;
-  }
-  if (typeof repaired.category === "string") {
-    repaired.category = repaired.category.toLowerCase();
-  }
-  return repaired;
-}
+/** The finder's verdict on one response: a strictly valid review, or why not. */
+export type FinderParseResult = { ok: true; result: ReviewResult } | { ok: false; reason: string };
 
 /**
- * Best-effort normalization of a parsed model response toward
- * `reviewResultSchema`. Shape-only: it never invents a finding, never drops
- * one, and never rewrites description or suggestion text. Returns the input
- * untouched when there is nothing it knows how to repair.
+ * Wrapper removal → `JSON.parse` → the unchanged strict `reviewResultSchema`,
+ * and nothing more. A bare array, `path` for `file`, `severity: "WARNING"` or a
+ * missing `summary` are invalid here and stay invalid: filling in data on our
+ * side would put words in the model's mouth. Prose with no object at all
+ * ("No issues found.") is a failure too, never `findings: []` — an empty list
+ * is valid only when the model wrote it.
  */
-export function repairReviewResultShape(value: unknown): unknown {
-  // Bare array → the wrapped object. The summary is synthesized rather than
-  // guessed from the findings: a fabricated verdict sentence would read as
-  // the model's own words in the PR comment.
-  if (Array.isArray(value)) {
-    return { summary: REPAIRED_SUMMARY_PLACEHOLDER, findings: value.map(repairFinding) };
-  }
-  if (!isRecord(value)) return value;
-  const repaired = { ...value };
-  if (typeof repaired.summary !== "string") repaired.summary = REPAIRED_SUMMARY_PLACEHOLDER;
-  if (Array.isArray(repaired.findings)) repaired.findings = repaired.findings.map(repairFinding);
-  return repaired;
-}
-
-/**
- * The recovery decision, pure so it can be tested without a provider: given
- * the failure the strict parse threw and the raw response text, return a
- * schema-valid result or `undefined` to mean "not repairable — rethrow".
- *
- * `undefined` covers every case this layer refuses to guess at: a failure
- * that isn't a schema/JSON mismatch (aborts, provider errors), a response
- * that isn't JSON, and a repaired shape that still fails validation.
- */
-export function repairParsedOutput(error: unknown, text: string | undefined): ReviewResult | undefined {
-  if (!NoObjectGeneratedError.isInstance(error)) return undefined;
+export function parseFinderOutput(text: string): FinderParseResult {
+  const json = extractJsonObject(text);
+  if (json === undefined) return { ok: false, reason: "no complete JSON object in the response" };
   let parsed: unknown;
   try {
-    parsed = JSON.parse(text ?? "");
-  } catch {
-    return undefined;
+    parsed = JSON.parse(json);
+  } catch (error) {
+    return { ok: false, reason: `JSON.parse: ${describeJsonParseError(error)}` };
   }
-  const candidate = reviewResultSchema.safeParse(repairReviewResultShape(parsed));
-  return candidate.success ? candidate.data : undefined;
+  const result = reviewResultSchema.safeParse(parsed);
+  if (!result.success) {
+    const issues = result.error.issues.map((issue) => `${issue.path.join(".") || "(root)"}: ${issue.message}`);
+    // zod names the schema's own paths and expectations, never the received
+    // value, so nothing of the rejected text rides along; only capped, because
+    // a long findings list can fail on every entry.
+    return { ok: false, reason: capReason(`schema: ${issues.join("; ")}`) };
+  }
+  return { ok: true, result: result.data };
+}
+
+export interface FinderOutputErrorDetails {
+  /** The rejected model text — untrusted; the CLI prints it capped and escaped, never into comment.md. */
+  text: string;
+  /** The upstream that served the rejected response, when OpenRouter reported it. */
+  provider?: string;
+  /** How the rejected generation ended (`stop`, `length`, …). */
+  finishReason?: string;
+  /** Why parseFinderOutput refused the text. */
+  validationError: string;
+  /** Whether the one format repair was attempted before giving up. */
+  repaired: boolean;
+}
+
+/**
+ * The finder's terminal format failure. Deliberately NOT a
+ * `NoObjectGeneratedError`: retry.ts re-rolls that class, and a re-roll of the
+ * whole pass is exactly what the one format repair replaced — the frame saw
+ * both attempts fail identically on every post-break run. The message names
+ * the provider, the finish reason and the validation error, so one log line
+ * attributes the failure.
+ */
+export class FinderOutputError extends Error {
+  readonly text: string;
+  // `declare`: an ordinary optional field is DEFINED as undefined under
+  // ES2022 class fields, so `"provider" in error` would be true for a response
+  // that reported no provider. Absent must mean absent.
+  declare readonly provider?: string;
+  declare readonly finishReason?: string;
+  readonly validationError: string;
+  readonly repaired: boolean;
+
+  constructor(details: FinderOutputErrorDetails) {
+    super(
+      `Finder output rejected (provider=${details.provider ?? "?"}, finish=${details.finishReason ?? "?"}, ` +
+        `${details.repaired ? "after one format repair" : "no format repair attempted"}): ${details.validationError}`,
+    );
+    this.name = "FinderOutputError";
+    this.text = details.text;
+    if (details.provider !== undefined) this.provider = details.provider;
+    if (details.finishReason !== undefined) this.finishReason = details.finishReason;
+    this.validationError = details.validationError;
+    this.repaired = details.repaired;
+  }
 }
 
 // --- Judge envelope repair ---
 //
-// WHY, and why it is shaped differently from the finder's: the judge shipped
+// WHY: the judge shipped
 // with NO repair on the stated grounds that "the judge runs the same sonnet
 // model without it and has never needed it". That assumption was falsified on
 // PR #127 — four consecutive AI_NoObjectGeneratedError failures across two runs
 // (31707888975 and its re-run), which killed the whole review at exit 1.
 //
-// The finder's repair maps three drift modes that were directly OBSERVED. The
-// judge's drift was not: the run log records the error class, never the text.
-// So this layer deliberately does NOT guess at field-level drift. It only
+// The judge's drift was never observed: the run log recorded the error class,
+// never the text. So this layer deliberately does NOT guess at field-level drift. It only
 // recovers JSON that is *present but wrapped* — fenced in Markdown, or sitting
 // inside surrounding prose — which is the one class that can be undone without
 // inventing anything. Everything else rethrows.
@@ -166,9 +175,8 @@ export function extractJsonObject(text: string | undefined): string | undefined 
  * Recovery decision for the judge, pure so it is testable without a provider:
  * a schema-valid `JudgeOutput`, or `undefined` meaning "rethrow the original".
  *
- * Re-validated against the STRICT `judgeOutputSchema` — the same discipline as
- * the finder's: a repair that does not produce a schema-valid result is not a
- * repair.
+ * Re-validated against the STRICT `judgeOutputSchema`: a repair that does not
+ * produce a schema-valid result is not a repair.
  */
 export function repairParsedJudgeOutput(error: unknown, text: string | undefined): JudgeOutputWire | undefined {
   if (!NoObjectGeneratedError.isInstance(error)) return undefined;
@@ -184,7 +192,7 @@ export function repairParsedJudgeOutput(error: unknown, text: string | undefined
   return candidate.success ? candidate.data : undefined;
 }
 
-/** `Output.object(judgeOutputSchema)` with the same one recovery pass the finder gets. */
+/** `Output.object(judgeOutputSchema)` with one recovery pass: the wrapper is removed, nothing else. */
 export function tolerantJudgeOutput(options: TolerantReviewOutputOptions = {}) {
   const base = Output.object<JudgeOutputWire>({
     schema: judgeOutputSchema,
@@ -214,40 +222,4 @@ export interface TolerantReviewOutputOptions {
    * model-selection signal, not a steady state to hide.
    */
   onRepair?: (detail: { reason: string }) => void;
-}
-
-/**
- * `Output.object(reviewResultSchema)` with one recovery pass.
- *
- * The AI SDK's `experimental_repairText` hook exists only on
- * `generateObject`/`streamObject`; the `generateText` + `Output.object` path
- * that `ToolLoopAgent` uses has no repair seam (verified against the bundled
- * source of ai@7.0.52). `Output` is a plain interface, though, so composing
- * one is the supported extension point.
- */
-export function tolerantReviewOutput(options: TolerantReviewOutputOptions = {}) {
-  const base = Output.object<ReviewResult>({
-    schema: reviewResultSchema,
-    // Provider-side guidance: some providers surface the output name and
-    // description to the model, which is the cheapest nudge back onto the
-    // envelope.
-    name: "review_result",
-    description: "A single object with a `summary` string and a `findings` array — never a bare array.",
-  });
-  return {
-    ...base,
-    async parseCompleteOutput(...args: Parameters<typeof base.parseCompleteOutput>): Promise<ReviewResult> {
-      const [parseOptions] = args;
-      try {
-        return await base.parseCompleteOutput(...args);
-      } catch (error) {
-        const repaired = repairParsedOutput(error, parseOptions.text);
-        // Nothing this layer understands — surface the original failure
-        // rather than a half-built object.
-        if (repaired === undefined) throw error;
-        options.onRepair?.({ reason: (error as Error).message });
-        return repaired;
-      }
-    },
-  };
 }

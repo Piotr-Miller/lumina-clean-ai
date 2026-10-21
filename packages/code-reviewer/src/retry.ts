@@ -14,11 +14,20 @@ const errorName = (error: unknown): string | undefined =>
 /**
  * Transient-failure classifier: timeout aborts (the AI SDK aborts timed-out
  * calls with a DOMException named `TimeoutError` — NOT an Error subclass, so
- * we match by name), APICallError with HTTP 429 or 5xx, and structured-output
- * schema mismatches (`NoObjectGeneratedError` — matched via the SDK's typed
- * `isInstance`, never by message; the finder flaked its schema on 2 of 7 live
- * runs and one re-roll is the designed recovery). External cancellations
- * (plain `AbortError`) and config/auth errors are never retryable.
+ * we match by name; the finder's whole-review budget aborts with the same
+ * name), APICallError with HTTP 429 or 5xx, and structured-output schema
+ * mismatches (`NoObjectGeneratedError` — matched via the SDK's typed
+ * `isInstance`, never by message). External cancellations (plain
+ * `AbortError`) and config/auth errors are never retryable.
+ *
+ * `NoObjectGeneratedError` now comes only from the JUDGE (and the
+ * implementation review), which still use provider-side structured output. The
+ * finder parses its own output since change `finder-serialization-outage` and
+ * fails with `FinderOutputError`, which is deliberately NOT retryable: its one
+ * format repair took over the re-roll's role, and the frame saw both attempts of
+ * the old re-roll fail identically on every post-break run. It fails every
+ * condition below as written, so the classifier needs no case for it — the
+ * test pins that.
  */
 export function isRetryableError(error: unknown): boolean {
   if (errorName(error) === "TimeoutError") return true;

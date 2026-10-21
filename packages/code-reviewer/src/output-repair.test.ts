@@ -1,30 +1,9 @@
 import { NoObjectGeneratedError } from "ai";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import {
-  extractJsonObject,
-  REPAIRED_SUMMARY_PLACEHOLDER,
-  repairParsedJudgeOutput,
-  repairParsedOutput,
-  repairReviewResultShape,
-  tolerantReviewOutput,
-} from "./output-repair.js";
+import { extractJsonObject, FinderOutputError, parseFinderOutput, repairParsedJudgeOutput } from "./output-repair.js";
+import { isRetryableError } from "./retry.js";
 import { CRITERIA } from "./scorecard.js";
-import { reviewResultSchema } from "./schemas.js";
-
-// The live drift this layer exists for (glm-4.6, tool-active): a bare findings
-// ARRAY, `path` where the schema says `file`, and a report-style severity
-// ladder. Recorded verbatim from the failing CI run so the fix is pinned to
-// the real shape, not an imagined one.
-const DRIFTED_FINDING = {
-  severity: "WARNING",
-  path: "packages/code-reviewer/src/cli.ts",
-  startLine: 89,
-  endLine: 98,
-  category: "security",
-  description: "model-chosen paths reach the log",
-  suggestion: "sanitize them",
-};
 
 const CANONICAL_FINDING = {
   file: "src/a.ts",
@@ -34,54 +13,137 @@ const CANONICAL_FINDING = {
   description: "off-by-one",
   suggestion: "use <=",
 };
+const VALID = JSON.stringify({ summary: "one real issue", findings: [CANONICAL_FINDING] });
 
-describe("repairReviewResultShape", () => {
-  it("wraps a bare findings array into the schema envelope", () => {
-    const repaired = repairReviewResultShape([DRIFTED_FINDING]);
-    const parsed = reviewResultSchema.safeParse(repaired);
-    expect(parsed.success).toBe(true);
-    expect(parsed.data?.summary).toBe(REPAIRED_SUMMARY_PLACEHOLDER);
-    expect(parsed.data?.findings).toHaveLength(1);
+// The live drift the former envelope repair rescued (glm-4.6, tool-active,
+// under response_format): each of its moves is now a failure, never a fix.
+const DRIFTED_FINDING = {
+  severity: "WARNING",
+  path: "packages/code-reviewer/src/cli.ts",
+  startLine: 89,
+  category: "security",
+  description: "model-chosen paths reach the log",
+  suggestion: "sanitize them",
+};
+
+const reasonOf = (text: string): string => {
+  const parsed = parseFinderOutput(text);
+  if (parsed.ok) throw new Error("expected a rejection");
+  return parsed.reason;
+};
+
+// One case per row of the plan's Definitions table (change
+// finder-serialization-outage): only the wrapper may be removed.
+describe("parseFinderOutput", () => {
+  it("accepts a bare canonical object", () => {
+    expect(parseFinderOutput(VALID)).toEqual({ ok: true, result: JSON.parse(VALID) as unknown });
   });
 
-  it("renames the tool's `path` field onto the schema's `file`", () => {
-    const repaired = repairReviewResultShape([DRIFTED_FINDING]) as {
-      findings: Record<string, unknown>[];
-    };
-    expect(repaired.findings[0].file).toBe("packages/code-reviewer/src/cli.ts");
-    expect(repaired.findings[0]).not.toHaveProperty("path");
+  it("accepts an object inside a markdown code fence (the wrapper)", () => {
+    expect(parseFinderOutput(`\`\`\`json\n${VALID}\n\`\`\``).ok).toBe(true);
   });
 
-  it("maps report-style severities onto the canonical enum", () => {
-    const ladder = ["CRITICAL", "WARNING", "OBSERVATION", "info", "Major"];
-    const repaired = repairReviewResultShape(ladder.map((severity) => ({ ...DRIFTED_FINDING, severity }))) as {
-      findings: { severity: string }[];
-    };
-    expect(repaired.findings.map((f) => f.severity)).toEqual(["critical", "major", "minor", "nit", "major"]);
+  it("accepts an object with prose before and after it (the wrapper)", () => {
+    expect(parseFinderOutput(`Here is the review:\n${VALID}\nHope that helps.`).ok).toBe(true);
   });
 
-  it("never overwrites a file the model did supply", () => {
-    const repaired = repairReviewResultShape([{ ...DRIFTED_FINDING, file: "real.ts", path: "wrong.ts" }]) as {
-      findings: { file: string }[];
-    };
-    expect(repaired.findings[0].file).toBe("real.ts");
+  it('accepts an explicit {"summary": …, "findings": []} as no findings', () => {
+    expect(parseFinderOutput('{"summary": "nothing worth reporting", "findings": []}')).toEqual({
+      ok: true,
+      result: { summary: "nothing worth reporting", findings: [] },
+    });
   });
 
-  it("leaves an already-canonical result untouched", () => {
-    const canonical = { summary: "looks fine", findings: [CANONICAL_FINDING] };
-    expect(repairReviewResultShape(canonical)).toEqual(canonical);
+  it("rejects a bare findings array instead of wrapping it", () => {
+    expect(parseFinderOutput(JSON.stringify([CANONICAL_FINDING])).ok).toBe(false);
   });
 
-  it("leaves an unrecognized severity alone so validation still rejects it", () => {
-    const repaired = repairReviewResultShape([{ ...DRIFTED_FINDING, severity: "spicy" }]);
-    expect(reviewResultSchema.safeParse(repaired).success).toBe(false);
+  it("rejects `path` without `file` instead of renaming it", () => {
+    // `file: undefined` is dropped by JSON.stringify, leaving only `path`.
+    const text = JSON.stringify({
+      summary: "s",
+      findings: [{ ...CANONICAL_FINDING, file: undefined, path: "src/a.ts" }],
+    });
+    expect(reasonOf(text)).toContain("findings.0.file");
   });
 
-  it("supplies the placeholder when only the summary is missing", () => {
-    const repaired = repairReviewResultShape({ findings: [CANONICAL_FINDING] }) as {
-      summary: string;
-    };
-    expect(repaired.summary).toBe(REPAIRED_SUMMARY_PLACEHOLDER);
+  it('rejects severity "WARNING" instead of mapping it onto the enum', () => {
+    const text = JSON.stringify({ summary: "s", findings: [{ ...CANONICAL_FINDING, severity: "WARNING" }] });
+    expect(reasonOf(text)).toContain("findings.0.severity");
+  });
+
+  it("rejects a lowercase-able category spelled in capitals instead of lowercasing it", () => {
+    const text = JSON.stringify({ summary: "s", findings: [{ ...CANONICAL_FINDING, category: "Security" }] });
+    expect(parseFinderOutput(text).ok).toBe(false);
+  });
+
+  it("rejects a missing summary instead of synthesizing one", () => {
+    expect(reasonOf(JSON.stringify({ findings: [CANONICAL_FINDING] }))).toContain("summary");
+  });
+
+  it("rejects the whole live drift shape at once", () => {
+    expect(parseFinderOutput(JSON.stringify([DRIFTED_FINDING])).ok).toBe(false);
+  });
+
+  it('rejects prose with no object ("No issues found.") — never findings: []', () => {
+    expect(parseFinderOutput("No issues found.")).toEqual({
+      ok: false,
+      reason: "no complete JSON object in the response",
+    });
+  });
+
+  it("rejects a truncated object rather than completing it", () => {
+    expect(parseFinderOutput('{"summary": "x", "findings": [{"file": "a.ts"').ok).toBe(false);
+  });
+
+  it("takes the FIRST object: an example {} before the real one is rejected and goes to repair", () => {
+    const text = `The format is {} like this:\n${VALID}`;
+    expect(reasonOf(text)).toMatch(/^schema: /u);
+  });
+
+  it("names a JSON syntax error by position, without quoting the rejected text", () => {
+    // The Phase 0 A2 failure: an invalid escape inside a string.
+    expect(reasonOf('{"summary": "use \\` here", "findings": []}')).toMatch(/^JSON\.parse: Bad escaped character/u);
+    const reason = reasonOf('{"summary": tru}');
+    expect(reason).toContain("(the object is not valid JSON)");
+    expect(reason).not.toContain("tru}");
+  });
+
+  it("never lets a received value or a control character into the reason", () => {
+    const text = JSON.stringify({ summary: "s", findings: [{ ...CANONICAL_FINDING, severity: "\u001b[31mWARNING" }] });
+    const reason = reasonOf(text);
+    expect(reason).not.toContain("WARNING");
+    expect(reason).not.toMatch(/\p{Cc}/u);
+  });
+
+  it("caps a long reason", () => {
+    const many = Array.from({ length: 50 }, () => ({ ...CANONICAL_FINDING, severity: "bad" }));
+    expect(reasonOf(JSON.stringify({ summary: "s", findings: many })).length).toBeLessThanOrEqual(301);
+  });
+});
+
+describe("FinderOutputError", () => {
+  it("carries the fields and names provider, finish and the validation error in its message", () => {
+    const error = new FinderOutputError({
+      text: "prose",
+      provider: "Novita",
+      finishReason: "stop",
+      validationError: "no complete JSON object in the response",
+      repaired: false,
+    });
+    expect(error.name).toBe("FinderOutputError");
+    expect(error).toMatchObject({ text: "prose", provider: "Novita", finishReason: "stop", repaired: false });
+    expect(error.message).toBe(
+      "Finder output rejected (provider=Novita, finish=stop, no format repair attempted): no complete JSON object in the response",
+    );
+  });
+
+  it("is not a NoObjectGeneratedError, so the pipeline's single retry never re-rolls it", () => {
+    const error = new FinderOutputError({ text: "", validationError: "v", repaired: true });
+    expect(NoObjectGeneratedError.isInstance(error)).toBe(false);
+    expect(isRetryableError(error)).toBe(false);
+    expect("provider" in error).toBe(false);
+    expect(error.message).toContain("provider=?, finish=?, after one format repair");
   });
 });
 
@@ -99,58 +161,6 @@ const schemaFailure = (text: string): NoObjectGeneratedError =>
     },
     finishReason: "stop",
   });
-
-// parseCompleteOutput's second argument is provider metadata the repair path
-// never reads; one shared stub keeps the tests about shape, not plumbing.
-const CONTEXT = {
-  response: { id: "r", timestamp: new Date(0), modelId: "m" },
-  usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
-  finishReason: "stop",
-} as unknown as Parameters<ReturnType<typeof tolerantReviewOutput>["parseCompleteOutput"]>[1];
-
-const parse = (text: string, onRepair?: (detail: { reason: string }) => void) =>
-  tolerantReviewOutput({ onRepair }).parseCompleteOutput({ text }, CONTEXT);
-
-describe("tolerantReviewOutput", () => {
-  it("parses a canonical response without reporting a repair", async () => {
-    const onRepair = vi.fn();
-    const result = await parse(JSON.stringify({ summary: "fine", findings: [CANONICAL_FINDING] }), onRepair);
-    expect(result.summary).toBe("fine");
-    expect(onRepair).not.toHaveBeenCalled();
-  });
-
-  it("rescues the live drift and reports the repair", async () => {
-    const onRepair = vi.fn();
-    const result = await parse(JSON.stringify([DRIFTED_FINDING]), onRepair);
-    expect(result.findings[0].file).toBe("packages/code-reviewer/src/cli.ts");
-    expect(result.findings[0].severity).toBe("major");
-    expect(onRepair).toHaveBeenCalledTimes(1);
-  });
-
-  it("rethrows when the response is not JSON at all", async () => {
-    await expect(parse("I cannot review this.")).rejects.toThrow(NoObjectGeneratedError);
-  });
-
-  it("rethrows when a repair still cannot satisfy the schema", async () => {
-    // Findings missing required fields are not something this layer invents.
-    await expect(parse(JSON.stringify([{ severity: "WARNING" }]))).rejects.toThrow(NoObjectGeneratedError);
-  });
-
-  it("refuses to repair a failure that is not a schema mismatch", () => {
-    // Aborts and provider errors must propagate untouched, never be treated
-    // as a drifted envelope worth rescuing.
-    expect(repairParsedOutput(new Error("aborted"), JSON.stringify([CANONICAL_FINDING]))).toBeUndefined();
-  });
-
-  it("refuses to repair a non-JSON response", () => {
-    expect(repairParsedOutput(schemaFailure("I cannot review this."), "I cannot review this.")).toBeUndefined();
-  });
-
-  it("repairs the live drift through the pure decision function", () => {
-    const text = JSON.stringify([DRIFTED_FINDING]);
-    expect(repairParsedOutput(schemaFailure(text), text)?.findings[0].file).toBe("packages/code-reviewer/src/cli.ts");
-  });
-});
 
 describe("extractJsonObject", () => {
   it("returns a bare object unchanged", () => {
@@ -196,8 +206,7 @@ describe("repairParsedJudgeOutput", () => {
     summary: "s",
   });
 
-  // Reuses the same construction the finder's tests use — the SDK error needs
-  // response/usage/finishReason, not just a message.
+  // The SDK error needs response/usage/finishReason, not just a message.
   const noObjectError = schemaFailure;
 
   it("rescues a fenced scorecard", () => {

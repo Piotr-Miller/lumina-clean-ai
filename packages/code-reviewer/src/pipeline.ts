@@ -1,4 +1,4 @@
-import type { ProviderMetadata, StepResult, ToolSet } from "ai";
+import type { StepResult, ToolSet } from "ai";
 
 import { resolveModels } from "./config.js";
 import { mergeFindings, offDiffFindingPaths } from "./findings.js";
@@ -10,6 +10,7 @@ import {
 } from "./impl-reviewer.js";
 import { createJudge, type Judge, type JudgeCallOptions, type JudgeOptions } from "./judge.js";
 import { type ImplReviewPromptInput, type JudgePromptInput } from "./prompts.js";
+import { asStepCost, asStepProvider } from "./provider-metadata.js";
 import { withOneRetry } from "./retry.js";
 import {
   createReviewer,
@@ -68,6 +69,11 @@ export const DEFAULT_JUDGE_TIMEOUT_MS = 300_000;
 // Overridable per-run via REVIEW_IMPL_REVIEW_TIMEOUT_MS so a recalibration does
 // not need a release.
 export const DEFAULT_IMPL_REVIEW_TIMEOUT_MS = 300_000;
+
+// Re-exported so the package surface stays where it was: the two narrowers
+// moved to provider-metadata.ts because reviewer.ts needs asStepProvider too,
+// and reviewer.ts importing pipeline.ts would be an import cycle.
+export { asStepCost, asStepProvider };
 
 export interface PipelineTimeouts {
   finderTimeoutMs?: number;
@@ -368,27 +374,16 @@ export interface FinderStepInfo {
    * table and goes stale; this is the figure the provider billed.
    */
   cost?: number;
+  /**
+   * The upstream OpenRouter routed the step to (e.g. `novita`, `venice`).
+   * Present only when the provider reported it: the 2026-09-20 outage could
+   * not be attributed to an endpoint from the run log because nothing
+   * recorded which one served each step (change `finder-serialization-outage`).
+   */
+  provider?: string;
+  /** How the step's generation ended, as the SDK reports it (`stop`, `tool-calls`, `length`, …). */
+  finishReason: string;
 }
-
-/**
- * Exact per-step cost out of the provider's metadata bag.
- *
- * `providerMetadata` is typed `Record<string, JSONObject>` — the SDK makes no
- * promise about the value shape, so narrow every hop instead of trusting it,
- * same discipline as `asFileContextTarget` above. Absent metadata, a provider
- * that reports no cost, or a non-finite value all degrade to `undefined`
- * rather than a fabricated 0, which would read as "this step was free".
- */
-export const asStepCost = (metadata: ProviderMetadata | undefined): number | undefined => {
-  const openrouter: unknown = metadata?.openrouter;
-  if (typeof openrouter !== "object" || openrouter === null) return undefined;
-  if (!("usage" in openrouter)) return undefined;
-  const usage: unknown = openrouter.usage;
-  if (typeof usage !== "object" || usage === null) return undefined;
-  if (!("cost" in usage)) return undefined;
-  const cost: unknown = usage.cost;
-  return typeof cost === "number" && Number.isFinite(cost) ? cost : undefined;
-};
 
 // The tool input is model-chosen and reaches us untyped — narrow it instead
 // of trusting the schema validated elsewhere.
@@ -405,6 +400,7 @@ const asFileContextTarget = (input: unknown): { path: string; startLine?: number
 /** Extract the small per-step description from the SDK's step result. */
 export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
   const cost = asStepCost(step.providerMetadata);
+  const provider = asStepProvider(step.providerMetadata);
   return {
     fileContextCalls: step.toolCalls.flatMap((call) => {
       if (call.toolName !== "getFileContext") return [];
@@ -417,9 +413,11 @@ export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
       outputTokens: step.usage.outputTokens,
       totalTokens: step.usage.totalTokens,
     },
-    // Key absent rather than undefined-valued when the provider reported
+    // Keys absent rather than undefined-valued when the provider reported
     // nothing, matching the finderTelemetry convention below.
     ...(cost === undefined ? {} : { cost }),
+    ...(provider === undefined ? {} : { provider }),
+    finishReason: step.finishReason,
   };
 }
 
@@ -465,14 +463,26 @@ export interface PipelineInput {
   source?: SourceProvider;
   /** Finder loop cap, forwarded to createReviewer as maxSteps — only when `source` is set. */
   finderMaxSteps?: number;
-  /** Observes each finder loop step (across both retry attempts) for per-step telemetry. */
+  /**
+   * Observes each finder request (across both retry attempts) for per-step
+   * telemetry: every gathering-loop step, the finalization and the format
+   * repair.
+   */
   onFinderStep?: (info: FinderStepInfo) => void;
   /**
-   * Fires when the finder's response failed the strict parse and an envelope
-   * repair rescued it (see output-repair.ts). Without it a repaired run looks
-   * identical to a clean one, hiding model drift worth acting on.
+   * Fires when the finder's finalization failed the strict parse and its one
+   * format repair request is about to be sent (see reviewer.ts); `reason` is
+   * the validation error. Without it a repaired run looks identical to a clean
+   * one, hiding model drift worth acting on.
    */
   onOutputRepair?: (detail: { reason: string }) => void;
+  /**
+   * Observes each judge request as it completes: the upstream that served it,
+   * where OpenRouter reported one, and how it ended. The CLI keeps the last
+   * one so a judge `NoObjectGeneratedError` — which carries no provider of its
+   * own — can still be attributed to an endpoint in the log.
+   */
+  onJudgeStep?: (info: { provider?: string; finishReason: string }) => void;
   /**
    * The same signal for the JUDGE's response. Separate from onOutputRepair so a
    * log line names which pass drifted — they are different models and the
@@ -513,7 +523,9 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
   // Accumulated across BOTH finder attempts of a retried run — it measures
   // real spend for the run, not the last attempt's shape, so `steps` MAY
   // exceed the per-attempt maxSteps cap (the SDK's stepNumber resets to 0 on
-  // the retry attempt; each event is simply counted).
+  // the retry attempt; each event is simply counted). One attempt alone can
+  // exceed it too: the finalization and the format repair are requests of
+  // their own, counted here so `cost` covers them (up to maxSteps + 2).
   const telemetry: FinderTelemetry = { steps: 0, toolCalls: 0 };
   const addTokens = (sum: number | undefined, next: number | undefined): number | undefined =>
     next === undefined ? sum : (sum ?? 0) + next;
@@ -554,6 +566,8 @@ export async function runReviewPipeline(input: PipelineInput): Promise<PipelineR
     judgeTelemetry.totalTokens = addTokens(judgeTelemetry.totalTokens, step.usage.totalTokens);
     const cost = asStepCost(step.providerMetadata);
     if (cost !== undefined) judgeTelemetry.cost = (judgeTelemetry.cost ?? 0) + cost;
+    const provider = asStepProvider(step.providerMetadata);
+    input.onJudgeStep?.({ ...(provider === undefined ? {} : { provider }), finishReason: step.finishReason });
   };
 
   const judgeFactory = input.deps?.createJudge ?? createJudge;
