@@ -436,21 +436,21 @@ The finder is now 2–N requests per review, with one wall-clock budget for the 
 
 #### Automated
 
-- [x] 3.1 The JSONL exclusion is present
-- [x] 3.2 The guard still holds
-- [x] 3.3 The other four guards are byte-identical
-- [x] 3.4 The workflow still parses
-- [x] 3.5 The finder re-roll claim is gone
-- [x] 3.6 Repository formatting stays clean
+- [x] 3.1 The JSONL exclusion is present — 8eb9a53
+- [x] 3.2 The guard still holds — 8eb9a53
+- [x] 3.3 The other four guards are byte-identical — 8eb9a53
+- [x] 3.4 The workflow still parses — 8eb9a53
+- [x] 3.5 The finder re-roll claim is gone — 8eb9a53
+- [x] 3.6 Repository formatting stays clean — 8eb9a53
 
 ### Phase 4: Flip the guard and probe it live
 
 #### Automated
 
 - [ ] 4.1 The guard is removed (probe passed)
-- [ ] 4.2 The workflow still parses
-- [ ] 4.3 Both documents name the change
-- [ ] 4.4 Repository formatting stays clean
+- [x] 4.2 The workflow still parses
+- [x] 4.3 Both documents name the change
+- [x] 4.4 Repository formatting stays clean
 - [ ] 4.5 (paid) The first live run on this PR passes the probe
 - [ ] 4.6 The guard is restored (probe failed)
 

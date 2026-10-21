@@ -17,3 +17,7 @@ Re-enable the advisory ai-review job: port the finder serialization fix (prompt-
 the owner raises the OpenRouter key limit before the guard is removed; land it as this change; a live probe passes
 when the review parses and is posted (`findings: []` still passes); on a failed probe `false &&` goes back before
 merge; T2 is included. plan.md § Definitions.
+
+2026-10-21: owner confirmed the OpenRouter key limit and credit behind `OPENROUTER_API_KEY` were raised — confirmed,
+figure not stated — and gave the go to push and open the PR (Phase 4 precondition, plan.md § Definitions "Budget
+raised").
