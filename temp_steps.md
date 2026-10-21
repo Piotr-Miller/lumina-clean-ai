@@ -1,11 +1,34 @@
 # temp_steps.md — immediate next steps
 
-> Refreshed 2026-10-19 (`advisory-review-analysis`: close-out implemented; #235 closed as not planned; archive next).
-> Previously 2026-10-14 (finder-glm-5-3: Phases 1–3 implemented, Phase 4 next), 2026-10-11 (Phases 1–2 implemented, Phase 2 awaiting review), 2026-10-05 (finder-verification measured, decided and archived: none admitted), 2026-10-04 (sealed after Phases 0–3) and 2026-10-03 (after #274; finder-model-swap archived; finder-verification opened and researched). **Short-lived by design**: this is the next-few-actions
+> Refreshed 2026-10-21 (`advisory-review-analysis`: accepted, archived, PR #298 open; merge next).
+> Previously 2026-10-19 (close-out implemented; #235 closed as not planned; archive next), 2026-10-14 (finder-glm-5-3: Phases 1–3 implemented, Phase 4 next), 2026-10-11 (Phases 1–2 implemented, Phase 2 awaiting review), 2026-10-05 (finder-verification measured, decided and archived: none admitted), 2026-10-04 (sealed after Phases 0–3) and 2026-10-03 (after #274; finder-model-swap archived; finder-verification opened and researched). **Short-lived by design**: this is the next-few-actions
 > list and the **only** such list. `context/foundation/roadmap.md` stays authoritative for scope,
 > including parked work. Delete this file once the list is empty.
 
-## Resume point — session of 2026-10-19 (`advisory-review-analysis`: close-out implemented; archive next)
+## Resume point — session of 2026-10-21 (`advisory-review-analysis`: archived; PR #298 open)
+
+**Branch:** `chore/advisory-review-analysis`, pushed to `origin`, up to date with `master` (`1b15eb3`).
+[PR #298](https://github.com/Piotr-Miller/lumina-clean-ai/pull/298) is open to `master`. No paid model evaluation
+ran; `ai-review` stays disabled.
+
+**Change `advisory-review-analysis` is archived** at `context/archive/2026-10-17-advisory-review-analysis/` (outcome
+`completed`; archive commit `ae0eabb`, sync record `eef5ff6`, `sync: none`).
+
+- **Full implementation review:** APPROVED at `2275106`, 0 findings (`reviews/impl-review-2275106.md`).
+- **Human acceptance: 5 of 5.** Rows 1.3, 2.5, 2.6, 3.7 and 4.5 accepted by the owner at
+  `22751060c956cf5d21a07c2d564f2ccb70b73ce4`, recorded in `288e388`.
+- **Decision on record:** end the advisory-review work, no paid pilot, `false &&` stays. Re-entry needs a new owner
+  decision and a new change (`close-out.md` § Re-entry). Keep `feat/finder-glm-5-3` and `feat/finder-glm-5-3-high`.
+
+**Next actions, in order:**
+
+1. **Owner:** wait for PR #298's required checks (`ci`, `integration`, `e2e`, `code-reviewer`) to go green.
+2. **Owner:** merge PR #298.
+3. **Owner:** delete this file once the list is empty — nothing else is queued after the merge.
+
+---
+
+## Resume point — session of 2026-10-19 (`advisory-review-analysis`: close-out implemented; superseded)
 
 **Branch:** `chore/advisory-review-analysis`. Phases 1–3 are committed and pushed through `82776c5`, verified on
 `origin`. Their phase reviews are APPROVED. No paid model evaluation ran; `ai-review` stays disabled.
