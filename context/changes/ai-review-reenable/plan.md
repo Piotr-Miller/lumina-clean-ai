@@ -447,12 +447,12 @@ The finder is now 2–N requests per review, with one wall-clock budget for the 
 
 #### Automated
 
-- [ ] 4.1 The guard is removed (probe passed)
+- [x] 4.1 The guard is removed (probe passed)
 - [x] 4.2 The workflow still parses
 - [x] 4.3 Both documents name the change
 - [x] 4.4 Repository formatting stays clean
-- [ ] 4.5 (paid) The first live run on this PR passes the probe
-- [ ] 4.6 The guard is restored (probe failed)
+- [x] 4.5 (paid) The first live run on this PR passes the probe
+- [-] 4.6 The guard is restored (probe failed) — n/a: the probe passed (run 39653424585 on PR #300: finder parsed, sticky comment posted, label ai-cr:passed; probe.md), so the guard stays removed
 
 #### Manual
 
