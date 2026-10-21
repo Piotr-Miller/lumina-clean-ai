@@ -217,12 +217,14 @@ jobs:
           # NON-prose diffs too. Run 35534422541 — the PR that added this very line
           # — handed it a 31-line YAML diff at 2.4k-4.5k tokens, and it still died on
           # AI_NoObjectGeneratedError, twice. The record is a clean break rather than
-          # a content effect: 20 consecutive successes from 2026-09-08 to 2026-09-13,
-          # then 5 consecutive failures on 2026-09-20 across prose AND code. So the
-          # root cause sits in the finder model (vars.OPENROUTER_REVIEW_MODEL,
-          # currently z-ai/glm-4.6) or its provider, not in this pathspec. No
-          # replacement finder passed its gates, so there is no model to swap in,
-          # and the job is off (see the `if:` comment above). Do NOT raise
+          # a content effect: the finder succeeded in 17 of 17 runs up to 2026-09-13,
+          # then failed in 35 of 35 from 2026-09-20, across prose AND code. The cause
+          # sat outside this pathspec: Venice, the only endpoint serving
+          # z-ai/glm-4.6 with structured outputs, stopped applying response_format
+          # (frame.md in context/archive/2026-09-24-finder-serialization-outage/).
+          # That change took response_format out of the finder — it parses its own
+          # output, with at most one format repair — and change ai-review-reenable
+          # ported it to master. Do NOT raise
           # REVIEW_FINDER_MAX_STEPS expecting relief either: on a synced-skill-tree
           # diff a bigger budget only buys more duplicate reads.
           #
@@ -241,6 +243,15 @@ jobs:
           # **/reviews/*.md above is now subsumed but STAYS: it carries its own
           # rationale and must survive any future narrowing of this blanket rule.
           #
+          # Fifth exclusion: JSONL records, the same class as results/*.json —
+          # one machine-written line per attempt or row, read with a script,
+          # never line by line. finder-serialization-outage's Phase 4 committed
+          # twelve gate-<endpoint>-<case>.jsonl files, 243,296 B in total, which
+          # is more than twice the 100 KB window. They sit under context/, which
+          # sorts before packages/, so the window would have closed on them
+          # before the gate runner's own source. No JSONL file in the
+          # repository is hand-written or reviewable code.
+          #
           # Array, not `${PLAN_PATH:+…}`: an unquoted expansion word-splits a
           # path containing a space into a broken pathspec and fails the step
           # red. The PR controls its own filenames, so that is reachable.
@@ -249,6 +260,7 @@ jobs:
             ':(exclude,glob)**/results/*.json'
             ':(exclude,glob)**/ground-truth/*'
             ':(exclude,glob)**/*.md'
+            ':(exclude,glob)**/*.jsonl'
           )
           [ -n "$PLAN_PATH" ] && EXCLUDES+=(":(exclude)${PLAN_PATH}")
           git diff "origin/${BASE_REF}...${HEAD_SHA}" -- . "${EXCLUDES[@]}" > "$RUNNER_TEMP/pr.diff"

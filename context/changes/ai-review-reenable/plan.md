@@ -426,22 +426,22 @@ The finder is now 2–N requests per review, with one wall-clock budget for the 
 
 #### Automated
 
-- [x] 2.1 The new tests fail first and then pass
-- [x] 2.2 Package lint passes
-- [x] 2.3 Package typecheck passes
-- [x] 2.4 Package tests pass
-- [x] 2.5 The log line is not written to the comment or the review JSON
+- [x] 2.1 The new tests fail first and then pass — f67151e
+- [x] 2.2 Package lint passes — f67151e
+- [x] 2.3 Package typecheck passes — f67151e
+- [x] 2.4 Package tests pass — f67151e
+- [x] 2.5 The log line is not written to the comment or the review JSON — f67151e
 
 ### Phase 3: Correct the pointers that hold either way
 
 #### Automated
 
-- [ ] 3.1 The JSONL exclusion is present
-- [ ] 3.2 The guard still holds
-- [ ] 3.3 The other four guards are byte-identical
-- [ ] 3.4 The workflow still parses
-- [ ] 3.5 The finder re-roll claim is gone
-- [ ] 3.6 Repository formatting stays clean
+- [x] 3.1 The JSONL exclusion is present
+- [x] 3.2 The guard still holds
+- [x] 3.3 The other four guards are byte-identical
+- [x] 3.4 The workflow still parses
+- [x] 3.5 The finder re-roll claim is gone
+- [x] 3.6 Repository formatting stays clean
 
 ### Phase 4: Flip the guard and probe it live
 
