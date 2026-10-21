@@ -383,6 +383,13 @@ export interface FinderStepInfo {
   provider?: string;
   /** How the step's generation ended, as the SDK reports it (`stop`, `tool-calls`, `length`, …). */
   finishReason: string;
+  /**
+   * The model's own text in this request, verbatim — a gathering step's notes,
+   * the finalization's JSON or the repair's. Untrusted model output: the CLI
+   * caps and escapes it before it reaches a log (T2), and nothing writes it to
+   * the comment or review.json. Empty when the model sent no text.
+   */
+  text: string;
 }
 
 // The tool input is model-chosen and reaches us untyped — narrow it instead
@@ -418,6 +425,7 @@ export function describeFinderStep(step: StepResult<ToolSet>): FinderStepInfo {
     ...(cost === undefined ? {} : { cost }),
     ...(provider === undefined ? {} : { provider }),
     finishReason: step.finishReason,
+    text: step.text,
   };
 }
 

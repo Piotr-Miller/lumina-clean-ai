@@ -511,12 +511,14 @@ const finderStep = (over: {
   usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number };
   providerMetadata?: unknown;
   finishReason?: string;
+  text?: string;
 }): StepResult<ToolSet> =>
   ({
     toolCalls: over.toolCalls ?? [],
     usage: over.usage ?? {},
     providerMetadata: over.providerMetadata,
     finishReason: over.finishReason ?? "stop",
+    text: over.text ?? "",
   }) as unknown as StepResult<ToolSet>;
 
 /** Shorthand for the provider bag OpenRouter fills under usage accounting. */
@@ -541,6 +543,13 @@ describe("describeFinderStep", () => {
 
   it("reads the provider-reported cost out of the usage-accounting metadata", () => {
     expect(describeFinderStep(finderStep({ providerMetadata: withCost(0.0123) })).cost).toBe(0.0123);
+  });
+
+  // T2: the step's own model text, verbatim — capping and escaping are the
+  // CLI's job, and an empty text must stay an empty string, not go missing.
+  it("finder text line: carries the step's model text verbatim, the empty text included", () => {
+    expect(describeFinderStep(finderStep({ text: "line one\nline two" })).text).toBe("line one\nline two");
+    expect(describeFinderStep(finderStep({ text: "" })).text).toBe("");
   });
 
   it("keeps a zero cost — a free step is data, not a missing reading", () => {
@@ -1337,6 +1346,16 @@ describe("finder telemetry covers the finalization and the repair (real reviewer
     expect(result.finderTelemetry?.steps).toBe(2);
     expect(result.finderTelemetry?.cost).toBeCloseTo(0.003, 10);
     expect(steps.map((step) => step.provider)).toEqual(["Novita", "Novita"]);
+  });
+
+  // T2: what the log line is built from — each request's own text, so a
+  // rejected finalization and its repair stay distinguishable.
+  it("finder text line: tool-less, the finalization and the repair each carry their own text", async () => {
+    const { steps } = await runWithStub([
+      { content: '{"summary": 1}', finish: "stop", provider: "Novita" },
+      { content: VALID_REVIEW_TEXT, finish: "stop", provider: "Novita" },
+    ]);
+    expect(steps.map((step) => step.text)).toEqual(['{"summary": 1}', VALID_REVIEW_TEXT]);
   });
 
   it("with a source: every loop step, the finalization and the repair are counted", async () => {

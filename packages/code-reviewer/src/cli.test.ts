@@ -4,6 +4,8 @@ import { NoObjectGeneratedError } from "ai";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  FINDER_TEXT_CAP_CHARS,
+  FINDER_TEXT_TRUNCATION_MARKER,
   formatRejectedOutputLine,
   REJECTED_OUTPUT_CAP_CHARS,
   REJECTED_OUTPUT_TRUNCATION_MARKER,
@@ -284,13 +286,16 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
 
   const DIFF = ["diff --git a/src/a.ts b/src/a.ts", "--- a/src/a.ts", "+++ b/src/a.ts", "@@ -1 +1 @@", "+x"].join("\n");
 
-  it("stays byte-identical to today without the flag: no source, no maxSteps, no step callback", async () => {
+  // T2 (plan-review F1): the step callback is wired with or without a source —
+  // a tool-less review still sends the finalization and maybe a repair, and
+  // those are exactly the requests whose text attributes an empty review.
+  it("without the flag: no source and no maxSteps, but the step callback is still wired", async () => {
     const pipeline = okPipeline();
     await runReviewCli([], {}, fakeIo({ readStdin: () => DIFF }), pipeline);
     const input = inputOf(pipeline);
     expect("source" in input).toBe(false);
     expect("finderMaxSteps" in input).toBe(false);
-    expect("onFinderStep" in input).toBe(false);
+    expect(input.onFinderStep).toBeDefined();
   });
 
   it("wires a diff-scoped source over io with the 5-step default budget", async () => {
@@ -312,14 +317,14 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     );
   });
 
-  it("skips the source entirely when the diff yields no reviewable paths", async () => {
+  it("skips the source when the diff yields no reviewable paths, but keeps the step callback", async () => {
     const io = fakeIo({ readStdin: () => "--- a/x.ts\n+++ /dev/null\n-x" });
     const pipeline = okPipeline();
     await runReviewCli(["--source-root", "root"], {}, io, pipeline);
     const input = inputOf(pipeline);
     expect("source" in input).toBe(false);
     expect("finderMaxSteps" in input).toBe(false);
-    expect("onFinderStep" in input).toBe(false);
+    expect(input.onFinderStep).toBeDefined();
   });
 
   it("honors a valid REVIEW_FINDER_MAX_STEPS override", async () => {
@@ -376,8 +381,9 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         usage: { inputTokens: 100, outputTokens: 10, totalTokens: 110 },
         provider: "Novita",
         finishReason: "tool-calls",
+        text: "checking a.ts",
       });
-      input.onFinderStep?.({ fileContextCalls: [], toolCalls: 0, usage: {}, finishReason: "stop" });
+      input.onFinderStep?.({ fileContextCalls: [], toolCalls: 0, usage: {}, finishReason: "stop", text: "" });
       input.onFinderStep?.({
         fileContextCalls: [
           { path: "src/a.ts", startLine: 5 },
@@ -387,15 +393,19 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         usage: { totalTokens: 50 },
         provider: "Z.AI",
         finishReason: "length",
+        text: "more",
       });
       return Promise.resolve(pipelineResult());
     });
     expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
     expect(io.errors).toEqual([
       "finder step 1: getFileContext src/a.ts:10-80 (tokens in=100 out=10 total=110) provider=Novita finish=tool-calls",
+      'finder step 1 text: 13 chars "checking a.ts"',
       // No provider reported → "?", never a guessed slug.
       "finder step 2: no getFileContext call (tokens in=? out=? total=?) provider=? finish=stop",
+      "finder step 2 text: empty (0 chars)",
       "finder step 3: getFileContext src/a.ts:5-end, getFileContext src/a.ts:1-8 (tokens in=? out=? total=50) provider=Z.AI finish=length",
+      'finder step 3 text: 4 chars "more"',
     ]);
   });
 
@@ -410,12 +420,14 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
         usage: { totalTokens: 10 },
         provider: "evil\nfinder step 98: forged",
         finishReason: "stop",
+        text: "ok",
       });
       return Promise.resolve(pipelineResult());
     });
     expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
     expect(io.errors).toEqual([
       "finder step 1: getFileContext src/a.ts??[31mfinder step 99: forged? (tokens in=? out=? total=10) provider=evil?finder step 98: forged finish=stop",
+      'finder step 1 text: 2 chars "ok"',
     ]);
   });
 
@@ -423,6 +435,107 @@ describe("runReviewCli --source-root (diff-scoped file context)", () => {
     const io = fakeIo();
     expect(await runReviewCli(["--bogus"], {}, io, okPipeline())).toBe(1);
     expect(io.errors.at(0)).toContain("--source-root");
+  });
+});
+
+// T2 (follow-ups/review-fixes.md of the outage archive): one bounded, escaped
+// stderr line per finder request with the model's own text, so a future
+// `findings: []` can be attributed to stage 1 or to the finalization from the
+// public Actions log alone.
+describe("runReviewCli finder text line (T2)", () => {
+  const DIFF = ["diff --git a/src/a.ts b/src/a.ts", "--- a/src/a.ts", "+++ b/src/a.ts", "@@ -1 +1 @@", "+x"].join("\n");
+  const DELETIONS_ONLY = "--- a/x.ts\n+++ /dev/null\n-x";
+
+  const step = (text: string, finishReason = "stop") => ({
+    fileContextCalls: [],
+    toolCalls: 0,
+    usage: {},
+    provider: "Novita",
+    finishReason,
+    text,
+  });
+
+  const textLines = (io: { errors: string[] }) => io.errors.filter((line) => /^finder step \d+ text: /u.test(line));
+
+  it("finder text line: caps the text at FINDER_TEXT_CAP_CHARS with a marker, reporting the full count", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const long = "a".repeat(FINDER_TEXT_CAP_CHARS + 500);
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onFinderStep?.(step(long));
+      return Promise.resolve(pipelineResult());
+    });
+    await runReviewCli(["--source-root", "root"], {}, io, pipeline);
+    expect(textLines(io)).toEqual([
+      `finder step 1 text: ${String(FINDER_TEXT_CAP_CHARS + 500)} chars "${"a".repeat(FINDER_TEXT_CAP_CHARS)}" ${FINDER_TEXT_TRUNCATION_MARKER}`,
+    ]);
+  });
+
+  it("finder text line: leaves a text of exactly the cap uncut and unmarked", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onFinderStep?.(step("b".repeat(FINDER_TEXT_CAP_CHARS)));
+      return Promise.resolve(pipelineResult());
+    });
+    await runReviewCli(["--source-root", "root"], {}, io, pipeline);
+    expect(textLines(io)).toEqual([
+      `finder step 1 text: ${String(FINDER_TEXT_CAP_CHARS)} chars "${"b".repeat(FINDER_TEXT_CAP_CHARS)}"`,
+    ]);
+  });
+
+  it("finder text line: escapes newlines and control characters so the untrusted text stays one log line", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onFinderStep?.(step('{\n  "a": 1\r\n}\t\u001b[31mfinder step 9: forged\u007f'));
+      return Promise.resolve(pipelineResult());
+    });
+    await runReviewCli(["--source-root", "root"], {}, io, pipeline);
+    const [line] = textLines(io);
+    expect(line).toBe('finder step 1 text: 41 chars "{\\n  "a": 1\\r\\n}\\t\\u001b[31mfinder step 9: forged\\u007f"');
+    expect(line).not.toMatch(/\p{Cc}/u);
+  });
+
+  it("finder text line: logs the finalization and the repair of a run without --source-root", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onFinderStep?.(step('{"summary": 1}'));
+      input.onFinderStep?.(step('{"summary":"ok","findings":[]}'));
+      return Promise.resolve(pipelineResult());
+    });
+    expect(await runReviewCli([], {}, io, pipeline)).toBe(0);
+    expect(io.errors).toEqual([
+      "finder step 1: no getFileContext call (tokens in=? out=? total=?) provider=Novita finish=stop",
+      'finder step 1 text: 14 chars "{"summary": 1}"',
+      "finder step 2: no getFileContext call (tokens in=? out=? total=?) provider=Novita finish=stop",
+      'finder step 2 text: 30 chars "{"summary":"ok","findings":[]}"',
+    ]);
+  });
+
+  it("finder text line: logs the finalization and the repair of a deletions-only diff with --source-root", async () => {
+    const io = fakeIo({ readStdin: () => DELETIONS_ONLY });
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onFinderStep?.(step("prose, no object"));
+      input.onFinderStep?.(step(""));
+      return Promise.resolve(pipelineResult());
+    });
+    expect(await runReviewCli(["--source-root", "root"], {}, io, pipeline)).toBe(0);
+    expect(textLines(io)).toEqual([
+      'finder step 1 text: 16 chars "prose, no object"',
+      "finder step 2 text: empty (0 chars)",
+    ]);
+  });
+
+  it("finder text line: never reaches comment.md, review.json or the step summary", async () => {
+    const io = fakeIo({ readStdin: () => DIFF });
+    const marker = "SECRET-GATHERING-NOTE-7f3a";
+    const pipeline = vi.fn().mockImplementation((input: PipelineInput) => {
+      input.onFinderStep?.(step(marker));
+      return Promise.resolve(pipelineResult());
+    });
+    await runReviewCli(["--source-root", "root"], { GITHUB_STEP_SUMMARY: "summary.md" }, io, pipeline);
+    expect(textLines(io)).toEqual([`finder step 1 text: ${String(marker.length)} chars "${marker}"`]);
+    expect(io.files.get(join(".review-out", "comment.md"))).not.toContain(marker);
+    expect(io.files.get(join(".review-out", "review.json"))).not.toContain(marker);
+    expect(io.appended.get("summary.md") ?? "").not.toContain(marker);
   });
 });
 
