@@ -456,5 +456,5 @@ The finder is now 2–N requests per review, with one wall-clock budget for the 
 
 #### Manual
 
-- [ ] 4.7 The owner confirmed the raised limit and reads the first comment and finder lines
-- [ ] 4.8 The owner reads both status texts
+- [x] 4.7 The owner confirmed the raised limit and reads the first comment and finder lines — accepted at be8e9717de11db7c8771a4bbc98fcfcda4dc6eb4
+- [x] 4.8 The owner reads both status texts — accepted at be8e9717de11db7c8771a4bbc98fcfcda4dc6eb4
