@@ -9,6 +9,8 @@ archived_at: null
 
 ## Notes
 
+2026-10-22: reopened 1.5 — was accepted at 1baf54749bc6829956c94cb0f4734b534153719a; changed: packages/code-reviewer/src/weekly-report-render.ts (impl-review phase 1, F1 fix: per-pass amounts carry ≥ under cohort gaps)
+
 2026-10-22: Plan-review triage complete: F1–F6 fixed (F4 Fix A), verdict after fixes SOUND. Plan/Progress structure and declared paths verified; implementation and all manual acceptance remain pending. See reviews/plan-review.md for the original review and decision history.
 
 2026-10-22: Plan review F6 accepted: latest reviewed workflow is selected by greatest original created_at, then greatest numeric run ID, independent of input order. Verdict and finding counts use the same snapshot; tests cover tied timestamps, numeric ordering and timestamp precedence.

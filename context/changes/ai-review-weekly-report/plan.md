@@ -109,6 +109,12 @@ The workflow only installs the package and runs `npm run weekly-report`.
 
 Week windows, run classification, cost, aggregation, reaction state, the alarm decision and markdown rendering, all with no IO, tested against the Definitions dataset.
 
+**Addendum (impl-review phase 1, F4, 2026-10-22).** Three edge rules the Definitions left open, decided in triage:
+
+- A negative pass cost fails the `reviewJsonSubset` parse. The whole artifact is then `artifact unreadable`, so that run counts toward the coverage alarm instead of contributing a partial figure.
+- `AI_REVIEW_WEEKLY_ALARM_UNREPORTED` must be a positive integer. `0` would fire every week, so it falls back to the default with a warning; `1` means "any gap". A USD threshold of `0` stays valid.
+- When duplicate rows for one workflow ID include an unknown `run_attempt`, its attempt coverage stays unknown and never becomes complete.
+
 ### Changes Required:
 
 #### 1. Domain core
@@ -425,10 +431,10 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Automated
 
-- [x] 1.1 New core tests pass
-- [x] 1.2 Package typecheck passes
-- [x] 1.3 Package lint passes
-- [x] 1.4 Full package suite passes
+- [x] 1.1 New core tests pass — 1baf547
+- [x] 1.2 Package typecheck passes — 1baf547
+- [x] 1.3 Package lint passes — 1baf547
+- [x] 1.4 Full package suite passes — 1baf547
 
 #### Manual
 
