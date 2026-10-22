@@ -9,6 +9,8 @@ archived_at: null
 
 ## Notes
 
+2026-10-22: reopened 1.5 — was accepted at ae7d6fddb99d41c46b4460ddee42b0408d676640; changed: packages/code-reviewer/src/weekly-report-render.ts (impl-review phase 1, F8 fix: truncation notice points to complete report.json data)
+
 2026-10-22: reopened 1.5 — was accepted at 1baf54749bc6829956c94cb0f4734b534153719a; changed: packages/code-reviewer/src/weekly-report-render.ts (impl-review phase 1, F1 fix: per-pass amounts carry ≥ under cohort gaps)
 
 2026-10-22: Plan-review triage complete: F1–F6 fixed (F4 Fix A), verdict after fixes SOUND. Plan/Progress structure and declared paths verified; implementation and all manual acceptance remain pending. See reviews/plan-review.md for the original review and decision history.
