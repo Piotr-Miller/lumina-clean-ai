@@ -80,7 +80,13 @@ export function previousCompleteWeek(now: Date): string {
 
 // --- review.json subset ---
 
-const telemetrySubset = z.object({ cost: z.number().nonnegative().optional() });
+/**
+ * One pass's cost above this is not a plausible observed figure (a full run costs about $0.33), and an
+ * unbounded value can sum to Infinity — a forged artifact is unreadable rather than a false alarm.
+ */
+export const MAX_PASS_COST_USD = 1000;
+
+const telemetrySubset = z.object({ cost: z.number().nonnegative().max(MAX_PASS_COST_USD).optional() });
 
 /**
  * The narrow slice of `PipelineResult` the report reads. review.json comes
@@ -352,21 +358,24 @@ export interface Thresholds {
 /**
  * Unset or empty means the default, silently — an undefined repo variable
  * reaches the job as "". Anything else that is not a non-negative decimal
- * (USD) or a non-negative integer (count) falls back to the default with a
- * warning naming the variable and the rejected value.
+ * (USD) or a positive integer (count) falls back to the default with a
+ * warning naming the variable and the rejected value. A count of 0 would
+ * fire on every week, gap or not, so it is rejected; 1 means "any gap".
  */
 export function parseThresholds(env: Record<string, string | undefined>): Thresholds {
   const warnings: ThresholdWarning[] = [];
-  const read = (variable: string, pattern: RegExp, fallback: number): number => {
+  const read = (variable: string, pattern: RegExp, fallback: number, min: number): number => {
     const raw = env[variable];
     if (raw === undefined || raw.trim() === "") return fallback;
     const value = Number(raw.trim());
-    if (pattern.test(raw.trim()) && Number.isFinite(value) && value <= Number.MAX_SAFE_INTEGER) return value;
+    if (pattern.test(raw.trim()) && Number.isFinite(value) && value >= min && value <= Number.MAX_SAFE_INTEGER) {
+      return value;
+    }
     warnings.push({ variable, rejected: raw, fallback });
     return fallback;
   };
-  const usd = read(ALARM_USD_VARIABLE, /^\d+(\.\d+)?$/u, DEFAULT_ALARM_USD);
-  const unreported = read(ALARM_UNREPORTED_VARIABLE, /^\d+$/u, DEFAULT_ALARM_UNREPORTED);
+  const usd = read(ALARM_USD_VARIABLE, /^\d+(\.\d+)?$/u, DEFAULT_ALARM_USD, 0);
+  const unreported = read(ALARM_UNREPORTED_VARIABLE, /^\d+$/u, DEFAULT_ALARM_UNREPORTED, 1);
   return { usd, unreported, warnings };
 }
 
@@ -390,7 +399,8 @@ export function decideAlarm(
 ): AlarmDecision {
   const triggers: AlarmTrigger[] = [];
   const knownSpend = roundUsd(report.spend.known);
-  if (knownSpend > thresholds.usd) triggers.push({ kind: "spend", knownSpend, threshold: thresholds.usd });
+  const usdThreshold = roundUsd(thresholds.usd);
+  if (knownSpend > usdThreshold) triggers.push({ kind: "spend", knownSpend, threshold: usdThreshold });
   if (report.coverageGapWorkflows >= thresholds.unreported) {
     triggers.push({
       kind: "coverage",
@@ -500,6 +510,8 @@ export interface WeeklyReport {
   models: { finder: string[]; judge: string[] };
   /** Run IDs whose created_at could not be read, so no week could own them. */
   invalidCreatedAt: number[];
+  /** Rows whose run ID is not a positive safe integer: they cannot be linked or deduplicated, so none is counted. */
+  invalidRunIds: number;
   thresholds: Thresholds;
   alarm: AlarmDecision;
 }
@@ -570,14 +582,20 @@ const isLater = (candidate: ReportRun, current: ReportRun): boolean => {
   return byTime === 0 ? candidate.id > current.id : byTime > 0;
 };
 
-/** One entry per workflow ID: the highest observed attempt, then a downloaded artifact, then input order. */
+/**
+ * One entry per workflow ID: the highest observed attempt, then a downloaded artifact, then input order.
+ * An unknown run_attempt on any row for the ID keeps the entry's coverage unknown — a duplicate row that
+ * claims attempt 1 never turns missing metadata into complete coverage.
+ */
 const dedupeRuns = (runs: readonly RawRun[]): RawRun[] => {
   const byId = new Map<number, RawRun>();
+  const unknownAttempt = new Set<number>();
   const rank = (run: RawRun): number => {
     const attempt = attemptCoverage(run.runAttempt);
     return attempt.kind === "gap" ? attempt.runAttempt : attempt.kind === "complete" ? 1 : 0;
   };
   for (const run of runs) {
+    if (attemptCoverage(run.runAttempt).kind === "unknown") unknownAttempt.add(run.id);
     const current = byId.get(run.id);
     if (
       current === undefined ||
@@ -587,7 +605,7 @@ const dedupeRuns = (runs: readonly RawRun[]): RawRun[] => {
       byId.set(run.id, run);
     }
   }
-  return [...byId.values()];
+  return [...byId.values()].map((run) => (unknownAttempt.has(run.id) ? { ...run, runAttempt: null } : run));
 };
 
 const normalizeAssociation = (association: PrAssociation): PrAssociation =>
@@ -620,7 +638,8 @@ const passTotal = (runs: readonly ReportRun[], pass: "finder" | "judge" | "impl"
 export function aggregateWeek(input: WeekInput): WeeklyReport {
   const window = isoWeekWindow(input.week);
   const invalidCreatedAt: number[] = [];
-  const inWindow = dedupeRuns(input.runs).filter((run) => {
+  const validIds = input.runs.filter((run) => Number.isSafeInteger(run.id) && run.id > 0);
+  const inWindow = dedupeRuns(validIds).filter((run) => {
     const created = Date.parse(run.createdAt);
     if (Number.isNaN(created)) {
       invalidCreatedAt.push(run.id);
@@ -769,6 +788,7 @@ export function aggregateWeek(input: WeekInput): WeeklyReport {
     prCoverageIncomplete: unmappedRuns.some((run) => run.runClass.kind !== "not-run"),
     models: { finder: [...finderModels].sort(), judge: [...judgeModels].sort() },
     invalidCreatedAt: invalidCreatedAt.sort((a, b) => a - b),
+    invalidRunIds: input.runs.length - validIds.length,
     thresholds: input.thresholds,
     alarm: decideAlarm({ spend, coverageGapWorkflows, counts }, input.thresholds),
   };

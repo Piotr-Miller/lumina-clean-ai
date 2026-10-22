@@ -8,8 +8,10 @@ import {
   renderAlarmBody,
   renderWeeklyComment,
   safeModelId,
+  TRUNCATION_NOTICE,
   weeklyMarker,
 } from "./weekly-report-render.js";
+import { MAX_COMMENT_CHARS } from "./render.js";
 
 const OWNER = "Piotr-Miller";
 const LINKS = { repoUrl: "https://github.com/Piotr-Miller/lumina-clean-ai" };
@@ -116,8 +118,8 @@ describe("renderWeeklyComment", () => {
 
   it("renders the per-pass split with not-run and unknown distinct from $0", () => {
     expect(comment).toContain("| finder | ≥ $0.120000 | 3 | 1 | 0 |");
-    expect(comment).toContain("| judge | $0.040000 | 4 | 0 | 0 |");
-    expect(comment).toContain("| impl | $0.050000 | 1 | 0 | 3 |");
+    expect(comment).toContain("| judge | ≥ $0.040000 | 4 | 0 | 0 |");
+    expect(comment).toContain("| impl | ≥ $0.050000 | 1 | 0 | 3 |");
     const noImpl = renderWeeklyComment(
       aggregateWeek(input({ runs: [run(5001, "2026-10-21T00:00:00Z", { artifact: review() })] })),
       LINKS,
@@ -130,6 +132,55 @@ describe("renderWeeklyComment", () => {
       LINKS,
     );
     expect(unknownFinder).toContain("| finder | unknown | 0 | 1 | 0 |");
+  });
+
+  it("bounds every reported pass amount with ≥ when the cohort has a gap, and only then", () => {
+    const gapFree = renderWeeklyComment(
+      aggregateWeek(input({ runs: [run(5003, "2026-10-21T00:00:00Z", { artifact: review() })] })),
+      LINKS,
+    );
+    expect(gapFree).toContain("| finder | $0.040000 | 1 | 0 | 0 |");
+    expect(gapFree).toContain("| judge | $0.010000 | 1 | 0 | 0 |");
+    const attemptGapOnly = renderWeeklyComment(
+      aggregateWeek(input({ runs: [run(5004, "2026-10-21T00:00:00Z", { runAttempt: 2, artifact: review() })] })),
+      LINKS,
+    );
+    expect(attemptGapOnly).toContain("| finder | ≥ $0.040000 | 1 | 0 | 0 |");
+    expect(attemptGapOnly).toContain("| judge | ≥ $0.010000 | 1 | 0 | 0 |");
+    const unreportedOnly = renderWeeklyComment(
+      aggregateWeek(
+        input({
+          runs: [
+            run(5005, "2026-10-21T00:00:00Z", { artifact: review() }),
+            run(5006, "2026-10-21T01:00:00Z", { conclusion: "failure" }),
+          ],
+        }),
+      ),
+      LINKS,
+    );
+    expect(unreportedOnly).toContain("| finder | ≥ $0.040000 | 1 | 0 | 0 |");
+  });
+
+  it("truncates an oversized comment under GitHub's limit, keeping the week marker", () => {
+    const failures = Array.from({ length: 2000 }, (_, n) =>
+      run(600_000 + n, "2026-10-21T00:00:00Z", { conclusion: "failure" }),
+    );
+    const huge = renderWeeklyComment(aggregateWeek(input({ runs: failures })), LINKS);
+    expect(huge.length).toBeLessThanOrEqual(MAX_COMMENT_CHARS);
+    expect(huge.startsWith(weeklyMarker("2026-W43"))).toBe(true);
+    expect(huge.endsWith(TRUNCATION_NOTICE)).toBe(true);
+    expect(comment.endsWith(TRUNCATION_NOTICE)).toBe(false);
+  });
+
+  it("warns about rows with an invalid run ID without linking them", () => {
+    const invalid = renderWeeklyComment(
+      aggregateWeek(input({ runs: [run(Number.NaN, "2026-10-21T00:00:00Z", { conclusion: "failure" })] })),
+      LINKS,
+    );
+    expect(invalid).toContain(
+      "- 1 row had a run ID that is not a positive integer and could not be counted or linked.",
+    );
+    expect(invalid).not.toContain("NaN");
   });
 
   it("carries the fixed per-request caveat", () => {
@@ -160,9 +211,15 @@ describe("renderWeeklyComment", () => {
     );
   });
 
+  it("labels the per-PR spend column as observed spend", () => {
+    expect(comment).toContain(
+      "| PR | Runs | Observed spend | Latest verdict | Impl | Label | Findings | Owner reaction |",
+    );
+  });
+
   it("states the alarm status and the mixes", () => {
     expect(comment).toContain(
-      "**Alarm:** not fired — known spend $0.210000 ≤ $10.000000, 2 coverage-gap workflows < 5.",
+      "**Alarm:** not fired — known observed provider-reported spend $0.210000 ≤ $10.000000, 2 coverage-gap workflows < 5.",
     );
     expect(comment).toContain("- Verdict (per reviewed run): passed 1 · failed 3");
     expect(comment).toContain("- Label (per PR): `ai-cr:passed` 0 · `ai-cr:failed` 1 · none 2");
@@ -220,8 +277,25 @@ describe("untrusted review.json content", () => {
     expect(safeModelId("x".repeat(201))).toBe("(unrecognised model id)");
   });
 
+  it("lists many malformed model ids as one unrecognised entry", () => {
+    const hostileModels = renderWeeklyComment(
+      aggregateWeek(
+        input({
+          runs: [1, 2, 3].map((n) =>
+            run(5100 + n, "2026-10-21T00:00:00Z", {
+              artifact: review({ models: { finder: `evil model ${String(n)}`, judge: "ok/judge-1" } }),
+            }),
+          ),
+        }),
+      ),
+      LINKS,
+    );
+    expect(hostileModels).toContain("finder: (unrecognised model id) · judge: `ok/judge-1`");
+  });
+
   it("still counts the hostile run's numbers", () => {
-    expect(rendered).toContain("REJECTED");
+    // The impl mix always prints "REJECTED <n>", so pin the count, not the word.
+    expect(rendered).toMatch(/Impl verdict \(per reviewed run\):[^\n]*REJECTED 1/u);
     expect(rendered).toContain("1/0/0/0 · 2 · 1");
   });
 });
@@ -232,7 +306,10 @@ describe("renderAlarmBody", () => {
   it("starts with the alarm marker and names its trigger", () => {
     const body = renderAlarmBody(expensive, expensive.alarm, LINKS);
     expect(body.startsWith(`${alarmMarker("2026-W43")}\n### AI review alarm — 2026-W43\n`)).toBe(true);
-    expect(body).toContain("- known spend $0.210000 exceeds $0.100000 (`AI_REVIEW_WEEKLY_ALARM_USD`)");
+    expect(body).toContain(
+      "- known observed provider-reported spend $0.210000 exceeds $0.100000 (`AI_REVIEW_WEEKLY_ALARM_USD`)",
+    );
+    expect(body).toContain("Cohort: `review.yml` workflow runs created 2026-10-19T00:00:00Z – 2026-10-26T00:00:00Z.");
   });
 
   it("names a coverage trigger with both counts", () => {
@@ -254,12 +331,37 @@ describe("renderAlarmBody", () => {
     expect(body).toContain("Advisory only: this alarm blocks nothing.");
   });
 
+  it("links back only to a comment URL inside the repo", () => {
+    for (const reportCommentUrl of [
+      "https://x) <!-- [y](javascript:alert(1)",
+      "https://github.com/someone/else/issues/1#issuecomment-2",
+      "https://github.com/Piotr-Miller/lumina-clean-ai/issues/1#issuecomment-2) <!--",
+    ]) {
+      const body = renderAlarmBody(expensive, expensive.alarm, { ...LINKS, reportCommentUrl });
+      expect(body).toContain("Details: the week's comment on the AI review weekly report issue.");
+      expect(body.split("<!--")).toHaveLength(2); // only the alarm marker opens an HTML comment
+      expect(body).not.toContain("javascript:");
+      expect(body).toContain(`> ${COST_CAVEAT}`);
+    }
+  });
+
+  it("refuses to render with a repo URL that is not a GitHub repo", () => {
+    for (const repoUrl of ["https://x) <!--", "http://github.com/a/b", "https://github.com/a/b/../c d"]) {
+      expect(() => renderAlarmBody(expensive, expensive.alarm, { repoUrl })).toThrow(/repoUrl/u);
+      expect(() => renderWeeklyComment(expensive, { repoUrl })).toThrow(/repoUrl/u);
+    }
+  });
+
   it("says so when nothing is over threshold any more", () => {
     expect(renderAlarmBody(report, report.alarm, LINKS)).toContain("No trigger is currently over threshold.");
   });
 });
 
 describe("formatSpend", () => {
+  it("prints the same rounded figure the alarm compares", () => {
+    expect(formatSpend({ known: 9.9999995, incomplete: false, hasKnown: true })).toBe("$10.000000 reported");
+  });
+
   it("distinguishes reported, lower bound and unknown", () => {
     expect(formatSpend({ known: 0.33304, incomplete: false, hasKnown: true })).toBe("$0.333040 reported");
     expect(formatSpend({ known: 0.13, incomplete: true, hasKnown: true })).toBe("≥ $0.130000");

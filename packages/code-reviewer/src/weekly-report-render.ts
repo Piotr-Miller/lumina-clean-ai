@@ -10,6 +10,7 @@ import {
   type PrRow,
   type ReactionCell,
   type ReportRun,
+  roundUsd,
   type SpendSummary,
   type WeeklyReport,
 } from "./weekly-report.js";
@@ -20,12 +21,32 @@ import {
 // and model ids that pass MODEL_ID_PATTERN. GitHub-supplied enums (status,
 // conclusion) go through the same allowlist treatment.
 
+import { MAX_COMMENT_CHARS } from "./render.js";
+
 export interface ReportLinks {
   /** `https://github.com/<owner>/<repo>`, built by the CLI from a validated slug. */
   repoUrl: string;
   /** The week's report comment, once published — the alarm issue links back to it. */
   reportCommentUrl?: string;
 }
+
+const REPO_URL_PATTERN = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+$/u;
+const COMMENT_PATH_PATTERN = /^\/issues\/\d+#issuecomment-\d+$/u;
+
+/** A malformed repo URL is a caller bug that would corrupt every link, so it stops rendering outright. */
+const assertRepoUrl = (links: ReportLinks): void => {
+  if (!REPO_URL_PATTERN.test(links.repoUrl)) {
+    throw new Error("weekly report: repoUrl is not an https://github.com/<owner>/<repo> URL; no report rendered.");
+  }
+};
+
+/** The report comment link, only when it is a comment URL inside this repo; otherwise the alarm links nothing. */
+const safeReportCommentUrl = (links: ReportLinks): string | undefined => {
+  const url = links.reportCommentUrl;
+  return url?.startsWith(links.repoUrl) === true && COMMENT_PATH_PATTERN.test(url.slice(links.repoUrl.length))
+    ? url
+    : undefined;
+};
 
 export const weeklyMarker = (week: string): string => `<!-- ai-review-weekly:${week} -->`;
 export const alarmMarker = (week: string): string => `<!-- ai-review-alarm:${week} -->`;
@@ -38,15 +59,22 @@ export const COST_CAVEAT =
 
 const MODEL_ID_PATTERN = /^[A-Za-z0-9._/:-]+$/u;
 const MAX_MODEL_ID_CHARS = 200;
+
+export const TRUNCATION_NOTICE =
+  "\n\n⚠️ comment truncated — the full report is `report.md` in the report workflow run's `ai-review-weekly-report` artifact.\n";
 const ENUM_PATTERN = /^[a-z_]{1,40}$/u;
 
 export const safeModelId = (id: string): string =>
   id.length <= MAX_MODEL_ID_CHARS && MODEL_ID_PATTERN.test(id) ? `\`${id}\`` : "(unrecognised model id)";
 
+/** Distinct after mapping, so many hostile ids collapse into one "(unrecognised model id)". */
+const safeModelList = (ids: readonly string[]): string => [...new Set(ids.map(safeModelId))].join(", ");
+
 const safeEnum = (value: string | null): string =>
   value === null ? "none" : ENUM_PATTERN.test(value) ? value : "(unrecognised)";
 
-const usd = (value: number): string => `$${value.toFixed(6)}`;
+/** Every amount goes through the alarm's own rounding, so two lines never disagree on the same figure. */
+const usd = (value: number): string => `$${roundUsd(value).toFixed(6)}`;
 
 /** `$X reported` with no detected gap, `≥ $X` with one, `unknown` when nothing was observed at all. */
 export function formatSpend(spend: SpendSummary): string {
@@ -91,15 +119,20 @@ const findingsText = (totals: FindingTotals): string =>
     totals.preDedup,
   )} · ${String(totals.impl)}`;
 
-/** A pass nobody reported a cost for is `unknown` or `not run`, never a $0 that reads as free. */
-const passCost = (total: PassTotal): string => {
-  if (total.reported > 0) return total.unknown > 0 ? `≥ ${usd(total.known)}` : usd(total.known);
+/**
+ * A pass nobody reported a cost for is `unknown` or `not run`, never a $0 that reads as free. A cohort gap
+ * (an unreported run or an unobserved attempt) may hide spend on any pass, so it bounds every pass amount.
+ */
+const passCost = (total: PassTotal, cohortGap: boolean): string => {
+  if (total.reported > 0) return total.unknown > 0 || cohortGap ? `≥ ${usd(total.known)}` : usd(total.known);
   if (total.unknown > 0) return "unknown";
   return total.notRun > 0 ? "not run" : "—";
 };
 
-const passRow = (name: string, total: PassTotal): string =>
-  `| ${name} | ${passCost(total)} | ${String(total.reported)} | ${String(total.unknown)} | ${String(total.notRun)} |`;
+const passRow = (name: string, total: PassTotal, cohortGap: boolean): string =>
+  `| ${name} | ${passCost(total, cohortGap)} | ${String(total.reported)} | ${String(total.unknown)} | ${String(
+    total.notRun,
+  )} |`;
 
 const prRow = (links: ReportLinks, row: PrRow): string => {
   const latest = row.latest;
@@ -113,7 +146,7 @@ const prRow = (links: ReportLinks, row: PrRow): string => {
 
 const describeTrigger = (trigger: AlarmTrigger): string =>
   trigger.kind === "spend"
-    ? `known spend ${usd(trigger.knownSpend)} exceeds ${usd(trigger.threshold)} (\`${ALARM_USD_VARIABLE}\`)`
+    ? `known observed provider-reported spend ${usd(trigger.knownSpend)} exceeds ${usd(trigger.threshold)} (\`${ALARM_USD_VARIABLE}\`)`
     : `${plural(trigger.coverageGapWorkflows, "workflow")} with unreadable review output or incomplete attempt coverage ` +
       `reach the threshold of ${String(trigger.threshold)} (\`${ALARM_UNREPORTED_VARIABLE}\`); ` +
       `${String(trigger.unreportedWorkflows)} of the cohort are class-unreported`;
@@ -123,7 +156,7 @@ const alarmLine = (report: WeeklyReport): string => {
     return `**Alarm:** 🚨 fired — ${report.alarm.triggers.map(describeTrigger).join("; ")}. See the week's alarm issue.`;
   }
   return (
-    `**Alarm:** not fired — known spend ${usd(report.spend.known)} ≤ ${usd(report.thresholds.usd)}, ` +
+    `**Alarm:** not fired — known observed provider-reported spend ${usd(report.spend.known)} ≤ ${usd(report.thresholds.usd)}, ` +
     `${plural(report.coverageGapWorkflows, "coverage-gap workflow")} < ${String(report.thresholds.unreported)}.`
   );
 };
@@ -174,6 +207,8 @@ const thresholdWarning = (warning: WeeklyReport["thresholds"]["warnings"][number
 };
 
 export function renderWeeklyComment(report: WeeklyReport, links: ReportLinks): string {
+  assertRepoUrl(links);
+  const cohortGap = report.unreportedRuns.length > 0 || report.attemptGapRuns.length > 0;
   const lines: string[] = [
     weeklyMarker(report.week),
     `### AI review — ${report.week}`,
@@ -206,9 +241,9 @@ export function renderWeeklyComment(report: WeeklyReport, links: ReportLinks): s
     "",
     "| Pass | Observed provider-reported cost | Runs reported | Runs unknown | Runs not run |",
     "| --- | --- | --- | --- | --- |",
-    passRow("finder", report.byPass.finder),
-    passRow("judge", report.byPass.judge),
-    passRow("impl", report.byPass.impl),
+    passRow("finder", report.byPass.finder, cohortGap),
+    passRow("judge", report.byPass.judge, cohortGap),
+    passRow("impl", report.byPass.impl, cohortGap),
   );
 
   lines.push("", "#### Per PR", "");
@@ -219,7 +254,7 @@ export function renderWeeklyComment(report: WeeklyReport, links: ReportLinks): s
       "Latest = the reviewed run with the greatest original `created_at` (ties: greatest run ID). " +
         "Findings: critical/major/minor/nit · pre-dedup · impl. Label and reaction as they stand now.",
       "",
-      "| PR | Runs | Spend | Latest verdict | Impl | Label | Findings | Owner reaction |",
+      "| PR | Runs | Observed spend | Latest verdict | Impl | Label | Findings | Owner reaction |",
       "| --- | --- | --- | --- | --- | --- | --- | --- |",
       ...report.prs.map((row) => prRow(links, row)),
     );
@@ -276,8 +311,8 @@ export function renderWeeklyComment(report: WeeklyReport, links: ReportLinks): s
   if (report.models.finder.length > 0 || report.models.judge.length > 0) {
     lines.push(
       "",
-      `<sub>finder: ${report.models.finder.map(safeModelId).join(", ") || "—"} · judge: ${
-        report.models.judge.map(safeModelId).join(", ") || "—"
+      `<sub>finder: ${safeModelList(report.models.finder) || "—"} · judge: ${
+        safeModelList(report.models.judge) || "—"
       }</sub>`,
     );
   }
@@ -291,16 +326,29 @@ export function renderWeeklyComment(report: WeeklyReport, links: ReportLinks): s
             .join(", ")}.`,
         ]
       : []),
+    ...(report.invalidRunIds > 0
+      ? [
+          `- ${plural(report.invalidRunIds, "row")} had a run ID that is not a positive integer and could not be counted or linked.`,
+        ]
+      : []),
   ];
   if (warnings.length > 0) lines.push("", "#### Warnings", "", ...warnings);
 
-  return `${lines.join("\n")}\n`;
+  // Whole-comment ceiling, as in render.ts: GitHub rejects a comment over 65,536 characters, which would
+  // fail the publish instead of posting. The week marker leads the comment, so the upsert anchor survives.
+  const comment = `${lines.join("\n")}\n`;
+  if (comment.length <= MAX_COMMENT_CHARS) return comment;
+  return comment.slice(0, MAX_COMMENT_CHARS - TRUNCATION_NOTICE.length) + TRUNCATION_NOTICE;
 }
 
 export function renderAlarmBody(report: WeeklyReport, alarm: AlarmDecision, links: ReportLinks): string {
+  assertRepoUrl(links);
+  const reportCommentUrl = safeReportCommentUrl(links);
   const lines = [
     alarmMarker(report.week),
     `### AI review alarm — ${report.week}`,
+    "",
+    `Cohort: \`review.yml\` workflow runs created ${iso(report.window.start)} – ${iso(report.window.end)}.`,
     "",
     alarm.fired ? "Triggered by:" : "No trigger is currently over threshold.",
     "",
@@ -311,9 +359,9 @@ export function renderAlarmBody(report: WeeklyReport, alarm: AlarmDecision, link
       "class-unreported run",
     )} · ${plural(report.coverageGapWorkflows, "coverage-gap workflow")} · observed as of ${iso(report.observedAt)}.`,
     "",
-    links.reportCommentUrl === undefined
+    reportCommentUrl === undefined
       ? "Details: the week's comment on the AI review weekly report issue."
-      : `Details: [the ${report.week} report](${links.reportCommentUrl}).`,
+      : `Details: [the ${report.week} report](${reportCommentUrl}).`,
     "",
     `> ${COST_CAVEAT}`,
     "",

@@ -9,6 +9,7 @@ import {
   DEFAULT_ALARM_UNREPORTED,
   DEFAULT_ALARM_USD,
   isoWeekWindow,
+  MAX_PASS_COST_USD,
   parseReviewJson,
   parseThresholds,
   previousCompleteWeek,
@@ -299,10 +300,21 @@ describe("runCost", () => {
     const skippedNoCost = runCost(parsed({ finder: 0.01, judge: 0.01, implReview: "skipped", impl: null }));
     expect(skippedNoCost.byPass.impl).toEqual({ state: "unknown" });
     expect(skippedNoCost.partial).toBe(true);
+    const skippedWithCost = runCost(parsed({ finder: 0.01, judge: 0.01, implReview: "skipped", impl: 0.3 }));
+    expect(skippedWithCost.contradictory).toBe(true);
+    expect(skippedWithCost.partial).toBe(true);
+    expect(skippedWithCost.byPass.impl).toEqual({ state: "reported", cost: 0.3 });
+    expect(skippedWithCost.known).toBeCloseTo(0.32, 9);
   });
 
   it("rejects a negative cost as unreadable rather than letting it reduce the sum", () => {
     expect(parseReviewJson(reviewText({ finder: -1, judge: 0.01 }))).toBeUndefined();
+  });
+
+  it("rejects an implausibly large pass cost as unreadable rather than summing it to Infinity", () => {
+    expect(parseReviewJson(reviewText({ finder: 1e308, judge: 1e308 }))).toBeUndefined();
+    expect(parseReviewJson(reviewText({ finder: MAX_PASS_COST_USD + 0.000001, judge: 0.01 }))).toBeUndefined();
+    expect(parseReviewJson(reviewText({ finder: MAX_PASS_COST_USD, judge: 0.01 }))).toBeDefined();
   });
 });
 
@@ -373,6 +385,8 @@ describe("thresholds and alarm", () => {
     });
     // Float noise below the displayed micro-dollar cannot fire it.
     expect(decideAlarm(report(10.0000001, 0), defaults).fired).toBe(false);
+    // A threshold finer than the micro-dollar is compared as displayed, so "exceeds" never reads $10 > $10.
+    expect(decideAlarm(report(9.9999999, 0), { usd: 9.9999996, unreported: 5 }).fired).toBe(false);
   });
 
   it("fires at 5 distinct coverage-gap workflows, not at 4", () => {
@@ -392,6 +406,13 @@ describe("thresholds and alarm", () => {
       { variable: "AI_REVIEW_WEEKLY_ALARM_UNREPORTED", rejected: "-1", fallback: 5 },
     ]);
     expect(parseThresholds({ AI_REVIEW_WEEKLY_ALARM_UNREPORTED: "2.5" }).warnings).toHaveLength(1);
+    // 0 would fire on every week, even an empty one; 1 already means "any gap".
+    expect(parseThresholds({ AI_REVIEW_WEEKLY_ALARM_UNREPORTED: "0" })).toEqual({
+      usd: 10,
+      unreported: 5,
+      warnings: [{ variable: "AI_REVIEW_WEEKLY_ALARM_UNREPORTED", rejected: "0", fallback: 5 }],
+    });
+    expect(parseThresholds({ AI_REVIEW_WEEKLY_ALARM_USD: "0" })).toEqual({ usd: 0, unreported: 5, warnings: [] });
     expect(parseThresholds({ AI_REVIEW_WEEKLY_ALARM_USD: "0x10" }).usd).toBe(10);
     expect(parseThresholds({ AI_REVIEW_WEEKLY_ALARM_USD: "12.5", AI_REVIEW_WEEKLY_ALARM_UNREPORTED: "3" })).toEqual({
       usd: 12.5,
@@ -568,6 +589,22 @@ describe("attempt accounting", () => {
     expect(report.unobservedAttempts).toBe(1);
   });
 
+  it("never lets a duplicate row claiming attempt 1 hide an unknown run_attempt", () => {
+    const unknown = run(4402, "2026-10-21T00:00:00Z", {
+      runAttempt: null,
+      artifact: reviewed({ finder: 0.01, judge: 0.01 }),
+    });
+    for (const order of [
+      [unknown, { ...unknown, runAttempt: 1 }],
+      [{ ...unknown, runAttempt: 1 }, unknown],
+    ]) {
+      const report = aggregateWeek(input(order));
+      expect(report.counts.workflows).toBe(1);
+      expect(report.spend.incomplete).toBe(true);
+      expect(report.coverageGapWorkflows).toBe(1);
+    }
+  });
+
   it("M: stays in W43 after a Monday re-run in W44", () => {
     const M = run(4501, "2026-10-25T23:59:59Z", { runAttempt: 2, artifact: reviewed({ finder: 0.01, judge: 0.01 }) });
     expect(aggregateWeek(input([M])).runs.map((r) => r.id)).toEqual([M.id]);
@@ -579,6 +616,15 @@ describe("attempt accounting", () => {
   it("reports runs whose created_at cannot be read instead of dropping them silently", () => {
     const report = aggregateWeek(input([run(4601, "not a date")]));
     expect(report.invalidCreatedAt).toEqual([4601]);
+  });
+
+  it("counts rows with an invalid run ID instead of merging or linking them", () => {
+    const valid = run(4602, "2026-10-21T00:00:00Z", { artifact: reviewed({ finder: 0.01, judge: 0.01 }) });
+    const invalid = [Number.NaN, Number.NaN, -5, 1.5, 0].map((id) => ({ ...valid, id }));
+    const report = aggregateWeek(input([valid, ...invalid]));
+    expect(report.invalidRunIds).toBe(5);
+    expect(report.runs.map((r) => r.id)).toEqual([4602]);
+    expect(report.spend.known).toBeCloseTo(0.02, 9);
   });
 });
 
