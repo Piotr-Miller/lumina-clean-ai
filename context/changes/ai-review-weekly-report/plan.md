@@ -438,16 +438,16 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Manual
 
-- [ ] 1.5 Owner confirms the rendered sample comment reads at a glance
+- [x] 1.5 Owner confirms the rendered sample comment reads at a glance — accepted at ae7d6fddb99d41c46b4460ddee42b0408d676640
 
 ### Phase 2: GitHub collector, publisher and CLI
 
 #### Automated
 
-- [ ] 2.1 Collector, publisher and CLI tests pass
-- [ ] 2.2 Package typecheck passes
-- [ ] 2.3 Package lint passes
-- [ ] 2.4 Full package suite passes
+- [x] 2.1 Collector, publisher and CLI tests pass
+- [x] 2.2 Package typecheck passes
+- [x] 2.3 Package lint passes
+- [x] 2.4 Full package suite passes
 
 #### Manual
 
