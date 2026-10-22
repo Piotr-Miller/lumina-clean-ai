@@ -61,7 +61,7 @@ const MODEL_ID_PATTERN = /^[A-Za-z0-9._/:-]+$/u;
 const MAX_MODEL_ID_CHARS = 200;
 
 export const TRUNCATION_NOTICE =
-  "\n\n⚠️ comment truncated — the full report is `report.md` in the report workflow run's `ai-review-weekly-report` artifact.\n";
+  "\n\n⚠️ comment truncated — the complete report data is in `report.json` in the report workflow run's `ai-review-weekly-report` artifact.\n";
 const ENUM_PATTERN = /^[a-z_]{1,40}$/u;
 
 export const safeModelId = (id: string): string =>

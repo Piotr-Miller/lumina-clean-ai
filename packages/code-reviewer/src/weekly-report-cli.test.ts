@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_OUT_DIR, parseWeeklyArgs, runWeeklyReportCli, type WeeklyReportIo } from "./weekly-report-cli.js";
 import { apiPr, apiRun, FakeGitHub, REPO, reviewJson, serverError } from "./weekly-report-github-fake.js";
 import { alarmMarker, weeklyMarker } from "./weekly-report-render.js";
+import { MAX_COMMENT_CHARS } from "./render.js";
 
 // The CLI's exit contract against a scripted GitHub (plan phase 2 §3):
 // exit 0 = a report was produced, alarm or not; exit 1 = no runs list, no
@@ -88,6 +89,25 @@ describe("runWeeklyReportCli", () => {
     expect(h.fake.files.has("/out/alarm.md")).toBe(false);
     expect(h.removed).toEqual(["/tmp/dl"]);
     expect(h.logs.at(-1)).toMatch(/^week=2026-W43 workflows=1 known_spend=\$0\.333040 .*alarm=not fired → https:\/\//u);
+  });
+
+  it("keeps overflow runs in the JSON artifact named by the truncated comment", async () => {
+    const h = harness();
+    h.fake.runs = Array.from({ length: 2000 }, (_, n) =>
+      apiRun({ id: 600_000 + n, conclusion: "failure", pull_requests: [apiPr(300)] }),
+    );
+    expect(await run(h, BASE_ARGS)).toBe(0);
+
+    const comment = h.fake.allComments(tracking(h))[0]?.body ?? "";
+    expect(comment.startsWith(weeklyMarker("2026-W43"))).toBe(true);
+    expect(comment.length).toBeLessThanOrEqual(MAX_COMMENT_CHARS);
+    expect(comment).toContain("comment truncated — the complete report data is in `report.json`");
+    expect(comment).not.toContain("/actions/runs/601999");
+    expect(h.fake.files.get("/out/report.md")).toBe(comment);
+    const data: unknown = JSON.parse(h.fake.files.get("/out/report.json") ?? "{}");
+    expect(data).toHaveProperty("counts.workflows", 2000);
+    expect(data).toHaveProperty("runs.length", 2000);
+    expect(data).toHaveProperty("runs.1999.id", 601999);
   });
 
   it("makes zero write calls under --dry-run and still writes the report and alarm files", async () => {

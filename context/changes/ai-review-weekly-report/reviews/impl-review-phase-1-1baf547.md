@@ -132,3 +132,48 @@
 - Mutation check skipped: none of the test-plan §2 risks (#1–#6, all app/Supabase pipeline) covers `packages/code-reviewer`.
 - Lessons: 35 of 39 entries apply to impl-review by their `Applies to` line. Four shaped this review: silent degradation, a guard metric that only exists on success, a check that cannot say what it found, and a comment that justifies a defect. The rest concern the Supabase/app runtime.
 - Phase 2 dependencies recorded by this review: the collector must emit one row per workflow ID (F4b) and deduplicate PR candidates by number (F7), and the CLI must pass validated GitHub URLs (F6).
+
+## Re-review 2 (2026-10-22)
+
+- **Scope**: Phase 1 (phases 1–4)
+- **Session**: fresh
+- **Base**: 1baf54749bc6829956c94cb0f4734b534153719a (previous round)
+- **Head**: 94310b509de83f2cf51bc8db5d13ad2e88b2d31e
+- **Worktree**: included(context/changes/ai-review-weekly-report/plan.md) — only Phase 2 Progress SHA write-back; no source edits
+- **Checks ran at**: 94310b509de83f2cf51bc8db5d13ad2e88b2d31e (current HEAD)
+- **Manual acceptance**: 1 of 1 confirmed — 1.5 current, accepted at ae7d6fddb99d41c46b4460ddee42b0408d676640
+- **Verdict**: APPROVED
+- **Findings**: 0 critical, 0 warnings, 1 observation
+- **Closes**: F1, F2, F3, F4, F6, F7. F5's cap and model deduplication verified; its fallback claim has a regression tracked as F8.
+
+### Verdicts
+
+| Dimension           | Verdict |
+| ------------------- | ------- |
+| Plan Adherence      | PASS    |
+| Scope Discipline    | PASS    |
+| Safety & Quality    | WARNING |
+| Architecture        | PASS    |
+| Pattern Consistency | PASS    |
+| Success Criteria    | PASS    |
+
+### F8 — Truncation directs readers to an equally truncated Markdown artifact
+
+- **Severity**: 🔍 OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Safety & Quality
+- **Location**: packages/code-reviewer/src/weekly-report-render.ts:63
+- **Detail**: F5's fix adds a notice promising the full report in `report.md`, but `renderWeeklyComment` discards overflow and returns only the capped string (lines 339–341). The current caller writes that exact string to `report.md` (`weekly-report-cli.ts:142–145`). A 2,000-failed-run fixture produces 60,000 characters, includes the notice and omits the last run's link from both destinations. The complete structured report is retained in `report.json` (CLI line 147). The cap preserves publication and the week marker, but its advertised recovery path sends readers to another truncated copy. This is a regression in F5's new fallback, with the Phase 2 caller cited as supporting evidence rather than separately reviewed scope. Today's recorded volume is far below this overflow case.
+- **Fix**: Point the notice to the complete data in `report.json`, following the existing sticky renderer's JSON-artifact fallback convention, and verify that an overflow report retains its final run in that named artifact.
+- **Decision**: FIXED — Fix now: notice points to complete data in `report.json`; the CLI overflow regression check verifies the published comment is capped and omits the final run while that JSON artifact retains all 2,000 runs, including ID 601999. Siblings: `render.ts` n/a (already points to complete `review.json` data); `renderAlarmBody` n/a (bounded body, no truncation fallback); CLI publish-failure message n/a (correctly names the rendered Markdown report, does not promise unabridged data); reopened: 1.5.
+
+- **Notes**:
+  - **Bookkeeping in diff**: context/changes/ai-review-weekly-report/change.md, context/changes/ai-review-weekly-report/plan.md, context/changes/ai-review-weekly-report/reviews/impl-review-phase-1-1baf547.md.
+  - Incremental phase surface: `weekly-report.ts`, `weekly-report.test.ts`, `weekly-report-render.ts`, `weekly-report-render.test.ts`. Phase 2 files excluded from this phase review: `packages/code-reviewer/package.json`, `src/run-weekly-report.ts`, `src/weekly-report-cli.ts`, `src/weekly-report-cli.test.ts`, `src/weekly-report-github.ts`, `src/weekly-report-github.test.ts`, `src/weekly-report-github-fake.ts` (all source paths under that package). These are planned Phase 2 work, not scope creep. No local changes excluded.
+  - F1: per-pass reported amounts inherit unreported/attempt gaps; tests pin both plus the gap-free case. F2: observed-spend labels and alarm cohort dates are present. F3: costs are bounded at $1,000/pass and alarm/display rounding agrees. F4: zero coverage threshold falls back with a warning, unknown duplicate attempts stay unknown in either order, and negative-cost policy is documented in the phase addendum. F6: repository/comment links and run IDs are validated. F7: the impl verdict assertion pins `REJECTED 1`, and skipped impl with numeric cost retains its cost while marking the artifact partial.
+  - All applicable phase gates ran in `packages/code-reviewer`, with stdout/stderr captured separately and exit status checked directly: 1.1 `npx vitest run src/weekly-report.test.ts src/weekly-report-render.test.ts` exit 0 — `Test Files 2 passed (2); Tests 79 passed (79)`; 1.2 `npm run typecheck` exit 0 — `tsc --noEmit`; 1.3 `npm run lint` exit 0 — `eslint .`; 1.4 `npm test` exit 0 — `Test Files 25 passed (25); Tests 865 passed (865)`. Logs: `/tmp/ai-review-phase1-checks.ryKXyC/1.1.log` through `1.4.log` (session-local evidence).
+  - `acceptance-state.sh` exited 0. Manual 1.5 is current; the remaining pending Manual rows belong to later phases and are outside this review. No n/a or paid rows in Phase 1, and no acceptance/Progress edits made by this review.
+  - Lessons: 35 of 39 entries apply by their `Applies to` declarations and were read whole. Silent degradation, guard observability, diagnostic clarity and stale pointers were relevant to this reporting change. Two independent read-only review passes agreed on F8; no other substantive incremental regression found.
+  - Mutation check skipped: test-plan §2 risks #1–#6 and its Risk Response Guidance concern the app/Supabase Cloud AI pipeline; none maps to this weekly-report core.
+  - Phase review leaves `change.md.status` as `implementing`; its `updated` stamp is already 2026-10-22. Report and change stamp are carried for a later workflow commit. No code changed or commits made.
+  - Triage 2026-10-22: F8 fixed after the owner chose Fix now. Post-fix `npm run typecheck`, `npm run lint`, `npm test` (25 files, 866 tests), and Prettier check on the two changed TypeScript files all exited 0. The first lint run caught an unsafe asymmetric-matcher type in the added test; the final test uses an `unknown` JSON value and property assertions. Logs: `/tmp/ai-review-f8-checks.zlykrZ/*-final.log`. The acceptance script confirmed 1.5 stale through the edited renderer, so it was reopened with its original title and no suffix; a second evaluation reports it pending. Earlier review/acceptance evidence above remains historical. Fix and acceptance follow-ups are recorded in `follow-ups/review-fixes.md`; no commit made.
