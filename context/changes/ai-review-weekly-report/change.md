@@ -1,0 +1,26 @@
+---
+change_id: ai-review-weekly-report
+title: "Weekly report of advisory AI review cost and owner reactions"
+status: implementing
+created: 2026-10-21
+updated: 2026-10-22
+archived_at: null
+---
+
+## Notes
+
+2026-10-22: Plan-review triage complete: F1–F6 fixed (F4 Fix A), verdict after fixes SOUND. Plan/Progress structure and declared paths verified; implementation and all manual acceptance remain pending. See reviews/plan-review.md for the original review and decision history.
+
+2026-10-22: Plan review F6 accepted: latest reviewed workflow is selected by greatest original created_at, then greatest numeric run ID, independent of input order. Verdict and finding counts use the same snapshot; tests cover tied timestamps, numeric ordering and timestamp precedence.
+
+2026-10-22: Plan review F5 accepted: no-plan/skipped impl is not run; missing executed-pass cost is unknown/partial. All amounts are observed provider-reported cost with a per-request completeness caveat. Tests cover applicability, missing telemetry and explicit zero; F4's coverage-alarm definition is retained.
+
+2026-10-22: Plan review F4 Fix A accepted: one observed snapshot per workflow ID, week by original created_at, explicit observation timestamp and unobserved earlier attempts. The existing coverage threshold counts the union of unreadable-review and incomplete/unknown-attempt workflow IDs once each; no per-attempt reconstruction or automatic historical refresh.
+
+2026-10-21: Plan review F3 accepted: the workflow uses a Bash argument array and adds --dry-run only for the literal true value. Phase 3 verification tests the actual YAML command with a stub npm; existing Progress titles and IDs stay unchanged.
+
+2026-10-21: Plan review F1 accepted: no-review requires positive skip evidence from the same attempt; missing artifacts without that proof remain unreported.
+
+2026-10-21: Plan review F2 accepted: resolve PR identity through a unique repository/ref match with a commit-associated PR fallback; unmapped runs retain weekly data and explicitly incomplete PR coverage. Baseline run 39653424585 resolves to closed PR #300 despite an advanced current head SHA.
+
+Add a scheduled weekly GitHub Actions job that monitors the advisory ai-review: per-PR and weekly cost (finder/judge/impl) read from each run's review.json in the ai-review-output artifact (14-day retention), the verdict / ai-cr label mix and finding counts, and a tally of the owner's 👍/👎 reactions on the AI review comments as the quality proxy. Report as a comment on one pinned "AI review weekly report" tracking issue; a week over a spend threshold opens a separate alarm issue. Advisory only, never a gate; no OpenRouter call, $0 to run. Owner decision 2026-10-21 after ai-review-reenable.
