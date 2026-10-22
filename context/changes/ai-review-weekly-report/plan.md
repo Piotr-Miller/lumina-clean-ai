@@ -438,7 +438,7 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Manual
 
-- [ ] 1.5 Owner confirms the rendered sample comment reads at a glance
+- [x] 1.5 Owner confirms the rendered sample comment reads at a glance — accepted at 31bb392d3a22e0bb975974bc9f763400507eb7a1
 
 ### Phase 2: GitHub collector, publisher and CLI
 
@@ -451,7 +451,7 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Manual
 
-- [ ] 2.5 Owner confirms the only GitHub writes are labels, tracking issue, comments and alarm issues
+- [x] 2.5 Owner confirms the only GitHub writes are labels, tracking issue, comments and alarm issues — accepted at 31bb392d3a22e0bb975974bc9f763400507eb7a1
 
 ### Phase 3: Workflow, pointers and local dry run
 
