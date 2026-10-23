@@ -147,6 +147,7 @@ export async function runWeeklyReportCli(
       io.writeFile(join(args.outDir, "report.json"), `${JSON.stringify({ ...report, published }, null, 2)}\n`);
     };
     writeJson();
+    if (report.alarm.fired) io.writeFile(join(args.outDir, "alarm.md"), renderAlarmBody(report, report.alarm, links));
     if (env.GITHUB_STEP_SUMMARY) io.appendFile(env.GITHUB_STEP_SUMMARY, `\n${comment}`);
     // The report also goes to the log: a reader of the run should not need to download the artifact.
     io.log(comment);
@@ -157,7 +158,6 @@ export async function runWeeklyReportCli(
       `alarm=${report.alarm.fired ? "fired" : "not fired"}`;
 
     if (args.dryRun) {
-      if (report.alarm.fired) io.writeFile(join(args.outDir, "alarm.md"), renderAlarmBody(report, report.alarm, links));
       io.log(`${summary} → ${args.outDir}/ (dry run: nothing was posted)`);
       return 0;
     }

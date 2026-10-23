@@ -159,15 +159,18 @@ describe("runWeeklyReportCli", () => {
     expect(h.removed).toEqual(["/tmp/dl"]);
   });
 
-  it("exits 1 with the way out when publishing fails, keeping the rendered report", async () => {
+  it("exits 1 with the way out when publishing fails, keeping the rendered report and firing alarm", async () => {
     const h = harness();
     h.fake.failures.set(`POST repos/${REPO}/issues`, serverError);
-    expect(await run(h, BASE_ARGS)).toBe(1);
+    expect(await run(h, BASE_ARGS, { AI_REVIEW_WEEKLY_ALARM_USD: "0.1" })).toBe(1);
     const message = h.errors.join("\n");
     expect(message).toContain(`could not publish — POST repos/${REPO}/issues failed (gh exit 1)`);
     expect(message).toContain("/out/report.md");
     expect(message).toContain("idempotent");
     expect(h.fake.files.has("/out/report.md")).toBe(true);
+    expect(JSON.parse(h.fake.files.get("/out/report.json") ?? "{}")).toHaveProperty("alarm.fired", true);
+    expect(h.fake.files.get("/out/alarm.md")?.startsWith(alarmMarker("2026-W43"))).toBe(true);
+    expect(h.fake.files.get("/out/alarm.md")).toContain("$0.333040");
   });
 
   it.each(["2026-W54", "2026-43", "W43"])(
