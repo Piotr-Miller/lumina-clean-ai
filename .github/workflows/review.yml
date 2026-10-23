@@ -329,4 +329,6 @@ jobs:
           path: packages/code-reviewer/.review-out/
           include-hidden-files: true
           if-no-files-found: ignore
+          # ai-review-weekly-report.yml reads this artifact up to 7 days after
+          # the run, so retention-days must stay >= 8 or that report loses runs.
           retention-days: 14
