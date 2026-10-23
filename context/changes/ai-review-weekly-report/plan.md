@@ -471,8 +471,8 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Automated
 
-- [x] 4.1 (paid) First live dispatch for W43
-- [x] 4.2 (paid) Second dispatch for the same week is idempotent
+- [x] 4.1 (paid) First live dispatch for W43 — ff0c1ef
+- [x] 4.2 (paid) Second dispatch for the same week is idempotent — ff0c1ef
 
 #### Manual
 

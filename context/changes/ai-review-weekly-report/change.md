@@ -1,13 +1,15 @@
 ---
 change_id: ai-review-weekly-report
 title: "Weekly report of advisory AI review cost and owner reactions"
-status: implementing
+status: implemented
 created: 2026-10-21
 updated: 2026-10-23
 archived_at: null
 ---
 
 ## Notes
+
+2026-10-23: PR #305 rebase-merged (master eecffa4); Progress SHAs of phases 1–3 repointed to the master commits (1baf547→ddce5c6, 94310b5→786023c, 1f13e6f→6e6df94; identical patch IDs). Manual rows 1.5, 2.5, 3.5 and 3.6 now read unverifiable (accepted revisions not in master history) and need re-confirmation at a master revision. Phase 4: first live dispatches ran (tracking issue #306, comment 6374372819, idempotent, no alarm); see first-run.md. 4.3 and 4.4 pending.
 
 2026-10-22: reopened 1.5 — was accepted at ae7d6fddb99d41c46b4460ddee42b0408d676640; changed: packages/code-reviewer/src/weekly-report-render.ts (impl-review phase 1, F8 fix: truncation notice points to complete report.json data)
 
