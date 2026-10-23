@@ -431,10 +431,10 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Automated
 
-- [x] 1.1 New core tests pass — 1baf547
-- [x] 1.2 Package typecheck passes — 1baf547
-- [x] 1.3 Package lint passes — 1baf547
-- [x] 1.4 Full package suite passes — 1baf547
+- [x] 1.1 New core tests pass — ddce5c6
+- [x] 1.2 Package typecheck passes — ddce5c6
+- [x] 1.3 Package lint passes — ddce5c6
+- [x] 1.4 Full package suite passes — ddce5c6
 
 #### Manual
 
@@ -444,10 +444,10 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Automated
 
-- [x] 2.1 Collector, publisher and CLI tests pass — 94310b5
-- [x] 2.2 Package typecheck passes — 94310b5
-- [x] 2.3 Package lint passes — 94310b5
-- [x] 2.4 Full package suite passes — 94310b5
+- [x] 2.1 Collector, publisher and CLI tests pass — 786023c
+- [x] 2.2 Package typecheck passes — 786023c
+- [x] 2.3 Package lint passes — 786023c
+- [x] 2.4 Full package suite passes — 786023c
 
 #### Manual
 
@@ -457,10 +457,10 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Automated
 
-- [x] 3.1 Workflow parses as YAML with expected triggers and permissions — 1f13e6f
-- [x] 3.2 Formatting holds for the touched files — 1f13e6f
-- [x] 3.3 Full package suite still passes — 1f13e6f
-- [x] 3.4 Local dry run produces a W43 report containing run 39653424585 at $0.333040 — 1f13e6f
+- [x] 3.1 Workflow parses as YAML with expected triggers and permissions — 6e6df94
+- [x] 3.2 Formatting holds for the touched files — 6e6df94
+- [x] 3.3 Full package suite still passes — 6e6df94
+- [x] 3.4 Local dry run produces a W43 report containing run 39653424585 at $0.333040 — 6e6df94
 
 #### Manual
 
@@ -471,8 +471,8 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Automated
 
-- [ ] 4.1 (paid) First live dispatch for W43
-- [ ] 4.2 (paid) Second dispatch for the same week is idempotent
+- [x] 4.1 (paid) First live dispatch for W43
+- [x] 4.2 (paid) Second dispatch for the same week is idempotent
 
 #### Manual
 
