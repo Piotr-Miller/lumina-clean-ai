@@ -457,10 +457,10 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Automated
 
-- [ ] 3.1 Workflow parses as YAML with expected triggers and permissions
-- [ ] 3.2 Formatting holds for the touched files
-- [ ] 3.3 Full package suite still passes
-- [ ] 3.4 Local dry run produces a W43 report containing run 39653424585 at $0.333040
+- [x] 3.1 Workflow parses as YAML with expected triggers and permissions
+- [x] 3.2 Formatting holds for the touched files
+- [x] 3.3 Full package suite still passes
+- [x] 3.4 Local dry run produces a W43 report containing run 39653424585 at $0.333040
 
 #### Manual
 

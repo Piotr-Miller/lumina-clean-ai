@@ -1,0 +1,99 @@
+# Weekly report on the advisory AI review (review.yml): observed
+# provider-reported spend per workflow run, per PR and per week (finder /
+# judge / impl), the verdict and ai-cr:* label mix, finding counts, and the
+# owner's 👍/👎 on each sticky review comment. Posted as one comment per ISO
+# week on the "AI review weekly report" issue (label ai-review-report); a week
+# over a threshold also gets an ai-review-alarm issue.
+#
+# ADVISORY and $0: no OpenRouter call, no secret beyond GITHUB_TOKEN, not a
+# required check and NEVER in deploy.needs — a red run or a fired alarm blocks
+# nothing. It reads review.yml's ai-review-output artifact, whose 14-day
+# retention must stay >= 8 days (see the upload step there).
+#
+# GitHub disables scheduled workflows in a public repository after 60 days
+# without repository activity. A silent Monday means "check whether the
+# schedule was disabled" (Actions tab), not "nothing happened"; re-enable it
+# there, then re-run any missed week through workflow_dispatch (input `week`).
+
+name: AI review weekly report
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      week:
+        description: "ISO week to report, YYYY-Www (empty = the last complete week)"
+        type: string
+        required: false
+      dry-run:
+        description: "Collect and render only; post nothing"
+        type: boolean
+        default: false
+
+permissions: {}
+
+# One report at a time, never cancelled: a cancelled run could stop between
+# the week comment and its alarm issue.
+concurrency:
+  group: ai-review-weekly-report
+  cancel-in-progress: false
+
+jobs:
+  weekly-report:
+    if: github.event.repository.fork == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+      pull-requests: read
+    defaults:
+      run:
+        working-directory: packages/code-reviewer
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: packages/code-reviewer/package-lock.json
+      - run: npm ci
+
+      # Every input arrives through env:, never interpolated into run:. The
+      # dispatch boolean reaches the shell as the string "true"/"false", and a
+      # schedule run has no inputs at all, so only the literal "true" may add
+      # --dry-run — anything else must leave publishing on. Pinned, against
+      # this exact block, by src/weekly-report-workflow.test.ts. The CLI owns
+      # error handling: exit 1 (runs not listable, or publish failed) names
+      # the failing call and fails this step red.
+      - name: Generate weekly report
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          WEEK: ${{ inputs.week }}
+          DRY_RUN: ${{ inputs.dry-run }}
+          AI_REVIEW_WEEKLY_ALARM_USD: ${{ vars.AI_REVIEW_WEEKLY_ALARM_USD }}
+          AI_REVIEW_WEEKLY_ALARM_UNREPORTED: ${{ vars.AI_REVIEW_WEEKLY_ALARM_UNREPORTED }}
+        run: |
+          args=(--repo "$GITHUB_REPOSITORY" --owner "$OWNER"
+                --out-dir "$RUNNER_TEMP/weekly-report")
+          if [[ -n "${WEEK:-}" ]]; then
+            args+=(--week "$WEEK")
+          fi
+          if [[ "${DRY_RUN:-}" == "true" ]]; then
+            args+=(--dry-run)
+          fi
+          npm run weekly-report -- "${args[@]}"
+
+      # always(): a failed publish still leaves report.md / report.json (and
+      # alarm.md) behind, and those are what the owner needs to see why.
+      - name: Upload weekly report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ai-review-weekly-report
+          path: ${{ runner.temp }}/weekly-report
+          retention-days: 90
