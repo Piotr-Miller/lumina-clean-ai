@@ -185,19 +185,19 @@ There is nothing to migrate. Old `review.json` artifacts stay readable: their im
 
 #### Automated
 
-- [x] 1.1 Core and CLI tests pass, including the new serialized-report.json assertions
-- [x] 1.2 Package typecheck passes, so the subset pin still holds
-- [x] 1.3 Package lint passes
-- [x] 1.4 Full package suite passes
-- [x] 1.5 Formatting holds for the package sources
-- [x] 1.6 A local dry run's report.json has no impl finding keys
+- [x] 1.1 Core and CLI tests pass, including the new serialized-report.json assertions — 2f4f3c3
+- [x] 1.2 Package typecheck passes, so the subset pin still holds — 2f4f3c3
+- [x] 1.3 Package lint passes — 2f4f3c3
+- [x] 1.4 Full package suite passes — 2f4f3c3
+- [x] 1.5 Formatting holds for the package sources — 2f4f3c3
+- [x] 1.6 A local dry run's report.json has no impl finding keys — 2f4f3c3
 
 ### Phase 2: Never merge invalid-ID rows in the collector
 
 #### Automated
 
-- [ ] 2.1 Collector tests pass, including invalid-ID row counting and the unchanged alarm count
-- [ ] 2.2 Package typecheck passes
-- [ ] 2.3 Package lint passes
-- [ ] 2.4 Full package suite passes
-- [ ] 2.5 Formatting holds for the package sources
+- [x] 2.1 Collector tests pass, including invalid-ID row counting and the unchanged alarm count
+- [x] 2.2 Package typecheck passes
+- [x] 2.3 Package lint passes
+- [x] 2.4 Full package suite passes
+- [x] 2.5 Formatting holds for the package sources

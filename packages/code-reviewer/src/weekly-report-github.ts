@@ -196,6 +196,9 @@ async function listRuns(gh: GhRunner, repo: string, window: WeekWindow): Promise
   return runs;
 }
 
+/** The core's definition: only a positive safe integer identifies a run; every other row is invalid. */
+const validRunId = (id: number): boolean => Number.isSafeInteger(id) && id > 0;
+
 const positiveAttempt = (value: number | null): number | null =>
   value !== null && Number.isSafeInteger(value) && value >= 1 ? value : null;
 
@@ -422,8 +425,11 @@ export async function collectWeek({ gh, repo, window, downloadDir, readFile }: C
   const listed = await listRuns(gh, repo, window);
   const seen = new Set<number>();
   const runs = listed.filter((run) => {
-    if (seen.has(run.id)) return false;
-    seen.add(run.id);
+    // Only a valid ID deduplicates: invalid rows (NaN, 0, …) would merge in the Set, so each reaches the core.
+    if (validRunId(run.id)) {
+      if (seen.has(run.id)) return false;
+      seen.add(run.id);
+    }
     const created = Date.parse(run.created_at);
     // An unreadable created_at reaches the core, which names it in the report's warnings.
     return Number.isNaN(created) || (created >= window.start.getTime() && created < window.end.getTime());
@@ -443,7 +449,7 @@ export async function collectWeek({ gh, repo, window, downloadDir, readFile }: C
       status: run.status,
       conclusion: run.conclusion,
     };
-    if (Number.isNaN(Date.parse(run.created_at)) || !Number.isSafeInteger(run.id) || run.id <= 0) {
+    if (Number.isNaN(Date.parse(run.created_at)) || !validRunId(run.id)) {
       raw.push({
         ...base,
         artifact: { kind: "absent" },
