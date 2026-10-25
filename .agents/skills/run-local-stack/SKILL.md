@@ -1,6 +1,6 @@
 ---
 name: run-local-stack
-description: "Start the LuminaClean AI app locally — Astro dev server on :4321 plus the local Supabase stack — and drive it in a browser to confirm a change really works. Carries the host-specific landmines this repo needs: on Linux + rootless podman, the SELinux relabel that stops Postgres crash-looping on `FATAL: invalid secret key` plus the `-x edge-runtime` exclusion for the podman volume double-create; on Windows + Docker Desktop, the HNS port-exclusion range that makes 54321+ unbindable. Use when asked to run, start, serve, or screenshot the app locally, when `npx supabase start` fails or hangs, when Postgres restart-loops under podman, or when a port bind is refused as \"forbidden by its access permissions\"."
+description: "Start the LuminaClean AI app locally — Astro dev server on :4321 plus the local Supabase stack — and drive it in a browser to confirm a change really works. Carries the host-specific landmines this repo needs: on Linux + rootless podman, the SELinux relabel that stops Postgres crash-looping on `FATAL: invalid secret key`, the `-x edge-runtime` exclusion and `stop --no-backup` for the podman volume double-create, and the recursive relabel `supabase functions serve` needs; on Windows + Docker Desktop, the HNS port-exclusion range that makes 54321+ unbindable. Use when asked to run, start, serve, or screenshot the app locally, when `npx supabase start` fails or hangs, when Postgres restart-loops under podman, or when a port bind is refused as \"forbidden by its access permissions\"."
 metadata:
   tags: run-app, local-stack, supabase, podman, selinux, fedora, windows, docker-desktop, playwright, luminaclean
 ---
@@ -8,7 +8,8 @@ metadata:
 # Run the local stack
 
 Verified end-to-end on Fedora 7.1 + rootless **podman 5.8.4** (where `docker` is the
-podman-docker shim), Node v24.19.0, supabase CLI 2.111.0 — 2026-08-27.
+podman-docker shim), Node v24.19.0, supabase CLI 2.111.0 — 2026-08-27. The kept-volume case of
+landmine 2 and landmine 3 (`functions serve`) were hit and fixed on the same host on 2026-10-25.
 
 The Windows section below is recorded from a session that hit and fixed it on
 Windows 11 + Docker Desktop (2026-08-03); it has not been re-verified since.
@@ -38,9 +39,9 @@ in `AGENTS.md` §Environment and `context/foundation/test-plan.md` §6.3.
 
 Then **drive it** — a served page is not a working page. See "Drive it" below.
 
-## Linux + rootless podman: two landmines
+## Linux + rootless podman: three landmines
 
-Both cost real time to rediscover. Neither is a Supabase bug. On Docker-proper hosts neither
+All three cost real time to rediscover. None is a Supabase bug. On Docker-proper hosts none
 occurs — skip this whole section.
 
 ### 1. SELinux → Postgres crash-loops on `invalid secret key`
@@ -93,14 +94,42 @@ idempotent; podman returns a hard error. It is deterministic — retrying reprod
 npx supabase start -x edge-runtime
 ```
 
-**What you give up.** `edge-runtime` serves the `enhance` Edge Function, so the Cloud-AI pipeline
-cannot complete locally: the engine toggle appears and jobs enqueue, but nothing serves `/start`.
-That path needs a real `REPLICATE_API_TOKEN` anyway, so it is not locally reachable regardless — see
-`context/foundation/cloud-live-smoke.md` for the manual live smoke. Everything else (auth, DB, RLS,
-storage, Realtime, Studio) runs.
+**The same error hits any volume a previous run kept.** A plain `npx supabase stop` keeps the
+`db`, `storage` and `edge_runtime` volumes (`"backup":true`), and the next start dies on
+`volume with name supabase_db_<project> already exists`. `-x edge-runtime` does not help here. On
+podman the local database therefore does not survive a stop/start cycle: stop with
+`npx supabase stop --no-backup` and expect to empty the volumes (see "Cleaning up"), or remove
+them before the next start. Either way the local DB is gone, so confirm with the user first.
+
+**What you give up.** `-x edge-runtime` drops only the runtime `start` would serve functions from.
+`npx supabase functions serve enhance --env-file supabase/functions/.env` still works under
+podman once landmine 3 is fixed, and it runs the stubbed Cloud-AI pipeline the E2E suite needs
+(`context/foundation/test-plan.md` §6.3; green on this host 2026-10-25). The live pipeline needs a
+real `REPLICATE_API_TOKEN` and is a manual smoke anyway — see
+`context/foundation/cloud-live-smoke.md`.
 
 This cost is the reason the flag is podman-only. On Docker you keep the runtime — do not pay it
 for nothing.
+
+### 3. SELinux → `functions serve` cannot read the function
+
+**Symptom.** `functions serve` prints `Serving functions on …/enhance`, but every request returns
+HTTP 503 and the log repeats `worker boot error: failed to bootstrap runtime: failed to determine
+entrypoint`. After relabelling `supabase/functions` alone, it becomes `failed to create the graph:
+Permission denied (os error 13)`.
+
+**Cause.** Landmine 1's `chcon` relabels the `supabase` directory itself, and only files created
+later inherit the type. The function files that already exist stay `user_home_t`. `enhance` also
+imports `../../../src/…` and `src/types.ts`, and the CLI bind-mounts those files too.
+
+**Fix** — relabel both trees recursively, then restart the serve:
+
+```bash
+chcon -R -t container_file_t supabase/functions src
+```
+
+Revert with `restorecon -R supabase/ src/`. Confirm with `ls -Z supabase/functions/enhance/index.ts
+src/types.ts`. A healthy endpoint answers a bare GET with HTTP 404.
 
 ## Windows (Docker Desktop): the port-exclusion landmine
 
@@ -148,6 +177,9 @@ parent. See the `npm run build` entry in `AGENTS.md` §Commands; verify a build 
 `dist/client/_astro/`, never by exit code.
 
 ## Cleaning up a failed start
+
+**Stopping `functions serve` from an agent shell:** kill it by PID. `pkill -f 'functions serve'`
+also matches the agent's own shell command line and kills that shell (exit 144).
 
 **podman.** `npx supabase stop --no-backup` fails with `failed to prune volumes`, leaving stale
 volumes that abort the *next* start. Remove them by hand:
