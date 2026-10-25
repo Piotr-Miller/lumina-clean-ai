@@ -432,7 +432,7 @@ None. No schema, API or stored-data change. Jobs already created keep their side
 
 #### Manual
 
-- [x] 1.6 The owner reads the failure copy and confirms its wording — accepted at 65a8548fca099e4fa7bc80baddf94738247f45e4
+- [x] 1.6 The owner reads the failure copy and confirms its wording — accepted at cd5a05dd465bdf0091875a27181a91a14c7c23d0
 
 ### Phase 2: Prove the model input in a real browser
 
@@ -445,19 +445,19 @@ None. No schema, API or stored-data change. Jobs already created keep their side
 
 #### Manual
 
-- [x] 2.5 Local S17-06 Cloud submit reaches the processing state with no error — accepted at 35dbbd5a1ced0103d3804cc6f33a4220d468afb8
+- [x] 2.5 Local S17-06 Cloud submit reaches the processing state with no error — accepted at cd5a05dd465bdf0091875a27181a91a14c7c23d0
 
 ### Phase 3: Ship and accept in production
 
 #### Automated
 
-- [x] 3.1 PR checks green and master deploy succeeds — ccecd53
-- [x] 3.2 The deployed client bundle contains the new copy — ccecd53
-- [x] 3.3 No stale "outstanding" pointer remains — ccecd53
-- [x] 3.4 Formatting passes — ccecd53
+- [x] 3.1 PR checks green and master deploy succeeds — 29057a0
+- [x] 3.2 The deployed client bundle contains the new copy — 29057a0
+- [x] 3.3 No stale "outstanding" pointer remains — 29057a0
+- [x] 3.4 Formatting passes — 29057a0
 
 #### Manual
 
-- [ ] 3.5 S17-06 upright in BEFORE, AFTER and download on production
-- [ ] 3.6 Orientation-1 control unchanged on production
-- [ ] 3.7 Acceptance record names the post-merge master SHA, check date and both job ids
+- [x] 3.5 S17-06 upright in BEFORE, AFTER and download on production — accepted at cd5a05dd465bdf0091875a27181a91a14c7c23d0
+- [x] 3.6 Orientation-1 control unchanged on production — accepted at cd5a05dd465bdf0091875a27181a91a14c7c23d0
+- [x] 3.7 Acceptance record names the post-merge master SHA, check date and both job ids — accepted at cd5a05dd465bdf0091875a27181a91a14c7c23d0
