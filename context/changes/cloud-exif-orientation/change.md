@@ -1,7 +1,7 @@
 ---
 change_id: cloud-exif-orientation
 title: "Cloud AI returns EXIF-rotated phone photos sideways"
-status: implementing
+status: implemented
 created: 2026-09-27
 updated: 2026-10-25
 archived_at: null
