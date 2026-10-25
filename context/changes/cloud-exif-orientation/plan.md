@@ -445,7 +445,7 @@ None. No schema, API or stored-data change. Jobs already created keep their side
 
 #### Manual
 
-- [ ] 2.5 Local S17-06 Cloud submit reaches the processing state with no error
+- [x] 2.5 Local S17-06 Cloud submit reaches the processing state with no error — accepted at 35dbbd5a1ced0103d3804cc6f33a4220d468afb8
 
 ### Phase 3: Ship and accept in production
 
