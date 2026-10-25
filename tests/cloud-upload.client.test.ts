@@ -298,4 +298,20 @@ describe("submitCloudJob preparation (before create-job)", () => {
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("may come back rotated or mirrored"));
   });
+
+  it.each([0, 3])(
+    "preserves the original JPEG and warns once for orientation component count %i",
+    async (orientationCount) => {
+      const fetchMock = okFetch();
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      const file = jpegFile(jpegBytes(exifApp1(tiff({ orientation: 6, orientationCount }))));
+
+      await submitCloudJob(file);
+
+      expect(putInit(fetchMock).body).toBe(file);
+      expect(redrawUprightJpeg).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("may come back rotated or mirrored"));
+    },
+  );
 });

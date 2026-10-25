@@ -58,6 +58,10 @@ function parseTiffOrientation(tiff: Uint8Array): OrientationDetection {
     const entry = ifd0 + 2 + i * 12;
     if (view.getUint16(entry, le) !== ORIENTATION_TAG) continue;
     const type = view.getUint16(entry + 2, le);
+    const components = view.getUint32(entry + 4, le);
+    if (components !== 1) {
+      return { kind: "unreadable", reason: `orientation tag has component count ${components}` };
+    }
     if (type === TYPE_SHORT) return { kind: "orientation", value: view.getUint16(entry + 8, le) };
     if (type === TYPE_LONG) return { kind: "orientation", value: view.getUint32(entry + 8, le) };
     return { kind: "unreadable", reason: `orientation tag has field type ${type}` };
