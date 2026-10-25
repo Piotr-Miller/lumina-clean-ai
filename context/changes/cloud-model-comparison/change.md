@@ -28,7 +28,8 @@ Fixed inputs:
 Decided in this change, not before: the candidate models and the comparison protocol.
 
 Out of scope: S-13 (a separate Premium proposal) and `cloud-exif-orientation` (a separate
-change, but a precondition for any in-app run of phone photos).
+change, live in production since 2026-10-25; see
+`context/changes/cloud-exif-orientation/live-acceptance.md`).
 
 This is a decision about the direction of the work. It does not claim that another model has
 already proven better.
