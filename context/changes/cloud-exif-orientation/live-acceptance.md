@@ -48,6 +48,9 @@ These were the only two production jobs created after the deploy.
 - **Orientation and aspect**: unchanged, upright portrait (owner).
 - **Job mapping**: by elimination. It is the second of the two post-deploy jobs, and no file was
   downloaded for it.
+- **Dimensions**: not measured, because no file was downloaded. The owner's slider observation
+  covers them: the slider box takes the result's dimensions, so a result turned 90° would have
+  shown as a landscape box.
 - **Result**: pass.
 
 ## Not assessed here
