@@ -425,7 +425,7 @@ export async function collectWeek({ gh, repo, window, downloadDir, readFile }: C
   const listed = await listRuns(gh, repo, window);
   const seen = new Set<number>();
   const runs = listed.filter((run) => {
-    // Only a valid ID deduplicates: invalid rows (NaN, 0, …) would merge in the Set, so each reaches the core.
+    // Invalid IDs never dedup: the Set would merge their repeats (every NaN, every 0) into one row.
     if (validRunId(run.id)) {
       if (seen.has(run.id)) return false;
       seen.add(run.id);
