@@ -1,7 +1,7 @@
 ---
 change_id: weekly-report-subset-gaps
 title: "Close two low-risk input gaps in the AI review weekly report"
-status: implemented
+status: impl_reviewed
 created: 2026-10-23
 updated: 2026-10-25
 archived_at: null
