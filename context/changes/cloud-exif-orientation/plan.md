@@ -424,11 +424,11 @@ None. No schema, API or stored-data change. Jobs already created keep their side
 
 #### Automated
 
-- [x] 1.1 New and changed unit tests pass — 65a8548
-- [x] 1.2 Full unit suite passes — 65a8548
-- [x] 1.3 Type checking passes — 65a8548
-- [x] 1.4 Linting passes — 65a8548
-- [x] 1.5 Formatting passes — 65a8548
+- [x] 1.1 New and changed unit tests pass — 687e436
+- [x] 1.2 Full unit suite passes — 687e436
+- [x] 1.3 Type checking passes — 687e436
+- [x] 1.4 Linting passes — 687e436
+- [x] 1.5 Formatting passes — 687e436
 
 #### Manual
 
@@ -438,10 +438,10 @@ None. No schema, API or stored-data change. Jobs already created keep their side
 
 #### Automated
 
-- [x] 2.1 The orientation spec passes against the local stack — d81db0d
-- [x] 2.2 The whole E2E suite stays green — d81db0d
-- [x] 2.3 Deliberate-break check: identity `prepare` makes the orientation spec fail on both fixtures — d81db0d
-- [x] 2.4 Formatting passes — d81db0d
+- [x] 2.1 The orientation spec passes against the local stack — c112198
+- [x] 2.2 The whole E2E suite stays green — c112198
+- [x] 2.3 Deliberate-break check: identity `prepare` makes the orientation spec fail on both fixtures — c112198
+- [x] 2.4 Formatting passes — c112198
 
 #### Manual
 
@@ -451,10 +451,10 @@ None. No schema, API or stored-data change. Jobs already created keep their side
 
 #### Automated
 
-- [ ] 3.1 PR checks green and master deploy succeeds
-- [ ] 3.2 The deployed client bundle contains the new copy
-- [ ] 3.3 No stale "outstanding" pointer remains
-- [ ] 3.4 Formatting passes
+- [x] 3.1 PR checks green and master deploy succeeds
+- [x] 3.2 The deployed client bundle contains the new copy
+- [x] 3.3 No stale "outstanding" pointer remains
+- [x] 3.4 Formatting passes
 
 #### Manual
 
