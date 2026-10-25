@@ -13,7 +13,7 @@
 
 - **Source**: ../reviews/impl-review-e2af620.md § Re-review 2
 - **Decision**: owner chose Fix now on 2026-10-25. The target path exists only after the move, so the fix is queued for the archive commit.
-- **Status**: queued; not yet applied.
+- **Status**: applied in the archive commit (2026-10-25); both lines now point at `context/archive/2026-09-27-cloud-exif-orientation/live-acceptance.md`.
 - **Changes**: in `context/foundation/roadmap.md:339` and `context/changes/cloud-model-comparison/change.md:31-32`, replace `context/changes/cloud-exif-orientation/live-acceptance.md` with `context/archive/<archived-folder>/live-acceptance.md`.
 - **Verification**: after the move, `grep -rn 'changes/cloud-exif-orientation' context/foundation context/changes` prints nothing.
 - **Remaining work**: apply in the archive commit, on the archive branch.
@@ -22,7 +22,7 @@
 
 - **Source**: ../reviews/impl-review-e2af620.md § Re-review 2
 - **Decision**: owner chose Fix now on 2026-10-25. The master SHA exists only after this branch merges, so the fix is queued for the archive branch.
-- **Status**: queued; not yet applied.
+- **Status**: applied in `chore(cloud-exif-orientation): record manual acceptance` on the archive branch (2026-10-25); 3.1–3.4 now carry `29057a0`, an ancestor of master.
 - **Changes**: in `plan.md` Progress, replace `— ccecd53` on 3.1–3.4 with the master SHA of `docs(cloud-exif-orientation): Ship and accept in production (p3)`. Do it in the same commit that records 3.5–3.7 and re-confirms 1.6 and 2.5.
 - **Verification**: `git merge-base --is-ancestor <sha> HEAD` exits 0 for the new suffix.
 - **Remaining work**: apply on the archive branch, before `/rune-archive`.
