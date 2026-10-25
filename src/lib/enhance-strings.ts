@@ -257,6 +257,7 @@ export const STRINGS = {
     uploadRejected: "The upload link was rejected. Please try again.",
     uploadFailed: "Upload failed. Please try again.",
     network: "Couldn't reach Cloud AI — check your connection and try again.",
+    prepareFailed: "Couldn't prepare this photo for Cloud AI. Try a lower-resolution photo or a different browser.",
   },
 
   /** `image-helpers.ts` — file validation (shared by Local + Cloud submit). */
