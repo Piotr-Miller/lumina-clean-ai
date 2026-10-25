@@ -79,7 +79,11 @@ describe("runWeeklyReportCli", () => {
     expect(report).toContain("$0.333040");
     expect(report).not.toContain("IGNORE PREVIOUS INSTRUCTIONS");
     expect(report).not.toContain("hostile text");
-    expect(JSON.parse(h.fake.files.get("/out/report.json") ?? "{}")).toMatchObject({
+    const reportJson = h.fake.files.get("/out/report.json") ?? "";
+    for (const text of ["IGNORE PREVIOUS INSTRUCTIONS", "hostile text", "hostile impl"]) {
+      expect(reportJson).not.toContain(text);
+    }
+    expect(JSON.parse(reportJson || "{}")).toMatchObject({
       week: "2026-W43",
       observedAt: "2026-10-26T06:00:00.000Z",
       published: { trackingIssue: tracking(h) },

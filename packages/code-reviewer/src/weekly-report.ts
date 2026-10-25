@@ -91,9 +91,10 @@ const telemetrySubset = z.object({ cost: z.number().nonnegative().max(MAX_PASS_C
 /**
  * The narrow slice of `PipelineResult` the report reads. review.json comes
  * from a run over PR-controlled content, so everything else — summary, finding
- * text, planPath — is stripped at parse time and can never reach the report.
- * Unknown keys are dropped, not rejected, so additive schema changes upstream
- * keep old and new artifacts readable.
+ * text (impl findings included), planPath — is stripped at parse time and can
+ * never reach the report or report.json. Unknown keys are dropped, not
+ * rejected, so additive schema changes upstream keep old and new artifacts
+ * readable.
  */
 export const reviewJsonSubset = z.object({
   verdict: verdictSchema,
@@ -105,7 +106,13 @@ export const reviewJsonSubset = z.object({
   implReviewTelemetry: telemetrySubset.optional(),
   implReview: z
     .discriminatedUnion("status", [
-      z.object({ status: z.literal("reviewed"), verdict: implVerdictSchema, findings: z.array(z.unknown()) }),
+      z.object({
+        status: z.literal("reviewed"),
+        verdict: implVerdictSchema,
+        // Only the count is read. The transform widens zod's `Record<string, never>` to `object`, so the
+        // PipelineResult pin below still holds while every key is stripped.
+        findings: z.array(z.object({}).transform((finding): object => finding)),
+      }),
       z.object({ status: z.literal("failed") }),
       z.object({ status: z.literal("skipped") }),
     ])
