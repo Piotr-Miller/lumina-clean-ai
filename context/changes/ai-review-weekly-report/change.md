@@ -3,11 +3,13 @@ change_id: ai-review-weekly-report
 title: "Weekly report of advisory AI review cost and owner reactions"
 status: implemented
 created: 2026-10-21
-updated: 2026-10-23
+updated: 2026-10-25
 archived_at: null
 ---
 
 ## Notes
+
+2026-10-25: re-confirmed 2.5 — was accepted at 31bb392d3a22e0bb975974bc9f763400507eb7a1; accepted at f234339afcee7326663ac8a47afc34f85ae3d921. Owner confirmed after inspection of the GitHub write calls; collector and CLI tests passed (73 tests).
 
 2026-10-23: PR #305 rebase-merged (master eecffa4); Progress SHAs of phases 1–3 repointed to the master commits (1baf547→ddce5c6, 94310b5→786023c, 1f13e6f→6e6df94; identical patch IDs). Manual rows 1.5, 2.5, 3.5 and 3.6 now read unverifiable (accepted revisions not in master history) and need re-confirmation at a master revision. Phase 4: first live dispatches ran (tracking issue #306, comment 6374372819, idempotent, no alarm); see first-run.md. 4.3 and 4.4 pending.
 
