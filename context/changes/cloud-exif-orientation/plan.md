@@ -451,10 +451,10 @@ None. No schema, API or stored-data change. Jobs already created keep their side
 
 #### Automated
 
-- [x] 3.1 PR checks green and master deploy succeeds
-- [x] 3.2 The deployed client bundle contains the new copy
-- [x] 3.3 No stale "outstanding" pointer remains
-- [x] 3.4 Formatting passes
+- [x] 3.1 PR checks green and master deploy succeeds — ccecd53
+- [x] 3.2 The deployed client bundle contains the new copy — ccecd53
+- [x] 3.3 No stale "outstanding" pointer remains — ccecd53
+- [x] 3.4 Formatting passes — ccecd53
 
 #### Manual
 
