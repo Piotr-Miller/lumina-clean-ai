@@ -438,10 +438,10 @@ None. No schema, API or stored-data change. Jobs already created keep their side
 
 #### Automated
 
-- [x] 2.1 The orientation spec passes against the local stack
-- [x] 2.2 The whole E2E suite stays green
-- [x] 2.3 Deliberate-break check: identity `prepare` makes the orientation spec fail on both fixtures
-- [x] 2.4 Formatting passes
+- [x] 2.1 The orientation spec passes against the local stack — d81db0d
+- [x] 2.2 The whole E2E suite stays green — d81db0d
+- [x] 2.3 Deliberate-break check: identity `prepare` makes the orientation spec fail on both fixtures — d81db0d
+- [x] 2.4 Formatting passes — d81db0d
 
 #### Manual
 
