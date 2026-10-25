@@ -74,6 +74,55 @@ describe("collectWeek — window", () => {
     expect(runs.map((run) => run.id)).toEqual([11, 12, 13]);
   });
 
+  it("never merges rows whose run ID is invalid, even when their values are equal", async () => {
+    const fake = baseline();
+    fake.runs = [
+      apiRun({ id: undefined }),
+      apiRun({ id: 0 }),
+      apiRun({ id: 61, conclusion: "skipped" }),
+      apiRun({ id: undefined }),
+      apiRun({ id: 0 }),
+      apiRun({ id: 61, conclusion: "skipped" }),
+    ];
+    const { runs } = await collect(fake);
+    expect(runs.map((run) => run.id)).toEqual([Number.NaN, 0, 61, Number.NaN, 0]);
+    // Invalid rows cost no lookups.
+    expect(fake.endpoints().some((endpoint) => /runs\/(NaN|0)\//u.test(endpoint))).toBe(false);
+
+    const report = aggregateWeek({
+      week: "2026-W43",
+      observedAt: new Date("2026-10-26T06:00:00Z"),
+      owner: OWNER,
+      runs,
+      prs: [],
+      thresholds: parseThresholds({}),
+    });
+    expect(report.invalidRunIds).toBe(4);
+    expect(report.counts.workflows).toBe(1);
+  });
+
+  it("keeps an invalid-ID row off the coverage-gap alarm count", async () => {
+    const fake = baseline();
+    fake.runs = [31, 32, 33, 34].map((id) => apiRun({ id }));
+    fake.runs.push(apiRun({ id: undefined }));
+    for (const id of [31, 32, 33, 34]) fake.jobs.set(`${String(id)}/1`, [reviewJob(1, "success")]);
+    const { runs } = await collect(fake);
+    expect(fake.endpoints().some((endpoint) => endpoint.includes("runs/NaN/"))).toBe(false);
+
+    const report = aggregateWeek({
+      week: "2026-W43",
+      observedAt: new Date("2026-10-26T06:00:00Z"),
+      owner: OWNER,
+      runs,
+      prs: [],
+      thresholds: parseThresholds({}),
+    });
+    expect(report.counts.unreported).toBe(4);
+    expect(report.coverageGapWorkflows).toBe(4);
+    expect(report.invalidRunIds).toBe(1);
+    expect(report.alarm.fired).toBe(false);
+  });
+
   it("passes a run with an unreadable created_at to the core, which names it, without looking it up", async () => {
     const fake = baseline();
     fake.runs = [apiRun({ id: 21, created_at: "not a date" })];
