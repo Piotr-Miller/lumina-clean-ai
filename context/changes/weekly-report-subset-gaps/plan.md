@@ -196,8 +196,8 @@ There is nothing to migrate. Old `review.json` artifacts stay readable: their im
 
 #### Automated
 
-- [x] 2.1 Collector tests pass, including invalid-ID row counting and the unchanged alarm count
-- [x] 2.2 Package typecheck passes
-- [x] 2.3 Package lint passes
-- [x] 2.4 Full package suite passes
-- [x] 2.5 Formatting holds for the package sources
+- [x] 2.1 Collector tests pass, including invalid-ID row counting and the unchanged alarm count — 5c30ab1
+- [x] 2.2 Package typecheck passes — 5c30ab1
+- [x] 2.3 Package lint passes — 5c30ab1
+- [x] 2.4 Full package suite passes — 5c30ab1
+- [x] 2.5 Formatting holds for the package sources — 5c30ab1
