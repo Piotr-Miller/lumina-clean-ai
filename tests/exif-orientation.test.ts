@@ -92,6 +92,20 @@ describe("detectOrientation / readOrientation", () => {
     expect(await detectBoth(bytes)).toEqual({ kind: "orientation", value: 8 });
   });
 
+  describe.each([false, true])("orientation component counts (littleEndian=%s)", (littleEndian) => {
+    describe.each([3, 4])("field type %i", (orientationType) => {
+      it.each([0, 2, 3])(
+        "rejects component count %i instead of interpreting value/offset bytes",
+        async (orientationCount) => {
+          const bytes = jpegBytes(exifApp1(tiff({ littleEndian, orientation: 6, orientationType, orientationCount })));
+          const detection = await detectBoth(bytes);
+          expect(detection).toMatchObject({ kind: "unreadable" });
+          expect(isOriented(detection)).toBe(false);
+        },
+      );
+    });
+  });
+
   it("finds Exif after a JFIF APP0", async () => {
     const bytes = jpegBytes(jfifApp0(), exifApp1(tiff({ orientation: 5 })));
     expect(await detectBoth(bytes)).toEqual({ kind: "orientation", value: 5 });

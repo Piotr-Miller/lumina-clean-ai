@@ -259,7 +259,10 @@ subsampling at a colour tolerance.
 **File**: `tests/e2e/cloud-upload-orientation.spec.ts`
 
 **Intent**: For each fixture: as a signed-in user, upload → Cloud AI → Process with Cloud AI, then
-capture the PUT to the signed upload URL with `page.waitForRequest` (observed, not mocked). Track
+capture the PUT to the signed upload URL with `page.waitForRequest` (observed, not mocked).
+The body is read in a pass-through `page.route` that continues the request unmodified to the real
+Storage, because Chromium exposes a `File`/`Blob` PUT body to request events only intermittently
+(`postDataBuffer()` was `null` on both fixtures in the first run) (owner decision 2026-10-25). Track
 that exact request through response and completion, and require a successful response with no
 network failure before the test can pass. Arm request/response observation before clicking submit.
 Decode the captured bytes in the page **ignoring metadata**, and assert:
@@ -421,24 +424,24 @@ None. No schema, API or stored-data change. Jobs already created keep their side
 
 #### Automated
 
-- [x] 1.1 New and changed unit tests pass
-- [x] 1.2 Full unit suite passes
-- [x] 1.3 Type checking passes
-- [x] 1.4 Linting passes
-- [x] 1.5 Formatting passes
+- [x] 1.1 New and changed unit tests pass — 65a8548
+- [x] 1.2 Full unit suite passes — 65a8548
+- [x] 1.3 Type checking passes — 65a8548
+- [x] 1.4 Linting passes — 65a8548
+- [x] 1.5 Formatting passes — 65a8548
 
 #### Manual
 
-- [ ] 1.6 The owner reads the failure copy and confirms its wording
+- [x] 1.6 The owner reads the failure copy and confirms its wording — accepted at 65a8548fca099e4fa7bc80baddf94738247f45e4
 
 ### Phase 2: Prove the model input in a real browser
 
 #### Automated
 
-- [ ] 2.1 The orientation spec passes against the local stack
-- [ ] 2.2 The whole E2E suite stays green
-- [ ] 2.3 Deliberate-break check: identity `prepare` makes the orientation spec fail on both fixtures
-- [ ] 2.4 Formatting passes
+- [x] 2.1 The orientation spec passes against the local stack
+- [x] 2.2 The whole E2E suite stays green
+- [x] 2.3 Deliberate-break check: identity `prepare` makes the orientation spec fail on both fixtures
+- [x] 2.4 Formatting passes
 
 #### Manual
 

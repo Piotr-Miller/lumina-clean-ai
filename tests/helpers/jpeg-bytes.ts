@@ -40,6 +40,8 @@ interface TiffOptions {
   orientation?: number;
   /** Field type of the orientation entry (3 = SHORT, 4 = LONG). */
   orientationType?: number;
+  /** Component count; non-singleton values build malformed orientation entries. */
+  orientationCount?: number;
   /** Orientation tag placed in IFD1 (the thumbnail's IFD) instead. */
   ifd1Orientation?: number;
 }
@@ -47,7 +49,13 @@ interface TiffOptions {
 const ENTRY_BYTES = 12;
 
 /** A TIFF structure (the bytes after `Exif\0\0`) with IFD0 and an optional IFD1. */
-export function tiff({ littleEndian = false, orientation, orientationType = 3, ifd1Orientation }: TiffOptions): Bytes {
+export function tiff({
+  littleEndian = false,
+  orientation,
+  orientationType = 3,
+  orientationCount = 1,
+  ifd1Orientation,
+}: TiffOptions): Bytes {
   // IFD0 carries an unrelated entry (ImageWidth) first, so the parser must scan past it.
   const ifd0Entries: [number, number, number][] = [[0x0100, 3, 640]];
   if (orientation !== undefined) ifd0Entries.push([0x0112, orientationType, orientation]);
@@ -68,7 +76,7 @@ export function tiff({ littleEndian = false, orientation, orientationType = 3, i
       const e = at + 2 + i * ENTRY_BYTES;
       view.setUint16(e, tag, le);
       view.setUint16(e + 2, type, le);
-      view.setUint32(e + 4, 1, le);
+      view.setUint32(e + 4, tag === 0x0112 ? orientationCount : 1, le);
       if (type === 4) view.setUint32(e + 8, value, le);
       else view.setUint16(e + 8, value, le);
     });
