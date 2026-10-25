@@ -316,6 +316,18 @@ export const reviewJson = (costs: { finder?: number; judge?: number; impl?: numb
       ? {}
       : {
           implReviewTelemetry: { attempts: 1, cost: costs.impl },
-          implReview: { status: "reviewed", verdict: "APPROVED", findings: [] },
+          implReview: {
+            status: "reviewed",
+            verdict: "APPROVED",
+            findings: [
+              {
+                id: "P1",
+                severity: "minor",
+                title: "hostile impl title",
+                detail: "hostile impl detail",
+                fix: "hostile impl fix",
+              },
+            ],
+          },
         }),
   });

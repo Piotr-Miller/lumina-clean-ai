@@ -231,6 +231,37 @@ describe("classifyRun", () => {
     expect(classifyRun(wrongShape)).toEqual({ kind: "unreported", reason: "artifact unreadable" });
   });
 
+  it("strips impl finding text at parse time and keeps only the count", () => {
+    const hostile = { title: "IMPL-TITLE-SENTINEL", detail: "IMPL-DETAIL-SENTINEL", fix: "IMPL-FIX-SENTINEL" };
+    const text = reviewText({
+      finder: 0.01,
+      judge: 0.01,
+      extra: { implReview: { status: "reviewed", verdict: "APPROVED", findings: [hostile, hostile] } },
+    });
+    expect(parseReviewJson(text)?.implReview).toEqual({ status: "reviewed", verdict: "APPROVED", findings: [{}, {}] });
+
+    const report = aggregateWeek(
+      input([run(2006, "2026-10-21T00:00:00Z", { artifact: { kind: "downloaded", text } })]),
+    );
+    expect(report.findings.impl).toBe(2);
+    const serialized = JSON.stringify(report);
+    for (const value of Object.values(hostile)) expect(serialized).not.toContain(value);
+  });
+
+  it("makes a review.json with a non-object impl finding unreadable", () => {
+    for (const finding of ["IMPL-TEXT-SENTINEL", null]) {
+      const text = reviewText({
+        finder: 0.01,
+        judge: 0.01,
+        extra: { implReview: { status: "reviewed", verdict: "APPROVED", findings: [finding] } },
+      });
+      expect(classifyRun(run(2007, "2026-10-21T00:00:00Z", { artifact: { kind: "downloaded", text } }))).toEqual({
+        kind: "unreported",
+        reason: "artifact unreadable",
+      });
+    }
+  });
+
   it("counts a failed run with a readable review.json as reviewed", () => {
     expect(classifyRun({ ...A, conclusion: "failure" }).kind).toBe("reviewed");
   });
