@@ -1,5 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { STRINGS } from "@/lib/enhance-strings";
 import { submitCloudJob } from "@/lib/services/cloud-upload.client";
+import { exifApp1, jfifApp0, jpegBytes, orientedJpegBytes, tiff, type Bytes } from "./helpers/jpeg-bytes";
+
+// The redraw needs a DOM canvas; under `node` the default preparation reaches this stub instead.
+const redrawUprightJpeg = vi.hoisted(() => vi.fn<(file: File) => Promise<File>>());
+vi.mock("@/lib/engines/canvas-helpers", () => ({ redrawUprightJpeg }));
 
 const ENDPOINT = "/api/enhance/cloud/create-job";
 
@@ -15,8 +21,33 @@ function png(): File {
   return new File([new Uint8Array([4, 5, 6])], "shot.png", { type: "image/png" });
 }
 
+function jpegFile(bytes: Bytes, name = "phone.jpg"): File {
+  return new File([bytes], name, { type: "image/jpeg" });
+}
+
+/** A fetch stub where create-job succeeds and the PUT returns 200. */
+function okFetch(jobId = "job-p") {
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(
+      jsonResponse({ jobId, uploadUrl: "https://x/u/j/source?token=t", uploadToken: "t", sourcePath: "u/j/source" }),
+    )
+    .mockResolvedValueOnce(new Response(null, { status: 200 }));
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+function putInit(fetchMock: ReturnType<typeof vi.fn>): RequestInit {
+  return (fetchMock.mock.calls[1] as [string, RequestInit])[1];
+}
+
+beforeEach(() => {
+  redrawUprightJpeg.mockReset();
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("submitCloudJob", () => {
@@ -146,5 +177,125 @@ describe("submitCloudJob", () => {
     await expect(submitCloudJob(jpeg())).rejects.toThrow(
       "Couldn't reach Cloud AI — check your connection and try again.",
     );
+  });
+});
+
+describe("submitCloudJob preparation (before create-job)", () => {
+  it("PUTs the prepared file and derives the MIME type and extension from it", async () => {
+    const fetchMock = okFetch();
+    const prepared = jpegFile(new Uint8Array([9, 9, 9]), "shot.jpg");
+    const prepare = vi.fn().mockResolvedValue(prepared);
+    const original = png();
+
+    await submitCloudJob(original, undefined, prepare);
+
+    expect(prepare).toHaveBeenCalledWith(original);
+    const [, postInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(postInit.body as string)).toEqual({ fileExtension: "jpg", mimeType: "image/jpeg" });
+    expect((putInit(fetchMock).headers as Record<string, string>)["Content-Type"]).toBe("image/jpeg");
+    expect(putInit(fetchMock).body).toBe(prepared);
+  });
+
+  it("stops before create-job with the prepare-failure copy when preparation throws", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const prepare = vi.fn().mockRejectedValue(new Error("Canvas could not encode the image."));
+
+    await expect(submitCloudJob(jpeg(), undefined, prepare)).rejects.toThrow(STRINGS.uploadErrors.prepareFailed);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("no job was created"),
+      "Canvas could not encode the image.",
+    );
+  });
+
+  it("rejects a prepared file over 25 MB before create-job", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const prepare = vi.fn().mockResolvedValue(jpegFile(new Uint8Array(25_000_001)));
+
+    await expect(submitCloudJob(jpeg(), undefined, prepare)).rejects.toThrow(STRINGS.fileValidation.tooLarge);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("by default PUTs an orientation-1 JPEG as the identical File, without warning", async () => {
+    const fetchMock = okFetch();
+    const warn = vi.spyOn(console, "warn");
+    const file = jpegFile(orientedJpegBytes(1));
+
+    await submitCloudJob(file);
+
+    expect(putInit(fetchMock).body).toBe(file);
+    expect(redrawUprightJpeg).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("by default PUTs a PNG as the identical File", async () => {
+    const fetchMock = okFetch();
+    const file = png();
+
+    await submitCloudJob(file);
+
+    expect(putInit(fetchMock).body).toBe(file);
+    expect(redrawUprightJpeg).not.toHaveBeenCalled();
+  });
+
+  it("by default PUTs a JPEG with no Exif as the identical File, without warning", async () => {
+    const fetchMock = okFetch();
+    const warn = vi.spyOn(console, "warn");
+    const file = jpegFile(jpegBytes(jfifApp0()));
+
+    await submitCloudJob(file);
+
+    expect(putInit(fetchMock).body).toBe(file);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("by default treats tag 0 as unoriented and PUTs the identical File", async () => {
+    const fetchMock = okFetch();
+    const file = jpegFile(orientedJpegBytes(0));
+
+    await submitCloudJob(file);
+
+    expect(putInit(fetchMock).body).toBe(file);
+    expect(redrawUprightJpeg).not.toHaveBeenCalled();
+  });
+
+  it("by default redraws an orientation-6 JPEG and PUTs the redrawn file", async () => {
+    const fetchMock = okFetch();
+    const upright = jpegFile(new Uint8Array([7, 7, 7]), "phone.jpg");
+    redrawUprightJpeg.mockResolvedValue(upright);
+    const file = jpegFile(orientedJpegBytes(6));
+
+    await submitCloudJob(file);
+
+    expect(redrawUprightJpeg).toHaveBeenCalledWith(file);
+    expect(putInit(fetchMock).body).toBe(upright);
+  });
+
+  it("by default stops before create-job when the redraw of an oriented JPEG fails", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    redrawUprightJpeg.mockRejectedValue(new Error("Canvas 2D context unavailable."));
+
+    await expect(submitCloudJob(jpegFile(orientedJpegBytes(8)))).rejects.toThrow(STRINGS.uploadErrors.prepareFailed);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("by default uploads a JPEG with unreadable Exif as stored, warning once with the consequence", async () => {
+    const fetchMock = okFetch();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const badTiff = tiff({ orientation: 6 });
+    badTiff.set([0x41, 0x42], 0); // unknown byte order
+    const file = jpegFile(jpegBytes(exifApp1(badTiff)));
+
+    await submitCloudJob(file);
+
+    expect(putInit(fetchMock).body).toBe(file);
+    expect(redrawUprightJpeg).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("may come back rotated or mirrored"));
   });
 });

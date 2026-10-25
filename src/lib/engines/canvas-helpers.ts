@@ -1,6 +1,6 @@
 /**
- * Shared DOM Canvas encode helper for the Local engine and the cloud-result
- * chroma post-pass.
+ * Shared DOM Canvas encode helpers for the Local engine, the cloud-result
+ * chroma post-pass and the Cloud upload's RGBA / orientation redraws.
  *
  * DOM-dependent (`canvas.toBlob`), so it deliberately lives **separately** from
  * the DOM-free `image-helpers.ts` (which is unit-tested under vitest's `node`
@@ -49,14 +49,15 @@ function decodeFile(file: File): Promise<HTMLImageElement> {
 }
 
 /**
- * Flatten a (possibly alpha) image File to an opaque RGB JPEG File — the reactive
- * recovery for the RGBA/torch failure (Bread requires a 3-channel input; an alpha
- * PNG is 4-channel). Pre-fills the canvas opaque white BEFORE `drawImage` so
- * transparent pixels composite onto white (JPEG has no alpha channel), then
- * re-encodes at the shared {@link JPEG_QUALITY}. The output name swaps the
- * extension to `.jpg` so the re-submit carries an honest MIME/extension pair.
+ * Decode → canvas → JPEG core shared by {@link flattenToRgbJpeg} and
+ * {@link redrawUprightJpeg}. The canvas takes the decoded (display) dimensions
+ * and `drawImage` applies any EXIF orientation, so the output is upright; the
+ * JPEG encoder writes no orientation tag. Pre-fills opaque white BEFORE
+ * `drawImage` so transparent pixels composite onto white (JPEG has no alpha
+ * channel); an opaque source covers the fill entirely. The output name swaps
+ * the extension to `.jpg` so the upload carries an honest MIME/extension pair.
  */
-export async function flattenToRgbJpeg(file: File): Promise<File> {
+async function redrawToJpeg(file: File): Promise<File> {
   const img = await decodeFile(file);
   const canvas = document.createElement("canvas");
   canvas.width = img.naturalWidth;
@@ -71,4 +72,24 @@ export async function flattenToRgbJpeg(file: File): Promise<File> {
   const blob = await canvasToBlob(canvas, "image/jpeg", JPEG_QUALITY);
   const base = file.name.replace(/\.[^./\\]+$/, "");
   return new File([blob], `${base || "photo"}.jpg`, { type: "image/jpeg" });
+}
+
+/**
+ * Flatten a (possibly alpha) image File to an opaque RGB JPEG File — the reactive
+ * recovery for the RGBA/torch failure (Bread requires a 3-channel input; an alpha
+ * PNG is 4-channel). Re-encodes at the shared {@link JPEG_QUALITY}.
+ */
+export function flattenToRgbJpeg(file: File): Promise<File> {
+  return redrawToJpeg(file);
+}
+
+/**
+ * Redraw an EXIF-oriented JPEG (tag 2–8) as an upright, tagless JPEG File, so
+ * the Cloud model receives the pixels the BEFORE pane shows — Bread ignores the
+ * tag. Rejects on a decode, 2D-context or encode failure (an over-limit canvas
+ * surfaces as one of the last two); the caller must not fall back to the
+ * original bytes.
+ */
+export function redrawUprightJpeg(file: File): Promise<File> {
+  return redrawToJpeg(file);
 }
