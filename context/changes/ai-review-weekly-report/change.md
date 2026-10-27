@@ -3,11 +3,19 @@ change_id: ai-review-weekly-report
 title: "Weekly report of advisory AI review cost and owner reactions"
 status: implemented
 created: 2026-10-21
-updated: 2026-10-25
+updated: 2026-10-27
 archived_at: null
 ---
 
 ## Notes
+
+2026-10-27: 4.3 and 4.4 accepted at 94d37575837b46b3bde29dd06d8b2d0cb02d9870, checked by the agent at the owner's request (owner: "sprawdz to sam"). 4.3: issue #306 is the repository's only pinned issue (GraphQL pinnedIssues). 4.4: run 40324631147 (event schedule, master 94d3757, success, created 2026-10-26T12:42:45Z, ~6.7 h after the 06:00 UTC cron slot) PATCHed comment 6374372819 (github-actions[bot], updated 2026-10-26T12:44:39Z, "observed as of 2026-10-26T12:43:43Z") with no dispatch, as first-run.md predicted; log: week=2026-W43 workflows=25 known_spend=$1.260812 (lower bound) coverage_gaps=2 alarm=not fired.
+
+2026-10-27: re-confirmed 3.6 — was accepted at 1f13e6f0411f5c5a74afa3e12ecafd22c0d06416; accepted at 94d37575837b46b3bde29dd06d8b2d0cb02d9870. Owner read the weekly-report paragraph (AGENTS.md:134).
+
+2026-10-27: re-confirmed 3.5 — was accepted at 1f13e6f0411f5c5a74afa3e12ecafd22c0d06416; accepted at 94d37575837b46b3bde29dd06d8b2d0cb02d9870. Owner confirmed a fresh local W43 dry run (identical to live comment 6374372819 apart from the observation timestamp): 25 workflows, ≥ $1.260812, PR #300 ≥ $0.482761 over 3 runs, alarm not fired.
+
+2026-10-27: re-confirmed 1.5 — was accepted at 31bb392d3a22e0bb975974bc9f763400507eb7a1; accepted at 94d37575837b46b3bde29dd06d8b2d0cb02d9870. Owner read the same fresh W43 rendering.
 
 2026-10-25: re-confirmed 2.5 — was accepted at 31bb392d3a22e0bb975974bc9f763400507eb7a1; accepted at f234339afcee7326663ac8a47afc34f85ae3d921. Owner confirmed after inspection of the GitHub write calls; collector and CLI tests passed (73 tests).
 
