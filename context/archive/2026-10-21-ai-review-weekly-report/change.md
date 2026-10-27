@@ -1,10 +1,11 @@
 ---
 change_id: ai-review-weekly-report
 title: "Weekly report of advisory AI review cost and owner reactions"
-status: implemented
+status: archived
+outcome: completed
 created: 2026-10-21
 updated: 2026-10-27
-archived_at: null
+archived_at: 2026-10-27T20:47:27Z
 ---
 
 ## Notes
