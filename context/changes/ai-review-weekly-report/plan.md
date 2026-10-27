@@ -438,7 +438,7 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Manual
 
-- [x] 1.5 Owner confirms the rendered sample comment reads at a glance — accepted at 31bb392d3a22e0bb975974bc9f763400507eb7a1
+- [x] 1.5 Owner confirms the rendered sample comment reads at a glance — accepted at 94d37575837b46b3bde29dd06d8b2d0cb02d9870
 
 ### Phase 2: GitHub collector, publisher and CLI
 
@@ -464,8 +464,8 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Manual
 
-- [x] 3.5 Owner confirms the dry-run W43 figures — accepted at 1f13e6f0411f5c5a74afa3e12ecafd22c0d06416
-- [x] 3.6 Owner reads the new AGENTS.md paragraph — accepted at 1f13e6f0411f5c5a74afa3e12ecafd22c0d06416
+- [x] 3.5 Owner confirms the dry-run W43 figures — accepted at 94d37575837b46b3bde29dd06d8b2d0cb02d9870
+- [x] 3.6 Owner reads the new AGENTS.md paragraph — accepted at 94d37575837b46b3bde29dd06d8b2d0cb02d9870
 
 ### Phase 4: Live acceptance after merge
 
@@ -476,5 +476,5 @@ None: there is no data migration. The labels and the tracking issue are created 
 
 #### Manual
 
-- [ ] 4.3 Owner pins the tracking issue
-- [ ] 4.4 Owner confirms the first scheduled run posted on its own
+- [x] 4.3 Owner pins the tracking issue — accepted at 94d37575837b46b3bde29dd06d8b2d0cb02d9870
+- [x] 4.4 Owner confirms the first scheduled run posted on its own — accepted at 94d37575837b46b3bde29dd06d8b2d0cb02d9870
