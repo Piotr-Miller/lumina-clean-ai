@@ -17,13 +17,15 @@ calibration.
 Fixed inputs:
 
 - Benchmark `s17-v1` (`test-photos/s17-benchmark.json`, hashes in `test-photos/s17-benchmark.sha256`):
-  six tuning photos and twelve validation photos.
+  six tuning photos and twelve validation photos. S-19 will use derived `s19-v1` with the two
+  exposed phone samples replaced; see `holdout-replacement-decision.md` (2026-10-28).
 - **Holdout:** the twelve validation photos are meant to stay unopened for every model. Tuning
   results only prepare the candidates; judging whether a candidate generalises needs that holdout.
   **Two of the twelve are no longer unopened for Bread:** S17-05 and S17-06 (see § Holdout
   exposure). Viewing them is not evidence of tuning on the holdout, but it has to be disclosed.
-  Before S-19 fixes its protocol, decide how to replace those two samples while keeping the
-  agreed bar evaluated on twelve photos.
+  Decision (2026-10-28): replace both for every candidate with two new, input-only-qualified
+  phone photos; retain the other ten and the unchanged 8/12 bar. Freeze a separate `s19-v1`
+  before final validation. Collection is still pending; see `holdout-replacement-decision.md`.
 - Quality bar: `context/archive/2026-08-31-cloud-quality-below-local/quality-bar.md`.
 - Evidence for Bread so far: `context/archive/2026-08-31-cloud-quality-below-local/calibration.md`.
   Across the three probes Bread gains on 4 of 6 tuning photos, 2 of them small. There is no basis
