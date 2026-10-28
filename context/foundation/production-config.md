@@ -178,6 +178,11 @@ exercised the deployed RPC path, exactly as the pre-merge note above states.
 | 5.2 — `CLOUD_DAILY_CAP=0` | HTTP **429** with the unchanged body `{"error":{"code":"daily_cap_reached","message":"The daily Cloud AI limit has been reached. Please try again tomorrow."}}`, and **no row inserted** — the day's count stayed at 1                                  |
 | 5.2 — cap restored to `3` | `190832de-0f89-4b2c-9250-7b15ca081082`: `succeeded` in **134.9 s** (warm). `result.png` present, `source.jpg` deleted. The kill-switch is reversible, not one-way                                                                                       |
 
+The 5.2 row records the cap-0 contract **as of 2026-08-31**. Since change `cloud-pause-message`
+(2026-10-28), `CLOUD_DAILY_CAP=0` returns HTTP **503** `cloud_paused` ("Cloud AI is temporarily
+unavailable due to maintenance…") before any database work; `daily_cap_reached` (429) is now
+returned only for a cap above 0.
+
 **What this proves, and what it does not.** It proves the deployed admission path runs through
 the guarded write — both rows were admitted by `admit_cloud_job`, the **first executions of that
 function in production** — and that the 429 contract and its user-facing copy are unchanged. It

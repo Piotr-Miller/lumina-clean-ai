@@ -52,6 +52,20 @@ const DAILY_CAP_REACHED_BODY = {
   },
 } as const;
 
+/**
+ * The kill-switch body. `cap = 0` is an operator pause (Cloud AI is held back
+ * until a quality review passes), not a used-up day, so it must not tell the
+ * user to come back tomorrow. It is a distinct code so the client can show its
+ * own copy, and the ordinary `daily_cap_reached` contract stays byte-identical
+ * for every `cap > 0`. Change `cloud-pause-message`.
+ */
+const CLOUD_PAUSED_BODY = {
+  error: {
+    code: "cloud_paused",
+    message: "Cloud AI is temporarily unavailable due to maintenance. Please use the Local engine in the meantime.",
+  },
+} as const;
+
 export interface CreateCloudJobInput {
   /** Authoritative session user (`context.locals.user`); `null` for anonymous. */
   user: { id: string } | null;
@@ -59,7 +73,7 @@ export interface CreateCloudJobInput {
   request: Request;
   /** Service-role client (built via `createAdminClient`; bypasses RLS). */
   admin: SupabaseClient;
-  /** Resolved `CLOUD_DAILY_CAP`. `cap = 0` rejects every submission (kill-switch). */
+  /** Resolved `CLOUD_DAILY_CAP`. `cap = 0` is the kill-switch: every submission gets 503 `cloud_paused`. */
   cap: number;
 }
 
@@ -96,6 +110,14 @@ export async function createCloudJobResponse(input: CreateCloudJobInput): Promis
     );
   }
 
+  // Operator kill-switch: answer before any database work. The sweep exists to
+  // free cap slots and the count to compare against the cap; with a cap of 0
+  // neither can change the outcome. Auth and validation above still run first,
+  // so an anonymous caller keeps getting 401.
+  if (cap === 0) {
+    return json(CLOUD_PAUSED_BODY, 503);
+  }
+
   try {
     // Best-effort retention sweep (S-08 Phase 3): reclaim THIS caller's own
     // browser-closed stale jobs + their sources before doing new work. Runs
@@ -120,9 +142,9 @@ export async function createCloudJobResponse(input: CreateCloudJobInput): Promis
     // and the insert are two operations and nothing serializes them — N
     // simultaneous requests at `count = cap - 1` all pass here. The enforcement
     // point is the guarded write inside `createPhotoJob` below, which holds a
-    // transaction-scoped advisory lock across count-and-insert. `cap = 0`
-    // rejects every submission (operator kill-switch). A count-query throw
-    // falls through to the outer catch → 500.
+    // transaction-scoped advisory lock across count-and-insert. `cap = 0` never
+    // reaches here (the kill-switch returns `cloud_paused` above). A count-query
+    // throw falls through to the outer catch → 500.
     if (isOverDailyCap(await countCloudJobsToday(admin), cap)) {
       return json(DAILY_CAP_REACHED_BODY, 429);
     }

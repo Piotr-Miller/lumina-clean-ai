@@ -250,6 +250,8 @@ export const STRINGS = {
       unauthorized: "Please sign in to use Cloud AI.",
       invalid_body: "This photo can't be sent to Cloud AI — please use a JPG or PNG.",
       daily_cap_reached: "The daily Cloud AI limit has been reached. Try the Local engine, or come back tomorrow.",
+      cloud_paused:
+        "Cloud AI is temporarily unavailable due to maintenance. Please use the Local engine in the meantime.",
       internal_error: "Cloud processing is temporarily unavailable. Please try again.",
     },
     genericRoute: "Couldn't start Cloud processing. Please try again.",
