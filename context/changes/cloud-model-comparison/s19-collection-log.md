@@ -105,7 +105,7 @@ keeps S19-V02 as the good-condition no-harm case (owner decision 2026-10-28).
 Every file is the Commons original, unchanged, and its SHA-1 matches the value Commons reports. All
 SHA-256 values are distinct from every file in `test-photos/licensed/` and `test-photos/private/`.
 Frozen in `test-photos/s19-benchmark.json` (6 tuning, 12 validation, 3 supplementary and 2 diagnostic
-cases) with `test-photos/s19-benchmark.sha256`; `s17-v1` is unchanged. The rejected Elmwood file was committed once on the S-19 branch (freeze commit 826516d) and deleted in the next commit; the Dotonbori file was never committed. No engine ran on any photo in this log.
+cases) with `test-photos/s19-benchmark.sha256`; `s17-v1` is unchanged. The rejected Elmwood file was committed once on the S-19 branch and deleted in the next commit; the Dotonbori file was never committed. No engine ran on any photo in this log.
 
 ## Listing script
 
