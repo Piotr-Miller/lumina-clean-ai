@@ -1,10 +1,11 @@
 ---
 change_id: cloud-pause-message
 title: "Tell users Cloud AI is paused for a quality review, not over today's limit"
-status: impl_reviewed
+status: archived
+outcome: completed
 created: 2026-10-28
 updated: 2026-10-28
-archived_at: null
+archived_at: 2026-10-28T21:18:09Z
 ---
 
 ## Notes
