@@ -118,6 +118,16 @@ describe("submitCloudJob", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("maps a 503 cloud_paused from the route to the pause message and never PUTs", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ error: { code: "cloud_paused" } }, 503));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(submitCloudJob(jpeg())).rejects.toThrow(
+      "Cloud AI is temporarily unavailable due to maintenance. Please use the Local engine in the meantime.",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("maps a 500 internal_error from the route to an unavailable message", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse({ error: { code: "internal_error" } }, 500));
     vi.stubGlobal("fetch", fetchMock);

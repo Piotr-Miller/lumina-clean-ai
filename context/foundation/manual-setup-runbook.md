@@ -138,8 +138,8 @@ app.settings.*`, so config moved to Vault — migration `20260608120000_jobs_web
 4. **Verify end-to-end:** submit one cloud job → it should go `queued → processing → succeeded`
    via Realtime, source deleted, result present. Submit beyond the cap → `daily_cap_reached`
    (429). Check a Replicate prediction has `webhook` set (not `NONE`).
-5. **Kill-switch (instant reverse):** `npx wrangler secret put CLOUD_DAILY_CAP` → `0` (pre-insert
-   reject), and/or `CLOUD_PIPELINE_ENABLED=false` on **both** Worker and Edge Function.
+5. **Kill-switch (instant reverse):** `npx wrangler secret put CLOUD_DAILY_CAP` → `0` (every
+   submission gets HTTP 503 `cloud_paused` before any database work), and/or `CLOUD_PIPELINE_ENABLED=false` on **both** Worker and Edge Function.
 
 ---
 

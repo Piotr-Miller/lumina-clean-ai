@@ -39,6 +39,8 @@ async function readBody(res: Response): Promise<ResponseBody> {
 
 const VALID_BODY = { fileExtension: "jpg", mimeType: "image/jpeg" } as const;
 const CAP_MESSAGE = "The daily Cloud AI limit has been reached. Please try again tomorrow.";
+const PAUSED_MESSAGE =
+  "Cloud AI is temporarily unavailable due to maintenance. Please use the Local engine in the meantime.";
 
 function jsonRequest(body: unknown): Request {
   return new Request("https://example.test/api/enhance/cloud/create-job", {
@@ -83,7 +85,7 @@ function makeStubAdmin(count: number, opts: { admitted?: boolean } = {}) {
     storage: { from: vi.fn(() => ({ createSignedUploadUrl })) },
   };
 
-  return { admin: admin as unknown as SupabaseClient, rpc, createSignedUploadUrl };
+  return { admin: admin as unknown as SupabaseClient, from: admin.from, rpc, createSignedUploadUrl };
 }
 
 const USER = { id: "11111111-1111-1111-1111-111111111111" };
@@ -139,15 +141,31 @@ describe("createCloudJobResponse — global daily-cap route boundary", () => {
     expect(rpc).toHaveBeenCalledWith("admit_cloud_job", expect.objectContaining({ p_cap: cap }));
   });
 
-  it("rejects the first request when the cap is 0 (operator kill-switch)", async () => {
+  it("answers the operator kill-switch (cap = 0) with 503 cloud_paused, before any database or storage work", async () => {
     const cap = 0;
-    const { admin, rpc, createSignedUploadUrl } = makeStubAdmin(0); // N = 0, cap = 0 → over
+    const { admin, from, rpc, createSignedUploadUrl } = makeStubAdmin(0);
+
+    const res = await createCloudJobResponse({ user: USER, request: jsonRequest(VALID_BODY), admin, cap });
+
+    expect(res.status).toBe(503);
+    const body = await readBody(res);
+    expect(body).toEqual({ error: { code: "cloud_paused", message: PAUSED_MESSAGE } });
+    expect("status" in body).toBe(false);
+    // A pause is not a used-up day: no sweep, no count, no admission, no signed URL.
+    expect(from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+    expect(createSignedUploadUrl).not.toHaveBeenCalled();
+  });
+
+  it("keeps the daily-cap contract at the smallest real cap (cap = 1, one job today): 429, not cloud_paused", async () => {
+    const cap = 1;
+    const { admin, rpc, createSignedUploadUrl } = makeStubAdmin(1);
 
     const res = await createCloudJobResponse({ user: USER, request: jsonRequest(VALID_BODY), admin, cap });
 
     expect(res.status).toBe(429);
     const body = await readBody(res);
-    expect(body.error?.code).toBe("daily_cap_reached");
+    expect(body).toEqual({ error: { code: "daily_cap_reached", message: CAP_MESSAGE } });
     expect(rpc).not.toHaveBeenCalled();
     expect(createSignedUploadUrl).not.toHaveBeenCalled();
   });
