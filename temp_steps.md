@@ -2,27 +2,40 @@
 
 ## Następne: S-19 `cloud-model-comparison` (#271)
 
-Cloud AI jest wstrzymany na produkcji od 2026-10-28T20:33:24Z (`CLOUD_DAILY_CAP=0`). Wraca dopiero wtedy,
-gdy S-19 spełni próg: co najmniej 8/12 wyraźnych wygranych, najwyżej jedna umiarkowana przegrana,
-zero ciężkich regresji. Samo zakończenie porównania nie wystarcza. Szczegóły:
-`context/changes/cloud-model-comparison/change.md` § Production pause.
+**Gdzie kontynuować (stan 2026-10-28, noc):** gałąź `feat/cloud-model-comparison` (wypchnięta na `origin`,
+bez PR). Na nowej maszynie: `git fetch && git switch feat/cloud-model-comparison`.
 
-1. ~~Zastąpić ujawnione S17-05/06~~ — zrobione 2026-10-28: decyzja w
-   `cloud-model-comparison/holdout-replacement-decision.md`; zestaw `s19-v1` zamrożony
-   (`test-photos/s19-benchmark.json`, S19-V01/V02 z Commons, log w `s19-collection-log.md`).
-2. **Ja:** `/rune-frame cloud-model-comparison` — kandydaci (modele) i protokół porównania.
+Cloud AI jest wstrzymany na produkcji od 2026-10-28T20:33:24Z (`CLOUD_DAILY_CAP=0`, użytkownik widzi
+komunikat o konserwacji). Wraca dopiero wtedy, gdy S-19 spełni próg: co najmniej 8/12 wyraźnych wygranych,
+najwyżej jedna umiarkowana przegrana, zero ciężkich regresji.
+
+Zrobione na gałęzi:
+
+- Decyzja o zastąpieniu holdoutu: `context/changes/cloud-model-comparison/holdout-replacement-decision.md`.
+- Zestaw `s19-v1` zamrożony: `test-photos/s19-benchmark.json` + `test-photos/s19-benchmark.sha256`
+  (6 tuning, 12 walidacja, 3 dodatkowe „wymaga obróbki” S19-E01–E03 poza progiem, 2 diagnostyczne S17-05/06).
+  - S19-V01 (zastępca S17-05, wymaga obróbki): `test-photos/licensed/25-phone-makersoul-yuchau-galaxys9plus.jpg`.
+  - S19-V02 (zastępca S17-06, dobry stan, test braku pogorszenia): `test-photos/licensed/24-phone-banyan-lamp-xiaomi.jpg`.
+  - Log wyboru: `context/changes/cloud-model-comparison/s19-collection-log.md`.
+- Weryfikacja na nowej maszynie: `sha256sum -c test-photos/s19-benchmark.sha256` (24× OK).
+
+Kroki:
+
+1. **Ja:** `/rune-frame cloud-model-comparison` — kandydaci (modele) i protokół porównania.
    Bread przy niskiej gammie i słabym odszumianiu to tylko jeden kandydat.
-3. **Ja:** `/rune-plan cloud-model-comparison`, potem plan review.
-4. **Ty:** zatwierdź koszt płatnych uruchomień, zanim ruszą.
-5. **Ja:** implementacja i uruchomienia; holdout otwierany dopiero przy ocenie końcowej.
+2. **Ja:** `/rune-plan cloud-model-comparison`, potem plan review.
+3. **Ty:** zatwierdź koszt płatnych uruchomień, zanim ruszą.
+4. **Ja:** implementacja i uruchomienia; walidacja otwierana dopiero przy ocenie końcowej.
 
 Zasady:
 
-- Zdjęcia do akceptacji na produkcji wybieramy z podziału `tuning` albo spoza benchmarku, nigdy z `validation`.
-- Porównanie oryginał → wynik Bread → post-pass dla S17-05/06 jest diagnostyczne. Nie służy do strojenia
-  kandydatów. Pliki: `test-photos/private/s19-holdout-exposure/` (gitignored).
-- Wniosek z tego porównania: prześwietlenie i utrata nasycenia pochodzą z Bread; post-pass tylko
-  obniża szum barwny nieba (~¼).
+- Na żadnym zdjęciu `s19-v1` nie uruchomiono jeszcze żadnego silnika — tak ma zostać do zablokowania
+  konfiguracji kandydatów na zdjęciach tuningowych.
+- Zdjęcia do akceptacji na produkcji wybieramy spoza walidacji (tuning albo spoza benchmarku).
+- Porównanie etapów S17-05/06 (oryginał → Bread → post-pass) jest diagnostyczne, nie do strojenia.
+  Wniosek: prześwietlenie i utrata nasycenia pochodzą z Bread; post-pass tylko obniża szum barwny.
+  Pliki są tylko na komputerze domowym: `test-photos/private/s19-holdout-exposure/` (gitignored);
+  hashe i liczby są w `cloud-model-comparison/change.md` § Holdout exposure.
 
 ## Kolejka po S-19
 
@@ -38,7 +51,7 @@ Zasady:
   (skill `run-local-stack`, landmine 2).
 - `supabase/functions/` i `src/` mają etykietę SELinux `container_file_t`. Cofnięcie: `restorecon -R supabase/ src/`.
 - `.dev.vars` i `supabase/functions/.env` są wygenerowane lokalnie dla E2E (gitignored).
-- `wrangler` jest zalogowany na tej maszynie (2026-10-28).
+- `wrangler` jest zalogowany na komputerze domowym (2026-10-28); na laptopie służbowym trzeba `npx wrangler login`, jeśli będzie potrzebny.
 
 ## Zamknięte (2026-10-27 – 2026-10-28)
 
