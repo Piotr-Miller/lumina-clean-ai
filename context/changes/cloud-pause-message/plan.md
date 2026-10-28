@@ -198,13 +198,13 @@ automated verification passes, then asks about the manual check after merge and 
 
 #### Automated
 
-- [x] 1.1 Handler and client tests pass — 10ed5cf
-- [x] 1.2 Full unit suite passes — 10ed5cf
-- [x] 1.3 Type checking passes — 10ed5cf
-- [x] 1.4 Lint passes — 10ed5cf
-- [x] 1.5 Formatting passes — 10ed5cf
-- [x] 1.6 No live doc still says cap 0 returns `daily_cap_reached` — 10ed5cf
+- [x] 1.1 Handler and client tests pass — d9d8058
+- [x] 1.2 Full unit suite passes — d9d8058
+- [x] 1.3 Type checking passes — d9d8058
+- [x] 1.4 Lint passes — d9d8058
+- [x] 1.5 Formatting passes — d9d8058
+- [x] 1.6 No live doc still says cap 0 returns `daily_cap_reached` — d9d8058
 
 #### Manual
 
-- [ ] 1.7 The owner reads the pause message in the UI after the deploy
+- [x] 1.7 The owner reads the pause message in the UI after the deploy — accepted at 0464e552a59249f752a218ba0f1e903732e367a1
