@@ -9,6 +9,8 @@ archived_at: null
 
 ## Notes
 
+2026-10-28: owner decision — the S17-05 slot must clearly need enhancement, and S17-06's slot stays a good-condition no-harm case (S19-V02 kept). S19-V01 was chosen by the owner from an input-only sheet. Three further owner picks form a supplementary needs-enhancement set (S19-E01–E03), reported outside the 8/12. See `s19-collection-log.md` and `test-photos/s19-benchmark.json`.
+
 Decision B from S-17 (maintainer, 2026-09-28): compare models for the **basic Cloud path** on the
 `s17-v1` benchmark. Bread at low gamma and weak denoise is **one candidate**. The lower-denoise
 Cloud setting is a hypothesis to compare here, not scope to ship. It does not resume Cloud Auto

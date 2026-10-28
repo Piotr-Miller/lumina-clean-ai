@@ -33,7 +33,10 @@ FETCH=(
   "S-17 Candle (29055009757).jpg · CC BY 2.0 Christopher Henry|17-candle.jpg|https://upload.wikimedia.org/wikipedia/commons/a/a0/Candle_%2829055009757%29.jpg"
   "S-17 National Museum Staircase2 at night (Prague).jpg · CC BY-SA 2.0 Mohamed Yahya|18-staircase.jpg|https://live.staticflickr.com/2685/4516172716_3ff704ce74_o.jpg"
   "S-17 Trisul by moonlight (3631259012).jpg · CC0 dr ashok kolluru|22-trisul.jpg|https://live.staticflickr.com/3417/3631259012_9b9303c845_o.jpg"
-  "S-19 replacement for S17-05: night facade, saturated neon and dark sky · CC BY-SA 4.0 Andre Carrotflower|23-phone-neon-elmwood-iphone6splus.jpg|https://upload.wikimedia.org/wikipedia/commons/c/cf/Elmwood_Avenue%2C_Buffalo%2C_New_York_-_%22Neon%2C_Not_the_Night%22_-_20191008.jpg"
+  "S-19 replacement for S17-05: dark Sham Shui Po street corner, lit shopfronts · CC0 Andy Li|25-phone-makersoul-yuchau-galaxys9plus.jpg|https://upload.wikimedia.org/wikipedia/commons/a/a9/MakerSoul_in_Yu_Chau_Street_at_night.jpg"
+  "S-19 supplementary needs-enhancement S19-E01 · CC BY-SA 4.0 Dwxn|26-phone-neon-wyluzuj-honor.jpg|https://upload.wikimedia.org/wikipedia/commons/b/bd/20231021_184556_we%C5%BA%C5%BCe_wyluzuj_neon_sign.jpg"
+  "S-19 supplementary needs-enhancement S19-E02 · CC BY-SA 4.0 Mbrickn|27-phone-neon-frickers-iphone8plus.jpg|https://upload.wikimedia.org/wikipedia/commons/e/e8/Night_Frickers.jpg"
+  "S-19 supplementary needs-enhancement S19-E03 · CC BY-SA 4.0 Lord Jaraxxus|28-phone-neon-pawnshop-causewaybay-iphone6s.jpg|https://upload.wikimedia.org/wikipedia/commons/e/e1/%E9%8A%85%E9%91%BC%E7%81%A3_Causeway_Bay_%E7%99%BB%E9%BE%8D%E8%A1%97_Tang_Lung_Street_%E5%92%8C%E6%98%8C%E5%A4%A7%E6%8A%BC_Woo_Cheong_Pawn_Shop_%E9%9C%93%E8%99%B9%E7%87%88%E6%8B%9B%E7%89%8C_Neon_Sign_%E8%A3%9D%E4%BF%AE_Renovation%2C_2020.jpg"
   "S-19 replacement for S17-06: street lamp under a banyan tree, foliage texture · CC BY-SA 4.0 ORLAMHOMNGA Feniam|24-phone-banyan-lamp-xiaomi.jpg|https://upload.wikimedia.org/wikipedia/commons/4/4b/HK_YTMD_YMT_%E4%B8%8A%E6%B5%B7%E8%A1%97_Shanghai_Street_%E5%85%AC%E5%9C%92_garden_%E6%A6%95%E6%A8%B9_Chinese_Banyan_tree_%E6%B0%A3%E6%A0%B9_air_roots_n_%E8%A1%97%E7%87%88_lamp_night_November_2022_Px3_01.jpg"
 )
 

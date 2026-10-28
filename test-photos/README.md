@@ -61,10 +61,12 @@ registered in `fetch.sh`. Do not silently replace frozen files after an upstream
 
 **S-19 v1 frozen 2026-10-28:** derived from `s17-v1` for the Cloud model comparison (S-19). It keeps
 the same six tuning photos and the ten unexposed validation photos, and replaces the exposed S17-05
-and S17-06 with two new full-size phone JPEGs from Commons, `23-phone-neon-elmwood-iphone6splus.jpg`
-(S19-V01, CC BY-SA 4.0 Andre Carrotflower) and `24-phone-banyan-lamp-xiaomi.jpg` (S19-V02, CC BY-SA
-4.0 ORLAMHOMNGA Feniam). Both are downloaded unchanged and registered in `fetch.sh`. S17-05/06 stay
-listed as separate diagnostic cases. See the [manifest](s19-benchmark.json), the
+and S17-06 with two new full-size phone JPEGs from Commons: `25-phone-makersoul-yuchau-galaxys9plus.jpg`
+(S19-V01, CC0 Andy Li, a dark street that needs enhancement) and `24-phone-banyan-lamp-xiaomi.jpg`
+(S19-V02, CC BY-SA 4.0 ORLAMHOMNGA Feniam, a good-condition no-harm case). Three more dark phone photos,
+`26-`, `27-` and `28-` (S19-E01–E03), form a supplementary needs-enhancement set reported outside the
+twelve. All are downloaded unchanged and registered in `fetch.sh`. S17-05/06 stay listed as separate
+diagnostic cases. See the [manifest](s19-benchmark.json), the
 [decision](../context/changes/cloud-model-comparison/holdout-replacement-decision.md) and the
 [collection log](../context/changes/cloud-model-comparison/s19-collection-log.md). Verify with
 `sha256sum -c test-photos/s19-benchmark.sha256`. `s17-v1` and its hash file are unchanged.
