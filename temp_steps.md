@@ -7,8 +7,9 @@ gdy S-19 spełni próg: co najmniej 8/12 wyraźnych wygranych, najwyżej jedna u
 zero ciężkich regresji. Samo zakończenie porównania nie wystarcza. Szczegóły:
 `context/changes/cloud-model-comparison/change.md` § Production pause.
 
-1. **Ty:** zdecyduj, jak zastąpić ujawnione zdjęcia walidacyjne S17-05 i S17-06, żeby próg nadal
-   był liczony na 12 zdjęciach. Opis ekspozycji: `cloud-model-comparison/change.md` § Holdout exposure.
+1. ~~Zastąpić ujawnione S17-05/06~~ — zrobione 2026-10-28: decyzja w
+   `cloud-model-comparison/holdout-replacement-decision.md`; zestaw `s19-v1` zamrożony
+   (`test-photos/s19-benchmark.json`, S19-V01/V02 z Commons, log w `s19-collection-log.md`).
 2. **Ja:** `/rune-frame cloud-model-comparison` — kandydaci (modele) i protokół porównania.
    Bread przy niskiej gammie i słabym odszumianiu to tylko jeden kandydat.
 3. **Ja:** `/rune-plan cloud-model-comparison`, potem plan review.

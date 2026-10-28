@@ -25,7 +25,8 @@ Fixed inputs:
   exposure). Viewing them is not evidence of tuning on the holdout, but it has to be disclosed.
   Decision (2026-10-28): replace both for every candidate with two new, input-only-qualified
   phone photos; retain the other ten and the unchanged 8/12 bar. Freeze a separate `s19-v1`
-  before final validation. Collection is still pending; see `holdout-replacement-decision.md`.
+  before final validation. Collected and frozen 2026-10-28 as S19-V01/V02: `test-photos/s19-benchmark.json`,
+  log in `s19-collection-log.md`.
 - Quality bar: `context/archive/2026-08-31-cloud-quality-below-local/quality-bar.md`.
 - Evidence for Bread so far: `context/archive/2026-08-31-cloud-quality-below-local/calibration.md`.
   Across the three probes Bread gains on 4 of 6 tuning photos, 2 of them small. There is no basis

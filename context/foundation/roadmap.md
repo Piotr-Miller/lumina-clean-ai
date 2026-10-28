@@ -332,7 +332,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ### S-19: Compare Cloud AI model candidates on the derived s19-v1 benchmark
 
 - **Phase:** `phase:post-mvp`
-- **Outcome:** the basic Cloud path's model is chosen from a comparison on `s19-v1`, derived from frozen `s17-v1` by replacing its two exposed phone validation photos, judged against the unchanged quality bar on a holdout no candidate was tuned on. Collection and freeze of the replacements remain pending; see `context/changes/cloud-model-comparison/holdout-replacement-decision.md`.
+- **Outcome:** the basic Cloud path's model is chosen from a comparison on `s19-v1`, derived from frozen `s17-v1` by replacing its two exposed phone validation photos, judged against the unchanged quality bar on a holdout no candidate was tuned on. The replacements were collected and frozen on 2026-10-28 (`test-photos/s19-benchmark.json`); see `context/changes/cloud-model-comparison/holdout-replacement-decision.md` and `s19-collection-log.md`.
 - **Change ID:** cloud-model-comparison
 - **GitHub issue:** [#271](https://github.com/Piotr-Miller/lumina-clean-ai/issues/271)
 - **PRD refs:** MVP Success Criteria ("cloud result is noticeably better than local"); the two-engine Strategy toggle (S-01, S-04)
