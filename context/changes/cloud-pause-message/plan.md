@@ -198,12 +198,12 @@ automated verification passes, then asks about the manual check after merge and 
 
 #### Automated
 
-- [x] 1.1 Handler and client tests pass
-- [x] 1.2 Full unit suite passes
-- [x] 1.3 Type checking passes
-- [x] 1.4 Lint passes
-- [x] 1.5 Formatting passes
-- [x] 1.6 No live doc still says cap 0 returns `daily_cap_reached`
+- [x] 1.1 Handler and client tests pass — 10ed5cf
+- [x] 1.2 Full unit suite passes — 10ed5cf
+- [x] 1.3 Type checking passes — 10ed5cf
+- [x] 1.4 Lint passes — 10ed5cf
+- [x] 1.5 Formatting passes — 10ed5cf
+- [x] 1.6 No live doc still says cap 0 returns `daily_cap_reached` — 10ed5cf
 
 #### Manual
 
