@@ -95,8 +95,9 @@ candidates.
 ## Production pause (owner decision, 2026-10-27)
 
 Decision: pause new Cloud AI jobs with `CLOUD_DAILY_CAP=0` until S-19 confirms the quality of the
-production path. The owner sets the Worker secret; when this note was written (2026-10-28) it had
-not yet been confirmed as set. Local stays available. Reasons: S-17 found no reliable Auto rule, S17-02 is
+production path. Set 2026-10-28T20:33:24Z (`wrangler secret put`, Worker deployment
+"Secret Change" at 20:33:23Z); the secret was still listed after the 20:34:58Z master deploy of
+`777f66f`. Not yet observed end-to-end as a 429 by a signed-in user. Local stays available. Reasons: S-17 found no reliable Auto rule, S17-02 is
 harmed even at strength 0, and both exposed validation photos came back unusable. Bread does
 improve some photos, which justifies the comparison but not leaving the current path to users.
 S17-06 was checked at gamma 1 / strength 0.05; the UI minimum strength is 0, so "even at the

@@ -6,7 +6,7 @@ Night and low-light photos taken on mobile devices suffer from heavy digital noi
 
 ### Minimum Feature Set
 
-- AI-powered image enhancement via a cloud model (Bread on Replicate) — single upload, automatic denoising + exposure correction. **✅ LIVE in prod since 2026-06-08** (luminacleanai.com; `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3`, kill-switch `=0`). Augmented with an adaptive **YCbCr chroma-denoise post-pass** that reduces colored shadow noise — flag enabled 2026-06-27 (change `bread-chroma-postpass`, S-11).
+- AI-powered image enhancement via a cloud model (Bread on Replicate) — single upload, automatic denoising + exposure correction. **✅ LIVE in prod since 2026-06-08** (luminacleanai.com; `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3`, kill-switch `=0`). **Paused since 2026-10-28** (`CLOUD_DAILY_CAP=0`) until S-19 confirms Cloud quality. Augmented with an adaptive **YCbCr chroma-denoise post-pass** that reduces colored shadow noise — flag enabled 2026-06-27 (change `bread-chroma-postpass`, S-11).
 - Instant client-side processing as a free fallback (Canvas API: gamma correction + Gaussian blur)
 - Dedicated toggle to switch between Cloud AI and Local engine (Strategy Pattern)
 - Simple user account system for storing jobs and gating cloud usage (Supabase Auth + RLS)
