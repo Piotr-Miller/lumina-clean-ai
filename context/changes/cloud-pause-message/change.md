@@ -9,6 +9,8 @@ archived_at: null
 
 ## Notes
 
+2026-10-28: 1.7 confirmed by the owner after the master deploy of 0464e55 (run 40769217235): signed in on luminacleanai.com, a Cloud submit shows "Cloud AI is temporarily unavailable due to maintenance. Please use the Local engine in the meantime." Progress rows 1.1-1.6 repointed from the branch commit 10ed5cf to master d9d8058 (PR #322 rebase-merge).
+
 Owner decision 2026-10-28: a separate small change before S-19 (`cloud-model-comparison`, #271).
 
 Cloud AI has been paused in production since 2026-10-28T20:33:24Z with the kill-switch
