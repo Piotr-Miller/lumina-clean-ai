@@ -39,9 +39,8 @@ zero ciężkich regresji. Samo zakończenie porównania nie wystarcza. Szczegó�
      Tabela obok ocen Bread z S-17: `change.md` § Owner decisions after the frame.
    - ⏳ **NASTĘPNE, na Linuksie:** wyniki Bread z S-17 są w `test-photos/private/s17/` (m.in. `direct/phase3/`).
      **Ja:** dodaję kolumnę Bread do `compare.html`. **Ty:** oceniasz Bread vs Local obok siebie.
-   - ⏳ **Ja:** porównanie profili kolorów (ICC) na wynikach Bread dla S17-03, S17-07, S17-21 (skrypt
-     `icc_gap.py` był w scratchpadzie sesji na Windows; łatwo go odtworzyć: średnie V/S przy dekodowaniu
-     naiwnym vs ICC→sRGB).
+   - ⏳ **Ja:** porównanie profili kolorów (ICC) na wynikach Bread dla S17-03, S17-07, S17-21 skryptem
+     `scripts/s19/icc-gap.py` (średnie V/S przy dekodowaniu naiwnym vs ICC→sRGB).
 4. **Ty:** decyzje — zgoda na płatną część empiryczną spike'a (≈ $1.1); czy zdjęcia użytkowników mogą trafiać
    do OpenAI/Google; budżet tuningu (limit w $); zatwierdzenie nowej kategorii ciężkiej regresji
    „zmieniona/zmyślona treść” w progu jakości **przed** tuningiem.
