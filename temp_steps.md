@@ -27,11 +27,24 @@ zero ciężkich regresji. Samo zakończenie porównania nie wystarcza. Szczegó�
      **przechowywanie/trenowanie na zdjęciach użytkowników**, komercyjna licencja na wynik, opóźnienie.
    - **Test wykonalności** tylko na 1–2 zdjęciach **tuningowych** na kandydata, każdy płatny test za zgodą właściciela.
    - Uwaga: mail „There's more to see with GPT-6” to reklama Intelligent UI w ChatGPT (widgety), nie modelu do obróbki.
-3. **Ja (NASTĘPNE):** `/rune-frame cloud-model-comparison` na faktach ze spike'a. Do rozstrzygnięcia: czy Cloud ma być modelem
-   (vs klasa D albo lepszy Local); **jeden finalista wybrany na tuningu, tylko on idzie na holdout**; czy chroma
-   post-pass obejmuje innych kandydatów; S-19 kończy się decyzją, wdrożenie innego dostawcy = osobna zmiana.
-4. **Ty:** decyzje — czy zdjęcia użytkowników mogą trafiać do OpenAI/Google; budżet tuningu (limit w $);
-   zatwierdzenie nowej kategorii ciężkiej regresji „zmieniona/zmyślona treść” w progu jakości **przed** tuningiem.
+3. ~~**Ja:** `/rune-frame cloud-model-comparison`.~~ **Zrobione 2026-10-29** → `cloud-model-comparison/frame.md`.
+   Wniosek: nie wiadomo jeszcze, czy to model trzyma Cloud poniżej progu. Porażka na produkcji to głównie
+   zakres gammy (dolna granica 1.0, a wszystkie akceptowalne ustawienia Bread w S-17 miały 0.5–0.9).
+   Dodatkowo TypeSafe Jev for Images odpada (obrazy nie są gotowe na produkcję), zob. `research.md`.
+   **Weryfikacja z frame.md — stan:**
+   - ✅ Kontrole walidacyjne (S17-10/18/24) mogą być wygraną, próg zostaje 8/12 (decyzja właściciela).
+   - ✅ Prawdziwy Local (produkcja, Auto ON) uruchomiony na 8 zdjęciach tuningowych, wyniki i licencje w
+     `cloud-model-comparison/references/`, przeglądarka do ocen: `references/compare.html`.
+   - ✅ Ocena Local vs oryginał (właściciel): 4 poprawy, 2 bez zmian, 2 szkody (S17-05, S17-21, oba za jasne).
+     Tabela obok ocen Bread z S-17: `change.md` § Owner decisions after the frame.
+   - ⏳ **NASTĘPNE, na Linuksie:** wyniki Bread z S-17 są w `test-photos/private/s17/` (m.in. `direct/phase3/`).
+     **Ja:** dodaję kolumnę Bread do `compare.html`. **Ty:** oceniasz Bread vs Local obok siebie.
+   - ⏳ **Ja:** porównanie profili kolorów (ICC) na wynikach Bread dla S17-03, S17-07, S17-21 (skrypt
+     `icc_gap.py` był w scratchpadzie sesji na Windows; łatwo go odtworzyć: średnie V/S przy dekodowaniu
+     naiwnym vs ICC→sRGB).
+4. **Ty:** decyzje — zgoda na płatną część empiryczną spike'a (≈ $1.1); czy zdjęcia użytkowników mogą trafiać
+   do OpenAI/Google; budżet tuningu (limit w $); zatwierdzenie nowej kategorii ciężkiej regresji
+   „zmieniona/zmyślona treść” w progu jakości **przed** tuningiem.
 5. **Ja:** `/rune-plan cloud-model-comparison` (+ przepięcie `scripts/s17/*` na v2), potem plan review.
 6. **Ja:** tuning → finalista → holdout (12 zdjęć, finalista vs Local, ocena na ślepo).
 
@@ -60,6 +73,8 @@ Zasady:
 - `wrangler` jest zalogowany na tej maszynie (2026-10-28).
 - **Windows (2026-10-29):** `ai-toolkit@1.15.0` zainstalowany, skille `rune-*` dostępne. Uwagi o podmanie/SELinux
   wyżej dotyczą maszyny z Linuksem.
+- **Branch S-19:** `docs/cloud-model-comparison-spike`, PR #327 (otwarty, niezmergowany). Na Linuksie:
+  `git checkout docs/cloud-model-comparison-spike && git pull`.
 
 ## Zamknięte (2026-10-27 – 2026-10-28)
 
