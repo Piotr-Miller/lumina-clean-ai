@@ -490,3 +490,85 @@ fact and is not this spike's question.
 - The test plan's word "expensive" is **refuted on price**: about $0.0006–0.003 per photo before
   thinking tokens, the same order as one Bread run. Its "unstable" half cannot be settled from
   documents.
+
+## Spike: Does TypeSafe "Jev for Images" pass the class-D sieve as a parameter chooser? (2026-10-29, 16:10)
+
+Added at the owner's request after the four sections above. The prompt was the YouTube video
+"'Jev for Images' Just Changed Visual Automations Forever" (Jay E, RoboNuggets,
+https://www.youtube.com/watch?v=0SFKD0xkdR8). The video was read as a transcript through exa,
+not watched. Vendor facts below come from docs.typesafe.ai and typesafe.ai only. Third-party
+figures are labelled as such.
+
+**What the previous source said.** No prior claim about Jev or TypeSafe found in
+`context/changes/**`, `context/archive/**` or `context/foundation/`.
+
+**Documentary half.**
+
+- **What it is: a decision model, not an image model.** Jev returns typed answers, not text or
+  pixels. The video lists three kinds: "a yes or no question", "pick from a list", and "a score
+  based on a scale".
+  - "Every question type accepts images, and the Box question type returns where something is in
+    an image" (https://docs.typesafe.ai/images, read 2026-10-29).
+  - So it fits class D (choosing parameters), not classes A–C. A parameter would come back as a
+    `choice` among presets or as a `score`. A free-form `{gamma, strength}` object is not a
+    documented answer type.
+- **S1 production API: fails for images.** Images need a header and are explicitly below
+  TypeSafe's production bar.
+  - "Images and Box questions are off by default. To use them, send the
+    `TypeSafe-Danger-Zone-Images: true` header" (https://docs.typesafe.ai/images, read
+    2026-10-29).
+  - "Images and Box questions aren't yet up to our standards to call ready for production"; "The
+    request format, the answers, and the limits on this page can change between releases" (same
+    page).
+  - The models table still lists "Input | Text | Text" for Jev 1.14 and 1.13, and says "Jev 1.14
+    is the newest Jev release, available from October 14, 2026" (https://docs.typesafe.ai/models,
+    read 2026-10-29).
+  - The vendor warns: "all models (Jev included) perform worse on multimodality over pure text"
+    (https://typesafe.ai/blog/jev-1-14, read 2026-10-29).
+- **S2 structured output: passes by design.** Answers are typed by construction (`noul`,
+  `choice`, `score`, `box`; https://docs.typesafe.ai/images).
+- **S3 price: the rate is published, the image cost is not.**
+  - Rate: "$42 / $0.042" per Btok / Mtok; "You pay per input token. Output tokens are free"
+    (https://docs.typesafe.ai/models).
+  - Image billing: "Each image counts as input tokens, billed at the same per-token input price as
+    text" (https://docs.typesafe.ai/images). No tokens-per-image formula is published.
+  - Third party, not the vendor: Wes Bos reported "One question about an image that is 850x850
+    cost one hundredth of a cent - $0.000096936", and "1568 is 4x more expensive than 784x784"
+    (post of 2026-10-14, read via a nitter mirror on 2026-10-29). If that holds, a 1568 px image
+    costs ≈ $0.0003.
+- **Input limits matter for this app.**
+  - "Width and height: 280 to 1568 pixels each"; "Total pixels: 78,400 to 2,458,624". A
+    4000 × 3000 phone photo has to be downscaled before the call.
+  - "The API removes all metadata (EXIF, color profiles, comments) and does not apply the EXIF
+    orientation" (https://docs.typesafe.ai/images). An orientation-6 photo such as S17-06 or
+    S17-24 has to be rotated before it is sent, the same fault class `cloud-exif-orientation`
+    fixed for Bread.
+- **S4 data: only partly documented.**
+  - "Jev is not fine-tuned or LoRA-adapted with customer data … the same weights serve every
+    account" (https://docs.typesafe.ai/models). That covers per-account tuning, not retention or
+    use of inputs for training the shared model.
+  - A third-party review says TypeSafe states Jev "is not trained on customer requests or
+    responses" and that zero data retention is available for enterprise customers
+    (https://aitoolfinder.org/tools/jev/, checked by its authors 2026-09-30). The vendor page was
+    not found.
+- **S5 output rights: not checked.**
+- **S6 latency: only vendor claims, reported by third parties.** "about 70–500ms" end-to-end,
+  attributed to the launch post (https://guzli.com/blog/jev-typesafe-ai-use-cases/, read
+  2026-10-29).
+
+**Empirical half, pending owner consent and a TypeSafe API key.** Smallest experiment: one
+`score` question and one `choice` question on S17-04, downscaled to 1568 px on the long side
+(≈ $0.0003). It records `usage.input_tokens`, the answers with their probabilities, and wall time.
+That settles the image cost only. Whether the chosen parameters are good is not a vendor fact.
+
+**Not yet checked:**
+
+- TypeSafe's own terms on retention and training;
+- output rights;
+- the tokens-per-image rule;
+- rate limits for images;
+- whether the "dreamer-ready" image status has a planned production date.
+
+**What this settles:** Jev for Images belongs in class D and is cheap, but it **fails S1 today**.
+TypeSafe itself says images are not production-ready and may change between releases. The 1568 px
+cap and the missing EXIF orientation would also need handling in this app's pipeline.

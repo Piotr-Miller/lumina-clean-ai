@@ -141,3 +141,31 @@ most one moderate loss, and zero severe regressions. Finishing the comparison al
 
 **Follow-up:** the over-cap message still says to try again tomorrow. For a longer pause it should
 say that Cloud AI is temporarily unavailable during a quality review and point to Local.
+
+## Owner decisions after the frame (2026-10-29)
+
+- **Validation controls count as possible wins.** S17-10, S17-18 and S17-24 may each be a clear
+  Cloud win, for example by visibly lower noise without harm. The threshold stays **8 of 12**.
+  This was decided before any tuning, as `frame.md` requires.
+- **Local baseline run.** The real Local engine (production app, Auto ON) ran on seven of the
+  eight `s17-v2` tuning photos on 2026-10-29. Downloads, their licences and the Auto values are in
+  `references/` (README per file). S17-21 was run by the owner by hand (its
+  17 MB file exceeds the browser tool's 10 MB upload limit). Owner's rating, 2026-10-29: **Local
+  with Auto ON is too bright** on S17-21. Its download and the Auto values are not recorded. On the
+  same photo, S-17 rated Bread at production Auto (1.5 / 0.151) "harm: washed out, lost detail".
+  The only acceptable Bread setting was gamma 0.5 / strength 0.0, which the production range
+  cannot reach (archive `calibration.md:160`, `:710`).
+
+  Local's own Auto values on that run (outputs are reproducible from the licensed input and these
+  two numbers):
+
+  | Photo  |   Auto gamma |    Auto blur |
+  | ------ | -----------: | -----------: |
+  | S17-01 |         1.56 |          0.2 |
+  | S17-02 |         1.05 |          0.2 |
+  | S17-03 |         1.19 |          0.2 |
+  | S17-04 |         1.10 |          0.1 |
+  | S17-05 |         1.67 |          0.3 |
+  | S17-06 |         1.00 |          0.1 |
+  | S17-07 |         1.80 |          0.7 |
+  | S17-21 | not recorded | not recorded |
