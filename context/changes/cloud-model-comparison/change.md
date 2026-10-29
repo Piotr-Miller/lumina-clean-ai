@@ -1,9 +1,9 @@
 ---
 change_id: cloud-model-comparison
 title: Compare Cloud AI model candidates on the s17-v1 benchmark
-status: new
+status: preparing
 created: 2026-09-28
-updated: 2026-10-28
+updated: 2026-10-29
 archived_at: null
 ---
 
@@ -16,14 +16,13 @@ calibration.
 
 Fixed inputs:
 
-- Benchmark `s17-v1` (`test-photos/s17-benchmark.json`, hashes in `test-photos/s17-benchmark.sha256`):
-  six tuning photos and twelve validation photos.
+- Benchmark `s17-v2` (`test-photos/s17-benchmark-v2.json`, hashes in
+  `test-photos/s17-benchmark-v2.sha256`): eight tuning photos and twelve validation photos. It
+  supersedes `s17-v1`, which stays frozen as history (see § Holdout replacement).
 - **Holdout:** the twelve validation photos are meant to stay unopened for every model. Tuning
   results only prepare the candidates; judging whether a candidate generalises needs that holdout.
-  **Two of the twelve are no longer unopened for Bread:** S17-05 and S17-06 (see § Holdout
-  exposure). Viewing them is not evidence of tuning on the holdout, but it has to be disclosed.
-  Before S-19 fixes its protocol, decide how to replace those two samples while keeping the
-  agreed bar evaluated on twelve photos.
+  S17-05 and S17-06 were opened for Bread (see § Holdout exposure), so `s17-v2` moves them to
+  tuning and puts two unexposed phone photos, S17-23 and S17-24, in their validation places.
 - Quality bar: `context/archive/2026-08-31-cloud-quality-below-local/quality-bar.md`.
 - Evidence for Bread so far: `context/archive/2026-08-31-cloud-quality-below-local/calibration.md`.
   Across the three probes Bread gains on 4 of 6 tuning photos, 2 of them small. There is no basis
@@ -91,6 +90,38 @@ post-pass leaves V and S unchanged within 0.003 and lowers sky chroma noise by a
 with a pink patch under Bread. So the degradation comes from Bread at these parameters, not from
 the post-pass. This is a diagnostic of exposed samples only, and it must not be used to tune S-19
 candidates.
+
+## Holdout replacement (owner decision, 2026-10-29)
+
+The owner chose to replace S17-05 and S17-06 with two new freely licensed photos of the same kind,
+so the bar is still evaluated on twelve validation photos. The result is benchmark `s17-v2`
+(`test-photos/s17-benchmark-v2.json`). `s17-v1` is not edited in place: its freeze protocol
+forbids changing membership or hashes after experiments begin, and the S-17 archive pins its
+hashes.
+
+| Change              | Photo                                                                                                                                | Why                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| validation → tuning | S17-05, S17-06                                                                                                                       | Bread outputs were opened (above). No other candidate has seen them, so they are still valid tuning material.                             |
+| new validation      | S17-23 `23-phone-sodium-street-pixel6.jpg`: Pixel 6, shop corner under sodium light, signage and mural · CC BY-SA 2.0 Tadeusz Hare   | Takes S17-05's role: a full-size phone JPEG with lettering and intense local light. Dark, with visible luminance noise at native scale.   |
+| new validation      | S17-24 `24-phone-fountain-galaxys23ultra.jpg`: Galaxy S23 Ultra, lit fountain, wet paving, point lights · CC BY-SA 4.0 ja:User:Sanjo | Takes S17-06's role, including **EXIF orientation 6**: a full-size Samsung JPEG of an already bright, processed scene, so a no-harm case. |
+
+Selection was input-only, as for `s17-v1`: a Wikimedia Commons search of phone-camera categories
+for night photos, then thumbnails, the file pages and native-pixel crops. No Cloud or Local output
+of either photo exists. Both files are single-revision Commons uploads whose SHA-1 matches the
+download, with the author on the file page matching the uploader (S17-23 via Flickypedia from the
+author's Flickr). Rejected on the way: Takamatsu Station (Pixel 8), because its listed author
+differs from its uploader, the same unresolved gap S17-01 carries; Battery Road (Pixel 7a),
+because 4445 × 3337 is a crop, not a camera original; and two more photos by S17-23's
+photographer, so that one author contributes one photo.
+
+Limits:
+
+- The S-17 scripts (`scripts/s17/*`, `scripts/measure-hue-shares.py`) still read
+  `s17-benchmark.json` (v1). S-19's plan has to point them at v2 or take the manifest as an
+  argument; until then they see S17-05/06 as validation and do not know S17-23/24.
+- `test-photos/s17-gallery.html` shows v1 only.
+- Phone coverage stays thin: five phone sources in all, three in tuning and two in validation,
+  and still no low-light phone portrait (`photo-candidates.md`, limit 2).
 
 ## Production pause (owner decision, 2026-10-27)
 
