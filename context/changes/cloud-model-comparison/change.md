@@ -156,16 +156,27 @@ say that Cloud AI is temporarily unavailable during a quality review and point t
   The only acceptable Bread setting was gamma 0.5 / strength 0.0, which the production range
   cannot reach (archive `calibration.md:160`, `:710`).
 
-  Local's own Auto values on that run (outputs are reproducible from the licensed input and these
-  two numbers):
+- **Local rated against the original (owner, 2026-10-29).** The owner rated each Local output
+  against its original in `references/compare.html`, using S-17's scale. The Bread columns are
+  S-17's ratings of the same photos, copied for reference and not re-rated. Bread at the
+  production floor (gamma ≥ 1.0) is archive `calibration.md:224-231` and `:454-461`; for S17-05
+  and S17-06 it is § Holdout exposure above. Bread at gamma 0.5 is `calibration.md:592-599`, and
+  S17-21 at strength 0.0 is `:710`. Gamma 0.5 cannot be reached in production.
 
-  | Photo  |   Auto gamma |    Auto blur |
-  | ------ | -----------: | -----------: |
-  | S17-01 |         1.56 |          0.2 |
-  | S17-02 |         1.05 |          0.2 |
-  | S17-03 |         1.19 |          0.2 |
-  | S17-04 |         1.10 |          0.1 |
-  | S17-05 |         1.67 |          0.3 |
-  | S17-06 |         1.00 |          0.1 |
-  | S17-07 |         1.80 |          0.7 |
-  | S17-21 | not recorded | not recorded |
+  | Photo  | Local Auto gamma / blur | Local vs original (owner)             | Bread at production settings  | Bread, best S-17 setting                 |
+  | ------ | ----------------------- | ------------------------------------- | ----------------------------- | ---------------------------------------- |
+  | S17-01 | 1.56 / 0.2              | improvement (small)                   | harm: washed out              | improvement (γ 0.5)                      |
+  | S17-02 | 1.05 / 0.2              | kept                                  | harm: washed out              | harm at every tested setting             |
+  | S17-03 | 1.19 / 0.2              | improvement (small)                   | harm: washed out              | improvement, small (γ 0.5)               |
+  | S17-04 | 1.10 / 0.1              | kept                                  | harm: washed out              | no harm (γ 0.5)                          |
+  | S17-05 | 1.67 / 0.3              | harm: sky too bright, looks unnatural | unusable (owner, production)  | not tested below γ 1.5                   |
+  | S17-06 | 1.00 / 0.1              | improvement (small)                   | unusable (owner, production)  | not tested below γ 1.0                   |
+  | S17-07 | 1.80 / 0.7              | improvement                           | harm: washed out, lost detail | improvement (γ 0.5, 0.7, 0.9)            |
+  | S17-21 | not recorded            | harm: too bright (rated in the app)   | harm: washed out, lost detail | improvement, small (γ 0.5, strength 0.0) |
+
+  **Tally.** Local: 4 improvements, 2 kept, 2 harm. Bread at production settings: 8 harm or
+  unusable. Bread at its best S-17 setting: 4 improvements, 1 no harm, 1 harm, 2 untested.
+  Local's two harms (S17-05, S17-21) are both too bright, the same failure as Bread's Auto.
+  These are tuning photos: they show what the comparator looks like, not the validation result.
+  No Bread output has been compared with a Local output side by side yet. That needs the S-17
+  outputs, which are on the Linux machine.
