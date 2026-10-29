@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local vs oryginał</title>
+    <style>
+      :root {
+        --bg: #1c1c1e;
+        --panel: #2a2a2d;
+        --line: #3a3a3e;
+        --text: #e8e8ea;
+        --muted: #9a9aa0;
+        --accent: #6ea8fe;
+        --good: #5cb85c;
+        --bad: #e06c6c;
+        --neutral: #c9a227;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.4 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      body {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+      header,
+      footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        border-bottom: 0;
+        align-items: flex-start;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0;
+        font-weight: 600;
+      }
+      .meta {
+        color: var(--muted);
+      }
+      button,
+      select,
+      input[type="text"] {
+        font: inherit;
+        color: var(--text);
+        background: #38383c;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 5px 10px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      button.on {
+        background: var(--accent);
+        color: #111;
+        border-color: var(--accent);
+      }
+      .spacer {
+        flex: 1;
+      }
+      main {
+        min-height: 0;
+        display: grid;
+        gap: 4px;
+        padding: 4px;
+      }
+      main.side {
+        grid-template-columns: 1fr 1fr;
+      }
+      main.flip {
+        grid-template-columns: 1fr;
+      }
+      .pane {
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+        background: #111;
+      }
+      .pane.zoom {
+        overflow: auto;
+      }
+      .pane img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .pane.zoom img {
+        width: auto;
+        height: auto;
+        max-width: none;
+        object-fit: none;
+      }
+      .label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.65);
+        font-weight: 600;
+        pointer-events: none;
+        z-index: 1;
+      }
+      .pane.zoom > .label {
+        position: sticky;
+        display: inline-block;
+        margin: 8px;
+        height: 0;
+        overflow: visible;
+      }
+      .missing {
+        display: grid;
+        place-items: center;
+        height: 100%;
+        color: var(--muted);
+        padding: 16px;
+        text-align: center;
+      }
+      .rate {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .rate button[data-v^="improvement"].on {
+        background: var(--good);
+        border-color: var(--good);
+      }
+      .rate button[data-v="kept"].on {
+        background: var(--neutral);
+        border-color: var(--neutral);
+      }
+      .rate button[data-v="harm"].on {
+        background: var(--bad);
+        border-color: var(--bad);
+      }
+      #why {
+        flex: 1 1 320px;
+        min-width: 200px;
+      }
+      .dots {
+        display: flex;
+        gap: 4px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--line);
+        cursor: pointer;
+      }
+      .dot.done {
+        background: var(--good);
+      }
+      .dot.cur {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      dialog {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        width: min(900px, calc(100vw - 32px));
+      }
+      dialog textarea {
+        width: 100%;
+        height: 50vh;
+        font:
+          12px/1.4 ui-monospace,
+          Consolas,
+          monospace;
+        background: #111;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px;
+      }
+      kbd {
+        background: #38383c;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 0 4px;
+        font-size: 12px;
+      }
+      @media (max-width: 700px) {
+        main.side {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <button id="prev" title="Poprzednie (←)">←</button>
+      <h1 id="title"></h1>
+      <button id="next" title="Następne (→)">→</button>
+      <span class="meta" id="auto"></span>
+      <div class="dots" id="dots"></div>
+      <span class="spacer"></span>
+      <button id="mSide">Obok siebie</button>
+      <button id="mFlip" title="Spacja przełącza oryginał ↔ Local">Przełączanie</button>
+      <button id="zoom" title="Z">100%</button>
+      <span class="meta"><kbd>←</kbd><kbd>→</kbd> zdjęcia · <kbd>Spacja</kbd> przełącz · <kbd>Z</kbd> 100%</span>
+    </header>
+    <main id="main"></main>
+    <footer>
+      <div class="rate" id="rate">
+        <strong>Local względem oryginału:</strong>
+        <button data-v="improvement">improvement</button>
+        <button data-v="improvement (small)">improvement (small)</button>
+        <button data-v="kept">kept</button>
+        <button data-v="harm">harm</button>
+      </div>
+      <input type="text" id="why" placeholder="Dlaczego — jedno zdanie (np. „washed out, lost detail”)" />
+      <button id="export">Eksport do Markdown</button>
+    </footer>
+    <dialog id="dlg">
+      <p>Tabela ocen. Skopiuj i wklej do czatu.</p>
+      <textarea id="md" readonly></textarea>
+      <p>
+        <button id="copy">Kopiuj</button> <button id="close">Zamknij</button> <span class="meta" id="copied"></span>
+      </p>
+    </dialog>
+    <script>
+      const PHOTOS = [
+        { id: "S17-01", file: "01-aurora-fjord-kirkjufell.jpg", gamma: 1.56, blur: 0.2 },
+        { id: "S17-02", file: "02-aurora-frozen-lake-norway.jpg", gamma: 1.05, blur: 0.2 },
+        { id: "S17-03", file: "03-aurora-reykjanes-snow-lava.jpg", gamma: 1.19, blur: 0.2 },
+        { id: "S17-04", file: "04-phone-whitehouse-iphone13pro.jpg", gamma: 1.1, blur: 0.1 },
+        { id: "S17-05", file: "05-phone-walgreens-pixel7.jpg", gamma: 1.67, blur: 0.3 },
+        { id: "S17-06", file: "06-phone-rain-galaxys24ultra.jpg", gamma: 1.0, blur: 0.1 },
+        { id: "S17-07", file: "07-night-portrait.jpg", gamma: 1.8, blur: 0.7 },
+        {
+          id: "S17-21",
+          file: "21-kangchenjunga.jpg",
+          gamma: null,
+          blur: null,
+          noLocal: true,
+          preset: { v: "harm", why: "too bright (rated in the app; download not saved)" },
+        },
+      ];
+      const KEY = "s19-local-vs-original-v1";
+      const $ = (id) => document.getElementById(id);
+
+      let ratings = {};
+      try {
+        ratings = JSON.parse(localStorage.getItem(KEY) || "{}");
+      } catch {
+        ratings = {};
+      }
+      for (const p of PHOTOS) if (p.preset && !ratings[p.id]) ratings[p.id] = { ...p.preset };
+      const save = () => {
+        try {
+          localStorage.setItem(KEY, JSON.stringify(ratings));
+        } catch {}
+      };
+
+      let idx = 0,
+        mode = "side",
+        zoomed = false,
+        showLocal = false;
+
+      const origSrc = (p) => "../../../../test-photos/licensed/" + p.file;
+      const localSrc = (p) => "luminaclean-" + p.file;
+
+      function pane(label, src, missingText) {
+        const d = document.createElement("div");
+        d.className = "pane" + (zoomed ? " zoom" : "");
+        const l = document.createElement("div");
+        l.className = "label";
+        l.textContent = label;
+        d.appendChild(l);
+        if (src) {
+          const img = document.createElement("img");
+          img.src = src;
+          img.alt = label;
+          img.decoding = "async";
+          d.appendChild(img);
+        } else {
+          const m = document.createElement("div");
+          m.className = "missing";
+          m.textContent = missingText;
+          d.appendChild(m);
+        }
+        return d;
+      }
+
+      function syncScroll(a, b) {
+        let lock = false;
+        const link = (from, to) =>
+          from.addEventListener("scroll", () => {
+            if (lock) return;
+            lock = true;
+            to.scrollLeft = from.scrollLeft;
+            to.scrollTop = from.scrollTop;
+            requestAnimationFrame(() => {
+              lock = false;
+            });
+          });
+        link(a, b);
+        link(b, a);
+      }
+
+      function render() {
+        const p = PHOTOS[idx];
+        $("title").textContent = p.id + " · " + p.file;
+        $("auto").textContent =
+          p.gamma == null ? "Auto: nie zapisano" : `Auto: gamma ${p.gamma.toFixed(2)}, blur ${p.blur}`;
+        const main = $("main");
+        const keep = main.querySelector(".pane.zoom");
+        const pos = keep ? [keep.scrollLeft, keep.scrollTop] : null;
+        main.className = mode;
+        main.replaceChildren();
+        const missing =
+          "Brak pliku Local dla tego zdjęcia (uruchomione ręcznie w aplikacji, wynik nie został zapisany).";
+        if (mode === "side") {
+          const a = pane("Oryginał", origSrc(p));
+          const b = pane("Local (Auto)", p.noLocal ? null : localSrc(p), missing);
+          main.append(a, b);
+          if (zoomed) syncScroll(a, b);
+        } else {
+          const local = showLocal && !p.noLocal;
+          main.append(
+            showLocal && p.noLocal
+              ? pane("Local (Auto)", null, missing)
+              : pane(local ? "Local (Auto)" : "Oryginał", local ? localSrc(p) : origSrc(p)),
+          );
+        }
+        if (pos)
+          main.querySelectorAll(".pane").forEach((el) => {
+            el.scrollLeft = pos[0];
+            el.scrollTop = pos[1];
+          });
+        $("mSide").classList.toggle("on", mode === "side");
+        $("mFlip").classList.toggle("on", mode === "flip");
+        $("zoom").classList.toggle("on", zoomed);
+        const r = ratings[p.id] || {};
+        document.querySelectorAll("#rate button").forEach((b) => b.classList.toggle("on", b.dataset.v === r.v));
+        $("why").value = r.why || "";
+        const dots = $("dots");
+        dots.replaceChildren();
+        PHOTOS.forEach((q, i) => {
+          const d = document.createElement("span");
+          d.className = "dot" + (ratings[q.id]?.v ? " done" : "") + (i === idx ? " cur" : "");
+          d.title = q.id;
+          d.onclick = () => {
+            idx = i;
+            showLocal = false;
+            render();
+          };
+          dots.appendChild(d);
+        });
+      }
+
+      function go(step) {
+        idx = (idx + step + PHOTOS.length) % PHOTOS.length;
+        showLocal = false;
+        render();
+      }
+
+      $("prev").onclick = () => go(-1);
+      $("next").onclick = () => go(1);
+      $("mSide").onclick = () => {
+        mode = "side";
+        render();
+      };
+      $("mFlip").onclick = () => {
+        mode = "flip";
+        render();
+      };
+      $("zoom").onclick = () => {
+        zoomed = !zoomed;
+        render();
+      };
+      document.querySelectorAll("#rate button").forEach(
+        (b) =>
+          (b.onclick = () => {
+            const id = PHOTOS[idx].id;
+            ratings[id] = { ...(ratings[id] || {}), v: b.dataset.v };
+            save();
+            render();
+          }),
+      );
+      $("why").addEventListener("input", (e) => {
+        const id = PHOTOS[idx].id;
+        ratings[id] = { ...(ratings[id] || {}), why: e.target.value };
+        save();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.target === $("why") || $("dlg").open) return;
+        if (e.key === "ArrowLeft") go(-1);
+        else if (e.key === "ArrowRight") go(1);
+        else if (e.key === " ") {
+          e.preventDefault();
+          if (mode !== "flip") mode = "flip";
+          showLocal = !showLocal;
+          render();
+        } else if (e.key === "z" || e.key === "Z") {
+          zoomed = !zoomed;
+          render();
+        }
+      });
+
+      $("export").onclick = () => {
+        const rows = PHOTOS.map((p) => {
+          const r = ratings[p.id] || {};
+          const auto = p.gamma == null ? "not recorded" : `${p.gamma.toFixed(2)} / ${p.blur}`;
+          const why = (r.why || "").replace(/\|/g, "\\|");
+          return `| ${p.id} | ${auto} | ${r.v || "—"} | ${why} |`;
+        });
+        $("md").value = [
+          "Local (Auto ON, production app) vs original, rated by the owner on " +
+            new Date().toISOString().slice(0, 10) +
+            ":",
+          "",
+          "| Photo | Auto gamma / blur | Rating | Why |",
+          "| --- | --- | --- | --- |",
+          ...rows,
+        ].join("\n");
+        $("copied").textContent = "";
+        $("dlg").showModal();
+      };
+      $("copy").onclick = async () => {
+        try {
+          await navigator.clipboard.writeText($("md").value);
+          $("copied").textContent = "Skopiowano.";
+        } catch {
+          $("md").select();
+          $("copied").textContent = "Zaznaczono — Ctrl+C.";
+        }
+      };
+      $("close").onclick = () => $("dlg").close();
+
+      render();
+    </script>
+  </body>
+</html>
