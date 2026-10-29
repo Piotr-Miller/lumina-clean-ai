@@ -332,12 +332,12 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ### S-19: Compare Cloud AI model candidates on the s17-v1 benchmark
 
 - **Phase:** `phase:post-mvp`
-- **Outcome:** the basic Cloud path's model is chosen from a comparison on the frozen `s17-v1` benchmark, judged against the agreed quality bar on a holdout no candidate was tuned on.
+- **Outcome:** the basic Cloud path's model is chosen from a comparison on the frozen `s17-v2` benchmark (`s17-v1` with the two exposed validation photos replaced, 2026-10-29), judged against the agreed quality bar on a holdout no candidate was tuned on.
 - **Change ID:** cloud-model-comparison
 - **GitHub issue:** [#271](https://github.com/Piotr-Miller/lumina-clean-ai/issues/271)
 - **PRD refs:** MVP Success Criteria ("cloud result is noticeably better than local"); the two-engine Strategy toggle (S-01, S-04)
 - **Prerequisites:** S-17 (closed 2026-09-28 with decision B). The EXIF-orientation fix that in-app runs of phone photos depend on is live in production since 2026-10-25 (`context/archive/2026-09-27-cloud-exif-orientation/live-acceptance.md`).
-- **Scope:** candidates for the **basic** Cloud path. Bread at low gamma and weak denoise is one candidate. The lower-denoise Cloud setting is a hypothesis to test here, not scope to ship. Candidates are prepared on the six tuning photos only; the twelve validation photos stay unopened until the comparison runs. Quality bar: `context/archive/2026-08-31-cloud-quality-below-local/quality-bar.md`.
+- **Scope:** candidates for the **basic** Cloud path. Bread at low gamma and weak denoise is one candidate. The lower-denoise Cloud setting is a hypothesis to test here, not scope to ship. Candidates are prepared on the eight `s17-v2` tuning photos only; the twelve validation photos stay unopened until the comparison runs. Quality bar: `context/archive/2026-08-31-cloud-quality-below-local/quality-bar.md`.
 - **Not yet decided:** the candidate models and the comparison protocol. That is what this change is for. S-13 (the Premium Retinexformer path) stays a separate proposal.
 - **Unblocks:** the Cloud AI delivery-resolution half of S-18 and `local-engine-ceiling` (#188), both parked on this comparison's result.
 - **Risk:** Medium. Swapping the model of a live paid path touches the Edge Function's contract, cost and cold start. The comparison itself is offline and changes nothing in production.
