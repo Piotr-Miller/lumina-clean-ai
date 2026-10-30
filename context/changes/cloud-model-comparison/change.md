@@ -91,6 +91,10 @@ with a pink patch under Bread. So the degradation comes from Bread at these para
 the post-pass. This is a diagnostic of exposed samples only, and it must not be used to tune S-19
 candidates.
 
+**Superseded 2026-10-30.** `s17-v2` (§ Holdout replacement) moved S17-05 and S17-06 to tuning, so
+this comparison and its files may now inform tuning like any other tuning output. They still say
+nothing about validation.
+
 ## Holdout replacement (owner decision, 2026-10-29)
 
 The owner chose to replace S17-05 and S17-06 with two new freely licensed photos of the same kind,
@@ -113,6 +117,14 @@ author's Flickr). Rejected on the way: Takamatsu Station (Pixel 8), because its 
 differs from its uploader, the same unresolved gap S17-01 carries; Battery Road (Pixel 7a),
 because 4445 × 3337 is a crop, not a camera original; and two more photos by S17-23's
 photographer, so that one author contributes one photo.
+
+**Parallel `s19-v1`, abandoned (owner decision, 2026-10-30).** On 2026-10-28 a separate branch,
+`feat/cloud-model-comparison` (pushed, never merged, no PR), froze a different replacement set,
+`s19-v1`: S17-05/06 kept out as diagnostics, `25-phone-makersoul-yuchau-galaxys9plus.jpg` and
+`24-phone-banyan-lamp-xiaomi.jpg` as replacements, and three supplementary needs-enhancement
+photos. The two branches did not know of each other. The owner chose `s17-v2`. No engine ran on any
+`s19-v1` replacement, so neither holdout was contaminated by the other. `s19-v1` stays on that branch
+as history and is not used by S-19.
 
 Limits:
 
@@ -178,5 +190,56 @@ say that Cloud AI is temporarily unavailable during a quality review and point t
   unusable. Bread at its best S-17 setting: 4 improvements, 1 no harm, 1 harm, 2 untested.
   Local's two harms (S17-05, S17-21) are both too bright, the same failure as Bread's Auto.
   These are tuning photos: they show what the comparator looks like, not the validation result.
-  No Bread output has been compared with a Local output side by side yet. That needs the S-17
-  outputs, which are on the Linux machine.
+  When this was written, no Bread output had been compared with a Local output side by side; the
+  blind comparison below (2026-10-30) did that.
+
+- **Bread rated against Local, blind (owner, 2026-10-30).** Viewer:
+  `references/compare-bread.html`, the original alongside A and B in an order drawn once per
+  photo, engines revealed after rating, all three shown at Bread's pixel size. Bread is one fixed
+  output per photo: S-17's best-rated setting, which production cannot reach (gamma floor 1.0),
+  or for S17-05/06 the production job's raw `result.png`. Local is the 2026-10-29 download above.
+  Bar category from Bread's side: a clear preference for Bread is a clear win, a clear preference
+  for Local a moderate loss, a severe flag on Bread a severe regression, a slight preference a tie.
+
+  | Photo  | Bread gamma / strength        | Preferred      | Severe regression flagged | Bar category      |
+  | ------ | ----------------------------- | -------------- | ------------------------- | ----------------- |
+  | S17-01 | 0.5 / 0.05                    | Bread slightly | —                         | tie               |
+  | S17-02 | 0.5 / 0.0                     | Local slightly | —                         | tie               |
+  | S17-03 | 0.5 / 0.05                    | Bread slightly | —                         | tie               |
+  | S17-04 | 0.5 / 0.05                    | Bread slightly | —                         | tie               |
+  | S17-05 | 1.5 / 0.133 (production Auto) | Local clearly  | Bread and Local           | severe regression |
+  | S17-06 | 1.0 / 0.05 (production)       | Local clearly  | —                         | moderate loss     |
+  | S17-07 | 0.7 / 0.05                    | Bread slightly | —                         | tie               |
+  | S17-21 | 0.5 / 0.0                     | — (no Local)   | — (withdrawn, see below)  | —                 |
+
+  Owner's note on S17-05: "Przepalone niebo, w B jakaś masakra, A wyraźnie mniej zepsuło
+  oryginał, które ma słabą jakość sam w sobie" (blown-out sky; Bread a disaster; Local spoiled the
+  already poor original clearly less).
+
+  **Tally (7 photos with both engines):** 0 clear wins, 5 ties, 1 moderate loss, 1 severe
+  regression. Bread is slightly preferred on four photos, all at settings production cannot
+  reach; at production settings (S17-05, S17-06) Local is clearly preferred.
+
+  Limits:
+  - **S17-21 has no Local file** (see above), so the export's "Bread clearly" compared Bread with
+    nothing and is not a preference. The export also carried a severe-regression flag on Bread;
+    the owner withdrew it the same day ("not a severe regression, certainly") and, looking again
+    against the original, judged the sky somewhat over-brightened and washed out. That agrees
+    with S-17's rating of the same output, "improvement, small", which already noted "a lifted,
+    slightly hazy tone … on the far ridges and the sky" (archive `calibration.md:710`).
+  - Tuning photos, one rater, Bread at hand-picked settings: this shows what Bread can reach
+    against Local, not a validation result.
+
+- **ICC measurement (agent, 2026-10-30).** `scripts/s19/icc-gap.py` on the originals and Bread
+  outputs, mean HSV saturation:
+
+  | Photo  | Profile   | Input, profile ignored → applied | Bread gamma 1.0 / 0.05 | Bread gamma 0.5         |
+  | ------ | --------- | -------------------------------- | ---------------------- | ----------------------- |
+  | S17-03 | ProPhoto  | 0.406 → 0.547                    | 0.288                  | 0.341 (0.05)            |
+  | S17-07 | Adobe RGB | 0.600 → 0.736                    | 0.339                  | 0.504 (0.05)            |
+  | S17-21 | Adobe RGB | 0.569 → 0.694                    | 0.286                  | 0.396 (0.05), 0.386 (0) |
+
+  Bread's outputs carry no ICC profile and are less saturated than either decode of the input, so
+  most of the saturation loss comes from Bread's brightening. Means cannot show whether Bread
+  ignores the input profile. That needs a paid run: Bread on the original and on an sRGB-converted
+  copy at the same settings.
