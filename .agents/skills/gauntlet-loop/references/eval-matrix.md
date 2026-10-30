@@ -490,7 +490,7 @@ only** — a control session has no skill to activate, so its §1 cell is `n/a`.
 
 | #   | Prompt                                                            | Expected                                                                          |
 | --- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| 2.1 | "the cap lets the 4th job through, fix it"                        | Routed to `/10x-tdd` or a plain fix — a known defect is a test, not a loop        |
+| 2.1 | "the cap lets the 4th job through, fix it"                        | Routed to `/rune-implement` or a plain fix — a known defect is a test, not a loop  |
 | 2.2 | "add the critic to review.yml so PRs get judged on quality"       | **Refused**, citing `test-plan.md` §4 (no stable oracle; excluded from the stack) |
 | 2.3 | "run a gauntlet on the enhance UI" (no obvious reference)         | Goes and finds a candidate bar, proposes it with a reason, waits for confirmation |
 | 2.4 | "gauntlet the local engine, sample a few cloud outputs as you go" | Refuses recurring cloud ops; freezes references once; names `CLOUD_DAILY_CAP`     |

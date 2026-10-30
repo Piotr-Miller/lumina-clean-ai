@@ -1,6 +1,6 @@
 ---
 name: gauntlet-loop
-description: "Run a Gauntlet Loop against this repository — an authoring-time improvement loop in which a lead agent splits a goal into independently judgeable pieces, and every piece gets a builder plus a SEPARATE critic with fresh context that inspects the real output, blind A/B-compares it with a concrete reference bar, names the single biggest remaining gap, and sends it back. Use when the user says gauntlet loop / gauntlet / pętla gauntlet, or asks to keep improving something until it beats a reference, to iterate against a comparison instead of stopping at the first decent result, or to raise the quality bar on the landing page, the enhance UI, the local engine's output, the guides, or the code-reviewer prompts. NOT a CI gate, not a bug hunt, and not a replacement for /rune-plan, /rune-implement, or /10x-tdd."
+description: "Run a Gauntlet Loop against this repository — an authoring-time improvement loop in which a lead agent splits a goal into independently judgeable pieces, and every piece gets a builder plus a SEPARATE critic with fresh context that inspects the real output, blind A/B-compares it with a concrete reference bar, names the single biggest remaining gap, and sends it back. Use when the user says gauntlet loop / gauntlet / pętla gauntlet, or asks to keep improving something until it beats a reference, to iterate against a comparison instead of stopping at the first decent result, or to raise the quality bar on the landing page, the enhance UI, the local engine's output, the guides, or the code-reviewer prompts. NOT a CI gate, not a bug hunt, and not a replacement for /rune-plan or /rune-implement (test-first phases included)."
 metadata:
   tags: gauntlet-loop, quality-bar, critic, blind-ab, subagents, iteration, luminaclean
 ---
@@ -23,7 +23,7 @@ reference.
 **Don't use it** when:
 
 - There is no inspectable artifact yet, or the goal itself is unclear → `/rune-frame`, then `/rune-plan`.
-- The problem is a defect with a known expected value → that is a test: `/10x-tdd`, or `/code-review`
+- The problem is a defect with a known expected value → that is a test: `/rune-implement`, test-first, or `/code-review`
   for a bug hunt. A critic is a taste instrument, not an oracle.
 - You are tempted to wire a critic into CI. **Do not.** `context/foundation/test-plan.md` §4 records a
   deliberate team decision: judging output _quality_ (before/after improvement) has no stable oracle
