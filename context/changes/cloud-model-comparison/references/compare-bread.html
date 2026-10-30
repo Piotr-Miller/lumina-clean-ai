@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bread vs Local</title>
+    <style>
+      :root {
+        --bg: #1c1c1e;
+        --panel: #2a2a2d;
+        --line: #3a3a3e;
+        --text: #e8e8ea;
+        --muted: #9a9aa0;
+        --accent: #6ea8fe;
+        --good: #5cb85c;
+        --bad: #e06c6c;
+        --neutral: #c9a227;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.4 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      body {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+      header,
+      footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        border-bottom: 0;
+        align-items: flex-start;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0;
+        font-weight: 600;
+      }
+      .meta {
+        color: var(--muted);
+      }
+      button,
+      input[type="text"] {
+        font: inherit;
+        color: var(--text);
+        background: #38383c;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 5px 10px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--accent);
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      button.on {
+        background: var(--accent);
+        color: #111;
+        border-color: var(--accent);
+      }
+      .spacer {
+        flex: 1;
+      }
+      main {
+        min-height: 0;
+        display: grid;
+        gap: 4px;
+        padding: 4px;
+      }
+      main.side {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      main.flip {
+        grid-template-columns: 1fr;
+      }
+      .pane {
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+        background: #111;
+      }
+      .pane.zoom {
+        overflow: auto;
+      }
+      .pane img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .pane.zoom img {
+        height: auto;
+        max-width: none;
+      }
+      .label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.65);
+        font-weight: 600;
+        pointer-events: none;
+        z-index: 1;
+      }
+      .pane.zoom > .label {
+        position: sticky;
+        display: inline-block;
+        margin: 8px;
+        height: 0;
+        overflow: visible;
+      }
+      .missing {
+        display: grid;
+        place-items: center;
+        height: 100%;
+        color: var(--muted);
+        padding: 16px;
+        text-align: center;
+      }
+      .rate {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .rate button[data-v$="clear"].on {
+        background: var(--good);
+        border-color: var(--good);
+      }
+      .rate button[data-v$="slight"].on,
+      .rate button[data-v="tie"].on {
+        background: var(--neutral);
+        border-color: var(--neutral);
+      }
+      .rate.severe button.on {
+        background: var(--bad);
+        border-color: var(--bad);
+      }
+      #why {
+        flex: 1 1 320px;
+        min-width: 200px;
+      }
+      .dots {
+        display: flex;
+        gap: 4px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--line);
+        cursor: pointer;
+      }
+      .dot.done {
+        background: var(--good);
+      }
+      .dot.cur {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      dialog {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        width: min(900px, calc(100vw - 32px));
+      }
+      dialog textarea {
+        width: 100%;
+        height: 50vh;
+        font:
+          12px/1.4 ui-monospace,
+          Consolas,
+          monospace;
+        background: #111;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px;
+      }
+      kbd {
+        background: #38383c;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 0 4px;
+        font-size: 12px;
+      }
+      @media (max-width: 900px) {
+        main.side {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <button id="prev" title="Poprzednie (←)">←</button>
+      <h1 id="title"></h1>
+      <button id="next" title="Następne (→)">→</button>
+      <div class="dots" id="dots"></div>
+      <span class="spacer"></span>
+      <button id="mSide">Obok siebie</button>
+      <button id="mFlip" title="1 oryginał · 2 A · 3 B · Spacja A↔B">Przełączanie</button>
+      <button id="zoom" title="Z">100% (rozmiar Bread)</button>
+      <button id="reveal" title="Dostępne po ocenie">Odkryj silniki</button>
+      <span class="meta"
+        ><kbd>←</kbd><kbd>→</kbd> zdjęcia · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> oryginał/A/B · <kbd>Spacja</kbd> A↔B ·
+        <kbd>Z</kbd> 100%</span
+      >
+    </header>
+    <main id="main"></main>
+    <footer>
+      <div class="rate" id="rate">
+        <strong>Który wynik lepszy?</strong>
+        <button data-v="A-clear">A wyraźnie</button>
+        <button data-v="A-slight">A nieco</button>
+        <button data-v="tie">remis</button>
+        <button data-v="B-slight">B nieco</button>
+        <button data-v="B-clear">B wyraźnie</button>
+      </div>
+      <div class="rate" id="sev">
+        <strong>Ciężka regresja (vs oryginał):</strong>
+        <button data-s="A">w A</button>
+        <button data-s="B">w B</button>
+      </div>
+      <input type="text" id="why" placeholder="Dlaczego — jedno zdanie" />
+      <button id="export">Eksport do Markdown</button>
+    </footer>
+    <dialog id="dlg">
+      <p>Tabela ocen. Skopiuj i wklej do czatu.</p>
+      <textarea id="md" readonly></textarea>
+      <p>
+        <button id="copy">Kopiuj</button> <button id="close">Zamknij</button> <span class="meta" id="copied"></span>
+      </p>
+    </dialog>
+    <script>
+      // One fixed Bread output per tuning photo: S-17's best-rated setting, or the only output
+      // that exists (S17-05/06: the production jobs' raw result.png, before the chroma post-pass).
+      // Bread files are gitignored and live only on the machine that holds test-photos/private/.
+      const S17 = "../../../../test-photos/private/s17/direct/";
+      const EXPOSED = "../../../../test-photos/private/s19-holdout-exposure/";
+      const PHOTOS = [
+        {
+          id: "S17-01",
+          file: "01-aurora-fjord-kirkjufell.jpg",
+          bread: S17 + "phase3/gamma-low/tee2vzw6-g0.5-s0.05.png",
+          setting: "0.5 / 0.05",
+        },
+        {
+          id: "S17-02",
+          file: "02-aurora-frozen-lake-norway.jpg",
+          bread: S17 + "strength0/4rv5crz6-g0.5-s0.png",
+          setting: "0.5 / 0.0",
+        },
+        {
+          id: "S17-03",
+          file: "03-aurora-reykjanes-snow-lava.jpg",
+          bread: S17 + "phase3/gamma-low/vx1qcyds-g0.5-s0.05.png",
+          setting: "0.5 / 0.05",
+        },
+        {
+          id: "S17-04",
+          file: "04-phone-whitehouse-iphone13pro.jpg",
+          bread: S17 + "phase3/gamma-low/qg34r4bp-g0.5-s0.05.png",
+          setting: "0.5 / 0.05",
+        },
+        {
+          id: "S17-05",
+          file: "05-phone-walgreens-pixel7.jpg",
+          bread: EXPOSED + "85ea0fef-a1f5-4055-be09-9a98a5647283-bread-result.png",
+          setting: "1.5 / 0.133 (production Auto)",
+        },
+        {
+          id: "S17-06",
+          file: "06-phone-rain-galaxys24ultra.jpg",
+          bread: EXPOSED + "e3df6cc5-d22a-41d9-ad13-d4752a51a8c4-bread-result.png",
+          setting: "1.0 / 0.05 (production)",
+        },
+        {
+          id: "S17-07",
+          file: "07-night-portrait.jpg",
+          bread: S17 + "phase3/gamma-low/jsp45s4q-g0.7-s0.05.png",
+          setting: "0.7 / 0.05",
+        },
+        {
+          id: "S17-21",
+          file: "21-kangchenjunga.jpg",
+          bread: S17 + "strength0/g639rw24-g0.5-s0.png",
+          setting: "0.5 / 0.0",
+          noLocal: true,
+        },
+      ];
+      const KEY = "s19-bread-vs-local-v1";
+      const $ = (id) => document.getElementById(id);
+
+      let state = {};
+      try {
+        state = JSON.parse(localStorage.getItem(KEY) || "{}");
+      } catch {
+        state = {};
+      }
+      // Engine order is drawn once per photo and kept, so a reload never reshuffles a rated pair.
+      for (const p of PHOTOS) {
+        state[p.id] ??= {};
+        state[p.id].breadIs ??= Math.random() < 0.5 ? "A" : "B";
+      }
+      const save = () => {
+        try {
+          localStorage.setItem(KEY, JSON.stringify(state));
+        } catch {}
+      };
+      save();
+
+      let idx = 0,
+        mode = "side",
+        zoomed = false,
+        flipShow = "orig",
+        revealed = false;
+
+      const origSrc = (p) => "../../../../test-photos/licensed/" + p.file;
+      const localSrc = (p) => "luminaclean-" + p.file;
+      const slot = (p, which) => {
+        const isBread = state[p.id].breadIs === which;
+        const engine = isBread ? "Bread " + p.setting : "Local (Auto)";
+        return {
+          label: revealed ? `${which} = ${engine}` : which,
+          src: isBread ? p.bread : p.noLocal ? null : localSrc(p),
+          missing: isBread
+            ? "Brak pliku Bread — test-photos/private/ jest tylko na komputerze domowym."
+            : "Brak pliku Local dla tego zdjęcia (uruchomione ręcznie w aplikacji, wynik nie został zapisany).",
+        };
+      };
+
+      function pane(label, src, missingText, ref) {
+        const d = document.createElement("div");
+        d.className = "pane" + (zoomed ? " zoom" : "");
+        const l = document.createElement("div");
+        l.className = "label";
+        l.textContent = label;
+        d.appendChild(l);
+        if (src) {
+          const img = document.createElement("img");
+          img.src = src;
+          img.alt = label;
+          img.decoding = "async";
+          img.onerror = () =>
+            img.replaceWith(
+              Object.assign(document.createElement("div"), {
+                className: "missing",
+                textContent: missingText || "Brak pliku: " + src,
+              }),
+            );
+          if (ref) img.dataset.ref = "1";
+          d.appendChild(img);
+        } else {
+          const m = document.createElement("div");
+          m.className = "missing";
+          m.textContent = missingText;
+          d.appendChild(m);
+        }
+        return d;
+      }
+
+      // At 100% every image is shown at Bread's pixel width: Local and the original are scaled
+      // down to it, never Bread up (quality bar: no enlarging Cloud beyond its resolution).
+      function applyZoomWidth(main) {
+        if (!zoomed) return;
+        const p = PHOTOS[idx];
+        const probe = new Image();
+        probe.onload = () =>
+          main.querySelectorAll(".pane img").forEach((img) => {
+            img.style.width = probe.naturalWidth + "px";
+          });
+        probe.src = p.bread;
+      }
+
+      function syncScroll(panes) {
+        let lock = false;
+        for (const from of panes)
+          from.addEventListener("scroll", () => {
+            if (lock) return;
+            lock = true;
+            for (const to of panes)
+              if (to !== from) {
+                to.scrollLeft = from.scrollLeft;
+                to.scrollTop = from.scrollTop;
+              }
+            requestAnimationFrame(() => {
+              lock = false;
+            });
+          });
+      }
+
+      function render() {
+        const p = PHOTOS[idx];
+        const s = state[p.id];
+        $("title").textContent = p.id + " · " + p.file;
+        const main = $("main");
+        const keep = main.querySelector(".pane.zoom");
+        const pos = keep ? [keep.scrollLeft, keep.scrollTop] : null;
+        main.className = mode;
+        main.replaceChildren();
+        const A = slot(p, "A"),
+          B = slot(p, "B");
+        if (mode === "side") {
+          const panes = [
+            pane("Oryginał", origSrc(p)),
+            pane(A.label, A.src, A.missing),
+            pane(B.label, B.src, B.missing),
+          ];
+          main.append(...panes);
+          if (zoomed) syncScroll(panes);
+        } else {
+          const v = flipShow === "A" ? A : flipShow === "B" ? B : { label: "Oryginał", src: origSrc(p) };
+          main.append(pane(v.label, v.src, v.missing));
+        }
+        applyZoomWidth(main);
+        if (pos)
+          main.querySelectorAll(".pane").forEach((el) => {
+            el.scrollLeft = pos[0];
+            el.scrollTop = pos[1];
+          });
+        $("mSide").classList.toggle("on", mode === "side");
+        $("mFlip").classList.toggle("on", mode === "flip");
+        $("zoom").classList.toggle("on", zoomed);
+        $("reveal").disabled = !s.v;
+        $("reveal").classList.toggle("on", revealed);
+        document.querySelectorAll("#rate button").forEach((b) => b.classList.toggle("on", b.dataset.v === s.v));
+        $("sev").classList.add("severe");
+        document.querySelectorAll("#sev button").forEach((b) => b.classList.toggle("on", !!s.severe?.[b.dataset.s]));
+        $("why").value = s.why || "";
+        const dots = $("dots");
+        dots.replaceChildren();
+        PHOTOS.forEach((q, i) => {
+          const d = document.createElement("span");
+          d.className = "dot" + (state[q.id].v ? " done" : "") + (i === idx ? " cur" : "");
+          d.title = q.id;
+          d.onclick = () => {
+            idx = i;
+            reset();
+          };
+          dots.appendChild(d);
+        });
+      }
+
+      function reset() {
+        flipShow = "orig";
+        revealed = false;
+        render();
+      }
+      function go(step) {
+        idx = (idx + step + PHOTOS.length) % PHOTOS.length;
+        reset();
+      }
+
+      $("prev").onclick = () => go(-1);
+      $("next").onclick = () => go(1);
+      $("mSide").onclick = () => {
+        mode = "side";
+        render();
+      };
+      $("mFlip").onclick = () => {
+        mode = "flip";
+        render();
+      };
+      $("zoom").onclick = () => {
+        zoomed = !zoomed;
+        render();
+      };
+      $("reveal").onclick = () => {
+        revealed = !revealed;
+        render();
+      };
+      document.querySelectorAll("#rate button").forEach(
+        (b) =>
+          (b.onclick = () => {
+            state[PHOTOS[idx].id].v = b.dataset.v;
+            save();
+            render();
+          }),
+      );
+      document.querySelectorAll("#sev button").forEach(
+        (b) =>
+          (b.onclick = () => {
+            const s = state[PHOTOS[idx].id];
+            s.severe = { ...(s.severe || {}), [b.dataset.s]: !s.severe?.[b.dataset.s] };
+            save();
+            render();
+          }),
+      );
+      $("why").addEventListener("input", (e) => {
+        state[PHOTOS[idx].id].why = e.target.value;
+        save();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.target === $("why") || $("dlg").open) return;
+        const show = (v) => {
+          mode = "flip";
+          flipShow = v;
+          render();
+        };
+        if (e.key === "ArrowLeft") go(-1);
+        else if (e.key === "ArrowRight") go(1);
+        else if (e.key === "1") show("orig");
+        else if (e.key === "2") show("A");
+        else if (e.key === "3") show("B");
+        else if (e.key === " ") {
+          e.preventDefault();
+          show(flipShow === "A" ? "B" : "A");
+        } else if (e.key === "z" || e.key === "Z") {
+          zoomed = !zoomed;
+          render();
+        }
+      });
+
+      // Mapping to the quality bar's categories (from Bread's side). Only a clear preference for
+      // Bread is a clear win; a clear preference for Local is a moderate loss unless Bread was
+      // flagged as a severe regression; every slight preference counts as a tie.
+      function bar(p) {
+        const s = state[p.id];
+        if (!s.v) return "—";
+        const b = s.breadIs;
+        if (s.severe?.[b]) return "severe regression";
+        if (s.v === b + "-clear") return "clear win";
+        if (s.v.endsWith("-clear")) return "moderate loss";
+        return "tie";
+      }
+      function preferred(p) {
+        const s = state[p.id];
+        if (!s.v) return "—";
+        if (s.v === "tie") return "tie";
+        const [side, how] = s.v.split("-");
+        return `${side === s.breadIs ? "Bread" : "Local"} ${how === "clear" ? "clearly" : "slightly"}`;
+      }
+
+      $("export").onclick = () => {
+        const rows = PHOTOS.map((p) => {
+          const s = state[p.id];
+          const sev = ["A", "B"]
+            .filter((k) => s.severe?.[k])
+            .map((k) => (k === s.breadIs ? "Bread" : "Local"))
+            .join(", ");
+          const why = (s.why || "").replace(/\|/g, "\\|");
+          return `| ${p.id} | ${p.setting} | Bread = ${s.breadIs} | ${preferred(p)} | ${sev || "—"} | ${bar(p)} | ${why} |`;
+        });
+        $("md").value = [
+          "Bread (fixed S-17 setting, raw output) vs Local (Auto ON, production app), blind A/B with the original alongside, rated by the owner on " +
+            new Date().toISOString().slice(0, 10) +
+            ". Tuning photos only. Bar category: clear Bread preference = clear win; clear Local preference = moderate loss; severe flag on Bread = severe regression; slight preferences = tie.",
+          "",
+          "| Photo | Bread gamma / strength | Order | Preferred | Severe regression | Bar category | Why |",
+          "| --- | --- | --- | --- | --- | --- | --- |",
+          ...rows,
+        ].join("\n");
+        $("copied").textContent = "";
+        $("dlg").showModal();
+      };
+      $("copy").onclick = async () => {
+        try {
+          await navigator.clipboard.writeText($("md").value);
+          $("copied").textContent = "Skopiowano.";
+        } catch {
+          $("md").select();
+          $("copied").textContent = "Zaznaczono — Ctrl+C.";
+        }
+      };
+      $("close").onclick = () => $("dlg").close();
+
+      render();
+    </script>
+  </body>
+</html>
