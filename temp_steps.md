@@ -50,8 +50,11 @@ zero ciężkich regresji. Samo zakończenie porównania nie wystarcza. Szczegó�
 Zasady:
 
 - Zdjęcia do akceptacji na produkcji wybieramy z podziału `tuning` albo spoza benchmarku, nigdy z `validation`.
-- Porównanie oryginał → wynik Bread → post-pass dla S17-05/06 jest diagnostyczne. Nie służy do strojenia
-  kandydatów. Pliki: `test-photos/private/s19-holdout-exposure/` (gitignored).
+- Porównanie oryginał → wynik Bread → post-pass dla S17-05/06: od `s17-v2` oba zdjęcia są tuningowe, więc
+  ten wynik może służyć strojeniu jak każdy inny wynik tuningowy (nie mówi nic o walidacji).
+  Pliki: `test-photos/private/s19-holdout-exposure/` (gitignored).
+- Benchmark to `s17-v2` (decyzja właściciela 2026-10-30). Równoległe `s19-v1` z gałęzi
+  `feat/cloud-model-comparison` jest porzucone; opis w `change.md` § Holdout replacement.
 - Wniosek z tego porównania: prześwietlenie i utrata nasycenia pochodzą z Bread; post-pass tylko
   obniża szum barwny nieba (~¼).
 

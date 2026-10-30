@@ -31,3 +31,11 @@ download and the Auto values were not saved.
 for rating Local against the original: side by side, a flip view (Space) and 100% zoom
 (Z). Open it straight from disk. It reads the originals from `test-photos/licensed/`, keeps the
 ratings in the browser and exports them as a Markdown table.
+
+`compare-bread.html` was also written for this change and contains no third-party material. It
+rates Bread against Local on the tuning photos, blind: the original, then A and B in an order drawn
+once per photo, with the engines revealed only after rating. Each photo gets one fixed Bread output
+(S-17's best-rated setting, or for S17-05/06 the production job's raw `result.png`). Those outputs
+are not published: it reads them from the gitignored `test-photos/private/`, so it only works on a
+machine that holds that folder. At 100% every image is shown at Bread's pixel size, scaling Local
+and the original down rather than Bread up.
