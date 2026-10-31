@@ -28,7 +28,7 @@ Zasady:
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,
   HTML strony 502 od Replicate). Analiza w `context/changes/cloud-error-message-leak/change.md`.
   Następny krok: `/rune-plan cloud-error-message-leak`; w planie: czy `start_failed` dostaje osobny komunikat.
-- **Opcjonalnie:** `/10x-lesson` z regułą o wyborze zdjęć do akceptacji spoza holdoutu.
+- **Opcjonalnie:** `/rune-lesson` z regułą o wyborze zdjęć do akceptacji spoza holdoutu.
 
 ## Stan lokalny (do pamiętania)
 
