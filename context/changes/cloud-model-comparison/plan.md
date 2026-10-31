@@ -469,7 +469,7 @@ and run id. The agent never creates or modifies approval records.
 
 - The owner saves the S17-21 Local download from the app using its prepared common sRGB input and records its exact Auto values — surface: context/changes/cloud-model-comparison/references/s19-local/, context/changes/cloud-model-comparison/references/README.md
 - The owner opens `compare-arms.html` on the existing spike outputs and confirms the flags, the brightened-original toggle and the reveal work — surface: context/changes/cloud-model-comparison/references/compare-arms.html
-- The owner saves new real Local baselines for all eight prepared tuning inputs and confirms the baseline helper records the same browser/session and applied Auto values — surface: context/changes/cloud-model-comparison/references/s19-local/, context/changes/cloud-model-comparison/references/README.md
+- The owner saves new real Local baselines for all eight prepared tuning inputs and confirms the baseline helper records one browser/session for all eight, with their Auto values labelled "recomputed" (not observed applied; restated 2026-10-31, see `change.md`) — surface: context/changes/cloud-model-comparison/references/s19-local/, context/changes/cloud-model-comparison/references/README.md
 
 ---
 
