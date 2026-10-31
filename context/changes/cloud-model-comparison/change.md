@@ -9,6 +9,17 @@ archived_at: null
 
 ## Notes
 
+2026-10-31: owner decision (delegated: "decide 1.13") — 1.13 restated, not marked n/a. "Applied Auto
+values" cannot be observed: the helper recomputes them, and the plan's "Recorded, not observed"
+decision already labels such values "recomputed". The criterion now asks for one browser/session
+across all eight records with that label. n/a was rejected because the baselines exist and Phase 2/3
+rate against them (F6). The Progress title stays unchanged, as titles are immutable. Evidence
+checked at the restatement: all eight `*.auto.json` share session `f2814060…`, Chrome
+156.0.8078.79, clean source `ef80a97`, provenance "recomputed"; seven published JPEGs byte-identical to
+the private downloads, S17-01 private (sha256 `f94c288d…`, F3). Diagnostic only, not proof of
+applied parity: `local-arms.ts local-equiv --compare-local` with the recomputed values against the real
+downloads gives mean |Δ| 0.50–2.52 and p99 |Δ| ≤ 21 (0–255), all eight ✓.
+
 2026-10-31: re-confirmed 1.9 — was accepted (no revision); accepted at
 860a04b47e2b4a1cded47d69c74941330f28d2a3, on the owner's explicit delegation ("do it for me"), from
 the headless re-verification in `references/1.9-spike-smoke/` (script 6605df7, PASS, pair order
