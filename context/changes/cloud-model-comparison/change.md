@@ -9,6 +9,11 @@ archived_at: null
 
 ## Notes
 
+2026-10-31: re-confirmed 1.9 — was accepted (no revision); accepted at
+860a04b47e2b4a1cded47d69c74941330f28d2a3, on the owner's explicit delegation ("do it for me"), from
+the headless re-verification in `references/1.9-spike-smoke/` (script 6605df7, PASS, pair order
+drawn per profile per F9). The owner did not personally run the manual steps.
+
 2026-10-31: re-confirmed 1.8 — was accepted at d123229c0aa8f42bdbe7b4f97355e2e396ba2a3f; accepted at
 533925b038d44d322eab9e4c138e9792dd718bfd. The owner confirmed the S17-21 download unchanged:
 `references/s19-local/S17-21.jpg` is byte-identical to the private download (sha256 883490bf…).
