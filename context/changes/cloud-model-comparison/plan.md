@@ -307,6 +307,14 @@ config/input hash, including probes from Phase 3, and never regenerates for qual
 series with explicitly recorded terminal technical failures is a valid execution, not a successful
 quality result; malformed config/ledger/access is an execution error. Bound retries and costs as
 specified above; never inherit the spike runner's assumption that every error costs zero.
+**Sizes, bounds and retries (owner decision 2026-10-31):** GPT standard ≤ 3,686,400 px and
+large ≤ 8,294,400 px, each edge ≤ 3840 and divisible by 16, aspect kept as closely as rounding
+permits, no cropping; each input's requested size is frozen in the series manifest before calls
+and the returned size is recorded. Cost bounds are documented in each config and cover all
+input/output charges and billing rounding; a response above its bound stops the runner, and no
+call is made without a defensible bound. `max_retries = 1` per logical slot (two attempts),
+transient technical failures only, no hidden client retries; timeout/unknown attempts stay
+fully reserved, and a retry is admitted only within the remaining phase budget.
 Each manifest also names prerequisite gate reports by path/hash and required PASS verdict;
 the runner checks them before paid work (Phase 3 has no prior core prerequisite). Remaining
 Phase 5 photos require the selected config's passing core report, and validation requires its
@@ -380,6 +388,12 @@ the app (Auto ON), including S17-21, and saves the downloads. `baseline.ts` foll
 and `recommendParams`, to capture full-precision stats/parameters in the same browser/session
 on the identical common input. Check those parameters against what the app actually applied;
 rounded UI labels alone are not an exact record. No product source change is needed.
+**Recorded, not observed (owner decision 2026-10-31):** the helper serves a local page that the
+owner opens in the same desktop Chrome as the app; it records full-precision stats and
+parameters, the input SHA-256, the app source revision and the browser version. Unless read
+from the app at processing time, the parameters are labelled "recomputed", not "observed
+applied". Rounded-label checks and headless output comparisons are diagnostics, never proof of
+exact applied-value parity.
 
 **Contract**: downloads and sidecars under `test-photos/private/s19/local/`, with common-input
 hash, browser/version, full stats and applied gamma/blur. Record all eight in README, including
@@ -410,6 +424,13 @@ documentation/harness allowlist (this change folder, `scripts/s19/`, roadmap and
 and fails on any product/deploy/config/secret mutation. This is scope evidence, not a runtime
 assertion about the production secret. All these commands operate on metadata only unless
 explicitly released Phase 7 tooling performs the photo work.
+**Approval records (owner decision 2026-10-31):** only explicitly marked one-line records under
+`## S-19 approvals` in `change.md` are parsed (`- S19-SPEND …`, `- S19-VALIDATION …`), with a
+strict `key=value` grammar that supports double-quoted values. Malformed records, duplicate keys
+and conflicting approvals are rejected; `decision=approved` and every mandatory field are
+required, and a missing or invalid approval blocks execution. Phase 7 needs both the spending
+approval and a validation approval matching the exact config hash, manifest hash, vendor, terms
+and run id. The agent never creates or modifies approval records.
 
 ### Success Criteria:
 
@@ -811,16 +832,16 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [ ] 1.1 Inputs are prepared and reproducible
-- [ ] 1.2 Holdout guard refuses a validation photo
-- [ ] 1.3 Dry run plans the Phase 3 calls with a cost under the cap
-- [ ] 1.4 Local blur reproduction is measured against real Local
-- [ ] 1.5 Tally maps a fixture export correctly, including an unverified-reconstruction case
-- [ ] 1.6 Typecheck passes with the new TS script
-- [ ] 1.7 Formatting of the change docs
-- [ ] 1.10 Input correctness is checked independently of reproducibility
-- [ ] 1.11 Phase budget cannot reset or overshoot
-- [ ] 1.12 Exact Auto records match the app
+- [x] 1.1 Inputs are prepared and reproducible
+- [x] 1.2 Holdout guard refuses a validation photo
+- [x] 1.3 Dry run plans the Phase 3 calls with a cost under the cap
+- [x] 1.4 Local blur reproduction is measured against real Local
+- [x] 1.5 Tally maps a fixture export correctly, including an unverified-reconstruction case
+- [x] 1.6 Typecheck passes with the new TS script
+- [x] 1.7 Formatting of the change docs
+- [x] 1.10 Input correctness is checked independently of reproducibility
+- [x] 1.11 Phase budget cannot reset or overshoot
+- [x] 1.12 Exact Auto records match the app
 
 #### Manual
 

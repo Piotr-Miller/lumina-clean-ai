@@ -1,7 +1,7 @@
 ---
 change_id: cloud-model-comparison
 title: Compare Cloud AI model candidates on the s17-v2 benchmark
-status: plan_reviewed
+status: implementing
 created: 2026-09-28
 updated: 2026-10-31
 archived_at: null
@@ -322,6 +322,14 @@ entry stays as history; from 2026-10-31 a confirmed content change **is** a seve
   that configuration from validation.
 
 Plan: `plan.md` and `plan-brief.md` in this folder.
+
+## Implementation decisions (2026-10-31)
+
+- 2026-10-31: owner decision — Auto records are "recomputed" from stats sampled in the owner's own Chrome, never claimed as observed applied values; plan.md Phase 1 item 6.
+- 2026-10-31: owner decision — GPT size caps (standard ≤ 3,686,400 px, large ≤ 8,294,400 px), documented conservative cost bounds, `max_retries = 1`; plan.md Phase 1 item 3.
+- 2026-10-31: owner decision — strict one-line `S19-SPEND` / `S19-VALIDATION` approval records under `## S-19 approvals`, written by the owner only; plan.md Phase 1 item 7.
+- 2026-10-31: finding — under those bounds the Phase 3 series (9 standard + 2 large probes + 3 NAFNet) is bounded at $3.40, above the plan's $3 cap, before any retry (`run-candidate.py --dry-run`). Phase 3 needs an owner decision before its spending approval.
+- 2026-10-31: owner decision — the eight new Local baselines and their Auto records are also committed in `references/s19-local/`, admitted per file under the evidence-image rule; the originals are already in `test-photos/licensed/` and the common inputs reproduce byte-for-byte, so neither is re-committed; references/README.md.
 
 ## Plan-review triage (2026-10-31)
 

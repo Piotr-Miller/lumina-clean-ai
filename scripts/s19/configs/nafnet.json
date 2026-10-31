@@ -1,0 +1,35 @@
+{
+  "name": "nafnet",
+  "kind": "nafnet",
+  "vendor": "fal",
+  "endpoint": "https://fal.run/fal-ai/nafnet/denoise",
+  "headers": {
+    "X-Fal-Store-IO": "0"
+  },
+  "extra": {
+    "seed": 1
+  },
+  "input": "nafnet",
+  "size_rule": {
+    "description": "output keeps the NAFNet input size (≤ 3968 px, from inputs.py)"
+  },
+  "validity": {
+    "format": "PNG",
+    "size": "exactly the input size"
+  },
+  "retry": {
+    "max_retries": 1,
+    "backoff_s": [60],
+    "transient_http": [408, 429, 500, 502, 503, 504],
+    "timeout_s": 900,
+    "note": "owner decision 2026-10-31: at most one retry per logical slot (two attempts), transient technical failures only; urllib makes no hidden retries"
+  },
+  "cost_bound": {
+    "basis": "fal NAFNet page: 'Your request will cost $0.0225 per megapixel' (research.md). Megapixels rounded up to a whole MP, plus $0.01 per call for billing rounding; total rounded up to the cent. fal reports no billed amount, so the full bound stays counted.",
+    "usd_per_megapixel": 0.0225,
+    "rounding_usd": 0.01
+  },
+  "implementation": {
+    "scripts/s19/inputs.py": "78d393de5d8b366d7d98b899f204f4fc6ed021acbafd8a5636f16981ca6ff04d"
+  }
+}
