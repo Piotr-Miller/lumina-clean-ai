@@ -572,3 +572,81 @@ That settles the image cost only. Whether the chosen parameters are good is not 
 **What this settles:** Jev for Images belongs in class D and is cheap, but it **fails S1 today**.
 TypeSafe itself says images are not production-ready and may change between releases. The 1568 px
 cap and the missing EXIF orientation would also need handling in this app's pipeline.
+
+## Empirical half: results (2026-10-30)
+
+Owner consent 2026-10-30 (about $1.1). Script: `scripts/s19/feasibility.py`, one call per
+(candidate, photo), tuning photos only. Outputs and per-call `meta.json` (sizes, wall time, vendor
+usage, input and output sha256) are in the gitignored `test-photos/private/s19-spike/`. Costs are
+computed from the reported usage at the list prices quoted in the sections above; no vendor
+invoice was read.
+
+| Call                                              | Output                    | Wall time                                                   | Usage                                                          | Cost           |
+| ------------------------------------------------- | ------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------- | -------------- |
+| A `vis-opt-group/sci` medium, S17-04              | 4032 × 3024               | 86 s (cold; 4.7 s run)                                      | predict 4.67 s                                                 | ≈ $0.001       |
+| A `fal-ai/control-light`, S17-04                  | **1152 × 864**            | 35 s                                                        | 1.0 MP                                                         | ≈ $0.03        |
+| A `fal-ai/nafnet/denoise`, S17-04 at 4032 px      | —                         | —                                                           | rejected: "Maximum dimensions are 3981x3981 pixels"            | $0             |
+| A `fal-ai/nafnet/denoise`, S17-04 at 3968 px      | 3968 × 2976               | 19 s                                                        | 11.8 MP                                                        | ≈ $0.27        |
+| A Bread (production version), S17-03 ProPhoto     | 1536 × 1024               | 140 s (cold; 3.2 s run)                                     | predict 3.18 s                                                 | ≈ $0.0007      |
+| A Bread, S17-03 converted to sRGB                 | 1536 × 1024               | 6 s                                                         | predict 2.12 s                                                 | ≈ $0.0005      |
+| B `gpt-image-2.5-sunburst` high, S17-04           | 2048 × 1536               | 39 s                                                        | in 1,452 image + 71 text tokens; out 2,223                     | ≈ $0.078       |
+| B `gpt-image-2.5-sunburst` high, S17-07           | 2304 × 1536               | 42 s                                                        | in 1,504 image + 71 text tokens; out 2,127                     | ≈ $0.076       |
+| B `gemini-nano-banana-2.1` 2K, S17-04 (paid tier) | 2400 × 1792 JPEG          | 19 s                                                        | in 1,120 image + 56 text tokens; out 1,680 image, 144 thinking | ≈ $0.05        |
+| B `gemini-nano-banana-2.1` 2K, S17-07 (paid tier) | 2528 × 1696 JPEG          | 23 s (after three 503 "high demand" answers, ~15 min apart) | in 1,120 image + 56 text tokens; out 1,680 image, 794 thinking | ≈ $0.05–0.06   |
+| D `claude-haiku-5-5`, S17-04                      | gamma 1.05, strength 0.03 | 4.1 s                                                       | in 5,115; out 257 (235 thinking)                               | ≈ $0.0006      |
+| D `gemini-3.1-flash-lite`, S17-04                 | gamma 1.1, strength 0.05  | 4.0 s                                                       | in 1,167 (1,064 image); out 23                                 | $0 (free tier) |
+| D `gpt-6-luna` `detail: high`, S17-04             | gamma 1.05, strength 0.06 | 7.6 s                                                       | in 3,079; out 86 (64 reasoning)                                | ≈ $0.001       |
+| D TypeSafe `jev-latest`, S17-04 at 1568 px        | see below                 | 0.7 s                                                       | in 5,241; out 75                                               | ≈ $0.0002      |
+| **Total**                                         |                           |                                                             |                                                                | **≈ $0.56**    |
+
+**What this settles.**
+
+- **Bread ignores the input's ICC profile.** The same S17-03 at the same settings gives mean
+  saturation 0.288 from the ProPhoto original and 0.403 from an sRGB-converted copy (mean
+  |difference| 0.039 per channel, blue 0.321 vs 0.275). Bread's outputs carry no profile. So on
+  wide-gamut inputs production Cloud starts from a desaturated image, which settles frame.md's
+  dimension 5 for Bread: the confound is real. Converting to sRGB before upload is a fix for any
+  candidate, not a reason to choose one.
+- **OpenAI S3 is now known:** a 4032 × 3024 edit input costs about 1,450 image tokens, ≈ $0.012.
+  One edit at `2048x1536` high is ≈ $0.08.
+- **fal control-light fails S2** on this input: a 12 MP photo returns 1152 × 864.
+- **fal NAFNet keeps size but caps input at 3981 px**, so a phone photo needs a downscale first.
+  It only denoises; there is no exposure control.
+- **Class D cost and latency:** $0–0.001 and 4–8 s per photo. All three answers fell inside the
+  ranges. OpenAI and Gemini accepted `minimum`/`maximum` in the schema; **Anthropic rejected
+  them** ("For 'number' type, properties maximum, minimum are not supported", HTTP 400, nothing
+  billed), so on Claude the bounds can only be stated in the prompt and checked afterwards.
+- **Jev (TypeSafe), S17-04 at 1568 × 1168:** one request with three typed questions, 0.7 s,
+  ≈ $0.0002. Brightening needed: score 0.33 of 2, 74 % "None: already well exposed".
+  Noise: 1.31 of 2. Preset choice: "gentle" at 0.44 against "medium" at 0.42, confidence 0.25.
+  So the two scores lean to "leave the exposure alone", while the preset choice is nearly a tie
+  and does not follow them. One photo shows the answer shape, cost and speed, not whether the
+  choices are good. Jev still fails S1: images need the `TypeSafe-Danger-Zone-Images` header and
+  are "not yet up to our standards to call ready for production".
+- **Gemini Nano Banana 2.1, S17-04:** 2400 × 1792, returned as JPEG (lossy), 19 s, ≈ $0.05.
+  Agent's first look, not a rating: much closer to the original than GPT Image 2.5. The sky
+  stays dark and the lawn is barely lifted. It also changes content: the limp flag on the roof is
+  redrawn as a fully spread US flag.
+- **Gemini Nano Banana 2.1, S17-07:** 2528 × 1696 JPEG, 23 s. Agent's first look, not a rating:
+  barely changed from the original, a slight lift only; far darker than GPT Image 2.5's version,
+  which the owner rated "a touch too bright".
+- Measured image tokens: Claude 5,115 input in total (computed 4,740 for the image alone),
+  Gemini 1,064 (documented 1,120), `gpt-6-luna` 3,079 at `detail: high`.
+
+**Not settled.**
+
+- Availability: Nano Banana 2.1 refused S17-07 with 503 "currently experiencing high demand" three times in a row on the paid tier before succeeding. A production path would need a retry policy and a fallback for this.
+- Class C: dropped by the owner on 2026-10-30 as competitors, not suppliers (`change.md`).
+- Quality. The agent's first look at reduced sheets, not a rating: SCI blows out the S17-04
+  facade and leaves a noisy sky; NAFNet is close to the original; control-light brightens
+  plausibly but at 1 MP; **GPT Image replaced S17-04's dark overcast sky with a blue sky and
+  defined clouds**, and re-rendered the S17-07 faces sharper than the original holds. That is the
+  content-change risk class B was flagged for, and it needs the owner's look at 100%.
+  **Superseded 2026-10-31:** the owner judged that these GPT outputs did not change shapes under
+  the fidelity definition in `change.md` § Fidelity definition and candidates. A brighter sky and
+  sharper faces are not content changes by that definition; the redrawn flag is Nano Banana's.
+
+**Disclosure: one photo went through Gemini's unpaid tier.** The `gemini-3.1-flash-lite` call ran
+on the free tier, whose terms let Google use content "to provide, improve, and develop Google
+products" (class B section, S4). The photo was S17-04, a publicly available CC BY-SA 4.0 image;
+no user photo was sent. The owner enabled billing on the key's project the same day; every later Gemini call ran on the paid tier (`serviceTier: standard`).

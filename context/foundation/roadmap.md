@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-09-28
+updated: 2026-10-31
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -47,7 +47,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-16 | atomic-cloud-daily-cap            | (post-MVP correctness) the global daily cap holds under simultaneous submissions — same message, now a hard invariant                     | S-05, S-07       | FR-014 (re-opens the S-05 obligation)                            | done                                                                  |
 | S-17 | cloud-quality-below-local         | (post-MVP quality) Auto avoids overexposure on night photos; compare the retained Bread path with Local on representative inputs          | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | done                                                                  |
 | S-18 | cloud-result-resolution-gap       | (post-MVP quality/UX) the Cloud AI result is delivered and shown at a size that does not make it look worse than the free engine          | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | done                                                                  |
-| S-19 | cloud-model-comparison            | (post-MVP quality) the basic Cloud path runs on the model that wins a holdout comparison on `s17-v1`                                      | S-17             | Success criterion "cloud result is noticeably better than local" | proposed                                                              |
+| S-19 | cloud-model-comparison            | (post-MVP quality) the basic Cloud path runs on the model that wins a holdout comparison on `s17-v1`                                      | S-17             | Success criterion "cloud result is noticeably better than local" | planning                                                              |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
 
@@ -341,7 +341,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Not yet decided:** the candidate models and the comparison protocol. That is what this change is for. S-13 (the Premium Retinexformer path) stays a separate proposal.
 - **Unblocks:** the Cloud AI delivery-resolution half of S-18 and `local-engine-ceiling` (#188), both parked on this comparison's result.
 - **Risk:** Medium. Swapping the model of a live paid path touches the Edge Function's contract, cost and cold start. The comparison itself is offline and changes nothing in production.
-- **Status:** proposed
+- **Status:** planning
 
 ## Backlog Handoff
 
