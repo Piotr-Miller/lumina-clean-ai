@@ -2,9 +2,9 @@
   "criterion": "1.9",
   "verdict": "PASS",
   "method": "delegated headless Playwright verification; not personal owner manual acceptance",
-  "completed_at": "2026-10-31T21:28:24.379Z",
-  "commit": "ea87ae4867feb99d88346d0d49ef6f8b6e29a31c",
-  "viewer_sha256": "8037c74c1f31516cfba867003f07a851325c69f03335237a392a48466955cc64",
+  "completed_at": "2026-10-31T22:35:52.841Z",
+  "commit": "6605df7174f86ab32bed2fb988a1200872a987cf",
+  "viewer_sha256": "0c8b292db6d35a2dd7d81444bf1f848aba38b7a54c519771876f05e72e5350ef",
   "manifest_sha256": "a29323a4153af78bc3c15bb17c8846377478cd5a8388e1edad42b0b30b238d09",
   "playwright": "1.62.1",
   "chromium": "151.0.7922.34",
@@ -13,41 +13,51 @@
     "height": 1050
   },
   "scope": "Real local files, isolated browser context, synthetic ratings only; no provider calls, holdout access or quality gate.",
+  "pair_order": {
+    "S17-04": ["nafnet", "gpt"],
+    "S17-07": ["gpt", "failed"]
+  },
+  "fresh_profile_first_pairs": {
+    "gpt-first": 1,
+    "nafnet-first": 1
+  },
   "checks": [
+    "Pair order is drawn per profile: fresh isolated contexts showed both S17-04 orders ({\"gpt-first\":1,\"nafnet-first\":1}), so a pair's position does not name its arm.",
+    "S17-04 pair order [\"nafnet\",\"gpt\"] is kept across a reload.",
     "Real spike-smoke manifest and three real images loaded; identities hidden and reveal disabled before rating.",
     "Severe regression, content change and unverified lettering flags toggle both on and off independently on A and B.",
     "Flags, synthetic tie and crop note survive reload. Missing original → result crop note warns; entering it clears the warning.",
     "Keyboard j turns original-only brightness(3) on; uppercase J turns it off. A and B remain unfiltered.",
     "After a synthetic rating, reveal displays the actual GPT and Local identities and toggles back to blind labels.",
-    "Downloaded JSON maps A-side flags to the correct candidate/reference, retains the crop note and synthetic tie, and includes the failed slot.",
-    "Changing pair clears reveal and isolates flags; the second real S17-04 comparison reveals NAFNet and Local.",
+    "Downloaded JSON maps A-side flags to the correct candidate/reference, retains the crop note and synthetic tie, and includes the failed slot; it records the rated pair's displayed position.",
+    "Changing pair clears reveal and isolates flags; the other real S17-04 comparison reveals NAFNet and Local.",
     "S17-07 GPT/Local images load and reveal; its synthetic technical_failure slot shows status only, with rating controls hidden.",
     "No page JavaScript errors, failed resource requests or missing-image placeholders."
   ],
   "screenshots": [
     {
       "file": "01-blind.png",
-      "sha256": "cdd32ae692ccf513efb733c2dc1aed1da8e5a60d562bf6b95e999309c103d929"
+      "sha256": "ae0c11a35cecda47cf1f4b3140d81d411297cc6afe9bca67ed08786b0ded3b2a"
     },
     {
       "file": "02-flags-warning.png",
-      "sha256": "303956f53f1c4ffd43cd98f27f31c6da11bf86322ed568899346c8078b5f4e58"
+      "sha256": "50949d02ae803148ab733910dc56528246a02ff3773d64637c33e2006ef76f58"
     },
     {
       "file": "03-j-brightened.png",
-      "sha256": "77bffa01b7b731c1215878a7b8c4d90c8682093d20caf55d9b2c56bb4c6e7e3f"
+      "sha256": "80a68fa2c82507e1b9998e072734c2365e5e990311aaf4d25c60150159d34cf4"
     },
     {
       "file": "04-revealed.png",
-      "sha256": "c744b879c4bcd431cc21cd7d819c3378da7297fd88790187684116c725ba6e8d"
+      "sha256": "338ae3d94d7af4df5f2b40351c097cf7870fd6f5d2d314692bbcb0a822a0ddcf"
     },
     {
       "file": "05-nafnet-revealed.png",
-      "sha256": "78db4ebc20edfacd77e32a13fbc36dd9e15ebdd12cdb7677090863953692aaa9"
+      "sha256": "d9df20497d7b07ea9ba9f681bd9e65e0968921a6c5a0019b3236c142e8d1a94b"
     },
     {
       "file": "06-portrait-revealed.png",
-      "sha256": "48977b01451ae9f951eee5a8c5422adee29e1da70f0b07186d006b9662db2af8"
+      "sha256": "e31058ef2205c5d850bfef7ddbba44237773f3a3b32e490789befefd906dfcdd"
     },
     {
       "file": "07-failed-slot.png",

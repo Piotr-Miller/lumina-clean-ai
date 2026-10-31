@@ -1,8 +1,13 @@
 # 1.9 — spike-smoke viewer verification
 
-**PASS**, 2026-10-31, against `ea87ae4867feb99d88346d0d49ef6f8b6e29a31c`.
-The owner explicitly delegated this check to headless Playwright. This records that browser
-verification, rather than claiming the owner personally performed the manual steps.
+**PASS**, 2026-10-31, against `6605df7174f86ab32bed2fb988a1200872a987cf` (viewer sha256
+`0c8b292d…`, unchanged since `533925b`). The owner explicitly delegated this check to headless
+Playwright. This records that browser verification, rather than claiming the owner personally
+performed the manual steps.
+
+This replaces the first run at `ea87ae4` (pre-rewrite SHA; see `change.md` Notes). The
+implementation review's F9 made the viewer draw each photo's pair order once per browser profile,
+so the script no longer assumes a fixed order: it finds each pair by the image it shows.
 
 Playwright 1.62.1 / Chromium 151.0.7922.34 opened the actual
 `compare-arms.html?m=spike-smoke` from disk in an isolated browser context at 1680 × 1050.
@@ -12,6 +17,10 @@ was mocked. Captures wait for image decoding and browser paint.
 
 Verified:
 
+- Pair order is drawn per profile (F9): fresh isolated contexts showed both S17-04 orders, the
+  order survives a reload, and the export records the rated pair's displayed position. This run
+  drew NAFNet first on S17-04 and the failed slot second on S17-07 (`pair_order` in
+  `verification.json`).
 - All three flag types toggle independently on both A and B; state survives reload.
 - A content-change flag produces the required crop-note warning; an `original → result` note
   clears it. Downloaded JSON correctly maps the blind-side flags to candidate/reference.
