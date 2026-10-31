@@ -1,6 +1,7 @@
 # 1.9 — spike-smoke viewer verification
 
-**PASS**, 2026-10-31, against `6605df7174f86ab32bed2fb988a1200872a987cf` (viewer sha256
+**PASS**, 2026-10-31, against `6605df7174f86ab32bed2fb988a1200872a987cf`, on master
+`5060eaa116e169685343ce5a63b379b15efe5c9b` after the rebase-merge of #327 (viewer sha256
 `0c8b292d…`, unchanged since `533925b`). The owner explicitly delegated this check to headless
 Playwright. This records that browser verification, rather than claiming the owner personally
 performed the manual steps.

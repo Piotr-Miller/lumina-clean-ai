@@ -9,6 +9,17 @@ archived_at: null
 
 ## Notes
 
+2026-10-31: re-pointed after the rebase-merge of #327 (merged 22:57Z, master head `af04e20`). Each
+commit mapped by `git range-diff 9d8e160..c924074 af04e20~21..af04e20` (all 21 `=`) and by equal
+`git patch-id --stable` across the pre-rebase, rebased and master copies:
+d4d1bf5 → deb3b84 → `5be376b` (Phase 1 Progress suffixes);
+533925b → ec07da0 → `7a561b8f0f6ddcf1ceb5df4674cb9ab571505876` (1.8);
+6605df7 → 1b88b1e → `5060eaa116e169685343ce5a63b379b15efe5c9b` (1.9 evidence README);
+860a04b → 54ca0e5 → `faf8868f44e868711922e6fa0b2c3ad75082ada2` (1.9);
+b3c868f → 16e58e4 → `37ea0243fd4389fea0b084b6302961a4961837ca` (1.13).
+Only the pointers changed; no acceptance was re-recorded. `1.9-spike-smoke/verification.json` keeps
+the raw run's `6605df7`; its README carries the mapping.
+
 2026-10-31: deleted the local `backup/s19-pre-f3` branch (never pushed). Nothing in this change
 needs the pre-rewrite commits; Progress, the 1.9 evidence and the post-merge re-pointing all use
 the rewritten branch. ea87ae4, 9e0bfa5, d123229 and 4236167 now remain only under `refs/original/`.
