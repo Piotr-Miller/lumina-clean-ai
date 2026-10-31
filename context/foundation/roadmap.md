@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-09-28
+updated: 2026-10-31
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -47,7 +47,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-16 | atomic-cloud-daily-cap            | (post-MVP correctness) the global daily cap holds under simultaneous submissions — same message, now a hard invariant                     | S-05, S-07       | FR-014 (re-opens the S-05 obligation)                            | done                                                                  |
 | S-17 | cloud-quality-below-local         | (post-MVP quality) Auto avoids overexposure on night photos; compare the retained Bread path with Local on representative inputs          | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | done                                                                  |
 | S-18 | cloud-result-resolution-gap       | (post-MVP quality/UX) the Cloud AI result is delivered and shown at a size that does not make it look worse than the free engine          | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | done                                                                  |
-| S-19 | cloud-model-comparison            | (post-MVP quality) the basic Cloud path runs on the model that wins a holdout comparison on `s17-v1`                                      | S-17             | Success criterion "cloud result is noticeably better than local" | proposed                                                              |
+| S-19 | cloud-model-comparison            | (post-MVP quality) the basic Cloud path runs on the model that wins a holdout comparison on `s17-v1`                                      | S-17             | Success criterion "cloud result is noticeably better than local" | planning                                                              |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
 
@@ -332,16 +332,16 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ### S-19: Compare Cloud AI model candidates on the s17-v1 benchmark
 
 - **Phase:** `phase:post-mvp`
-- **Outcome:** the basic Cloud path's model is chosen from a comparison on the frozen `s17-v1` benchmark, judged against the agreed quality bar on a holdout no candidate was tuned on.
+- **Outcome:** the basic Cloud path's model is chosen from a comparison on the frozen `s17-v2` benchmark (`s17-v1` with the two exposed validation photos replaced, 2026-10-29), judged against the agreed quality bar on a holdout no candidate was tuned on.
 - **Change ID:** cloud-model-comparison
 - **GitHub issue:** [#271](https://github.com/Piotr-Miller/lumina-clean-ai/issues/271)
 - **PRD refs:** MVP Success Criteria ("cloud result is noticeably better than local"); the two-engine Strategy toggle (S-01, S-04)
 - **Prerequisites:** S-17 (closed 2026-09-28 with decision B). The EXIF-orientation fix that in-app runs of phone photos depend on is live in production since 2026-10-25 (`context/archive/2026-09-27-cloud-exif-orientation/live-acceptance.md`).
-- **Scope:** candidates for the **basic** Cloud path. Bread at low gamma and weak denoise is one candidate. The lower-denoise Cloud setting is a hypothesis to test here, not scope to ship. Candidates are prepared on the six tuning photos only; the twelve validation photos stay unopened until the comparison runs. Quality bar: `context/archive/2026-08-31-cloud-quality-below-local/quality-bar.md`.
+- **Scope:** candidates for the **basic** Cloud path. Bread at low gamma and weak denoise is one candidate. The lower-denoise Cloud setting is a hypothesis to test here, not scope to ship. Candidates are prepared on the eight `s17-v2` tuning photos only; the twelve validation photos stay unopened until the comparison runs. Quality bar: `context/archive/2026-08-31-cloud-quality-below-local/quality-bar.md`.
 - **Not yet decided:** the candidate models and the comparison protocol. That is what this change is for. S-13 (the Premium Retinexformer path) stays a separate proposal.
 - **Unblocks:** the Cloud AI delivery-resolution half of S-18 and `local-engine-ceiling` (#188), both parked on this comparison's result.
 - **Risk:** Medium. Swapping the model of a live paid path touches the Edge Function's contract, cost and cold start. The comparison itself is offline and changes nothing in production.
-- **Status:** proposed
+- **Status:** planning
 
 ## Backlog Handoff
 

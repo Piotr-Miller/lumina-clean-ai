@@ -33,6 +33,8 @@ FETCH=(
   "S-17 Candle (29055009757).jpg · CC BY 2.0 Christopher Henry|17-candle.jpg|https://upload.wikimedia.org/wikipedia/commons/a/a0/Candle_%2829055009757%29.jpg"
   "S-17 National Museum Staircase2 at night (Prague).jpg · CC BY-SA 2.0 Mohamed Yahya|18-staircase.jpg|https://live.staticflickr.com/2685/4516172716_3ff704ce74_o.jpg"
   "S-17 Trisul by moonlight (3631259012).jpg · CC0 dr ashok kolluru|22-trisul.jpg|https://live.staticflickr.com/3417/3631259012_9b9303c845_o.jpg"
+  "s17-v2 Better Food Company, Sevier Street (Pixel 6, sodium-lit street; replaces exposed S17-05 in validation) · CC BY-SA 2.0 Tadeusz Hare|23-phone-sodium-street-pixel6.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Better_Food_Company%2C_Sevier_Street_-_53379191006.jpg"
+  "s17-v2 Central Eastern Block 1 Miyakonojo Dec 2023 01 (Galaxy S23 Ultra, lit fountain, EXIF orientation 6; replaces exposed S17-06 in validation) · CC BY-SA 4.0 ja:User:Sanjo|24-phone-fountain-galaxys23ultra.jpg|https://commons.wikimedia.org/wiki/Special:FilePath/Central_Eastern_Block_1_Miyakonojo_Dec_2023_01.jpg"
 )
 
 for entry in "${FETCH[@]}"; do

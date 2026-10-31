@@ -59,6 +59,14 @@ Verify frozen bytes from the repo root with `sha256sum -c test-photos/s17-benchm
 The manifest contains per-file authors, licence links, sources and limitations; all 18 are
 registered in `fetch.sh`. Do not silently replace frozen files after an upstream change.
 
+**S-17 v2 frozen 2026-10-29 (current, used by S-19):** the same photos plus S17-23 and S17-24,
+8 tuning / 12 validation. S17-05 and S17-06 moved to tuning after their Bread outputs were
+opened; the two new full-size phone JPEGs took their validation places. See the
+[manifest](s17-benchmark-v2.json) and the reasons in
+[`cloud-model-comparison/change.md`](../context/changes/cloud-model-comparison/change.md) § Holdout
+replacement. Verify with `sha256sum -c test-photos/s17-benchmark-v2.sha256`. v1 above stays frozen
+as history; the gallery shows v1 only.
+
 ### `licensed/01-aurora-fjord-kirkjufell.jpg`
 
 3840 × 2560 · 9.83 MP · 6.6 MB · CC BY-SA 4.0 · photo by Oliver Degener, uploaded to
