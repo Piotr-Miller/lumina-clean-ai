@@ -863,7 +863,7 @@ None: no production data or schema changes.
 
 #### Manual
 
-- [ ] 1.8 The owner saves the S17-21 Local download from the app
+- [x] 1.8 The owner saves the S17-21 Local download from the app — accepted at d123229c0aa8f42bdbe7b4f97355e2e396ba2a3f
 - [x] 1.9 The owner opens `compare-arms.html` on the existing spike outputs and confirms the flags, the brightened-original toggle and the reveal work — verified headless at ea87ae4867feb99d88346d0d49ef6f8b6e29a31c on the owner's explicit delegation; [evidence](references/1.9-spike-smoke/README.md) (not personal owner manual acceptance)
 - [ ] 1.13 The owner saves new real Local baselines for all eight prepared tuning inputs and confirms the baseline helper records the same browser/session and applied Auto values
 
