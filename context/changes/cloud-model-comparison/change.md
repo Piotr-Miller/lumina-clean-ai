@@ -9,6 +9,11 @@ archived_at: null
 
 ## Notes
 
+2026-10-31: re-confirmed 1.8 — was accepted at d123229c0aa8f42bdbe7b4f97355e2e396ba2a3f; accepted at
+533925b038d44d322eab9e4c138e9792dd718bfd. The owner confirmed the S17-21 download unchanged:
+`references/s19-local/S17-21.jpg` is byte-identical to the private download (sha256 883490bf…).
+Between the two revisions the surface changed only by S17-01 leaving it (F3) and `references/README.md`.
+
 2026-10-31: reopened 1.9 — was accepted (no revision): a headless check at ea87ae4 on the owner's
 delegation, evidence `references/1.9-spike-smoke/README.md`; changed:
 context/changes/cloud-model-comparison/references/compare-arms.html. Implementation review F9: the
