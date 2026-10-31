@@ -10,7 +10,7 @@ archived_at: null
 ## Notes
 
 2026-10-31: accepted 1.13 at b3c868f5e436c2a27e7aa2b5953a3ceb79327819, on the owner's explicit delegation ("decide 1.13: restate
-it as \"recomputed\" and accept it, or mark it n/a"), against the restated criterion and the evidence in
+it as "recomputed" and accept it, or mark it n/a"), against the restated criterion and the evidence in
 the restatement note below. The owner did not personally re-run the baseline helper.
 
 2026-10-31: owner decision (delegated: "decide 1.13") — 1.13 restated, not marked n/a. "Applied Auto
