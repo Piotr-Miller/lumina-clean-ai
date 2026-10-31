@@ -8,10 +8,15 @@ fail with a file error instead of the access refusal the tests require.
 from __future__ import annotations
 
 import json
+import os
+import shutil
+import subprocess
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
-from fixtures import ROOT, World, load, sha
+from fixtures import World, load, sha
 
 protocol = load("protocol")
 
@@ -43,6 +48,61 @@ class Holdout(World):
         self.assert_refused(self.run_cli("viewer-inputs", str(spec)))
         self.assert_refused(self.run_cli("local-arms", "local-equiv", "V-01", tsx=True))
         self.assert_refused(self.run_cli("baseline", "--check-auto", "V-01", tsx=True))
+
+    def test_every_cli_refuses_flag_and_matching_release_without_consent(self):
+        # implementation review F10: the hardest refusal, a validation flag plus a release whose
+        # config and manifest hashes match, with no owner approval, run through every CLI
+        cfg = self.make_config()
+        series = self.make_series([(cfg, "core", ["T-01"], 1)])
+        release = self.private / "validation-access.json"
+        release.parent.mkdir(parents=True, exist_ok=True)
+        release.write_text(json.dumps({"phase": 7, "run_id": "val-1", "config_sha256": sha(cfg),
+                                       "manifest_sha256": sha(self.manifest), "series_sha256": "0" * 64,
+                                       "vendor": "openai", "terms": "t", "created_at": "x"}))
+        flags = ("--validation", "--access", str(release), "--config", str(cfg))
+        spec = self.tmp / "spec-v.json"
+        spec.write_text(json.dumps({"series_id": "x", "split": "validation", "photos": [
+            {"id": "V-01", "original": str(self.photos / "V-01.jpg"), "arms": [], "pairs": []}]}))
+        runs = {
+            "inputs": self.run_cli("inputs", *flags, "V-01"),
+            "run-candidate": self.run_cli("run-candidate", "--phase", "7", "--series", str(series), "--cap", "5",
+                                          "--dry-run", *flags, "V-01"),
+            "viewer-inputs": self.run_cli("viewer-inputs", str(spec), *flags),
+            "local-arms": self.run_cli("local-arms", "local-equiv", "V-01", *flags, tsx=True),
+            "baseline": self.run_cli("baseline", "--check-auto", "V-01", *flags, tsx=True),
+        }
+        for cli, r in runs.items():
+            with self.subTest(cli=cli):
+                self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+                self.assertIn("no S19-VALIDATION record", r.stdout + r.stderr)
+                self.assertNotIn("No such file", r.stdout + r.stderr)
+
+    def test_tuning_tools_refuse_holdout_paths_behind_tuning_ids(self):
+        # implementation review F7: the id guard checks the claim, this checks what paths reach
+        t01 = self.entries[0]["path"]
+        held_run = self.private / "runs" / "gpt" / "V-02" / "1" / "out.png"
+
+        def spec(original=t01, arm_path=None):
+            path = self.tmp / "spec.json"
+            arms = [{"arm_id": "a", "kind": "candidate", "path": arm_path}] if arm_path else []
+            path.write_text(json.dumps({"series_id": "x", "split": "tuning", "photos": [
+                {"id": "T-01", "original": original, "arms": arms, "pairs": []}]}))
+            return str(path)
+
+        r = self.run_cli("viewer-inputs", spec(original=str(self.photos / "V-01.jpg")))
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("is not this photo's manifest file", r.stderr)
+        for arm_path, why in ((str(self.photos / "V-01.jpg"), "is a validation photo"),
+                              (str(held_run), "is named after validation photo V-02"),
+                              (str(self.private / "validation-local" / "x.jpg"), "is inside validation-local/")):
+            with self.subTest(why=why):
+                r = self.run_cli("viewer-inputs", spec(arm_path=arm_path))
+                self.assertEqual(r.returncode, 1, r.stdout)
+                self.assertIn(why, r.stderr)
+                self.assertNotIn("No such file", r.stderr)
+        r = self.run_cli("local-arms", "nafnet-gamma", "T-01", "--source", str(held_run), tsx=True)
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("is named after validation photo V-02", r.stdout + r.stderr)
 
     def test_all_means_tuning_and_all_validation_needs_a_release(self):
         r = self.run_cli("protocol", "check-access", "--all")
@@ -106,8 +166,11 @@ class Phase7Flow(World):
         self.report = self.tmp / "tuning-report.json"
         self.report.write_text(json.dumps({"verdicts": {sha(self.cfg): {"verdict": "PASS"}}}))
         self.series = self.tmp / "validation.json"
-        self.series.write_text(json.dumps({"series_id": "validation", "phase": 7, "split": "validation", "slots": [
-            {"config_sha256": sha(self.cfg), "photo": v, "slot": 1, "cost_bound_usd": 0.4} for v in self.validation]}))
+        self.series.write_text(json.dumps({
+            "series_id": "validation", "phase": 7, "split": "validation", "manifest_sha256": sha(self.manifest),
+            "configs": {sha(self.cfg): {"path": str(self.cfg), "name": "final", "kind": "gpt", "role": "validation"}},
+            "slots": [{"config_sha256": sha(self.cfg), "photo": v, "slot": 1, "cost_bound_usd": 0.4}
+                      for v in self.validation]}))
         self.freeze = (f"S19-FREEZE config_sha256={sha(self.cfg)} series_sha256={sha(self.series)} "
                        f"tuning_report={self.report} tuning_report_sha256={sha(self.report)} date=2026-11-15")
         self.approvals = [
@@ -131,6 +194,10 @@ class Phase7Flow(World):
                          "--all-validation")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertTrue((self.private / "inputs" / "V-12-common.jpg").exists())
+        r = self.run_cli("inputs", "--check", "--config", str(self.cfg), "--validation", "--access", str(release),
+                         "--all-validation")  # implementation review F8: covers the 12, adds no tuning id
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(r.stdout.count("✓"), 12, r.stdout)
         self.assertEqual(self.open().returncode, 0, "the same run resumes")
         self.set_records([a.replace("val-1", "val-2") for a in self.approvals], [self.freeze])
         r = self.open()
@@ -153,6 +220,28 @@ class Phase7Flow(World):
                 self.assertEqual(r.returncode, 1, r.stdout)
                 self.assertIn(why, r.stderr)
                 self.assertFalse((self.private / "validation-access.json").exists())
+
+    def test_release_binds_vendor_series_and_the_frozen_process(self):
+        # implementation review F8
+        self.set_records([a.replace("vendor=openai", "vendor=fal") for a in self.approvals], [self.freeze])
+        r = self.open()
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("approves vendor 'fal', but finalist.json sends to 'openai'", r.stderr)
+        self.assertFalse((self.private / "validation-access.json").exists())
+        self.set_records(self.approvals, [self.freeze])
+        self.assertEqual(self.open().returncode, 0)
+        release = str(self.private / "validation-access.json")
+        runner = ("run-candidate", "--config", str(self.cfg), "--phase", "7", "--cap", "5", "--dry-run",
+                  "--validation", "--access", release, "--all-validation")
+        edited = self.tmp / "validation-edited.json"
+        edited.write_text(self.series.read_text() + "\n")
+        r = self.run_cli(*runner[:1], "--series", str(edited), *runner[1:])
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("is not the validation series the release froze", r.stderr)
+        self.impl.write_text("# changed after the release\n")
+        r = self.run_cli(*runner[:1], "--series", str(self.series), *runner[1:])
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("the process changed", r.stderr)
 
     def test_cap_must_fit_the_twelve_initial_calls(self):
         self.approvals[1] = self.approvals[1].replace("cap_usd=5", "cap_usd=4")
@@ -214,11 +303,39 @@ class Scope(unittest.TestCase):
                 "context/foundation/roadmap.md", "wrangler.jsonc", "src/lib/engines/auto-params.ts"]):
             self.assertEqual(protocol.check_scope("HEAD"), ["wrangler.jsonc", "src/lib/engines/auto-params.ts"])
 
-    def test_since_defaults_to_the_harness_start(self):
-        r = protocol.main(["check-scope", "--since", protocol.IMPLEMENTATION_BASE])
-        self.assertIn(r, (0, 1))  # the live worktree may hold the owner's unrelated edits
+    def test_cli_exit_follows_the_changed_paths(self):
+        # implementation review F10: replaces an `assertIn(r, (0, 1))` that could never fail
+        allowed = ["scripts/s19/x.py", "context/changes/cloud-model-comparison/plan.md"]
+        with mock.patch.object(protocol, "changed_paths", return_value=allowed):
+            self.assertEqual(protocol.main(["check-scope", "--since", "HEAD"]), 0)
+        with mock.patch.object(protocol, "changed_paths", return_value=allowed + ["wrangler.jsonc"]):
+            self.assertEqual(protocol.main(["check-scope", "--since", "HEAD"]), 1)
         self.assertTrue(protocol.IMPLEMENTATION_BASE.startswith("ef80a97"))
-        self.assertTrue((ROOT / ".git").exists())
+
+    def test_git_level_changes_are_seen_committed_staged_and_untracked(self):
+        repo = Path(tempfile.mkdtemp(prefix="s19-scope-"))
+        self.addCleanup(shutil.rmtree, repo, True)
+
+        def git(*a):
+            subprocess.run(["git", "-C", str(repo), *a], check=True, capture_output=True,
+                           env={**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
+                                "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"})
+
+        git("init", "-q")
+        (repo / "README.md").write_text("base\n")
+        git("add", "README.md")
+        git("commit", "-q", "-m", "base")
+        base = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True,
+                              text=True).stdout.strip()
+        (repo / "scripts" / "s19").mkdir(parents=True)
+        (repo / "scripts" / "s19" / "ok.py").write_text("x\n")
+        (repo / "src").mkdir()
+        (repo / "src" / "committed.ts").write_text("x\n")
+        git("add", "src/committed.ts", "scripts/s19/ok.py")
+        git("commit", "-q", "-m", "change")
+        (repo / "wrangler.jsonc").write_text("{}\n")  # untracked
+        with mock.patch.object(protocol, "ROOT", repo):
+            self.assertEqual(protocol.check_scope(base), ["src/committed.ts", "wrangler.jsonc"])
 
 
 if __name__ == "__main__":

@@ -288,7 +288,9 @@
         showLocal = false;
 
       const origSrc = (p) => "../../../../test-photos/licensed/" + p.file;
-      const localSrc = (p) => "luminaclean-" + p.file;
+      // S17-01's download is private: its author/uploader gap is unresolved (README).
+      const HIST = "../../../../test-photos/private/s19-historical-local/";
+      const localSrc = (p) => (p.id === "S17-01" ? HIST : "") + "luminaclean-" + p.file;
 
       function pane(label, src, missingText) {
         const d = document.createElement("div");

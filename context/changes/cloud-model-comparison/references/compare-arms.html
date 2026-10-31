@@ -362,6 +362,22 @@
             state[id].candIs ??= Math.random() < 0.5 ? "A" : "B";
             state[id].flags ??= {};
           }
+        // The order of a photo's pairs is drawn once too (Fisher–Yates) and kept: otherwise
+        // "pair 1" would always be the same candidate type, and position would name the arm.
+        const isPermutation = (o, n) =>
+          Array.isArray(o) && o.length === n && [...o].sort((a, b) => a - b).every((v, i) => v === i);
+        for (const p of M.photos) {
+          const key = "order|" + p.id;
+          if (!isPermutation(state[key], p.pairs.length)) {
+            const o = p.pairs.map((_, i) => i);
+            for (let i = o.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [o[i], o[j]] = [o[j], o[i]];
+            }
+            state[key] = o;
+          }
+          p.pairs = state[key].map((i) => p.pairs[i]);
+        }
         const save = () => {
           try {
             localStorage.setItem(KEY, JSON.stringify(state));
@@ -664,7 +680,7 @@
                 photo: p.id,
                 candidate: { arm_id: cand.arm_id, ...(cand.candidate || {}), output_sha256: cand.sha256 },
                 reference: { arm_id: ref.arm_id, kind: ref.kind, sha256: ref.sha256, ...(ref.reference || {}) },
-                blind_order: { candidate: c },
+                blind_order: { candidate: c, pair_position: p.pairs.indexOf(pr) + 1, pairs: p.pairs.length },
                 preference: pref,
                 severe_candidate: !!s.flags["severe" + c],
                 severe_reference: !!s.flags["severe" + r],

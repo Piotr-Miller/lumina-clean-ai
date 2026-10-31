@@ -344,7 +344,9 @@
         revealed = false;
 
       const origSrc = (p) => "../../../../test-photos/licensed/" + p.file;
-      const localSrc = (p) => "luminaclean-" + p.file;
+      // S17-01's download is private: its author/uploader gap is unresolved (README).
+      const HIST = "../../../../test-photos/private/s19-historical-local/";
+      const localSrc = (p) => (p.id === "S17-01" ? HIST : "") + "luminaclean-" + p.file;
       const slot = (p, which) => {
         const isBread = state[p.id].breadIs === which;
         const engine = isBread ? "Bread " + p.setting : "Local (Auto)";

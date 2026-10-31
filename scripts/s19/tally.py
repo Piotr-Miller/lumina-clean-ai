@@ -33,7 +33,13 @@ Gates, per immutable config (a combined export never pools candidates):
   tuning      all eight photos' slot-1 results rated against Local, the config's passing core
               report when it has core slots, ≥ 6 clear wins, ≤ 1 moderate loss, 0 severe, 0
               content changes
-  validation  all 12 frozen slots, ≥ 8 clear wins, ≤ 1 moderate loss, 0 severe
+  validation  all 12 frozen slots, ≥ 8 clear wins, ≤ 1 moderate loss, 0 severe; every config
+              must match the S19-FREEZE record, and the series its frozen hash
+
+Joins beyond the slot (gate modes): a Local reference must be the photo's gate baseline
+(`local/<id>.jpg`, or `validation-local/` for validation), never a historical download or a
+control; a NAFNet + Local gamma rating names its `local-arms` record (`candidate.derived`), which
+must have been rendered from the slot's first valid result.
 """
 
 from __future__ import annotations
@@ -141,6 +147,61 @@ def slot_outcomes(series: dict, rows: list[dict], diagnostic: bool) -> dict[tupl
     return out
 
 
+def baseline_path(photo: str, series: dict) -> Path:
+    """The real Local download produced in the app from the common prepared input (Phase 1
+    item 6; Phase 7 for validation). Only this file may be a gate's Local reference."""
+    return protocol.private_dir() / ("validation-local" if series["split"] == "validation" else "local") / f"{photo}.jpg"
+
+
+_BASELINES: dict[Path, str] = {}
+
+
+def baseline_sha(photo: str, series: dict) -> str:
+    path = baseline_path(photo, series)
+    if path not in _BASELINES:
+        if not path.exists():
+            raise Invalid(f"{photo}: no gate baseline at {path}; produce real Local from the common input first")
+        _BASELINES[path] = protocol.sha256_file(path)
+    return _BASELINES[path]
+
+
+def check_derived(r: dict, s: dict, o: dict) -> None:
+    """A rated NAFNet + Local gamma file is not the slot's raw output: accept it only through the
+    local-arms record that made it from exactly that output, unchanged since the viewer built
+    its manifest."""
+    rid, c = r["rating_id"], r["candidate"]
+    d = c["derived"]
+    if s["kind"] != "nafnet":
+        raise Invalid(f"rating {rid}: only a NAFNet output is rated through a derived arm")
+    if d.get("source_output_sha256") != o["result"]["output_sha256"]:
+        raise Invalid(f"rating {rid}: the derived arm was not made from the slot's first valid result")
+    path = protocol.resolve(d["record"]) if d.get("record") else None
+    if path is None or not path.exists() or protocol.sha256_file(path) != d.get("record_sha256"):
+        raise Invalid(f"rating {rid}: derived record {d.get('record')} is missing or changed since the viewer "
+                      "manifest was built")
+    rec = json.loads(path.read_text())
+    src = rec.get("source") or {}
+    if rec.get("output_sha256") != c.get("output_sha256"):
+        raise Invalid(f"rating {rid}: the rated file is not the output of {d['record']}")
+    if (src.get("kind"), src.get("output_sha256"), src.get("config_sha256")) != (
+            "ledger", d["source_output_sha256"], s["config_sha256"]):
+        raise Invalid(f"rating {rid}: {d['record']} was not rendered from this slot's ledger output")
+    if (rec.get("auto_record") or {}).get("common_sha256") != c.get("auto_common_sha256"):
+        raise Invalid(f"rating {rid}: the derived arm and the rating name different Auto records")
+
+
+def check_frozen(series: dict, series_sha: str) -> None:
+    """The validation gate counts only the frozen finalist on the frozen validation series."""
+    for config_sha in series["configs"]:
+        try:
+            rec = protocol.freeze_record(config_sha)
+        except protocol.Refused as e:
+            raise Invalid(str(e)) from e
+        if rec["series_sha256"] != series_sha:
+            raise Invalid(f"the validation series hashes to {series_sha[:12]}…, the S19-FREEZE record froze "
+                          f"{rec['series_sha256'][:12]}…")
+
+
 def tally(export: dict, series: dict, rows: list[dict], gate: str | None, diagnostic: bool) -> dict:
     ratings = export.get("ratings")
     if not isinstance(ratings, list):
@@ -170,11 +231,17 @@ def tally(export: dict, series: dict, rows: list[dict], gate: str | None, diagno
         o = outcomes[(s["config_sha256"], s["input_sha256"], s["photo"], s["slot"])]
         if o["status"] != "ok":
             raise Invalid(f"rating {r['rating_id']}: slot status is {o['status']}, there is no output to rate")
-        if c.get("output_sha256") != o["result"]["output_sha256"]:
+        if c.get("derived"):
+            check_derived(r, s, o)
+        elif c.get("output_sha256") != o["result"]["output_sha256"]:
             raise Invalid(f"rating {r['rating_id']}: rated output is not the slot's first valid result")
         ref = r["reference"]
         if ref.get("kind") not in ("local", "control"):
             raise Invalid(f"rating {r['rating_id']}: reference kind must be local or control")
+        if ref.get("kind") == "local" and not diagnostic and ref.get("sha256") != baseline_sha(r["photo"], series):
+            raise Invalid(f"rating {r['rating_id']}: the Local reference is not {r['photo']}'s gate baseline "
+                          f"({baseline_path(r['photo'], series)}); historical downloads and controls cannot "
+                          "occupy the real-Local slot")
         if ref.get("kind") == "control":
             if s["kind"] != "nafnet":
                 raise Invalid(f"rating {r['rating_id']}: only NAFNet is rated against a control")
@@ -320,6 +387,8 @@ def main(argv: list[str] | None = None) -> int:
             raise Invalid("the validation gate needs the validation series")
         if args.gate in ("core", "tuning") and series.get("split") != "tuning":
             raise Invalid(f"the {args.gate} gate needs a tuning series")
+        if args.gate == "validation":
+            check_frozen(series, protocol.sha256_file(series_path))
         rows = read_ledger(protocol.resolve(args.attempts))
         report = tally(export, series, rows, args.gate, args.diagnostic)
     except (Invalid, OSError, ValueError, KeyError) as e:

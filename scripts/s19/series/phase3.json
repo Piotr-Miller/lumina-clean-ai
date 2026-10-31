@@ -6,19 +6,19 @@
   "fixed_on": "2026-10-31",
   "note": "Fixed before any call of this series. Probes are diagnostic; a gate counts each photo's slot 1.",
   "configs": {
-    "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b": {
+    "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456": {
       "path": "scripts/s19/configs/gpt-std.json",
       "name": "gpt-std",
       "kind": "gpt",
       "role": "core"
     },
-    "28e2529007c7451d5dad6c43b8ac3518f92bb7d93befb479027168fa641e39a7": {
+    "2ab95f80b00da3d14a55f4a2d79f6880b900435291fccd4b1e4129de8627db3d": {
       "path": "scripts/s19/configs/gpt-large.json",
       "name": "gpt-large",
       "kind": "gpt",
       "role": "probe"
     },
-    "9482f38507929f3fa7855b09862a1c63b523f0401eafd2c5a6a70535b536a7fd": {
+    "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4": {
       "path": "scripts/s19/configs/nafnet.json",
       "name": "nafnet",
       "kind": "nafnet",
@@ -28,7 +28,7 @@
   "prerequisites": [],
   "slots": [
     {
-      "config_sha256": "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b",
+      "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
       "config_name": "gpt-std",
       "kind": "gpt",
       "photo": "S17-03",
@@ -42,7 +42,7 @@
       "requires": []
     },
     {
-      "config_sha256": "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b",
+      "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
       "config_name": "gpt-std",
       "kind": "gpt",
       "photo": "S17-03",
@@ -56,7 +56,7 @@
       "requires": []
     },
     {
-      "config_sha256": "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b",
+      "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
       "config_name": "gpt-std",
       "kind": "gpt",
       "photo": "S17-03",
@@ -70,7 +70,7 @@
       "requires": []
     },
     {
-      "config_sha256": "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b",
+      "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
       "config_name": "gpt-std",
       "kind": "gpt",
       "photo": "S17-04",
@@ -84,7 +84,7 @@
       "requires": []
     },
     {
-      "config_sha256": "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b",
+      "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
       "config_name": "gpt-std",
       "kind": "gpt",
       "photo": "S17-04",
@@ -98,7 +98,7 @@
       "requires": []
     },
     {
-      "config_sha256": "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b",
+      "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
       "config_name": "gpt-std",
       "kind": "gpt",
       "photo": "S17-04",
@@ -112,7 +112,7 @@
       "requires": []
     },
     {
-      "config_sha256": "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b",
+      "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
       "config_name": "gpt-std",
       "kind": "gpt",
       "photo": "S17-07",
@@ -126,7 +126,7 @@
       "requires": []
     },
     {
-      "config_sha256": "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b",
+      "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
       "config_name": "gpt-std",
       "kind": "gpt",
       "photo": "S17-07",
@@ -140,7 +140,7 @@
       "requires": []
     },
     {
-      "config_sha256": "df67f7aeaf635cee4923c3ceac29af3d92dfb2b7cde58159b60058883487b17b",
+      "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
       "config_name": "gpt-std",
       "kind": "gpt",
       "photo": "S17-07",
@@ -154,7 +154,7 @@
       "requires": []
     },
     {
-      "config_sha256": "28e2529007c7451d5dad6c43b8ac3518f92bb7d93befb479027168fa641e39a7",
+      "config_sha256": "2ab95f80b00da3d14a55f4a2d79f6880b900435291fccd4b1e4129de8627db3d",
       "config_name": "gpt-large",
       "kind": "gpt",
       "photo": "S17-04",
@@ -168,7 +168,7 @@
       "requires": []
     },
     {
-      "config_sha256": "28e2529007c7451d5dad6c43b8ac3518f92bb7d93befb479027168fa641e39a7",
+      "config_sha256": "2ab95f80b00da3d14a55f4a2d79f6880b900435291fccd4b1e4129de8627db3d",
       "config_name": "gpt-large",
       "kind": "gpt",
       "photo": "S17-07",
@@ -182,7 +182,7 @@
       "requires": []
     },
     {
-      "config_sha256": "9482f38507929f3fa7855b09862a1c63b523f0401eafd2c5a6a70535b536a7fd",
+      "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
       "config_name": "nafnet",
       "kind": "nafnet",
       "photo": "S17-03",
@@ -196,7 +196,7 @@
       "requires": []
     },
     {
-      "config_sha256": "9482f38507929f3fa7855b09862a1c63b523f0401eafd2c5a6a70535b536a7fd",
+      "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
       "config_name": "nafnet",
       "kind": "nafnet",
       "photo": "S17-04",
@@ -210,7 +210,7 @@
       "requires": []
     },
     {
-      "config_sha256": "9482f38507929f3fa7855b09862a1c63b523f0401eafd2c5a6a70535b536a7fd",
+      "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
       "config_name": "nafnet",
       "kind": "nafnet",
       "photo": "S17-07",
