@@ -110,3 +110,8 @@ guard before reading any image, and a tuning manifest never lists validation pho
 `scripts/s19/viewer/spike-smoke.json` is a smoke-test spec over the existing spike outputs
 (GPT on S17-04 and S17-07, raw NAFNet on S17-04) against the historical Local downloads, with
 one synthetic failed slot. It is not a gate and not the Phase 2 rating set.
+
+The owner's delegated headless Playwright verification of Progress 1.9 is recorded in
+[`1.9-spike-smoke/README.md`](1.9-spike-smoke/README.md), with screenshots, per-file publication
+bases, a machine-readable report and the reproduction script. Its ratings are synthetic UI
+test inputs, not quality evaluations.

@@ -1,0 +1,58 @@
+{
+  "criterion": "1.9",
+  "verdict": "PASS",
+  "method": "delegated headless Playwright verification; not personal owner manual acceptance",
+  "completed_at": "2026-10-31T21:28:24.379Z",
+  "commit": "ea87ae4867feb99d88346d0d49ef6f8b6e29a31c",
+  "viewer_sha256": "8037c74c1f31516cfba867003f07a851325c69f03335237a392a48466955cc64",
+  "manifest_sha256": "a29323a4153af78bc3c15bb17c8846377478cd5a8388e1edad42b0b30b238d09",
+  "playwright": "1.62.1",
+  "chromium": "151.0.7922.34",
+  "viewport": {
+    "width": 1680,
+    "height": 1050
+  },
+  "scope": "Real local files, isolated browser context, synthetic ratings only; no provider calls, holdout access or quality gate.",
+  "checks": [
+    "Real spike-smoke manifest and three real images loaded; identities hidden and reveal disabled before rating.",
+    "Severe regression, content change and unverified lettering flags toggle both on and off independently on A and B.",
+    "Flags, synthetic tie and crop note survive reload. Missing original → result crop note warns; entering it clears the warning.",
+    "Keyboard j turns original-only brightness(3) on; uppercase J turns it off. A and B remain unfiltered.",
+    "After a synthetic rating, reveal displays the actual GPT and Local identities and toggles back to blind labels.",
+    "Downloaded JSON maps A-side flags to the correct candidate/reference, retains the crop note and synthetic tie, and includes the failed slot.",
+    "Changing pair clears reveal and isolates flags; the second real S17-04 comparison reveals NAFNet and Local.",
+    "S17-07 GPT/Local images load and reveal; its synthetic technical_failure slot shows status only, with rating controls hidden.",
+    "No page JavaScript errors, failed resource requests or missing-image placeholders."
+  ],
+  "screenshots": [
+    {
+      "file": "01-blind.png",
+      "sha256": "cdd32ae692ccf513efb733c2dc1aed1da8e5a60d562bf6b95e999309c103d929"
+    },
+    {
+      "file": "02-flags-warning.png",
+      "sha256": "303956f53f1c4ffd43cd98f27f31c6da11bf86322ed568899346c8078b5f4e58"
+    },
+    {
+      "file": "03-j-brightened.png",
+      "sha256": "77bffa01b7b731c1215878a7b8c4d90c8682093d20caf55d9b2c56bb4c6e7e3f"
+    },
+    {
+      "file": "04-revealed.png",
+      "sha256": "c744b879c4bcd431cc21cd7d819c3378da7297fd88790187684116c725ba6e8d"
+    },
+    {
+      "file": "05-nafnet-revealed.png",
+      "sha256": "78db4ebc20edfacd77e32a13fbc36dd9e15ebdd12cdb7677090863953692aaa9"
+    },
+    {
+      "file": "06-portrait-revealed.png",
+      "sha256": "48977b01451ae9f951eee5a8c5422adee29e1da70f0b07186d006b9662db2af8"
+    },
+    {
+      "file": "07-failed-slot.png",
+      "sha256": "4022cd810c0a7c0d768f7b8900f5a3091a6f35ed9d0ec5790180c42c89322c93"
+    }
+  ],
+  "errors": []
+}
