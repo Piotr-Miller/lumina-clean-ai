@@ -165,17 +165,28 @@ holdout consent.
 | Phase          | Paid content                                                                                                                                                                  |                                                                    Estimate |                                         Cap |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------: | ------------------------------------------: |
 | 1, 2, 4, 6     | harness, rating existing outputs, curve work, freeze                                                                                                                          |                                                                          $0 |                                          $0 |
-| 3              | GPT: 3 new calls each on S17-03, S17-04, S17-07 at the standard size; one larger-size probe each on S17-04 and S17-07; NAFNet on S17-03, S17-04, S17-07 (new prepared inputs) |                                               ≈ $0.75 + $0.4 + $0.75 = $1.9 |                                          $3 |
+| 3              | GPT: 3 new calls each on S17-03, S17-04, S17-07 at the standard size; one larger-size probe each on S17-04 and S17-07; NAFNet on S17-03, S17-04, S17-07 (new prepared inputs) |                                               ≈ $0.75 + $0.4 + $0.75 = $1.9 |                                          $4 |
 | 5, standard    | carried standard GPT once on S17-01/02/05/06/21; NAFNet on those five                                                                                                         |                                                        ≈ $0.4 + $1.2 = $1.6 |                                          $3 |
 | 5, large       | complete the selected large config's core (7 missing slots after the 2 probes), then the 5 remaining photos; NAFNet on those five                                             |                                  ≈ 12 × $0.20 + $1.2 = $3.6, before retries |                      **Amendment required** |
 | 5, new prompt  | a fresh config: its own 9 core slots and 5 remaining photos; plus surviving NAFNet and any Phase 5 work already paid                                                          | ≈ 14 × $0.20 + $1.2 = $4 for large output, plus prior Phase 5 spend/retries | **Amendment if the $3 cap cannot cover it** |
 | 7              | frozen finalist on 12 validation photos, retries included                                                                                                                     |                                GPT ≈ $1–2.4 (size-dependent); NAFNet ≈ $2.5 |                                          $5 |
-| **Base total** | standard continuation, on top of the $0.56 already spent                                                                                                                      |                                                                      ≈ $4–6 |                      **$11 = $3 + $3 + $5** |
+| **Base total** | standard continuation, on top of the $0.56 already spent                                                                                                                      |                                                                      ≈ $4–6 |                      **$12 = $4 + $3 + $5** |
+
+**Phase 3 cap decision (2026-10-31, delegated by the owner): $4.00.** Keep all 14
+initial slots: 9 standard GPT at $0.20 = $1.80, 2 large probes at $0.41 = $0.82,
+and 3 NAFNet at $0.24/$0.28/$0.26 = $0.78. Their conservative bounds total $3.40;
+the remaining $0.60 is shared technical-retry headroom, not a guarantee that all slots can
+retry. Existing limits (at most one technical retry per slot, unknown costs fully reserved,
+no quality rerolls) still apply. The runner stops at $4 even if this leaves an incomplete
+series; no automatic top-up. This replaces the earlier $3 planning cap and preserves the
+full core and both probes. Paid execution separately requires the owner-authored
+`S19-SPEND phase=3 cap_usd=4` approval record in `change.md`; this delegated cap decision
+does not create that record.
 
 The alternative Phase 5 rows are branches, not additions to the standard row. An amendment must
 state a numeric replacement Phase 5 cap `C5`, the exact config and remaining slots, prior Phase 5
-spend/reservations, retry allowance, and the revised total `$3 + C5 + $5`. For illustration,
-`C5 = $5` makes the total $13; it is not an approved budget or a guarantee that every retry fits.
+spend/reservations, retry allowance, and the revised total `$4 + C5 + $5`. For illustration,
+`C5 = $5` makes the total $14; it is not an approved budget or a guarantee that every retry fits.
 A prompt change after spending on another config includes that earlier spend. No alternative
 inherits approval merely because the plan describes it.
 
@@ -438,7 +449,7 @@ and run id. The agent never creates or modifies approval records.
 
 - Inputs are prepared and reproducible: `python3 scripts/s19/inputs.py --all && python3 scripts/s19/inputs.py --check` — not run: needs Phase 1 output
 - Holdout guard refuses a validation photo: `python3 -B -m unittest discover -s scripts/s19/tests -p test_protocol.py -v` asserts refusal before photo reads/network for every CLI, even with a matching hash and validation flag but absent/declined consent; also tests a synthetic approved Phase 7 path — not run: needs Phase 1 output
-- Dry run plans the Phase 3 calls with a cost under the cap: `python3 scripts/s19/run-candidate.py --config scripts/s19/configs/gpt-std.json --phase 3 --series scripts/s19/series/phase3.json --cap 3 --dry-run --repeat 3 S17-03 S17-04 S17-07` reports all nine standard GPT slots and their cost bounds; the manifest also accounts for two size probes and three NAFNet calls under the same $3 ledger — not run: needs Phase 1 output
+- Dry run plans the Phase 3 calls with a cost under the cap: `python3 scripts/s19/run-candidate.py --config scripts/s19/configs/gpt-std.json --phase 3 --series scripts/s19/series/phase3.json --cap 4 --dry-run --repeat 3 S17-03 S17-04 S17-07` reports all nine standard GPT slots and their cost bounds; the manifest also accounts for two size probes and three NAFNet calls under the same $4 ledger — passed 2026-10-31: dry runs for all three configs exit 0; 14 initial slots bounded at $3.40 fit within $4.00, with $0.00 committed
 - Local blur reproduction is measured against real Local: `npx tsx scripts/s19/local-arms.ts local-equiv --compare-local S17-01 S17-02 S17-03 S17-04 S17-05 S17-06 S17-07 S17-21` requires the new baseline and exact Auto records first — not run: needs Phase 1 output
 - Tally maps a fixture export correctly, including an unverified-reconstruction case: `python3 -B -m unittest discover -s scripts/s19/tests -p test_tally.py -v` asserts exact category counts/reasons and process exits for valid PASS, valid STOP and invalid evidence, including both unverified-lettering cases — not run: needs Phase 1 output
 - Typecheck passes with the new TS script: `npm run typecheck` — not run: needs Phase 1 output
@@ -502,7 +513,7 @@ inputs, all rated. The spike outputs are not counted: they were made from unprep
 is Adobe RGB) and stay Phase 2 material only. The first valid result per photo is the one the gate
 counts; the other two measure stability. One larger-size GPT probe on S17-04 and S17-07 to decide the
 output size to investigate next. NAFNet on S17-03, S17-04 and S17-07 with Local gamma and the free control. Needs the
-owner's consent for a cap of $3.
+owner's consent for a cap of $4 (cap decision delegated on 2026-10-31; spending approval remains separate).
 
 ### Changes Required:
 
@@ -537,9 +548,9 @@ export note on resolution.
 
 #### Automated Verification:
 
-- (paid) GPT core series: `python3 scripts/s19/run-candidate.py --config scripts/s19/configs/gpt-std.json --phase 3 --series scripts/s19/series/phase3.json --cap 3 --repeat 3 --resume S17-03 S17-04 S17-07` — artifact: `test-photos/private/s19/attempts.jsonl` — not run: paid
-- (paid) GPT size probe: `python3 scripts/s19/run-candidate.py --config scripts/s19/configs/gpt-large.json --phase 3 --series scripts/s19/series/phase3.json --cap 3 --resume S17-04 S17-07` — artifact: `test-photos/private/s19/attempts.jsonl` — not run: paid
-- (paid) NAFNet core: `python3 scripts/s19/run-candidate.py --config scripts/s19/configs/nafnet.json --phase 3 --series scripts/s19/series/phase3.json --cap 3 --resume S17-03 S17-04 S17-07` — artifact: `test-photos/private/s19/attempts.jsonl` — not run: paid
+- (paid) GPT core series: `python3 scripts/s19/run-candidate.py --config scripts/s19/configs/gpt-std.json --phase 3 --series scripts/s19/series/phase3.json --cap 4 --repeat 3 --resume S17-03 S17-04 S17-07` — artifact: `test-photos/private/s19/attempts.jsonl` — not run: paid
+- (paid) GPT size probe: `python3 scripts/s19/run-candidate.py --config scripts/s19/configs/gpt-large.json --phase 3 --series scripts/s19/series/phase3.json --cap 4 --resume S17-04 S17-07` — artifact: `test-photos/private/s19/attempts.jsonl` — not run: paid
+- (paid) NAFNet core: `python3 scripts/s19/run-candidate.py --config scripts/s19/configs/nafnet.json --phase 3 --series scripts/s19/series/phase3.json --cap 4 --resume S17-03 S17-04 S17-07` — artifact: `test-photos/private/s19/attempts.jsonl` — not run: paid
 - Tally and core gate: `python3 scripts/s19/tally.py context/changes/cloud-model-comparison/evaluations/phase3-core.json --series scripts/s19/series/phase3.json --attempts test-photos/private/s19/attempts.jsonl --gate core --out context/changes/cloud-model-comparison/evaluations/phase3-report.json` validates the evidence and records each eligible config's PASS/STOP; the large probe remains diagnostic — not run: needs Phase 3 output
 
 #### Manual Verification:
@@ -832,21 +843,21 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [x] 1.1 Inputs are prepared and reproducible
-- [x] 1.2 Holdout guard refuses a validation photo
-- [x] 1.3 Dry run plans the Phase 3 calls with a cost under the cap
-- [x] 1.4 Local blur reproduction is measured against real Local
-- [x] 1.5 Tally maps a fixture export correctly, including an unverified-reconstruction case
-- [x] 1.6 Typecheck passes with the new TS script
-- [x] 1.7 Formatting of the change docs
-- [x] 1.10 Input correctness is checked independently of reproducibility
-- [x] 1.11 Phase budget cannot reset or overshoot
-- [x] 1.12 Exact Auto records match the app
+- [x] 1.1 Inputs are prepared and reproducible — ea87ae4
+- [x] 1.2 Holdout guard refuses a validation photo — ea87ae4
+- [x] 1.3 Dry run plans the Phase 3 calls with a cost under the cap — ea87ae4
+- [x] 1.4 Local blur reproduction is measured against real Local — ea87ae4
+- [x] 1.5 Tally maps a fixture export correctly, including an unverified-reconstruction case — ea87ae4
+- [x] 1.6 Typecheck passes with the new TS script — ea87ae4
+- [x] 1.7 Formatting of the change docs — ea87ae4
+- [x] 1.10 Input correctness is checked independently of reproducibility — ea87ae4
+- [x] 1.11 Phase budget cannot reset or overshoot — ea87ae4
+- [x] 1.12 Exact Auto records match the app — ea87ae4
 
 #### Manual
 
 - [ ] 1.8 The owner saves the S17-21 Local download from the app
-- [ ] 1.9 The owner opens `compare-arms.html` on the existing spike outputs and confirms the flags, the brightened-original toggle and the reveal work
+- [x] 1.9 The owner opens `compare-arms.html` on the existing spike outputs and confirms the flags, the brightened-original toggle and the reveal work — verified headless at ea87ae4867feb99d88346d0d49ef6f8b6e29a31c on the owner's explicit delegation; [evidence](references/1.9-spike-smoke/README.md) (not personal owner manual acceptance)
 - [ ] 1.13 The owner saves new real Local baselines for all eight prepared tuning inputs and confirms the baseline helper records the same browser/session and applied Auto values
 
 ### Phase 2: Rate what is already paid for

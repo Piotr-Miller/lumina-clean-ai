@@ -39,7 +39,7 @@ paused. A pass leads to a separate change that plans the production switch.
 | GPT sampling        | First technically valid result; retries only for technical errors; 3 × 3 repeats rated in full beforehand                                  | No cherry-picking; stability measured before the holdout                               | Plan (owner)             |
 | Fair input          | Identical full-resolution prepared sRGB bytes for real Local and GPT; NAFNet downscale shared with its control; exact app Auto records     | Isolates input, exposure and denoise effects                                           | Frame; triage 2026-10-31 |
 | Tuning gate         | ≥ 6/8 clear wins, ≤ 1 moderate loss, 0 severe, 0 content changes; one immutable config and complete evidence                               | Fixed gate, leaving margin over 8/12                                                   | Owner; plan              |
-| Budget              | Base caps $3 + $3 + $5 = $11 above $0.56; a larger/new GPT config may require a numeric replacement Phase 5 cap and revised total          | All configs/retries share a persistent phase ledger; separate consent before paid work | Plan; triage 2026-10-31  |
+| Budget              | Base caps $4 + $3 + $5 = $12 above $0.56; a larger/new GPT config may require a numeric replacement Phase 5 cap and revised total          | All configs/retries share a persistent phase ledger; separate consent before paid work | Plan; triage 2026-10-31  |
 | Sending the holdout | Positive owner approval for the exact frozen hash/vendor/terms, separate $5 consent, then an explicit Phase 7 release                      | Freeze or a dated refusal never authorises access                                      | Plan; triage 2026-10-31  |
 | Gate evidence       | Join expected slots, all attempts and ratings by immutable config/input/output ids; fixed denominators; no omitted failures or best repeat | An export of successful images alone is insufficient                                   | Plan; triage 2026-10-31  |
 | STOP and closure    | Valid PASS and STOP reports exit 0; invalid evidence exits 2; only an explicit PASS permits advancement                                    | A negative scientific outcome is not broken tooling                                    | Plan; triage 2026-10-31  |
@@ -68,15 +68,20 @@ Terminal outcomes and status pointers are recorded even when validation is never
 
 ## Phases at a Glance
 
-| Phase                        | What it delivers                                                                                                      | Key risk                                                                          |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| 1. Harness and viewer        | Common inputs, new app Local baselines on all 8, exact Auto, access/budget guards, viewer and tally                   | Verify Auto before measuring the control blur approximation                       |
-| 2. Rate existing outputs     | Blind ratings of the 3 paid spike outputs vs Local, $0                                                                | Too few photos to stop on; used only as an early warning                          |
-| 3. Core paid series          | 9 new standard GPT calls + 2 large probes; 3 new NAFNet results including S17-04 (shared cap $3)                      | Large probes are diagnostic, not a passing core                                   |
-| 4. Exposure curve (optional) | Deterministic curve, with and without NAFNet, $0                                                                      | Overfitting to 3 photos                                                           |
-| 5. All 8 tuning photos       | Complete the selected GPT core first; then remaining 5 photos; cap $3 only if sufficient, otherwise numeric amendment | Large needs 7 missing core calls after probes; a new prompt needs 9               |
-| 6. Freeze                    | Identical passing process hash; explicit positive/declined sending decision                                           | Missing/declined consent closes the experiment without holdout access             |
-| 7. Validation                | Release, prepare common inputs/real Local, one-shot finalist on all 12 (cap $5); terminal record                      | Technical/budget incompleteness stays visible; no repeated independent validation |
+| Phase                        | What it delivers                                                                                                                             | Key risk                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 1. Harness and viewer        | Common inputs, new app Local baselines on all 8, exact Auto, access/budget guards, viewer and tally                                          | Verify Auto before measuring the control blur approximation                       |
+| 2. Rate existing outputs     | Blind ratings of the 3 paid spike outputs vs Local, $0                                                                                       | Too few photos to stop on; used only as an early warning                          |
+| 3. Core paid series          | 9 new standard GPT calls + 2 large probes; 3 new NAFNet results including S17-04 (shared cap $4; $3.40 initial bound + $0.60 retry headroom) | Large probes are diagnostic, not a passing core                                   |
+| 4. Exposure curve (optional) | Deterministic curve, with and without NAFNet, $0                                                                                             | Overfitting to 3 photos                                                           |
+| 5. All 8 tuning photos       | Complete the selected GPT core first; then remaining 5 photos; cap $3 only if sufficient, otherwise numeric amendment                        | Large needs 7 missing core calls after probes; a new prompt needs 9               |
+| 6. Freeze                    | Identical passing process hash; explicit positive/declined sending decision                                                                  | Missing/declined consent closes the experiment without holdout access             |
+| 7. Validation                | Release, prepare common inputs/real Local, one-shot finalist on all 12 (cap $5); terminal record                                             | Technical/budget incompleteness stays visible; no repeated independent validation |
+
+**Phase 3 cap decision (2026-10-31, owner-delegated):** raise $3 to $4 and retain all
+14 slots. Initial conservative bounds total $3.40, leaving $0.60 shared retry headroom.
+Retries still require remaining budget; no guaranteed retry for every slot and no automatic
+top-up. The separate owner-authored spending record is still required before paid execution.
 
 **Prerequisites:** the owner's consent per paid phase (including any numeric budget amendment);
 new common-input Local downloads and exact app Auto records for all eight tuning photos; API keys in
@@ -89,7 +94,7 @@ new common-input Local downloads and exact app Auto records for all eight tuning
   rules are any confirmed content change in the 9 GPT calls, a repeat spread from clear win to
   moderate loss or worse, and NAFNet not beating its matched control on ≥ 2 of 3 photos. A
   technical failure is counted separately and incomplete evidence cannot PASS.
-- The $11 total is the standard base branch, not a promise covering every config change. At the
+- The $12 total is the standard base branch, not a promise covering every config change. At the
   plan's estimates, a fresh large-output prompt config plus NAFNet is about $4 in Phase 5 before
   prior Phase 5 spend/retries; a numeric amendment must state the new total before any extra call.
   The $5 validation cap must fit 12 bounded initial calls before holdout release; retries may
