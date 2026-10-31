@@ -413,6 +413,13 @@ unless individually admitted under AGENTS.md's evidence rule. The helper checks 
 access guard before any validation decode; validation baselines/stats are created only in Phase 7
 under `test-photos/private/s19/validation-local/`.
 
+**Acceptance surface (owner decision 2026-10-31):** Manual checks 1.8 and 1.13 pin the
+published copies in `context/changes/cloud-model-comparison/references/s19-local/` and their
+provenance README. All eight JPEGs are byte-identical to the private downloads; the Auto JSON
+records contain the same data, with formatting differences only. The private directory remains
+the harness's working location. This surface correction does not confirm applied Auto parity
+or accept 1.13.
+
 #### 7. Shared access, freeze and outcome protocol
 
 **File**: `scripts/s19/protocol.py`, `scripts/s19/tests/test_protocol.py`, `scripts/s19/tests/test_inputs.py`, `scripts/s19/tests/test_tally.py`, `scripts/s19/tests/test_budget.py`
@@ -460,9 +467,9 @@ and run id. The agent never creates or modifies approval records.
 
 #### Manual Verification:
 
-- The owner saves the S17-21 Local download from the app using its prepared common sRGB input and records its exact Auto values — surface: test-photos/private/s19/local/, context/changes/cloud-model-comparison/references/README.md
+- The owner saves the S17-21 Local download from the app using its prepared common sRGB input and records its exact Auto values — surface: context/changes/cloud-model-comparison/references/s19-local/, context/changes/cloud-model-comparison/references/README.md
 - The owner opens `compare-arms.html` on the existing spike outputs and confirms the flags, the brightened-original toggle and the reveal work — surface: context/changes/cloud-model-comparison/references/compare-arms.html
-- The owner saves new real Local baselines for all eight prepared tuning inputs and confirms the baseline helper records the same browser/session and applied Auto values — surface: test-photos/private/s19/local/, context/changes/cloud-model-comparison/references/README.md
+- The owner saves new real Local baselines for all eight prepared tuning inputs and confirms the baseline helper records the same browser/session and applied Auto values — surface: context/changes/cloud-model-comparison/references/s19-local/, context/changes/cloud-model-comparison/references/README.md
 
 ---
 

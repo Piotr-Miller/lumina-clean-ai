@@ -9,6 +9,13 @@ archived_at: null
 
 ## Notes
 
+2026-10-31: owner decision — use the committed `references/s19-local/` copies as the acceptance
+surface for 1.8 and 1.13, together with `references/README.md`, so the acceptance script can pin
+the evidence to a Git revision. Verified all eight JPEGs byte-for-byte against the private
+downloads and all eight Auto records for JSON equality. Commit this surface correction before
+recording 1.8 at the new HEAD. 1.13 remains pending applied-value verification; changing its
+surface is not acceptance.
+
 Decision B from S-17 (maintainer, 2026-09-28): compare models for the **basic Cloud path** on the
 `s17-v1` benchmark. Bread at low gamma and weak denoise is **one candidate**. The lower-denoise
 Cloud setting is a hypothesis to compare here, not scope to ship. It does not resume Cloud Auto
