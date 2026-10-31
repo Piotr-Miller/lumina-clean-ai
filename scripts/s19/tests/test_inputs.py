@@ -87,6 +87,19 @@ class InputsTest(World):
         self.assertFalse(small["nafnet"]["downscaled"])
         self.assertEqual(small["nafnet"]["sha256"], small["common"]["sha256"])
 
+    def test_prepared_files_are_quality_95_with_444_chroma(self):
+        # implementation review F10: the 4:4:4 contract was set in code but never asserted
+        from PIL import JpegImagePlugin
+
+        self.replace_photo("T-01", Image.new("RGB", (4100, 2000), (50, 60, 70)), [4100, 2000])
+        self.prepare("T-01")
+        for target in ("common", "nafnet"):
+            with self.subTest(target=target), Image.open(self.private / "inputs" / f"T-01-{target}.jpg") as im:
+                self.assertEqual(im.format, "JPEG")
+                self.assertEqual(JpegImagePlugin.get_sampling(im), 0, "0 means 4:4:4 (no chroma subsampling)")
+                # quality 95 → the libjpeg luma table scaled by 10 %, so its DC entry is 2
+                self.assertEqual(im.quantization[0][0], 2)
+
     def test_check_reproduces_and_detects_tampering(self):
         self.prepare("T-01")
         r = self.run_cli("inputs", "--check", "T-01")

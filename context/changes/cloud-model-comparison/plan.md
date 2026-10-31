@@ -850,21 +850,21 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [x] 1.1 Inputs are prepared and reproducible — ea87ae4
-- [x] 1.2 Holdout guard refuses a validation photo — ea87ae4
-- [x] 1.3 Dry run plans the Phase 3 calls with a cost under the cap — ea87ae4
-- [x] 1.4 Local blur reproduction is measured against real Local — ea87ae4
-- [x] 1.5 Tally maps a fixture export correctly, including an unverified-reconstruction case — ea87ae4
-- [x] 1.6 Typecheck passes with the new TS script — ea87ae4
-- [x] 1.7 Formatting of the change docs — ea87ae4
-- [x] 1.10 Input correctness is checked independently of reproducibility — ea87ae4
-- [x] 1.11 Phase budget cannot reset or overshoot — ea87ae4
-- [x] 1.12 Exact Auto records match the app — ea87ae4
+- [x] 1.1 Inputs are prepared and reproducible — d4d1bf5
+- [x] 1.2 Holdout guard refuses a validation photo — d4d1bf5
+- [x] 1.3 Dry run plans the Phase 3 calls with a cost under the cap — d4d1bf5
+- [x] 1.4 Local blur reproduction is measured against real Local — d4d1bf5
+- [x] 1.5 Tally maps a fixture export correctly, including an unverified-reconstruction case — d4d1bf5
+- [x] 1.6 Typecheck passes with the new TS script — d4d1bf5
+- [x] 1.7 Formatting of the change docs — d4d1bf5
+- [x] 1.10 Input correctness is checked independently of reproducibility — d4d1bf5
+- [x] 1.11 Phase budget cannot reset or overshoot — d4d1bf5
+- [x] 1.12 Exact Auto records match the app — d4d1bf5
 
 #### Manual
 
-- [x] 1.8 The owner saves the S17-21 Local download from the app — accepted at d123229c0aa8f42bdbe7b4f97355e2e396ba2a3f
-- [x] 1.9 The owner opens `compare-arms.html` on the existing spike outputs and confirms the flags, the brightened-original toggle and the reveal work — verified headless at ea87ae4867feb99d88346d0d49ef6f8b6e29a31c on the owner's explicit delegation; [evidence](references/1.9-spike-smoke/README.md) (not personal owner manual acceptance)
+- [ ] 1.8 The owner saves the S17-21 Local download from the app
+- [ ] 1.9 The owner opens `compare-arms.html` on the existing spike outputs and confirms the flags, the brightened-original toggle and the reveal work
 - [ ] 1.13 The owner saves new real Local baselines for all eight prepared tuning inputs and confirms the baseline helper records the same browser/session and applied Auto values
 
 ### Phase 2: Rate what is already paid for

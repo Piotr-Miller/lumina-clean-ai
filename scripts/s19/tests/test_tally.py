@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from pathlib import Path
 
 from fixtures import World, load, sha
 
@@ -50,14 +51,25 @@ class TallyWorld(World):
                            "series_id": "s", "config_sha256": s["config_sha256"], "input_sha256": s["input_sha256"],
                            "photo": photo, "slot": slot})
 
+    def baseline(self, series, photo):
+        """The photo's real-Local gate baseline file (bytes are arbitrary); returns its hash."""
+        split = json.loads(series.read_text())["split"]
+        path = self.private / ("validation-local" if split == "validation" else "local") / f"{photo}.jpg"
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(f"real Local of {photo}".encode())
+        return sha(path)
+
     def rating(self, series, cfg_name, photo, slot, pref, ref="local", **flags):
         s = self.slot_key(series, cfg_name, photo, slot)
         self.n += 1
+        ref_sha = self.baseline(series, photo) if ref == "local" else f"control-{photo}"
         r = {"rating_id": f"r{self.n}", "photo": photo, "preference": pref,
              "candidate": {"config_sha256": s["config_sha256"], "slot": slot, "input_sha256": s["input_sha256"],
                            "output_sha256": flags.pop("output", None) or f"{cfg_name}-{photo}-{slot}-1-ok",
                            "auto_common_sha256": "A"},
-             "reference": {"kind": ref, "input_sha256": s["input_sha256"], "auto_common_sha256": "A"},
+             "reference": {"kind": ref, "sha256": ref_sha, "input_sha256": s["input_sha256"],
+                           "auto_common_sha256": "A"},
              "reason": "because" if pref.endswith("clear") else "",
              "clear_reason_type": "independent_gain" if pref == "candidate-clear" else None}
         r.update(flags)
@@ -179,6 +191,23 @@ class TuningGateTest(TallyWorld):
         r, _ = self.tally(self.series, self.rate(["tie"] * 8), split="validation")
         self.assertEqual(r.returncode, 2)
 
+    def test_only_the_gate_baseline_can_be_the_local_reference(self):
+        # implementation review F6: a historical download, or a control labelled "local"
+        historical = self.tmp / "historical-T-01.jpg"
+        historical.write_bytes(b"Local of the unprepared source file")
+        for impostor in (sha(historical), "control-T-01"):
+            with self.subTest(impostor=impostor[:12]):
+                ratings = self.rate(["candidate-clear"] * 6 + ["reference-clear", "tie"])
+                ratings[0]["reference"]["sha256"] = impostor
+                r, _ = self.tally(self.series, ratings)
+                self.assertEqual(r.returncode, 2, r.stdout)
+                self.assertIn("is not T-01's gate baseline", r.stderr)
+        ratings = self.rate(["tie"] * 8)
+        (self.private / "local" / "T-02.jpg").unlink()
+        r, _ = self.tally(self.series, ratings)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("T-02: no gate baseline", r.stderr)
+
     def test_clear_win_without_reason_is_invalid(self):
         ratings = self.rate(["candidate-clear"] + ["tie"] * 7)
         ratings[0]["reason"] = ""
@@ -223,6 +252,66 @@ class CoreGateTest(TallyWorld):
 
     def verdicts(self, report):
         return {v["name"]: v for v in report["verdicts"].values()}
+
+    # ---- implementation review F2: NAFNet + Local gamma is rated through its local-arms record
+
+    def derived(self, p, raw, src_kind="ledger"):
+        shown = f"naf-gamma-{p}"
+        rec = self.tmp / f"arm-{p}.json"
+        rec.write_text(json.dumps({"arm": "nafnet-gamma", "id": p, "output_sha256": shown,
+                                   "source": {"kind": src_kind, "output_sha256": raw, "config_sha256": sha(self.naf)},
+                                   "auto_record": {"common_sha256": "A"}}))
+        return shown, {"arm": "nafnet-gamma", "record": str(rec), "record_sha256": sha(rec),
+                       "source_output_sha256": raw}
+
+    def derived_naf_ratings(self, vs_control):
+        out = []
+        for p, pref in zip(self.core, vs_control):
+            shown, link = self.derived(p, f"naf-{p}-1-1-ok")
+            for ref, pr in (("local", "tie"), ("control", pref)):
+                r = self.rating(self.series, "naf", p, 1, pr, ref=ref, output=shown)
+                r["candidate"]["derived"] = dict(link)
+                out.append(r)
+        return out
+
+    def test_nafnet_gamma_is_rated_through_its_local_arms_record(self):
+        ratings = self.gpt_ratings(["candidate-clear", "tie", "candidate-slight"] * 3)
+        ratings += self.derived_naf_ratings(["candidate-clear", "candidate-slight", "tie"])
+        r, rep = self.tally(self.series, ratings, gate="core")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.verdicts(rep)["naf"]["verdict"], "PASS")
+
+    def test_a_derived_arm_must_come_from_the_slot_through_its_unchanged_record(self):
+        def wrong_source(rs):
+            rs[-1]["candidate"]["derived"]["source_output_sha256"] = "naf-other"
+
+        def record_edited(rs):
+            Path(rs[-1]["candidate"]["derived"]["record"]).write_text("{}")
+
+        def other_file_rated(rs):
+            rs[-1]["candidate"]["output_sha256"] = "something-else"
+
+        def from_a_source_file(rs):
+            _, link = self.derived("T-03", "naf-T-03-1-1-ok", src_kind="file")
+            rs[-1]["candidate"]["derived"] = link
+            rs[-2]["candidate"]["derived"] = dict(link)
+
+        def on_gpt(rs):
+            rs[0]["candidate"]["derived"] = dict(rs[-1]["candidate"]["derived"])
+
+        cases = [(wrong_source, "not made from the slot's first valid result"),
+                 (record_edited, "is missing or changed"),
+                 (other_file_rated, "the rated file is not the output of"),
+                 (from_a_source_file, "was not rendered from this slot's ledger output"),
+                 (on_gpt, "only a NAFNet output")]
+        for mutate, why in cases:
+            with self.subTest(why=why):
+                ratings = self.gpt_ratings(["candidate-clear", "tie", "candidate-slight"] * 3)
+                ratings += self.derived_naf_ratings(["candidate-clear", "candidate-slight", "tie"])
+                mutate(ratings)
+                r, _ = self.tally(self.series, ratings, gate="core")
+                self.assertEqual(r.returncode, 2, r.stdout)
+                self.assertIn(why, r.stderr)
 
     def test_stable_core_passes_and_probe_stays_diagnostic(self):
         ratings = self.gpt_ratings(["candidate-clear", "tie", "candidate-slight"] * 3)
@@ -319,6 +408,12 @@ class ValidationGateTest(TallyWorld):
         super().setUp()
         self.prepare_validation()
 
+    def freeze(self, cfg, series):
+        report = self.tmp / "tuning-report.json"
+        report.write_text(json.dumps({"verdicts": {sha(cfg): {"verdict": "PASS"}}}))
+        self.set_records([], [f"S19-FREEZE config_sha256={sha(cfg)} series_sha256={sha(series)} "
+                              f"tuning_report={report} tuning_report_sha256={sha(report)} date=2026-11-15"])
+
     def prepare_validation(self):
         # Synthetic validation photos may be prepared here only by rewriting them as tuning in a
         # second manifest: the real guard refuses validation ids, which test_protocol covers.
@@ -334,6 +429,7 @@ class ValidationGateTest(TallyWorld):
     def test_eight_of_twelve_passes_and_seven_stops(self):
         cfg = self.make_config(name="final")
         series = self.make_series([(cfg, "validation", list(self.validation), 1)], split="validation")
+        self.freeze(cfg, series)
         for p in self.validation:
             self.attempt(series, "final", p, 1)
         for wins, verdict in ((8, "PASS"), (7, "STOP")):
@@ -343,6 +439,24 @@ class ValidationGateTest(TallyWorld):
             self.assertEqual(r.returncode, 0, r.stderr)
             self.assertEqual(self.only(rep)["verdict"], verdict)
             self.assertEqual(self.only(rep)["counts"]["clear win"], wins)
+
+    def test_validation_gate_counts_only_the_frozen_finalist_and_series(self):
+        # implementation review F8
+        cfg = self.make_config(name="final")
+        series = self.make_series([(cfg, "validation", list(self.validation), 1)], split="validation")
+        for p in self.validation:
+            self.attempt(series, "final", p, 1)
+        ratings = [self.rating(series, "final", p, 1, "candidate-clear") for p in self.validation]
+        self.set_records([])
+        r, _ = self.tally(series, ratings, gate="validation", split="validation")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("no S19-FREEZE record", r.stderr)
+        other = self.tmp / "other-series.json"
+        other.write_text(series.read_text() + "\n")
+        self.freeze(cfg, other)
+        r, _ = self.tally(series, ratings, gate="validation", split="validation")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("the S19-FREEZE record froze", r.stderr)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,7 @@ import base64
 import contextlib
 import datetime as _dt
 import fcntl
+import hashlib
 import io
 import json
 import math
@@ -113,9 +114,9 @@ def actual_cost(config: dict, usage: dict | None) -> float | None:
     reservation then stays counted)."""
     b = config["cost_bound"]
     if config["kind"] == "gpt" and usage:
-        out = usage.get("output_tokens_details", {}).get("image_tokens", usage.get("output_tokens"))
-        img = usage.get("input_tokens_details", {}).get("image_tokens")
-        txt = usage.get("input_tokens_details", {}).get("text_tokens")
+        out = (usage.get("output_tokens_details") or {}).get("image_tokens", usage.get("output_tokens"))
+        img = (usage.get("input_tokens_details") or {}).get("image_tokens")
+        txt = (usage.get("input_tokens_details") or {}).get("text_tokens")
         if None in (out, img, txt):
             return None
         return round(
@@ -134,6 +135,27 @@ def locked():
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path.with_suffix(".lock"), "a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+@contextlib.contextmanager
+def slot_lock(key: tuple):
+    """Exclusive, non-blocking OS lock on one logical slot for the whole time a process drives it.
+    A second process on the same slot is refused before it reserves or sends anything. The ledger
+    alone cannot tell a crashed attempt from one still in flight elsewhere; the OS releases this
+    lock when its holder dies, so a crash never blocks a later --resume."""
+    d = ledger_path().parent / "locks"
+    d.mkdir(parents=True, exist_ok=True)
+    name = hashlib.sha256(json.dumps(list(key)).encode()).hexdigest()[:32]
+    with open(d / f"{name}.lock", "a") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise protocol.Refused(f"{key[2]}/{key[3]} is being run by another process right now; "
+                                   "nothing reserved or sent — wait for it, then --resume") from None
         try:
             yield
         finally:
@@ -231,6 +253,21 @@ def multipart(fields: dict, files: dict) -> tuple[bytes, str]:
                      f"Content-Type: {ctype}\r\n\r\n".encode() + data + b"\r\n")
     parts.append(f"--{boundary}--\r\n".encode())
     return b"".join(parts), f"multipart/form-data; boundary={boundary}"
+
+
+KEY_ENV = {"gpt": "OPENAI_API_KEY", "nafnet": "FAL_KEY"}
+
+
+def require_key(config: dict) -> None:
+    """Refuse before any reservation when the provider key is absent. Read later, inside the
+    call, a missing key would look like a lost response: logged as unknown, retried, and kept
+    fully reserved against a cap that cannot be reset."""
+    var = KEY_ENV.get(config["kind"])
+    if var is None:
+        raise protocol.Refused(f"unknown config kind {config['kind']!r}")
+    if not os.environ.get(var):
+        raise protocol.Refused(f"{var} is not set: no call can be sent, so nothing was reserved; "
+                               f"export {var} and rerun")
 
 
 def call_provider(config: dict, image: Path, size: tuple[int, int]) -> dict:
@@ -331,7 +368,63 @@ def run_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: int
              sleep=time.sleep) -> str:
     """Drive one logical slot to a valid result, a terminal failure or a budget stop."""
     image, meta = input_for(spec["photo"], spec["input"])
+    check_slot_frozen(config, spec, meta)
     key = slot_key(config_sha, meta["sha256"], spec["photo"], spec["slot"])
+    with slot_lock(key):
+        return _drive_slot(config, config_sha, series, spec, phase, cap, sleep, image, meta, key)
+
+
+def check_slot_frozen(config: dict, spec: dict, meta: dict) -> None:
+    """The series fixed this slot's input, size and bound before any call; refuse unless the
+    prepared input and the config still reproduce them exactly, so nothing is paid for under a
+    key or a bound the gate would later reject."""
+    where = f"{spec['photo']}/{spec['slot']}"
+    if meta["sha256"] != spec["input_sha256"]:
+        raise protocol.Refused(f"{where}: the prepared input hashes to {meta['sha256'][:12]}…, but the series froze "
+                               f"{spec['input_sha256'][:12]}…; inputs were re-prepared — nothing sent")
+    dims = tuple(meta["dimensions"])
+    size = request_size(*dims, config["size_rule"]) if config["kind"] == "gpt" else dims
+    if list(size) != list(spec["request_size"]):
+        raise protocol.Refused(f"{where}: the config gives {size[0]}×{size[1]}, the series froze "
+                               f"{spec['request_size'][0]}×{spec['request_size'][1]} — nothing sent")
+    bound = cost_bound(config, size)
+    if abs(bound - spec["cost_bound_usd"]) > 1e-9:
+        raise protocol.Refused(f"{where}: the config bounds this call at ${bound:.2f}, the series froze "
+                               f"${spec['cost_bound_usd']:.2f} — nothing sent")
+
+
+def record_response(result: dict, config: dict, spec: dict, attempt_id: str, res: dict,
+                    size: tuple[int, int]) -> None:
+    """Fill `result` for a response that carried an image. The paid bytes are saved before
+    anything that could fail, and an unreadable usage block leaves the cost unknown (the full
+    reservation stays counted) instead of raising."""
+    data = res["output"]
+    valid, why, out_meta = validate_output(config, data, size)
+    out_dir = protocol.private_dir() / "runs" / config["name"] / spec["photo"] / str(spec["slot"])
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ext = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}.get(out_meta.get("format"), "bin")
+    out_path = out_dir / f"{attempt_id}.{ext}"
+    out_path.write_bytes(data)
+    result.update(status=OK if valid else INVALID, transient=not valid, usage=res.get("usage"),
+                  response_model=res.get("response_model"), output_sha256=protocol.sha256_bytes(data),
+                  output=out_meta, output_path=str(out_path.relative_to(protocol.ROOT))
+                  if out_path.is_relative_to(protocol.ROOT) else str(out_path))
+    if not valid:
+        result["error"] = why
+    try:
+        cost = actual_cost(config, res.get("usage"))
+    except Exception as e:  # noqa: BLE001 — an odd usage block must not lose the result row
+        cost, basis = None, f"usage not readable ({e!r}): full reservation kept"
+    else:
+        basis = ("reported usage × config rates" if cost is not None
+                 else "no billed amount reported: full reservation kept")
+    result.update(cost_usd=cost, cost_basis=basis)
+    if cost is not None and cost > spec["cost_bound_usd"]:
+        result["bound_exceeded"] = True
+
+
+def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: int, cap: float, sleep,
+                image: Path, meta: dict, key: tuple) -> str:
     size = tuple(spec["request_size"])
     max_attempts = config["retry"]["max_retries"] + 1
     while True:
@@ -373,6 +466,7 @@ def run_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: int
             return "not_attempted_budget"
         t0 = time.time()
         result = {"event": "result", "attempt_id": attempt_id}
+        local_failure: Exception | None = None
         try:
             res = call_provider(config, image, size)
         except Exception as e:  # noqa: BLE001 — a lost response may still be billed
@@ -385,30 +479,23 @@ def run_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: int
                 result.update(status=ERROR, transient=transient, error=res["error"], cost_usd=None,
                               cost_basis="error response: full reservation kept")
             else:
-                data = res["output"]
-                valid, why, out_meta = validate_output(config, data, size)
-                cost = actual_cost(config, res.get("usage"))
-                out_dir = protocol.private_dir() / "runs" / config["name"] / spec["photo"] / str(spec["slot"])
-                out_dir.mkdir(parents=True, exist_ok=True)
-                ext = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}.get(out_meta.get("format"), "bin")
-                out_path = out_dir / f"{attempt_id}.{ext}"
-                out_path.write_bytes(data)
-                result.update(status=OK if valid else INVALID, transient=not valid, usage=res.get("usage"),
-                              response_model=res.get("response_model"), cost_usd=cost,
-                              cost_basis="reported usage × config rates" if cost is not None
-                              else "no billed amount reported: full reservation kept",
-                              output_sha256=protocol.sha256_bytes(data), output=out_meta,
-                              output_path=str(out_path.relative_to(protocol.ROOT))
-                              if out_path.is_relative_to(protocol.ROOT) else str(out_path))
-                if not valid:
-                    result["error"] = why
-                if cost is not None and cost > spec["cost_bound_usd"]:
-                    result["bound_exceeded"] = True
+                try:
+                    record_response(result, config, spec, attempt_id, res, size)
+                except Exception as e:  # noqa: BLE001 — a paid response must always leave a result row
+                    # Not transient: a resume must not pay again for a response it already received.
+                    result.update(status=UNKNOWN, transient=False, cost_usd=None,
+                                  error=f"a paid response could not be recorded locally: {e!r}",
+                                  cost_basis="paid response not recorded: full reservation kept")
+                    local_failure = e
         result.update(finished_at=now(), wall_s=round(time.time() - t0, 2))
         with locked():
             append(result)
         print(f"  {spec['photo']}/{spec['slot']} attempt {reserve['ordinal']}: {result['status']}"
               f"{' — ' + str(result.get('error'))[:200] if result.get('error') else ''}")
+        if local_failure is not None:
+            raise protocol.Refused(f"{spec['photo']}/{spec['slot']}: {local_failure!r} after a paid response; "
+                                   "the attempt is logged with its full reservation — fix the local "
+                                   "problem before any further call")
         if result.get("bound_exceeded"):
             raise protocol.Refused(
                 f"{spec['photo']}/{spec['slot']} cost ${result['cost_usd']:.4f}, above its bound "
@@ -443,7 +530,14 @@ def main(argv: list[str] | None = None, sleep=time.sleep) -> int:
         protocol.require_access(ids, validation=args.validation, access=args.access, config=args.config,
                                 manifest=manifest)
         series = load_series(protocol.resolve(args.series), config_sha, args.phase)
-        wanted = [(i, n) for i in ids for n in range(1, args.repeat + 1)]
+        if args.validation:
+            # The release bound one series; the finalist must still be the frozen process.
+            release = protocol.read_release(Path(args.access))
+            if protocol.sha256_file(protocol.resolve(args.series)) != release["series_sha256"]:
+                raise protocol.Refused(f"{args.series} is not the validation series the release froze "
+                                       f"({release['series_sha256'][:12]}…)")
+            protocol.check_freeze(config_path)
+        wanted =[(i, n) for i in ids for n in range(1, args.repeat + 1)]
         by = {(s["photo"], s["slot"]): s for s in series["slots"] if s["config_sha256"] == config_sha}
         missing = [f"{i}/{n}" for i, n in wanted if (i, n) not in by]
         if missing:
@@ -493,6 +587,8 @@ def main(argv: list[str] | None = None, sleep=time.sleep) -> int:
     try:
         protocol.check_cap(args.phase, args.cap)
         check_prerequisites(series, pending)
+        if pending:
+            require_key(config)
     except protocol.Refused as e:
         print(f"refused: {e}", file=sys.stderr)
         return 1

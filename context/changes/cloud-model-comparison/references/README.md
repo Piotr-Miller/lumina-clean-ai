@@ -9,19 +9,26 @@ runs in the browser, so no photo was uploaded to a server. Outputs are full reso
 the table, then JPEG re-encoding by the browser. The input is the file of the same name in
 `test-photos/licensed/`, where `test-photos/fetch.sh` records its source.
 
-**Basis for publishing:** every source is CC0, CC BY or CC BY-SA, and none carries a
+**Basis for publishing:** every published source is CC0, CC BY or CC BY-SA, and none carries a
 NoDerivatives term. Each adaptation is published under its source's licence, with attribution
-and the changes above. The two CC BY-SA adaptations are themselves CC BY-SA 4.0.
+and the changes above. The CC BY-SA adaptation (04) is itself CC BY-SA 4.0.
 
-| File                                              | Source (author, page)                                                                                                                                                                                                                              | Licence of source and of this file                              | Auto gamma / blur |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- |
-| `luminaclean-01-aurora-fjord-kirkjufell.jpg`      | Oliver Degener (uploaded by Chr Grundo), [Northern Lights over Kirkjufell seen from Grundarfjörður](https://commons.wikimedia.org/wiki/File:Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg); input fetched at 3840 px wide | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | 1.56 / 0.2        |
-| `luminaclean-02-aurora-frozen-lake-norway.jpg`    | Anthony's astro, [Aurora mountain](https://commons.wikimedia.org/wiki/File:Aurora_mountain.jpg); input fetched at 3840 px wide                                                                                                                     | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | 1.05 / 0.2        |
-| `luminaclean-03-aurora-reykjanes-snow-lava.jpg`   | Sean O Riordan (via Flickr), [Reykjanes Geopark Aurora](https://commons.wikimedia.org/wiki/File:Reykjanes_Geopark_Aurora_-_Flickr_-_Seanie2322.jpg); input fetched at 3840 px wide                                                                 | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)   | 1.19 / 0.2        |
-| `luminaclean-04-phone-whitehouse-iphone13pro.jpg` | 56BeachyL, [WhiteHouseNight](https://commons.wikimedia.org/wiki/File:WhiteHouseNight.jpg)                                                                                                                                                          | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | 1.10 / 0.1        |
-| `luminaclean-05-phone-walgreens-pixel7.jpg`       | edenpictures (Eden, Janine and Jim), [Walgreens Neon, New Orleans at night, April 2023](https://commons.wikimedia.org/wiki/File:Walgreens_Neon%2C_New_Orleans_at_night%2C_April_2023.jpg)                                                          | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)       | 1.67 / 0.3        |
-| `luminaclean-06-phone-rain-galaxys24ultra.jpg`    | Justauser13, [Rain at night captured from Expert RAW, Samsung Galaxy S24 Ultra](https://commons.wikimedia.org/wiki/File:Rain_at_night_captured_from_Expert_RAW%2C_Samsung_Galaxy_S24_Ultra.jpg)                                                    | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | 1.00 / 0.1        |
-| `luminaclean-07-night-portrait.jpg`               | Garry Knight, [Night Portrait (46464526805)](https://commons.wikimedia.org/wiki/File:Night_Portrait_%2846464526805%29.jpg)                                                                                                                         | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)       | 1.80 / 0.7        |
+**`luminaclean-01-aurora-fjord-kirkjufell.jpg` is withdrawn** (2026-10-31, implementation review
+F11) for the same unresolved S17-01 author/uploader gap described under the S-19 gate baselines
+below. It was committed in 5018c81 and reached the remote spike branch before the withdrawal;
+from now on it lives privately at `test-photos/private/s19-historical-local/` (sha256
+`9b06a7bd…25a3`), where `compare.html` and `compare-bread.html` read it. Its row stays below as
+the provenance record.
+
+| File                                                              | Source (author, page)                                                                                                                                                                                                                              | Licence of source and of this file                              | Auto gamma / blur |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ----------------- |
+| `luminaclean-01-aurora-fjord-kirkjufell.jpg` (withdrawn, private) | Oliver Degener (uploaded by Chr Grundo), [Northern Lights over Kirkjufell seen from Grundarfjörður](https://commons.wikimedia.org/wiki/File:Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg); input fetched at 3840 px wide | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | 1.56 / 0.2        |
+| `luminaclean-02-aurora-frozen-lake-norway.jpg`                    | Anthony's astro, [Aurora mountain](https://commons.wikimedia.org/wiki/File:Aurora_mountain.jpg); input fetched at 3840 px wide                                                                                                                     | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | 1.05 / 0.2        |
+| `luminaclean-03-aurora-reykjanes-snow-lava.jpg`                   | Sean O Riordan (via Flickr), [Reykjanes Geopark Aurora](https://commons.wikimedia.org/wiki/File:Reykjanes_Geopark_Aurora_-_Flickr_-_Seanie2322.jpg); input fetched at 3840 px wide                                                                 | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)   | 1.19 / 0.2        |
+| `luminaclean-04-phone-whitehouse-iphone13pro.jpg`                 | 56BeachyL, [WhiteHouseNight](https://commons.wikimedia.org/wiki/File:WhiteHouseNight.jpg)                                                                                                                                                          | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | 1.10 / 0.1        |
+| `luminaclean-05-phone-walgreens-pixel7.jpg`                       | edenpictures (Eden, Janine and Jim), [Walgreens Neon, New Orleans at night, April 2023](https://commons.wikimedia.org/wiki/File:Walgreens_Neon%2C_New_Orleans_at_night%2C_April_2023.jpg)                                                          | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)       | 1.67 / 0.3        |
+| `luminaclean-06-phone-rain-galaxys24ultra.jpg`                    | Justauser13, [Rain at night captured from Expert RAW, Samsung Galaxy S24 Ultra](https://commons.wikimedia.org/wiki/File:Rain_at_night_captured_from_Expert_RAW%2C_Samsung_Galaxy_S24_Ultra.jpg)                                                    | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | 1.00 / 0.1        |
+| `luminaclean-07-night-portrait.jpg`                               | Garry Knight, [Night Portrait (46464526805)](https://commons.wikimedia.org/wiki/File:Night_Portrait_%2846464526805%29.jpg)                                                                                                                         | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)       | 1.80 / 0.7        |
 
 S17-21 (`21-kangchenjunga.jpg`) has no file here. The owner ran it by hand because its 17 MB
 input exceeds the browser tool's 10 MB upload limit, and rated the result too bright. The
@@ -58,21 +65,22 @@ app source revision. Those parameters are labelled **recomputed**, not "observed
 are not read from the app while it processes the photo. The app's rounded slider labels can be
 typed into the page; `baseline.ts --check-auto --all` compares them as a diagnostic only.
 
-| Photo  | Common input                                    | Source (author, page)                                                                                                                                              | Licence                                                         | Download / Auto record                                   |
-| ------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- | -------------------------------------------------------- |
-| S17-01 | 3840 × 2560, from sRGB                          | Oliver Degener (uploaded by Chr Grundo), [Commons](https://commons.wikimedia.org/wiki/File:Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | `s19-local/S17-01.jpg`, `.auto.json`; γ 1.54 / blur 0.2  |
-| S17-02 | 3840 × 2221, Display P3                         | Anthony's astro, [Commons](https://commons.wikimedia.org/wiki/File:Aurora_mountain.jpg)                                                                            | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | `s19-local/S17-02.jpg`, `.auto.json`; γ 1.05 / blur 0.2  |
-| S17-03 | 3840 × 2560, ProPhoto RGB                       | Sean O Riordan, [Commons](https://commons.wikimedia.org/wiki/File:Reykjanes_Geopark_Aurora_-_Flickr_-_Seanie2322.jpg)                                              | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)   | `s19-local/S17-03.jpg`, `.auto.json`; γ 1.20 / blur 0.2  |
-| S17-04 | 4032 × 3024, Display P3                         | 56BeachyL, [Commons](https://commons.wikimedia.org/wiki/File:WhiteHouseNight.jpg)                                                                                  | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | `s19-local/S17-04.jpg`, `.auto.json`; γ 1.10 / blur 0.1  |
-| S17-05 | 3072 × 4080, sRGB                               | edenpictures, [Commons](https://commons.wikimedia.org/wiki/File:Walgreens_Neon%2C_New_Orleans_at_night%2C_April_2023.jpg)                                          | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)       | `s19-local/S17-05.jpg`, `.auto.json`; γ 1.67 / blur 0.3  |
-| S17-06 | 4284 × 5712, DCI-P3, EXIF orientation 6 applied | Justauser13, [Commons](https://commons.wikimedia.org/wiki/File:Rain_at_night_captured_from_Expert_RAW%2C_Samsung_Galaxy_S24_Ultra.jpg)                             | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | `s19-local/S17-06.jpg`, `.auto.json`; γ 1.00 / blur 0.05 |
-| S17-07 | 5145 × 3431, Adobe RGB                          | Garry Knight, [Commons](https://commons.wikimedia.org/wiki/File:Night_Portrait_%2846464526805%29.jpg)                                                              | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)       | `s19-local/S17-07.jpg`, `.auto.json`; γ 1.80 / blur 0.7  |
-| S17-21 | 6016 × 4000, Adobe RGB                          | Sudipto2cool, [Commons](https://commons.wikimedia.org/wiki/File:Kangchenjunga_at_Night.jpg)                                                                        | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | `s19-local/S17-21.jpg`, `.auto.json`; γ 1.72 / blur 0.5  |
+| Photo  | Common input                                    | Source (author, page)                                                                                                                                              | Licence                                                         | Download / Auto record                                                         |
+| ------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| S17-01 | 3840 × 2560, from sRGB                          | Oliver Degener (uploaded by Chr Grundo), [Commons](https://commons.wikimedia.org/wiki/File:Northern_Lights_over_Kirkjufell_seen_from_Grundarfj%C3%B6r%C3%B0ur.jpg) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | `s19-local/S17-01.auto.json` only (JPEG private, see below); γ 1.54 / blur 0.2 |
+| S17-02 | 3840 × 2221, Display P3                         | Anthony's astro, [Commons](https://commons.wikimedia.org/wiki/File:Aurora_mountain.jpg)                                                                            | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | `s19-local/S17-02.jpg`, `.auto.json`; γ 1.05 / blur 0.2                        |
+| S17-03 | 3840 × 2560, ProPhoto RGB                       | Sean O Riordan, [Commons](https://commons.wikimedia.org/wiki/File:Reykjanes_Geopark_Aurora_-_Flickr_-_Seanie2322.jpg)                                              | [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)   | `s19-local/S17-03.jpg`, `.auto.json`; γ 1.20 / blur 0.2                        |
+| S17-04 | 4032 × 3024, Display P3                         | 56BeachyL, [Commons](https://commons.wikimedia.org/wiki/File:WhiteHouseNight.jpg)                                                                                  | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | `s19-local/S17-04.jpg`, `.auto.json`; γ 1.10 / blur 0.1                        |
+| S17-05 | 3072 × 4080, sRGB                               | edenpictures, [Commons](https://commons.wikimedia.org/wiki/File:Walgreens_Neon%2C_New_Orleans_at_night%2C_April_2023.jpg)                                          | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)       | `s19-local/S17-05.jpg`, `.auto.json`; γ 1.67 / blur 0.3                        |
+| S17-06 | 4284 × 5712, DCI-P3, EXIF orientation 6 applied | Justauser13, [Commons](https://commons.wikimedia.org/wiki/File:Rain_at_night_captured_from_Expert_RAW%2C_Samsung_Galaxy_S24_Ultra.jpg)                             | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | `s19-local/S17-06.jpg`, `.auto.json`; γ 1.00 / blur 0.05                       |
+| S17-07 | 5145 × 3431, Adobe RGB                          | Garry Knight, [Commons](https://commons.wikimedia.org/wiki/File:Night_Portrait_%2846464526805%29.jpg)                                                              | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/)       | `s19-local/S17-07.jpg`, `.auto.json`; γ 1.80 / blur 0.7                        |
+| S17-21 | 6016 × 4000, Adobe RGB                          | Sudipto2cool, [Commons](https://commons.wikimedia.org/wiki/File:Kangchenjunga_at_Night.jpg)                                                                        | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)       | `s19-local/S17-21.jpg`, `.auto.json`; γ 1.72 / blur 0.5                        |
 
 The owner saved the eight downloads on 2026-10-31 (S17-21 first landed in `~/Downloads` and was
-copied into place unchanged). At the owner's request they are also published in `s19-local/`,
-the JPEGs byte-identical to `test-photos/private/s19/local/`, each beside its Auto record (the
-same JSON, reformatted by Prettier). The originals are already committed in
+copied into place unchanged). At the owner's request seven of them (all but S17-01, see below)
+are also published in `s19-local/`, the JPEGs byte-identical to `test-photos/private/s19/local/`,
+and all eight Auto records sit there (the same JSON, reformatted by Prettier). The originals are
+already committed in
 `test-photos/licensed/`; the common inputs are not committed, because `inputs.py --check`
 re-derives them byte-for-byte from those originals.
 
@@ -80,10 +88,19 @@ re-derives them byte-for-byte from those originals.
 profile converted to sRGB (`inputs.py`), then Local's gamma curve and Gaussian blur with the Auto
 values in the table, then JPEG re-encoding by the browser. Full resolution.
 
-**Basis for publishing:** every source is CC0, CC BY or CC BY-SA with the author in the table, and
-none carries a NoDerivatives term. Each adaptation is published under its source's licence, with
-attribution and the changes above; the two CC BY-SA adaptations (S17-01, S17-04) are CC BY-SA 4.0.
+**Basis for publishing:** every published source is CC0, CC BY or CC BY-SA with the author in the
+table, and none carries a NoDerivatives term. Each adaptation is published under its source's
+licence, with attribution and the changes above; the CC BY-SA adaptation (S17-04) is CC BY-SA 4.0.
 The `.auto.json` records hold measurements and metadata only, no image content.
+
+**S17-01 is not published.** Commons names Oliver Degener as photographer and Chr Grundo as
+author/uploader, and that gap is unresolved (`test-photos/s17-benchmark-v2.json`;
+`context/archive/2026-08-31-cloud-quality-below-local/photo-candidates.md`, limit 4). Keeping the
+input does not authorise a new derivative, and provenance alone is no basis (AGENTS.md). Its
+download stays private at `test-photos/private/s19/local/S17-01.jpg` (sha256 `f94c288d…bfd0`);
+only its Auto record is published. The JPEG was removed on 2026-10-31 by rewriting the four
+unpushed commits that carried it (implementation review F3), so it never reached the public
+history.
 
 ## `compare-arms.html` (S-19 blind viewer)
 
@@ -91,11 +108,19 @@ Written for this change; it contains no third-party material. It generalises `co
 to the original plus N arms. `scripts/s19/viewer-inputs.py <spec.json>` writes the manifest it
 reads to the gitignored `test-photos/private/s19/viewer/<name>.js` (a script, since browsers
 refuse `fetch` from disk); open `compare-arms.html?m=<name>`. The builder checks the holdout
-guard before reading any image, and a tuning manifest never lists validation photos.
+guard before reading any image, and a tuning manifest never lists validation photos. It also
+ties each `original` to its id's manifest file and refuses any path that reaches the holdout
+(`protocol.py check-paths`).
 
 - **Gate pairs.** Each pair is one candidate against real Local, or a NAFNet arm against its
-  control, in an A/B order drawn once per pair and revealed only after rating. At 100% both are
-  shown at the smaller width of the pair; nothing is enlarged.
+  control, in an A/B order drawn once per pair and revealed only after rating. The order of a
+  photo's pairs is drawn once too and kept, so position never names the arm; the export records
+  each pair's position. At 100% both are shown at the smaller width of the pair; nothing is
+  enlarged.
+- **Gate references and derived arms.** In a gate, the Local reference must be the photo's gate
+  baseline `local/<id>.jpg`. A NAFNet + Local gamma arm is not the slot's raw output: its spec
+  names the `local-arms.ts` record that made it (`candidate.derived.record`), and the builder
+  and `tally.py` check that record against the shown file and the slot's first valid result.
 - **Flags.** Per side: severe regression, content change (with a mandatory crop note
   "original → result") and unverified lettering reconstruction. A clear preference needs a
   reason, and a clear candidate win needs its basis: an independent confirmed gain, or only

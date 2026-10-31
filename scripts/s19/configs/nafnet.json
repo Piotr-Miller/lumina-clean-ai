@@ -30,6 +30,6 @@
     "rounding_usd": 0.01
   },
   "implementation": {
-    "scripts/s19/inputs.py": "78d393de5d8b366d7d98b899f204f4fc6ed021acbafd8a5636f16981ca6ff04d"
+    "scripts/s19/inputs.py": "10c7610ccefee0ee19b1ff6847b15463152b879efd74a51205fc03d9e6f3b3bd"
   }
 }

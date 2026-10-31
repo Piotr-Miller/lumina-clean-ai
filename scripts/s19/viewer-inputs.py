@@ -53,6 +53,30 @@ def describe(path_str: str, expect_sha: str | None) -> dict:
     return {"src": rel_to_viewer(path), "sha256": sha, "dimensions": size}
 
 
+def derived_link(photo: str, arm: dict, shown_sha: str) -> dict:
+    """A rated file made from a paid output (NAFNet + Local gamma) is not the slot's raw result.
+    Tie it to that result through the `local-arms.ts` record that produced it: the record must
+    name the shown file as its output and a ledger output as its source; tally then checks the
+    source against the slot's first valid result and the record's hash against this link."""
+    spec = arm["candidate"]["derived"]
+    if "record" not in spec:
+        raise protocol.Refused(f"{photo} {arm['arm_id']}: a derived arm needs candidate.derived.record "
+                               "(the local-arms <id>.json that produced it)")
+    record_path = protocol.resolve(spec["record"])
+    try:
+        record = json.loads(record_path.read_text())
+    except (OSError, ValueError) as e:
+        raise protocol.Refused(f"{photo} {arm['arm_id']}: cannot read derived record {spec['record']}: {e}") from e
+    if record.get("output_sha256") != shown_sha:
+        raise protocol.Refused(f"{photo} {arm['arm_id']}: {spec['record']} did not produce the shown file")
+    source = record.get("source") or {}
+    if source.get("kind") != "ledger" or not source.get("output_sha256"):
+        raise protocol.Refused(f"{photo} {arm['arm_id']}: {spec['record']} was not rendered from a ledger output "
+                               "(--source files cannot be rated in a gate)")
+    return {"arm": record.get("arm"), "record": spec["record"], "record_sha256": protocol.sha256_file(record_path),
+            "source_output_sha256": source["output_sha256"], "source_config_sha256": source.get("config_sha256")}
+
+
 def build(spec: dict, validation: bool, access: str | None, config: str | None) -> dict:
     split = spec.get("split")
     if split not in ("tuning", "validation"):
@@ -60,7 +84,20 @@ def build(spec: dict, validation: bool, access: str | None, config: str | None) 
     if (split == "validation") != validation:
         raise protocol.Refused("a validation spec needs --validation --access --config; a tuning spec must not use them")
     ids = [p["id"] for p in spec["photos"]]
-    protocol.require_access(ids, validation=validation, access=access, config=config)  # before any image read
+    manifest = protocol.load_manifest()
+    protocol.require_access(ids, validation=validation, access=access, config=config,
+                            manifest=manifest)  # before any image read
+    # The id guard checks which photos the spec claims; bind its paths to those claims too, so a
+    # slip cannot read a holdout file under a tuning id.
+    by_id = {e["id"]: e for e in manifest["entries"]}
+    for p in spec["photos"]:
+        if os.path.realpath(protocol.resolve(p["original"])) != os.path.realpath(protocol.resolve(by_id[p["id"]]["path"])):
+            raise protocol.Refused(f"{p['id']}: original {p['original']} is not this photo's manifest file "
+                                   f"{by_id[p['id']]['path']}")
+        paths = [p["original"]] + [a["path"] for a in p["arms"] if a.get("status", "ok") == "ok"]
+        paths += [a["candidate"]["derived"]["record"] for a in p["arms"]
+                  if a.get("candidate", {}).get("derived", {}).get("record")]
+        protocol.check_paths(paths, validation=validation, manifest=manifest)
     photos = []
     for p in spec["photos"]:
         arms = {}
@@ -70,6 +107,9 @@ def build(spec: dict, validation: bool, access: str | None, config: str | None) 
             entry = {k: v for k, v in a.items() if k != "path"}
             if a.get("status", "ok") == "ok":
                 entry.update(describe(a["path"], a.get("candidate", {}).get("output_sha256") or a.get("sha256")))
+                if a.get("candidate", {}).get("derived"):
+                    entry["candidate"] = {**a["candidate"],
+                                          "derived": derived_link(p["id"], a, entry["sha256"])}
             arms[a["arm_id"]] = entry
         for cand, ref in p["pairs"]:
             if cand not in arms or ref not in arms:

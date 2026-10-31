@@ -9,6 +9,31 @@ archived_at: null
 
 ## Notes
 
+2026-10-31: reopened 1.9 — was accepted (no revision): a headless check at ea87ae4 on the owner's
+delegation, evidence `references/1.9-spike-smoke/README.md`; changed:
+context/changes/cloud-model-comparison/references/compare-arms.html. Implementation review F9: the
+order of a photo's pairs is now drawn once and kept, and the export records each pair's position.
+The 1.9 smoke script assumes the old fixed pair order ("Para 2" is NAFNet on S17-04), so it needs
+updating before 1.9 is re-verified.
+
+2026-10-31: Phase 3 config hashes changed before any paid call (implementation review F8, at the
+owner's choice). `inputs.py` changed (its `--check --all-validation` selection), so its pin in the
+three configs moved from 78d393de… to 10c7610c…, and `scripts/s19/series/phase3.json` was
+regenerated with `make-series.py`: gpt-std e053a848…, gpt-large 2ab95f80…, nafnet b491e544…. The
+14 slots, sizes and bounds are unchanged ($3.40 within the $4 cap). Phase 3 runs under these
+hashes.
+
+2026-10-31: reopened 1.8 — was accepted at d123229c0aa8f42bdbe7b4f97355e2e396ba2a3f; changed:
+context/changes/cloud-model-comparison/references/s19-local,
+context/changes/cloud-model-comparison/references/README.md. Implementation review F3, Fix A, at
+the owner's choice: `s19-local/S17-01.jpg` was dropped from the four unpushed commits by
+`git filter-branch` (ea87ae4 → d4d1bf5, 9e0bfa5 → ae39f70, d123229 → c556e3b,
+4236167 → 067f37a), because S17-01's author/uploader gap is unresolved. The JPEG stays private;
+its Auto record stays published. The old SHAs survive only in the local `backup/s19-pre-f3` branch
+and `refs/original/`. The Progress suffixes `— ea87ae4` and the 1.9 evidence still name the old
+SHAs and are re-pointed after the merge, as every branch SHA must be. 1.8 (S17-21, still
+published) needs re-confirmation at the new HEAD.
+
 2026-10-31: owner decision — use the committed `references/s19-local/` copies as the acceptance
 surface for 1.8 and 1.13, together with `references/README.md`, so the acceptance script can pin
 the evidence to a Git revision. Verified all eight JPEGs byte-for-byte against the private

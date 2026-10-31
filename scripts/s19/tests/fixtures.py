@@ -150,7 +150,7 @@ class World(unittest.TestCase):
     def make_config(self, name: str = "fake-gpt", kind: str = "gpt", bound_usd: float = 1.0,
                     max_retries: int = 1) -> Path:
         """A config whose per-call bound is exactly `bound_usd` (rounding_usd carries it all)."""
-        cfg = {"name": name, "kind": kind, "vendor": "test", "endpoint": "http://invalid.test/", "model": "m",
+        cfg = {"name": name, "kind": kind, "vendor": "openai", "endpoint": "http://invalid.test/", "model": "m",
                "prompt": "p", "quality": "high", "output_format": "png", "input": "common",
                "size_rule": {"max_pixels": 655360 * 2, "min_pixels": 1, "max_edge": 3840, "multiple": 16},
                "validity": {"format": "PNG"},
@@ -171,18 +171,25 @@ class World(unittest.TestCase):
         """configs: (config path, role, photos, slots per photo)."""
         series = {"series_id": series_id, "phase": phase, "split": split, "manifest_sha256": sha(self.manifest),
                   "configs": {}, "prerequisites": prerequisites or [], "slots": []}
+        runner = load("run-candidate")  # sizes and bounds exactly as make-series.py derives them
         for path, role, photos, repeats in configs:
             cfg = json.loads(path.read_text())
             h = sha(path)
             series["configs"][h] = {"path": str(path), "name": cfg["name"], "kind": cfg["kind"], "role": role}
             for p in photos:
                 side = self.sidecar(p)[cfg["input"]]
+                dims = tuple(side["dimensions"])
+                try:
+                    size = runner.request_size(*dims, cfg["size_rule"]) if cfg["kind"] == "gpt" else dims
+                except runner.protocol.Refused:
+                    size = dims  # tally-only fixtures: the runner itself would refuse such a slot
+
                 for n in range(1, repeats + 1):
                     series["slots"].append({
                         "config_sha256": h, "config_name": cfg["name"], "kind": cfg["kind"], "photo": p, "slot": n,
                         "role": role, "input": cfg["input"], "input_sha256": side["sha256"],
-                        "input_dimensions": side["dimensions"], "request_size": side["dimensions"],
-                        "cost_bound_usd": cfg["cost_bound"]["rounding_usd"], "requires": [],
+                        "input_dimensions": list(dims), "request_size": list(size),
+                        "cost_bound_usd": runner.cost_bound(cfg, size), "requires": [],
                     })
         path = self.tmp / f"series-{series_id}.json"
         path.write_text(json.dumps(series, indent=2))

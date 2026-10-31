@@ -87,6 +87,18 @@ export function guard(args: GuardArgs): string[] {
   }
 }
 
+/** Ask protocol.py whether these files may be read in this mode (metadata only, nothing is opened). */
+export function guardPaths(paths: string[], validation: boolean): void {
+  const argv = [join(REPO, "scripts/s19/protocol.py"), "check-paths", "--paths", ...paths];
+  if (validation) argv.push("--validation");
+  try {
+    execFileSync("python3", argv, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch (e) {
+    const err = e as { stderr?: string; message: string };
+    throw new Refused((err.stderr ?? err.message).trim().replace(/^refused: /, ""));
+  }
+}
+
 /** Parse the flags both tools share; everything else is returned as positional ids. */
 export function parseCommon(
   argv: string[],
@@ -100,7 +112,7 @@ export function parseCommon(
     flags: new Set(),
     opts: new Map(),
   };
-  const valued = new Set(["--access", "--config", "--port", "--source"]);
+  const valued = new Set(["--access", "--config", "--port", "--source", "--nafnet-config"]);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (valued.has(a)) {

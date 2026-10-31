@@ -9,12 +9,15 @@ from __future__ import annotations
 import contextlib
 import json
 import multiprocessing as mp
+import os
 import socket
+import io
 import time
 import unittest
+from pathlib import Path
 from unittest import mock
 
-from fixtures import World, load, png_bytes
+from fixtures import World, load, png_bytes, sha
 
 runner = load("run-candidate")
 
@@ -52,6 +55,9 @@ class BudgetTest(World):
         patcher = mock.patch.object(socket.socket, "connect", no_network)
         patcher.start()
         self.addCleanup(patcher.stop)
+        keys = mock.patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "FAL_KEY": "test-key"})
+        keys.start()
+        self.addCleanup(keys.stop)
 
     def run_main(self, *ids, cap="3", fake=None, extra=(), config=None, series=None):
         fake = fake or Fake()
@@ -164,6 +170,63 @@ class BudgetTest(World):
     def test_slot_outside_the_series_is_refused(self):
         code, fake = self.run_main("T-01", extra=["--repeat", "3"])
         self.assertEqual((code, fake.calls), (1, 0))
+
+    # ------------------------------------------------ implementation review F1, F4, F5
+
+    def test_missing_key_refuses_before_any_reservation(self):
+        os.environ.pop("OPENAI_API_KEY")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            code, fake = self.run_main("T-01", "T-02")
+        self.assertEqual((code, fake.calls), (1, 0))
+        self.assertEqual(self.ledger(), [], "a missing key must not reserve any part of the cap")
+        self.assertIn("OPENAI_API_KEY is not set", err.getvalue())
+
+    def test_unreadable_usage_keeps_the_output_and_its_result_row(self):
+        def odd_usage(config, image, size):
+            return {"http_status": 200, "output": png_bytes(size),
+                    "usage": {"output_tokens_details": None, "input_tokens_details": None}}
+
+        code, fake = self.run_main("T-01", fake=odd_usage)
+        self.assertEqual(code, 0)
+        [res] = [r for r in self.ledger() if r["event"] == "result"]
+        self.assertEqual((res["status"], res["cost_usd"]), ("ok", None))
+        self.assertTrue((runner.protocol.ROOT / res["output_path"]).exists()
+                        or Path(res["output_path"]).exists())
+        self.assertEqual(self.committed(), 1.0, "an unknown cost keeps the full reservation")
+        code, fake = self.run_main("T-01")
+        self.assertEqual((code, fake.calls), (0, 0), "the paid result is reused, never bought again")
+
+    def test_a_paid_response_that_cannot_be_saved_is_logged_and_never_repaid(self):
+        with mock.patch.object(Path, "write_bytes", side_effect=OSError("disk full")):
+            code, fake = self.run_main("T-01", "T-02")
+        self.assertEqual((code, fake.calls), (1, 1), "the run stops after the local failure")
+        [res] = [r for r in self.ledger() if r["event"] == "result"]
+        self.assertEqual((res["status"], res["transient"]), ("unknown", False))
+        self.assertEqual(self.committed(), 1.0)
+        code, fake = self.run_main("T-01")
+        self.assertEqual(fake.calls, 0, "a resume must not pay again for a response already received")
+
+    def test_a_slot_held_by_another_process_is_refused_unsent(self):
+        side = self.sidecar("T-01")["common"]
+        key = runner.slot_key(sha(self.cfg), side["sha256"], "T-01", 1)
+        with runner.slot_lock(key):
+            code, fake = self.run_main("T-01")
+        self.assertEqual((code, fake.calls), (1, 0))
+        self.assertEqual([r for r in self.ledger() if r["event"] == "reserve"], [])
+        code, fake = self.run_main("T-01")  # released (as a crash would release it): it now runs
+        self.assertEqual((code, fake.calls), (0, 1))
+
+    def test_series_that_no_longer_matches_its_inputs_or_config_is_refused(self):
+        frozen = json.loads(self.series.read_text())
+        for field, value in (("cost_bound_usd", 0.5), ("request_size", [16, 16]), ("input_sha256", "0" * 64)):
+            edited = json.loads(json.dumps(frozen))
+            edited["slots"][0][field] = value
+            path = self.tmp / f"series-{field}.json"
+            path.write_text(json.dumps(edited))
+            code, fake = self.run_main("T-01", series=path)
+            self.assertEqual((code, fake.calls), (1, 0), field)
+        self.assertEqual(self.ledger(), [])
 
 
 # ---------------------------------------------------------------- concurrent admission

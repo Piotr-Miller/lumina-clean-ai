@@ -190,7 +190,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.all_validation and not args.validation:
             raise protocol.Refused("--all-validation needs --validation --access <release.json> --config <finalist.json>")
         manifest = protocol.load_manifest()
-        ids = protocol.select_ids(manifest, args.ids, args.all or (args.check and not args.ids), args.all_validation)
+        # A bare --check covers tuning; with --all-validation it covers validation only.
+        ids = protocol.select_ids(manifest, args.ids, args.all or (args.check and not args.ids and not args.all_validation),
+                                  args.all_validation)
         if not ids:
             raise protocol.Refused("no photos selected: name ids or pass --all")
         protocol.require_access(ids, validation=args.validation, access=args.access, config=args.config,

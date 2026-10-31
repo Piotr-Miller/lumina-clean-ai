@@ -340,8 +340,52 @@ def require_access(
     for k in ("vendor", "terms", "run_id"):
         if row[k] != release[k]:
             raise Refused(f"release {k} {release[k]!r} differs from the owner's approval {row[k]!r}")
+    check_vendor(row, resolve(config))
     spend_approval(7, records)
     return ids
+
+
+def check_paths(paths: list[str | Path], *, validation: bool, manifest: dict | None = None) -> None:
+    """Refuse a path a tuning-mode tool was handed when it points into the holdout: a validation
+    source file, `validation-local/`, or any path component named after a validation id
+    (prepared inputs `<id>-common.jpg`, run outputs `runs/<config>/<id>/…`, arm files). Metadata
+    only: it resolves links and compares names, it never opens a file. The id guard alone checks
+    which photo a spec claims; this checks what its paths actually reach."""
+    if validation:
+        return  # validation mode is already bound to the Phase 7 release by require_access
+    manifest = manifest or load_manifest()
+    held = {e["id"] for e in manifest["entries"] if e["split"] == "validation"}
+    sources = {os.path.realpath(resolve(e["path"])) for e in manifest["entries"] if e["split"] == "validation"}
+    vlocal = os.path.realpath(private_dir() / "validation-local")
+
+    def named_after_held(part: str) -> str | None:
+        return next((h for h in held if part == h or part.startswith((h + "-", h + "."))), None)
+
+    for p in paths:
+        real = os.path.realpath(resolve(p))
+        hit = None
+        if real in sources:
+            hit = "is a validation photo"
+        elif real == vlocal or real.startswith(vlocal + os.sep):
+            hit = "is inside validation-local/"
+        else:
+            h = next((named_after_held(part) for part in Path(real).parts if named_after_held(part)), None)
+            if h:
+                hit = f"is named after validation photo {h}"
+        if hit:
+            raise Refused(f"{p} {hit}: a tuning-mode tool may not read it. The holdout opens only in Phase 7, "
+                          "with --validation --access <release.json> --config <finalist.json>")
+
+
+def check_vendor(row: dict, config_path: Path) -> None:
+    """The owner approves sending the holdout to one named vendor; the config must be that vendor's."""
+    try:
+        vendor = json.loads(config_path.read_text()).get("vendor")
+    except (OSError, ValueError) as e:
+        raise Refused(f"cannot read config {config_path}: {e}") from e
+    if vendor != row["vendor"]:
+        raise Refused(f"S19-VALIDATION approves vendor {row['vendor']!r}, but {config_path.name} sends to "
+                      f"{vendor!r}: the holdout goes only to the approved vendor")
 
 
 def read_release(path: Path) -> dict:
@@ -398,6 +442,7 @@ def open_validation(config_path: Path, phase: int, series_path: Path, cap: float
     manifest_sha = sha256_file(manifest_path())
     records = read_records()
     row = validation_approval(config_sha, manifest_sha, records)
+    check_vendor(row, config_path)
     check_cap(7, cap, records)
     series_sha = sha256_file(series_path)
     if series_sha != rec["series_sha256"]:
@@ -516,6 +561,9 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--validation", action="store_true")
     a.add_argument("--access")
     a.add_argument("--config")
+    cp = sub.add_parser("check-paths")
+    cp.add_argument("--paths", nargs="+", required=True)
+    cp.add_argument("--validation", action="store_true")
     sub.add_parser("approvals")
     f = sub.add_parser("check-freeze")
     f.add_argument("--config", required=True)
@@ -538,6 +586,9 @@ def main(argv: list[str] | None = None) -> int:
             ids = select_ids(manifest, args.ids, args.all, args.all_validation)
             require_access(ids, validation=args.validation, access=args.access, config=args.config, manifest=manifest)
             print(json.dumps({"allowed": ids}))
+        elif args.cmd == "check-paths":
+            check_paths(args.paths, validation=args.validation)
+            print(json.dumps({"allowed": args.paths}))
         elif args.cmd == "approvals":
             print(json.dumps({k: v for k, v in read_records().items()}, indent=2))
         elif args.cmd == "check-freeze":
