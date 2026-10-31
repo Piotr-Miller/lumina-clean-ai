@@ -1,0 +1,69 @@
+{
+  "id": "S17-21",
+  "common_sha256": "2169a2b9a6e02e95ac23d909e64743b60594d71bb45bfd88b2563e1464b6c730",
+  "common_dimensions": [6016, 4000],
+  "natural_dimensions": [6016, 4000],
+  "stats": {
+    "mean": 0.10436227202277981,
+    "p05": 0.00392156862745098,
+    "p25": 0.043137254901960784,
+    "p50": 0.09803921568627451,
+    "p75": 0.15294117647058825,
+    "p95": 0.21568627450980393,
+    "p99": 0.37254901960784315,
+    "shadowRatio": 0.8513671875,
+    "highlightRatio": 0.0006663602941176471,
+    "clipRatio": 0.0002068014705882353
+  },
+  "local": {
+    "gamma": 1.7240243128472155,
+    "blur": 0.5
+  },
+  "parameter_provenance": "recomputed: recommendParams(stats, 'local') in node, from LumaStats measured by the app's own sampleImageLuma in the owner's browser on the common input; not read from the app at processing time",
+  "browser": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "fullVersionList": {
+      "brands": [
+        {
+          "brand": "Not:A-Brand",
+          "version": "8"
+        },
+        {
+          "brand": "Chromium",
+          "version": "156"
+        },
+        {
+          "brand": "Google Chrome",
+          "version": "156"
+        }
+      ],
+      "fullVersionList": [
+        {
+          "brand": "Not:A-Brand",
+          "version": "8.0.0.0"
+        },
+        {
+          "brand": "Chromium",
+          "version": "156.0.8078.79"
+        },
+        {
+          "brand": "Google Chrome",
+          "version": "156.0.8078.79"
+        }
+      ],
+      "mobile": false,
+      "platform": "Linux",
+      "platformVersion": ""
+    }
+  },
+  "session_id": "f2814060-6827-4342-9c4b-f4edc60d9f2e",
+  "sampled_at": "2026-10-31T14:59:01.733Z",
+  "source_revision": {
+    "git_head": "ef80a97cad27556e98e77dde73c559e7909555ae",
+    "worktree_dirty": false,
+    "files": {
+      "src/lib/engines/auto-params.ts": "d35ad3e30cb659381c5242e3a0fafd66de228dcb6dbe981acfe116669e7d08f4",
+      "src/lib/engines/auto-params.client.ts": "eefa860c6a1871afdb954e4ab65dab6f3d314f0d60ffedd6f59c80cc4b55e4c2"
+    }
+  }
+}

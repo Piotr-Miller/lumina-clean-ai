@@ -1,0 +1,46 @@
+{
+  "name": "gpt-std",
+  "kind": "gpt",
+  "vendor": "openai",
+  "endpoint": "https://api.openai.com/v1/images/edits",
+  "model": "gpt-image-2.5-sunburst",
+  "model_snapshot_observed": "2026-09-08",
+  "prompt": "Enhance this low-light photo: reduce noise and correct the exposure while keeping it a natural night scene. Preserve every detail exactly as it is: all text and lettering, faces, geometry and the colours of the light sources. Do not add, remove or change any content.",
+  "quality": "high",
+  "output_format": "png",
+  "n": 1,
+  "input": "common",
+  "size_rule": {
+    "description": "standard: ≤ 3,686,400 px (2560×1440, OpenAI's non-experimental limit), owner decision 2026-10-31",
+    "max_pixels": 3686400,
+    "min_pixels": 655360,
+    "max_edge": 3840,
+    "multiple": 16,
+    "max_aspect": 3.0,
+    "algorithm": "largest short edge (multiple of 16) whose aspect-rounded long edge fits; no cropping"
+  },
+  "validity": {
+    "format": "PNG",
+    "size": "exactly the requested size"
+  },
+  "retry": {
+    "max_retries": 1,
+    "backoff_s": [60],
+    "transient_http": [408, 429, 500, 502, 503, 504],
+    "timeout_s": 900,
+    "note": "owner decision 2026-10-31: at most one retry per logical slot (two attempts), transient technical failures only; urllib makes no hidden retries"
+  },
+  "cost_bound": {
+    "basis": "No published GPT Image 2.5 token formula exists (OpenAI image-generation guide, read 2026-10-31: 'use the response's usage to measure token consumption'). Bound from the spike's measured usage (research.md § Empirical half): output 2,223 image tokens at 3.15 MP and 2,127 at 3.54 MP, i.e. ≤ 706 tokens/MP; bounded at 1,500 tokens/MP (> 2× the measured density). Input 1,452 and 1,504 image tokens for 12 MP and 17.7 MP inputs; bounded at 3,000. Prompt 71 text tokens; bounded at 200 at $10/M (above any listed text-input rate). Rates $30/M output image, $8/M input image (OpenAI pricing, read 2026-10-29). Plus $0.01 per call for billing rounding; the total is rounded up to the cent. A response whose usage exceeds the bound stops the runner.",
+    "output_image_tokens_per_megapixel": 1500,
+    "input_image_tokens": 3000,
+    "input_text_tokens": 200,
+    "usd_per_million_output_image_tokens": 30,
+    "usd_per_million_input_image_tokens": 8,
+    "usd_per_million_input_text_tokens": 10,
+    "rounding_usd": 0.01
+  },
+  "implementation": {
+    "scripts/s19/inputs.py": "78d393de5d8b366d7d98b899f204f4fc6ed021acbafd8a5636f16981ca6ff04d"
+  }
+}

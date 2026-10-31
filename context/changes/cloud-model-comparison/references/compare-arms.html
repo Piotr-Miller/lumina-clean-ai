@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S-19 arms</title>
+    <style>
+      :root {
+        --bg: #1c1c1e;
+        --panel: #2a2a2d;
+        --line: #3a3a3e;
+        --text: #e8e8ea;
+        --muted: #9a9aa0;
+        --accent: #6ea8fe;
+        --good: #5cb85c;
+        --bad: #e06c6c;
+        --neutral: #c9a227;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.4 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      body {
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+      }
+      header,
+      nav,
+      footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        border-bottom: 0;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0;
+        font-weight: 600;
+      }
+      .meta {
+        color: var(--muted);
+      }
+      button,
+      input[type="text"],
+      select {
+        font: inherit;
+        color: var(--text);
+        background: #38383c;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 5px 10px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--accent);
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      button.on {
+        background: var(--accent);
+        color: #111;
+        border-color: var(--accent);
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        align-items: center;
+      }
+      .spacer {
+        flex: 1;
+      }
+      main {
+        min-height: 0;
+        display: grid;
+        gap: 4px;
+        padding: 4px;
+      }
+      main.side {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      main.flip {
+        grid-template-columns: 1fr;
+      }
+      main.native {
+        grid-template-columns: 1fr;
+        overflow: auto;
+      }
+      .pane {
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+        background: #111;
+      }
+      .pane.zoom,
+      main.native .pane {
+        overflow: auto;
+      }
+      .pane img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .pane.zoom img,
+      main.native .pane img {
+        height: auto;
+        max-width: none;
+      }
+      main.native .pane img {
+        width: auto;
+      }
+      .pane img.bright {
+        filter: brightness(3);
+      }
+      .label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.65);
+        font-weight: 600;
+        pointer-events: none;
+        z-index: 1;
+      }
+      .pane.zoom > .label,
+      main.native .label {
+        position: sticky;
+        display: inline-block;
+        margin: 8px;
+      }
+      .missing {
+        display: grid;
+        place-items: center;
+        height: 100%;
+        min-height: 120px;
+        color: var(--muted);
+        padding: 16px;
+        text-align: center;
+      }
+      #pref button[data-v$="clear"].on {
+        background: var(--good);
+        border-color: var(--good);
+      }
+      #pref button[data-v$="slight"].on,
+      #pref button[data-v="tie"].on {
+        background: var(--neutral);
+        border-color: var(--neutral);
+      }
+      .flags button.on {
+        background: var(--bad);
+        border-color: var(--bad);
+        color: #111;
+      }
+      input.wide {
+        flex: 1 1 320px;
+        min-width: 200px;
+      }
+      .warn {
+        color: var(--bad);
+      }
+      .dots {
+        display: flex;
+        gap: 4px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--line);
+        cursor: pointer;
+      }
+      .dot.done {
+        background: var(--good);
+      }
+      .dot.cur {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      dialog {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        width: min(960px, calc(100vw - 32px));
+      }
+      dialog textarea {
+        width: 100%;
+        height: 45vh;
+        font:
+          12px/1.4 ui-monospace,
+          Consolas,
+          monospace;
+        background: #111;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px;
+      }
+      kbd {
+        background: #38383c;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 0 4px;
+        font-size: 12px;
+      }
+      #fatal {
+        padding: 32px;
+        color: var(--bad);
+      }
+      @media (max-width: 900px) {
+        main.side {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <button id="prev" title="Poprzednie zdjęcie (←)">←</button>
+      <h1 id="title"></h1>
+      <button id="next" title="Następne zdjęcie (→)">→</button>
+      <div class="dots" id="dots"></div>
+      <span class="spacer"></span>
+      <button id="mSide">Obok siebie</button>
+      <button id="mFlip" title="1 oryginał · 2 A · 3 B · Spacja A↔B">Przełączanie</button>
+      <button id="zoom" title="Z">100% (mniejsza para)</button>
+      <button id="bright" title="J">Rozjaśniony oryginał</button>
+      <button id="native" title="Dostępne po ocenie wszystkich par zdjęcia">Natywny eksport</button>
+      <button id="reveal" title="Dostępne po ocenie">Odkryj ramiona</button>
+      <button id="export">Eksport</button>
+    </header>
+    <nav id="pairs"></nav>
+    <main id="main"></main>
+    <footer id="rating">
+      <div class="row" id="pref">
+        <strong>Który wynik lepszy?</strong>
+        <button data-v="A-clear">A wyraźnie</button>
+        <button data-v="A-slight">A nieco</button>
+        <button data-v="tie">remis</button>
+        <button data-v="B-slight">B nieco</button>
+        <button data-v="B-clear">B wyraźnie</button>
+      </div>
+      <div class="row flags">
+        <strong>Ciężka regresja (vs oryginał):</strong>
+        <button data-f="severe" data-s="A">w A</button>
+        <button data-f="severe" data-s="B">w B</button>
+        <strong>Zmiana treści:</strong>
+        <button data-f="content" data-s="A">w A</button>
+        <button data-f="content" data-s="B">w B</button>
+        <strong>Nieweryfikowalna rekonstrukcja napisów:</strong>
+        <button data-f="unverified" data-s="A">w A</button>
+        <button data-f="unverified" data-s="B">w B</button>
+      </div>
+      <div class="row">
+        <input
+          type="text"
+          class="wide"
+          id="crop"
+          placeholder="Kadr zmiany treści: gdzie, „oryginał → wynik” (wymagane przy fladze)"
+        />
+      </div>
+      <div class="row">
+        <select id="reasonType">
+          <option value="">Podstawa wyraźnej przewagi…</option>
+          <option value="independent_gain">Niezależny potwierdzony zysk (szum, detal, ekspozycja, kolor)</option>
+          <option value="unverified_lettering">Tylko nieweryfikowalne napisy</option>
+        </select>
+        <input
+          type="text"
+          class="wide"
+          id="why"
+          placeholder="Dlaczego — jedno zdanie (wymagane przy wyraźnej przewadze)"
+        />
+        <span class="warn" id="warn"></span>
+      </div>
+      <div class="meta">
+        <kbd>←</kbd><kbd>→</kbd> zdjęcia · <kbd>[</kbd><kbd>]</kbd> pary · <kbd>1</kbd><kbd>2</kbd
+        ><kbd>3</kbd> oryginał/A/B · <kbd>Spacja</kbd> A↔B · <kbd>Z</kbd> 100% · <kbd>J</kbd> rozjaśniony oryginał
+      </div>
+    </footer>
+    <dialog id="dlg">
+      <p id="dlgHead"></p>
+      <textarea id="md" readonly></textarea>
+      <p>
+        <button id="dl">Pobierz JSON (dla tally.py)</button> <button id="copy">Kopiuj Markdown</button>
+        <button id="close">Zamknij</button> <span class="meta" id="copied"></span>
+      </p>
+    </dialog>
+    <script>
+      // Manifest written by scripts/s19/viewer-inputs.py as a script (browsers refuse fetch() of a
+      // file:// JSON). ?m=<name> picks test-photos/private/s19/viewer/<name>.js; default "arms".
+      const NAME = new URLSearchParams(location.search).get("m") || "arms";
+      const s = document.createElement("script");
+      s.src = "../../../../test-photos/private/s19/viewer/" + encodeURIComponent(NAME) + ".js";
+      s.onload = () => start(window.S19_ARMS);
+      s.onerror = () =>
+        fatal("Brak manifestu " + s.src + ". Uruchom: python3 scripts/s19/viewer-inputs.py <spec.json>");
+      document.head.appendChild(s);
+
+      function fatal(msg) {
+        document.body.innerHTML = "";
+        const d = document.createElement("div");
+        d.id = "fatal";
+        d.textContent = msg;
+        document.body.appendChild(d);
+      }
+
+      function start(M) {
+        if (!M || !Array.isArray(M.photos)) return fatal("Manifest nie ma listy zdjęć.");
+        // A validation manifest must carry the Phase 7 release, and every candidate must be the
+        // released config; otherwise no image URL is ever created.
+        if (M.split === "validation") {
+          const r = M.release || {};
+          if (!r.run_id || !r.config_sha256 || !r.manifest_sha256 || r.manifest_sha256 !== M.manifest_sha256)
+            return fatal("Manifest walidacyjny bez zgodnego zwolnienia Fazy 7 — odmowa.");
+          for (const p of M.photos)
+            for (const a of Object.values(p.arms))
+              if (a.candidate && a.candidate.config_sha256 !== r.config_sha256)
+                return fatal("Ramię " + a.arm_id + " nie jest zamrożoną konfiguracją — odmowa.");
+        }
+        const $ = (id) => document.getElementById(id);
+        const KEY = "s19-arms:" + M.series_id + ":" + M.manifest_sha256 + ":" + NAME;
+        let state = {};
+        try {
+          state = JSON.parse(localStorage.getItem(KEY) || "{}");
+        } catch {
+          state = {};
+        }
+        const pairId = (p, pair) => p.id + "|" + pair[0] + "|" + pair[1];
+        // A/B order drawn once per pair and kept, so a reload never reshuffles a rated pair.
+        for (const p of M.photos)
+          for (const pair of p.pairs) {
+            const id = pairId(p, pair);
+            state[id] ??= {};
+            state[id].candIs ??= Math.random() < 0.5 ? "A" : "B";
+            state[id].flags ??= {};
+          }
+        const save = () => {
+          try {
+            localStorage.setItem(KEY, JSON.stringify(state));
+          } catch {}
+        };
+        save();
+
+        let idx = 0,
+          pidx = 0,
+          mode = "side",
+          zoomed = false,
+          bright = false,
+          flipShow = "orig",
+          revealed = false;
+
+        const photo = () => M.photos[idx];
+        const pair = () => photo().pairs[pidx];
+        const st = () => state[pairId(photo(), pair())];
+        const sideArm = (which) => {
+          const [cand, ref] = pair();
+          return photo().arms[st().candIs === which ? cand : ref];
+        };
+        // A pair is settled when it is rated, or when its candidate slot has no result to rate.
+        const failedSlot = (p, pr) => !!p.arms[pr[0]].status && p.arms[pr[0]].status !== "ok";
+        const rated = (p, pr) => !!state[pairId(p, pr)].v || failedSlot(p, pr);
+        const photoDone = (p) => p.pairs.every((pr) => rated(p, pr));
+
+        function pane(label, arm, extraClass) {
+          const d = document.createElement("div");
+          d.className = "pane" + (zoomed && mode !== "native" ? " zoom" : "");
+          const l = document.createElement("div");
+          l.className = "label";
+          l.textContent = label;
+          d.appendChild(l);
+          if (arm && arm.src) {
+            const img = document.createElement("img");
+            img.src = arm.src;
+            img.alt = label;
+            img.decoding = "async";
+            if (extraClass) img.className = extraClass;
+            img.dataset.w = arm.dimensions ? arm.dimensions[0] : "";
+            img.onerror = () =>
+              img.replaceWith(
+                Object.assign(document.createElement("div"), {
+                  className: "missing",
+                  textContent: "Brak pliku: " + arm.src,
+                }),
+              );
+            d.appendChild(img);
+          } else {
+            const m = document.createElement("div");
+            m.className = "missing";
+            m.textContent = arm ? "Brak wyniku: " + (arm.status || "?") : "Brak ramienia";
+            d.appendChild(m);
+          }
+          return d;
+        }
+
+        // At 100% every pane is shown at the smaller width of the two rated arms: the larger one
+        // is scaled down, never the smaller one up (quality bar: no enlarging Cloud).
+        function applyZoomWidth(main) {
+          if (!zoomed || mode === "native") return;
+          const ws = ["A", "B"]
+            .map((w) => sideArm(w))
+            .filter((a) => a && a.dimensions)
+            .map((a) => a.dimensions[0]);
+          if (!ws.length) return;
+          const w = Math.min(...ws);
+          main.querySelectorAll(".pane img").forEach((img) => (img.style.width = w + "px"));
+        }
+
+        function syncScroll(panes) {
+          let lock = false;
+          for (const from of panes)
+            from.addEventListener("scroll", () => {
+              if (lock) return;
+              lock = true;
+              for (const to of panes)
+                if (to !== from) {
+                  to.scrollLeft = from.scrollLeft;
+                  to.scrollTop = from.scrollTop;
+                }
+              requestAnimationFrame(() => (lock = false));
+            });
+        }
+
+        function armName(arm) {
+          return arm.label || arm.arm_id;
+        }
+
+        function render() {
+          const p = photo();
+          const s = st();
+          $("title").textContent =
+            p.id + " · " + (M.title || M.series_id) + (M.split === "validation" ? " · WALIDACJA" : "");
+          const nav = $("pairs");
+          nav.replaceChildren();
+          p.pairs.forEach((pr, i) => {
+            const b = document.createElement("button");
+            const done = rated(p, pr);
+            b.textContent = "Para " + (i + 1) + (done ? " ✓" : "");
+            b.className = i === pidx && mode !== "native" ? "on" : "";
+            b.onclick = () => {
+              pidx = i;
+              if (mode === "native") mode = "side";
+              reset();
+            };
+            nav.appendChild(b);
+          });
+          const main = $("main");
+          main.className = mode;
+          main.replaceChildren();
+          const A = sideArm("A"),
+            B = sideArm("B");
+          const lab = (w, a) => (revealed ? w + " = " + armName(a) : w);
+          const orig = { src: p.original.src, dimensions: p.original.dimensions };
+          if (mode === "native") {
+            // Each arm's own file at 100%, with its pixel size: what a user would download.
+            const arms = Object.values(p.arms);
+            for (const a of arms)
+              main.append(pane(armName(a) + (a.dimensions ? " · " + a.dimensions.join("×") : ""), a));
+          } else if (mode === "side") {
+            const panes = [
+              pane(bright ? "Oryginał (rozjaśniony)" : "Oryginał", orig, bright ? "bright" : ""),
+              pane(lab("A", A), A),
+              pane(lab("B", B), B),
+            ];
+            main.append(...panes);
+            if (zoomed) syncScroll(panes);
+          } else {
+            const v =
+              flipShow === "A"
+                ? [lab("A", A), A, ""]
+                : flipShow === "B"
+                  ? [lab("B", B), B, ""]
+                  : [bright ? "Oryginał (rozjaśniony)" : "Oryginał", orig, bright ? "bright" : ""];
+            main.append(pane(v[0], v[1], v[2]));
+          }
+          applyZoomWidth(main);
+          const candOk = !p.arms[pair()[0]].status || p.arms[pair()[0]].status === "ok";
+          $("rating").style.display = mode === "native" || !candOk ? "none" : "";
+          $("mSide").classList.toggle("on", mode === "side");
+          $("mFlip").classList.toggle("on", mode === "flip");
+          $("zoom").classList.toggle("on", zoomed);
+          $("bright").classList.toggle("on", bright);
+          $("native").disabled = !photoDone(p);
+          $("native").classList.toggle("on", mode === "native");
+          $("reveal").disabled = !s.v;
+          $("reveal").classList.toggle("on", revealed);
+          document.querySelectorAll("#pref button").forEach((b) => b.classList.toggle("on", b.dataset.v === s.v));
+          document
+            .querySelectorAll(".flags button")
+            .forEach((b) => b.classList.toggle("on", !!s.flags[b.dataset.f + b.dataset.s]));
+          $("crop").value = s.crop || "";
+          $("why").value = s.why || "";
+          $("reasonType").value = s.reasonType || "";
+          $("warn").textContent = problems(s).join(" · ");
+          const dots = $("dots");
+          dots.replaceChildren();
+          M.photos.forEach((q, i) => {
+            const d = document.createElement("span");
+            d.className = "dot" + (photoDone(q) ? " done" : "") + (i === idx ? " cur" : "");
+            d.title = q.id;
+            d.onclick = () => {
+              idx = i;
+              pidx = 0;
+              reset();
+            };
+            dots.appendChild(d);
+          });
+        }
+
+        // What is still missing for this pair's rating to be exportable.
+        function problems(s) {
+          const out = [];
+          if (!s.v) return out;
+          if ((s.flags.contentA || s.flags.contentB) && !(s.crop || "").includes("→"))
+            out.push("zmiana treści wymaga kadru „oryginał → wynik”");
+          if (s.v.endsWith("-clear") && !(s.why || "").trim()) out.push("wyraźna przewaga wymaga uzasadnienia");
+          if (s.v === s.candIs + "-clear" && !s.reasonType) out.push("wybierz podstawę wyraźnej przewagi");
+          return out;
+        }
+
+        function reset() {
+          flipShow = "orig";
+          revealed = false;
+          render();
+        }
+        function go(step) {
+          idx = (idx + step + M.photos.length) % M.photos.length;
+          pidx = 0;
+          if (mode === "native") mode = "side";
+          reset();
+        }
+        function goPair(step) {
+          const n = photo().pairs.length;
+          pidx = (pidx + step + n) % n;
+          reset();
+        }
+
+        $("prev").onclick = () => go(-1);
+        $("next").onclick = () => go(1);
+        $("mSide").onclick = () => ((mode = "side"), render());
+        $("mFlip").onclick = () => ((mode = "flip"), render());
+        $("zoom").onclick = () => ((zoomed = !zoomed), render());
+        $("bright").onclick = () => ((bright = !bright), render());
+        $("native").onclick = () => ((mode = mode === "native" ? "side" : "native"), render());
+        $("reveal").onclick = () => ((revealed = !revealed), render());
+        document.querySelectorAll("#pref button").forEach(
+          (b) =>
+            (b.onclick = () => {
+              st().v = b.dataset.v;
+              save();
+              render();
+            }),
+        );
+        document.querySelectorAll(".flags button").forEach(
+          (b) =>
+            (b.onclick = () => {
+              const k = b.dataset.f + b.dataset.s;
+              st().flags[k] = !st().flags[k];
+              save();
+              render();
+            }),
+        );
+        for (const [id, key] of [
+          ["crop", "crop"],
+          ["why", "why"],
+        ])
+          $(id).addEventListener("input", (e) => {
+            st()[key] = e.target.value;
+            save();
+            $("warn").textContent = problems(st()).join(" · ");
+          });
+        $("reasonType").addEventListener("change", (e) => {
+          st().reasonType = e.target.value;
+          save();
+          render();
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (["crop", "why", "reasonType"].includes(e.target.id) || $("dlg").open) return;
+          const show = (v) => {
+            mode = "flip";
+            flipShow = v;
+            render();
+          };
+          if (e.key === "ArrowLeft") go(-1);
+          else if (e.key === "ArrowRight") go(1);
+          else if (e.key === "[") goPair(-1);
+          else if (e.key === "]") goPair(1);
+          else if (e.key === "1") show("orig");
+          else if (e.key === "2") show("A");
+          else if (e.key === "3") show("B");
+          else if (e.key === " ") {
+            e.preventDefault();
+            show(flipShow === "A" ? "B" : "A");
+          } else if (e.key === "z" || e.key === "Z") {
+            zoomed = !zoomed;
+            render();
+          } else if (e.key === "j" || e.key === "J") {
+            bright = !bright;
+            render();
+          }
+        });
+
+        // Export: the JSON tally.py joins against the series and the ledger, plus a Markdown table.
+        // Preferences and flags are translated from blind sides to candidate/reference here.
+        let exportJson = "";
+        $("export").onclick = () => {
+          const ratings = [],
+            unrated = [],
+            failed = [],
+            incomplete = [];
+          for (const p of M.photos)
+            for (const pr of p.pairs) {
+              const s = state[pairId(p, pr)];
+              const cand = p.arms[pr[0]],
+                ref = p.arms[pr[1]];
+              if (cand.status && cand.status !== "ok") {
+                failed.push({
+                  photo: p.id,
+                  arm_id: cand.arm_id,
+                  status: cand.status,
+                  candidate: cand.candidate || null,
+                });
+                continue;
+              }
+              if (!s.v) {
+                unrated.push(p.id + " " + cand.arm_id);
+                continue;
+              }
+              const pr_ = problems(s);
+              if (pr_.length) incomplete.push(p.id + " " + cand.arm_id + ": " + pr_.join(", "));
+              const c = s.candIs,
+                r = c === "A" ? "B" : "A";
+              const pref = s.v === "tie" ? "tie" : (s.v[0] === c ? "candidate-" : "reference-") + s.v.split("-")[1];
+              ratings.push({
+                rating_id: pairId(p, pr),
+                photo: p.id,
+                candidate: { arm_id: cand.arm_id, ...(cand.candidate || {}), output_sha256: cand.sha256 },
+                reference: { arm_id: ref.arm_id, kind: ref.kind, sha256: ref.sha256, ...(ref.reference || {}) },
+                blind_order: { candidate: c },
+                preference: pref,
+                severe_candidate: !!s.flags["severe" + c],
+                severe_reference: !!s.flags["severe" + r],
+                content_change: !!s.flags["content" + c],
+                content_change_reference: !!s.flags["content" + r],
+                crop_note: s.crop || "",
+                unverified_reconstruction: !!s.flags["unverified" + c],
+                clear_reason_type: pref === "candidate-clear" ? s.reasonType || null : null,
+                reason: s.why || "",
+              });
+            }
+          const today = new Date().toISOString().slice(0, 10);
+          const doc = {
+            viewer: "compare-arms",
+            version: 1,
+            series_id: M.series_id,
+            split: M.split,
+            manifest_sha256: M.manifest_sha256,
+            release: M.release || null,
+            rated_on: today,
+            ratings,
+            failed_slots: failed,
+          };
+          exportJson = JSON.stringify(doc, null, 2);
+          const cell = (t) => String(t ?? "").replace(/\|/g, "\\|");
+          const md = [
+            "| Photo | Candidate | Reference | Preferred | Severe | Content change | Unverified lettering | Basis | Why |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+            ...ratings.map(
+              (x) =>
+                "| " +
+                [
+                  x.photo,
+                  x.candidate.arm_id,
+                  x.reference.arm_id,
+                  x.preference,
+                  x.severe_candidate ? "candidate" : "—",
+                  x.content_change ? cell(x.crop_note) : "—",
+                  x.unverified_reconstruction ? "yes" : "—",
+                  x.clear_reason_type || "—",
+                  cell(x.reason),
+                ].join(" | ") +
+                " |",
+            ),
+            ...failed.map(
+              (f) =>
+                "| " +
+                f.photo +
+                " | " +
+                f.arm_id +
+                " | — | " +
+                f.status +
+                " | — | — | — | — | technical status, not rated |",
+            ),
+          ].join("\n");
+          $("dlgHead").textContent =
+            (unrated.length ? "Nieocenione: " + unrated.join(", ") + ". " : "") +
+            (incomplete.length ? "Niekompletne (tally.py je odrzuci): " + incomplete.join("; ") + ". " : "") +
+            ratings.length +
+            " ocen, " +
+            failed.length +
+            " slotów bez wyniku.";
+          $("md").value = md;
+          $("copied").textContent = "";
+          $("dlg").showModal();
+        };
+        $("dl").onclick = () => {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([exportJson], { type: "application/json" }));
+          a.download = M.series_id + "-" + NAME + "-ratings.json";
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        };
+        $("copy").onclick = async () => {
+          try {
+            await navigator.clipboard.writeText($("md").value);
+            $("copied").textContent = "Skopiowano.";
+          } catch {
+            $("md").select();
+            $("copied").textContent = "Zaznaczono — Ctrl+C.";
+          }
+        };
+        $("close").onclick = () => $("dlg").close();
+        render();
+      }
+    </script>
+  </body>
+</html>

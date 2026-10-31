@@ -1,0 +1,63 @@
+{
+  "series_id": "spike-smoke",
+  "split": "tuning",
+  "title": "Viewer smoke test on the spike outputs (not a gate, not Phase 2)",
+  "photos": [
+    {
+      "id": "S17-04",
+      "original": "test-photos/licensed/04-phone-whitehouse-iphone13pro.jpg",
+      "arms": [
+        {
+          "arm_id": "gpt-spike",
+          "label": "GPT Image 2.5 (spike, unprepared input)",
+          "path": "test-photos/private/s19-spike/B-openai-sunburst-S17-04/output.png",
+          "candidate": { "source": "s19-spike B-openai-sunburst-S17-04" }
+        },
+        {
+          "arm_id": "nafnet-spike-raw",
+          "label": "NAFNet raw (spike, no gamma)",
+          "path": "test-photos/private/s19-spike/A-fal-nafnet-denoise-S17-04-max3968/output.png",
+          "candidate": { "source": "s19-spike A-fal-nafnet-denoise-S17-04-max3968" }
+        },
+        {
+          "arm_id": "local-historical",
+          "label": "Local (2026-10-29 download, source-file input)",
+          "kind": "local",
+          "path": "context/changes/cloud-model-comparison/references/luminaclean-04-phone-whitehouse-iphone13pro.jpg"
+        }
+      ],
+      "pairs": [
+        ["gpt-spike", "local-historical"],
+        ["nafnet-spike-raw", "local-historical"]
+      ]
+    },
+    {
+      "id": "S17-07",
+      "original": "test-photos/licensed/07-night-portrait.jpg",
+      "arms": [
+        {
+          "arm_id": "gpt-spike",
+          "label": "GPT Image 2.5 (spike, unprepared input)",
+          "path": "test-photos/private/s19-spike/B-openai-sunburst-S17-07/output.png",
+          "candidate": { "source": "s19-spike B-openai-sunburst-S17-07" }
+        },
+        {
+          "arm_id": "gpt-failed-demo",
+          "label": "Failed slot (demonstration of a status-only arm)",
+          "status": "technical_failure",
+          "candidate": { "source": "synthetic: shows how a slot without a result is displayed" }
+        },
+        {
+          "arm_id": "local-historical",
+          "label": "Local (2026-10-29 download, source-file input)",
+          "kind": "local",
+          "path": "context/changes/cloud-model-comparison/references/luminaclean-07-night-portrait.jpg"
+        }
+      ],
+      "pairs": [
+        ["gpt-spike", "local-historical"],
+        ["gpt-failed-demo", "local-historical"]
+      ]
+    }
+  ]
+}
