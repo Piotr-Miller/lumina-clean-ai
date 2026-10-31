@@ -865,7 +865,7 @@ None: no production data or schema changes.
 
 - [x] 1.8 The owner saves the S17-21 Local download from the app — accepted at 533925b038d44d322eab9e4c138e9792dd718bfd
 - [x] 1.9 The owner opens `compare-arms.html` on the existing spike outputs and confirms the flags, the brightened-original toggle and the reveal work — accepted at 860a04b47e2b4a1cded47d69c74941330f28d2a3
-- [ ] 1.13 The owner saves new real Local baselines for all eight prepared tuning inputs and confirms the baseline helper records the same browser/session and applied Auto values
+- [x] 1.13 The owner saves new real Local baselines for all eight prepared tuning inputs and confirms the baseline helper records the same browser/session and applied Auto values — accepted at b3c868f5e436c2a27e7aa2b5953a3ceb79327819
 
 ### Phase 2: Rate what is already paid for
 
