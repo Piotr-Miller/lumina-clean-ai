@@ -38,14 +38,67 @@ async function main() {
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     assert.equal(await page.getByText("Brak pliku:", { exact: false }).count(), 0);
   }
+  // The viewer draws each photo's pair order once per browser profile (F9), so the script finds
+  // a pair by the image it shows. Reading the src is what a test may do; a rater sees only A/B.
+  const pairButtons = (p) => p.locator("#pairs button");
+  const pairButton = (n) => page.getByRole("button", { name: new RegExp(`^Para ${n}( ✓)?$`) });
+  async function identify(p) {
+    await expect(p.locator("main .pane")).not.toHaveCount(0);
+    const srcs = await p.locator("main img").evaluateAll((imgs) => imgs.map((img) => img.getAttribute("src")));
+    if (srcs.some((src) => src.includes("/B-openai-sunburst-"))) return "gpt";
+    if (srcs.some((src) => src.includes("/A-fal-nafnet-denoise-"))) return "nafnet";
+    if (await p.getByText("Brak wyniku: technical_failure", { exact: true }).count()) return "failed";
+    throw new Error(`unidentified pair: ${srcs.join(", ")}`);
+  }
+  // Visits every pair of the current photo and returns their identities in display order,
+  // leaving pair 1 selected.
+  async function layout() {
+    const n = await pairButtons(page).count();
+    const order = [];
+    for (let i = 1; i <= n; i++) {
+      await pairButton(i).click();
+      order.push(await identify(page));
+    }
+    await pairButton(1).click();
+    return order;
+  }
   async function capture(name) {
     await ready();
     const bytes = await page.screenshot({ path: path.join(__dirname, name), fullPage: true });
     shots.push({ file: name, sha256: createHash("sha256").update(bytes).digest("hex") });
   }
+  const pairOrder = {};
+  const freshProfiles = { "gpt-first": 0, "nafnet-first": 0 };
   try {
+    // F9: a fresh profile draws a new order. Sample isolated contexts until both S17-04 orders
+    // have appeared; with a fair draw, 30 identical first pairs has probability 2^-29.
+    for (let i = 0; i < 30 && !(freshProfiles["gpt-first"] && freshProfiles["nafnet-first"]); i++) {
+      const fresh = await browser.newContext({ viewport: { width: 1680, height: 1050 } });
+      try {
+        const p = await fresh.newPage();
+        await p.goto(url.href);
+        await expect(p.getByRole("heading")).toContainText("S17-04");
+        await expect(pairButtons(p)).toHaveCount(2);
+        freshProfiles[(await identify(p)) + "-first"]++;
+      } finally {
+        await fresh.close();
+      }
+    }
+    assert(freshProfiles["gpt-first"] > 0 && freshProfiles["nafnet-first"] > 0, JSON.stringify(freshProfiles));
+    checks.push(
+      `Pair order is drawn per profile: fresh isolated contexts showed both S17-04 orders (${JSON.stringify(freshProfiles)}), so a pair's position does not name its arm.`,
+    );
+
     await page.goto(url.href);
     await expect(page.getByRole("heading")).toContainText("S17-04");
+    pairOrder["S17-04"] = await layout();
+    assert.deepEqual([...pairOrder["S17-04"]].sort(), ["gpt", "nafnet"]);
+    const gpt04 = pairOrder["S17-04"].indexOf("gpt") + 1;
+    const nafnet04 = pairOrder["S17-04"].indexOf("nafnet") + 1;
+    await page.reload();
+    assert.deepEqual(await layout(), pairOrder["S17-04"]);
+    checks.push(`S17-04 pair order ${JSON.stringify(pairOrder["S17-04"])} is kept across a reload.`);
+    await pairButton(gpt04).click();
     await expect(page.locator("#main .label")).toHaveText(["Oryginał", "A", "B"]);
     await expect(page.getByRole("button", { name: "Odkryj ramiona", exact: true })).toBeDisabled();
     await capture("01-blind.png");
@@ -76,6 +129,7 @@ async function main() {
     await page.locator("#crop").fill(note);
     await expect(page.locator("#warn")).toBeEmpty();
     await page.reload();
+    await pairButton(gpt04).click();
     for (const flag of ["severe", "content", "unverified"]) {
       await expect(page.locator(`button[data-f="${flag}"][data-s="A"]`)).toHaveClass("on");
       await expect(page.locator(`button[data-f="${flag}"][data-s="B"]`)).not.toHaveClass("on");
@@ -132,13 +186,16 @@ async function main() {
     assert.equal(rating.unverified_reconstruction, candidateOnA);
     assert.equal(rating.crop_note, note);
     assert.equal(rating.preference, "tie");
+    assert.equal(rating.candidate.arm_id, "gpt-spike");
+    assert.equal(rating.blind_order.pair_position, gpt04);
+    assert.equal(rating.blind_order.pairs, 2);
     assert.equal(payload.failed_slots.length, 1);
     checks.push(
-      "Downloaded JSON maps A-side flags to the correct candidate/reference, retains the crop note and synthetic tie, and includes the failed slot.",
+      "Downloaded JSON maps A-side flags to the correct candidate/reference, retains the crop note and synthetic tie, and includes the failed slot; it records the rated pair's displayed position.",
     );
     await page.getByRole("button", { name: "Zamknij", exact: true }).click();
 
-    await page.getByRole("button", { name: "Para 2", exact: true }).click();
+    await pairButton(nafnet04).click();
     await expect(labels).toHaveText(["Oryginał", "A", "B"]);
     await expect(page.locator(".flags button.on")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Odkryj ramiona", exact: true })).toBeDisabled();
@@ -147,18 +204,21 @@ async function main() {
     await expect(page.locator("#main")).toContainText("NAFNet raw (spike, no gamma)");
     await capture("05-nafnet-revealed.png");
     checks.push(
-      "Changing pair clears reveal and isolates flags; the second real S17-04 comparison reveals NAFNet and Local.",
+      "Changing pair clears reveal and isolates flags; the other real S17-04 comparison reveals NAFNet and Local.",
     );
 
     await page.getByRole("button", { name: "→", exact: true }).click();
     await expect(page.getByRole("heading")).toContainText("S17-07");
+    pairOrder["S17-07"] = await layout();
+    assert.deepEqual([...pairOrder["S17-07"]].sort(), ["failed", "gpt"]);
+    await pairButton(pairOrder["S17-07"].indexOf("gpt") + 1).click();
     await ready();
     await expect(page.getByRole("button", { name: "Odkryj ramiona", exact: true })).toBeDisabled();
     await page.getByRole("button", { name: "remis", exact: true }).click();
     await page.getByRole("button", { name: "Odkryj ramiona", exact: true }).click();
     await expect(page.locator("#main")).toContainText("GPT Image 2.5");
     await capture("06-portrait-revealed.png");
-    await page.getByRole("button", { name: "Para 2 ✓", exact: true }).click();
+    await pairButton(pairOrder["S17-07"].indexOf("failed") + 1).click();
     await expect(page.getByText("Brak wyniku: technical_failure", { exact: true })).toBeVisible();
     await expect(page.locator("#rating")).toBeHidden();
     await expect(page.locator("main img")).toHaveCount(2);
@@ -186,6 +246,8 @@ async function main() {
       viewport: { width: 1680, height: 1050 },
       scope:
         "Real local files, isolated browser context, synthetic ratings only; no provider calls, holdout access or quality gate.",
+      pair_order: pairOrder,
+      fresh_profile_first_pairs: freshProfiles,
       checks,
       screenshots: shots,
       errors,
