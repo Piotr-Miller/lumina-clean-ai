@@ -9,6 +9,10 @@ archived_at: null
 
 ## Notes
 
+2026-10-31: deleted the local `backup/s19-pre-f3` branch (never pushed). Nothing in this change
+needs the pre-rewrite commits; Progress, the 1.9 evidence and the post-merge re-pointing all use
+the rewritten branch. ea87ae4, 9e0bfa5, d123229 and 4236167 now remain only under `refs/original/`.
+
 2026-10-31: accepted 1.13 at b3c868f5e436c2a27e7aa2b5953a3ceb79327819, on the owner's explicit delegation ("decide 1.13: restate
 it as "recomputed" and accept it, or mark it n/a"), against the restated criterion and the evidence in
 the restatement note below. The owner did not personally re-run the baseline helper.
