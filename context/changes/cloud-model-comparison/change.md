@@ -1,9 +1,9 @@
 ---
 change_id: cloud-model-comparison
-title: Compare Cloud AI model candidates on the s17-v1 benchmark
-status: preparing
+title: Compare Cloud AI model candidates on the s17-v2 benchmark
+status: plan_reviewed
 created: 2026-09-28
-updated: 2026-10-29
+updated: 2026-10-31
 archived_at: null
 ---
 
@@ -243,3 +243,97 @@ say that Cloud AI is temporarily unavailable during a quality review and point t
   most of the saturation loss comes from Bread's brightening. Means cannot show whether Bread
   ignores the input profile. That needs a paid run: Bread on the original and on an sRGB-converted
   copy at the same settings.
+
+- **Class C is out (owner decision, 2026-10-30).** "We want to be competition to class C, not use
+  their services." LuminaClean is itself a photo-enhancement service, so a commercial
+  photo-enhancement API (Deep-Image, Claid, Cloudinary, Picsart, Adobe, VanceAI, Topaz) is not a
+  candidate for the Cloud path. No class-C account is opened and no class-C call is run. Their
+  section in `research.md` stays as market context.
+
+- **Class B content change is not a severe regression (owner decision, 2026-10-30;
+  superseded 2026-10-31 by § Fidelity definition below — kept as history).** Asked
+  whether "changed or invented content" should become a severe-regression category before tuning,
+  the owner answered: "Absolutnie nie jest ciężka regresja" (absolutely not a severe regression).
+  The quality bar stays as it is: no new category. The owner's look at the two GPT Image 2.5
+  Sunburst feasibility outputs (`research.md` § Empirical half: results; files in
+  `test-photos/private/s19-spike/`), rated against the original:
+  - **S17-04:** "the best version of this photo that has been made", although the model replaced
+    the dark overcast sky with a blue sky and defined clouds;
+  - **S17-07:** "looks very good, but a touch too bright".
+
+  These are two tuning photos, one call each, with a fixed prompt, and not rated against Local.
+  GPT Image 2.5 has no fidelity or exposure parameter (`research.md`, class B), so brightness can
+  only be steered through the prompt.
+
+- **OpenAI Zero Data Retention is deferred to deployment (owner decision, 2026-10-30).** The S-19
+  comparison sends only CC-licensed benchmark photos, so it runs on the API's default terms: no
+  training, up to 30 days' abuse-monitoring retention for `/v1/images/edits`. ZDR is "subject to
+  prior approval by OpenAI and acceptance of additional requirements", requested through OpenAI's
+  sales team, and does not cover images flagged as potential CSAM
+  (https://developers.openai.com/api/docs/guides/your-data#zero-data-retention, read
+  2026-10-30). **Deployment condition:** if GPT Image 2.5 passes validation, the owner decides
+  between ZDR and the 30-day default before any user photo is sent to OpenAI, and the privacy
+  policy states whichever applies.
+
+## Fidelity definition and candidates (owner decisions, 2026-10-31)
+
+Supersedes the 2026-10-30 entry "Class B content change is not a severe regression" above. That
+entry stays as history; from 2026-10-31 a confirmed content change **is** a severe regression.
+
+- **Content change (severe regression).** A change of shape, geometry or layout of a recognisable
+  element, an added or removed object, or changed lettering. Brightening, denoising, sharpening,
+  a more legible face or more visible texture are **not** content changes by themselves. A
+  suspected change is recorded as a concrete crop with "original → result"; new sharpness or
+  clearer texture alone is not evidence of one. New detail is not automatically counted as
+  recovered information either.
+- **Stars.** Adding, moving or removing an unambiguously recognisable star is a content change.
+  The loss of the faintest points that cannot be told apart from noise is not automatically a
+  severe regression. Brightening a star already present in the original is not adding it: before a
+  point is called new, the original is checked with a brightened preview at a comparable scale.
+  Only concrete, confirmed changes count, not differences of single bright pixels.
+- **Lettering.** A severe regression when the result changes recognisable letters, digits or the
+  essential stroke layout against the original. Sharper edges and better legibility are not a
+  content change. When the original cannot verify the reconstructed letters, the text is marked
+  **"unverified reconstruction"**: not automatically a severe regression, but its legibility is
+  not grounds for a clear win. Crops are checked, including with a brightened original, and text
+  is never confirmed because it looks plausible or forms a sensible word.
+- **The existing GPT Image 2.5 outputs** (S17-04, S17-07) did not change shapes in this sense, in
+  the owner's judgement. The spread-out flag on S17-04 is **Nano Banana's** output, not GPT's; a
+  second-opinion review (GPT-6.1, 2026-10-31, not blind: file names carried model names) and the
+  agent's prompt to Codex attributed flag changes to GPT, which is wrong.
+- **Candidates.** (1) GPT Image 2.5 as a direct edit. (2) NAFNet denoising followed by a
+  deterministic exposure step. Bread is out, with no further tuning. Class C stays excluded. SCI,
+  control-light and Nano Banana are not candidates. A tone-only transfer from GPT onto the original
+  is a fallback, used only if fidelity problems are documented.
+- **NAFNet arms, in order.** (a) NAFNet + Local's gamma, with the Auto value computed from the
+  original exactly as for Local and no Gaussian blur. (b) Only if exposure needs improving: one
+  deterministic curve that protects highlights and limits lifting a dark sky. (c) The same new
+  curve without NAFNet, with Local's existing denoising, to separate the contribution of exposure,
+  NAFNet and both. Control arms get identical input preparation and resolution. The current Local
+  stays the unchanged reference. Curve parameters are chosen on tuning photos only, and one
+  automatic process is frozen before validation.
+- **GPT sampling in validation.** For each validation photo, the first technically valid result is
+  rated: the file decodes and meets the frozen format and size requirements. Poor quality, a
+  content change or unfavourable exposure do not allow regenerating; such a result is rated and
+  may be a loss or a severe regression. Retries are allowed only for technical errors, up to a
+  limit fixed in advance. Every attempt is logged; a persistent error is reported, not dropped.
+  Before validation, three independent calls each on S17-03, S17-04 and S17-07 are rated, all of
+  them, without picking the best. Repeated fidelity violations or a wide spread in quality block
+  that configuration from validation.
+
+Plan: `plan.md` and `plan-brief.md` in this folder.
+
+## Plan-review triage (2026-10-31)
+
+The owner requested all recommended fixes from the independent plan review (F1–F10).
+The plan and brief now cover positive-consent Phase 7 access across the harness; complete
+manifest/attempt/rating evidence; a full selected-config GPT core before extension; cumulative
+phase budgets with numeric amendments; a new NAFNet S17-04; common sRGB app baselines and exact
+browser Auto records; independent-gain reasons for unverified lettering; valid STOP outcomes and
+closure on every terminal branch; and meaningful hash/fixture/scope assertions.
+
+This records acceptance of the documentation corrections only. No paid phase, increased cap or
+validation-photo access has been approved by this triage. No experiment steps or Manual Progress
+rows are marked complete. Review findings were returned in the conversation, not saved as a
+review file. The new gate baselines will use prepared common sRGB files; the historical source-file
+Local downloads and spike results remain diagnostic evidence, with their existing records intact.

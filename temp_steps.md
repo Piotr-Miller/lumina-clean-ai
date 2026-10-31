@@ -21,7 +21,8 @@ zero ciężkich regresji. Samo zakończenie porównania nie wystarcza. Szczegó�
      wydane 2026-09-08, stawki za tokeny w cenniku; brak liczby tokenów zdjęcia wejściowego przy edycji, zob.
      `cloud-model-comparison/research.md`, sekcja B; edycja obrazów w Gemini; Flux Kontext) — ryzyko: przerysowanie
      treści (napisy, twarze);
-   - C. komercyjne API do zdjęć (auto-ton/odszumianie od firm fotograficznych);
+   - ~~C. komercyjne API do zdjęć (auto-ton/odszumianie od firm fotograficznych);~~ **odrzucone 2026-10-30:**
+     to nasza konkurencja, nie dostawca (`change.md` § Owner decisions after the frame);
    - D. model wizyjny jako „Auto”: dobiera parametry dla deterministycznego potoku (odpowiedź na brak reguły Auto w S-17).
    - **Sito** przed płatnymi uruchomieniami: API produkcyjne, rozdzielczość wyjścia ≥ 1536 px, cena za zdjęcie,
      **przechowywanie/trenowanie na zdjęciach użytkowników**, komercyjna licencja na wynik, opóźnienie.
@@ -41,10 +42,11 @@ zero ciężkich regresji. Samo zakończenie porównania nie wystarcza. Szczegó�
      **Ja:** dodaję kolumnę Bread do `compare.html`. **Ty:** oceniasz Bread vs Local obok siebie.
    - ⏳ **Ja:** porównanie profili kolorów (ICC) na wynikach Bread dla S17-03, S17-07, S17-21 skryptem
      `scripts/s19/icc-gap.py` (średnie V/S przy dekodowaniu naiwnym vs ICC→sRGB).
-4. **Ty:** decyzje — zgoda na płatną część empiryczną spike'a (≈ $1.1); czy zdjęcia użytkowników mogą trafiać
-   do OpenAI/Google; budżet tuningu (limit w $); zatwierdzenie nowej kategorii ciężkiej regresji
-   „zmieniona/zmyślona treść” w progu jakości **przed** tuningiem.
-5. **Ja:** `/rune-plan cloud-model-comparison` (+ przepięcie `scripts/s17/*` na v2), potem plan review.
+4. ~~**Ty:** decyzje — zgoda na płatną część empiryczną spike'a; kategoria „zmieniona treść”.~~ **Zrobione:**
+   spike wykonany 2026-10-30 (≈ $0.56); definicja wierności i kandydaci (GPT Image 2.5, NAFNet + ekspozycja)
+   ustalone 2026-10-31 → `change.md` § Fidelity definition and candidates. ZDR odłożone do wdrożenia.
+5. **Ja:** `/rune-plan cloud-model-comparison` — **plan gotowy 2026-10-31** (`plan.md`, `plan-brief.md`);
+   następnie plan review. Budżety etapów wymagają osobnej zgody przed każdym płatnym etapem.
 6. **Ja:** tuning → finalista → holdout (12 zdjęć, finalista vs Local, ocena na ślepo).
 
 Zasady:
