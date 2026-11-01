@@ -3,11 +3,13 @@ change_id: cloud-model-comparison
 title: Compare Cloud AI model candidates on the s17-v2 benchmark
 status: implementing
 created: 2026-09-28
-updated: 2026-10-31
+updated: 2026-11-01
 archived_at: null
 ---
 
 ## Notes
+
+2026-11-01: Phase 2 merged as #332 by rebase; mapped with `git range-diff 03f2baa..506199b e734e98~2..e734e98` (both `=`): 5b2c168 → c2e63ff (2.1 suffix), 506199b → e734e98. Recorded 2.2 and 2.3 accepted at e734e9899fc021a89f8a7e8a5ba30d1ecd1dec85 on the owner's confirmation ("potwierdzam"; ratings are the owner's, stop rule reviewed), quoted in `evaluations/phase2-existing.md`.
 
 2026-11-01: owner decision — Phase 2's S17-04 NAFNet + gamma and control arms are built from an isolated historical index of the spike (`historical.py`, `evaluations/phase2-*`) through a new `local-arms.ts --attempts`, instead of being dropped or re-planned; plan.md Phase 2 item 2.
 

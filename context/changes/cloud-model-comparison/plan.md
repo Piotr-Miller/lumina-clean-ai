@@ -883,12 +883,12 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [x] 2.1 Tally of the export
+- [x] 2.1 Tally of the export — c2e63ff
 
 #### Manual
 
-- [ ] 2.2 The owner rates S17-04 (GPT, NAFNet+gamma, control) and S17-07 (GPT) against Local, blind
-- [ ] 2.3 Stop rule reviewed
+- [x] 2.2 The owner rates S17-04 (GPT, NAFNet+gamma, control) and S17-07 (GPT) against Local, blind — accepted at e734e9899fc021a89f8a7e8a5ba30d1ecd1dec85
+- [x] 2.3 Stop rule reviewed — accepted at e734e9899fc021a89f8a7e8a5ba30d1ecd1dec85
 
 ### Phase 3: First paid series on the core tuning photos
 
