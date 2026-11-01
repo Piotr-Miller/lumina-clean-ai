@@ -9,6 +9,8 @@ archived_at: null
 
 ## Notes
 
+2026-11-01: owner decision — Phase 2's S17-04 NAFNet + gamma and control arms are built from an isolated historical index of the spike (`historical.py`, `evaluations/phase2-*`) through a new `local-arms.ts --attempts`, instead of being dropped or re-planned; plan.md Phase 2 item 2.
+
 2026-10-31: re-pointed after the rebase-merge of #327 (merged 22:57Z, master head `af04e20`). Each
 commit mapped by `git range-diff 9d8e160..c924074 af04e20~21..af04e20` (all 21 `=`) and by equal
 `git patch-id --stable` across the pre-rebase, rebased and master copies:

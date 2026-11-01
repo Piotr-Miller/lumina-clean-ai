@@ -1,0 +1,20 @@
+{
+  "name": "nafnet-spike",
+  "historical": true,
+  "series_id": "phase2-historical",
+  "source": {
+    "script": "scripts/s19/feasibility.py",
+    "commit": "eb22c59"
+  },
+  "kind": "nafnet",
+  "vendor": "fal",
+  "endpoint": "https://fal.run/fal-ai/nafnet/denoise",
+  "model": "fal-ai/nafnet/denoise",
+  "seed": 1,
+  "input_note": "feasibility.py fit_copy: Lanczos to longer edge ≤ 3968, multiples of 16, JPEG q95 4:4:4, source ICC profile (Display P3 for S17-04) kept, no sRGB conversion",
+  "unknown_historical_fields": {
+    "reserved_usd": null,
+    "cost_bound_usd": null,
+    "retry_policy": null
+  }
+}

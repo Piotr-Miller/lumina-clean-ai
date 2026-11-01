@@ -498,6 +498,18 @@ The historical series manifest and attempt index point at the spike `meta.json` 
 their actual input/output hashes and known errors; unknown historical fields are labelled, not
 invented. This diagnostic dataset is isolated from the new shared gate ledger.
 
+#### 2. Historical arms (owner decision 2026-11-01)
+
+**File**: `scripts/s19/historical.py` (new), `scripts/s19/local-arms.ts`, `scripts/s19/viewer/phase2.json` (new), `scripts/s19/tests/test_historical.py` (new)
+
+**Intent**: Phase 1's tools, as fixed in review (F2), build NAFNet + gamma only from the gate
+ledger and the control only from the new prepared input, so neither S17-04 arm could be made from
+the spike. `historical.py` writes the evaluation index above from the spike `meta.json` files
+(config descriptors under `evaluations/phase2-configs/`, hashed as written), and
+`local-arms.ts --attempts <ledger>` renders both arms from that index's NAFNet slot: the spike
+output for NAFNet + gamma, the spike's own downscaled input for the control, each verified
+against the index, written under `arms/phase2-attempts/`. Gate modes are unchanged.
+
 ### Success Criteria:
 
 #### Automated Verification:
@@ -871,7 +883,7 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [ ] 2.1 Tally of the export
+- [x] 2.1 Tally of the export
 
 #### Manual
 

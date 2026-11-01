@@ -1,0 +1,21 @@
+{
+  "name": "gpt-spike",
+  "historical": true,
+  "series_id": "phase2-historical",
+  "source": {
+    "script": "scripts/s19/feasibility.py",
+    "commit": "eb22c59"
+  },
+  "prompt": "Enhance this low-light photo: reduce noise and correct the exposure while keeping it a natural night scene. Preserve every detail exactly as it is: all text and lettering, faces, geometry and the colours of the light sources. Do not add, remove or change any content.",
+  "kind": "gpt",
+  "vendor": "openai",
+  "endpoint": "https://api.openai.com/v1/images/edits",
+  "model": "gpt-image-2.5-sunburst",
+  "quality": "high",
+  "input_note": "the benchmark source file as stored: no EXIF transpose, no ICC conversion",
+  "unknown_historical_fields": {
+    "reserved_usd": null,
+    "cost_bound_usd": null,
+    "retry_policy": null
+  }
+}

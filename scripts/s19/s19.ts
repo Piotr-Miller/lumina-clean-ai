@@ -112,7 +112,7 @@ export function parseCommon(
     flags: new Set(),
     opts: new Map(),
   };
-  const valued = new Set(["--access", "--config", "--port", "--source", "--nafnet-config"]);
+  const valued = new Set(["--access", "--config", "--port", "--source", "--nafnet-config", "--attempts"]);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (valued.has(a)) {

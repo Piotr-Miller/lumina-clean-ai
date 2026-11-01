@@ -1,0 +1,72 @@
+{
+  "gate": "diagnostic",
+  "series_id": "phase2-historical",
+  "split": "tuning",
+  "verdicts": {
+    "e051a93b7b9a95ade76b5a2a53a38d833eb8fa14a8c1d691723008fb5739aaad": {
+      "name": "gpt-spike",
+      "kind": "gpt",
+      "slot_status": {
+        "ok": 2
+      },
+      "rows": [
+        {
+          "photo": "S17-04",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "A odzyskuje chmury, trawnik i czerwone krzewy, zachowując architekturę — to niezależna poprawa, nie rekonstrukcja napisów."
+        },
+        {
+          "photo": "S17-07",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "B dużo skuteczniej odzyskuje wygląd twarzy, ubrań, cegieł i witryny — przewaga jest niezależna od poprawionej czytelności neonowych napisów."
+        }
+      ],
+      "verdict": "DIAGNOSTIC"
+    },
+    "65cad4faf5ed4894d8e5ac30780808a7ac5567c27538aa02ecc6fc8f1ddfa289": {
+      "name": "nafnet-spike",
+      "kind": "nafnet",
+      "slot_status": {
+        "ok": 1
+      },
+      "rows": [
+        {
+          "photo": "S17-04",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "reference-slight"
+        },
+        {
+          "photo": "S17-04",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "control",
+          "category": "tie",
+          "reason": "reference-slight"
+        }
+      ],
+      "verdict": "DIAGNOSTIC"
+    }
+  },
+  "inputs": {
+    "export_sha256": "0ef844d56e1faa30951ffd29c56f514478ab0672f434cee180a136c517ad569a",
+    "series_sha256": "e92cf2f1cc71650fd9a5bc24b2f3ad4f29e2ecd211663405b68738266ac75a22",
+    "attempts": "context/changes/cloud-model-comparison/evaluations/phase2-attempts.jsonl"
+  }
+}
