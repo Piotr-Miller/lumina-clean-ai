@@ -1,0 +1,85 @@
+{
+  "series_id": "phase2-historical",
+  "split": "tuning",
+  "title": "Phase 2: existing spike outputs vs historical Local (diagnostic, not a gate)",
+  "photos": [
+    {
+      "id": "S17-04",
+      "original": "test-photos/licensed/04-phone-whitehouse-iphone13pro.jpg",
+      "arms": [
+        {
+          "arm_id": "gpt-spike",
+          "label": "GPT Image 2.5 (spike 2026-10-30, unprepared source input)",
+          "path": "test-photos/private/s19-spike/B-openai-sunburst-S17-04/output.png",
+          "candidate": {
+            "config_sha256": "e051a93b7b9a95ade76b5a2a53a38d833eb8fa14a8c1d691723008fb5739aaad",
+            "slot": 1,
+            "input_sha256": "c0022a812c6a96c9ffa443a1f91b76bc46b5e82c058f79f09cf02d0dbd322f4d",
+            "source": "s19-spike B-openai-sunburst-S17-04"
+          }
+        },
+        {
+          "arm_id": "nafnet-gamma",
+          "label": "NAFNet (spike) + Local gamma",
+          "path": "test-photos/private/s19/arms/phase2-attempts/nafnet-gamma/S17-04.png",
+          "candidate": {
+            "config_sha256": "65cad4faf5ed4894d8e5ac30780808a7ac5567c27538aa02ecc6fc8f1ddfa289",
+            "slot": 1,
+            "input_sha256": "6c999cb1bd4d00f2ce8389caa86497e546706c29366ae9eb0ca1a48f0c600dea",
+            "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+            "source": "s19-spike A-fal-nafnet-denoise-S17-04-max3968",
+            "derived": {
+              "record": "test-photos/private/s19/arms/phase2-attempts/nafnet-gamma/S17-04.json"
+            }
+          }
+        },
+        {
+          "arm_id": "control",
+          "label": "Control: spike NAFNet input + Local gamma, no denoise",
+          "kind": "control",
+          "path": "test-photos/private/s19/arms/phase2-attempts/control/S17-04.png",
+          "reference": {
+            "input_sha256": "6c999cb1bd4d00f2ce8389caa86497e546706c29366ae9eb0ca1a48f0c600dea",
+            "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+            "record": "test-photos/private/s19/arms/phase2-attempts/control/S17-04.json"
+          }
+        },
+        {
+          "arm_id": "local-historical",
+          "label": "Local (2026-10-29 app download, source-file input)",
+          "kind": "local",
+          "path": "context/changes/cloud-model-comparison/references/luminaclean-04-phone-whitehouse-iphone13pro.jpg"
+        }
+      ],
+      "pairs": [
+        ["gpt-spike", "local-historical"],
+        ["nafnet-gamma", "local-historical"],
+        ["nafnet-gamma", "control"]
+      ]
+    },
+    {
+      "id": "S17-07",
+      "original": "test-photos/licensed/07-night-portrait.jpg",
+      "arms": [
+        {
+          "arm_id": "gpt-spike",
+          "label": "GPT Image 2.5 (spike 2026-10-30, unprepared source input)",
+          "path": "test-photos/private/s19-spike/B-openai-sunburst-S17-07/output.png",
+          "candidate": {
+            "config_sha256": "e051a93b7b9a95ade76b5a2a53a38d833eb8fa14a8c1d691723008fb5739aaad",
+            "slot": 1,
+            "input_sha256": "66ae1afaa3af1cb9f5c78824751001c142237f2324ad822334996a4494cdb005",
+            "source": "s19-spike B-openai-sunburst-S17-07"
+          }
+        },
+        {
+          "arm_id": "local-historical",
+          "label": "Local (2026-10-29 app download, source-file input)",
+          "kind": "local",
+          "path": "context/changes/cloud-model-comparison/references/luminaclean-07-night-portrait.jpg"
+        }
+      ],
+      "pairs": [["gpt-spike", "local-historical"]]
+    }
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "viewer": "blind-files",
+  "version": 1,
+  "series_id": "phase2-historical",
+  "split": "tuning",
+  "manifest_sha256": "74eb611e2b1e6fcb57f2fbe17a3b4d641be431b9cce97db81fc3a626590dacf8",
+  "release": null,
+  "rated_on": "2026-11-01",
+  "rating_method": "Owner's verdicts pasted on 2026-11-01, made on blind file copies in test-photos/private/s19/phase2-blind/ (oryginal/A/B per pair: PNG, sRGB, no metadata, each pair at the smaller arm's size, A/B drawn with secrets.randbelow), translated to candidate/reference with the sealed key (sha256 aca01c6a003c29d5c9fa2e742b1bf2ba88937946812d72ef0ab55d41bf380c09). Hashes are those of the rated arms' source files from the viewer manifest phase2.js. Blinding note: pairs 2 and 3 share the NAFNet arm, so B was byte-identical in both; the rater noticed this (not which arm it was).",
+  "ratings": [
+    {
+      "rating_id": "S17-04:gpt-spike:local-historical",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "gpt-spike",
+        "config_sha256": "e051a93b7b9a95ade76b5a2a53a38d833eb8fa14a8c1d691723008fb5739aaad",
+        "slot": 1,
+        "input_sha256": "c0022a812c6a96c9ffa443a1f91b76bc46b5e82c058f79f09cf02d0dbd322f4d",
+        "source": "s19-spike B-openai-sunburst-S17-04",
+        "output_sha256": "e9f93edc85f377315b78b5e4d2acc15e99737e4fb27017930128a10b8364b4dd"
+      },
+      "reference": {
+        "arm_id": "local-historical",
+        "kind": "local",
+        "sha256": "d6bcf8d29717379379c86bc54afafd7e2e40c5b99375c2b8ce4e3354650f32a7"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "pair_position": 1,
+        "pairs": 3,
+        "blind_file_pair": "para-1-S17-04"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": "independent_gain",
+      "reason": "A odzyskuje chmury, trawnik i czerwone krzewy, zachowując architekturę — to niezależna poprawa, nie rekonstrukcja napisów."
+    },
+    {
+      "rating_id": "S17-04:nafnet-gamma:local-historical",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "nafnet-gamma",
+        "config_sha256": "65cad4faf5ed4894d8e5ac30780808a7ac5567c27538aa02ecc6fc8f1ddfa289",
+        "slot": 1,
+        "input_sha256": "6c999cb1bd4d00f2ce8389caa86497e546706c29366ae9eb0ca1a48f0c600dea",
+        "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "source": "s19-spike A-fal-nafnet-denoise-S17-04-max3968",
+        "derived": {
+          "arm": "nafnet-gamma",
+          "record": "test-photos/private/s19/arms/phase2-attempts/nafnet-gamma/S17-04.json",
+          "record_sha256": "b66fe36e5c851492866c5a38057119e40178bd57800d9c64fe37196c0dd22c78",
+          "source_output_sha256": "2737d6d7d7869b2b8d0638016598b3f9a85b2c8fbd37a79073c225bb002ef2a7",
+          "source_config_sha256": "65cad4faf5ed4894d8e5ac30780808a7ac5567c27538aa02ecc6fc8f1ddfa289"
+        },
+        "output_sha256": "eff864759dd8cc44bf99ef72ff068b52854c4477208d01a7cc6a2c870ec15c6f"
+      },
+      "reference": {
+        "arm_id": "local-historical",
+        "kind": "local",
+        "sha256": "d6bcf8d29717379379c86bc54afafd7e2e40c5b99375c2b8ce4e3354650f32a7"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 2,
+        "pairs": 3,
+        "blind_file_pair": "para-2-S17-04"
+      },
+      "preference": "reference-slight",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "A zachowuje bardziej neutralne ciemne niebo; B wprowadza zielonkawy zafarb. Detale budynku są porównywalne."
+    },
+    {
+      "rating_id": "S17-04:nafnet-gamma:control",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "nafnet-gamma",
+        "config_sha256": "65cad4faf5ed4894d8e5ac30780808a7ac5567c27538aa02ecc6fc8f1ddfa289",
+        "slot": 1,
+        "input_sha256": "6c999cb1bd4d00f2ce8389caa86497e546706c29366ae9eb0ca1a48f0c600dea",
+        "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "source": "s19-spike A-fal-nafnet-denoise-S17-04-max3968",
+        "derived": {
+          "arm": "nafnet-gamma",
+          "record": "test-photos/private/s19/arms/phase2-attempts/nafnet-gamma/S17-04.json",
+          "record_sha256": "b66fe36e5c851492866c5a38057119e40178bd57800d9c64fe37196c0dd22c78",
+          "source_output_sha256": "2737d6d7d7869b2b8d0638016598b3f9a85b2c8fbd37a79073c225bb002ef2a7",
+          "source_config_sha256": "65cad4faf5ed4894d8e5ac30780808a7ac5567c27538aa02ecc6fc8f1ddfa289"
+        },
+        "output_sha256": "eff864759dd8cc44bf99ef72ff068b52854c4477208d01a7cc6a2c870ec15c6f"
+      },
+      "reference": {
+        "arm_id": "control",
+        "kind": "control",
+        "sha256": "6076f70577ce9f55663897c412f8a205ab0008b72351f62267b0f7a86a4033d5",
+        "input_sha256": "6c999cb1bd4d00f2ce8389caa86497e546706c29366ae9eb0ca1a48f0c600dea",
+        "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "record": "test-photos/private/s19/arms/phase2-attempts/control/S17-04.json"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 3,
+        "pairs": 3,
+        "blind_file_pair": "para-3-S17-04"
+      },
+      "preference": "reference-slight",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Praktycznie ten sam rezultat co w parze 2; A jest minimalnie bardziej naturalne kolorystycznie."
+    },
+    {
+      "rating_id": "S17-07:gpt-spike:local-historical",
+      "photo": "S17-07",
+      "candidate": {
+        "arm_id": "gpt-spike",
+        "config_sha256": "e051a93b7b9a95ade76b5a2a53a38d833eb8fa14a8c1d691723008fb5739aaad",
+        "slot": 1,
+        "input_sha256": "66ae1afaa3af1cb9f5c78824751001c142237f2324ad822334996a4494cdb005",
+        "source": "s19-spike B-openai-sunburst-S17-07",
+        "output_sha256": "2e81bc47d3bfb096618a7aea83f73571f61b1378b207137f7b214383a8c19f39"
+      },
+      "reference": {
+        "arm_id": "local-historical",
+        "kind": "local",
+        "sha256": "cea044e6ad05965cd76a483bc8df8902d3f769b28e6b735cf5ccc53c84c483cc"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 1,
+        "pairs": 1,
+        "blind_file_pair": "para-4-S17-07"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": true,
+      "clear_reason_type": "independent_gain",
+      "reason": "B dużo skuteczniej odzyskuje wygląd twarzy, ubrań, cegieł i witryny — przewaga jest niezależna od poprawionej czytelności neonowych napisów."
+    }
+  ],
+  "failed_slots": []
+}

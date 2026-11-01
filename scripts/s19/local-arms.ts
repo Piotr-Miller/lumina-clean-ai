@@ -4,6 +4,7 @@
  * re-implemented.
  *
  *   npx tsx scripts/s19/local-arms.ts <arm> <ids…> | --all  [--compare-local] [--source <png>]
+ *       [--attempts <ledger.jsonl> --nafnet-config <config.json>]
  *
  * Arms (output: test-photos/private/s19/arms/<arm>/<id>.png plus <id>.json with parameters):
  *   local-equiv   common input → Gaussian blur σ = Auto blur px → Local gamma. An approximation
@@ -16,6 +17,13 @@
  *                 the rated file to the slot. --source (one id only, dimensions equal to the
  *                 NAFNet input) is recorded as a `file` source and cannot be rated in a gate.
  *   nafnet-curve, blur-curve  Phase 4; refused until that phase defines the curve.
+ *
+ * --attempts (control and nafnet-gamma, tuning only) reads the NAFNet slot from another ledger:
+ * Phase 2's historical index (`evaluations/phase2-attempts.jsonl`, written by historical.py),
+ * whose reserve rows name the file the spike actually sent (`input_path`). Both arms then start
+ * from that slot's input, verified against the ledger's hash, instead of the prepared NAFNet
+ * input, and write under arms/<ledger name>/<arm>/ so a gate arm is never overwritten. The record
+ * names the ledger; tally's gate modes still accept only the gate ledger's own outputs.
  *
  * Before rendering, every arm reads the full-precision Auto record for the photo's COMMON input
  * (`local/<id>.auto.json` from baseline.ts), checks its input hash against the prepared file and
@@ -30,7 +38,7 @@
  * measured); 1 refused or a check failed; 2 usage.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join, relative } from "node:path";
 
 import sharp from "sharp";
 
@@ -38,6 +46,7 @@ import { recommendParams } from "../../src/lib/engines/auto-params";
 import { buildGammaLut } from "../../src/lib/engines/image-helpers";
 import {
   PRIVATE,
+  REPO,
   Refused,
   guard,
   guardPaths,
@@ -123,6 +132,7 @@ interface LedgerRow {
   config_sha256?: string;
   config_name?: string;
   input_sha256?: string;
+  input_path?: string;
   photo?: string;
   slot?: number;
   ordinal?: number;
@@ -136,36 +146,67 @@ interface Source {
   output_sha256: string;
   config_sha256?: string;
   attempt_id?: string;
+  ledger?: string;
 }
 
-/** The first valid slot-1 result of exactly this NAFNet config (by hash, never by name) for this
- * input, with its file verified against the hash the ledger recorded. */
-function nafnetOutput(id: string, inputSha: string, configSha: string): Source {
-  const path = join(PRIVATE, "attempts.jsonl");
-  if (!existsSync(path)) throw new Refused(`${id}: no attempts ledger yet; run NAFNet (Phase 3) or pass --source`);
+/** The gate ledger every paid runner writes; anything else is a historical index. */
+const GATE_LEDGER = join(PRIVATE, "attempts.jsonl");
+
+interface NafnetSlot {
+  source: Source;
+  input: { path: string; sha256: string };
+}
+
+/** The first valid slot-1 result of exactly this NAFNet config (by hash, never by name), with its
+ * file verified against the hash the ledger recorded. In the gate ledger the slot must be for the
+ * prepared NAFNet input (`gateInput`); a historical ledger names its input file, which is verified
+ * against the recorded hash and becomes the arm's input. */
+function nafnetSlot(
+  id: string,
+  configSha: string,
+  path: string,
+  gateInput?: { path: string; sha256: string },
+): NafnetSlot {
+  if (!existsSync(path))
+    throw new Refused(`${id}: no attempts ledger at ${path}; run NAFNet (Phase 3) or pass --source`);
   const rows = readFileSync(path, "utf8")
     .split("\n")
     .filter((l) => l.trim())
     .map((l) => JSON.parse(l) as LedgerRow);
   const reserves = rows
     .filter((r) => r.event === "reserve" && r.config_sha256 === configSha && r.photo === id && r.slot === 1)
-    .filter((r) => r.input_sha256 === inputSha)
+    .filter((r) => !gateInput || r.input_sha256 === gateInput.sha256)
     .sort((a, b) => (a.ordinal ?? 0) - (b.ordinal ?? 0));
   const results = new Map(rows.filter((r) => r.event === "result").map((r) => [r.attempt_id, r]));
-  const ok = reserves.map((r) => results.get(r.attempt_id)).find((r) => r?.status === "ok");
-  if (!ok?.output_path || !ok.output_sha256)
+  const reserve = reserves.find((r) => results.get(r.attempt_id)?.status === "ok");
+  const ok = reserve && results.get(reserve.attempt_id);
+  if (!reserve || !ok?.output_path || !ok.output_sha256)
     throw new Refused(
-      `${id}: no valid slot-1 result of NAFNet config ${configSha.slice(0, 12)}… for input ${inputSha.slice(0, 12)}…`,
+      `${id}: no valid slot-1 result of NAFNet config ${configSha.slice(0, 12)}… in ${path}` +
+        (gateInput ? ` for input ${gateInput.sha256.slice(0, 12)}…` : ""),
     );
   const file = repoPath(ok.output_path);
   if (!existsSync(file) || sha256File(file) !== ok.output_sha256)
     throw new Refused(`${id}: ${ok.output_path} is missing or no longer the output the ledger recorded`);
+  let input = gateInput;
+  if (!input) {
+    if (!reserve.input_path || !reserve.input_sha256)
+      throw new Refused(`${id}: ${path} does not name the slot's input file (input_path); not a historical index`);
+    const inputFile = repoPath(reserve.input_path);
+    if (!existsSync(inputFile) || sha256File(inputFile) !== reserve.input_sha256)
+      throw new Refused(`${id}: ${reserve.input_path} is missing or no longer the input the ledger recorded`);
+    input = { path: inputFile, sha256: reserve.input_sha256 };
+  }
   return {
-    kind: "ledger",
-    path: file,
-    output_sha256: ok.output_sha256,
-    config_sha256: configSha,
-    attempt_id: ok.attempt_id,
+    source: {
+      kind: "ledger",
+      path: file,
+      output_sha256: ok.output_sha256,
+      config_sha256: configSha,
+      attempt_id: ok.attempt_id,
+      ...(gateInput ? {} : { ledger: path }),
+    },
+    input,
   };
 }
 
@@ -175,6 +216,7 @@ async function render(
   validation: boolean,
   nafnetConfigSha: string,
   sourceFile?: string,
+  ledger: string = GATE_LEDGER,
 ): Promise<{ out: string; img: Rgb }> {
   if (arm === "nafnet-curve" || arm === "blur-curve")
     throw new Refused(`${arm} is defined in Phase 4 (only if exposure costs NAFNet its wins); no curve exists yet`);
@@ -183,25 +225,36 @@ async function render(
   let input: string;
   let source: Source | undefined;
   let sigma = 0;
+  const historical = ledger !== GATE_LEDGER;
+  const gateInput = { path: repoPath(side.nafnet.path), sha256: side.nafnet.sha256 };
+  let nafnetInput = gateInput;
   if (arm === "local-equiv") {
     input = repoPath(side.common.path);
     sigma = rec.local.blur;
   } else if (arm === "control") {
-    input = repoPath(side.nafnet.path);
-    if (sha256File(input) !== side.nafnet.sha256) throw new Refused(`${id}: NAFNet input differs from its sidecar`);
+    if (historical) nafnetInput = nafnetSlot(id, nafnetConfigSha, ledger).input;
+    else if (sha256File(gateInput.path) !== gateInput.sha256)
+      throw new Refused(`${id}: NAFNet input differs from its sidecar`);
+    input = nafnetInput.path;
   } else {
-    source = sourceFile
-      ? { kind: "file", path: sourceFile, output_sha256: sha256File(sourceFile) }
-      : nafnetOutput(id, side.nafnet.sha256, nafnetConfigSha);
+    if (sourceFile) source = { kind: "file", path: sourceFile, output_sha256: sha256File(sourceFile) };
+    else {
+      const slot = nafnetSlot(id, nafnetConfigSha, ledger, historical ? undefined : gateInput);
+      source = slot.source;
+      nafnetInput = slot.input;
+    }
     input = source.path;
   }
   let img = await decode(input);
-  if (arm === "nafnet-gamma" && (img.width !== side.nafnet.dimensions[0] || img.height !== side.nafnet.dimensions[1]))
-    throw new Refused(
-      `${id}: NAFNet output ${String(img.width)}×${String(img.height)} ≠ its input ${side.nafnet.dimensions.join("×")}`,
-    );
+  if (arm === "nafnet-gamma") {
+    const meta = await sharp(nafnetInput.path).metadata();
+    if (img.width !== meta.width || img.height !== meta.height)
+      throw new Refused(
+        `${id}: NAFNet output ${String(img.width)}×${String(img.height)} ≠ its input ${String(meta.width)}×${String(meta.height)}`,
+      );
+  }
   img = applyGamma(gaussian(img, sigma), rec.local.gamma);
-  const dir = join(PRIVATE, "arms", arm);
+  const dir = historical ? join(PRIVATE, "arms", basename(ledger, ".jsonl"), arm) : join(PRIVATE, "arms", arm);
   mkdirSync(dir, { recursive: true });
   const out = join(dir, `${id}.png`);
   await sharp(Buffer.from(img.data), { raw: { width: img.width, height: img.height, channels: 3 } })
@@ -217,7 +270,7 @@ async function render(
         input_sha256: sha256File(input),
         // nafnet-gamma only: the paid output this file was made from. `ledger` is the slot's
         // verified first valid result and may be rated in a gate; `file` (--source) may not.
-        source: source ? { ...source, path: undefined } : null,
+        source: source ? { ...source, path: undefined, ledger: source.ledger && relative(REPO, source.ledger) } : null,
         auto_record: { common_sha256: rec.common_sha256, session_id: rec.session_id, provenance: "recomputed" },
         gamma: rec.local.gamma,
         blur_sigma_px: sigma,
@@ -265,7 +318,9 @@ async function main(): Promise<number> {
     const args = parseCommon(process.argv.slice(2));
     const arm = args.rest.shift() as Arm | undefined;
     if (!arm || !ARMS.includes(arm)) {
-      console.error(`usage: local-arms.ts <${ARMS.join("|")}> <ids…>|--all [--compare-local] [--source <png>]`);
+      console.error(
+        `usage: local-arms.ts <${ARMS.join("|")}> <ids…>|--all [--compare-local] [--source <png>] [--attempts <jsonl>]`,
+      );
       return 2;
     }
     args.ids = args.rest;
@@ -276,6 +331,15 @@ async function main(): Promise<number> {
       throw new Refused("--source needs nafnet-gamma and one id");
     if (source) guardPaths([source], args.validation); // the id guard says nothing about this path
     const nafnetConfigSha = sha256File(repoPath(args.opts.get("--nafnet-config") ?? "scripts/s19/configs/nafnet.json"));
+    const attempts = args.opts.get("--attempts");
+    if (attempts) {
+      if (arm !== "control" && arm !== "nafnet-gamma") throw new Refused("--attempts needs control or nafnet-gamma");
+      if (source) throw new Refused("--attempts and --source name two different NAFNet sources");
+      if (args.validation)
+        throw new Refused("--attempts reads a historical tuning index; validation uses the gate ledger");
+      guardPaths([attempts], args.validation);
+    }
+    const ledger = attempts ? repoPath(attempts) : GATE_LEDGER;
     const compare = args.flags.has("--compare-local");
     if (compare && arm !== "local-equiv") throw new Refused("--compare-local measures the local-equiv arm only");
     let failed = 0;
@@ -287,6 +351,7 @@ async function main(): Promise<number> {
           args.validation,
           nafnetConfigSha,
           source ? repoPath(source) : undefined,
+          ledger,
         );
         const measured = compare ? `; vs real Local: ${await compareLocal(id, img, args.validation)}` : "";
         console.log(`✓ ${id}: ${out}${measured}`);
