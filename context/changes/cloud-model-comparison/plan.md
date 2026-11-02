@@ -658,9 +658,16 @@ photos, i.e. a black sky turned navy with clouds (S17-04), sharpened or reshaped
 - **Moderation retry (procedural change from Phase 3):** HTTP 400 `moderation_blocked` is retried
   at most once per slot with the identical input, prompt and parameters, within the two-attempt
   limit and the cap (`retry.retry_error_codes`). A second block, or a cap with no room for the
-  retry, fails the slot and the core gate STOPs. Every attempt is logged, and first-attempt blocks
-  are reported separately from final slot failures. A better gate completion cannot be attributed
-  to the prompt alone.
+  retry, fails the slot and the core gate STOPs. Every attempt is logged, and the runner reports
+  three counts: first-attempt blocks, blocks recovered by the retry, and final slot failures after
+  a block. A better gate completion cannot be attributed to the prompt alone.
+- **After a final slot failure (owner decision 2026-11-02):** the runner still sends the remaining
+  core slots, so their outputs can be rated as diagnostics (stability, fidelity), as in Phase 3.
+  The failed slot stays in the denominator, the core gate STOPs, and the 5 extension slots stay
+  refused. No further spending is implied: the extension needs the PASS report.
+- **Reading the result:** gate completion and image fidelity are judged separately. A PASS made
+  possible by the retry does not show that the sky, aurora or neon flags improved; that is judged
+  on original-versus-result crops in the ratings.
 - **Series:** `scripts/s19/series/phase5.json`, sha256 `7308f0ef77f8554566b8bf310e75d7189777e67b981d74ea3291b7d295d867e4`: 9 core slots (S17-03/04/07 × 3), then
   one tuning slot each on S17-01/02/05/06/21. The 5 extension slots require this config's PASS core
   report, pinned with `make-series.py phase5 --core-report` only after the core verdict; until

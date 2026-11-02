@@ -193,6 +193,16 @@ class BudgetTest(World):
         self.assertEqual(len({(r["input_sha256"], tuple(r["request_size"])) for r in reserves}), 1)
         self.assertEqual(self.committed(), 2.0, "the blocked attempt keeps its reservation")
 
+    def test_block_summary_separates_first_blocks_recoveries_and_final_failures(self):
+        cfg, series = self.moderation_config()
+        self.set_records(["S19-SPEND phase=3 cap_usd=9 decision=approved date=2026-11-01"])
+        self.run_main("T-01", fake=Fake("moderation", "ok"), config=cfg, series=series, cap="9")
+        self.run_main("T-02", fake=Fake("moderation", "moderation"), config=cfg, series=series, cap="9")
+        self.run_main("T-03", fake=Fake("ok"), config=cfg, series=series, cap="9")
+        self.assertEqual(runner.retried_error_summary(self.ledger(), sha(cfg), ["moderation_blocked"]),
+                         {"first_attempt_blocks": 2, "recovered_by_retry": 1, "final_slot_failures": 1},
+                         "three blocked attempts, but only two first-attempt blocks")
+
     def test_second_moderation_block_fails_the_slot(self):
         cfg, series = self.moderation_config()
         code, fake = self.run_main("T-02", fake=Fake("moderation", "moderation", "ok"), config=cfg, series=series)

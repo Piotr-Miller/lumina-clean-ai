@@ -438,6 +438,31 @@ def is_transient(config: dict, http_status: int, error) -> bool:
             or error_code(error) in config["retry"].get("retry_error_codes", []))
 
 
+def retried_error_summary(rows: list[dict], config_sha: str, codes: list[str]) -> dict:
+    """Per slot of this config: was its first attempt blocked with one of `codes`, did a later
+    attempt then succeed, or did the slot end as a technical failure. Second blocks are not
+    counted as first-attempt blocks."""
+    reserves = {r["attempt_id"]: r for r in rows if r.get("event") == "reserve" and r.get("config_sha256") == config_sha}
+    results = {r["attempt_id"]: r for r in rows if r.get("event") == "result" and r.get("attempt_id") in reserves}
+    terminal = {(r["photo"], r["slot"]) for r in rows
+                if r.get("event") == "slot_terminal" and r.get("config_sha256") == config_sha}
+    by_slot: dict[tuple, list[tuple[int, dict]]] = {}
+    for aid, res in results.items():
+        rv = reserves[aid]
+        by_slot.setdefault((rv["photo"], rv["slot"]), []).append((rv.get("ordinal", 0), res))
+    out = {"first_attempt_blocks": 0, "recovered_by_retry": 0, "final_slot_failures": 0}
+    for slot, attempts in by_slot.items():
+        attempts.sort(key=lambda a: a[0])
+        if error_code(attempts[0][1].get("error")) not in codes:
+            continue
+        out["first_attempt_blocks"] += 1
+        if any(r.get("status") == OK for _, r in attempts[1:]):
+            out["recovered_by_retry"] += 1
+        elif slot in terminal:
+            out["final_slot_failures"] += 1
+    return out
+
+
 def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: int, cap: float, sleep,
                 image: Path, meta: dict, key: tuple) -> str:
     size = tuple(spec["request_size"])
@@ -619,13 +644,12 @@ def main(argv: list[str] | None = None, sleep=time.sleep) -> int:
     committed, unknown = phase_committed(rows, args.phase)
     print(f"phase {args.phase} ledger: ${committed:.2f} committed, {unknown} without a known cost; "
           + ", ".join(f"{k} {v}" for k, v in outcome.items()))
-    retried = config["retry"].get("retry_error_codes", [])
-    if retried:
-        mine = {r["attempt_id"] for r in rows if r.get("event") == "reserve" and r.get("config_sha256") == config_sha}
-        hits = [r for r in rows if r.get("event") == "result" and r.get("attempt_id") in mine
-                and error_code(r.get("error")) in retried]
-        print(f"{config['name']}: {len(hits)} attempt(s) blocked with {', '.join(retried)} "
-              "(reported separately from final slot failures)")
+    codes = config["retry"].get("retry_error_codes", [])
+    if codes:
+        b = retried_error_summary(rows, config_sha, codes)
+        print(f"{config['name']} {'/'.join(codes)}: {b['first_attempt_blocks']} first-attempt block(s), "
+              f"{b['recovered_by_retry']} recovered by the retry, {b['final_slot_failures']} final slot "
+              f"failure(s) after a block")
     return 1 if "not_attempted_budget" in outcome.values() else 0
 
 
