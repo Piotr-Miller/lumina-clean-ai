@@ -646,6 +646,31 @@ This phase needs its own spending consent: $3 for the base branch, or a numeric 
 covering prior phase spend, all remaining bounded calls and the agreed retry allowance. If that
 approval is absent, stop before further spending, record the outcome and keep the holdout closed.
 
+**Phase 5 amendment: fresh restrained-prompt GPT config (owner decision 2026-11-02).** Phase 3 left
+no surviving GPT config (`gpt-std` STOP), so this is the "new prompt" branch, at the standard size
+the owner preferred in 3.7. Its tuning-only rationale: the Phase 3 fidelity flags on the tuning
+photos, i.e. a black sky turned navy with clouds (S17-04), sharpened or reshaped aurora bands
+(S17-03) and reconstructed side neon (S17-07).
+
+- **Config:** `scripts/s19/configs/phase5-gpt.json`, sha256 `9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea`. Same model, quality, size rule,
+  cost bound and input as `gpt-std`; new hash, so it inherits no slot, rating or report. Prompt:
+  "Enhance this low-light photo: reduce noise and correct the exposure while keeping it a natural night scene. Preserve every detail exactly as it is: all text and lettering, faces, geometry and the colours of the light sources. Do not add, remove or change any content. Keep a dark night sky dark: do not turn a black sky blue and do not add clouds, stars or aurora bands that are not clearly visible in the original. Do not sharpen or reshape aurora. Preserve the original shape, colour and glow of neon lights. Do not reconstruct missing or ambiguous neon strokes or lettering."
+- **Moderation retry (procedural change from Phase 3):** HTTP 400 `moderation_blocked` is retried
+  at most once per slot with the identical input, prompt and parameters, within the two-attempt
+  limit and the cap (`retry.retry_error_codes`). A second block, or a cap with no room for the
+  retry, fails the slot and the core gate STOPs. Every attempt is logged, and first-attempt blocks
+  are reported separately from final slot failures. A better gate completion cannot be attributed
+  to the prompt alone.
+- **Series:** `scripts/s19/series/phase5.json`, sha256 `7308f0ef77f8554566b8bf310e75d7189777e67b981d74ea3291b7d295d867e4`: 9 core slots (S17-03/04/07 × 3), then
+  one tuning slot each on S17-01/02/05/06/21. The 5 extension slots require this config's PASS core
+  report, pinned with `make-series.py phase5 --core-report` only after the core verdict; until
+  then, or after a STOP, the runner refuses them. No NAFNet arm (Phase 3 STOP, Phase 4 no gain).
+- **Numeric cap:** **C5 = $4** for Phase 5, which has no prior spend or reservations. The 14 slots
+  are bounded at $2.82, and the remaining $1.18 is shared retry headroom, not a guarantee that every
+  slot can retry. Revised standard-branch total: **$13 = $4 + $4 + $5**, on top of the $0.56 spike
+  spend. Paid execution needs the owner-authored `S19-SPEND phase=5 cap_usd=4` record; this
+  amendment does not create it.
+
 ### Changes Required:
 
 #### 1. Runs and rating
@@ -923,7 +948,7 @@ None: no production data or schema changes.
 
 #### Manual
 
-- [ ] 4.2 The owner rates NAFNet+curve, blur+curve and NAFNet+gamma against Local, blind
+- [x] 4.2 The owner rates NAFNet+curve, blur+curve and NAFNet+gamma against Local, blind — accepted at b3550508947a1a0ebdb7184e8a0fef2ac5f64a0a
 
 ### Phase 5: Extend surviving arms to all eight tuning photos
 

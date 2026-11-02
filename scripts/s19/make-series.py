@@ -9,8 +9,12 @@ frozen request size and the slot's cost bound. `run-candidate.py` refuses any sl
 here, and `tally.py` joins ratings and attempts against it. Fix a series before looking at
 its results; editing it afterwards changes its hash, which later gates check.
 
-Only the Phase 3 layout is defined now. Phase 5 and validation layouts are added before their
-runs (plan Phase 5, Phase 6). Exit status: 0 written; 1 refused; 2 usage.
+Layouts: phase3, and phase5 (owner decision 2026-11-02: a fresh restrained-prompt GPT config,
+9 core slots on S17-03/04/07, then one slot on each remaining tuning photo). The phase5 extension
+slots require the config's PASS core report; until `--core-report <phase5-core-report.json>` pins
+that report's hash, the runner refuses them, and a STOP report never satisfies the requirement.
+The validation layout is added before its run (plan Phase 6). Exit status: 0 written; 1 refused;
+2 usage.
 """
 
 from __future__ import annotations
@@ -44,10 +48,19 @@ LAYOUTS = {
             ("nafnet.json", "core", ["S17-03", "S17-04", "S17-07"], 1),
         ],
     },
+    "phase5": {
+        "phase": 5,
+        "split": "tuning",
+        "rows": [
+            ("phase5-gpt.json", "core", ["S17-03", "S17-04", "S17-07"], 3),
+            ("phase5-gpt.json", "tuning", ["S17-01", "S17-02", "S17-05", "S17-06", "S17-21"], 1),
+        ],
+        "core_report": "context/changes/cloud-model-comparison/evaluations/phase5-core-report.json",
+    },
 }
 
 
-def build(name: str) -> dict:
+def build(name: str, core_report: str | None = None) -> dict:
     layout = LAYOUTS[name]
     manifest = protocol.load_manifest()
     photos = sorted({p for _, _, ps, _ in layout["rows"] for p in ps})
@@ -57,8 +70,8 @@ def build(name: str) -> dict:
         path = CONFIGS / file
         config = json.loads(path.read_text())
         sha = protocol.sha256_file(path)
-        configs[sha] = {"path": str(path.relative_to(protocol.ROOT)), "name": config["name"], "kind": config["kind"],
-                        "role": role}
+        configs.setdefault(sha, {"path": str(path.relative_to(protocol.ROOT)), "name": config["name"],
+                                 "kind": config["kind"], "role": role})  # a config's role is its first row's
         for photo in ids:
             _, meta = runner.input_for(photo, config["input"])
             dims = tuple(meta["dimensions"])
@@ -68,7 +81,7 @@ def build(name: str) -> dict:
                               "photo": photo, "slot": slot, "role": role, "input": config["input"],
                               "input_sha256": meta["sha256"], "input_dimensions": list(dims),
                               "request_size": list(size), "cost_bound_usd": runner.cost_bound(config, size),
-                              "requires": []})
+                              "requires": ["core"] if role == "tuning" and layout.get("core_report") else []})
     return {
         "series_id": name,
         "phase": layout["phase"],
@@ -77,19 +90,37 @@ def build(name: str) -> dict:
         "fixed_on": _dt.date.today().isoformat(),
         "note": "Fixed before any call of this series. Probes are diagnostic; a gate counts each photo's slot 1.",
         "configs": configs,
-        "prerequisites": [],
+        "prerequisites": prerequisites(layout, configs, core_report),
         "slots": slots,
     }
+
+
+def prerequisites(layout: dict, configs: dict, core_report: str | None) -> list[dict]:
+    """The core-PASS requirement of an extension layout; its report hash stays null (refused by
+    the runner) until the owner's core verdict exists and is pinned with --core-report."""
+    if not layout.get("core_report"):
+        return []
+    core = [sha for sha, c in configs.items() if c["role"] == "core"]
+    report = layout["core_report"]
+    if core_report:
+        path = protocol.resolve(core_report)
+        if path.resolve() != protocol.resolve(report).resolve() or not path.exists():
+            raise protocol.Refused(f"--core-report must be the existing {report}")
+        sha = protocol.sha256_file(path)
+    else:
+        sha = None
+    return [{"id": "core", "stage": "core", "config_sha256": core[0], "report": report, "report_sha256": sha}]
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Write an S-19 series manifest")
     ap.add_argument("name", choices=sorted(LAYOUTS))
     ap.add_argument("--out")
+    ap.add_argument("--core-report", help="phase5: pin the PASS core report the extension requires")
     args = ap.parse_args(argv)
     out = protocol.resolve(args.out or f"scripts/s19/series/{args.name}.json")
     try:
-        series = build(args.name)
+        series = build(args.name, args.core_report)
     except protocol.Refused as e:
         print(f"refused: {e}", file=sys.stderr)
         return 1

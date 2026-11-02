@@ -9,6 +9,13 @@ archived_at: null
 
 ## Notes
 
+2026-11-02: owner decision — S-19 continues with route B: a fresh restrained-prompt GPT config for
+Phase 5 at the standard size (`configs/phase5-gpt.json`, `9a0f076c77fb…`), with one moderation retry
+per slot as a declared procedural change, numeric cap C5 = $4 and a revised total of $13; plan.md
+Phase 5 amendment. Accepted 4.2 at b3550508947a1a0ebdb7184e8a0fef2ac5f64a0a on the owner's blind
+Phase 4 ratings (`evaluations/phase4-curve.md`). No Phase 5 call until the owner's
+`S19-SPEND phase=5` record exists.
+
 2026-11-02: Phase 3 merged as #334 by rebase; `git range-diff` maps 89bb81c → d7ecbf1 (3.1–3.4 suffixes) and 55b1c85 → 0d0d25c, both `=`. Recorded 3.5, 3.6 and 3.7 accepted at 0d0d25c288f1d8ae591b24611ab90d47bfa4336e, the master commit holding the owner's decisions (`evaluations/phase3-core.md` § Owner decisions). 3.5 is accepted on the owner's confirmation that the ratings are theirs; the crop notes the rater referenced were not part of the pasted text, and the suspected aurora change is described in words only.
 
 2026-11-02: owner decisions on Phase 3 (details in `evaluations/phase3-core.md` § Owner decisions):
