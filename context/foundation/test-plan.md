@@ -188,7 +188,7 @@ relevant rollout phase ships; before that it reads "TBD — see §3 Phase <N>."
 - **Generation levers** (read both before writing a spec): `tests/e2e/RULES.md`
   (the anti-pattern rules + the **port-8787 single-fixture-server** rule) and
   `tests/e2e/seed.spec.ts` (the canonical shape). Drive new specs through the
-  `/10x-e2e` loop (PLAN → GENERATE → REVIEW → VERIFY).
+  `/rune-e2e` loop (PLAN → GENERATE → REVIEW → VERIFY).
 - **Locators** (hard rule, CLAUDE.md): `getByRole` / `getByLabel` / `getByText`
   first; `getByTestId` only when a11y attrs are ambiguous; never CSS/XPath.
   **Never `page.waitForTimeout()`** — wait on state (`toBeVisible`,
