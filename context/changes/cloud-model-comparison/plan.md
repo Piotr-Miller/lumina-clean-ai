@@ -904,16 +904,16 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [x] 3.1 (paid) GPT core series — 89bb81c
-- [x] 3.2 (paid) GPT size probe — 89bb81c
-- [x] 3.3 (paid) NAFNet core — 89bb81c
-- [x] 3.4 Tally and core gate — 89bb81c
+- [x] 3.1 (paid) GPT core series — d7ecbf1
+- [x] 3.2 (paid) GPT size probe — d7ecbf1
+- [x] 3.3 (paid) NAFNet core — d7ecbf1
+- [x] 3.4 Tally and core gate — d7ecbf1
 
 #### Manual
 
-- [ ] 3.5 The owner rates all outputs blind against Local, with content-change crops where suspected
-- [ ] 3.6 Core gate decision recorded
-- [ ] 3.7 The owner chooses the GPT output size to carry forward
+- [x] 3.5 The owner rates all outputs blind against Local, with content-change crops where suspected — accepted at 0d0d25c288f1d8ae591b24611ab90d47bfa4336e
+- [x] 3.6 Core gate decision recorded — accepted at 0d0d25c288f1d8ae591b24611ab90d47bfa4336e
+- [x] 3.7 The owner chooses the GPT output size to carry forward — accepted at 0d0d25c288f1d8ae591b24611ab90d47bfa4336e
 
 ### Phase 4: Deterministic exposure curve (only if needed)
 
