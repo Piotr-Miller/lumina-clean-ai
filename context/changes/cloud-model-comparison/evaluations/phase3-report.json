@@ -1,0 +1,221 @@
+{
+  "gate": "core",
+  "series_id": "phase3",
+  "split": "tuning",
+  "verdicts": {
+    "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456": {
+      "name": "gpt-std",
+      "kind": "gpt",
+      "slot_status": {
+        "ok": 8,
+        "technical_failure": 1
+      },
+      "rows": [
+        {
+          "photo": "S17-03",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: lepsza separacja zorzy, wyraźniejsze gwiazdy, brzeg i morze."
+        },
+        {
+          "photo": "S17-03",
+          "slot": 2,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: wyraźniejsza struktura zorzy, lepsza widoczność morza i brzegu."
+        },
+        {
+          "photo": "S17-03",
+          "slot": 3,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: znacznie lepsza separacja zorzy, wody i brzegu."
+        },
+        {
+          "photo": "S17-04",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: czytelniejsze otoczenie, krzewy i trawnik."
+        },
+        {
+          "photo": "S17-04",
+          "slot": 2,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: więcej czytelnych szczegółów otoczenia, budynku i nieba."
+        },
+        {
+          "photo": "S17-04",
+          "slot": 3,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: odzyskane trawnik, krzewy, otoczenie budynku i niebo."
+        },
+        {
+          "photo": "S17-07",
+          "slot": 1,
+          "role": "core",
+          "status": "technical_failure",
+          "attempts": 1,
+          "reference": null,
+          "category": null,
+          "reason": "last error was not transient"
+        },
+        {
+          "photo": "S17-07",
+          "slot": 2,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: twarze, odzież, ściany i bruk są dużo czytelniejsze. Nie tylko napisy."
+        },
+        {
+          "photo": "S17-07",
+          "slot": 3,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: twarze, ubrania, nawierzchnia i ciemna fasada są znacznie lepsze."
+        }
+      ],
+      "verdict": "STOP",
+      "reasons": ["incomplete core: S17-07/1 technical_failure"]
+    },
+    "2ab95f80b00da3d14a55f4a2d79f6880b900435291fccd4b1e4129de8627db3d": {
+      "name": "gpt-large",
+      "kind": "gpt",
+      "slot_status": {
+        "ok": 2
+      },
+      "rows": [
+        {
+          "photo": "S17-04",
+          "slot": 1,
+          "role": "probe",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: roślinność, trawnik, architektura i niebo."
+        },
+        {
+          "photo": "S17-07",
+          "slot": 1,
+          "role": "probe",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Niezależna poprawa: znacznie lepsze twarze, ubrania, faktura ścian i bruk."
+        }
+      ],
+      "verdict": "DIAGNOSTIC",
+      "reasons": ["probe-only config: no core slots in this series"]
+    },
+    "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4": {
+      "name": "nafnet",
+      "kind": "nafnet",
+      "slot_status": {
+        "ok": 3
+      },
+      "rows": [
+        {
+          "photo": "S17-03",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "control",
+          "category": "tie",
+          "reason": "tie"
+        },
+        {
+          "photo": "S17-03",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "reference-slight"
+        },
+        {
+          "photo": "S17-04",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "control",
+          "category": "tie",
+          "reason": "reference-slight"
+        },
+        {
+          "photo": "S17-04",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "reference-slight"
+        },
+        {
+          "photo": "S17-07",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "control",
+          "category": "tie",
+          "reason": "reference-slight"
+        },
+        {
+          "photo": "S17-07",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "reference-slight"
+        }
+      ],
+      "verdict": "STOP",
+      "reasons": ["NAFNet preferred over its control on 0 of 3, needs ≥ 2"],
+      "per_photo": {
+        "S17-03": ["tie"],
+        "S17-04": ["tie"],
+        "S17-07": ["tie"]
+      }
+    }
+  },
+  "inputs": {
+    "export_sha256": "889413ad0f15f361bf98a76a4f992179ced68425269a75260b24a7b14c671c7f",
+    "series_sha256": "78742a5894662676a0bfa7093354b9617d60121807d5ef6f55d0fd0185dcf3e8",
+    "attempts": "test-photos/private/s19/attempts.jsonl"
+  }
+}

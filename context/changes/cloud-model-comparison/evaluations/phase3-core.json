@@ -1,0 +1,617 @@
+{
+  "viewer": "blind-files",
+  "version": 1,
+  "series_id": "phase3",
+  "split": "tuning",
+  "manifest_sha256": "74eb611e2b1e6fcb57f2fbe17a3b4d641be431b9cce97db81fc3a626590dacf8",
+  "release": null,
+  "rated_on": "2026-11-02",
+  "rating_method": "Verdicts pasted into the Claude session on 2026-11-02 by the owner. The rater worked on the 16 blind pairs in test-photos/private/s19/phase3-blind/ (received as a ZIP; oryginal/A/B per pair, PNG sRGB without metadata, each pair at the smaller arm's size, pair order shuffled and A/B drawn with secrets), translated through the sealed key (sha256 394ada83cb178f8441055be494b5777045dc2ae3410d2c3f35ab0c1a6c79fca5). The rater states they did not open the key or compare files across pairs. Possible content changes (aurora bands, S17-03) are recorded as rater_flag and unverified_reconstruction, not as confirmed content_change, pending the owner's decision. Crop notes were not included in the pasted text. Blinding note: pairs of one photo share the same reference file at the same size.",
+  "ratings": [
+    {
+      "rating_id": "S17-07:gpt-large-1:local",
+      "photo": "S17-07",
+      "candidate": {
+        "arm_id": "gpt-large-1",
+        "config_sha256": "2ab95f80b00da3d14a55f4a2d79f6880b900435291fccd4b1e4129de8627db3d",
+        "slot": 1,
+        "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+        "output_sha256": "d2a546802b0921de52b9c5522b795e4384f6fd88c990ea2918b039f56d60ef38"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "257b80d0147705b2e50747261ba65d5ae7473604a53165c55997a3b2beef3ef4"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "pair_position": 4,
+        "pairs": 6,
+        "blind_file_pair": "para-01"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": true,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: znacznie lepsze twarze, ubrania, faktura ścian i bruk.",
+      "rater_flag": {
+        "kind": "unverified lettering",
+        "text": "nieweryfikowalne fragmenty bocznego neonu A"
+      }
+    },
+    {
+      "rating_id": "S17-03:nafnet-gamma:control",
+      "photo": "S17-03",
+      "candidate": {
+        "arm_id": "nafnet-gamma",
+        "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
+        "slot": 1,
+        "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "auto_common_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "derived": {
+          "arm": "nafnet-gamma",
+          "record": "test-photos/private/s19/arms/nafnet-gamma/S17-03.json",
+          "record_sha256": "c6941f224be5958264741c690c4cd5e18c99742cbaa363da8e2ebe6f85177c90",
+          "source_output_sha256": "ec3077895c469eae14d4e2bbe9ee86c2a0279ff254157563a96c78baeb274e40",
+          "source_config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4"
+        },
+        "output_sha256": "d6bfbd230c12cd2da6ecc89e43eb63131f86bca18550ec403a19b8dca3edc24d"
+      },
+      "reference": {
+        "arm_id": "control",
+        "kind": "control",
+        "sha256": "7d258fc68ec118f5780919b88cc6b3043e21bcaf25f1cb352ac74bccb783f60b",
+        "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "auto_common_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "record": "test-photos/private/s19/arms/control/S17-03.json"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "pair_position": 5,
+        "pairs": 5,
+        "blind_file_pair": "para-02"
+      },
+      "preference": "tie",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Minimalne różnice w wygładzeniu zorzy i gwiazd. Żadna wersja nie daje przekonującej przewagi."
+    },
+    {
+      "rating_id": "S17-04:gpt-std-3:local",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "gpt-std-3",
+        "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+        "slot": 3,
+        "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "output_sha256": "d98c8341ac3b9a047c6b15de69984c2e1017c32225c02167f5dd51eda0cb23d2"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "c58892c8182cd81ffa49dd7df29c39a33740d2bf169ad3895c15961403dec94a"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 3,
+        "pairs": 6,
+        "blind_file_pair": "para-03"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: odzyskane trawnik, krzewy, otoczenie budynku i niebo.",
+      "rater_flag": {
+        "kind": "fidelity note (sky reinterpretation)",
+        "text": "silna reinterpretacja nocnego nieba, z czarnego w granatowe z widocznymi chmurami"
+      }
+    },
+    {
+      "rating_id": "S17-07:gpt-std-2:local",
+      "photo": "S17-07",
+      "candidate": {
+        "arm_id": "gpt-std-2",
+        "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+        "slot": 2,
+        "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+        "output_sha256": "5fd038ac75e8988bd6543b2399d224b778ef9d6ba397f18d9049dd013bafa5a0"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "257b80d0147705b2e50747261ba65d5ae7473604a53165c55997a3b2beef3ef4"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 2,
+        "pairs": 6,
+        "blind_file_pair": "para-04"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": true,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: twarze, odzież, ściany i bruk są dużo czytelniejsze. Nie tylko napisy.",
+      "rater_flag": {
+        "kind": "unverified lettering",
+        "text": "nieweryfikowalne fragmenty bocznego neonu B"
+      }
+    },
+    {
+      "rating_id": "S17-03:nafnet-gamma:local",
+      "photo": "S17-03",
+      "candidate": {
+        "arm_id": "nafnet-gamma",
+        "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
+        "slot": 1,
+        "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "auto_common_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "derived": {
+          "arm": "nafnet-gamma",
+          "record": "test-photos/private/s19/arms/nafnet-gamma/S17-03.json",
+          "record_sha256": "c6941f224be5958264741c690c4cd5e18c99742cbaa363da8e2ebe6f85177c90",
+          "source_output_sha256": "ec3077895c469eae14d4e2bbe9ee86c2a0279ff254157563a96c78baeb274e40",
+          "source_config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4"
+        },
+        "output_sha256": "d6bfbd230c12cd2da6ecc89e43eb63131f86bca18550ec403a19b8dca3edc24d"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "773962d189ac95c28883e2e89af15209ff31498d80b4ac19ea3c2dbbe2531ba2"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 4,
+        "pairs": 5,
+        "blind_file_pair": "para-05"
+      },
+      "preference": "reference-slight",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Nieco bardziej naturalna struktura nieba i zachowanie drobnych gwiazd. B wygląda odrobinę bardziej miękko."
+    },
+    {
+      "rating_id": "S17-04:gpt-std-1:local",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "gpt-std-1",
+        "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+        "slot": 1,
+        "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "output_sha256": "b6b08e0963c147f9dd4042bca415057ee4260cfba1b47a5cacf50213c58cfcd1"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "c58892c8182cd81ffa49dd7df29c39a33740d2bf169ad3895c15961403dec94a"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "pair_position": 1,
+        "pairs": 6,
+        "blind_file_pair": "para-06"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: czytelniejsze otoczenie, krzewy i trawnik.",
+      "rater_flag": {
+        "kind": "fidelity note (sky reinterpretation)",
+        "text": "mocno zmieniony wygląd nieba, z czarnego w granatowe z chmurami"
+      }
+    },
+    {
+      "rating_id": "S17-03:gpt-std-3:local",
+      "photo": "S17-03",
+      "candidate": {
+        "arm_id": "gpt-std-3",
+        "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+        "slot": 3,
+        "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "output_sha256": "8d903bfa7aad8ce6a0bc3d3244401c7f404b497b66b6236fc1deeb11fa8370c3"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "773962d189ac95c28883e2e89af15209ff31498d80b4ac19ea3c2dbbe2531ba2"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "pair_position": 3,
+        "pairs": 5,
+        "blind_file_pair": "para-07"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": true,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: znacznie lepsza separacja zorzy, wody i brzegu.",
+      "rater_flag": {
+        "kind": "possible content change, not confirmed",
+        "text": "możliwa zmiana treści — nowe lub silnie zrekonstruowane pasma zorzy, których dokładnego przebiegu nie można potwierdzić w oryginale"
+      }
+    },
+    {
+      "rating_id": "S17-04:nafnet-gamma:control",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "nafnet-gamma",
+        "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
+        "slot": 1,
+        "input_sha256": "6eb1760e41af16b51948f2531f8c71f7d5d68c547f7c0fa944402c2b6dd6ed54",
+        "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "derived": {
+          "arm": "nafnet-gamma",
+          "record": "test-photos/private/s19/arms/nafnet-gamma/S17-04.json",
+          "record_sha256": "0d933aad0dd3f9aab3b657682a1daa2baff0cedfb0339c950f292be0398dcc10",
+          "source_output_sha256": "659d1cc36a63a8dba249c379b7a901eff3e7b1cb4dab08447dcd28b602206440",
+          "source_config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4"
+        },
+        "output_sha256": "302c8e96eb0bcc9ae676a351deb8ac5513be1c922a4691137c9bd352902e926c"
+      },
+      "reference": {
+        "arm_id": "control",
+        "kind": "control",
+        "sha256": "ea0a3aded2f32d84a2acdcfea3c8ca04e853ce3e3a7859e2f7d9c5218f42498f",
+        "input_sha256": "6eb1760e41af16b51948f2531f8c71f7d5d68c547f7c0fa944402c2b6dd6ed54",
+        "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "record": "test-photos/private/s19/arms/control/S17-04.json"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 6,
+        "pairs": 6,
+        "blind_file_pair": "para-08"
+      },
+      "preference": "reference-slight",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Bardziej neutralne czernie. B wprowadza zielonkawy zafarb na nocnym niebie bez istotnej poprawy detali."
+    },
+    {
+      "rating_id": "S17-04:gpt-large-1:local",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "gpt-large-1",
+        "config_sha256": "2ab95f80b00da3d14a55f4a2d79f6880b900435291fccd4b1e4129de8627db3d",
+        "slot": 1,
+        "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "output_sha256": "e8704e52341c830b6e138997bb6410da46dec834668491b4787a1a1496774c05"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "c58892c8182cd81ffa49dd7df29c39a33740d2bf169ad3895c15961403dec94a"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 4,
+        "pairs": 6,
+        "blind_file_pair": "para-09"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: roślinność, trawnik, architektura i niebo.",
+      "rater_flag": {
+        "kind": "fidelity note (sky reinterpretation)",
+        "text": "mocna reinterpretacja kolorystyki i widoczności chmur"
+      }
+    },
+    {
+      "rating_id": "S17-04:gpt-std-2:local",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "gpt-std-2",
+        "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+        "slot": 2,
+        "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "output_sha256": "cd2e75302f465b905da2693323fb71dd70da920bae298a422c1990aef15f87cf"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "c58892c8182cd81ffa49dd7df29c39a33740d2bf169ad3895c15961403dec94a"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 2,
+        "pairs": 6,
+        "blind_file_pair": "para-10"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: więcej czytelnych szczegółów otoczenia, budynku i nieba.",
+      "rater_flag": {
+        "kind": "fidelity note (sky reinterpretation)",
+        "text": "silna zmiana wyglądu nocnego nieba"
+      }
+    },
+    {
+      "rating_id": "S17-07:nafnet-gamma:control",
+      "photo": "S17-07",
+      "candidate": {
+        "arm_id": "nafnet-gamma",
+        "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
+        "slot": 1,
+        "input_sha256": "b574b2a1b72f81faf654de7661cac17ea425c2bef7cee1065deebf7ab66c1b96",
+        "auto_common_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+        "derived": {
+          "arm": "nafnet-gamma",
+          "record": "test-photos/private/s19/arms/nafnet-gamma/S17-07.json",
+          "record_sha256": "aea7cc7f91afaacbb86a11057a1406f85eb2b28358df58d8ac0987cbb51f6a9f",
+          "source_output_sha256": "c8cf36b0112f7c827c91f1e87628981ab087758b7a2badfff1b8ffec44cc8b41",
+          "source_config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4"
+        },
+        "output_sha256": "4b22ae224bb44e5aa4f9847196b01d818e620e13aa6bdba01e9fa855112f2375"
+      },
+      "reference": {
+        "arm_id": "control",
+        "kind": "control",
+        "sha256": "0e74d4f4ba423107a0143dee67c8528dccd4a987201e66512172c94ff9326093",
+        "input_sha256": "b574b2a1b72f81faf654de7661cac17ea425c2bef7cee1065deebf7ab66c1b96",
+        "auto_common_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+        "record": "test-photos/private/s19/arms/control/S17-07.json"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "pair_position": 6,
+        "pairs": 6,
+        "blind_file_pair": "para-11"
+      },
+      "preference": "reference-slight",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "A mocniej rozjaśnia, ale daje purpurowe przebarwienia i miejscowe rozmycie ciemnych obszarów. B wygląda naturalniej."
+    },
+    {
+      "rating_id": "S17-03:gpt-std-1:local",
+      "photo": "S17-03",
+      "candidate": {
+        "arm_id": "gpt-std-1",
+        "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+        "slot": 1,
+        "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "output_sha256": "b7fef0cdc65af97baf1700934d67d47424240a1e8491d2b0a59adc428b514f5e"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "773962d189ac95c28883e2e89af15209ff31498d80b4ac19ea3c2dbbe2531ba2"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 1,
+        "pairs": 5,
+        "blind_file_pair": "para-12"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": true,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: lepsza separacja zorzy, wyraźniejsze gwiazdy, brzeg i morze.",
+      "rater_flag": {
+        "kind": "possible content change, not confirmed",
+        "text": "możliwa zmiana treści — rekonstrukcja kształtu pasm zorzy"
+      }
+    },
+    {
+      "rating_id": "S17-07:gpt-std-3:local",
+      "photo": "S17-07",
+      "candidate": {
+        "arm_id": "gpt-std-3",
+        "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+        "slot": 3,
+        "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+        "output_sha256": "4d6b5dce4c458a293c1ead02623eb10b5e057a1355b76cbd6678fdb7690a2b06"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "257b80d0147705b2e50747261ba65d5ae7473604a53165c55997a3b2beef3ef4"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 3,
+        "pairs": 6,
+        "blind_file_pair": "para-13"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": true,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: twarze, ubrania, nawierzchnia i ciemna fasada są znacznie lepsze.",
+      "rater_flag": {
+        "kind": "unverified lettering",
+        "text": "nieweryfikowalne fragmenty bocznego neonu B"
+      }
+    },
+    {
+      "rating_id": "S17-03:gpt-std-2:local",
+      "photo": "S17-03",
+      "candidate": {
+        "arm_id": "gpt-std-2",
+        "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+        "slot": 2,
+        "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "output_sha256": "1dc066398486a7a78f04d79c76cfe398fff1cff07a006d9664492eb1198c2750"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "773962d189ac95c28883e2e89af15209ff31498d80b4ac19ea3c2dbbe2531ba2"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "pair_position": 2,
+        "pairs": 5,
+        "blind_file_pair": "para-14"
+      },
+      "preference": "candidate-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": true,
+      "clear_reason_type": "independent_gain",
+      "reason": "Niezależna poprawa: wyraźniejsza struktura zorzy, lepsza widoczność morza i brzegu.",
+      "rater_flag": {
+        "kind": "possible content change, not confirmed",
+        "text": "możliwa zmiana treści — zmodyfikowany przebieg pasm zorzy"
+      }
+    },
+    {
+      "rating_id": "S17-04:nafnet-gamma:local",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "nafnet-gamma",
+        "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
+        "slot": 1,
+        "input_sha256": "6eb1760e41af16b51948f2531f8c71f7d5d68c547f7c0fa944402c2b6dd6ed54",
+        "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "derived": {
+          "arm": "nafnet-gamma",
+          "record": "test-photos/private/s19/arms/nafnet-gamma/S17-04.json",
+          "record_sha256": "0d933aad0dd3f9aab3b657682a1daa2baff0cedfb0339c950f292be0398dcc10",
+          "source_output_sha256": "659d1cc36a63a8dba249c379b7a901eff3e7b1cb4dab08447dcd28b602206440",
+          "source_config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4"
+        },
+        "output_sha256": "302c8e96eb0bcc9ae676a351deb8ac5513be1c922a4691137c9bd352902e926c"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "c58892c8182cd81ffa49dd7df29c39a33740d2bf169ad3895c15961403dec94a"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "pair_position": 5,
+        "pairs": 6,
+        "blind_file_pair": "para-15"
+      },
+      "preference": "reference-slight",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "B lepiej zachowuje neutralne czarne niebo. A wprowadza zielonkawy zafarb, bez istotnej korzyści."
+    },
+    {
+      "rating_id": "S17-07:nafnet-gamma:local",
+      "photo": "S17-07",
+      "candidate": {
+        "arm_id": "nafnet-gamma",
+        "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
+        "slot": 1,
+        "input_sha256": "b574b2a1b72f81faf654de7661cac17ea425c2bef7cee1065deebf7ab66c1b96",
+        "auto_common_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+        "derived": {
+          "arm": "nafnet-gamma",
+          "record": "test-photos/private/s19/arms/nafnet-gamma/S17-07.json",
+          "record_sha256": "aea7cc7f91afaacbb86a11057a1406f85eb2b28358df58d8ac0987cbb51f6a9f",
+          "source_output_sha256": "c8cf36b0112f7c827c91f1e87628981ab087758b7a2badfff1b8ffec44cc8b41",
+          "source_config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4"
+        },
+        "output_sha256": "4b22ae224bb44e5aa4f9847196b01d818e620e13aa6bdba01e9fa855112f2375"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "257b80d0147705b2e50747261ba65d5ae7473604a53165c55997a3b2beef3ef4"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "pair_position": 5,
+        "pairs": 6,
+        "blind_file_pair": "para-16"
+      },
+      "preference": "reference-slight",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Naturalniejsza kolorystyka i mniej przebarwień w cieniach. A mocniej wygładza i miejscami rozmazuje szczegóły."
+    }
+  ],
+  "failed_slots": [
+    {
+      "photo": "S17-07",
+      "arm_id": "gpt-std-1",
+      "status": "technical_failure",
+      "candidate": {
+        "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+        "slot": 1,
+        "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538"
+      }
+    }
+  ]
+}
