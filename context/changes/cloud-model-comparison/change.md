@@ -3,11 +3,21 @@ change_id: cloud-model-comparison
 title: Compare Cloud AI model candidates on the s17-v2 benchmark
 status: implementing
 created: 2026-09-28
-updated: 2026-11-01
+updated: 2026-11-02
 archived_at: null
 ---
 
 ## Notes
+
+2026-11-02: owner decisions on Phase 3 (details in `evaluations/phase3-core.md` § Owner decisions):
+3.5 the ratings are the owner's; 3.6 core gate accepted without exception (`gpt-std` STOP, `nafnet`
+STOP, `gpt-large` inconclusive; S17-03 aurora a suspected, not confirmed, content change); 3.7
+standard is the preferred GPT size, with no Phase 5 GPT call or holdout access authorised.
+Production stays a separate question (a blocked call would need a tested fallback to Local).
+
+2026-11-02: owner decision — exploratory Phase 4 on the existing NAFNet outputs, $0, despite its
+entry condition not being met (colour casts and detail loss, not exposure alone); it cannot change
+the Phase 3 gate or authorise Phase 5; plan.md Phase 4 Overview.
 
 2026-11-01: Phase 2 merged as #332 by rebase; mapped with `git range-diff 03f2baa..506199b e734e98~2..e734e98` (both `=`): 5b2c168 → c2e63ff (2.1 suffix), 506199b → e734e98. Recorded 2.2 and 2.3 accepted at e734e9899fc021a89f8a7e8a5ba30d1ecd1dec85 on the owner's confirmation ("potwierdzam"; ratings are the owner's, stop rule reviewed), quoted in `evaluations/phase2-existing.md`.
 
@@ -422,3 +432,7 @@ validation-photo access has been approved by this triage. No experiment steps or
 rows are marked complete. Review findings were returned in the conversation, not saved as a
 review file. The new gate baselines will use prepared common sRGB files; the historical source-file
 Local downloads and spike results remain diagnostic evidence, with their existing records intact.
+
+## S-19 approvals
+
+- S19-SPEND phase=3 cap_usd=4 decision=approved date=2026-11-01

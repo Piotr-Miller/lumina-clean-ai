@@ -103,13 +103,29 @@ input size (≤ 3968 px). Each blind pair was shown at the smaller arm's size, s
 judged at GPT's resolution, with Local scaled down to it. Whether that resolution loss matters at
 full size was not rated.
 
-## Owner decisions still open
+## Owner decisions (2026-11-02)
 
-- **3.5:** confirm these verdicts as yours, or name who made them (the pasted text says the rater
-  received a ZIP).
-- **3.6, core gate:** the report gives `gpt-std` STOP (moderation block) and `nafnet` STOP (0 of 3
-  over its control). Also decide whether the S17-03 aurora flags are **confirmed** content changes.
-- **3.7, output size:** the rater chose **standard**, before unblinding. But under the plan only a
-  _surviving_ standard config can be carried forward (Phase 5). After this STOP, the GPT routes
-  left are completing the large config's own 3 × 3 core, or a new config, each needing a numeric
-  Phase 5 budget amendment. Or the experiment closes here as "stopped before validation".
+- **3.5 — ratings:** the owner confirms the 16 verdicts as their own ("Też moje").
+- **3.6 — core gate, accepted without exception:**
+  - `gpt-std`: **STOP**. The rules are not changed after seeing the results. The moderation block
+    is an execution-reliability failure, not by itself evidence of unsafe or wrong image content,
+    and a single block in nine calls is too small a sample to estimate the model's real failure
+    rate. The owner keeps the production question separate: a conditional GO would need the app
+    to handle a blocked call correctly (for example an automatic fallback to Local), tested on its
+    own, plus a look at the refusal cause and a larger photo sample. Phase 3 alone promotes
+    nothing to production.
+  - `gpt-large`: **inconclusive**, diagnostic only. Two probes give no basis to bypass the decision.
+  - `nafnet`: **STOP** for the tested configuration (0 of 3 over the control, ≥ 2 required).
+  - **S17-03 aurora (pairs 07, 12, 14): suspected, not confirmed content change.** The winning
+    variants show clearer, narrower bands and stronger colour separation. The main direction and
+    position match the original, which shows weaker structures that may have been amplified, but
+    the authenticity of every fine band cannot be confirmed without independent reference
+    material. Visual verdicts stand; no confirmed severe regression is counted. "No proven
+    hallucination, but not a fully faithful reconstruction either."
+- **3.7 — output size:** **standard** is recorded as the owner's preferred GPT output size. It does
+  not authorise continuing the failed configuration: `gpt-std` stays STOP, and no Phase 5 GPT call
+  or holdout access is authorised.
+- **Next:** the experiment stays open **only** for an exploratory Phase 4 on the existing NAFNet
+  outputs (owner decision, plan Phase 4). After it, the owner decides whether to close the
+  experiment or explicitly authorise a new candidate configuration, its budget and a prospective
+  validation.

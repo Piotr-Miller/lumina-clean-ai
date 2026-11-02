@@ -589,6 +589,16 @@ bright skies, as Local on S17-05 and S17-21). Define one deterministic curve tha
 highlights and limits lifting a dark sky; apply it to NAFNet output and, as the owner required, to
 Local's own denoising without NAFNet. Free: it reuses existing NAFNet outputs.
 
+**Exploratory run despite the entry condition (owner decision 2026-11-02).** Phase 3 gave NAFNet +
+gamma STOP (0 of 3 over its control), and the observed deficiencies were colour casts and loss of
+detail rather than exposure alone, so the entry condition above is not met. The owner explicitly
+authorises Phase 4 anyway, as a documented deviation: only the existing Phase 3 NAFNet outputs and
+deterministic exposure adjustments, **no paid inference**. Results are rated against the original
+real-Local baselines and a matched no-NAFNet control with identical input preparation and the
+same curve. Phase 4 cannot change the Phase 3 gate result and authorises no Phase 5 run; a
+materially improved configuration needs an explicit continuation decision and separate
+prospective validation before any production use.
+
 ### Changes Required:
 
 #### 1. Curve
@@ -894,10 +904,10 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [x] 3.1 (paid) GPT core series
-- [x] 3.2 (paid) GPT size probe
-- [x] 3.3 (paid) NAFNet core
-- [x] 3.4 Tally and core gate
+- [x] 3.1 (paid) GPT core series — 89bb81c
+- [x] 3.2 (paid) GPT size probe — 89bb81c
+- [x] 3.3 (paid) NAFNet core — 89bb81c
+- [x] 3.4 Tally and core gate — 89bb81c
 
 #### Manual
 
