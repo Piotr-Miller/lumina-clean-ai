@@ -16,7 +16,15 @@
  *                 ledger's output hash; the <id>.json record names that source so tally can tie
  *                 the rated file to the slot. --source (one id only, dimensions equal to the
  *                 NAFNet input) is recorded as a `file` source and cannot be rated in a gate.
- *   nafnet-curve, blur-curve  Phase 4; refused until that phase defines the curve.
+ *   nafnet-curve  NAFNet output (as nafnet-gamma) → the Phase 4 exposure curve instead of gamma.
+ *   blur-curve    common input → Gaussian blur σ = Auto blur px → the curve: Local's own denoising
+ *                 with the curve, no NAFNet.
+ *   control-curve NAFNet input → the curve, no denoise: nafnet-curve's matched control (same
+ *                 input, Auto record and curve; owner decision 2026-11-02).
+ *
+ * The curve (curve.ts) is Local's Auto gamma with a limited lift in dark tones and highlights, a
+ * pure function of the Auto record's LumaStats and the constants in --curve-config (default
+ * configs/curve.json); the record names that config's hash.
  *
  * --attempts (control and nafnet-gamma, tuning only) reads the NAFNet slot from another ledger:
  * Phase 2's historical index (`evaluations/phase2-attempts.jsonl`, written by historical.py),
@@ -44,6 +52,7 @@ import sharp from "sharp";
 
 import { recommendParams } from "../../src/lib/engines/auto-params";
 import { buildGammaLut } from "../../src/lib/engines/image-helpers";
+import { buildCurveLut, type CurveConfig } from "./curve";
 import {
   PRIVATE,
   REPO,
@@ -57,7 +66,7 @@ import {
   type AutoRecord,
 } from "./s19";
 
-const ARMS = ["local-equiv", "control", "nafnet-gamma", "nafnet-curve", "blur-curve"] as const;
+const ARMS = ["local-equiv", "control", "nafnet-gamma", "nafnet-curve", "blur-curve", "control-curve"] as const;
 type Arm = (typeof ARMS)[number];
 
 interface Rgb {
@@ -104,8 +113,7 @@ export function gaussian(img: Rgb, sigma: number): Rgb {
   return { data: out, width: w, height: h };
 }
 
-function applyGamma(img: Rgb, gamma: number): Rgb {
-  const lut = buildGammaLut(gamma);
+function applyLut(img: Rgb, lut: ArrayLike<number>): Rgb {
   const out = new Uint8Array(img.data.length);
   for (let i = 0; i < img.data.length; i++) out[i] = lut[img.data[i]];
   return { ...img, data: out };
@@ -217,9 +225,10 @@ async function render(
   nafnetConfigSha: string,
   sourceFile?: string,
   ledger: string = GATE_LEDGER,
+  curveConfig?: { cfg: CurveConfig; sha256: string },
 ): Promise<{ out: string; img: Rgb }> {
-  if (arm === "nafnet-curve" || arm === "blur-curve")
-    throw new Refused(`${arm} is defined in Phase 4 (only if exposure costs NAFNet its wins); no curve exists yet`);
+  const curved = arm.endsWith("-curve");
+  if (curved && !curveConfig) throw new Refused(`${arm} needs a curve config`);
   const rec = autoRecord(id, validation);
   const side = readSidecar(id);
   let input: string;
@@ -228,10 +237,10 @@ async function render(
   const historical = ledger !== GATE_LEDGER;
   const gateInput = { path: repoPath(side.nafnet.path), sha256: side.nafnet.sha256 };
   let nafnetInput = gateInput;
-  if (arm === "local-equiv") {
+  if (arm === "local-equiv" || arm === "blur-curve") {
     input = repoPath(side.common.path);
     sigma = rec.local.blur;
-  } else if (arm === "control") {
+  } else if (arm === "control" || arm === "control-curve") {
     if (historical) nafnetInput = nafnetSlot(id, nafnetConfigSha, ledger).input;
     else if (sha256File(gateInput.path) !== gateInput.sha256)
       throw new Refused(`${id}: NAFNet input differs from its sidecar`);
@@ -246,14 +255,16 @@ async function render(
     input = source.path;
   }
   let img = await decode(input);
-  if (arm === "nafnet-gamma") {
+  if (arm === "nafnet-gamma" || arm === "nafnet-curve") {
     const meta = await sharp(nafnetInput.path).metadata();
     if (img.width !== meta.width || img.height !== meta.height)
       throw new Refused(
         `${id}: NAFNet output ${String(img.width)}×${String(img.height)} ≠ its input ${String(meta.width)}×${String(meta.height)}`,
       );
   }
-  img = applyGamma(gaussian(img, sigma), rec.local.gamma);
+  const lut =
+    curved && curveConfig ? buildCurveLut(rec.local.gamma, rec.stats, curveConfig.cfg) : buildGammaLut(rec.local.gamma);
+  img = applyLut(gaussian(img, sigma), lut);
   const dir = historical ? join(PRIVATE, "arms", basename(ledger, ".jsonl"), arm) : join(PRIVATE, "arms", arm);
   mkdirSync(dir, { recursive: true });
   const out = join(dir, `${id}.png`);
@@ -273,6 +284,10 @@ async function render(
         source: source ? { ...source, path: undefined, ledger: source.ledger && relative(REPO, source.ledger) } : null,
         auto_record: { common_sha256: rec.common_sha256, session_id: rec.session_id, provenance: "recomputed" },
         gamma: rec.local.gamma,
+        tone:
+          curved && curveConfig
+            ? { kind: "curve", config_sha256: curveConfig.sha256, ...curveConfig.cfg }
+            : { kind: "gamma" },
         blur_sigma_px: sigma,
         output_sha256: sha256File(out),
         dimensions: [img.width, img.height],
@@ -319,7 +334,7 @@ async function main(): Promise<number> {
     const arm = args.rest.shift() as Arm | undefined;
     if (!arm || !ARMS.includes(arm)) {
       console.error(
-        `usage: local-arms.ts <${ARMS.join("|")}> <ids…>|--all [--compare-local] [--source <png>] [--attempts <jsonl>]`,
+        `usage: local-arms.ts <${ARMS.join("|")}> <ids…>|--all [--compare-local] [--source <png>] [--attempts <jsonl>] [--curve-config <json>]`,
       );
       return 2;
     }
@@ -331,6 +346,10 @@ async function main(): Promise<number> {
       throw new Refused("--source needs nafnet-gamma and one id");
     if (source) guardPaths([source], args.validation); // the id guard says nothing about this path
     const nafnetConfigSha = sha256File(repoPath(args.opts.get("--nafnet-config") ?? "scripts/s19/configs/nafnet.json"));
+    const curvePath = repoPath(args.opts.get("--curve-config") ?? "scripts/s19/configs/curve.json");
+    const curveConfig = arm.endsWith("-curve")
+      ? { cfg: JSON.parse(readFileSync(curvePath, "utf8")) as CurveConfig, sha256: sha256File(curvePath) }
+      : undefined;
     const attempts = args.opts.get("--attempts");
     if (attempts) {
       if (arm !== "control" && arm !== "nafnet-gamma") throw new Refused("--attempts needs control or nafnet-gamma");
@@ -352,6 +371,7 @@ async function main(): Promise<number> {
           nafnetConfigSha,
           source ? repoPath(source) : undefined,
           ledger,
+          curveConfig,
         );
         const measured = compare ? `; vs real Local: ${await compareLocal(id, img, args.validation)}` : "";
         console.log(`✓ ${id}: ${out}${measured}`);

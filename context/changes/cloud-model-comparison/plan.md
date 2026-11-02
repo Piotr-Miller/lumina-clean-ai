@@ -919,7 +919,7 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [ ] 4.1 Curve arms render for every rated tuning photo
+- [x] 4.1 Curve arms render for every rated tuning photo
 
 #### Manual
 
