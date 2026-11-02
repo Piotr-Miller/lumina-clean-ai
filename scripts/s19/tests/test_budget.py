@@ -17,7 +17,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from fixtures import World, load, png_bytes, sha
+from fixtures import World, load, png_bytes, sha, sha
 
 runner = load("run-candidate")
 
@@ -40,6 +40,8 @@ class Fake:
             return {"http_status": 200, "output": png_bytes(size), "usage": None}
         if o == "timeout":
             raise TimeoutError("read timed out")
+        if o == "moderation":
+            return {"http_status": 400, "error": {"error": {"code": "moderation_blocked", "message": "rejected"}}}
         if isinstance(o, int):
             return {"http_status": o, "error": {"message": f"http {o}"}}
         raise AssertionError(o)
@@ -166,6 +168,59 @@ class BudgetTest(World):
         self.assertEqual(code, 1)
         sent = [r for r in self.ledger() if r["event"] == "reserve"]
         self.assertEqual(len(sent), 1, "no further call after a cost above its bound")
+
+    def moderation_config(self):
+        cfg = json.loads(self.make_config(name="mod", bound_usd=1.00).read_text())
+        cfg["retry"]["retry_error_codes"] = ["moderation_blocked"]
+        path = self.tmp / "mod.json"
+        path.write_text(json.dumps(cfg))
+        return path, self.make_series([(path, "core", ["T-01", "T-02", "T-03"], 1)], series_id="mod")
+
+    def test_moderation_block_is_terminal_unless_the_config_retries_it(self):
+        code, fake = self.run_main("T-01", fake=Fake("moderation", "ok"))
+        self.assertEqual((code, fake.calls), (0, 1), "without retry_error_codes a block is not retried")
+        terminal = [r for r in self.ledger() if r["event"] == "slot_terminal"]
+        self.assertEqual([(t["photo"], t["status"]) for t in terminal], [("T-01", "technical_failure")])
+
+    def test_configured_moderation_block_is_retried_once_with_the_same_input(self):
+        cfg, series = self.moderation_config()
+        code, fake = self.run_main("T-01", fake=Fake("moderation", "ok"), config=cfg, series=series)
+        self.assertEqual((code, fake.calls), (0, 2))
+        results = [r for r in self.ledger() if r["event"] == "result"]
+        self.assertEqual([(r["status"], r.get("error_code")) for r in results],
+                         [("error", "moderation_blocked"), ("ok", None)])
+        reserves = [r for r in self.ledger() if r["event"] == "reserve"]
+        self.assertEqual(len({(r["input_sha256"], tuple(r["request_size"])) for r in reserves}), 1)
+        self.assertEqual(self.committed(), 2.0, "the blocked attempt keeps its reservation")
+
+    def test_second_moderation_block_fails_the_slot(self):
+        cfg, series = self.moderation_config()
+        code, fake = self.run_main("T-02", fake=Fake("moderation", "moderation", "ok"), config=cfg, series=series)
+        self.assertEqual((code, fake.calls), (0, 2), "at most one retry")
+        terminal = [r for r in self.ledger() if r["event"] == "slot_terminal"]
+        self.assertEqual([(t["photo"], t["status"]) for t in terminal], [("T-02", "technical_failure")])
+
+    def test_extension_slot_waits_for_a_pinned_passing_core_report(self):
+        report = self.tmp / "core-report.json"
+        series = json.loads(self.make_series([(self.cfg, "tuning", ["T-01"], 1)], series_id="ext").read_text())
+        series["slots"][0]["requires"] = ["core"]
+        prereq = {"id": "core", "stage": "core", "config_sha256": series["slots"][0]["config_sha256"],
+                  "report": str(report), "report_sha256": None}
+        path = self.tmp / "series-ext.json"
+
+        def attempt(report_sha):
+            series["prerequisites"] = [dict(prereq, report_sha256=report_sha)]
+            path.write_text(json.dumps(series))
+            return self.run_main("T-01", series=path)
+
+        code, fake = attempt(None)
+        self.assertEqual((code, fake.calls), (1, 0), "an unpinned core report never admits the extension")
+        report.write_text(json.dumps({"verdicts": {prereq["config_sha256"]: {"verdict": "STOP"}}}))
+        code, fake = attempt(sha(report))
+        self.assertEqual((code, fake.calls), (1, 0), "a STOP core report never admits the extension")
+        report.write_text(json.dumps({"verdicts": {prereq["config_sha256"]: {"verdict": "PASS"}}}))
+        code, fake = attempt(sha(report))
+        self.assertEqual((code, fake.calls), (0, 1))
 
     def test_slot_outside_the_series_is_refused(self):
         code, fake = self.run_main("T-01", extra=["--repeat", "3"])

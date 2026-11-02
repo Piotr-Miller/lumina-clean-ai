@@ -27,7 +27,11 @@ Paid mode needs the owner's `S19-SPEND phase=N ... decision=approved` record who
 implies no consent. --resume skips a slot that already has a valid result for the identical
 config and input hashes (from any phase, so Phase 3 probes count towards a Phase 5 core) and
 never regenerates for quality. Retries follow the config (`retry.max_retries`, transient
-failures only); urllib makes no hidden retries.
+failures only); urllib makes no hidden retries. A config may also list vendor error codes that
+count as transient (`retry.retry_error_codes`, e.g. `moderation_blocked`; owner decision
+2026-11-02 for the Phase 5 config): such an error is retried with the identical input and
+parameters, within the same attempt limit and cap, and the summary counts these first-attempt
+blocks separately from final slot failures.
 
 Keys come from the environment only: OPENAI_API_KEY, FAL_KEY.
 
@@ -423,6 +427,17 @@ def record_response(result: dict, config: dict, spec: dict, attempt_id: str, res
         result["bound_exceeded"] = True
 
 
+def error_code(error) -> str | None:
+    """The vendor's error code from an error body ({"error": {"code": ...}}), if any."""
+    inner = error.get("error") if isinstance(error, dict) else None
+    return inner.get("code") if isinstance(inner, dict) else None
+
+
+def is_transient(config: dict, http_status: int, error) -> bool:
+    return (http_status in config["retry"]["transient_http"]
+            or error_code(error) in config["retry"].get("retry_error_codes", []))
+
+
 def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: int, cap: float, sleep,
                 image: Path, meta: dict, key: tuple) -> str:
     size = tuple(spec["request_size"])
@@ -475,8 +490,9 @@ def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: 
         else:
             result["http_status"] = res["http_status"]
             if "error" in res:
-                transient = res["http_status"] in config["retry"]["transient_http"]
+                transient = is_transient(config, res["http_status"], res["error"])
                 result.update(status=ERROR, transient=transient, error=res["error"], cost_usd=None,
+                              error_code=error_code(res["error"]),
                               cost_basis="error response: full reservation kept")
             else:
                 try:
@@ -599,9 +615,17 @@ def main(argv: list[str] | None = None, sleep=time.sleep) -> int:
     except protocol.Refused as e:
         print(f"stopped: {e}", file=sys.stderr)
         return 1
-    committed, unknown = phase_committed(read_ledger(), args.phase)
+    rows = read_ledger()
+    committed, unknown = phase_committed(rows, args.phase)
     print(f"phase {args.phase} ledger: ${committed:.2f} committed, {unknown} without a known cost; "
           + ", ".join(f"{k} {v}" for k, v in outcome.items()))
+    retried = config["retry"].get("retry_error_codes", [])
+    if retried:
+        mine = {r["attempt_id"] for r in rows if r.get("event") == "reserve" and r.get("config_sha256") == config_sha}
+        hits = [r for r in rows if r.get("event") == "result" and r.get("attempt_id") in mine
+                and error_code(r.get("error")) in retried]
+        print(f"{config['name']}: {len(hits)} attempt(s) blocked with {', '.join(retried)} "
+              "(reported separately from final slot failures)")
     return 1 if "not_attempted_budget" in outcome.values() else 0
 
 
