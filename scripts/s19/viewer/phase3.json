@@ -1,0 +1,261 @@
+{
+  "series_id": "phase3",
+  "split": "tuning",
+  "title": "Phase 3 core: GPT std ×3, GPT large probe, NAFNet + gamma vs real Local and control",
+  "photos": [
+    {
+      "id": "S17-03",
+      "original": "test-photos/licensed/03-aurora-reykjanes-snow-lava.jpg",
+      "arms": [
+        {
+          "arm_id": "gpt-std-1",
+          "label": "gpt-std slot 1",
+          "path": "test-photos/private/s19/runs/gpt-std/S17-03/1/c29a5855d26a4fc6938117fc30996eec.png",
+          "candidate": {
+            "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+            "slot": 1,
+            "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+            "output_sha256": "b7fef0cdc65af97baf1700934d67d47424240a1e8491d2b0a59adc428b514f5e"
+          }
+        },
+        {
+          "arm_id": "gpt-std-2",
+          "label": "gpt-std slot 2",
+          "path": "test-photos/private/s19/runs/gpt-std/S17-03/2/dd829d7d7bec45788f89e74115e3fe17.png",
+          "candidate": {
+            "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+            "slot": 2,
+            "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+            "output_sha256": "1dc066398486a7a78f04d79c76cfe398fff1cff07a006d9664492eb1198c2750"
+          }
+        },
+        {
+          "arm_id": "gpt-std-3",
+          "label": "gpt-std slot 3",
+          "path": "test-photos/private/s19/runs/gpt-std/S17-03/3/c71d91220296404fa198b2495a97dd25.png",
+          "candidate": {
+            "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+            "slot": 3,
+            "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+            "output_sha256": "8d903bfa7aad8ce6a0bc3d3244401c7f404b497b66b6236fc1deeb11fa8370c3"
+          }
+        },
+        {
+          "arm_id": "nafnet-gamma",
+          "label": "NAFNet + Local gamma",
+          "path": "test-photos/private/s19/arms/nafnet-gamma/S17-03.png",
+          "candidate": {
+            "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
+            "slot": 1,
+            "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+            "auto_common_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+            "derived": {
+              "record": "test-photos/private/s19/arms/nafnet-gamma/S17-03.json"
+            }
+          }
+        },
+        {
+          "arm_id": "control",
+          "label": "Control: NAFNet input + Local gamma, no denoise",
+          "kind": "control",
+          "path": "test-photos/private/s19/arms/control/S17-03.png",
+          "reference": {
+            "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+            "auto_common_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+            "record": "test-photos/private/s19/arms/control/S17-03.json"
+          }
+        },
+        {
+          "arm_id": "local",
+          "label": "Real Local (app, common input, 2026-10-31)",
+          "kind": "local",
+          "path": "test-photos/private/s19/local/S17-03.jpg"
+        }
+      ],
+      "pairs": [
+        ["gpt-std-1", "local"],
+        ["gpt-std-2", "local"],
+        ["gpt-std-3", "local"],
+        ["nafnet-gamma", "local"],
+        ["nafnet-gamma", "control"]
+      ]
+    },
+    {
+      "id": "S17-04",
+      "original": "test-photos/licensed/04-phone-whitehouse-iphone13pro.jpg",
+      "arms": [
+        {
+          "arm_id": "gpt-std-1",
+          "label": "gpt-std slot 1",
+          "path": "test-photos/private/s19/runs/gpt-std/S17-04/1/2db128ff587c4faa94caaec9a9048867.png",
+          "candidate": {
+            "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+            "slot": 1,
+            "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+            "output_sha256": "b6b08e0963c147f9dd4042bca415057ee4260cfba1b47a5cacf50213c58cfcd1"
+          }
+        },
+        {
+          "arm_id": "gpt-std-2",
+          "label": "gpt-std slot 2",
+          "path": "test-photos/private/s19/runs/gpt-std/S17-04/2/05169424512e40bbbe1b0ec542163324.png",
+          "candidate": {
+            "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+            "slot": 2,
+            "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+            "output_sha256": "cd2e75302f465b905da2693323fb71dd70da920bae298a422c1990aef15f87cf"
+          }
+        },
+        {
+          "arm_id": "gpt-std-3",
+          "label": "gpt-std slot 3",
+          "path": "test-photos/private/s19/runs/gpt-std/S17-04/3/fffd4a0359f941dd885d15de07e5af6c.png",
+          "candidate": {
+            "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+            "slot": 3,
+            "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+            "output_sha256": "d98c8341ac3b9a047c6b15de69984c2e1017c32225c02167f5dd51eda0cb23d2"
+          }
+        },
+        {
+          "arm_id": "gpt-large-1",
+          "label": "gpt-large slot 1",
+          "path": "test-photos/private/s19/runs/gpt-large/S17-04/1/693573d70bba466f8330dea1d8b0a84a.png",
+          "candidate": {
+            "config_sha256": "2ab95f80b00da3d14a55f4a2d79f6880b900435291fccd4b1e4129de8627db3d",
+            "slot": 1,
+            "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+            "output_sha256": "e8704e52341c830b6e138997bb6410da46dec834668491b4787a1a1496774c05"
+          }
+        },
+        {
+          "arm_id": "nafnet-gamma",
+          "label": "NAFNet + Local gamma",
+          "path": "test-photos/private/s19/arms/nafnet-gamma/S17-04.png",
+          "candidate": {
+            "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
+            "slot": 1,
+            "input_sha256": "6eb1760e41af16b51948f2531f8c71f7d5d68c547f7c0fa944402c2b6dd6ed54",
+            "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+            "derived": {
+              "record": "test-photos/private/s19/arms/nafnet-gamma/S17-04.json"
+            }
+          }
+        },
+        {
+          "arm_id": "control",
+          "label": "Control: NAFNet input + Local gamma, no denoise",
+          "kind": "control",
+          "path": "test-photos/private/s19/arms/control/S17-04.png",
+          "reference": {
+            "input_sha256": "6eb1760e41af16b51948f2531f8c71f7d5d68c547f7c0fa944402c2b6dd6ed54",
+            "auto_common_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+            "record": "test-photos/private/s19/arms/control/S17-04.json"
+          }
+        },
+        {
+          "arm_id": "local",
+          "label": "Real Local (app, common input, 2026-10-31)",
+          "kind": "local",
+          "path": "test-photos/private/s19/local/S17-04.jpg"
+        }
+      ],
+      "pairs": [
+        ["gpt-std-1", "local"],
+        ["gpt-std-2", "local"],
+        ["gpt-std-3", "local"],
+        ["gpt-large-1", "local"],
+        ["nafnet-gamma", "local"],
+        ["nafnet-gamma", "control"]
+      ]
+    },
+    {
+      "id": "S17-07",
+      "original": "test-photos/licensed/07-night-portrait.jpg",
+      "arms": [
+        {
+          "arm_id": "gpt-std-1",
+          "label": "gpt-std slot 1 (technical_failure)",
+          "status": "technical_failure",
+          "candidate": {
+            "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+            "slot": 1,
+            "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538"
+          }
+        },
+        {
+          "arm_id": "gpt-std-2",
+          "label": "gpt-std slot 2",
+          "path": "test-photos/private/s19/runs/gpt-std/S17-07/2/3be8887f6a5f4eb7a7c7ab3a3bc4a5d8.png",
+          "candidate": {
+            "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+            "slot": 2,
+            "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+            "output_sha256": "5fd038ac75e8988bd6543b2399d224b778ef9d6ba397f18d9049dd013bafa5a0"
+          }
+        },
+        {
+          "arm_id": "gpt-std-3",
+          "label": "gpt-std slot 3",
+          "path": "test-photos/private/s19/runs/gpt-std/S17-07/3/42cfc469fec14ea58678dfb48cec1cf6.png",
+          "candidate": {
+            "config_sha256": "e053a848928c490ccace567ddff0fd9479155e6a920d91dfd9d611a211691456",
+            "slot": 3,
+            "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+            "output_sha256": "4d6b5dce4c458a293c1ead02623eb10b5e057a1355b76cbd6678fdb7690a2b06"
+          }
+        },
+        {
+          "arm_id": "gpt-large-1",
+          "label": "gpt-large slot 1",
+          "path": "test-photos/private/s19/runs/gpt-large/S17-07/1/a4b60405dd0d4e0bbe61573a7d84d7fb.png",
+          "candidate": {
+            "config_sha256": "2ab95f80b00da3d14a55f4a2d79f6880b900435291fccd4b1e4129de8627db3d",
+            "slot": 1,
+            "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+            "output_sha256": "d2a546802b0921de52b9c5522b795e4384f6fd88c990ea2918b039f56d60ef38"
+          }
+        },
+        {
+          "arm_id": "nafnet-gamma",
+          "label": "NAFNet + Local gamma",
+          "path": "test-photos/private/s19/arms/nafnet-gamma/S17-07.png",
+          "candidate": {
+            "config_sha256": "b491e544b1f7c8d8e282cf32d22aff3edf9d56f53a21f7876e7185f8718427d4",
+            "slot": 1,
+            "input_sha256": "b574b2a1b72f81faf654de7661cac17ea425c2bef7cee1065deebf7ab66c1b96",
+            "auto_common_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+            "derived": {
+              "record": "test-photos/private/s19/arms/nafnet-gamma/S17-07.json"
+            }
+          }
+        },
+        {
+          "arm_id": "control",
+          "label": "Control: NAFNet input + Local gamma, no denoise",
+          "kind": "control",
+          "path": "test-photos/private/s19/arms/control/S17-07.png",
+          "reference": {
+            "input_sha256": "b574b2a1b72f81faf654de7661cac17ea425c2bef7cee1065deebf7ab66c1b96",
+            "auto_common_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+            "record": "test-photos/private/s19/arms/control/S17-07.json"
+          }
+        },
+        {
+          "arm_id": "local",
+          "label": "Real Local (app, common input, 2026-10-31)",
+          "kind": "local",
+          "path": "test-photos/private/s19/local/S17-07.jpg"
+        }
+      ],
+      "pairs": [
+        ["gpt-std-1", "local"],
+        ["gpt-std-2", "local"],
+        ["gpt-std-3", "local"],
+        ["gpt-large-1", "local"],
+        ["nafnet-gamma", "local"],
+        ["nafnet-gamma", "control"]
+      ]
+    }
+  ]
+}

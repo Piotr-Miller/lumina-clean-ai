@@ -894,10 +894,10 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [ ] 3.1 (paid) GPT core series
-- [ ] 3.2 (paid) GPT size probe
-- [ ] 3.3 (paid) NAFNet core
-- [ ] 3.4 Tally and core gate
+- [x] 3.1 (paid) GPT core series
+- [x] 3.2 (paid) GPT size probe
+- [x] 3.3 (paid) NAFNet core
+- [x] 3.4 Tally and core gate
 
 #### Manual
 
