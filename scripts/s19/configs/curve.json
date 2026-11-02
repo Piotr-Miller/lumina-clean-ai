@@ -1,0 +1,11 @@
+{
+  "name": "curve-v1",
+  "kind": "curve",
+  "decided": "owner decision 2026-11-02 (plan Phase 4)",
+  "base": "Local Auto gamma from recommendParams on the common input's LumaStats",
+  "lambda0": 0.5,
+  "highlight_fade": 0.5,
+  "toe": ["p05", "p50"],
+  "shoulder": ["p95", 1],
+  "apply": "per channel 8-bit LUT, rounded like buildGammaLut; implementation scripts/s19/curve.ts"
+}
