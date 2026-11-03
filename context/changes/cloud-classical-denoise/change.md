@@ -62,10 +62,12 @@ hosting, integration or product naming decision.
    `<denoiser>-gamma` (common sRGB input → classical denoise → Local's Auto gamma, no blur) is
    rated blind against two references: the matched **control** (same input → Auto gamma, no
    denoise — the existing `control` arm) and the **real Local** download. Same exposure on both
-   sides, so denoise-vs-blur is the only variable. Candidates: OpenCV
-   `fastNlMeansDenoisingColored` first; BM3D only if NLM shows a gain but damages stars/texture.
-   **Gate:** preferred over its control on ≥ 6 of 8 photos, no severe regression, rated on
-   **two axes** (visual quality and fidelity to the original, as in Phase 5) from the first round.
+   sides, so denoise-vs-blur is the only variable. Candidates, in order: **1a** OpenCV
+   `fastNlMeansDenoisingColored`; **1b** a bounded BM3D trial, only if 1a fails the gate, and only
+   after its licence question is settled. **Gate**, identical for 1a and 1b: ≥ 6 of 8 wins over the
+   control on the quality axis, no significant fidelity loss on any photo, zero severe
+   regressions, rated on **two axes** (visual quality and fidelity to the original, as in Phase 5)
+   from the first round. Exact rules in § Owner decisions.
 2. **Tone mapping, separately**, only after step 1 passes: local tone mapping with a black-point
    anchor and highlight protection, on the denoised image, against the same image with plain
    Auto gamma. S-19's Phase 4 curve was neutral (`phase4-curve.md:57-60`), so no exposure gain is
@@ -82,8 +84,8 @@ hosting, integration or product naming decision.
    **measure wall time at full resolution** (12 MP NLM on CPU may be tens of seconds — the ≤ 30 s
    p95 guardrail, `roadmap.md:383`) and the cold start of a CPU container (seconds, not the
    ~2 min GPU model boot, but still measured, not assumed). Hosting (Modal vs Cloudflare
-   Containers) and the `enhance` pipeline integration are decided **after** the quality result,
-   never before. Validation on the still-closed `s17-v2` holdout stays one-shot and needs its own
+   Containers) and the `enhance` pipeline integration are decided **after** the quality result
+   and after the free/paid conversation (§ Owner decisions, 3), never before. Validation on the still-closed `s17-v2` holdout stays one-shot and needs its own
    owner-written approval record, as in S-19.
 
 ### What is reused, unchanged
@@ -124,14 +126,55 @@ after step 1, as a separate arm. It is not a second full track and is not run in
 - No holdout access before step 4 and an owner-written approval record.
 - No edit to anything under `context/archive/`.
 
-### Open decisions for the owner, before step 1 runs
+### Owner decisions (2026-11-03, before step 1)
 
-- Confirm the step-1 gate as ≥ 6 of 8 over control (the Phase 3 rule was ≥ 2 of 3).
-- Confirm NLM-first, BM3D-second (or run both arms in the same blind set at the cost of more
-  pairs to rate).
-- Whether a passing classical pipeline, which could in principle run in the browser as WASM,
-  reopens the free/paid question in `local-engine-ceiling` (#188) and PRD §116 — a product
-  decision to take **after** the result, recorded here so it is not forgotten.
+These settle the three questions that were open here. They are recorded before any step-1 output
+exists, so the rules are fixed before anyone sees a result, as in S-19.
+
+1. **Step-1 gate: ≥ 6 of 8 over the control, with a separate fidelity condition.**
+   - Counted over the eight distinct `s17-v2` tuning photos, one rated pair per photo.
+   - **Quality axis:** a photo is a win when the arm is preferred over its matched control,
+     slightly or clearly — a noticeable improvement. A tie is not a win. At least 6 of 8 wins.
+   - **Fidelity axis, separately:** no significant fidelity loss on any of the eight photos, and
+     zero severe regressions, each judged against the original **and** against the real Local
+     download. Operationally (agent's reading, to confirm before the rating viewer is built): a
+     **clear** fidelity preference for the control or for Local on any photo fails the gate; a
+     slight one does not. Severe regression follows the S-19 fidelity definition.
+   - Why: it blocks a repeat of S-19's GPT result — a better-looking image paid for with scene
+     detail.
+   - Passing lets the experiment continue. It does not show Cloud beats Local as a product; only
+     the final holdout decides that.
+2. **NLM first; BM3D as a second, bounded trial only if NLM fails.**
+   - If 1a passes, step 2 follows. No algorithm tournament.
+   - If 1a fails for **any** reason — no gain, or a loss of stars or texture — 1b is allowed.
+     A 1a failure is not taken as predicting 1b.
+   - Both trials have a tuning range fixed in advance (the parameter grid is written into the
+     arm's config before rendering), the same eight photos and the identical gate.
+   - **BM3D licence, verified 2026-11-03.** Both readily available implementations are
+     restricted:
+     - The authors' packages, including `pip install bm3d`, are "available exclusively for
+       non-profit education and scientific research. Any unauthorized use of the software for
+       industrial or profit-oriented activities is expressly prohibited"
+       (https://webpages.tuni.fi/foi/GCF-BM3D/). The linked TAU limited licence text could not
+       be read.
+     - OpenCV contrib's `xphoto::bm3dDenoising` refuses to run unless built with
+       `OPENCV_ENABLE_NONFREE`: "This algorithm is patented and is excluded in this
+       configuration" (`modules/xphoto/src/bm3d_image_denoising.cpp:306`, branch 4.x). The PyPI
+       `opencv-python` packages do not include non-free algorithms (their README, Q "Why the
+       packages do not include non-free algorithms?").
+   - **Consequence.** Neither implementation is assumed usable in the product. Because S-20
+     exists to inform a product decision, **whether even the offline 1b trial is within the
+     authors' licence is itself an open owner decision, to settle before 1b runs.** Options:
+     obtain and read the TAU licence terms, find an independently licensed implementation, or
+     run the same bounded trial with a different second denoiser.
+3. **Free/paid: revisit right after a passing step 1, before choosing hosting.**
+   - That is the first result that would justify reopening the "Local is deliberately naive"
+     premise (PRD §116, `local-engine-ceiling` #188). The conversation settles what a user would
+     pay for: quality, speed, convenience or higher limits.
+   - A classical denoiser passing step 1 does not show that the full pipeline runs acceptably in
+     a browser. Any change to the free/paid split waits for the holdout result and the
+     step-4 performance measurements.
+   - Shipping a better Local would be its own change. This change still does not touch Local.
 
 ### Roadmap placement (owner question, 2026-11-03: S-13 or S-14?)
 
