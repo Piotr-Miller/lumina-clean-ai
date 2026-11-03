@@ -1,0 +1,165 @@
+{
+  "gate": "core",
+  "series_id": "phase5",
+  "split": "tuning",
+  "verdicts": {
+    "9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea": {
+      "name": "phase5-gpt",
+      "kind": "gpt",
+      "slot_status": {
+        "ok": 8,
+        "technical_failure": 1,
+        "missing": 5
+      },
+      "rows": [
+        {
+          "photo": "S17-03",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "candidate-slight"
+        },
+        {
+          "photo": "S17-03",
+          "slot": 2,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "candidate-slight"
+        },
+        {
+          "photo": "S17-03",
+          "slot": 3,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "candidate-slight"
+        },
+        {
+          "photo": "S17-04",
+          "slot": 1,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "candidate-slight"
+        },
+        {
+          "photo": "S17-04",
+          "slot": 2,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "candidate-slight"
+        },
+        {
+          "photo": "S17-04",
+          "slot": 3,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "tie",
+          "reason": "candidate-slight"
+        },
+        {
+          "photo": "S17-07",
+          "slot": 1,
+          "role": "core",
+          "status": "technical_failure",
+          "attempts": 2,
+          "reference": null,
+          "category": null,
+          "reason": "2 attempt(s) used of 2"
+        },
+        {
+          "photo": "S17-07",
+          "slot": 2,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Boczny neon S17-07: poprawia pozorną szczegółowość i czytelność cieni, lecz przerysowuje litery oraz szczegóły twarzy i ubrań; formy liter różnią się między próbami. Wierniejszy zachowuje źródłowe kształty, choć jest zaszumiony, mocno rozjaśniony i ma silną poświatę."
+        },
+        {
+          "photo": "S17-07",
+          "slot": 3,
+          "role": "core",
+          "status": "ok",
+          "attempts": 1,
+          "reference": "local",
+          "category": "clear win",
+          "reason": "Boczny neon S17-07: poprawia pozorną szczegółowość i czytelność cieni, lecz przerysowuje litery oraz szczegóły twarzy i ubrań; formy liter różnią się między próbami. Wierniejszy zachowuje źródłowe kształty, choć jest zaszumiony, mocno rozjaśniony i ma silną poświatę."
+        },
+        {
+          "photo": "S17-01",
+          "slot": 1,
+          "role": "tuning",
+          "status": "missing",
+          "attempts": 0,
+          "reference": null,
+          "category": null,
+          "reason": null
+        },
+        {
+          "photo": "S17-02",
+          "slot": 1,
+          "role": "tuning",
+          "status": "missing",
+          "attempts": 0,
+          "reference": null,
+          "category": null,
+          "reason": null
+        },
+        {
+          "photo": "S17-05",
+          "slot": 1,
+          "role": "tuning",
+          "status": "missing",
+          "attempts": 0,
+          "reference": null,
+          "category": null,
+          "reason": null
+        },
+        {
+          "photo": "S17-06",
+          "slot": 1,
+          "role": "tuning",
+          "status": "missing",
+          "attempts": 0,
+          "reference": null,
+          "category": null,
+          "reason": null
+        },
+        {
+          "photo": "S17-21",
+          "slot": 1,
+          "role": "tuning",
+          "status": "missing",
+          "attempts": 0,
+          "reference": null,
+          "category": null,
+          "reason": null
+        }
+      ],
+      "verdict": "STOP",
+      "reasons": ["incomplete core: S17-07/1 technical_failure"]
+    }
+  },
+  "inputs": {
+    "export_sha256": "9d2200e101cefe37ab75d17f51cc853a339243342285709f75a52005c48e1cf0",
+    "series_sha256": "7308f0ef77f8554566b8bf310e75d7189777e67b981d74ea3291b7d295d867e4",
+    "attempts": "test-photos/private/s19/attempts.jsonl"
+  }
+}

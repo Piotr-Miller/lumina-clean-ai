@@ -961,10 +961,10 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [ ] 5.5 (paid) Selected GPT core is completed without replacing earlier slots
-- [ ] 5.6 Selected GPT full core verdict is recorded before extension
-- [ ] 5.1 (paid) Surviving arms on the remaining tuning photos
-- [ ] 5.2 Tuning gate per arm
+- [x] 5.5 (paid) Selected GPT core is completed without replacing earlier slots
+- [x] 5.6 Selected GPT full core verdict is recorded before extension
+- [-] 5.1 (paid) Surviving arms on the remaining tuning photos — n/a: no arm survived the core (phase5-gpt STOP, incomplete core S17-07/1, evaluations/phase5-core-report.json); the plan's "any STOP prevents their paid run"
+- [-] 5.2 Tuning gate per arm — n/a: no arm reached the remaining tuning photos (phase5-gpt core STOP, evaluations/phase5-core-report.json)
 
 #### Manual
 
