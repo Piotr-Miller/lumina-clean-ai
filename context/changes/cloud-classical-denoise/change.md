@@ -135,11 +135,37 @@ exists, so the rules are fixed before anyone sees a result, as in S-19.
    - Counted over the eight distinct `s17-v2` tuning photos, one rated pair per photo.
    - **Quality axis:** a photo is a win when the arm is preferred over its matched control,
      slightly or clearly — a noticeable improvement. A tie is not a win. At least 6 of 8 wins.
-   - **Fidelity axis, separately:** no significant fidelity loss on any of the eight photos, and
-     zero severe regressions, each judged against the original **and** against the real Local
-     download. Operationally (agent's reading, to confirm before the rating viewer is built): a
-     **clear** fidelity preference for the control or for Local on any photo fails the gate; a
-     slight one does not. Severe regression follows the S-19 fidelity definition.
+   - **Fidelity axis, separately:** no significant fidelity loss and no severe regression on any
+     of the eight photos. One such photo stops the trial. Definition below (owner, 2026-11-03);
+     it replaces the agent's earlier reading ("a clear fidelity preference for the control or for
+     Local"), which the owner judged too discretionary.
+   - **Significant fidelity loss** means the result unambiguously removes, distorts or changes
+     scene information that the **original** confirms: detail, structure, shapes, colour
+     relationships or the character of the lighting. The change is visible in the whole photo or
+     in a corresponding 1:1 crop, never enlarged beyond the source resolution. The rater can point
+     to a specific area and say what information was lost.
+
+     | Rating            | Example                                                                                            | Effect                      |
+     | ----------------- | -------------------------------------------------------------------------------------------------- | --------------------------- |
+     | No loss           | Less noise; texture and scene structure kept                                                       | Allowed                     |
+     | Minor loss        | Slight softening of fine texture, no characteristic detail lost                                    | Allowed, recorded           |
+     | Significant loss  | Smeared aurora bands, merged fabric texture, clearly changed skin tone                             | Stops the trial             |
+     | Severe regression | Confirmed change of lettering or object geometry, or removal of an unambiguously recognisable star | Stops the trial             |
+     | Uncertain         | A vanishing point may be a star or noise                                                           | Resolved before the verdict |
+
+   - Three rules for applying it:
+     - **The original decides fidelity.** The control and the real Local download help to spot a
+       loss; their own artefacts need not be preserved. For dark detail, a brightened preview of
+       the original may be checked too.
+     - **A small area can be significant** when it holds a characteristic detail: a letter, an eye,
+       a recognisable star.
+     - **Every significant loss names its crop and a short reason.** "Local looks more natural"
+       is not a reason.
+   - Severe regressions follow the S-19 fidelity definition (S-19 `change.md` § Fidelity
+     definition and candidates); the table's severe row is consistent with it.
+   - **Rating viewer:** the loss scale above is its own question, asked separately from the
+     aesthetic preference, so "smoother and nicer" cannot hide lost information. The crop and the
+     reason are required fields whenever "significant loss" or "severe regression" is chosen.
    - Why: it blocks a repeat of S-19's GPT result — a better-looking image paid for with scene
      detail.
    - Passing lets the experiment continue. It does not show Cloud beats Local as a product; only
