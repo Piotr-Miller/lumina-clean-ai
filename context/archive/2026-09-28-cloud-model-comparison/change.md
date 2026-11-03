@@ -1,13 +1,16 @@
 ---
 change_id: cloud-model-comparison
 title: Compare Cloud AI model candidates on the s17-v2 benchmark
-status: implemented
+status: archived
+outcome: completed
 created: 2026-09-28
 updated: 2026-11-03
-archived_at: null
+archived_at: 2026-11-03T20:08:52Z
 ---
 
 ## Notes
+
+2026-11-03: #339 rebase-merged; `git range-diff` maps 5009b0f → d2bd072 (5.5, 5.6) and 135f153 → 492088b (7.3, 7.8 suffixes). Recorded 5.7 accepted at 492088b5d57f80c473f2309d3a4acdb9509a6b9a on the owner's confirmation ("potwierdzam 5.7"): the owner rated every phase5-gpt core output, and the record shows this hash did not pass the core gate.
 
 2026-11-03: **Outcome: evaluations/outcome.md — stopped before validation.** The Phase 5 core of
 the restrained-prompt GPT config STOPped (S17-07/1 blocked by OpenAI moderation on both attempts),

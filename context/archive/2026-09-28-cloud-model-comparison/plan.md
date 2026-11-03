@@ -961,8 +961,8 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [x] 5.5 (paid) Selected GPT core is completed without replacing earlier slots — 5009b0f
-- [x] 5.6 Selected GPT full core verdict is recorded before extension — 5009b0f
+- [x] 5.5 (paid) Selected GPT core is completed without replacing earlier slots — d2bd072
+- [x] 5.6 Selected GPT full core verdict is recorded before extension — d2bd072
 - [-] 5.1 (paid) Surviving arms on the remaining tuning photos — n/a: no arm survived the core (phase5-gpt STOP, incomplete core S17-07/1, evaluations/phase5-core-report.json); the plan's "any STOP prevents their paid run"
 - [-] 5.2 Tuning gate per arm — n/a: no arm reached the remaining tuning photos (phase5-gpt core STOP, evaluations/phase5-core-report.json)
 
@@ -970,7 +970,7 @@ None: no production data or schema changes.
 
 - [-] 5.3 The owner rates all 8 tuning photos blind for each surviving arm — n/a: no arm survived the core (phase5-core-report.json STOP); S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
 - [-] 5.4 Tuning gate recorded — n/a: no arm reached the tuning gate (phase5-core-report.json STOP); S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
-- [ ] 5.7 The owner rates every new selected-config core output before extension and records that the exact selected hash passed the full core gate
+- [x] 5.7 The owner rates every new selected-config core output before extension and records that the exact selected hash passed the full core gate — accepted at 492088b5d57f80c473f2309d3a4acdb9509a6b9a
 
 ### Phase 6: Choose and freeze one finalist
 
@@ -990,8 +990,8 @@ None: no production data or schema changes.
 - [-] 7.7 Validation access is released and inputs prepared only in Phase 7 — n/a: the holdout stays closed; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
 - [-] 7.1 (paid) Validation run — n/a: no finalist, no Phase 7 consent; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
 - [-] 7.2 Bar verdict — n/a: no validation run; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
-- [x] 7.3 `CLOUD_DAILY_CAP` unchanged
-- [x] 7.8 Terminal outcome and status pointers are recorded
+- [x] 7.3 `CLOUD_DAILY_CAP` unchanged — 492088b
+- [x] 7.8 Terminal outcome and status pointers are recorded — 492088b
 
 #### Manual
 
