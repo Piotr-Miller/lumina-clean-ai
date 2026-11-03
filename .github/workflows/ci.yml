@@ -425,6 +425,30 @@ jobs:
           mkdir -p wrangler-logs
           cp -r ~/.config/.wrangler/logs/. wrangler-logs/ 2>/dev/null || echo "no wrangler logs found"
           ls -la wrangler-logs/ || true
+      # Edge-runtime evidence for the north-star `/callback` flake (#343). On
+      # 2026-11-03 the stubbed callback POST hung until the 30 s test timeout
+      # after setup had found the function reachable, and the readiness probe
+      # above accepted the gateway's 502 on a PASSING run too — so what the
+      # runtime did during the hang is the missing fact. `functions serve`
+      # writes its output, including the function's own console, to
+      # $RUNNER_TEMP, outside the workspace, where upload-artifact never looks;
+      # the edge-runtime and Kong (the gateway that answers 502) containers keep
+      # their own logs, discarded with the runner. Container names are found,
+      # not hard-coded: they carry config.toml's project_id. Same contract as
+      # the step above: failure only, continue-on-error, never a second red.
+      # Nothing secret lands here: the stack's keys are the CLI's local ones
+      # and the signing secret is generated per run.
+      - name: Collect Edge Function logs
+        if: ${{ failure() }}
+        continue-on-error: true
+        run: |
+          mkdir -p edge-logs
+          cp "$RUNNER_TEMP/functions-serve.log" edge-logs/ 2>/dev/null || echo "no functions-serve.log (serve never started)"
+          docker ps -a --format '{{.Names}}\t{{.Status}}' > edge-logs/containers.txt 2>&1 || true
+          docker ps -a --format '{{.Names}}' | grep -E '^supabase_(edge_runtime|kong)_' | while read -r name; do
+            docker logs --timestamps "$name" > "edge-logs/$name.log" 2>&1 || true
+          done
+          ls -la edge-logs/ || true
       - name: Upload Playwright report
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
@@ -433,6 +457,7 @@ jobs:
           path: |
             playwright-report/
             wrangler-logs/
+            edge-logs/
             test-results/
           retention-days: 7
       # Flaky-green evidence (change `e2e-webserver-boot-flake`, sig 3): with
