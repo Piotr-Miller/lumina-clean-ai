@@ -1,6 +1,19 @@
-# Kolejne kroki (stan na 2026-10-29)
+# Kolejne kroki (stan na 2026-11-03)
 
-## Następne: S-19 `cloud-model-comparison` (#271)
+## S-19 `cloud-model-comparison` (#271): zamknięte 2026-11-03, „stopped before validation”
+
+Wynik: `context/changes/cloud-model-comparison/evaluations/outcome.md`. Żaden kandydat nie przeszedł bramki
+core: GPT Image 2.5 (standard i z ograniczającym promptem) zablokowany przez moderację OpenAI na S17-07,
+NAFNet 0 z 3 nad własną kontrolą. GPT ładniejszy, ale prawdziwy Local wierniejszy w 8 z 8 par (Phase 5).
+Holdout (12 zdjęć walidacyjnych) nieotwarty. Cloud nadal wstrzymany (`CLOUD_DAILY_CAP=0`).
+
+Następne kroki:
+
+1. **Ty:** zmerguj PR z Phase 5 i zamknięciem.
+2. **Ja:** `/rune-archive cloud-model-comparison`, a po twojej zgodzie zamknięcie issue #271.
+3. **Ty (opcjonalnie):** `/rune-new` dla Jev jako bramki i choosera dla Local Auto (opis w `outcome.md`).
+
+Historia przed zamknięciem (stan na 2026-10-29, nieaktualna):
 
 Cloud AI jest wstrzymany na produkcji od 2026-10-28T20:33:24Z (`CLOUD_DAILY_CAP=0`). Wraca dopiero wtedy,
 gdy S-19 spełni próg: co najmniej 8/12 wyraźnych wygranych, najwyżej jedna umiarkowana przegrana,
@@ -77,8 +90,7 @@ Zasady:
 - `wrangler` jest zalogowany na tej maszynie (2026-10-28).
 - **Windows (2026-10-29):** `ai-toolkit@1.15.0` zainstalowany, skille `rune-*` dostępne. Uwagi o podmanie/SELinux
   wyżej dotyczą maszyny z Linuksem.
-- **Branch S-19:** `docs/cloud-model-comparison-spike`, PR #327 (otwarty, niezmergowany). Na Linuksie:
-  `git checkout docs/cloud-model-comparison-spike && git pull`.
+- **Branch S-19:** wszystko jest na masterze (PR #327–#337); zamknięcie na `docs/cloud-model-comparison-phase-5`.
 
 ## Zamknięte (2026-10-27 – 2026-10-28)
 

@@ -303,6 +303,34 @@ class Scope(unittest.TestCase):
                 "context/foundation/roadmap.md", "wrangler.jsonc", "src/lib/engines/auto-params.ts"]):
             self.assertEqual(protocol.check_scope("HEAD"), ["wrangler.jsonc", "src/lib/engines/auto-params.ts"])
 
+    def test_only_s19_commits_and_the_worktree_count(self):
+        import subprocess
+        import tempfile
+
+        repo = Path(tempfile.mkdtemp(prefix="s19-scope-"))
+        self.addCleanup(__import__("shutil").rmtree, repo, True)
+
+        def git(*a):
+            subprocess.run(["git", "-C", str(repo), *a], check=True, capture_output=True)
+
+        def commit(path, subject):
+            (repo / path).parent.mkdir(parents=True, exist_ok=True)
+            (repo / path).write_text(subject)
+            git("add", path)
+            git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", subject)
+
+        git("init", "-q")
+        commit("README", "base")
+        base = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        commit("scripts/s19/a.py", "feat(cloud-model-comparison): a")
+        commit("AGENTS.md", "chore: pin a toolkit (#999)")  # another change merged meanwhile
+        commit("wrangler.jsonc", "fix(cloud-model-comparison): slip")
+        (repo / "src").mkdir()
+        (repo / "src" / "x.ts").write_text("worktree")
+        paths = protocol.changed_paths(base, root=repo)
+        self.assertEqual(paths, ["scripts/s19/a.py", "src/x.ts", "wrangler.jsonc"])
+        self.assertEqual(protocol.changed_paths("0" * 40, root=repo), paths, "a non-ancestor base reads all of HEAD")
+
     def test_cli_exit_follows_the_changed_paths(self):
         # implementation review F10: replaces an `assertIn(r, (0, 1))` that could never fail
         allowed = ["scripts/s19/x.py", "context/changes/cloud-model-comparison/plan.md"]
@@ -310,7 +338,7 @@ class Scope(unittest.TestCase):
             self.assertEqual(protocol.main(["check-scope", "--since", "HEAD"]), 0)
         with mock.patch.object(protocol, "changed_paths", return_value=allowed + ["wrangler.jsonc"]):
             self.assertEqual(protocol.main(["check-scope", "--since", "HEAD"]), 1)
-        self.assertTrue(protocol.IMPLEMENTATION_BASE.startswith("ef80a97"))
+        self.assertTrue(protocol.IMPLEMENTATION_BASE.startswith("eb22c59"), "the plan commit as master knows it")
 
     def test_git_level_changes_are_seen_committed_staged_and_untracked(self):
         repo = Path(tempfile.mkdtemp(prefix="s19-scope-"))
@@ -332,7 +360,7 @@ class Scope(unittest.TestCase):
         (repo / "src").mkdir()
         (repo / "src" / "committed.ts").write_text("x\n")
         git("add", "src/committed.ts", "scripts/s19/ok.py")
-        git("commit", "-q", "-m", "change")
+        git("commit", "-q", "-m", "feat(cloud-model-comparison): change")  # an S-19 commit
         (repo / "wrangler.jsonc").write_text("{}\n")  # untracked
         with mock.patch.object(protocol, "ROOT", repo):
             self.assertEqual(protocol.check_scope(base), ["src/committed.ts", "wrangler.jsonc"])

@@ -57,9 +57,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CHANGE_DIR = ROOT / "context" / "changes" / "cloud-model-comparison"
 
-# The commit this harness was started from. `check-scope` compares everything after it (plus
-# the worktree) with the S-19 allowlist; earlier branch commits set up the v2 benchmark.
-IMPLEMENTATION_BASE = "ef80a97cad27556e98e77dde73c559e7909555ae"
+# The commit this harness was started from: the S-19 plan commit. `check-scope` compares the files
+# of every S-19 commit after it (subject scope SCOPE_TAG), plus the worktree, with the S-19
+# allowlist. Commits without the tag were merged into master meanwhile by other changes, so they
+# are left out instead of failing the check. The plan commit was ef80a97 on the original branch;
+# PR #327's rebase-merge rewrote it to eb22c59 (same patch-id), the ancestor master knows. A base
+# that is not an ancestor of HEAD makes the check read every S-19 commit in HEAD's history.
+IMPLEMENTATION_BASE = "eb22c59dfdaa748b8e461046f92198358207f792"
+SCOPE_TAG = "(cloud-model-comparison)"
 SCOPE_ALLOWLIST = (
     "context/changes/cloud-model-comparison/",
     "scripts/s19/",
@@ -530,14 +535,19 @@ def close(outcome_path: Path) -> list[str]:
 # ---------------------------------------------------------------- scope
 
 
-def changed_paths(since: str) -> list[str]:
-    def git(*args: str) -> str:
-        r = subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True)
-        if r.returncode != 0:
+def changed_paths(since: str, root: Path | None = None) -> list[str]:
+    root = root or ROOT
+    def git(*args: str, check: bool = True) -> str:
+        r = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True)
+        if check and r.returncode != 0:
             raise Refused(f"git {' '.join(args)} failed: {r.stderr.strip()}")
-        return r.stdout
+        return r.stdout if r.returncode == 0 else ""
 
-    paths = set(git("diff", "--name-only", "--no-renames", f"{since}..HEAD").split("\n"))
+    ancestor = subprocess.run(["git", "-C", str(root), "merge-base", "--is-ancestor", since, "HEAD"],
+                              capture_output=True).returncode == 0
+    commits = f"{since}..HEAD" if ancestor else "HEAD"
+    paths = set(git("log", "--fixed-strings", f"--grep={SCOPE_TAG}", "--name-only", "--no-renames", "--format=",
+                    commits).split("\n"))
     for line in git("status", "--porcelain", "--untracked-files=all", "--no-renames").split("\n"):
         if line:
             paths.add(line[3:].strip('"'))

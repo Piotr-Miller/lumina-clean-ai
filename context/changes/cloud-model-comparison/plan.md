@@ -961,40 +961,40 @@ None: no production data or schema changes.
 
 #### Automated
 
-- [x] 5.5 (paid) Selected GPT core is completed without replacing earlier slots
-- [x] 5.6 Selected GPT full core verdict is recorded before extension
+- [x] 5.5 (paid) Selected GPT core is completed without replacing earlier slots — 5009b0f
+- [x] 5.6 Selected GPT full core verdict is recorded before extension — 5009b0f
 - [-] 5.1 (paid) Surviving arms on the remaining tuning photos — n/a: no arm survived the core (phase5-gpt STOP, incomplete core S17-07/1, evaluations/phase5-core-report.json); the plan's "any STOP prevents their paid run"
 - [-] 5.2 Tuning gate per arm — n/a: no arm reached the remaining tuning photos (phase5-gpt core STOP, evaluations/phase5-core-report.json)
 
 #### Manual
 
-- [ ] 5.3 The owner rates all 8 tuning photos blind for each surviving arm
-- [ ] 5.4 Tuning gate recorded
+- [-] 5.3 The owner rates all 8 tuning photos blind for each surviving arm — n/a: no arm survived the core (phase5-core-report.json STOP); S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
+- [-] 5.4 Tuning gate recorded — n/a: no arm reached the tuning gate (phase5-core-report.json STOP); S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
 - [ ] 5.7 The owner rates every new selected-config core output before extension and records that the exact selected hash passed the full core gate
 
 ### Phase 6: Choose and freeze one finalist
 
 #### Automated
 
-- [ ] 6.1 The recorded hash matches the config
+- [-] 6.1 The recorded hash matches the config — n/a: no finalist to freeze; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
 
 #### Manual
 
-- [ ] 6.2 The owner chooses the finalist and approves the freeze record
-- [ ] 6.3 The owner records the decision on sending validation photos to the vendor
+- [-] 6.2 The owner chooses the finalist and approves the freeze record — n/a: no finalist; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
+- [-] 6.3 The owner records the decision on sending validation photos to the vendor — n/a: the holdout is never sent; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
 
 ### Phase 7: One-shot validation
 
 #### Automated
 
-- [ ] 7.7 Validation access is released and inputs prepared only in Phase 7
-- [ ] 7.1 (paid) Validation run
-- [ ] 7.2 Bar verdict
-- [ ] 7.3 `CLOUD_DAILY_CAP` unchanged
-- [ ] 7.8 Terminal outcome and status pointers are recorded
+- [-] 7.7 Validation access is released and inputs prepared only in Phase 7 — n/a: the holdout stays closed; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
+- [-] 7.1 (paid) Validation run — n/a: no finalist, no Phase 7 consent; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
+- [-] 7.2 Bar verdict — n/a: no validation run; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
+- [x] 7.3 `CLOUD_DAILY_CAP` unchanged
+- [x] 7.8 Terminal outcome and status pointers are recorded
 
 #### Manual
 
-- [ ] 7.4 Local is produced in the app for all 12 validation photos and saved
-- [ ] 7.5 The owner rates all 12 blind against Local, with fidelity flags
-- [ ] 7.6 The owner accepts the recorded verdict and the next step
+- [-] 7.4 Local is produced in the app for all 12 validation photos and saved — n/a: the holdout stays closed; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
+- [-] 7.5 The owner rates all 12 blind against Local, with fidelity flags — n/a: no validation run; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
+- [-] 7.6 The owner accepts the recorded verdict and the next step — n/a: no validation verdict; S-19 stopped before validation (evaluations/outcome.md); no config passed a core gate
