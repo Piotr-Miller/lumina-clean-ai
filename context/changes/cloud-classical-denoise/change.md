@@ -5,6 +5,7 @@ status: new
 created: 2026-11-03
 updated: 2026-11-03
 archived_at: null
+issue: 347
 ---
 
 ## Notes
@@ -148,9 +149,10 @@ after step 1, as a separate arm. It is not a second full track and is not run in
   (a learned model) stays the Premium candidate **above** it. `local-jev-gate` is not a slice
   at all — it touches Local — and sits in Parked like `local-engine-ceiling` (#188).
 
-Issue labels on registration, following `github-issues.md`: `roadmap`, `slice`, `phase:post-mvp`,
-`status:proposed` (not plan-ready by the owner's decision). The roadmap row and the issue are
-written when the owner confirms; neither exists yet.
+**Confirmed by the owner on 2026-11-03.** Roadmap row S-20 written (`context/foundation/roadmap.md`);
+issue [#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347) opened with `enhancement`,
+`roadmap`, `slice`, `status:proposed` and `phase:post-mvp` (not plan-ready by the owner's decision).
+`local-jev-gate` is [#348](https://github.com/Piotr-Miller/lumina-clean-ai/issues/348), Parked.
 
 ### Related
 
