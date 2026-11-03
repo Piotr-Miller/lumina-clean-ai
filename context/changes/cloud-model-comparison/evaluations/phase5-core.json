@@ -1,0 +1,259 @@
+{
+  "viewer": "blind-files",
+  "version": 1,
+  "series_id": "phase5",
+  "split": "tuning",
+  "manifest_sha256": "74eb611e2b1e6fcb57f2fbe17a3b4d641be431b9cce97db81fc3a626590dacf8",
+  "release": null,
+  "rated_on": "2026-11-03",
+  "rating_method": "Owner's verdicts pasted into the Claude session on 2026-11-03, made on 8 blind pairs in test-photos/private/s19/phase5-blind/ (oryginal/A/B, PNG sRGB, GPT's output size, pair order shuffled, A/B by secrets) with 1:1 crops, decoded through the sealed key (sha256 fe42d462b3b871b4edc1fb3f93542bc1ee937676fd7b602be2d9f2c87ba62cd2) after the rating was closed. The owner rated two axes per pair: visual quality (`preference`, used by tally) and fidelity to the original (`fidelity_preference`, not read by tally). Diagnostic only: the core gate is STOP on the S17-07/1 technical failure regardless of these ratings. No content change was confirmed; the fidelity findings are recorded in words. Blinding note: the three pairs of one photo share the same Local file.",
+  "ratings": [
+    {
+      "rating_id": "S17-04:phase5-gpt-2:local",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "phase5-gpt-2",
+        "config_sha256": "9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea",
+        "slot": 2,
+        "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "output_sha256": "a0d5a067bdde9ada5ed087eaef966e0b094c5f4d16cf87218ce8aa239c2b467d"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "c58892c8182cd81ffa49dd7df29c39a33740d2bf169ad3895c15961403dec94a"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "blind_file_pair": "para-01"
+      },
+      "preference": "candidate-slight",
+      "fidelity_preference": "reference-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Niebo S17-04: gładszy wariant daje czystszy obraz, ale wprowadza nierówne, szerokie przejścia tonalne i mocno wzmacnia krawędzie prętów; przerysowanie flagi i drobnych ornamentów. Wierniejszy wariant zachowuje więcej szumu, ale lepiej odpowiada oryginałowi."
+    },
+    {
+      "rating_id": "S17-04:phase5-gpt-1:local",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "phase5-gpt-1",
+        "config_sha256": "9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea",
+        "slot": 1,
+        "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "output_sha256": "89c4588d0199723e9a709351170b51fc93a9c666c04d11a230b8f79869c2e4c0"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "c58892c8182cd81ffa49dd7df29c39a33740d2bf169ad3895c15961403dec94a"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "blind_file_pair": "para-02"
+      },
+      "preference": "candidate-slight",
+      "fidelity_preference": "reference-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Niebo S17-04: gładszy wariant daje czystszy obraz, ale wprowadza nierówne, szerokie przejścia tonalne i mocno wzmacnia krawędzie prętów; przerysowanie flagi i drobnych ornamentów. Wierniejszy wariant zachowuje więcej szumu, ale lepiej odpowiada oryginałowi."
+    },
+    {
+      "rating_id": "S17-04:phase5-gpt-3:local",
+      "photo": "S17-04",
+      "candidate": {
+        "arm_id": "phase5-gpt-3",
+        "config_sha256": "9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea",
+        "slot": 3,
+        "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+        "output_sha256": "b079d94af92d23fdc4a1d261095c930cf49f2daaa8d1f2bb5dda8ade98c87c80"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "c58892c8182cd81ffa49dd7df29c39a33740d2bf169ad3895c15961403dec94a"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "blind_file_pair": "para-03"
+      },
+      "preference": "candidate-slight",
+      "fidelity_preference": "reference-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Niebo S17-04: gładszy wariant daje czystszy obraz, ale wprowadza nierówne, szerokie przejścia tonalne i mocno wzmacnia krawędzie prętów; przerysowanie flagi i drobnych ornamentów. Wierniejszy wariant zachowuje więcej szumu, ale lepiej odpowiada oryginałowi."
+    },
+    {
+      "rating_id": "S17-03:phase5-gpt-1:local",
+      "photo": "S17-03",
+      "candidate": {
+        "arm_id": "phase5-gpt-1",
+        "config_sha256": "9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea",
+        "slot": 1,
+        "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "output_sha256": "4765b13c498add805a3852acf28bf2e395038451e8be3cb49d2ede6aa6657de9"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "773962d189ac95c28883e2e89af15209ff31498d80b4ac19ea3c2dbbe2531ba2"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "blind_file_pair": "para-04"
+      },
+      "preference": "candidate-slight",
+      "fidelity_preference": "reference-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Zorza S17-03: efektowniejszy wariant wygładza pasma, zmienia ich drobny przebieg i lokalne przewężenia oraz wygląd słabszych gwiazd; neutralizacja zielonego zafarbu śniegu zmienia charakter sceny. Wierniejszy zachowuje miękką strukturę źródła."
+    },
+    {
+      "rating_id": "S17-03:phase5-gpt-3:local",
+      "photo": "S17-03",
+      "candidate": {
+        "arm_id": "phase5-gpt-3",
+        "config_sha256": "9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea",
+        "slot": 3,
+        "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "output_sha256": "0bb548af60f180f21d24a86093f8883bfedfaa996c219e25659ee655efab0026"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "773962d189ac95c28883e2e89af15209ff31498d80b4ac19ea3c2dbbe2531ba2"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "blind_file_pair": "para-05"
+      },
+      "preference": "candidate-slight",
+      "fidelity_preference": "reference-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Zorza S17-03: efektowniejszy wariant wygładza pasma, zmienia ich drobny przebieg i lokalne przewężenia oraz wygląd słabszych gwiazd; neutralizacja zielonego zafarbu śniegu zmienia charakter sceny. Wierniejszy zachowuje miękką strukturę źródła."
+    },
+    {
+      "rating_id": "S17-07:phase5-gpt-2:local",
+      "photo": "S17-07",
+      "candidate": {
+        "arm_id": "phase5-gpt-2",
+        "config_sha256": "9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea",
+        "slot": 2,
+        "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+        "output_sha256": "d9dc33aebdc966096d0e3ae41969428ed6d2e105c8b2ec5d05d581e29bb868d6"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "257b80d0147705b2e50747261ba65d5ae7473604a53165c55997a3b2beef3ef4"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "blind_file_pair": "para-06"
+      },
+      "preference": "candidate-clear",
+      "fidelity_preference": "reference-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": true,
+      "clear_reason_type": "independent_gain",
+      "reason": "Boczny neon S17-07: poprawia pozorną szczegółowość i czytelność cieni, lecz przerysowuje litery oraz szczegóły twarzy i ubrań; formy liter różnią się między próbami. Wierniejszy zachowuje źródłowe kształty, choć jest zaszumiony, mocno rozjaśniony i ma silną poświatę."
+    },
+    {
+      "rating_id": "S17-03:phase5-gpt-2:local",
+      "photo": "S17-03",
+      "candidate": {
+        "arm_id": "phase5-gpt-2",
+        "config_sha256": "9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea",
+        "slot": 2,
+        "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+        "output_sha256": "bf1d8652104c73b5dc2e0a6de07f2bfb65ab9f2a373f19953e693dafa6387001"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "773962d189ac95c28883e2e89af15209ff31498d80b4ac19ea3c2dbbe2531ba2"
+      },
+      "blind_order": {
+        "candidate": "B",
+        "blind_file_pair": "para-07"
+      },
+      "preference": "candidate-slight",
+      "fidelity_preference": "reference-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": false,
+      "clear_reason_type": null,
+      "reason": "Zorza S17-03: efektowniejszy wariant wygładza pasma, zmienia ich drobny przebieg i lokalne przewężenia oraz wygląd słabszych gwiazd; neutralizacja zielonego zafarbu śniegu zmienia charakter sceny. Wierniejszy zachowuje miękką strukturę źródła."
+    },
+    {
+      "rating_id": "S17-07:phase5-gpt-3:local",
+      "photo": "S17-07",
+      "candidate": {
+        "arm_id": "phase5-gpt-3",
+        "config_sha256": "9a0f076c77fbc15f55a5469e3f0f9c3a3243fc2570c739766ad6f067cfa9f0ea",
+        "slot": 3,
+        "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+        "output_sha256": "e5c96bfe9e7de2e0fa12f7171a7039472caf3bb0776440903d84796c375d1d2a"
+      },
+      "reference": {
+        "arm_id": "local",
+        "kind": "local",
+        "sha256": "257b80d0147705b2e50747261ba65d5ae7473604a53165c55997a3b2beef3ef4"
+      },
+      "blind_order": {
+        "candidate": "A",
+        "blind_file_pair": "para-08"
+      },
+      "preference": "candidate-clear",
+      "fidelity_preference": "reference-clear",
+      "severe_candidate": false,
+      "severe_reference": false,
+      "content_change": false,
+      "content_change_reference": false,
+      "crop_note": "",
+      "unverified_reconstruction": true,
+      "clear_reason_type": "independent_gain",
+      "reason": "Boczny neon S17-07: poprawia pozorną szczegółowość i czytelność cieni, lecz przerysowuje litery oraz szczegóły twarzy i ubrań; formy liter różnią się między próbami. Wierniejszy zachowuje źródłowe kształty, choć jest zaszumiony, mocno rozjaśniony i ma silną poświatę."
+    }
+  ],
+  "failed_slots": [
+    {
+      "photo": "S17-07",
+      "arm_id": "phase5-gpt-1",
+      "status": "technical_failure"
+    }
+  ]
+}
