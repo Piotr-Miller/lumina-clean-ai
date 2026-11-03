@@ -1,0 +1,67 @@
+# Classifies a pull request as docs-only so a REQUIRED job can still report
+# (green) while skipping its expensive steps. Used by `integration` and `e2e`
+# in ci.yml; the predicate and its allowlist live in scripts/lib/docs-only.ts.
+#
+# Why a step and not a trigger filter or a separate job:
+# - `paths-ignore` on the workflow produces NO run, and a required check that
+#   never reports holds the PR at "expected" forever.
+# - A separate `changes` job would enter the `needs` graph of `deploy`; a failed
+#   or skipped ancestor can then skip `deploy` while `deploy-skipped-alarm`,
+#   which reads only its DIRECT needs, stays silent. A step inside each job
+#   leaves the job graph exactly as it was.
+#
+# Fail-closed: the output is 'true' ONLY for a pull_request whose every changed
+# path is allowlisted. Push and workflow_dispatch runs (the ones that gate
+# `deploy`) always get 'false', and so does any error — a missing merge parent,
+# a failed diff, a failed or unexpected classifier answer. Callers gate on
+# `!= 'true'`, so an absent output also runs everything.
+#
+# Needs: a checkout with fetch-depth >= 2 (the diff is the test merge commit
+# against its first parent, i.e. exactly what merging would change) and Node 24
+# on PATH (it runs the TypeScript classifier through native type stripping, so
+# no `npm ci` is needed to decide whether to run `npm ci`).
+
+name: Docs-only scope
+description: Output docs-only='true' only for a pull request whose every changed path is allowlisted in scripts/lib/docs-only.ts.
+
+outputs:
+  docs-only:
+    description: "'true' or 'false'; 'false' on any non-pull_request event and on any error."
+    value: ${{ steps.classify.outputs.docs-only }}
+
+runs:
+  using: composite
+  steps:
+    - id: classify
+      shell: bash
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        verdict=false
+        reason="not a pull_request event ($EVENT_NAME): gates run in full"
+        if [ "$EVENT_NAME" = "pull_request" ]; then
+          if ! git rev-parse --verify --quiet 'HEAD^2' > /dev/null; then
+            reason="HEAD is not GitHub's test merge commit: gates run in full"
+          elif ! changed=$(git -c core.quotePath=false diff --name-only --no-renames 'HEAD^1' HEAD); then
+            reason="git diff failed: gates run in full"
+          else
+            answer=$(printf '%s\n' "$changed" | node scripts/lib/docs-only.ts) || answer=error
+            count=$(printf '%s\n' "$changed" | grep -c . || true)
+            case "$answer" in
+              true)
+                verdict=true
+                reason="all $count changed path(s) are under the docs-only allowlist: Docker, Supabase and Playwright steps are skipped"
+                ;;
+              false)
+                if [ "$count" = 0 ]; then
+                  reason="no changed paths: gates run in full"
+                else
+                  reason="$count changed path(s), at least one outside the docs-only allowlist: gates run in full"
+                fi
+                ;;
+              *) reason="classifier failed or answered '$answer': gates run in full" ;;
+            esac
+          fi
+        fi
+        echo "docs-only=$verdict" >> "$GITHUB_OUTPUT"
+        echo "Docs-only scope: $verdict — $reason" | tee -a "$GITHUB_STEP_SUMMARY"
