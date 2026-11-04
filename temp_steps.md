@@ -1,6 +1,6 @@
 # Kolejne kroki (stan na 2026-11-04)
 
-Produkcja: najnowszy master `685d12c`, deploy zielony. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0`
+Produkcja: najnowszy master `4e04923`, deploy zielony (w tym funkcja `enhance` z supabase-js przez npm, #356). Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0`
 od 2026-10-28). Lokalnie: gałąź `master`, czyste drzewo poza tym plikiem.
 
 ## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — zarejestrowane, NIE rozpoczęte
@@ -49,16 +49,20 @@ w `test-photos/private/s19/` (do późniejszej „opcji 2”: GPT jako przewodni
 
 ## CI — co obserwować
 
-- **#343** (flaka north-star: test wisi na `/callback`): przy następnej awarii `e2e` pobrać artefakt
-  `playwright-report` → katalog `edge-logs/` (`functions-serve.log`, logi edge runtime i Kong, od #346)
-  i dopisać do #343, co pokazują.
+- **#343** (flaka north-star: test wisi na `/callback`): **przyczyna znaleziona 2026-11-04** dzięki
+  `edge-logs/` z #346. Edge runtime padał przy leniwym ładowaniu modułów: esm.sh zwrócił inne bajty
+  `tslib` niż w `deno.lock` („Integrity check failed”), kontener znikał, `/callback` czekał do timeoutu.
+  Poprawka #356: `@supabase/supabase-js` przez `npm:` zamiast esm.sh. Na jej runie sonda dostała 404 od
+  funkcji (wcześniej zawsze 502) i 8/8 testów przeszło. **Issue otwarte** do kilku zielonych runów `e2e`
+  na master; potem zaproponować zamknięcie. Przy ewentualnej kolejnej awarii: artefakt
+  `playwright-report` → `edge-logs/`. Kandydat na później: sonda gotowości nadal przyjmuje 502.
 - **#352** (brak miejsca na dysku przy ładowaniu obrazów Supabase): pomiar z #353 to 79G wolnego ze 145G,
   więc hipoteza „obrazy trzymane podwójnie” jest prawdopodobnie błędna. Przy następnej awarii odczytać z
   logu linię `disk before load: … free of …` i dopisać do #352. Jeśli dysk mały → usunąć preinstalowane
   narzędzia runnera (`/usr/share/dotnet`, `/usr/local/lib/android`, `/opt/ghc`).
 - **Docs-only skip działa** (#344): PR zmieniający tylko `context/` → `integration`/`e2e` ~1 min z
-  `Docs-only scope: true`. Push na master zawsze biegnie w pełni. `AGENTS.md` i inne pliki poza
-  `context/` celowo NIE są pomijane.
+  `Docs-only scope: true`. Od #357 także sam `temp_steps.md` (dopasowanie dokładne, nie prefiks).
+  Push na master zawsze biegnie w pełni. `AGENTS.md` i inne pliki poza listą celowo NIE są pomijane.
 - Padnięty `e2e` na master → deploy pominięty, alarm się odpala. Procedura: `gh run rerun <id> --failed`.
 
 ## Kolejka (bez zmian)
@@ -81,6 +85,11 @@ w `test-photos/private/s19/` (do późniejszej „opcji 2”: GPT jako przewodni
 | #350, #351 | decyzje właściciela dla kroku 1 i definicja istotnej straty wierności   |
 | #352, #353 | issue o braku miejsca + usuwanie archiwów po `docker load` i linie `df` |
 | #343, #352 | komentarze z dowodami (trzecie wystąpienie flaki; pomiar 79G/145G)      |
+| #354       | `temp_steps.md` w stanie na 2026-11-04                                  |
+| #356       | supabase-js przez `npm:` — przyczyna #343 (integrity check na esm.sh)   |
+| #357       | `temp_steps.md` pomijany przez ciężkie kroki CI                         |
+| #343       | komentarz z przyczyną i poprawką                                        |
+| gałęzie    | 28 zmergowanych gałęzi usuniętych lokalnie i na GitHubie                |
 
 S-19 (`cloud-model-comparison`, #271): zarchiwizowane 2026-11-03 jako „stopped before validation”,
 issue zamknięte. Wynik: `context/archive/2026-09-28-cloud-model-comparison/evaluations/outcome.md`.
@@ -93,7 +102,9 @@ issue zamknięte. Wynik: `context/archive/2026-09-28-cloud-model-comparison/eval
 - `supabase/functions/` i `src/` mają etykietę SELinux `container_file_t`. Cofnięcie: `restorecon -R supabase/ src/`.
 - `.dev.vars` i `supabase/functions/.env` są wygenerowane lokalnie dla E2E (gitignored).
 - `wrangler` jest zalogowany na tej maszynie (2026-10-28).
-- Lokalne, zmergowane gałęzie z tych dwóch dni (`docs/register-*`, `ci/docs-only-skip`, `ci/e2e-edge-logs`,
-  `ci/supabase-image-load-disk`, `docs/s20-*`, `docs/agents-ai-review-exclusions`) można usunąć — ich PR-y
-  są zmergowane, ale rebase-merge zmienił SHA, więc `git branch -d` odmówi; potrzebne `git branch -D`.
+- Zmergowane gałęzie usunięte 2026-11-04 (lokalnie i na GitHubie). Zostały celowo, bo nie mają PR-a albo PR
+  był zamknięty bez merge'u: `feat/cloud-model-comparison` (historia porzuconego `s19-v1`), `feat/finder-glm-5-3`,
+  `feat/finder-glm-5-3-high`, `feat/finder-model-swap`, `feat/finder-serialization-outage`, `feat/finder-sonnet`,
+  `feat/finder-sonnet-effort` (tylko na GitHubie), `feat/finder-verification`. Rebase-merge zmienia SHA, więc
+  `git branch -d` odmawia na zmergowanych gałęziach; potrzebne `git branch -D`.
 - **Windows:** uwagi o podmanie/SELinux wyżej dotyczą tylko maszyny z Linuksem.
