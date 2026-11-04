@@ -46,6 +46,19 @@ describe("isDocsOnlyChange", () => {
     expect(isDocsOnlyChange(["context/../src/middleware.ts"])).toBe(false);
   });
 
+  it("is true for temp_steps.md alone and together with context/ paths", () => {
+    expect(isDocsOnlyChange(["temp_steps.md"])).toBe(true);
+    expect(isDocsOnlyChange(["temp_steps.md", "context/changes/x/change.md"])).toBe(true);
+  });
+
+  it("matches temp_steps.md exactly, never as a prefix or in another directory", () => {
+    expect(isDocsOnlyChange(["temp_steps.md.bak"])).toBe(false);
+    expect(isDocsOnlyChange(["temp_steps.mdx"])).toBe(false);
+    expect(isDocsOnlyChange(["temp_steps.md/x.ts"])).toBe(false);
+    expect(isDocsOnlyChange(["src/temp_steps.md"])).toBe(false);
+    expect(isDocsOnlyChange(["temp_steps.md", "src/types.ts"])).toBe(false);
+  });
+
   it("is false for a path Git quoted, because it no longer starts with the prefix", () => {
     expect(isDocsOnlyChange(['"context/changes/x/tab\\there.md"'])).toBe(false);
   });

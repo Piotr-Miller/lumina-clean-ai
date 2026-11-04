@@ -13,6 +13,11 @@
  * `AGENTS.md` steers agents. Widen the list only for a tree that no CI job
  * reads.
  *
+ * Single files outside such a tree go in `DOCS_ONLY_FILES` and match EXACTLY,
+ * never as a prefix, so `temp_steps.md` does not also admit `temp_steps.md.bak`
+ * or `temp_steps.md/x`. Today that is only `temp_steps.md`: the owner's
+ * hand-off notes at the repo root, read by no test, build step or agent rule.
+ *
  * Fail-closed by construction: an empty list, a blank-only list or any path
  * outside the allowlist yields `false` (run everything). A path Git had to
  * quote (it starts with `"`) never matches a prefix, so it also runs
@@ -31,6 +36,9 @@ import { pathToFileURL } from "node:url";
 /** Repo-relative path prefixes whose changes no `integration` / `e2e` step reads. */
 export const DOCS_ONLY_PREFIXES: readonly string[] = ["context/"];
 
+/** Repo-relative single files, matched exactly, whose changes no `integration` / `e2e` step reads. */
+export const DOCS_ONLY_FILES: readonly string[] = ["temp_steps.md"];
+
 /** Split `git diff --name-only` output into paths, dropping blank lines (incl. CRLF endings). */
 export function parseChangedPaths(output: string): string[] {
   return output
@@ -39,14 +47,15 @@ export function parseChangedPaths(output: string): string[] {
     .filter((line) => line !== "");
 }
 
-/** True only when at least one path changed and every changed path is under an allowlisted prefix. */
+/** True for one changed path that is an allowlisted file or sits under an allowlisted prefix. */
+function isDocsOnlyPath(path: string): boolean {
+  if (path.split("/").includes("..")) return false;
+  return DOCS_ONLY_FILES.includes(path) || DOCS_ONLY_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
+/** True only when at least one path changed and every changed path is allowlisted. */
 export function isDocsOnlyChange(paths: readonly string[]): boolean {
-  return (
-    paths.length > 0 &&
-    paths.every(
-      (path) => !path.split("/").includes("..") && DOCS_ONLY_PREFIXES.some((prefix) => path.startsWith(prefix)),
-    )
-  );
+  return paths.length > 0 && paths.every(isDocsOnlyPath);
 }
 
 const invokedPath = process.argv.at(1);

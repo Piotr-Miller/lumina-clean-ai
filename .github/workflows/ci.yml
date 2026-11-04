@@ -112,7 +112,7 @@ jobs:
           node-version: 24
           cache: npm
       # Docs-only skip: a PR whose every changed path is on the allowlist in
-      # scripts/lib/docs-only.ts (today only context/**) still runs this
+      # scripts/lib/docs-only.ts (today context/** and temp_steps.md) still runs this
       # REQUIRED job, which reports green, but skips every step below. Each
       # one is gated on `docs-only != 'true'`, so a missing or failed
       # classification runs the whole job (fail-closed). Master pushes and
@@ -251,7 +251,7 @@ jobs:
           node-version: 24
           cache: npm
       # Docs-only skip: a PR whose every changed path is on the allowlist in
-      # scripts/lib/docs-only.ts (today only context/**) still runs this
+      # scripts/lib/docs-only.ts (today context/** and temp_steps.md) still runs this
       # REQUIRED job, which reports green, but skips every step below. Each
       # one is gated on `docs-only != 'true'`, so a missing or failed
       # classification runs the whole job (fail-closed). Master pushes and
