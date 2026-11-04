@@ -140,10 +140,19 @@ jobs:
       - name: Load cached Supabase images
         if: steps.scope.outputs.docs-only != 'true' && steps.supabase-images.outputs.cache-hit == 'true'
         run: |
+          # Delete each tar as soon as it is loaded (#352). Keeping them all
+          # until the loop ends held every image on disk twice (tar + loaded
+          # layers) and ran the runner out of space mid-load. Safe for the
+          # cache: this step runs only on a primary-key hit, and actions/cache
+          # saves only on a miss, so the restored tars are never re-saved.
+          # The df lines record the headroom, so a recurrence shows the numbers.
           shopt -s nullglob
+          df -h / | tail -n 1 | awk '{print "disk before load: " $4 " free of " $2}'
           for tar in ~/supabase-images/*.tar; do
             docker load -i "$tar"
+            rm -f "$tar"
           done
+          df -h / | tail -n 1 | awk '{print "disk after load: " $4 " free of " $2}'
       # `supabase start` boots Postgres + Auth + Storage in Docker (~1-2 min on a
       # cold image pull; near-instant on a cache hit). Retry once after a clean
       # stop so a transient Docker/image-pull hiccup doesn't false-fail the job —
@@ -268,10 +277,19 @@ jobs:
       - name: Load cached Supabase images
         if: steps.scope.outputs.docs-only != 'true' && steps.supabase-images.outputs.cache-hit == 'true'
         run: |
+          # Delete each tar as soon as it is loaded (#352). Keeping them all
+          # until the loop ends held every image on disk twice (tar + loaded
+          # layers) and ran the runner out of space mid-load. Safe for the
+          # cache: this step runs only on a primary-key hit, and actions/cache
+          # saves only on a miss, so the restored tars are never re-saved.
+          # The df lines record the headroom, so a recurrence shows the numbers.
           shopt -s nullglob
+          df -h / | tail -n 1 | awk '{print "disk before load: " $4 " free of " $2}'
           for tar in ~/supabase-images/*.tar; do
             docker load -i "$tar"
+            rm -f "$tar"
           done
+          df -h / | tail -n 1 | awk '{print "disk after load: " $4 " free of " $2}'
       - name: Start local Supabase (retry once on transient boot failure)
         if: steps.scope.outputs.docs-only != 'true'
         run: |
