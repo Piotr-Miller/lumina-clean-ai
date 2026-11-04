@@ -1,84 +1,89 @@
-# Kolejne kroki (stan na 2026-11-03)
+# Kolejne kroki (stan na 2026-11-04)
 
-## S-19 `cloud-model-comparison` (#271): zamknięte 2026-11-03, „stopped before validation”
+Produkcja: najnowszy master `685d12c`, deploy zielony. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0`
+od 2026-10-28). Lokalnie: gałąź `master`, czyste drzewo poza tym plikiem.
 
-Wynik: `context/changes/cloud-model-comparison/evaluations/outcome.md`. Żaden kandydat nie przeszedł bramki
-core: GPT Image 2.5 (standard i z ograniczającym promptem) zablokowany przez moderację OpenAI na S17-07,
-NAFNet 0 z 3 nad własną kontrolą. GPT ładniejszy, ale prawdziwy Local wierniejszy w 8 z 8 par (Phase 5).
-Holdout (12 zdjęć walidacyjnych) nieotwarty. Cloud nadal wstrzymany (`CLOUD_DAILY_CAP=0`).
+## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — zarejestrowane, NIE rozpoczęte
+
+Hipoteza: ścieżka Cloud to klasyczne, deterministyczne odszumianie w pełnej rozdzielczości po stronie
+serwera, a nie model generujący piksele. Dowodzone offline na harnessie S-19, krok po kroku.
+Opis: `context/changes/cloud-classical-denoise/change.md`; roadmapa: `context/foundation/roadmap.md` § S-20.
+
+Zasady kroku 1 ustalone przez właściciela 2026-11-03 (`change.md` § Owner decisions):
+
+- Bramka: ≥ 6 z 8 wygranych jakościowych nad kontrolą bez odszumiania (remis to nie wygrana) **oraz**
+  zero istotnych strat wierności i zero ciężkich regresji na każdym z 8 zdjęć.
+- O wierności rozstrzyga oryginał. Skala: brak straty / niewielka / **istotna** / **ciężka regresja** /
+  niepewne. Istotna i ciężka zatrzymują próbę; każda wymaga wycinka i uzasadnienia.
+- Przeglądarka do ocen: preferencja estetyczna i skala straty jako dwa osobne pytania.
+- Najpierw NLM (`fastNlMeansDenoisingColored`). BM3D tylko jako ograniczona druga próba, jeśli NLM nie
+  przejdzie (z dowolnego powodu). Zakres strojenia ustalony z góry, te same kryteria.
+- Rozmowa o free/paid zaraz po udanym kroku 1, przed wyborem hostingu.
 
 Następne kroki:
 
-1. **Ty:** zmerguj PR z Phase 5 i zamknięciem.
-2. **Ja:** `/rune-archive cloud-model-comparison`, a po twojej zgodzie zamknięcie issue #271.
-3. **Ty (opcjonalnie):** `/rune-new` dla Jev jako bramki i choosera dla Local Auto (opis w `outcome.md`).
+1. **Ty:** daj znać, kiedy startujemy.
+2. **Ja:** `/rune-plan cloud-classical-denoise`. Plan musi objąć: ramię `nlm-gamma` w
+   `scripts/s19/local-arms.ts` (wspólne wejście sRGB → NLM → gamma z Auto Local), przeglądarkę z dwoma
+   pytaniami (wycinek i uzasadnienie obowiązkowe przy stracie istotnej/ciężkiej), uogólnienie `tally.py`
+   z 3 na 8 zdjęć, z góry zapisaną siatkę parametrów NLM.
+3. **Ty:** oceny na ślepo 8 par; potem bramka.
+4. Dalej wg `change.md` § Sequence: tone mapping osobno → chooser (heurystyka vs VLM) → freeze →
+   pomiar czasu 12 MP i cold startu → jednorazowy holdout (osobna zgoda właściciela).
 
-Historia przed zamknięciem (stan na 2026-10-29, nieaktualna):
+**Otwarte, tylko jeśli NLM nie przejdzie:** licencja BM3D. Pakiet autorów (`pip install bm3d`) jest
+wyłącznie do niekomercyjnej edukacji i badań; `xphoto::bm3dDenoising` w OpenCV jest za patentem
+(`OPENCV_ENABLE_NONFREE`, nie ma go w paczkach z PyPI). Trzeba rozstrzygnąć, czy nawet próba offline
+mieści się w licencji, albo wybrać inną drugą metodę.
 
-Cloud AI jest wstrzymany na produkcji od 2026-10-28T20:33:24Z (`CLOUD_DAILY_CAP=0`). Wraca dopiero wtedy,
-gdy S-19 spełni próg: co najmniej 8/12 wyraźnych wygranych, najwyżej jedna umiarkowana przegrana,
-zero ciężkich regresji. Samo zakończenie porównania nie wystarcza. Szczegóły:
-`context/changes/cloud-model-comparison/change.md` § Production pause.
+Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
+w `test-photos/private/s19/` (do późniejszej „opcji 2”: GPT jako przewodnik tonalny, $0).
 
-1. ~~**Ty:** zdecyduj, jak zastąpić ujawnione zdjęcia walidacyjne S17-05 i S17-06.~~ **Zrobione 2026-10-29:**
-   dwa nowe zdjęcia CC z telefonu (S17-23 Pixel 6, S17-24 Galaxy S23 Ultra z orientacją 6), S17-05/06 → tuning.
-   Benchmark `s17-v2` (`test-photos/s17-benchmark-v2.json`), uzasadnienie: `cloud-model-comparison/change.md`
-   § Holdout replacement. Do zrobienia w planie S-19: skrypty `scripts/s17/*` nadal czytają v1.
-2. **Ja:** `/rune-spike cloud-model-comparison` — rozpoznanie rynku + test wykonalności.
-   **Część dokumentacyjna zrobiona 2026-10-29** → `cloud-model-comparison/research.md` (cztery sekcje A–D).
-   Część empiryczna (≈ $1.1 łącznie, lista w każdej sekcji) czeka na zgodę właściciela.
-   **Zakres poszerzony przez właściciela 2026-10-29: nie tylko Replicate.** Cztery klasy kandydatów:
-   - A. modele restoracji/odszumiania (Bread i podobne) na dowolnym hostingu: Replicate, fal.ai, HF Endpoints,
-     własne GPU (Modal/RunPod);
-   - B. generatywna edycja obrazu (OpenAI GPT Image 2.5 Sunburst/Flare — potwierdzone u OpenAI 2026-10-29,
-     wydane 2026-09-08, stawki za tokeny w cenniku; brak liczby tokenów zdjęcia wejściowego przy edycji, zob.
-     `cloud-model-comparison/research.md`, sekcja B; edycja obrazów w Gemini; Flux Kontext) — ryzyko: przerysowanie
-     treści (napisy, twarze);
-   - ~~C. komercyjne API do zdjęć (auto-ton/odszumianie od firm fotograficznych);~~ **odrzucone 2026-10-30:**
-     to nasza konkurencja, nie dostawca (`change.md` § Owner decisions after the frame);
-   - D. model wizyjny jako „Auto”: dobiera parametry dla deterministycznego potoku (odpowiedź na brak reguły Auto w S-17).
-   - **Sito** przed płatnymi uruchomieniami: API produkcyjne, rozdzielczość wyjścia ≥ 1536 px, cena za zdjęcie,
-     **przechowywanie/trenowanie na zdjęciach użytkowników**, komercyjna licencja na wynik, opóźnienie.
-   - **Test wykonalności** tylko na 1–2 zdjęciach **tuningowych** na kandydata, każdy płatny test za zgodą właściciela.
-   - Uwaga: mail „There's more to see with GPT-6” to reklama Intelligent UI w ChatGPT (widgety), nie modelu do obróbki.
-3. ~~**Ja:** `/rune-frame cloud-model-comparison`.~~ **Zrobione 2026-10-29** → `cloud-model-comparison/frame.md`.
-   Wniosek: nie wiadomo jeszcze, czy to model trzyma Cloud poniżej progu. Porażka na produkcji to głównie
-   zakres gammy (dolna granica 1.0, a wszystkie akceptowalne ustawienia Bread w S-17 miały 0.5–0.9).
-   Dodatkowo TypeSafe Jev for Images odpada (obrazy nie są gotowe na produkcję), zob. `research.md`.
-   **Weryfikacja z frame.md — stan:**
-   - ✅ Kontrole walidacyjne (S17-10/18/24) mogą być wygraną, próg zostaje 8/12 (decyzja właściciela).
-   - ✅ Prawdziwy Local (produkcja, Auto ON) uruchomiony na 8 zdjęciach tuningowych, wyniki i licencje w
-     `cloud-model-comparison/references/`, przeglądarka do ocen: `references/compare.html`.
-   - ✅ Ocena Local vs oryginał (właściciel): 4 poprawy, 2 bez zmian, 2 szkody (S17-05, S17-21, oba za jasne).
-     Tabela obok ocen Bread z S-17: `change.md` § Owner decisions after the frame.
-   - ⏳ **NASTĘPNE, na Linuksie:** wyniki Bread z S-17 są w `test-photos/private/s17/` (m.in. `direct/phase3/`).
-     **Ja:** dodaję kolumnę Bread do `compare.html`. **Ty:** oceniasz Bread vs Local obok siebie.
-   - ⏳ **Ja:** porównanie profili kolorów (ICC) na wynikach Bread dla S17-03, S17-07, S17-21 skryptem
-     `scripts/s19/icc-gap.py` (średnie V/S przy dekodowaniu naiwnym vs ICC→sRGB).
-4. ~~**Ty:** decyzje — zgoda na płatną część empiryczną spike'a; kategoria „zmieniona treść”.~~ **Zrobione:**
-   spike wykonany 2026-10-30 (≈ $0.56); definicja wierności i kandydaci (GPT Image 2.5, NAFNet + ekspozycja)
-   ustalone 2026-10-31 → `change.md` § Fidelity definition and candidates. ZDR odłożone do wdrożenia.
-5. **Ja:** `/rune-plan cloud-model-comparison` — **plan gotowy 2026-10-31** (`plan.md`, `plan-brief.md`);
-   następnie plan review. Budżety etapów wymagają osobnej zgody przed każdym płatnym etapem.
-6. **Ja:** tuning → finalista → holdout (12 zdjęć, finalista vs Local, ocena na ślepo).
+## Czeka na wynik kroku 1 S-20
 
-Zasady:
+- **`local-jev-gate`** ([#348](https://github.com/Piotr-Miller/lumina-clean-ai/issues/348)), Parked: Jev
+  jako bramka „już dobre, nie ruszaj” i chooser dla Local. Blokada: TypeSafe nie ma obrazów w produkcji
+  (sito S1). Opis: `context/changes/local-jev-gate/change.md`.
+- **`local-engine-ceiling`** (#188) i druga połowa S-18 (rozdzielczość wyniku Cloud): przesunięte z S-19
+  na S-20.
 
-- Zdjęcia do akceptacji na produkcji wybieramy z podziału `tuning` albo spoza benchmarku, nigdy z `validation`.
-- Porównanie oryginał → wynik Bread → post-pass dla S17-05/06: od `s17-v2` oba zdjęcia są tuningowe, więc
-  ten wynik może służyć strojeniu jak każdy inny wynik tuningowy (nie mówi nic o walidacji).
-  Pliki: `test-photos/private/s19-holdout-exposure/` (gitignored).
-- Benchmark to `s17-v2` (decyzja właściciela 2026-10-30). Równoległe `s19-v1` z gałęzi
-  `feat/cloud-model-comparison` jest porzucone; opis w `change.md` § Holdout replacement.
-- Wniosek z tego porównania: prześwietlenie i utrata nasycenia pochodzą z Bread; post-pass tylko
-  obniża szum barwny nieba (~¼).
+## CI — co obserwować
 
-## Kolejka po S-19
+- **#343** (flaka north-star: test wisi na `/callback`): przy następnej awarii `e2e` pobrać artefakt
+  `playwright-report` → katalog `edge-logs/` (`functions-serve.log`, logi edge runtime i Kong, od #346)
+  i dopisać do #343, co pokazują.
+- **#352** (brak miejsca na dysku przy ładowaniu obrazów Supabase): pomiar z #353 to 79G wolnego ze 145G,
+  więc hipoteza „obrazy trzymane podwójnie” jest prawdopodobnie błędna. Przy następnej awarii odczytać z
+  logu linię `disk before load: … free of …` i dopisać do #352. Jeśli dysk mały → usunąć preinstalowane
+  narzędzia runnera (`/usr/share/dotnet`, `/usr/local/lib/android`, `/opt/ghc`).
+- **Docs-only skip działa** (#344): PR zmieniający tylko `context/` → `integration`/`e2e` ~1 min z
+  `Docs-only scope: true`. Push na master zawsze biegnie w pełni. `AGENTS.md` i inne pliki poza
+  `context/` celowo NIE są pomijane.
+- Padnięty `e2e` na master → deploy pominięty, alarm się odpala. Procedura: `gh run rerun <id> --failed`.
+
+## Kolejka (bez zmian)
 
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,
   HTML strony 502 od Replicate). Analiza w `context/changes/cloud-error-message-leak/change.md`.
   Następny krok: `/rune-plan cloud-error-message-leak`; w planie: czy `start_failed` dostaje osobny komunikat.
 - **Opcjonalnie:** `/rune-lesson` z regułą o wyborze zdjęć do akceptacji spoza holdoutu.
+
+## Zrobione 2026-11-03 – 2026-11-04
+
+| PR / issue | Co                                                                      |
+| ---------- | ----------------------------------------------------------------------- |
+| #342       | foldery zmian `cloud-classical-denoise` i `local-jev-gate`              |
+| #344       | `integration`/`e2e` pomijają ciężkie kroki na PR-ach tylko z `context/` |
+| #345       | `AGENTS.md`: poprawny opis wykluczeń `ai-review`                        |
+| #346       | logi edge runtime i Kong w artefakcie przy porażce `e2e`                |
+| #347, #348 | issue'y S-20 i Jev (treść #347 zaktualizowana o decyzje)                |
+| #349       | wiersz S-20 w roadmapie, Jev w Parked, mapowanie issue'ów               |
+| #350, #351 | decyzje właściciela dla kroku 1 i definicja istotnej straty wierności   |
+| #352, #353 | issue o braku miejsca + usuwanie archiwów po `docker load` i linie `df` |
+| #343, #352 | komentarze z dowodami (trzecie wystąpienie flaki; pomiar 79G/145G)      |
+
+S-19 (`cloud-model-comparison`, #271): zarchiwizowane 2026-11-03 jako „stopped before validation”,
+issue zamknięte. Wynik: `context/archive/2026-09-28-cloud-model-comparison/evaluations/outcome.md`.
 
 ## Stan lokalny (do pamiętania)
 
@@ -88,14 +93,7 @@ Zasady:
 - `supabase/functions/` i `src/` mają etykietę SELinux `container_file_t`. Cofnięcie: `restorecon -R supabase/ src/`.
 - `.dev.vars` i `supabase/functions/.env` są wygenerowane lokalnie dla E2E (gitignored).
 - `wrangler` jest zalogowany na tej maszynie (2026-10-28).
-- **Windows (2026-10-29):** `ai-toolkit@1.15.0` zainstalowany, skille `rune-*` dostępne. Uwagi o podmanie/SELinux
-  wyżej dotyczą maszyny z Linuksem.
-- **Branch S-19:** wszystko jest na masterze (PR #327–#337); zamknięcie na `docs/cloud-model-comparison-phase-5`.
-
-## Zamknięte (2026-10-27 – 2026-10-28)
-
-- `ai-review-weekly-report`: akceptacja 1.5/3.5/3.6/4.3/4.4, archiwizacja #318, `archive_commit` #319.
-- Ekspozycja holdoutu S17-05/06 + porównanie etapów + decyzja o pauzie: #320.
-- Kill-switch `CLOUD_DAILY_CAP=0` ustawiony i potwierdzony end-to-end: #321.
-- `cloud-pause-message`: przy capie 0 API zwraca 503 `cloud_paused`, a UI pokazuje „Cloud AI is temporarily
-  unavailable due to maintenance…”. Implementacja #322, akceptacja i archiwizacja #323, `archive_commit` #324.
+- Lokalne, zmergowane gałęzie z tych dwóch dni (`docs/register-*`, `ci/docs-only-skip`, `ci/e2e-edge-logs`,
+  `ci/supabase-image-load-disk`, `docs/s20-*`, `docs/agents-ai-review-exclusions`) można usunąć — ich PR-y
+  są zmergowane, ale rebase-merge zmienił SHA, więc `git branch -d` odmówi; potrzebne `git branch -D`.
+- **Windows:** uwagi o podmanie/SELinux wyżej dotyczą tylko maszyny z Linuksem.
