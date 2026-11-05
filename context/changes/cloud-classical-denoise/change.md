@@ -117,6 +117,14 @@ and match the ledger (`test-photos/private/s19/attempts.jsonl`, checked 2026-11-
 low-frequency gain map from a GPT output applied to the **denoised original** can be tried at $0,
 after step 1, as a separate arm. It is not a second full track and is not run in parallel.
 
+**Caution added 2026-11-05: a tonal guide is not safe by construction.** A low-frequency gain map
+stops overdrawn detail, but it carries exactly the low-frequency changes S-19 flagged: a black
+sky turned navy, the green cast of snow neutralised, wide tonal steps in the S17-04 sky
+(`context/archive/2026-09-28-cloud-model-comparison/evaluations/outcome.md:23`, `phase5-tuning.md`).
+Pixels coming from the original do not guarantee the scene's look is kept; Option 2 is rated on
+the same fidelity scale as step 1. It is no prerequisite for testing GPT Image 2.6 as an output —
+that is the separate change `gpt-image-26-screen`.
+
 ### Not in scope
 
 - No change to the Local engine, its Auto or the free path (PRD §116: Local stays naive).
