@@ -14,7 +14,7 @@ A real render refuses unless this line is a PASS for the `nlm.py`, grid and Open
 (owner decision 2026-11-05).
 
 ```text
-S20-CALIBRATION result=PASS implementation_sha256=e3b81d8dabb41cf53efc5a50d5b945b431b5025b349aa8072e55c72d76294eed config_sha256=34f1a72b3b3bd3a29276a8bafe6792ac58c70d29e2c394655de91ca402fd7b95 opencv_version=4.13.0
+S20-CALIBRATION result=PASS implementation_sha256=ab27728fc7858be9a79a501b70a562d6757fe4ccace10b8eea00dfe48eb19a85 config_sha256=34f1a72b3b3bd3a29276a8bafe6792ac58c70d29e2c394655de91ca402fd7b95 opencv_version=4.13.0
 ```
 
 ## Set-up
@@ -33,7 +33,7 @@ S20-CALIBRATION result=PASS implementation_sha256=e3b81d8dabb41cf53efc5a50d5b945
   as pre-registered. Dark ramp and near-clipping rows are recorded, not gated.
 - Fixtures: flat L = 128; texture L = 128 + 40·sin(2πx/16)·sin(2πy/24); dark ramp L = 0 → 40
   across x; near 0 L = 2; near 255 L = 253. a = b = 128 before noise in every fixture.
-- OpenCV 4.13.0, numpy 2.5.4, OpenCV threads 8.
+- OpenCV 4.13.0, numpy 2.5.4.
 
 ## Estimates
 

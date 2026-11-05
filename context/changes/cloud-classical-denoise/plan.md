@@ -149,7 +149,7 @@ Rules first, renders second, ratings last, each transition enforced by a committ
 | ----- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1     | Phase 1–4 code, the grid config and the calibration record are committed                | —                                                                                                                                                                                                        |
 | 2     | `nlm.py` renders the grid (`--calibrate` is exempt: it produces the calibration record) | every file in `RULE_FILES` committed and clean: `scripts/s20/**/*.py` (tools, not tests), `scripts/s20/configs/nlm-grid.json`, `scripts/s19/local-arms.ts`, `scripts/s19/s19.ts`, the calibration record |
-| 3     | `blind.py pilot` builds the pilot set                                                   | all 24 NLM and 32 arm records exist and verify                                                                                                                                                           |
+| 3     | `blind.py pilot` builds the pilot set                                                   | all 24 NLM and 32 arm records exist and verify; each NLM record's `implementation_sha256`, `config_sha256` and `opencv_version` equal the committed calibration bind line                                |
 | 4     | Owner commits `pilot-sealed.md` (set digest + key sha256), **then** opens the viewer    | human control                                                                                                                                                                                            |
 | 5     | Owner rates; `pilot-ratings.json` is committed                                          | —                                                                                                                                                                                                        |
 | 6     | `pilot.py` decides                                                                      | `RULE_FILES` clean; the pilot seal is write-once and strictly precedes every commit of the ratings; the ratings are clean                                                                                |
@@ -445,8 +445,10 @@ does not hash itself [F6], and an experiment-specific viewer with identity-free 
 - **Pilot mode:** per photo, the original, `control-full` labelled "kontrola", and the three
   `nlm-gamma` strengths as `X`/`Y`/`Z`. Labels are drawn with `secrets`.
 - **Gate mode:** the 16 pairs, derived independently as 8 ids × {control-full, local}. The NLM
-  side and the global pair order are drawn with `secrets`, and the ids are `p01`…`p16`. Gate mode
-  refuses unless step 8 of the order table holds [F1].
+  side and the global pair order are drawn with `secrets`, and the ids are `p01`…`p16`. Phase 3
+  builds the set construction only (owner decision 2026-11-05): gate mode reads `k` from
+  `scripts/s20/configs/nlm-frozen.json` and checks only its shape. Phase 4 wires the step-8
+  precondition of the order table into gate mode [F1].
 - **Presentation copies [F2]:** every rater-facing image is re-encoded from decoded pixels,
   including the original and the JPEG Local. It is written with Pillow as RGB PNG, with no
   metadata, a fixed `compress_level`, and a name built only from the item id and the side. The
@@ -460,6 +462,11 @@ does not hash itself [F6], and an experiment-specific viewer with identity-free 
   - The key carries the same digest, and the builder prints both the digest and the key's
     sha256.
 - Every path passes the guards [F3].
+- **Render provenance (impl review phase 2, F1):** both modes refuse an NLM record whose
+  `implementation_sha256`, `config_sha256` or `opencv_version` differs from the bind line of the
+  calibration record committed in this repository. `nlm.py`'s rule check runs against the
+  test-only `S20_REPO` tree, so this is the first check that a render came from the committed
+  rules, and it runs before any rating.
 
 **Contract**:
 
@@ -510,8 +517,11 @@ ratings: [{pair_id, quality, fidelity: {A: {level, crops: [{x, y, w, h}], reason
 - **Set digest:** it recomputes. A tampered payload fails, and a different key order gives the
   same digest.
 - **Draws:** they come from `secrets` (patched).
-- **Gate build refusals:** a missing freeze, an uncommitted freeze, or a freeze whose `k` differs
-  from the recomputed pilot.
+- **Synthetic sets:** the test fixture builds a synthetic set in both modes; manual check 3.3 runs
+  the viewer on them. The gate-build refusals moved to Phase 4 with the step-8 precondition (owner
+  decision 2026-11-05).
+- **Provenance refusals (F1):** in both modes, an NLM record whose `implementation_sha256`,
+  `config_sha256` or `opencv_version` differs from the committed calibration bind.
 - **Reuse:** an existing `set_id` is refused.
 - **Holdout:** the read trap [F3].
 
@@ -529,15 +539,9 @@ ratings: [{pair_id, quality, fidelity: {A: {level, crops: [{x, y, w, h}], reason
   - crop drawing, and the required fields for `significant`/`severe`;
   - export works.
     — surface: context/changes/cloud-classical-denoise/references/compare-s20.html
-- Owner runs the round trip on a synthetic gate set [F7]:
-  1. Rate, reload, and confirm the state is restored.
-  2. Mark one pair `uncertain`, export, and confirm `gate.py` reports BLOCKED with only that
-     pair's id.
-  3. Resolve the pair, re-export, and confirm the other ratings are preserved and nothing is
-     re-paired.
-  4. Rebuild the set under a new `set_id` and confirm the old state is not offered.
 
-  — surface: context/changes/cloud-classical-denoise/references/compare-s20.html, scripts/s20/gate.py
+The round trip on a synthetic gate set moved to Phase 4's manual checks, because its step 2 needs
+`gate.py` (owner decision 2026-11-05).
 
 ---
 
@@ -577,6 +581,9 @@ bundle [F10], tested on synthetic data and committed before any real render.
 - Requires step 6 of the order table.
 - Validates the export: the `set_digest` matches the seal and the manifest, every photo appears
   exactly once, and every label is valid. Duplicates are never deduplicated.
+- Re-checks the provenance of every NLM record behind the key (`implementation_sha256`,
+  `config_sha256`, `opencv_version` against the committed calibration bind; impl review phase 2,
+  F1). A mismatch is BLOCKED.
 - Decodes the export and applies the vote rule.
 - Writes `evaluations/pilot-result.json`, and on a selection also
   `scripts/s20/configs/nlm-frozen.json`.
@@ -602,6 +609,8 @@ decided}`.
    - any failed binding: presentation pixels against source; the source against its arm record,
      the NLM record, the decoded record and the frozen config; for `control-full` vs `nlm-gamma`
      of each photo, equal `decoded_pixels_sha256`, `auto_file_sha256` and `lut_sha256` [F9];
+     each NLM record's `implementation_sha256`, `config_sha256` and `opencv_version` equal to the
+     committed calibration bind (impl review phase 2, F1);
      Local against its private baseline hash;
    - an `uncertain` on any side;
    - a `significant`/`severe` level without a reason or a valid crop.
@@ -650,9 +659,18 @@ block and the wording found), 2 on a read or parse error. Tests cover a stale st
 apart from its heading and change id. A positive fixture mirrors the real layout, where the last H3
 is followed by an H2: S-20 updated with its verdict link passes while S-15 keeps its `on hold` [F15].
 
-#### 5. Tests
+#### 5. Gate-mode precondition (owner decision 2026-11-05)
 
-**Files**: `scripts/s20/tests/test_pointers.py`, `scripts/s20/tests/test_evidence.py`, `scripts/s20/tests/test_pilot.py`, `scripts/s20/tests/test_gate.py`
+**File**: `scripts/s20/blind.py`
+
+**Intent**: wire order step 8 into the gate mode Phase 3 built. `blind.py gate` refuses unless
+step 6 still holds, the freeze is write-once and clean, and `k` recomputed from the current sealed
+pilot (`pilot.py`'s export validation, key decode and vote rule) equals the freeze's `k`; a STOP
+pilot refuses any freeze [F1].
+
+#### 6. Tests
+
+**Files**: `scripts/s20/tests/test_pointers.py`, `scripts/s20/tests/test_evidence.py`, `scripts/s20/tests/test_pilot.py`, `scripts/s20/tests/test_gate.py`, `scripts/s20/tests/test_blind.py`
 
 **Intent**: one named case per Definitions row and per walkthrough row in the review
 (`reviews/plan-review.md` § Independent degenerate walkthrough).
@@ -666,6 +684,8 @@ is followed by an H2: S-20 updated with its verdict link passes while S-15 keeps
   - a stale freeze from an earlier attempt is refused when the current pilot is STOP;
   - a re-exported ratings commit after the seal is accepted;
   - a rebase-style rewritten history still verifies.
+- **Gate build refusals** (`test_blind.py`, moved from Phase 3, owner decision 2026-11-05): a
+  missing freeze, an uncommitted freeze, or a freeze whose `k` differs from the recomputed pilot.
 - **Pilot:**
   - 2/2/1/3 selects the weaker of the tied leaders, and 0/0/1/7 selects that `k`;
   - 8×`none` gives STOP;
@@ -678,6 +698,8 @@ is followed by an H2: S-20 updated with its verdict link passes while S-15 keeps
   - crop boundaries: a valid 1×1 at the corner; zero, negative and overflowing sizes BLOCKED.
 - **Gate coverage:** a duplicate plus a missing pair, a key mapping two ids to one comparison, a
   tampered presentation file, and an Auto record changed between arms are each BLOCKED.
+- **Provenance (F1):** in `pilot.py` and `gate.py`, an NLM record whose `implementation_sha256`,
+  `config_sha256` or `opencv_version` differs from the committed calibration bind is BLOCKED.
 - **Leaks [F12]:** real CLI subprocesses of `blind.py`, `pilot.py` and `gate.py`, one per
   BLOCKED branch:
   - order or seal violation, schema error, key or hash mismatch, missing file, path-guard
@@ -701,6 +723,7 @@ is followed by an H2: S-20 updated with its verdict link passes while S-15 keeps
 #### Manual Verification:
 
 - Owner reads the two rules as coded and confirms they match the 2026-11-03/11-05 decisions before any render — surface: scripts/s20/pilot.py, scripts/s20/gate.py
+- Owner runs the round trip on a synthetic gate set [F7] (moved from Phase 3, owner decision 2026-11-05): 1. rate, reload, and confirm the state is restored; 2. mark one pair `uncertain`, export, and confirm `gate.py` reports BLOCKED with only that pair's id; 3. resolve the pair, re-export, and confirm the other ratings are preserved and nothing is re-paired; 4. rebuild the set under a new `set_id` and confirm the old state is not offered — surface: context/changes/cloud-classical-denoise/references/compare-s20.html, scripts/s20/gate.py
 
 ---
 
@@ -881,9 +904,9 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 2.1 NLM tests pass
-- [x] 2.2 Grid config holds the pre-registered values
-- [x] 2.3 Calibration runs on synthetic data only
+- [x] 2.1 NLM tests pass — 422ed56
+- [x] 2.2 Grid config holds the pre-registered values — 422ed56
+- [x] 2.3 Calibration runs on synthetic data only — 422ed56
 
 #### Manual
 
@@ -893,13 +916,12 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [ ] 3.1 Blind-set tests pass
-- [ ] 3.2 Viewer is formatted
+- [x] 3.1 Blind-set tests pass
+- [x] 3.2 Viewer is formatted
 
 #### Manual
 
 - [ ] 3.3 Owner checks the viewer on a synthetic set in both modes
-- [ ] 3.4 Owner runs the round trip on a synthetic gate set
 
 ### Phase 4: Evidence state, pilot rule and gate rule
 
@@ -910,6 +932,7 @@ That is acceptable offline. Product timing is step 4's question.
 #### Manual
 
 - [ ] 4.2 Owner confirms the coded rules match the decisions before any render
+- [ ] 4.3 Owner runs the round trip on a synthetic gate set
 
 ### Phase 5: Pilot run and freeze
 
