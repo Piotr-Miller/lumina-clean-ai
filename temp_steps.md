@@ -1,9 +1,9 @@
-# Kolejne kroki (stan na 2026-11-04)
+# Kolejne kroki (stan na 2026-11-05)
 
 Produkcja: najnowszy master `4e04923`, deploy zielony (w tym funkcja `enhance` z supabase-js przez npm, #356). Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0`
 od 2026-10-28). Lokalnie: gałąź `master`, czyste drzewo poza tym plikiem.
 
-## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — zarejestrowane, NIE rozpoczęte
+## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — start 2026-11-05 (właściciel), etap: `/rune-plan`
 
 Hipoteza: ścieżka Cloud to klasyczne, deterministyczne odszumianie w pełnej rozdzielczości po stronie
 serwera, a nie model generujący piksele. Dowodzone offline na harnessie S-19, krok po kroku.
@@ -22,8 +22,8 @@ Zasady kroku 1 ustalone przez właściciela 2026-11-03 (`change.md` § Owner dec
 
 Następne kroki:
 
-1. **Ty:** daj znać, kiedy startujemy.
-2. **Ja:** `/rune-plan cloud-classical-denoise`. Plan musi objąć: ramię `nlm-gamma` w
+1. ~~**Ty:** daj znać, kiedy startujemy.~~ Start 2026-11-05.
+2. **Ja:** `/rune-plan cloud-classical-denoise` (w toku). Plan musi objąć: ramię `nlm-gamma` w
    `scripts/s19/local-arms.ts` (wspólne wejście sRGB → NLM → gamma z Auto Local), przeglądarkę z dwoma
    pytaniami (wycinek i uzasadnienie obowiązkowe przy stracie istotnej/ciężkiej), uogólnienie `tally.py`
    z 3 na 8 zdjęć, z góry zapisaną siatkę parametrów NLM.
@@ -49,13 +49,10 @@ w `test-photos/private/s19/` (do późniejszej „opcji 2”: GPT jako przewodni
 
 ## CI — co obserwować
 
-- **#343** (flaka north-star: test wisi na `/callback`): **przyczyna znaleziona 2026-11-04** dzięki
-  `edge-logs/` z #346. Edge runtime padał przy leniwym ładowaniu modułów: esm.sh zwrócił inne bajty
-  `tslib` niż w `deno.lock` („Integrity check failed”), kontener znikał, `/callback` czekał do timeoutu.
-  Poprawka #356: `@supabase/supabase-js` przez `npm:` zamiast esm.sh. Na jej runie sonda dostała 404 od
-  funkcji (wcześniej zawsze 502) i 8/8 testów przeszło. **Issue otwarte** do kilku zielonych runów `e2e`
-  na master; potem zaproponować zamknięcie. Przy ewentualnej kolejnej awarii: artefakt
-  `playwright-report` → `edge-logs/`. Kandydat na później: sonda gotowości nadal przyjmuje 502.
+- **#343** (flaka north-star): **zamknięte 2026-11-05**. Przyczyna: esm.sh zwracał inne bajty `tslib` niż
+  w `deno.lock`, edge runtime padał, `/callback` czekał do timeoutu. Poprawka #356 (supabase-js przez `npm:`);
+  potem 6/6 pełnych runów `e2e` zielonych. Przy nawrocie: reopen + artefakt `playwright-report` → `edge-logs/`.
+  Kandydat na później: sonda gotowości nadal przyjmuje 502.
 - **#352** (brak miejsca na dysku przy ładowaniu obrazów Supabase): pomiar z #353 to 79G wolnego ze 145G,
   więc hipoteza „obrazy trzymane podwójnie” jest prawdopodobnie błędna. Przy następnej awarii odczytać z
   logu linię `disk before load: … free of …` i dopisać do #352. Jeśli dysk mały → usunąć preinstalowane
@@ -65,7 +62,12 @@ w `test-photos/private/s19/` (do późniejszej „opcji 2”: GPT jako przewodni
   Push na master zawsze biegnie w pełni. `AGENTS.md` i inne pliki poza listą celowo NIE są pomijane.
 - Padnięty `e2e` na master → deploy pominięty, alarm się odpala. Procedura: `gh run rerun <id> --failed`.
 
-## Kolejka (bez zmian)
+## Kolejka
+
+- **`gpt-image-26-screen`** ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359), Parked, założone
+  2026-11-05): przesiewowy test `gpt-image-2.6-sunburst` (`complexity=low`) jako wyniku Cloud na S17-03/04/07,
+  po 2 wyniki, limit $1.50, bramka zapisana przed renderem. Niezależny od wyniku NLM; praktycznie po zbudowaniu
+  przeglądarki z kroku 1 S-20. Potem `/rune-plan gpt-image-26-screen`.
 
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,
   HTML strony 502 od Replicate). Analiza w `context/changes/cloud-error-message-leak/change.md`.
@@ -88,7 +90,7 @@ w `test-photos/private/s19/` (do późniejszej „opcji 2”: GPT jako przewodni
 | #354       | `temp_steps.md` w stanie na 2026-11-04                                  |
 | #356       | supabase-js przez `npm:` — przyczyna #343 (integrity check na esm.sh)   |
 | #357       | `temp_steps.md` pomijany przez ciężkie kroki CI                         |
-| #343       | komentarz z przyczyną i poprawką                                        |
+| #343       | komentarz z przyczyną i poprawką; issue zamknięte 2026-11-05            |
 | gałęzie    | 28 zmergowanych gałęzi usuniętych lokalnie i na GitHubie                |
 
 S-19 (`cloud-model-comparison`, #271): zarchiwizowane 2026-11-03 jako „stopped before validation”,
