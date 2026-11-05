@@ -1,9 +1,9 @@
 ---
 change_id: cloud-classical-denoise
 title: "Cloud AI as a classical full-resolution denoise pipeline, proven offline against real Local"
-status: new
+status: implementing
 created: 2026-11-03
-updated: 2026-11-03
+updated: 2026-11-05
 archived_at: null
 issue: 347
 ---
@@ -61,7 +61,8 @@ hosting, integration or product naming decision.
 1. **Denoising alone.** On the eight `s17-v2` tuning photos, a new arm
    `<denoiser>-gamma` (common sRGB input → classical denoise → Local's Auto gamma, no blur) is
    rated blind against two references: the matched **control** (same input → Auto gamma, no
-   denoise — the existing `control` arm) and the **real Local** download. Same exposure on both
+   denoise — **not** the existing `control` arm, which starts from the downscaled NAFNet input on
+   5 of 8 photos; corrected 2026-11-05, see § Owner decisions (2026-11-05)) and the **real Local** download. Same exposure on both
    sides, so denoise-vs-blur is the only variable. Candidates, in order: **1a** OpenCV
    `fastNlMeansDenoisingColored`; **1b** a bounded BM3D trial, only if 1a fails the gate, and only
    after its licence question is settled. **Gate**, identical for 1a and 1b: ≥ 6 of 8 wins over the
@@ -94,7 +95,7 @@ hosting, integration or product naming decision.
   until step 4.
 - The S-19 harness: `scripts/s19/inputs.py` (common sRGB inputs — the ICC conversion that any
   candidate needs), `baseline.ts` (Auto records), `local-arms.ts` (arms `control`, `local-equiv`),
-  `tally.py` (gate rule at `:325`, generalised from 3 to 8 photos), the blind viewer and the
+  `tally.py` (unchanged — superseded 2026-11-05 by a separate S-20 gate, see § Owner decisions (2026-11-05)), the blind viewer and the
   `secrets`-drawn, sealed-key protocol. Outputs go to the gitignored
   `test-photos/private/s19/arms/<arm>/`.
 - The real Local baselines and their Auto records in the S-19 archive `references/s19-local/`
@@ -209,6 +210,45 @@ exists, so the rules are fixed before anyone sees a result, as in S-19.
      a browser. Any change to the free/paid split waits for the holdout result and the
      step-4 performance measurements.
    - Shipping a better Local would be its own change. This change still does not touch Local.
+
+### Owner decisions (2026-11-05, planning step 1a)
+
+Recorded while planning, before any harness code or render exists. Plan:
+`context/changes/cloud-classical-denoise/plan.md`.
+
+1. **Premise corrections (measured at planning).** The existing `control` arm renders from the
+   NAFNet input, downscaled on S17-04/05/06/07/21, so it is not matched to a full-resolution arm.
+   Step 1 uses a new `control-full` arm (common input → Auto gamma, no denoise). The real Local
+   download has exactly the common input's dimensions on all eight tuning photos.
+   `tally.py` cannot score this gate without relaxing its paid-slot and NAFNet-only invariants
+   (`tally.py:113-147`, `:246-247`), and reads no fidelity field.
+2. **Separate gate; `tally.py` unchanged.** The gate requires all 16 expected comparisons
+   (8 photos × NLM vs `control-full`, NLM vs real Local) exactly once, verifies file hashes and
+   source bindings, and rejects missing, duplicate or invalid ratings. Quality wins count only
+   against `control-full`: ≥ 6 of 8, ties excluded. Its report distinguishes **PASS**, **FAIL**
+   and **BLOCKED**.
+3. **Fidelity: the worst substantiated loss across both pairs counts.** Significant or severe
+   loss needs a crop and a reason verified against the original; the control and Local only help
+   reveal it, and a lower rating in the other pair does not cancel confirmed evidence. Unresolved
+   doubt about a loss or its severity blocks the verdict; it is resolved against the original
+   without revealing arm identities or changing the frozen configuration.
+4. **Viewer.** Reuse `compare-arms.html`'s interaction code (zoom, flip, brightened original) in
+   an experiment-specific page; replace its manifest and `Math.random()` sides with anonymous
+   pair ids and a sealed key; separate quality and fidelity ratings, with a source-pixel crop
+   rectangle and reason required for significant/severe loss. Exports are validated again in the
+   gate. No generic framework and no features for #359.
+5. **Tuning: blind pilot, then a frozen gate.** The noise estimator, the three `k` values and the
+   h/hColor mapping are frozen before rendering. A blind pilot picks one global `k` by a fixed
+   vote rule (ties prefer weaker denoising); an explicit "none improves on control" choice counts
+   for no strength, and if no strength receives a vote the bounded NLM trial stops. The selected
+   configuration is frozen before the separate 16-pair gate; no retuning after its results.
+
+6. **Plan review (2026-11-05).** Codex's review (`reviews/plan-review.md`) returned RETHINK with
+   five critical and five warning findings on the evidence protocol; the gate and vote rules were
+   confirmed as matching items 2–5. All ten fixes accepted. Two choices: pre-registration order is
+   enforced by committed-and-clean seals with ancestor order, and the gate builder recomputes `k`
+   from the sealed pilot (F1); the noise estimate lives in OpenCV's own Lab space, with
+   h = k·σ̂_L and hColor = k·σ̂_ab, calibrated on synthetic data before the freeze (F8).
 
 ### Roadmap placement (owner question, 2026-11-03: S-13 or S-14?)
 
