@@ -13,6 +13,8 @@ import type { LocalParams, LumaStats } from "../../src/lib/engines/types";
 
 export const REPO = resolve(import.meta.dirname, "../..");
 export const PRIVATE = process.env.S19_PRIVATE ?? join(REPO, "test-photos/private/s19");
+/** S-20 step 1's private workspace (`cloud-classical-denoise`): the shared decode and the NLM renders. */
+export const PRIVATE_S20 = process.env.S20_PRIVATE ?? join(REPO, "test-photos/private/s20");
 
 /** Written by `inputs.py` as `inputs/<id>.json`. */
 export interface InputSidecar {
@@ -120,6 +122,7 @@ export function parseCommon(
     "--nafnet-config",
     "--attempts",
     "--curve-config",
+    "--nlm-k",
   ]);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];

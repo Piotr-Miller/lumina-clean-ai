@@ -22,6 +22,22 @@
  *   control-curve NAFNet input → the curve, no denoise: nafnet-curve's matched control (same
  *                 input, Auto record and curve; owner decision 2026-11-02).
  *
+ * S-20 step 1a (`cloud-classical-denoise`, plan Phase 1): one decode, then two arms that differ
+ * only by the denoiser. Tuning photos only; every path passes the holdout path guard before it is
+ * read.
+ *   decoded       common input → sharp's raw sRGB RGB → lossless PNG with no ICC and no metadata,
+ *                 test-photos/private/s20/decoded/<id>.png. Its record binds the common input's
+ *                 hash to `pixels_sha256`, the sha256 of the raw RGB bytes, so every later step
+ *                 starts from the same pixels whatever decoder it uses.
+ *   control-full  the decoded PNG, verified against `pixels_sha256` → Local gamma, σ = 0, at full
+ *                 resolution: nlm-gamma's matched control (the S-19 `control` starts from the
+ *                 NAFNet input, downscaled on 5 of 8 tuning photos).
+ *   nlm-gamma     --nlm-k <k>: nlm.py's render test-photos/private/s20/nlm/k<k>/<id>.png → Local
+ *                 gamma. Its record must name this photo's decoded pixels, and the output's hash
+ *                 and dimensions must match. Output arms/nlm-gamma/k<k>/<id>.png.
+ * Both matched arms record `decoded_pixels_sha256`, `auto_file_sha256` (the Auto record file) and
+ * `lut_sha256` (the 256-byte LUT), so a pair check can prove the two differ only by the denoiser.
+ *
  * The curve (curve.ts) is Local's Auto gamma with a limited lift in dark tones and highlights, a
  * pure function of the Auto record's LumaStats and the constants in --curve-config (default
  * configs/curve.json); the record names that config's hash.
@@ -45,8 +61,9 @@
  * because sharp's blur refuses σ < 0.3 and Auto picks 0.05–0.7. Exit status: 0 rendered (and
  * measured); 1 refused or a check failed; 2 usage.
  */
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, join, relative } from "node:path";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
 
 import sharp from "sharp";
 
@@ -55,6 +72,7 @@ import { buildGammaLut } from "../../src/lib/engines/image-helpers";
 import { buildCurveLut, type CurveConfig } from "./curve";
 import {
   PRIVATE,
+  PRIVATE_S20,
   REPO,
   Refused,
   guard,
@@ -66,8 +84,19 @@ import {
   type AutoRecord,
 } from "./s19";
 
-const ARMS = ["local-equiv", "control", "nafnet-gamma", "nafnet-curve", "blur-curve", "control-curve"] as const;
+const ARMS = [
+  "local-equiv",
+  "control",
+  "nafnet-gamma",
+  "nafnet-curve",
+  "blur-curve",
+  "control-curve",
+  "decoded",
+  "control-full",
+  "nlm-gamma",
+] as const;
 type Arm = (typeof ARMS)[number];
+const S20_ARMS: readonly Arm[] = ["decoded", "control-full", "nlm-gamma"];
 
 interface Rgb {
   data: Uint8Array;
@@ -301,6 +330,252 @@ async function render(
   return { out, img };
 }
 
+// ---------------------------------------------------------------- S-20 step 1a: shared decode, matched arms
+
+/** Written by the `decoded` arm as test-photos/private/s20/decoded/<id>.json. */
+interface DecodedRecord {
+  kind: "decoded";
+  id: string;
+  common: { path: string; sha256: string };
+  common_sha256: string;
+  pixels_sha256: string;
+  output_sha256: string;
+  dimensions: [number, number];
+  decoder: { sharp: string; vips: string };
+  implementation_sha256: string;
+  rendered_at: string;
+}
+
+/** The fields of an nlm.py record (plan Phase 2) that the nlm-gamma arm binds to. */
+interface NlmRecord {
+  id: string;
+  k: number;
+  decoded_record?: string;
+  decoded_pixels_sha256: string;
+  output_sha256: string;
+  dimensions: [number, number];
+  config_sha256: string;
+}
+
+/** A record parsed from disk: any field may be absent or null until it is checked. */
+type Untrusted<T> = { [K in keyof T]?: T[K] | null };
+
+function sha256Bytes(bytes: Uint8Array | Uint8ClampedArray): string {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+
+/** Repo-relative when inside the repository, so a record can be published without a home path. */
+function rel(path: string): string {
+  const r = relative(REPO, path);
+  return r.startsWith("..") || isAbsolute(r) ? path : r;
+}
+
+/** The grid's k as the one-decimal string used in directory names (`k1.5`), shared with nlm.py. */
+export function formatK(raw: string): string {
+  const k = Number(raw);
+  if (!/^\d+(\.\d+)?$/.test(raw) || !Number.isFinite(k) || k <= 0 || Number(k.toFixed(1)) !== k)
+    throw new Refused(
+      `--nlm-k ${raw}: expected a positive number with at most one decimal, one of the grid's k values`,
+    );
+  return k.toFixed(1);
+}
+
+const decodedPaths = (id: string) => ({
+  png: join(PRIVATE_S20, "decoded", `${id}.png`),
+  record: join(PRIVATE_S20, "decoded", `${id}.json`),
+});
+const nlmPaths = (id: string, k: string) => ({
+  png: join(PRIVATE_S20, "nlm", `k${k}`, `${id}.png`),
+  record: join(PRIVATE_S20, "nlm", `k${k}`, `${id}.json`),
+});
+const sidecarPath = (id: string) => join(PRIVATE, "inputs", `${id}.json`);
+const autoPath = (id: string) => join(PRIVATE, "local", `${id}.auto.json`);
+
+function sameDims(a: readonly number[] | null | undefined, w: number, h: number): boolean {
+  return Array.isArray(a) && a.length === 2 && a[0] === w && a[1] === h;
+}
+
+/** Keep only a PNG's critical chunks. libvips always writes `pHYs` (a DPI), and the S-20 files carry
+ * no metadata at all; dropping whole ancillary chunks leaves every remaining CRC valid. */
+export function stripPngMetadata(png: Buffer): Buffer {
+  const signature = png.subarray(0, 8);
+  if (!signature.equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])))
+    throw new Refused("the encoder did not produce a PNG");
+  const keep: Buffer[] = [signature];
+  for (let i = 8; i < png.length;) {
+    const end = i + 12 + png.readUInt32BE(i);
+    if (end > png.length) throw new Refused("the encoder produced a truncated PNG chunk");
+    const type = png.toString("latin1", i + 4, i + 8);
+    if (["IHDR", "PLTE", "IDAT", "IEND"].includes(type)) keep.push(png.subarray(i, end));
+    i = end;
+  }
+  return Buffer.concat(keep);
+}
+
+async function writePng(img: Rgb, out: string): Promise<void> {
+  mkdirSync(join(out, ".."), { recursive: true });
+  const png = await sharp(Buffer.from(img.data), { raw: { width: img.width, height: img.height, channels: 3 } })
+    .png()
+    .toBuffer();
+  writeFileSync(out, stripPngMetadata(png));
+}
+
+/** decoded: the one decode of the common input every S-20 step starts from. */
+async function renderDecoded(id: string): Promise<string> {
+  const out = decodedPaths(id);
+  guardPaths([sidecarPath(id), out.png, out.record], false);
+  const side = readSidecar(id);
+  const common = repoPath(side.common.path);
+  guardPaths([common], false);
+  if (!existsSync(common) || sha256File(common) !== side.common.sha256)
+    throw new Refused(
+      `${id}: ${side.common.path} is missing or no longer the common file its sidecar names; run python3 scripts/s19/inputs.py --check ${id}`,
+    );
+  const img = await decode(common);
+  if (!sameDims(side.common.dimensions, img.width, img.height))
+    throw new Refused(
+      `${id}: the common input decodes to ${String(img.width)}×${String(img.height)}, its sidecar says ${JSON.stringify(side.common.dimensions)}`,
+    );
+  const pixels = sha256Bytes(img.data);
+  await writePng(img, out.png);
+  const again = await decode(out.png);
+  if (sha256Bytes(again.data) !== pixels)
+    throw new Refused(
+      `${id}: ${out.png} does not decode back to the pixels just written; the PNG round trip is not lossless`,
+    );
+  const record: DecodedRecord = {
+    kind: "decoded",
+    id,
+    common: { path: rel(common), sha256: side.common.sha256 },
+    common_sha256: side.common.sha256,
+    pixels_sha256: pixels,
+    output_sha256: sha256File(out.png),
+    dimensions: [img.width, img.height],
+    decoder: { sharp: sharp.versions.sharp, vips: sharp.versions.vips },
+    implementation_sha256: sha256File(import.meta.filename),
+    rendered_at: new Date().toISOString(),
+  };
+  writeFileSync(out.record, `${JSON.stringify(record, null, 2)}\n`);
+  return out.png;
+}
+
+/** The shared decode of this photo, its PNG verified pixel by pixel against `pixels_sha256`. */
+async function verifiedDecoded(id: string, commonSha: string): Promise<{ rec: DecodedRecord; img: Rgb }> {
+  const p = decodedPaths(id);
+  if (!existsSync(p.record) || !existsSync(p.png))
+    throw new Refused(
+      `${id}: no shared decode at ${p.record}; run npx tsx scripts/s19/local-arms.ts decoded ${id} first`,
+    );
+  const rec = JSON.parse(readFileSync(p.record, "utf8")) as Untrusted<DecodedRecord>;
+  if (rec.kind !== "decoded" || rec.id !== id || rec.common_sha256 !== commonSha)
+    throw new Refused(
+      `${id}: ${p.record} is not the decode of this photo's current common input; re-run local-arms.ts decoded ${id}`,
+    );
+  const img = await decode(p.png);
+  if (sha256Bytes(img.data) !== rec.pixels_sha256)
+    throw new Refused(
+      `${id}: ${p.png} no longer holds the pixels its record names (pixels_sha256); re-run local-arms.ts decoded ${id}`,
+    );
+  if (!sameDims(rec.dimensions, img.width, img.height))
+    throw new Refused(
+      `${id}: ${p.png} is ${String(img.width)}×${String(img.height)}, its record says ${JSON.stringify(rec.dimensions)}`,
+    );
+  return { rec: rec as DecodedRecord, img };
+}
+
+/** control-full and nlm-gamma: the same decoded pixels, Auto record and LUT; only the denoiser differs. */
+async function renderMatched(arm: "control-full" | "nlm-gamma", id: string, k?: string): Promise<string> {
+  const dec = decodedPaths(id);
+  const nlm = arm === "nlm-gamma" && k ? nlmPaths(id, k) : undefined;
+  if (arm === "nlm-gamma" && !nlm) throw new Refused("nlm-gamma needs --nlm-k <k>");
+  const dir = nlm ? join(PRIVATE, "arms", "nlm-gamma", `k${String(k)}`) : join(PRIVATE, "arms", "control-full");
+  const out = join(dir, `${id}.png`);
+  const outRecord = join(dir, `${id}.json`);
+  guardPaths(
+    [sidecarPath(id), autoPath(id), dec.png, dec.record, ...(nlm ? [nlm.png, nlm.record] : []), out, outRecord],
+    false,
+  );
+  const side = readSidecar(id);
+  guardPaths([repoPath(side.common.path)], false); // autoRecord hashes it
+  const rec = autoRecord(id, false);
+  const autoFileSha = sha256File(autoPath(id));
+  const decoded = await verifiedDecoded(id, side.common.sha256);
+  let img = decoded.img;
+  let input = dec.png;
+  let source: Record<string, unknown> | null = null;
+  if (nlm) {
+    if (!existsSync(nlm.record) || !existsSync(nlm.png))
+      throw new Refused(
+        `${id}: no NLM render at ${nlm.record}; run python3 scripts/s20/nlm.py for k ${String(k)} first`,
+      );
+    const n = JSON.parse(readFileSync(nlm.record, "utf8")) as Untrusted<NlmRecord>;
+    const missing = (
+      ["id", "k", "decoded_pixels_sha256", "output_sha256", "dimensions", "config_sha256"] as const
+    ).filter((f) => n[f] === undefined || n[f] === null);
+    if (missing.length)
+      throw new Refused(`${id}: ${nlm.record} is not an nlm.py record (missing ${missing.join(", ")})`);
+    if (n.id !== id || n.k !== Number(k))
+      throw new Refused(
+        `${id}: ${nlm.record} is for photo ${String(n.id)} at k ${String(n.k)}, not ${id} at k ${String(k)}`,
+      );
+    if (n.decoded_record && resolve(repoPath(n.decoded_record)) !== resolve(dec.record))
+      throw new Refused(`${id}: ${nlm.record} names decoded record ${n.decoded_record}, not ${rel(dec.record)}`);
+    if (n.decoded_pixels_sha256 !== decoded.rec.pixels_sha256)
+      throw new Refused(
+        `${id}: ${nlm.record} was rendered from other decoded pixels than ${rel(dec.record)} (decoded_pixels_sha256); re-render it with nlm.py`,
+      );
+    if (sha256File(nlm.png) !== n.output_sha256)
+      throw new Refused(
+        `${id}: ${nlm.png} is no longer the output its record names (output_sha256); re-render it with nlm.py`,
+      );
+    img = await decode(nlm.png);
+    if (!sameDims(n.dimensions, img.width, img.height) || !sameDims(decoded.rec.dimensions, img.width, img.height))
+      throw new Refused(
+        `${id}: NLM output ${String(img.width)}×${String(img.height)} (record ${JSON.stringify(n.dimensions)}) ≠ decoded ${JSON.stringify(decoded.rec.dimensions)}`,
+      );
+    input = nlm.png;
+    source = {
+      kind: "nlm",
+      record: rel(nlm.record),
+      record_sha256: sha256File(nlm.record),
+      output_sha256: n.output_sha256,
+      config_sha256: n.config_sha256,
+      k: n.k,
+    };
+  }
+  const lut = buildGammaLut(rec.local.gamma);
+  img = applyLut(img, lut);
+  await writePng(img, out);
+  writeFileSync(
+    outRecord,
+    `${JSON.stringify(
+      {
+        arm,
+        id,
+        input: rel(input),
+        input_sha256: sha256File(input),
+        source,
+        decoded_record: rel(dec.record),
+        decoded_record_sha256: sha256File(dec.record),
+        decoded_pixels_sha256: decoded.rec.pixels_sha256,
+        auto_record: { common_sha256: rec.common_sha256, session_id: rec.session_id, provenance: "recomputed" },
+        auto_file_sha256: autoFileSha,
+        gamma: rec.local.gamma,
+        tone: { kind: "gamma" },
+        lut_sha256: sha256Bytes(lut),
+        blur_sigma_px: 0,
+        output_sha256: sha256File(out),
+        dimensions: [img.width, img.height],
+        implementation_sha256: sha256File(import.meta.filename),
+        rendered_at: new Date().toISOString(),
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return out;
+}
+
 async function compareLocal(id: string, img: Rgb, validation: boolean): Promise<string> {
   const path = join(PRIVATE, validation ? "validation-local" : "local", `${id}.jpg`);
   if (!existsSync(path)) throw new Refused(`${id}: no real Local download at ${path}`);
@@ -334,13 +609,38 @@ async function main(): Promise<number> {
     const arm = args.rest.shift() as Arm | undefined;
     if (!arm || !ARMS.includes(arm)) {
       console.error(
-        `usage: local-arms.ts <${ARMS.join("|")}> <ids…>|--all [--compare-local] [--source <png>] [--attempts <jsonl>] [--curve-config <json>]`,
+        `usage: local-arms.ts <${ARMS.join("|")}> <ids…>|--all [--compare-local] [--source <png>] [--attempts <jsonl>] [--curve-config <json>] [--nlm-k <k>]`,
       );
       return 2;
     }
     args.ids = args.rest;
+    const s20 = S20_ARMS.includes(arm);
+    if (s20 && (args.validation || args.allValidation))
+      throw new Refused(`${arm} is an S-20 step 1 arm: it covers the tuning photos only and has no validation mode`);
+    const nlmK = args.opts.get("--nlm-k");
+    if (nlmK !== undefined && arm !== "nlm-gamma") throw new Refused("--nlm-k needs the nlm-gamma arm");
+    if (arm === "nlm-gamma" && nlmK === undefined)
+      throw new Refused("nlm-gamma needs --nlm-k <k>, one of the grid's k values");
+    const k = nlmK === undefined ? undefined : formatK(nlmK);
     const ids = guard(args);
     if (ids.length === 0) throw new Refused("no photos selected: name ids or pass --all");
+    if (s20) {
+      let failed = 0;
+      for (const id of ids) {
+        try {
+          const out =
+            arm === "decoded"
+              ? await renderDecoded(id)
+              : await renderMatched(arm as "control-full" | "nlm-gamma", id, k);
+          console.log(`✓ ${id}: ${out}`);
+        } catch (e) {
+          if (!(e instanceof Refused)) throw e;
+          console.log(`✗ ${e.message}`);
+          failed++;
+        }
+      }
+      return failed ? 1 : 0;
+    }
     const source = args.opts.get("--source");
     if (source && (arm !== "nafnet-gamma" || ids.length !== 1))
       throw new Refused("--source needs nafnet-gamma and one id");

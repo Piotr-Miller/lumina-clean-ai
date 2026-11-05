@@ -854,17 +854,17 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Manual
 
-- [ ] 0.3 Owner installs OpenCV
-- [ ] 0.4 Owner reads the premise record and accepts it
+- [x] 0.3 Owner installs OpenCV — accepted at f6b28003605b1c281ac7e951413cc67125227dbb
+- [x] 0.4 Owner reads the premise record and accepts it — accepted at f6b28003605b1c281ac7e951413cc67125227dbb
 
 ### Phase 1: Shared decode and matched arms
 
 #### Automated
 
-- [ ] 1.1 Arm tests pass
-- [ ] 1.2 S-19 harness tests still pass
-- [ ] 1.3 Typecheck passes
-- [ ] 1.4 Lint passes
+- [x] 1.1 Arm tests pass
+- [x] 1.2 S-19 harness tests still pass
+- [x] 1.3 Typecheck passes
+- [x] 1.4 Lint passes
 
 ### Phase 2: NLM tool, grid and calibration
 
