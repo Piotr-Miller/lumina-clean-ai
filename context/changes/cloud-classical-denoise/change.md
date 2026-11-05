@@ -10,6 +10,9 @@ issue: 347
 
 ## Notes
 
+- 2026-11-05: reopened 0.3 — was accepted at 595c87ab2ae5658389ba4ca64e17660b4b70b016; changed: context/changes/cloud-classical-denoise/evaluations/step1-premise.md (F1 guard erratum and corrected replay; the acceptance script includes this record in 0.3's fallback surface).
+- 2026-11-05: reopened 0.4 — was accepted at 595c87ab2ae5658389ba4ca64e17660b4b70b016; changed: context/changes/cloud-classical-denoise/evaluations/step1-premise.md (F1 guard erratum and corrected replay).
+
 **Registered 2026-11-03, deliberately NOT started.** Owner decision: this change goes first,
 `local-jev-gate` is registered as a stub and waits for this change's step 1. Nothing below has
 been run; no harness code has been written; no owner rating exists.

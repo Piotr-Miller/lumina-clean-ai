@@ -150,3 +150,87 @@ def timed():
 
 {"facts": facts, "time": timed}[sys.argv[2]]()
 ```
+
+## Erratum and guarded replay (2026-11-05, implementation review F1)
+
+The original script and its checksum above are preserved as the historical measurement.
+The Checks table's claim that every concrete path was guarded is too broad:
+
+- `timed()` guarded the common image and temporary output, but read the input sidecar
+  `inputs/S17-06.json` without passing that path to `check_paths` first.
+- `facts()` omitted `ARCH / "S17-01.jpg"` from its guard list before checking its absence
+  with `.exists()`.
+
+These omissions mean a tuning-named sidecar or archive path resolving into the holdout would
+not have been refused before that access. The review demonstrated the sidecar omission with
+synthetic paths and a read trap; it did not establish that the original run accessed the holdout.
+
+The corrected replay makes exactly these changes:
+
+```diff
+-    paths = []
++    paths = [ARCH / "S17-01.jpg"]
+
+-    guard([i], [common, target])
+-    rec = json.loads((PRIV / "inputs" / f"{i}.json").read_text())
++    record_path = PRIV / "inputs" / f"{i}.json"
++    guard([i], [common, target, record_path])
++    rec = json.loads(record_path.read_text())
+```
+
+Save the following block outside the repository, for example as
+`/tmp/s20-premise-replay.py`, and run `python3 -B /tmp/s20-premise-replay.py` from the repository
+root. It verifies the historical checksum, applies the two exact corrections in memory, and
+runs only `facts()`. The original timing is not repeated; the one-render exception remains used.
+
+````python
+"""Guarded Phase 0 facts replay; no decode, filter, or output-image write."""
+import hashlib
+import sys
+from pathlib import Path
+
+root = Path.cwd().resolve()
+record = root / "context/changes/cloud-classical-denoise/evaluations/step1-premise.md"
+document = record.read_text()
+source = document.split("```python\n", 1)[1].split("\n```", 1)[0] + "\n"
+expected = "0ab3647bfd6759f283a860646aadbd30a9da742e35e64d95e2ede770d3c2f6e0"
+if hashlib.sha256(source.encode()).hexdigest() != expected:
+    raise RuntimeError("historical appendix changed; inspect it before replaying")
+
+patches = [
+    ("    paths = []\n", '    paths = [ARCH / "S17-01.jpg"]\n'),
+    (
+        '    guard([i], [common, target])\n'
+        '    rec = json.loads((PRIV / "inputs" / f"{i}.json").read_text())\n',
+        '    record_path = PRIV / "inputs" / f"{i}.json"\n'
+        '    guard([i], [common, target, record_path])\n'
+        '    rec = json.loads(record_path.read_text())\n',
+    ),
+]
+for before, after in patches:
+    if source.count(before) != 1:
+        raise RuntimeError("expected exactly one patch site; inspect the appendix")
+    source = source.replace(before, after, 1)
+
+sys.argv = ["premise.py", str(root), "facts"]
+exec(compile(source, "<guarded Phase 0 replay>", "exec"))
+````
+
+### Correction verification
+
+- The documented replay executed successfully (exit 0). Dimensions and common-file bindings
+  agree on 8/8; published Local hashes agree on 7/7; parsed Auto records agree on 8/8;
+  S17-01's full private hash matches, and its archived JPEG remains absent. Auto dimensions and
+  the absence of EXIF orientation tags also match the original record.
+- The historical appendix still hashes to
+  `0ab3647bfd6759f283a860646aadbd30a9da742e35e64d95e2ede770d3c2f6e0`.
+  The corrected in-memory script hashes to
+  `1624de556d4bbf51fe04fe728bca6da72b63c8f51ccdba535116d38f1f62a149`.
+- A synthetic `S17-06.json` symlink resolving to a validation-named fixture is refused by the
+  corrected `timed()` before `read_text`, image decode or filtering. Read/decode/filter traps
+  would fail the check if reached.
+- A synthetic archived `S17-01.jpg` symlink resolving to a validation-named fixture is refused
+  by the corrected `facts()` before `.exists()` or image metadata access. Traps on both access
+  methods would fail the check if reached.
+- Both refusal checks passed (exit 0). Only synthetic fixtures were used for them; no holdout
+  bytes were read, and no additional NLM render ran. The 13.31 s timing remains historical.

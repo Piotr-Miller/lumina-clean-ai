@@ -849,8 +849,8 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 0.1 OpenCV is importable
-- [x] 0.2 Holdout guard allows the eight tuning ids
+- [x] 0.1 OpenCV is importable — 595c87a
+- [x] 0.2 Holdout guard allows the eight tuning ids — 595c87a
 
 #### Manual
 
