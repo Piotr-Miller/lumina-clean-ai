@@ -460,7 +460,7 @@ def calibrate(grid: dict, config_sha: str, impl_sha: str, version: str) -> tuple
         "  as pre-registered. Dark ramp and near-clipping rows are recorded, not gated.",
         "- Fixtures: flat L = 128; texture L = 128 + 40·sin(2πx/16)·sin(2πy/24); dark ramp L = 0 → 40",
         "  across x; near 0 L = 2; near 255 L = 253. a = b = 128 before noise in every fixture.",
-        f"- OpenCV {version}, numpy {np.__version__}, OpenCV threads {cv2.getNumThreads()}.",
+        f"- OpenCV {version}, numpy {np.__version__}.",
         "",
         "## Estimates",
         "",

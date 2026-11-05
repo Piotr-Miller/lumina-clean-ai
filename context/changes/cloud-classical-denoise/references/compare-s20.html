@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>S-20 blind rating</title>
+    <!--
+      S-20 step 1a blind rating viewer (cloud-classical-denoise, plan Phase 3 item 2).
+      Open as compare-s20.html?set=<set_id>; it loads test-photos/private/s20/<set_id>/manifest.js,
+      written by scripts/s20/blind.py. Open a set only after its seal file is committed (plan order
+      step 4), and only through this page.
+
+      Adapted from the archived S-19 compare-arms.html: side-by-side and flip modes, the synced 1:1
+      zoom and the brightened original are kept. Nothing here draws a side or knows an arm: sides,
+      labels and pair order come from the sealed manifest, and the page stores and exports only
+      anonymous item ids and answers (plan F7).
+    -->
+    <style>
+      :root {
+        --bg: #1c1c1e;
+        --panel: #2a2a2d;
+        --line: #3a3a3e;
+        --text: #e8e8ea;
+        --muted: #9a9aa0;
+        --accent: #6ea8fe;
+        --good: #5cb85c;
+        --bad: #e06c6c;
+        --neutral: #c9a227;
+        --crop-a: #6ea8fe;
+        --crop-b: #f0a04b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.4 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      body {
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+      }
+      /* Explicit rows: a hidden banner must not shift the images into an auto row. */
+      body > header {
+        grid-row: 1;
+      }
+      #banner {
+        grid-row: 2;
+      }
+      main {
+        grid-row: 3;
+      }
+      body > footer {
+        grid-row: 4;
+      }
+      header,
+      footer,
+      #banner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        align-items: center;
+        padding: 8px 16px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--line);
+      }
+      #banner {
+        color: var(--bad);
+      }
+      #banner:empty {
+        display: none;
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        border-bottom: 0;
+        flex-direction: column;
+        align-items: stretch;
+        max-height: 45vh;
+        overflow: auto;
+      }
+      h1 {
+        font-size: 15px;
+        margin: 0;
+        font-weight: 600;
+      }
+      .meta {
+        color: var(--muted);
+      }
+      button,
+      input[type="text"] {
+        font: inherit;
+        color: var(--text);
+        background: #38383c;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 5px 10px;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) {
+        border-color: var(--accent);
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      button.on {
+        background: var(--accent);
+        color: #111;
+        border-color: var(--accent);
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 10px;
+        align-items: center;
+      }
+      .row > strong {
+        min-width: 210px;
+      }
+      .spacer {
+        flex: 1;
+      }
+      main {
+        min-height: 0;
+        display: grid;
+        gap: 4px;
+        padding: 4px;
+      }
+      main.side.n3 {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      main.side.n5 {
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+      }
+      main.flip {
+        grid-template-columns: 1fr;
+      }
+      .pane {
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+        background: #111;
+      }
+      .pane.zoom {
+        overflow: auto;
+      }
+      .stage {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+      .pane.zoom .stage {
+        display: inline-block;
+        width: auto;
+        height: auto;
+      }
+      .stage img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      .pane.zoom .stage img {
+        height: auto;
+        max-width: none;
+      }
+      .stage img.bright {
+        filter: brightness(3);
+      }
+      main.drawing .stage img {
+        cursor: crosshair;
+      }
+      .crop {
+        position: absolute;
+        border: 2px solid var(--crop-a);
+        pointer-events: none;
+      }
+      .crop.B {
+        border-color: var(--crop-b);
+      }
+      .crop.live {
+        border-style: dashed;
+      }
+      .crop span {
+        position: absolute;
+        top: -18px;
+        left: -2px;
+        font-size: 11px;
+        padding: 0 4px;
+        background: rgba(0, 0, 0, 0.7);
+      }
+      .label {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: rgba(0, 0, 0, 0.65);
+        font-weight: 600;
+        pointer-events: none;
+        z-index: 2;
+      }
+      .pane.zoom > .label {
+        position: sticky;
+        display: inline-block;
+        margin: 8px;
+      }
+      .missing {
+        display: grid;
+        place-items: center;
+        height: 100%;
+        min-height: 120px;
+        color: var(--muted);
+        padding: 16px;
+        text-align: center;
+      }
+      #quality button[data-v$="clear"].on {
+        background: var(--good);
+        border-color: var(--good);
+      }
+      #quality button[data-v$="slight"].on,
+      #quality button[data-v="tie"].on {
+        background: var(--neutral);
+        border-color: var(--neutral);
+      }
+      .fid button[data-v="significant"].on,
+      .fid button[data-v="severe"].on {
+        background: var(--bad);
+        border-color: var(--bad);
+        color: #111;
+      }
+      .fid button[data-v="uncertain"].on {
+        background: var(--neutral);
+        border-color: var(--neutral);
+        color: #111;
+      }
+      input.wide {
+        flex: 1 1 320px;
+        min-width: 200px;
+      }
+      .warn {
+        color: var(--bad);
+      }
+      .chip {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 1px 8px;
+        font-size: 12px;
+      }
+      .dots {
+        display: flex;
+        gap: 4px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--line);
+        cursor: pointer;
+      }
+      .dot.done {
+        background: var(--good);
+      }
+      .dot.cur {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      dialog {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        width: min(760px, calc(100vw - 32px));
+      }
+      kbd {
+        background: #38383c;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 0 4px;
+        font-size: 12px;
+      }
+      #fatal {
+        padding: 32px;
+        color: var(--bad);
+      }
+      @media (max-width: 900px) {
+        main.side.n3,
+        main.side.n5 {
+          grid-template-columns: 1fr;
+          grid-template-rows: none;
+          grid-auto-rows: minmax(240px, 1fr);
+          overflow: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <button id="prev" title="Poprzednie (←)">←</button>
+      <h1 id="title"></h1>
+      <button id="next" title="Następne (→)">→</button>
+      <div class="dots" id="dots"></div>
+      <span class="spacer"></span>
+      <button id="mSide">Obok siebie</button>
+      <button id="mFlip" title="Klawisze 1–5 wybierają obraz, Spacja przełącza dwa ostatnie">Przełączanie</button>
+      <button id="zoom" title="Z">100%</button>
+      <button id="bright" title="J">Rozjaśniony oryginał</button>
+      <button id="export">Eksport</button>
+    </header>
+    <div id="banner"></div>
+    <main id="main"></main>
+    <footer id="rating"></footer>
+    <dialog id="dlg">
+      <p id="dlgHead"></p>
+      <ul id="dlgList"></ul>
+      <p class="meta" id="dlgDigest"></p>
+      <p><button id="dl">Pobierz JSON</button> <button id="close">Zamknij</button></p>
+    </dialog>
+    <script>
+      "use strict";
+      const SET_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
+      const HEX64 = /^[0-9a-f]{64}$/;
+      const QUALITY = ["A-clear", "A-slight", "tie", "B-slight", "B-clear"];
+      const LEVELS = ["none", "minor", "significant", "severe", "uncertain"];
+      const NEEDS_EVIDENCE = ["significant", "severe"];
+      const PILOT_CHOICES = ["X", "Y", "Z", "none"];
+      const LABELS = { pilot: ["kontrola", "X", "Y", "Z"], gate: ["A", "B"] };
+      const STATE_VERSION = 1;
+
+      const setId = new URLSearchParams(location.search).get("set") || "";
+      if (!SET_ID.test(setId))
+        fatal("Podaj zestaw: compare-s20.html?set=<set_id> (zbudowany przez scripts/s20/blind.py).");
+      else {
+        const base = "../../../../test-photos/private/s20/" + setId + "/";
+        const s = document.createElement("script");
+        s.src = base + "manifest.js";
+        s.onload = () => start(window.S20_SET, base);
+        s.onerror = () =>
+          fatal("Brak manifestu " + s.src + ". Uruchom: python3 scripts/s20/blind.py <pilot|gate> --set " + setId);
+        document.head.appendChild(s);
+      }
+
+      function fatal(msg) {
+        document.body.innerHTML = "";
+        const d = document.createElement("div");
+        d.id = "fatal";
+        d.textContent = msg;
+        document.body.appendChild(d);
+      }
+
+      // ---------------------------------------------------------------- manifest
+
+      function manifestProblem(M) {
+        if (!M || typeof M !== "object") return "manifest nie jest obiektem";
+        if (M.set_id !== setId) return "manifest jest zestawem " + M.set_id + ", nie " + setId;
+        if (!(M.kind in LABELS)) return "nieznany rodzaj zestawu " + M.kind;
+        if (!HEX64.test(M.set_digest || "")) return "manifest nie ma set_digest";
+        if (!Array.isArray(M.items) || !M.items.length) return "manifest nie ma elementów";
+        const ids = new Set();
+        for (const it of M.items) {
+          if (!it || typeof it.id !== "string" || ids.has(it.id)) return "zdublowany lub pusty identyfikator";
+          ids.add(it.id);
+          const d = it.original && it.original.dimensions;
+          if (!Array.isArray(d) || d.length !== 2 || !d.every((v) => Number.isInteger(v) && v > 0))
+            return it.id + ": brak wymiarów oryginału";
+          const labels = Object.keys(it.images || {}).sort();
+          if (labels.join() !== [...LABELS[M.kind]].sort().join()) return it.id + ": nieoczekiwane etykiety " + labels;
+        }
+        return null;
+      }
+
+      // ---------------------------------------------------------------- state (anonymous ids and answers only)
+
+      const isInt = (v) => Number.isInteger(v);
+      function validCrop(c, dims) {
+        return (
+          c &&
+          typeof c === "object" &&
+          Object.keys(c).sort().join() === "h,w,x,y" &&
+          [c.x, c.y, c.w, c.h].every(isInt) &&
+          c.w >= 1 &&
+          c.h >= 1 &&
+          c.x >= 0 &&
+          c.y >= 0 &&
+          c.x + c.w <= dims[0] &&
+          c.y + c.h <= dims[1]
+        );
+      }
+      function validAnswer(kind, a, item) {
+        if (!a || typeof a !== "object" || Array.isArray(a)) return false;
+        if (kind === "pilot") return Object.keys(a).join() === "choice" && PILOT_CHOICES.includes(a.choice);
+        const keys = Object.keys(a);
+        if (!keys.every((k) => k === "quality" || k === "fidelity")) return false;
+        if ("quality" in a && !QUALITY.includes(a.quality)) return false;
+        const f = a.fidelity;
+        if (!f || typeof f !== "object" || Object.keys(f).sort().join() !== "A,B") return false;
+        return ["A", "B"].every((s) => {
+          const x = f[s];
+          return (
+            x &&
+            typeof x === "object" &&
+            Object.keys(x).sort().join() === "crops,level,reason" &&
+            (x.level === null || LEVELS.includes(x.level)) &&
+            typeof x.reason === "string" &&
+            Array.isArray(x.crops) &&
+            x.crops.every((c) => validCrop(c, item.original.dimensions))
+          );
+        });
+      }
+      function loadState(M, key) {
+        let raw = null;
+        try {
+          raw = localStorage.getItem(key);
+        } catch {
+          return { state: {}, note: "Pamięć przeglądarki niedostępna: oceny nie przetrwają przeładowania." };
+        }
+        if (raw === null) return { state: {}, note: "" };
+        const byId = Object.fromEntries(M.items.map((it) => [it.id, it]));
+        try {
+          const s = JSON.parse(raw);
+          const ok =
+            s &&
+            s.version === STATE_VERSION &&
+            s.answers &&
+            typeof s.answers === "object" &&
+            Object.entries(s.answers).every(([id, a]) => id in byId && validAnswer(M.kind, a, byId[id]));
+          if (ok) return { state: s.answers, note: "" };
+        } catch {}
+        return {
+          state: {},
+          note: "Zapisany stan tego zestawu był uszkodzony lub obcy — odrzucony, nie scalony. Zaczynasz od zera.",
+        };
+      }
+
+      // ---------------------------------------------------------------- page
+
+      function start(M, base) {
+        const problem = manifestProblem(M);
+        if (problem) return fatal("Manifest odrzucony: " + problem + ".");
+        const $ = (id) => document.getElementById(id);
+        const KEY = "s20:" + M.kind + ":" + M.set_digest;
+        const loaded = loadState(M, KEY);
+        const answers = loaded.state;
+        $("banner").textContent = loaded.note;
+        const save = () => {
+          try {
+            localStorage.setItem(KEY, JSON.stringify({ version: STATE_VERSION, answers }));
+          } catch {}
+        };
+
+        let idx = 0,
+          mode = "side",
+          zoomed = false,
+          bright = false,
+          flipShow = 0,
+          flipPrev = 1,
+          drawing = null; // "A" | "B" while a crop is being drawn for that side
+
+        const item = () => M.items[idx];
+        const panes = () => {
+          const it = item();
+          const order = M.kind === "pilot" ? ["kontrola", "X", "Y", "Z"] : ["A", "B"];
+          return [
+            { name: bright ? "Oryginał (rozjaśniony)" : "Oryginał", src: it.original.src, bright },
+            ...order.map((l) => ({ name: l, src: it.images[l].src, bright: false })),
+          ];
+        };
+        const fresh = () => ({
+          fidelity: {
+            A: { level: null, crops: [], reason: "" },
+            B: { level: null, crops: [], reason: "" },
+          },
+        });
+        // A gate pair's answer exists from its first visit (fidelity per side); a pilot answer only
+        // once a choice is made, so the stored state never holds an empty pilot answer.
+        const ans = () => (M.kind === "pilot" ? answers[item().id] || {} : (answers[item().id] ??= fresh()));
+
+        function missing(it) {
+          const a = answers[it.id];
+          if (M.kind === "pilot") return a && a.choice ? [] : ["wybór"];
+          const out = [];
+          if (!a || !a.quality) out.push("jakość");
+          for (const s of ["A", "B"]) {
+            const f = a && a.fidelity[s];
+            if (!f || !f.level) out.push("wierność " + s);
+            else if (NEEDS_EVIDENCE.includes(f.level)) {
+              if (!f.crops.length) out.push("kadr " + s);
+              if (!f.reason.trim()) out.push("uzasadnienie " + s);
+            }
+          }
+          return out;
+        }
+        const uncertain = (it) =>
+          M.kind === "gate" &&
+          answers[it.id] &&
+          ["A", "B"].some((s) => answers[it.id].fidelity[s].level === "uncertain");
+
+        // ------------------------------------------------ images, zoom, crops
+
+        function geometry(img) {
+          const r = img.getBoundingClientRect();
+          const [W, H] = item().original.dimensions;
+          const s = Math.min(r.width / W, r.height / H);
+          return { r, s, ox: r.left + (r.width - W * s) / 2, oy: r.top + (r.height - H * s) / 2, W, H };
+        }
+        function toSource(img, cx, cy) {
+          const g = geometry(img);
+          return [(cx - g.ox) / g.s, (cy - g.oy) / g.s];
+        }
+        function cropFrom(p, q) {
+          const [W, H] = item().original.dimensions;
+          const clamp = (v, hi) => Math.min(hi, Math.max(0, v));
+          const x0 = Math.floor(clamp(Math.min(p[0], q[0]), W)),
+            y0 = Math.floor(clamp(Math.min(p[1], q[1]), H));
+          const x1 = Math.ceil(clamp(Math.max(p[0], q[0]), W)),
+            y1 = Math.ceil(clamp(Math.max(p[1], q[1]), H));
+          const c = { x: Math.min(x0, W - 1), y: Math.min(y0, H - 1) };
+          c.w = Math.max(1, x1 - c.x);
+          c.h = Math.max(1, y1 - c.y);
+          return c;
+        }
+        function placeCrops() {
+          document.querySelectorAll(".stage").forEach((stage) => {
+            stage.querySelectorAll(".crop:not(.live)").forEach((n) => n.remove());
+            const img = stage.querySelector("img");
+            if (!img || M.kind !== "gate" || !img.complete) return;
+            const g = geometry(img);
+            const sr = stage.getBoundingClientRect();
+            for (const side of ["A", "B"])
+              ans().fidelity[side].crops.forEach((c, i) => {
+                const d = document.createElement("div");
+                d.className = "crop " + side;
+                Object.assign(d.style, {
+                  left: g.ox - sr.left + c.x * g.s + "px",
+                  top: g.oy - sr.top + c.y * g.s + "px",
+                  width: Math.max(2, c.w * g.s) + "px",
+                  height: Math.max(2, c.h * g.s) + "px",
+                });
+                const t = document.createElement("span");
+                t.textContent = side + (i + 1);
+                d.appendChild(t);
+                stage.appendChild(d);
+              });
+          });
+        }
+        function attachDrawing(stage, img) {
+          img.addEventListener("pointerdown", (e) => {
+            if (!drawing) return;
+            e.preventDefault();
+            const side = drawing;
+            const p = toSource(img, e.clientX, e.clientY);
+            const live = document.createElement("div");
+            live.className = "crop live " + side;
+            stage.appendChild(live);
+            const g = geometry(img),
+              sr = stage.getBoundingClientRect();
+            const move = (ev) => {
+              const c = cropFrom(p, toSource(img, ev.clientX, ev.clientY));
+              Object.assign(live.style, {
+                left: g.ox - sr.left + c.x * g.s + "px",
+                top: g.oy - sr.top + c.y * g.s + "px",
+                width: c.w * g.s + "px",
+                height: c.h * g.s + "px",
+              });
+            };
+            const up = (ev) => {
+              window.removeEventListener("pointermove", move);
+              window.removeEventListener("pointerup", up);
+              live.remove();
+              ans().fidelity[side].crops.push(cropFrom(p, toSource(img, ev.clientX, ev.clientY)));
+              drawing = null;
+              save();
+              render();
+            };
+            window.addEventListener("pointermove", move);
+            window.addEventListener("pointerup", up);
+          });
+        }
+        function pane(p) {
+          const d = document.createElement("div");
+          d.className = "pane" + (zoomed ? " zoom" : "");
+          const l = document.createElement("div");
+          l.className = "label";
+          l.textContent = p.name;
+          d.appendChild(l);
+          const stage = document.createElement("div");
+          stage.className = "stage";
+          const img = document.createElement("img");
+          img.src = base + p.src;
+          img.alt = p.name;
+          img.draggable = false;
+          if (p.bright) img.className = "bright";
+          if (zoomed) img.style.width = item().original.dimensions[0] + "px";
+          img.onload = placeCrops;
+          img.onerror = () =>
+            stage.replaceWith(
+              Object.assign(document.createElement("div"), {
+                className: "missing",
+                textContent: "Brak pliku " + p.src,
+              }),
+            );
+          stage.appendChild(img);
+          d.appendChild(stage);
+          attachDrawing(stage, img);
+          return d;
+        }
+        function syncScroll(list) {
+          let lock = false;
+          for (const from of list)
+            from.addEventListener("scroll", () => {
+              if (lock) return;
+              lock = true;
+              for (const to of list)
+                if (to !== from) {
+                  to.scrollLeft = from.scrollLeft;
+                  to.scrollTop = from.scrollTop;
+                }
+              requestAnimationFrame(() => (lock = false));
+            });
+        }
+
+        // ------------------------------------------------ rating controls
+
+        function buttons(values, labels, current, onPick, dataName) {
+          const frag = document.createDocumentFragment();
+          values.forEach((v, i) => {
+            const b = document.createElement("button");
+            b.textContent = labels[i];
+            b.dataset.v = v;
+            if (dataName) b.dataset.side = dataName;
+            b.classList.toggle("on", current === v);
+            b.onclick = () => onPick(v);
+            frag.appendChild(b);
+          });
+          return frag;
+        }
+        function row(title, ...children) {
+          const r = document.createElement("div");
+          r.className = "row";
+          const s = document.createElement("strong");
+          s.textContent = title;
+          r.append(s, ...children);
+          return r;
+        }
+        function footer() {
+          const f = $("rating");
+          f.replaceChildren();
+          const a = ans();
+          if (M.kind === "pilot") {
+            f.append(
+              row(
+                "Która siła najlepsza?",
+                buttons(PILOT_CHOICES, ["X", "Y", "Z", "żadna nie poprawia kontroli"], a.choice, (v) => {
+                  answers[item().id] = { choice: v };
+                  save();
+                  render();
+                }),
+              ),
+            );
+          } else {
+            const q = document.createElement("div");
+            q.className = "row";
+            q.id = "quality";
+            q.append(
+              Object.assign(document.createElement("strong"), { textContent: "Który wynik lepszy (jakość)?" }),
+              buttons(QUALITY, ["A wyraźnie", "A nieco", "remis", "B nieco", "B wyraźnie"], a.quality, (v) => {
+                a.quality = v;
+                save();
+                render();
+              }),
+            );
+            f.append(q);
+            for (const side of ["A", "B"]) {
+              const fid = a.fidelity[side];
+              const r = row(
+                "Wierność " + side + " wobec oryginału:",
+                buttons(LEVELS, ["brak straty", "drobna", "istotna", "ciężka", "niepewne"], fid.level, (v) => {
+                  fid.level = v;
+                  save();
+                  render();
+                }),
+              );
+              r.classList.add("fid");
+              f.append(r);
+              if (NEEDS_EVIDENCE.includes(fid.level) || fid.crops.length || fid.reason) {
+                const draw = document.createElement("button");
+                draw.textContent = drawing === side ? "Rysuj na dowolnym obrazie… (Esc)" : "Dodaj kadr " + side;
+                draw.classList.toggle("on", drawing === side);
+                draw.onclick = () => {
+                  drawing = drawing === side ? null : side;
+                  render();
+                };
+                const reason = document.createElement("input");
+                reason.type = "text";
+                reason.className = "wide";
+                reason.placeholder = "Co zostało utracone wobec oryginału? (wymagane przy istotnej/ciężkiej)";
+                reason.value = fid.reason;
+                reason.addEventListener("input", () => {
+                  fid.reason = reason.value;
+                  save();
+                  $("check").textContent = checkText();
+                });
+                const chips = fid.crops.map((c, i) => {
+                  const chip = document.createElement("span");
+                  chip.className = "chip";
+                  chip.textContent = side + (i + 1) + ": x " + c.x + ", y " + c.y + ", " + c.w + "×" + c.h + " px ";
+                  const x = document.createElement("button");
+                  x.textContent = "✕";
+                  x.title = "Usuń kadr";
+                  x.onclick = () => {
+                    fid.crops.splice(i, 1);
+                    save();
+                    render();
+                  };
+                  chip.appendChild(x);
+                  return chip;
+                });
+                f.append(row("Dowód " + side + ":", draw, ...chips, reason));
+              }
+            }
+          }
+          const c = document.createElement("div");
+          c.className = "row";
+          c.append(
+            Object.assign(document.createElement("span"), { id: "check", className: "warn", textContent: checkText() }),
+          );
+          f.append(c);
+          f.append(
+            Object.assign(document.createElement("div"), {
+              className: "meta",
+              innerHTML:
+                "<kbd>←</kbd><kbd>→</kbd> elementy · <kbd>1</kbd>–<kbd>" +
+                panes().length +
+                "</kbd> obraz · <kbd>Spacja</kbd> dwa ostatnie · <kbd>Z</kbd> 100% · <kbd>J</kbd> rozjaśniony oryginał · <kbd>Esc</kbd> przerwij kadr",
+            }),
+          );
+        }
+        function checkText() {
+          const m = missing(item());
+          const parts = [];
+          if (m.length) parts.push("Brakuje: " + m.join(", "));
+          if (uncertain(item()))
+            parts.push("„niepewne” zablokuje werdykt — rozstrzygnij wobec oryginału przed eksportem końcowym");
+          return parts.join(" · ");
+        }
+
+        // ------------------------------------------------ render
+
+        function render() {
+          const it = item();
+          $("title").textContent =
+            it.id + " · " + it.photo + " · " + (M.kind === "pilot" ? "pilot" : "bramka") + " · " + M.set_id;
+          const main = $("main");
+          const list = panes();
+          main.className = mode + " n" + list.length + (drawing ? " drawing" : "");
+          main.replaceChildren();
+          if (mode === "side") {
+            const nodes = list.map(pane);
+            main.append(...nodes);
+            if (zoomed) syncScroll(nodes);
+          } else {
+            main.append(pane(list[Math.min(flipShow, list.length - 1)]));
+          }
+          $("mSide").classList.toggle("on", mode === "side");
+          $("mFlip").classList.toggle("on", mode === "flip");
+          $("zoom").classList.toggle("on", zoomed);
+          $("bright").classList.toggle("on", bright);
+          footer();
+          const dots = $("dots");
+          dots.replaceChildren();
+          M.items.forEach((q, i) => {
+            const d = document.createElement("span");
+            d.className = "dot" + (missing(q).length ? "" : " done") + (i === idx ? " cur" : "");
+            d.title = q.id;
+            d.onclick = () => go(i - idx);
+            dots.appendChild(d);
+          });
+        }
+        function go(step) {
+          idx = (idx + step + M.items.length) % M.items.length;
+          drawing = null;
+          flipShow = 0;
+          render();
+        }
+        function show(n) {
+          if (n >= panes().length) return;
+          if (n !== flipShow) flipPrev = flipShow;
+          flipShow = n;
+          mode = "flip";
+          render();
+        }
+
+        $("prev").onclick = () => go(-1);
+        $("next").onclick = () => go(1);
+        $("mSide").onclick = () => ((mode = "side"), render());
+        $("mFlip").onclick = () => ((mode = "flip"), render());
+        $("zoom").onclick = () => ((zoomed = !zoomed), render());
+        $("bright").onclick = () => ((bright = !bright), render());
+        window.addEventListener("resize", placeCrops);
+        document.addEventListener("keydown", (e) => {
+          if (e.target.tagName === "INPUT" || $("dlg").open) return;
+          if (e.key === "ArrowLeft") go(-1);
+          else if (e.key === "ArrowRight") go(1);
+          else if (/^[1-5]$/.test(e.key)) show(Number(e.key) - 1);
+          else if (e.key === " ") {
+            e.preventDefault();
+            show(flipPrev);
+          } else if (e.key === "z" || e.key === "Z") {
+            zoomed = !zoomed;
+            render();
+          } else if (e.key === "j" || e.key === "J") {
+            bright = !bright;
+            render();
+          } else if (e.key === "Escape" && drawing) {
+            drawing = null;
+            render();
+          }
+        });
+
+        // ------------------------------------------------ export (echoes set_digest; ids and answers only)
+
+        let exportJson = "";
+        $("export").onclick = () => {
+          const doc = {
+            viewer: "compare-s20",
+            version: 1,
+            kind: M.kind,
+            set_id: M.set_id,
+            set_digest: M.set_digest,
+            rated_on: new Date().toISOString().slice(0, 10),
+          };
+          if (M.kind === "pilot")
+            doc.choices = M.items.map((it) => ({
+              item_id: it.id,
+              photo: it.photo,
+              choice: (answers[it.id] && answers[it.id].choice) || null,
+            }));
+          else
+            doc.ratings = M.items.map((it) => {
+              const a = answers[it.id] || fresh();
+              return {
+                pair_id: it.id,
+                quality: a.quality || null,
+                fidelity: {
+                  A: { level: a.fidelity.A.level, crops: a.fidelity.A.crops, reason: a.fidelity.A.reason },
+                  B: { level: a.fidelity.B.level, crops: a.fidelity.B.crops, reason: a.fidelity.B.reason },
+                },
+              };
+            });
+          exportJson = JSON.stringify(doc, null, 2) + "\n";
+          const incomplete = M.items.filter((it) => missing(it).length);
+          const unsure = M.items.filter(uncertain);
+          $("dlgHead").textContent =
+            incomplete.length || unsure.length
+              ? "Eksport niekompletny — reguła go zablokuje (BLOCKED). Możesz go pobrać i uzupełnić później."
+              : "Wszystkie " + M.items.length + " elementy ocenione.";
+          const ul = $("dlgList");
+          ul.replaceChildren(
+            ...incomplete.map((it) =>
+              Object.assign(document.createElement("li"), {
+                textContent: it.id + ": brakuje " + missing(it).join(", "),
+              }),
+            ),
+            ...unsure.map((it) => Object.assign(document.createElement("li"), { textContent: it.id + ": niepewne" })),
+          );
+          $("dlgDigest").textContent = "set_digest " + M.set_digest;
+          $("dlg").showModal();
+        };
+        $("dl").onclick = () => {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(new Blob([exportJson], { type: "application/json" }));
+          a.download = M.set_id + "-ratings.json";
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        };
+        $("close").onclick = () => $("dlg").close();
+        render();
+      }
+    </script>
+  </body>
+</html>
