@@ -3,7 +3,7 @@ project: LuminaClean AI
 version: 1
 status: draft
 created: 2026-05-26
-updated: 2026-11-03
+updated: 2026-11-05
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -48,7 +48,7 @@ Mobile night and low-light photos come out dark and grainy, and the existing fix
 | S-17 | cloud-quality-below-local         | (post-MVP quality) Auto avoids overexposure on night photos; compare the retained Bread path with Local on representative inputs                            | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | done                                                                  |
 | S-18 | cloud-result-resolution-gap       | (post-MVP quality/UX) the Cloud AI result is delivered and shown at a size that does not make it look worse than the free engine                            | S-11, S-12       | Success criterion "cloud result is noticeably better than local" | done                                                                  |
 | S-19 | cloud-model-comparison            | (post-MVP quality) the basic Cloud path runs on the model that wins a holdout comparison on `s17-v1`                                                        | S-17             | Success criterion "cloud result is noticeably better than local" | done                                                                  |
-| S-20 | cloud-classical-denoise           | (post-MVP quality) the basic Cloud path gives a result noticeably better than Local from a classical full-resolution denoise pipeline, proven offline first | S-19             | Success criterion "cloud result is noticeably better than local" | proposed                                                              |
+| S-20 | cloud-classical-denoise           | (post-MVP quality) the basic Cloud path gives a result noticeably better than Local from a classical full-resolution denoise pipeline, proven offline first | S-19             | Success criterion "cloud result is noticeably better than local" | in-progress                                                           |
 
 > **Status (2026-06-08): MVP live on luminacleanai.com with Cloud AI ON.** All slices F-01–S-09 are done and the S-05 + S-08 + S-09 flip-ON gate has cleared via **D.1** (`cloud-flip-on-revalidation`): `CLOUD_PIPELINE_ENABLED=true`, `CLOUD_DAILY_CAP=3` (kill-switch `=0`), webhook config moved GUC→Vault. The roadmap's MVP scope is fully delivered — see `## Done`.
 
@@ -357,7 +357,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Why not S-13 / S-14:** S-13 (#60) assumes Bread stays the Standard engine and adds a Premium tier above it; S-14 (#61) is an epic above S-13 whose heavy post-pass is NAFNet, which lost to its own control in S-19. If a classical pipeline becomes Standard, S-13 stays the Premium candidate above it.
 - **Unblocks:** the Cloud AI delivery-resolution half of S-18 and `local-engine-ceiling` (#188).
 - **Risk:** Low while offline — steps 1–3 change nothing in production. Medium at step 4: a new server-side runtime for a paused paid path (hosting, timeout budget, `enhance` contract).
-- **Status:** proposed — registered 2026-11-03, **not started** by owner decision. `local-jev-gate` (#348, a Local-engine follow-up, Parked below) is sequenced after this slice's step 1.
+- **Status:** in-progress — step 1a (NLM) planned 2026-11-05, implementation started 2026-11-05 (`context/changes/cloud-classical-denoise/plan.md`). `local-jev-gate` (#348, a Local-engine follow-up, Parked below) is sequenced after this slice's step 1.
 
 ## Backlog Handoff
 
@@ -381,7 +381,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-17       | cloud-quality-below-local         | Calibrate Cloud Auto exposure and verify quality against Local                              | done                  | Archived 2026-09-28 → `context/archive/2026-08-31-cloud-quality-below-local/`. Issue #203.                                                                                                                                       |
 | S-18       | cloud-result-resolution-gap       | Cloud AI returns ~1.5 MP lossy JPEG where Local returns full resolution                     | done                  | Archived 2026-09-21 → `context/archive/2026-09-20-cloud-result-resolution-gap/`. Presentation half only; delivery half Parked pending S-19. Issue #238.                                                                          |
 | S-19       | cloud-model-comparison            | Compare Cloud AI model candidates on the s17-v1 benchmark                                   | done                  | Archived 2026-11-03 → `context/archive/2026-09-28-cloud-model-comparison/`.                                                                                                                                                      |
-| S-20       | cloud-classical-denoise           | Cloud AI as a classical full-resolution denoise pipeline, proven offline against real Local | on hold               | `phase:post-mvp`. Registered 2026-11-03, **not started** (owner decision); step-1 rules decided 2026-11-03 (`change.md` § Owner decisions), BM3D licence still open. Issue #347.                                                 |
+| S-20       | cloud-classical-denoise           | Cloud AI as a classical full-resolution denoise pipeline, proven offline against real Local | in progress           | `phase:post-mvp`. Registered 2026-11-03; step-1 rules decided 2026-11-03 and 2026-11-05; step 1a planned 2026-11-05 (`plan.md`) (`change.md` § Owner decisions), BM3D licence still open. Issue #347.                            |
 
 This table is the clean handoff to a backlog tool. One row per `F-NN` / `S-NN`; it does not duplicate the detailed body.
 
