@@ -1,0 +1,37 @@
+{
+  "experiment": "S-20 step 1a (cloud-classical-denoise, #347): OpenCV fastNlMeansDenoisingColored at full resolution before Local's Auto gamma",
+  "decided": "Pre-registered by context/changes/cloud-classical-denoise/plan.md § Phase 2 (revised 2026-11-05 after the plan review, F8 and F14) and the owner decisions of 2026-11-05 (change.md § Owner decisions (2026-11-05), items 5 and 6, and Notes). Committed before any real render; never retuned after a rating.",
+  "filter": "cv2.fastNlMeansDenoisingColored",
+  "opencv_version": "4.13.0",
+  "input": {
+    "file": "test-photos/private/s20/decoded/<id>.png",
+    "read": "cv2.imread(path, cv2.IMREAD_COLOR)",
+    "dtype": "uint8",
+    "order": "BGR",
+    "binding": "the RGB view's raw bytes hash to the decoded record's pixels_sha256"
+  },
+  "space": "cv2.cvtColor(bgr, cv2.COLOR_LBGR2Lab) on 8-bit data, the conversion the filter itself applies",
+  "estimator": {
+    "name": "Immerkaer 1996, Fast Noise Variance Estimation, CVIU, doi:10.1006/cviu.1996.0060",
+    "kernel": [
+      [1, -2, 1],
+      [-2, 4, -2],
+      [1, -2, 1]
+    ],
+    "dtype": "float64",
+    "formula": "sigma_hat = sqrt(pi/2) * sum(|I * N|) / (6 * (W - 2) * (H - 2)), over the valid region",
+    "sigma_hat_L": "from L",
+    "sigma_hat_ab": "(sigma_hat_a + sigma_hat_b) / 2"
+  },
+  "mapping": {
+    "h": "round(k * sigma_hat_L, 2)",
+    "hColor": "round(k * sigma_hat_ab, 2)",
+    "round_digits": 2,
+    "refusal": "a non-finite or <= 0 sigma_hat, h or hColor is a technical refusal, not a vote; no epsilon is introduced"
+  },
+  "k": [1.0, 1.5, 2.0],
+  "templateWindowSize": 7,
+  "searchWindowSize": 21,
+  "hypothesis": "Bounded: the pilot picks one global k from these three, or none. Calibrated on synthetic fixtures before this file was committed.",
+  "calibration": "context/changes/cloud-classical-denoise/evaluations/step1-calibration.md"
+}
