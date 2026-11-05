@@ -383,6 +383,17 @@ If the flat or texture tolerance fails, the grid or the estimator is revised **h
 1 is committed, never after a real render. The conversion measurement cannot fail the
 calibration.
 
+**Gated quantities and fixture path (owner decision 2026-11-05).** Each tolerance applies to
+σ̂_L, σ̂_a and σ̂_b separately; σ̂_ab is recorded, and is implied by a and b. Each noisy 8-bit
+Lab fixture is converted with `COLOR_Lab2LBGR` to 8-bit BGR, and the gated σ̂ comes from the
+estimator's full path from there (`COLOR_LBGR2Lab` + Immerkær), as on a photo. The estimator on
+the noisy Lab fixture itself, with no conversion, is recorded as an ungated diagnostic.
+
+**Calibration binds the render (owner decision 2026-11-05).** The record carries one
+machine-readable bind line naming the PASS, `nlm.py`'s sha256, `nlm-grid.json`'s sha256 and the
+OpenCV version. A real render (item 2) is refused unless the committed record's bind line is a
+PASS and all three match the current values.
+
 Known limit: synthetic white noise does not reproduce correlated camera or JPEG noise. If the
 calibration contradicts the grid, the grid is revised **here**, before item 1 is committed. Never
 after a real render.
@@ -861,18 +872,18 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 1.1 Arm tests pass
-- [x] 1.2 S-19 harness tests still pass
-- [x] 1.3 Typecheck passes
-- [x] 1.4 Lint passes
+- [x] 1.1 Arm tests pass — e79b80d
+- [x] 1.2 S-19 harness tests still pass — e79b80d
+- [x] 1.3 Typecheck passes — e79b80d
+- [x] 1.4 Lint passes — e79b80d
 
 ### Phase 2: NLM tool, grid and calibration
 
 #### Automated
 
-- [ ] 2.1 NLM tests pass
-- [ ] 2.2 Grid config holds the pre-registered values
-- [ ] 2.3 Calibration runs on synthetic data only
+- [x] 2.1 NLM tests pass
+- [x] 2.2 Grid config holds the pre-registered values
+- [x] 2.3 Calibration runs on synthetic data only
 
 #### Manual
 
