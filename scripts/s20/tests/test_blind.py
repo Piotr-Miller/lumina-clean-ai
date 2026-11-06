@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import re
 import shutil
 import stat
@@ -31,6 +32,11 @@ import blind_fixture as bf  # noqa: E402
 from fixtures import make_icc, D50_SRGB  # noqa: E402
 
 blind = bf.load_blind()
+sys.path.insert(0, str(bf.S20))
+import common  # noqa: E402  (the rule tools' reason classes, raised by order step 8)
+
+LEAKS = ("control-full", "nlm-gamma", "k1.0", "k1.5", "k2.0", '"k"', "test-photos/private", "/arms/",
+         ".key-do-not-open", "Traceback")
 ARM_WORDS = ("control", "nlm", "local", "decoded", "gamma", "arm", "k1.", "k2.", "sigma")
 
 
@@ -61,7 +67,7 @@ class BlindWorld(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp(prefix="s20-blind-"))
         self.addCleanup(shutil.rmtree, self.tmp, True)
         self.w = bf.SyntheticWorld(self.tmp)
-        self.w.freeze(1.5)
+        self.w.pilot_chain(1.5)  # a gate set needs order step 8: a committed pilot and freeze
 
     def build(self, kind: str, set_id: str = "s1") -> tuple[Path, dict]:
         r = self.w.blind(kind, "--set", set_id)
@@ -74,7 +80,11 @@ class BlindWorld(unittest.TestCase):
         out = r.stdout + r.stderr
         self.assertEqual(r.returncode, 3, out)
         self.assertIn(f"set: {reason}", out)
-        self.assertNotIn("Traceback", out)
+        # a class blind.py does not own comes from the rule tools (an order-step-8 refusal)
+        ways = blind.WAY_OUT if reason in blind.WAY_OUT else common.WAY_OUT
+        self.assertIn(f"Way out: {ways[reason]}.", out, "the refusal names its way out (F7)")
+        for leak in LEAKS + (str(self.w.private), str(self.w.s20)):  # F12: no identity in any channel
+            self.assertNotIn(leak, out, f"leak {leak!r}")
         self.assertFalse((self.w.s20 / set_id).exists(), "a failed build leaves no set directory")
         self.assertEqual([p.name for p in self.w.s20.iterdir() if p.name.startswith(f".{set_id}-")], [],
                          "nor a temporary one")
@@ -150,7 +160,7 @@ class ManifestTest(BlindWorld):
         _, payload = read_manifest(self.w.s20 / "s1")
         self.assertIn(f"set_digest  {payload['set_digest']}", r.stdout)
         self.assertIn(f"key sha256  {key_sha}", r.stdout)
-        self.assertIn("BEFORE opening the viewer", r.stdout)
+        self.assertIn("commit it, and only then open", r.stdout)
 
 
 class PresentationTest(BlindWorld):
@@ -170,6 +180,15 @@ class PresentationTest(BlindWorld):
                         original = Path(src["path"]) if Path(src["path"]).is_absolute() else bf.ROOT / src["path"]
                         self.assertEqual(pixels_sha(original), src["pixels_sha256"])
                         self.assertEqual(blind.protocol.sha256_file(copy), src["presentation_sha256"])
+
+    def test_every_image_of_an_item_has_the_same_size(self):
+        """File size must not rank the strengths or name the NLM side (impl review phase 3, F2)."""
+        for kind in ("pilot", "gate"):
+            with self.subTest(kind=kind):
+                set_dir, key = self.build(kind, f"size-{kind}")
+                for item, it in key["items"].items():
+                    sizes = {side: (set_dir / s["presentation"]).stat().st_size for side, s in it["sources"].items()}
+                    self.assertEqual(len(set(sizes.values())), 1, (item, sizes))
 
     def test_the_jpeg_local_leaves_no_jpeg_signature(self):
         set_dir, key = self.build("gate")
@@ -224,6 +243,32 @@ class DrawTest(BlindWorld):
             self.assertEqual(it["sides"]["B"]["arm"], "nlm-gamma", "choice took the last side")
         self.assertEqual(self.Known.calls, 3 + 1 + 6, "3 label shuffles, 1 pair shuffle, 6 side draws")
 
+    def test_write_order_and_mtimes_carry_no_side(self):
+        """Write order shows in mtimes and inode numbers, so it must follow the side, never the arm:
+        the NLM side is forced to A and then to B, and the order stays original, A, B both times."""
+        for nlm_side, pick in (("A", 0), ("B", -1)):
+            with self.subTest(nlm_side=nlm_side):
+                written: list[str] = []
+                real = blind.write_copy
+
+                def spy(src, out):
+                    written.append(out.name)
+                    return real(src, out)
+
+                known = type("K", (self.Known,), {"choice": lambda self, seq, i=pick: seq[i]})
+                out = io.StringIO()
+                set_id = f"order-{nlm_side.lower()}"
+                with mock.patch.object(blind, "rng", known), mock.patch.object(blind, "write_copy", spy), \
+                        mock.patch("sys.stdout", out), mock.patch.dict("os.environ", self.w.env):
+                    self.assertEqual(blind.main(["gate", "--set", set_id]), 0, out.getvalue())
+                set_dir = self.w.s20 / set_id
+                key = json.loads((set_dir / blind.KEY_NAME).read_text())["items"]
+                for item, it in key.items():
+                    self.assertEqual(it["sides"][nlm_side]["arm"], "nlm-gamma", item)
+                    self.assertEqual([n for n in written if n.startswith(item + "-")],
+                                     [f"{item}-original.png", f"{item}-A.png", f"{item}-B.png"], item)
+                self.assertEqual({p.stat().st_mtime_ns for p in set_dir.iterdir()}, {blind.FILE_TIME_NS})
+
     def test_rng_is_the_operating_systems_csprng(self):
         import secrets
 
@@ -247,7 +292,10 @@ class RefusalTest(BlindWorld):
                     a = json.loads(arm_good)
                     a["source"]["record_sha256"] = blind.protocol.sha256_file(rec)
                     arm.write_text(json.dumps(a))
-                    self.assertIn("(photo T-01)", self.blocked(kind, "provenance mismatch"))
+                    if kind == "pilot":
+                        self.assertIn("(photo T-01)", self.blocked(kind, "provenance mismatch"))
+                    else:  # step 8 re-checks the pilot's NLM records first: the edited one no longer binds
+                        self.blocked(kind, "binding failed")
                     rec.write_text(good)
                     arm.write_text(arm_good)
 
@@ -256,13 +304,80 @@ class RefusalTest(BlindWorld):
         r = self.w.blind("gate", "--set", "s1")
         self.assertEqual(r.returncode, 3)
         self.assertIn("set: set exists", r.stdout)
+        self.assertIn(f"Way out: {blind.WAY_OUT['set exists']}.", r.stdout)
 
-    def test_a_bad_set_id_is_refused(self):
-        for bad in ("../x", "A", "_x", "x" * 65):
+    def test_a_bad_set_id_is_a_usage_error(self):
+        """Exit 2 from argparse, like every s19/s20 tool; a trailing newline is not a set id (F6)."""
+        for bad in ("../x", "A", "_x", "x" * 65, "pilot-1\n"):
             with self.subTest(set_id=bad):
                 r = self.w.blind("pilot", "--set", bad)
-                self.assertEqual(r.returncode, 3)
-                self.assertIn("set: usage", r.stdout)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertIn("must match", r.stderr)
+                self.assertNotIn("Traceback", r.stdout + r.stderr)
+
+    def test_every_reason_class_has_one_way_out(self):
+        src = Path(blind.__file__).read_text()
+        reasons = (set(re.findall(r'Blocked\("([a-z ]+)"', src))
+                   | set(re.findall(r'reason, photo, detail = "([a-z ]+)"', src))
+                   | set(re.findall(r'f"[^"\n]*",\s*"([a-z ]+)"\)', src))  # need(..., f"detail", "reason")
+                   | set(re.findall(r'reason: str = "([a-z ]+)"', src)))
+        self.assertIn("provenance mismatch", reasons, "the scan sees need()'s reason argument")
+        self.assertEqual(reasons, set(blind.WAY_OUT))
+
+    def test_a_bind_line_missing_a_field_is_refused(self):
+        """A missing bind field must not let a record lacking it pass as None == None (F5)."""
+        real = blind.committed
+        for field in blind.BIND_FIELDS:
+            with self.subTest(field=field):
+                def without(rel_path, field=field):
+                    raw = real(rel_path)
+                    if rel_path == blind.evidence.CALIBRATION_REL:
+                        raw = re.sub(rf" {field}=\S+".encode(), b"", raw)
+                    return raw
+
+                with mock.patch.object(blind, "committed", without), mock.patch.dict("os.environ", self.w.env):
+                    with self.assertRaises(blind.Blocked) as cm:
+                        blind.committed_bind()
+                self.assertEqual(cm.exception.reason, "calibration not committed")
+                self.assertIn(field, cm.exception.detail)
+
+    def test_a_set_dir_that_appears_during_the_build_is_not_replaced(self):
+        """Linux rename replaces an empty directory, so the id is re-checked right before it (F8)."""
+        final = self.w.s20 / "late"
+        real = blind.write_copy
+
+        def appear(src, out):
+            final.mkdir(parents=True, exist_ok=True)
+            return real(src, out)
+
+        out = io.StringIO()
+        with mock.patch.object(blind, "write_copy", appear), mock.patch("sys.stdout", out), \
+                mock.patch.dict("os.environ", self.w.env):
+            self.assertEqual(blind.main(["pilot", "--set", "late"]), 3, out.getvalue())
+        self.assertIn("set: set exists", out.getvalue())
+        self.assertEqual(list(final.iterdir()), [], "the directory that appeared is left as it was")
+        self.assertEqual([p.name for p in self.w.s20.iterdir() if p.name.startswith(".late-")], [])
+
+    def test_every_copy_re_guards_the_realpath_it_opens(self):
+        """write_copy runs minutes after verification, so it guards its source again (F8)."""
+        guarded: list[list[Path]] = []
+        real_guard, real_copy = blind.protocol.check_paths, blind.write_copy
+
+        def guard(paths, **kw):
+            guarded.append([Path(p) for p in paths])
+            return real_guard(paths, **kw)
+
+        def copy(src, out):
+            start = len(guarded)
+            entry = real_copy(src, out)
+            self.assertEqual(src["_abs"], os.path.realpath(src["_abs"]), "the verified realpath is kept")
+            self.assertIn([Path(src["_abs"])], guarded[start:], out.name)
+            return entry
+
+        out = io.StringIO()
+        with mock.patch.object(blind.protocol, "check_paths", guard), mock.patch.object(blind, "write_copy", copy), \
+                mock.patch("sys.stdout", out), mock.patch.dict("os.environ", self.w.env):
+            self.assertEqual(blind.main(["gate", "--set", "guarded"]), 0, out.getvalue())
 
     def test_a_missing_or_unbound_record_is_refused(self):
         self.nlm_record("T-03", "k2.0").unlink()
@@ -306,9 +421,59 @@ class RefusalTest(BlindWorld):
         log = next((self.w.s20 / "logs").glob("blind-*.log")).read_text()
         self.assertIn("does not hold pixels_sha256", log, "refused by the decoder-agreement check itself")
 
-    def test_a_freeze_whose_k_is_not_in_the_grid_is_refused(self):
-        self.w.freeze(1.25)
-        self.blocked("gate", "freeze invalid")
+    # ---- order step 8 (plan Phase 4 item 5; moved from Phase 3 by owner decision 2026-11-05)
+
+    FROZEN = "scripts/s20/configs/nlm-frozen.json"
+
+    def test_a_missing_freeze_refuses_a_gate_build(self):
+        self.w.git("rm", "-q", "--", self.FROZEN)
+        self.w.git("commit", "-q", "-m", "drop freeze")
+        self.blocked("gate", "order violation")
+
+    def test_an_uncommitted_freeze_change_refuses_a_gate_build(self):
+        path = self.w.repo / self.FROZEN
+        doc = json.loads(path.read_text())
+        doc["decided"] += " (edited)"
+        path.write_text(json.dumps(doc))
+        self.blocked("gate", "order violation")
+
+    def test_a_freeze_whose_k_differs_from_the_recomputed_pilot_refuses_a_gate_build(self):
+        tmp = Path(tempfile.mkdtemp(prefix="s20-blind-stale-"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        w = bf.SyntheticWorld(tmp)
+        w.init_repo()
+        key = w.seal("pilot", "pilot-y")
+        w.write_export("pilot", w.pilot_export(key, lambda photo, labels: next(l for l, k in labels.items() if k == 1.5)))
+        self.assertEqual(w.pilot("pilot-y").returncode, 0)
+        frozen = w.repo / self.FROZEN
+        doc = json.loads(frozen.read_text())
+        doc["k"] = 2.0  # written once, committed once: write-once holds, the content does not follow
+        frozen.write_text(json.dumps(doc))
+        w.commit(self.FROZEN, message="freeze")
+        r = w.blind("gate", "--set", "g")
+        self.assertEqual(r.returncode, 3, r.stdout)
+        self.assertIn("set: stale freeze", r.stdout)
+
+    def test_a_stop_pilot_makes_an_earlier_freeze_unusable(self):
+        key = json.loads((self.w.s20 / "pilot-x" / blind.KEY_NAME).read_text())
+        self.w.write_export("pilot", self.w.pilot_export(key, lambda photo, labels: "none"))  # re-exported, legal
+        self.assertEqual(self.w.pilot().returncode, 1, "the pilot is now STOP")
+        self.blocked("gate", "pilot stop")
+
+    def test_the_built_gate_key_names_the_committed_freeze(self):
+        _, key = self.build("gate")
+        raw = (self.w.repo / self.FROZEN).read_bytes()
+        self.assertEqual(key["freeze"], {"path": self.FROZEN, "sha256": blind.sha_bytes(raw), "k": 1.5})
+
+    def test_the_printed_seal_file_holds_one_valid_seal_line(self):
+        r = self.w.blind("pilot", "--set", "s9")
+        text = r.stdout.split("--- START seal file ---\n", 1)[1].split("--- END seal file ---", 1)[0]
+        lines = [ln for ln in text.splitlines() if ln.startswith("S20-SEAL")]
+        key_sha = blind.protocol.sha256_file(self.w.s20 / "s9" / blind.KEY_NAME)
+        _, payload = read_manifest(self.w.s20 / "s9")
+        self.assertEqual(lines, [f"S20-SEAL kind=pilot set_id=s9 set_digest={payload['set_digest']} key_sha256={key_sha}"])
+        self.assertIn("procedural commitment", text)
+        self.assertIn("not technical proof", text)
 
     def test_a_tuning_path_into_the_holdout_is_refused_before_it_is_read(self):
         holdout = Path(next(e["path"] for e in self.w.entries if e["id"] == "V-01"))
