@@ -177,6 +177,9 @@
         height: auto;
         max-width: none;
       }
+      .stage img[hidden] {
+        display: none;
+      }
       .stage img.bright {
         filter: brightness(3);
       }
@@ -291,6 +294,22 @@
         border-radius: 3px;
         padding: 0 4px;
         font-size: 12px;
+      }
+      #sealForm {
+        max-width: 760px;
+        padding: 24px;
+      }
+      #sealForm textarea {
+        width: 100%;
+        font:
+          12px/1.4 ui-monospace,
+          Consolas,
+          monospace;
+        background: #111;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 8px;
       }
       #fatal {
         padding: 32px;
@@ -447,9 +466,57 @@
 
       // ---------------------------------------------------------------- page
 
+      // ---------------------------------------------------------------- seal check (owner decision 2026-11-06)
+      // No image is created until the committed seal line matches this set's kind, set_id and digest.
+      // The seal is a procedural commitment; this check stops opening the wrong or an unsealed set.
+
+      const SEAL =
+        /^S20-SEAL kind=(pilot|gate) set_id=([a-z0-9][a-z0-9-]{0,63}) set_digest=([0-9a-f]{64}) key_sha256=([0-9a-f]{64})$/;
+      function sealProblem(text, M) {
+        const lines = text
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter((l) => l.startsWith("S20-SEAL"));
+        if (lines.length !== 1) return "wklej dokładnie jedną linię S20-SEAL (jest " + lines.length + ")";
+        const m = SEAL.exec(lines[0]);
+        if (!m) return "linia S20-SEAL ma zły format — skopiuj ją z zacommitowanego pliku pieczęci";
+        if (m[1] !== M.kind) return "pieczęć dotyczy zestawu typu " + m[1] + ", a otwierasz " + M.kind;
+        if (m[2] !== M.set_id) return "pieczęć dotyczy zestawu " + m[2] + ", a otwierasz " + M.set_id;
+        if (m[3] !== M.set_digest) return "set_digest pieczęci nie zgadza się z tym zestawem";
+        return null;
+      }
       function start(M, base) {
         const problem = manifestProblem(M);
         if (problem) return fatal("Manifest odrzucony: " + problem + ".");
+        const sealKey = "s20:seal:" + M.kind + ":" + M.set_digest;
+        let sealed = false;
+        try {
+          sealed = localStorage.getItem(sealKey) === "1";
+        } catch {}
+        if (sealed) return openSet(M, base);
+        const main = document.getElementById("main");
+        const form = document.createElement("div");
+        form.id = "sealForm";
+        form.innerHTML =
+          "<h1>Pieczęć zestawu</h1><p>Wklej linię <code>S20-SEAL</code> (albo cały plik) z zacommitowanego " +
+          "<code>evaluations/" +
+          M.kind +
+          "-sealed.md</code>. Obrazy pojawią się dopiero, gdy pieczęć zgadza się z tym zestawem. Pieczęć to " +
+          "zobowiązanie proceduralne, nie techniczny dowód, że nikt wcześniej nie zajrzał.</p>" +
+          '<textarea id="sealText" rows="4" aria-label="Linia S20-SEAL"></textarea>' +
+          '<p><button id="sealCheck">Sprawdź pieczęć</button> <span class="warn" id="sealWarn"></span></p>';
+        main.replaceChildren(form);
+        document.getElementById("sealCheck").onclick = () => {
+          const why = sealProblem(document.getElementById("sealText").value, M);
+          if (why) return (document.getElementById("sealWarn").textContent = "Odmowa: " + why + ".");
+          try {
+            localStorage.setItem(sealKey, "1");
+          } catch {}
+          openSet(M, base);
+        };
+      }
+
+      function openSet(M, base) {
         const $ = (id) => document.getElementById(id);
         const KEY = "s20:" + M.kind + ":" + M.set_digest;
         const loaded = loadState(M, KEY);
@@ -467,7 +534,10 @@
           bright = false,
           flipShow = 0,
           flipPrev = 1,
-          drawing = null; // "A" | "B" while a crop is being drawn for that side
+          drawing = null, // "A" | "B" while a crop is being drawn for that side
+          builtFor = null, // { idx, zoomed } of the panes on screen
+          flipPane = null, // the one pane of flip mode, holding every image of the item
+          drag = null; // { cancel } while a crop is being dragged
 
         const item = () => M.items[idx];
         const panes = () => {
@@ -535,7 +605,7 @@
         function placeCrops() {
           document.querySelectorAll(".stage").forEach((stage) => {
             stage.querySelectorAll(".crop:not(.live)").forEach((n) => n.remove());
-            const img = stage.querySelector("img");
+            const img = stage.querySelector("img:not([hidden])");
             if (!img || M.kind !== "gate" || !img.complete) return;
             const g = geometry(img);
             const sr = stage.getBoundingClientRect();
@@ -556,11 +626,20 @@
               });
           });
         }
+        // A drag in progress is cancelled by anything that hides, rebuilds or leaves its image
+        // (flip, item, mode, zoom, bright, Esc): it then records nothing, rather than a crop
+        // measured on a detached image or pushed into another item (impl review phase 3, F4).
+        function cancelDrag() {
+          if (drag) drag.cancel();
+        }
         function attachDrawing(stage, img) {
           img.addEventListener("pointerdown", (e) => {
             if (!drawing) return;
             e.preventDefault();
+            cancelDrag();
             const side = drawing;
+            const started = item();
+            const answer = ans();
             const p = toSource(img, e.clientX, e.clientY);
             const live = document.createElement("div");
             live.className = "crop live " + side;
@@ -576,46 +655,67 @@
                 height: c.h * g.s + "px",
               });
             };
-            const up = (ev) => {
+            const stop = () => {
               window.removeEventListener("pointermove", move);
               window.removeEventListener("pointerup", up);
               live.remove();
-              ans().fidelity[side].crops.push(cropFrom(p, toSource(img, ev.clientX, ev.clientY)));
+              drag = null;
+            };
+            const up = (ev) => {
+              stop();
+              const c = cropFrom(p, toSource(img, ev.clientX, ev.clientY));
+              // Never store a crop the loader would reject: one invalid crop discards all state.
+              if (item() === started && validCrop(c, started.original.dimensions)) answer.fidelity[side].crops.push(c);
               drawing = null;
               save();
-              render();
+              update();
             };
+            drag = { cancel: stop };
             window.addEventListener("pointermove", move);
             window.addEventListener("pointerup", up);
           });
         }
-        function pane(p) {
+        // A pane holds one image (side mode) or every image of the item (flip mode). Flipping only
+        // toggles which one is visible, so the 1:1 scroll position and the decoded images survive.
+        function pane(ps) {
           const d = document.createElement("div");
           d.className = "pane" + (zoomed ? " zoom" : "");
           const l = document.createElement("div");
           l.className = "label";
-          l.textContent = p.name;
           d.appendChild(l);
           const stage = document.createElement("div");
           stage.className = "stage";
-          const img = document.createElement("img");
-          img.src = base + p.src;
-          img.alt = p.name;
-          img.draggable = false;
-          if (p.bright) img.className = "bright";
-          if (zoomed) img.style.width = item().original.dimensions[0] + "px";
-          img.onload = placeCrops;
-          img.onerror = () =>
-            stage.replaceWith(
-              Object.assign(document.createElement("div"), {
-                className: "missing",
-                textContent: "Brak pliku " + p.src,
-              }),
-            );
-          stage.appendChild(img);
+          const [W, H] = item().original.dimensions;
+          for (const p of ps) {
+            const img = document.createElement("img");
+            img.src = base + p.src;
+            img.alt = p.name;
+            img.dataset.name = p.name;
+            img.draggable = false;
+            if (p.bright) img.className = "bright";
+            // An explicit 1:1 box: the scroll extent exists before, and while, the image decodes.
+            if (zoomed) Object.assign(img.style, { width: W + "px", height: H + "px" });
+            img.onload = placeCrops;
+            img.onerror = () =>
+              stage.replaceWith(
+                Object.assign(document.createElement("div"), {
+                  className: "missing",
+                  textContent: "Brak pliku " + p.src,
+                }),
+              );
+            stage.appendChild(img);
+            attachDrawing(stage, img);
+          }
           d.appendChild(stage);
-          attachDrawing(stage, img);
+          showIn(d, 0);
           return d;
+        }
+        function showIn(d, n) {
+          const imgs = [...d.querySelectorAll(".stage img")];
+          if (!imgs.length) return;
+          imgs.forEach((img, i) => (img.hidden = i !== n));
+          d.querySelector(".label").textContent = imgs[n].dataset.name;
+          placeCrops();
         }
         function syncScroll(list) {
           let lock = false;
@@ -666,7 +766,7 @@
                 buttons(PILOT_CHOICES, ["X", "Y", "Z", "żadna nie poprawia kontroli"], a.choice, (v) => {
                   answers[item().id] = { choice: v };
                   save();
-                  render();
+                  update();
                 }),
               ),
             );
@@ -679,7 +779,7 @@
               buttons(QUALITY, ["A wyraźnie", "A nieco", "remis", "B nieco", "B wyraźnie"], a.quality, (v) => {
                 a.quality = v;
                 save();
-                render();
+                update();
               }),
             );
             f.append(q);
@@ -690,7 +790,7 @@
                 buttons(LEVELS, ["brak straty", "drobna", "istotna", "ciężka", "niepewne"], fid.level, (v) => {
                   fid.level = v;
                   save();
-                  render();
+                  update();
                 }),
               );
               r.classList.add("fid");
@@ -701,7 +801,7 @@
                 draw.classList.toggle("on", drawing === side);
                 draw.onclick = () => {
                   drawing = drawing === side ? null : side;
-                  render();
+                  update();
                 };
                 const reason = document.createElement("input");
                 reason.type = "text";
@@ -723,7 +823,7 @@
                   x.onclick = () => {
                     fid.crops.splice(i, 1);
                     save();
-                    render();
+                    update();
                   };
                   chip.appendChild(x);
                   return chip;
@@ -759,21 +859,47 @@
 
         // ------------------------------------------------ render
 
+        // Panes are rebuilt only when what they show changes: the item, the mode, the zoom or the
+        // brightened original. Answers, crops and flips re-render the controls only (update), so
+        // the 1:1 scroll position survives them (impl review phase 3, F3).
+        function renderPanes() {
+          cancelDrag();
+          const main = $("main");
+          const list = panes();
+          const prev = main.querySelector(".pane.zoom");
+          const keep =
+            zoomed && prev && builtFor && builtFor.idx === idx && builtFor.zoomed
+              ? [prev.scrollLeft, prev.scrollTop]
+              : null;
+          builtFor = { idx, zoomed };
+          main.className = mode + " n" + list.length;
+          main.replaceChildren();
+          if (mode === "side") {
+            const nodes = list.map((p) => pane([p]));
+            main.append(...nodes);
+            if (zoomed) syncScroll(nodes);
+            flipPane = null;
+          } else {
+            flipShow = Math.min(flipShow, list.length - 1);
+            flipPane = pane(list);
+            main.append(flipPane);
+            showIn(flipPane, flipShow);
+          }
+          if (keep)
+            for (const n of main.querySelectorAll(".pane.zoom")) {
+              n.scrollLeft = keep[0];
+              n.scrollTop = keep[1];
+            }
+        }
         function render() {
+          renderPanes();
+          update();
+        }
+        function update() {
           const it = item();
           $("title").textContent =
             it.id + " · " + it.photo + " · " + (M.kind === "pilot" ? "pilot" : "bramka") + " · " + M.set_id;
-          const main = $("main");
-          const list = panes();
-          main.className = mode + " n" + list.length + (drawing ? " drawing" : "");
-          main.replaceChildren();
-          if (mode === "side") {
-            const nodes = list.map(pane);
-            main.append(...nodes);
-            if (zoomed) syncScroll(nodes);
-          } else {
-            main.append(pane(list[Math.min(flipShow, list.length - 1)]));
-          }
+          $("main").classList.toggle("drawing", !!drawing);
           $("mSide").classList.toggle("on", mode === "side");
           $("mFlip").classList.toggle("on", mode === "flip");
           $("zoom").classList.toggle("on", zoomed);
@@ -788,19 +914,25 @@
             d.onclick = () => go(i - idx);
             dots.appendChild(d);
           });
+          placeCrops();
         }
         function go(step) {
           idx = (idx + step + M.items.length) % M.items.length;
           drawing = null;
           flipShow = 0;
+          flipPrev = 1;
           render();
         }
         function show(n) {
           if (n >= panes().length) return;
           if (n !== flipShow) flipPrev = flipShow;
           flipShow = n;
-          mode = "flip";
-          render();
+          cancelDrag();
+          if (mode === "flip" && flipPane) showIn(flipPane, n);
+          else {
+            mode = "flip";
+            render();
+          }
         }
 
         $("prev").onclick = () => go(-1);
@@ -824,9 +956,10 @@
           } else if (e.key === "j" || e.key === "J") {
             bright = !bright;
             render();
-          } else if (e.key === "Escape" && drawing) {
+          } else if (e.key === "Escape" && (drawing || drag)) {
+            cancelDrag();
             drawing = null;
-            render();
+            update();
           }
         });
 

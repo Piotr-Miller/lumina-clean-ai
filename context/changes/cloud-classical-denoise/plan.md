@@ -451,7 +451,8 @@ does not hash itself [F6], and an experiment-specific viewer with identity-free 
   precondition of the order table into gate mode [F1].
 - **Presentation copies [F2]:** every rater-facing image is re-encoded from decoded pixels,
   including the original and the JPEG Local. It is written with Pillow as RGB PNG, with no
-  metadata, a fixed `compress_level`, and a name built only from the item id and the side. The
+  metadata, a fixed `compress_level` (0, stored, so that size depends on dimensions only; impl
+  review phase 3, F2), one shared mtime, and a name built only from the item id and the side. The
   key records, per file: the source path and sha256, the presentation sha256, and a
   decoded-pixel sha256 equal for source and copy.
 - **Set digest [F6]:**
@@ -668,7 +669,28 @@ step 6 still holds, the freeze is write-once and clean, and `k` recomputed from 
 pilot (`pilot.py`'s export validation, key decode and vote rule) equals the freeze's `k`; a STOP
 pilot refuses any freeze [F1].
 
-#### 6. Tests
+#### 6. Seal format, viewer seal check and Local baselines (owner decision 2026-11-06)
+
+**Files**: `scripts/s20/blind.py`, `context/changes/cloud-classical-denoise/references/compare-s20.html`, `scripts/s20/configs/local-baselines.json`
+
+**Intent**:
+
+- **Seal files.** `blind.py` prints the whole seal file for the set it built: exactly one machine
+  line `S20-SEAL kind=<kind> set_id=<set_id> set_digest=<hex> key_sha256=<hex>` plus the
+  human-control statement. It never writes into the repository; the owner saves and commits it.
+  `pilot.py`, `blind.py gate` and `gate.py` require exactly one valid `S20-SEAL` line; a missing,
+  duplicated or malformed line is refused. The statement is a procedural commitment, not technical
+  proof that nothing was opened earlier, and the seal file says so.
+- **Viewer seal check.** Before showing any image, `compare-s20.html` asks for the committed
+  `S20-SEAL` line and refuses unless its kind, `set_id` and `set_digest` equal the manifest's.
+- **Local baselines.** `scripts/s20/configs/local-baselines.json` maps exactly the eight tuning ids
+  to the sha256 of the exact bytes of the expected Local download: seven from the committed
+  archive copies (`references/s19-local/<id>.jpg`), S17-01's from `evaluations/step1-premise.md`.
+  It is written once from those sources, never from the downloads being checked. `gate.py` reads
+  only this file, requires it committed and clean, and a missing entry or malformed sha256 is
+  BLOCKED. A test compares exactly the eight ids and hashes with both sources.
+
+#### 7. Tests
 
 **Files**: `scripts/s20/tests/test_pointers.py`, `scripts/s20/tests/test_evidence.py`, `scripts/s20/tests/test_pilot.py`, `scripts/s20/tests/test_gate.py`, `scripts/s20/tests/test_blind.py`
 
@@ -916,8 +938,8 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 3.1 Blind-set tests pass
-- [x] 3.2 Viewer is formatted
+- [x] 3.1 Blind-set tests pass — b83a7c4
+- [x] 3.2 Viewer is formatted — b83a7c4
 
 #### Manual
 
@@ -927,7 +949,7 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [ ] 4.1 Evidence, pilot and gate tests pass
+- [x] 4.1 Evidence, pilot and gate tests pass
 
 #### Manual
 

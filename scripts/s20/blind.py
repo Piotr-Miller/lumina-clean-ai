@@ -14,8 +14,13 @@ Pilot: per tuning photo, the original, `control-full` labelled "kontrola" and th
 `nlm-gamma` strengths as X/Y/Z, the labels drawn with `secrets`. Gate: 8 photos ×
 {NLM vs control-full, NLM vs real Local}, the NLM side and the global pair order drawn with
 `secrets`, ids p01…p16. The NLM strength is the `k` of `scripts/s20/configs/nlm-frozen.json`,
-checked here for shape only: the order-step-8 precondition (seals, write-once freeze, `k`
-recomputed from the sealed pilot) is Phase 4's (owner decision 2026-11-05).
+and gate mode refuses unless order step 8 holds (`pilot.require_freeze`): every rule file clean,
+the pilot seal write-once and before its ratings, the freeze write-once and after them, and the
+freeze exactly what the current sealed pilot decides; a STOP pilot refuses any freeze (plan
+Phase 4 item 5, owner decision 2026-11-05).
+
+On success it prints the whole seal file for the set: one `S20-SEAL` line plus the human-control
+statement (owner decision 2026-11-06). It never writes into the repository.
 
 Before any byte is read: `protocol.require_access(ids)`, then `protocol.check_paths` on every
 concrete path. Every source is verified before it is copied (order step 3): the shared decode
@@ -33,9 +38,10 @@ dropping it changes nothing a browser shows.
 
 One CLI boundary [F7, F12]: any failure prints `set: <reason class>` (with a photo id from the
 trusted manifest where one applies) and exits 3, with no traceback; the detail goes only to a
-private log under `test-photos/private/s20/logs/`. A failed build leaves no set directory.
+private log under `test-photos/private/s20/logs/`; the line also names one fixed way out per reason
+class (`WAY_OUT`). A failed build leaves no set directory.
 
-Exit status: 0 built; 2 usage; 3 BLOCKED.
+Exit status: 0 built; 2 usage (argparse, including a malformed --set); 3 BLOCKED.
 """
 
 from __future__ import annotations
@@ -69,7 +75,25 @@ PILOT_LABELS = ("X", "Y", "Z")
 # The sRGB profile Chrome's canvas embeds in every Local download (all eight tuning photos,
 # measured 2026-11-05). Untagged PNG is sRGB to a browser, so dropping exactly this is a no-op.
 SRGB_ICC_SHA256 = {"12afb4d9953adee0607d347daee5b78b18d6b3cab2d572b88970703f5edb37bc"}
-COMPRESS_LEVEL = 6
+# Stored deflate: a file's size then depends on its dimensions only. At any real level the
+# smoother NLM output compresses smaller and its size names the side (impl review phase 3, F2).
+COMPRESS_LEVEL = 0
+# Every file of a set carries this mtime (2026-11-05T00:00:00Z), so timestamps order nothing.
+FILE_TIME_NS = 1_793_836_800 * 1_000_000_000
+BIND_FIELDS = ("implementation_sha256", "config_sha256", "opencv_version")
+# One fixed way out per reason class: printed with the BLOCKED line, so the refusal says what to
+# do without naming an arm, a strength or a private path (impl review phase 3, F7).
+WAY_OUT = {
+    "access refused": "only tuning photos may be read; check the manifest split and that no path links into the holdout",
+    "calibration not committed": "commit the PASS calibration record and nlm-grid.json it names (nlm.py --calibrate)",
+    "missing source": "render the missing step with local-arms.ts and nlm.py, then rebuild",
+    "source binding failed": "re-render the named photo's arms from its current decode, then rebuild",
+    "provenance mismatch": "re-render the NLM grid with the committed nlm.py, grid and OpenCV, then rebuild",
+    "set exists": "pick a new --set: a set_id is never reused",
+    "usage": "run with --set <set_id> matching " + SET_ID.pattern,
+    "interrupted": "rebuild; the interrupted build left no set",
+    "internal error": "read the private log; report it if the cause is not in your inputs",
+}
 
 
 class Blocked(Exception):
@@ -120,26 +144,14 @@ def committed_bind() -> dict:
     fields = dict(kv.split("=", 1) for kv in binds[0].split() if "=" in kv)
     if fields.get("result") != "PASS":
         raise Blocked("calibration not committed", f"the committed calibration records {fields.get('result')!r}")
+    for f in BIND_FIELDS:  # a missing field would let a record lacking it pass as None == None
+        if not fields.get(f):
+            raise Blocked("calibration not committed", f"the committed bind line has no {f}")
     grid_raw = committed(evidence.GRID_REL)
     if sha_bytes(grid_raw) != fields.get("config_sha256"):
         raise Blocked("calibration not committed", "the committed grid is not the one the committed calibration names")
     grid = json.loads(grid_raw)
-    return {"implementation_sha256": fields.get("implementation_sha256"), "config_sha256": fields["config_sha256"],
-            "opencv_version": fields.get("opencv_version"), "k": [float(k) for k in grid["k"]]}
-
-
-def read_freeze(ks: list[float]) -> tuple[float, dict]:
-    """The frozen `k`, shape-checked only (Phase 4 adds the order-step-8 precondition)."""
-    path = evidence.repo_root() / FROZEN_REL
-    try:
-        raw = path.read_bytes()
-        freeze = json.loads(raw)
-    except (OSError, ValueError) as e:
-        raise Blocked("freeze invalid", f"cannot read the freeze {path}: {e}")
-    k = freeze.get("k") if isinstance(freeze, dict) else None
-    if isinstance(k, bool) or not isinstance(k, (int, float)) or float(k) not in ks:
-        raise Blocked("freeze invalid", f"{path}: k {k!r} is not one of the grid's {ks}")
-    return float(k), {"path": FROZEN_REL, "sha256": sha_bytes(raw), "k": float(k)}
+    return {**{f: fields[f] for f in BIND_FIELDS}, "k": [float(k) for k in grid["k"]]}
 
 
 # ---------------------------------------------------------------- sources
@@ -246,7 +258,7 @@ def verified_sources(pid: str, ks: list[float], bind: dict, *, local: bool) -> d
         need(nlm.get("id") == pid and nlm.get("k") == k and nlm.get("decoded_pixels_sha256") == dec["pixels_sha256"]
              and nlm.get("dimensions") == dims and protocol.sha256_file(nlm_png) == nlm.get("output_sha256"), pid,
              f"{nlm_json} does not verify against its output and the shared decode")
-        off = [f for f in ("implementation_sha256", "config_sha256", "opencv_version") if nlm.get(f) != bind[f]]
+        off = [f for f in BIND_FIELDS if nlm.get(f) != bind[f]]
         need(not off, pid, f"{nlm_json}: {', '.join(off)} differ from the committed calibration bind",
              "provenance mismatch")
         out[("nlm-gamma", k)] = source(arm_png, *decode(arm_png, pid), record=arm_json,
@@ -276,7 +288,8 @@ def check_arm(pid: str, rec: dict, arm: str, png: Path, dec: dict, dec_json: Pat
 def source(path: Path, pixels: bytes, dims: list[int], meta: dict, *, record: Path | None = None,
            nlm_record: tuple[Path, str] | None = None) -> dict:
     # Only hashes are kept: write_copy re-decodes and re-verifies, so a build never holds every photo.
-    s = {"_abs": str(path), "path": rel(path), "sha256": protocol.sha256_file(path), "dimensions": dims,
+    # `_abs` is the realpath the guard just passed; write_copy re-guards and opens exactly that.
+    s = {"_abs": os.path.realpath(path), "path": rel(path), "sha256": protocol.sha256_file(path), "dimensions": dims,
          "pixels_sha256": sha_bytes(pixels), "icc_sha256": meta["icc_sha256"]}
     if record:
         s["record"], s["record_sha256"] = rel(record), protocol.sha256_file(record)
@@ -304,6 +317,7 @@ def write_copy(src: dict, out: Path) -> dict:
     from PIL import Image
 
     path = Path(src["_abs"])
+    protocol.check_paths([path], validation=False)  # again: minutes may have passed since verification
     if protocol.sha256_file(path) != src["sha256"]:
         raise Blocked("source binding failed", f"{path} changed after it was verified")
     pixels, dims, _ = decode(path, None)
@@ -321,7 +335,7 @@ def write_copy(src: dict, out: Path) -> dict:
 
 
 def build(kind: str, set_id: str) -> dict:
-    if not SET_ID.match(set_id):
+    if not SET_ID.fullmatch(set_id):
         raise Blocked("usage", f"set id {set_id!r} must match {SET_ID.pattern}")
     final = private_s20() / set_id
     protocol.check_paths([final], validation=False)
@@ -331,7 +345,10 @@ def build(kind: str, set_id: str) -> dict:
     ks = bind["k"]
     freeze = None
     if kind == "gate":
-        k, freeze = read_freeze(ks)
+        import pilot  # step 8; imported here because pilot imports this module
+
+        _, freeze = pilot.require_freeze(evidence.repo_root())
+        k = freeze["k"]
     manifest = protocol.load_manifest()
     ids = protocol.select_ids(manifest, [], True, False)
     if not ids:
@@ -370,9 +387,11 @@ def build(kind: str, set_id: str) -> dict:
                 nlm_side = r.choice(("A", "B"))
                 ref_side = "B" if nlm_side == "A" else "A"
                 src = sources[pid]
-                key_sources = {"original": write_copy(src["original"], tmp / f"{item}-original.png"),
-                               nlm_side: write_copy(src[("nlm-gamma", k)], tmp / f"{item}-{nlm_side}.png"),
-                               ref_side: write_copy(src[ref], tmp / f"{item}-{ref_side}.png")}
+                # Written in side order, never NLM-first: write order shows in mtimes and inodes.
+                key_sources = {"original": write_copy(src["original"], tmp / f"{item}-original.png")}
+                for side in ("A", "B"):
+                    arm = ("nlm-gamma", k) if side == nlm_side else ref
+                    key_sources[side] = write_copy(src[arm], tmp / f"{item}-{side}.png")
                 items.append({"id": item, "photo": pid,
                               "original": {"src": f"{item}-original.png", "dimensions": src["original"]["dimensions"]},
                               "images": {"A": {"src": f"{item}-A.png"}, "B": {"src": f"{item}-B.png"}}})
@@ -390,6 +409,12 @@ def build(kind: str, set_id: str) -> dict:
                "freeze": freeze, "items": key_items}
         (tmp / KEY_NAME).write_text(json.dumps(key, sort_keys=True, indent=1) + "\n")
         key_sha = protocol.sha256_file(tmp / KEY_NAME)
+        for p in tmp.iterdir():  # one timestamp for every file: no file's mtime says when it was drawn
+            os.utime(p, ns=(FILE_TIME_NS, FILE_TIME_NS))
+        # Again, right before the rename: on Linux it would silently replace an empty directory
+        # that appeared during the minutes of the build, and a set_id is never reused.
+        if os.path.lexists(final):
+            raise Blocked("set exists", f"{final} appeared during the build: a set_id is never reused")
         os.rename(tmp, final)
     except BaseException:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -413,18 +438,31 @@ def log_detail(text: str) -> str | None:
         return None
 
 
+def set_id_arg(value: str) -> str:
+    """A usage error is argparse's (exit 2), like every s19/s20 tool; `fullmatch` rejects "id\\n"."""
+    if not SET_ID.fullmatch(value):
+        raise argparse.ArgumentTypeError(f"must match {SET_ID.pattern}")
+    return value
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("kind", choices=("pilot", "gate"))
-    ap.add_argument("--set", required=True, dest="set_id")
+    ap.add_argument("--set", required=True, dest="set_id", type=set_id_arg)
     args = ap.parse_args(argv)
     manifest_ids: set[str] = set()
     try:
         manifest_ids = {e["id"] for e in protocol.load_manifest()["entries"]}
         out = build(args.kind, args.set_id)
     except BaseException as e:  # noqa: BLE001 - the one boundary: nothing propagates, nothing chains
+        import common  # the step-8 refusals carry the rule tools' reason classes
+
+        ways = WAY_OUT
         if isinstance(e, Blocked):
             reason, photo, detail = e.reason, e.photo, e.detail
+        elif isinstance(e, (common.Blocked, common.BlockedMany)):
+            first = e.found[0] if isinstance(e, common.BlockedMany) else e
+            reason, photo, detail, ways = first.reason, None, str(e), common.WAY_OUT
         elif isinstance(e, protocol.Refused):
             reason, photo, detail = "access refused", None, str(e)
         elif isinstance(e, KeyboardInterrupt):
@@ -433,14 +471,18 @@ def main(argv: list[str] | None = None) -> int:
             reason, photo, detail = "internal error", None, "".join(traceback.format_exception(e))
         log = log_detail(f"blind.py {args.kind} --set {args.set_id}\nreason: {reason}\n\n{detail}\n")
         where = f" (photo {photo})" if photo in manifest_ids else ""
-        print(f"set: {reason}{where}. BLOCKED: no set was written. "
+        print(f"set: {reason}{where}. BLOCKED: no set was written. Way out: {ways[reason]}. "
               + (f"Details in the private S-20 log {log}." if log else "No private log could be written."))
         return 3
+    seal_rel = f"context/changes/cloud-classical-denoise/evaluations/{out['kind']}-sealed.md"
     print(f"✓ {out['kind']} set {out['set_id']}: {out['items']} items\n"
           f"  set_digest  {out['set_digest']}\n"
           f"  key sha256  {out['key_sha256']}\n"
-          "Commit both in the seal file BEFORE opening the viewer (plan order step 4), then open\n"
-          f"  context/changes/cloud-classical-denoise/references/compare-s20.html?set={out['set_id']}")
+          f"Save everything between the markers as {seal_rel}, commit it, and only then open\n"
+          f"  context/changes/cloud-classical-denoise/references/compare-s20.html?set={out['set_id']}\n"
+          "--- START seal file ---\n"
+          + evidence.seal_text(out["kind"], out["set_id"], out["set_digest"], out["key_sha256"])
+          + "--- END seal file ---")
     return 0
 
 

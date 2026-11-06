@@ -1,0 +1,18 @@
+{
+  "purpose": "S-20 step 1a gate: the sha256 of the exact bytes of each expected real Local download (plan \u00a7 Phase 4 item 6, owner decision 2026-11-06). gate.py reads only this file.",
+  "sources": {
+    "S17-02..S17-21": "context/archive/2026-09-28-cloud-model-comparison/references/s19-local/<id>.jpg (committed archive copies; Phase 0 check 3a found the private files byte-identical)",
+    "S17-01": "context/changes/cloud-classical-denoise/evaluations/step1-premise.md, check 3b (its JPEG is not published)"
+  },
+  "written": "2026-11-06, once, from the sources above; never from the downloads being checked",
+  "sha256": {
+    "S17-01": "f94c288da5de92e80bdad69daf0a58c5d0477d28580bdd4f4deddccfef42bfd0",
+    "S17-02": "5539b95051a4fd9c04ff155c58231505a03d52c63ad5ad812581fc6f5fa4b388",
+    "S17-03": "773962d189ac95c28883e2e89af15209ff31498d80b4ac19ea3c2dbbe2531ba2",
+    "S17-04": "c58892c8182cd81ffa49dd7df29c39a33740d2bf169ad3895c15961403dec94a",
+    "S17-05": "5ea679cee0d037e6af346d01b3850110c0c77372911ee813c3c1426804f0ccba",
+    "S17-06": "cb88413db259219daa34ec72460fe5338fac8e2735961a500857a79cb32eead7",
+    "S17-07": "257b80d0147705b2e50747261ba65d5ae7473604a53165c55997a3b2beef3ef4",
+    "S17-21": "883490bf4a801d050af8613c0f0d6705bb770739c168f20f523a31ef106567f8"
+  }
+}
