@@ -3,7 +3,7 @@ change_id: cloud-classical-denoise
 title: "Cloud AI as a classical full-resolution denoise pipeline, proven offline against real Local"
 status: implementing
 created: 2026-11-03
-updated: 2026-11-05
+updated: 2026-11-07
 archived_at: null
 issue: 347
 ---
@@ -18,6 +18,7 @@ issue: 347
 - 2026-11-05: 2.4 accepted at 422ed562fec31ebf2c1f140b63132ba10e793884 (grid and calibration record). Owner's notes, non-blocking: (1) Local's Auto gamma runs after the filter, so it can make visible the noise near black that a weak h left behind (the estimate reads 40–67 % low there); the pilot should look at the shadows in particular. (2) The texture gate is weak: a sine with a 16/24 px period is smooth for the 3×3 Laplacian kernel, hence only +2 %, so its PASS says little about the fine texture of real photos; the record admits this under "Known limit".
 - 2026-11-05: owner decision — Phase 3 builds gate-mode set construction only (k read from nlm-frozen.json, shape-checked); Phase 4 wires the step-8 precondition into blind.py gate mode and owns the gate-build refusal tests; manual check 3.4 (round trip) moved to Phase 4 as 4.3; plan.md § Phase 3 items 1 and 3, § Phase 4 items 5–6, Progress
 - 2026-11-06: owner decision — seal files: blind.py prints the whole file (one `S20-SEAL` line + a procedural human-control statement), the owner commits it, tools require exactly one valid line, and the viewer checks the pasted line against the set it opens; Local baselines: a committed `scripts/s20/configs/local-baselines.json` (8 ids, exact-byte sha256 from the archive and the premise record, never from the checked downloads), gate.py reads only it; plan.md § Phase 4 item 6
+- 2026-11-07: owner decision — `blind_fixture.py publish` builds eight photos (16 gate pairs) and `--keep` keeps the whole synthetic world and prints the exact gate.py round-trip commands for manual check 4.3; the Phase 4 review fixes are committed before any real render (they are rule files); plan.md § Phase 4 item 8
 
 **Registered 2026-11-03, deliberately NOT started.** Owner decision: this change goes first,
 `local-jev-gate` is registered as a stub and waits for this change's step 1. Nothing below has

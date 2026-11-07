@@ -56,10 +56,12 @@ class RuleTest(unittest.TestCase):
 
 
 class World(unittest.TestCase):
+    n_tuning = 3
+
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="s20-pilot-"))
         self.addCleanup(shutil.rmtree, self.tmp, True)
-        self.w = bf.SyntheticWorld(self.tmp)
+        self.w = bf.SyntheticWorld(self.tmp, n_tuning=self.n_tuning)
         self.w.init_repo()
         self.key = self.w.seal("pilot", "pilot-x")
         self.result = self.w.repo / bf.EVAL / "pilot-result.json"
@@ -193,6 +195,50 @@ class BlockedTest(World):
         path.write_text(path.read_text().replace('"rated_on": "2026-11-06"', '"rated_on": NaN'))
         self.w.commit(common.PILOT_RATINGS, message="nan")
         self.blocked("set: schema error")
+
+
+class FileBindingTest(World):
+    n_tuning = 8
+
+    def swap_strengths(self):
+        for item, it in self.key["items"].items():
+            labels = [next(lab for lab, v in it["labels"].items() if v.get("k") == k) for k in (1.5, 2.0)]
+            a, b = [self.w.s20 / "pilot-x" / it["sources"][lab]["presentation"] for lab in labels]
+            first, second = a.read_bytes(), b.read_bytes()
+            a.write_bytes(second)
+            b.write_bytes(first)
+
+    def test_swapped_strength_presentations_block_selection(self):
+        self.swap_strengths()
+        self.w.write_export("pilot", self.export())
+        self.blocked("item i01: binding failed")
+
+    def test_changed_source_blocks_selection_even_when_presentations_are_untouched(self):
+        src = Path(self.key["items"]["i01"]["sources"]["X"]["path"])
+        src.write_bytes(b"changed source")
+        self.w.write_export("pilot", self.export())
+        self.blocked("item i01: binding failed")
+
+    def test_missing_presentation_blocks_selection(self):
+        src = self.key["items"]["i01"]["sources"]["original"]
+        (self.w.s20 / "pilot-x" / src["presentation"]).unlink()
+        self.w.write_export("pilot", self.export())
+        self.blocked("item i01: missing file")
+
+    def test_swapped_pilot_blocks_both_gate_construction_and_execution_after_freeze(self):
+        self.w.write_export("pilot", self.export())
+        selected = self.w.pilot()
+        self.assertEqual(selected.returncode, 0, selected.stdout + selected.stderr)
+        self.w.commit(common.PILOT_RESULT, common.FROZEN, message="freeze")
+        self.swap_strengths()
+        for run in (lambda: self.w.blind("gate", "--set", "gate-x"), self.w.gate):
+            with self.subTest(entrypoint=run):
+                r = run()
+                self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+                self.assertIn("binding failed", r.stdout)
+                for leak in LEAKS:
+                    self.assertNotIn(leak, r.stdout + r.stderr)
+        self.assertFalse((self.w.s20 / "gate-x").exists())
 
 
 class ProvenanceUnitTest(unittest.TestCase):

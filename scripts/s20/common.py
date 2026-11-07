@@ -106,6 +106,44 @@ def evidence_order(fn: Callable, *args, reason: str = "order violation", **kw):
         raise Blocked(reason, str(e))
 
 
+def require_pilot_order(root: Path) -> None:
+    """Metadata-only order step 6, shared by the live pilot and the published audit."""
+    evidence_order(evidence.require_committed_clean, evidence.rule_files(root), root, purpose="the pilot rule")
+    evidence_order(evidence.require_write_once, PILOT_SEAL, root)
+    evidence_order(evidence.require_committed_clean, [PILOT_RATINGS], root, purpose="the pilot rule")
+    evidence_order(evidence.require_strictly_before, PILOT_SEAL, PILOT_RATINGS, root)
+
+
+def require_freeze_order(root: Path) -> None:
+    """The freeze is committed once, clean, and later than every pilot-ratings commit."""
+    evidence_order(evidence.require_write_once, FROZEN, root)
+    evidence_order(evidence.require_strictly_before, PILOT_RATINGS, FROZEN, root)
+
+
+def require_gate_order(root: Path) -> None:
+    """Metadata-only gate-seal and ratings order, shared by the live gate and audit."""
+    evidence_order(evidence.require_write_once, GATE_SEAL, root)
+    evidence_order(evidence.require_strictly_before, FROZEN, GATE_SEAL, root)
+    evidence_order(evidence.require_committed_clean, [GATE_RATINGS, BASELINES], root, purpose="the gate")
+    evidence_order(evidence.require_strictly_before, GATE_SEAL, GATE_RATINGS, root)
+
+
+def guarded_path(path: Path) -> Path:
+    """The evidence helper's path guard, translated to the tools' sanitized refusal class."""
+    try:
+        return evidence.guarded_path(path)
+    except protocol.Refused as e:
+        raise Blocked("access refused", str(e))
+
+
+def read_bytes(path: Path) -> bytes:
+    """Guard a concrete resolved metadata path before opening any of its bytes."""
+    try:
+        return guarded_path(path).read_bytes()
+    except OSError as e:
+        raise Blocked("missing file", f"{path}: {e}")
+
+
 def load_set(seal_rel: str, kind: str, root: Path) -> dict:
     """The sealed set on disk: seal line, key and manifest, each path guarded before it is read."""
     seal = evidence_order(evidence.read_seal, seal_rel, kind, root, reason="seal invalid")
@@ -151,6 +189,35 @@ def expected_photos() -> list[str]:
     """The tuning photos, derived from the benchmark manifest alone: never from a key or an export."""
     manifest = protocol.load_manifest()
     return protocol.select_ids(manifest, [], True, False)
+
+
+def file_bindings(sealed: dict, items: dict) -> None:
+    """Pilot or gate presentation pixels against their source: re-hash and re-decode both files."""
+    import blind
+
+    found = []
+    for item in sorted(items):
+        for side, s in sorted(sealed["key"]["items"][item]["sources"].items()):
+            pres = sealed["dir"] / s["presentation"]
+            srcp = Path(s["path"]) if Path(s["path"]).is_absolute() else ROOT / s["path"]
+            try:
+                protocol.check_paths([pres, srcp], validation=False)
+                if (sha_file(pres) != s["presentation_sha256"] or sha_file(srcp) != s["sha256"]):
+                    raise Blocked("binding failed", f"{item} {side}: a file changed", item)
+                for f in (pres, srcp):
+                    pixels, dims, _ = blind.decode(f, None)
+                    if sha_bytes(pixels) != s["pixels_sha256"] or dims != s["dimensions"]:
+                        raise Blocked("binding failed", f"{item} {side}: {f.name} decodes to other pixels", item)
+            except protocol.Refused as e:
+                found.append(Blocked("access refused", str(e)))
+            except OSError as e:
+                found.append(Blocked("missing file", f"{item} {side}: {e}", item))
+            except blind.Blocked as e:
+                found.append(Blocked("binding failed", e.detail, item))
+            except Blocked as b:
+                found.append(b)
+    if found:
+        raise BlockedMany(found)
 
 
 # ---------------------------------------------------------------- the one CLI boundary

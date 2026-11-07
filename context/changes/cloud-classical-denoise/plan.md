@@ -736,6 +736,20 @@ pilot refuses any freeze [F1].
   - **No** decoded report, key copy, audit bundle or identity-bearing temporary file may exist
     after a BLOCKED run [F16].
 
+#### 8. Synthetic world for the manual checks (owner decision 2026-11-07)
+
+**File**: `scripts/s20/tests/blind_fixture.py`
+
+**Intent**: `publish` builds an eight-photo world, so the gate set has the 16 pairs `gate.py`
+requires, and copies a pilot set, a gate set and the same pairs under a second `set_id` (round-trip
+step 4) into `test-photos/private/s20/`, printing each viewer URL with its seal line. `publish --keep
+<empty dir>` keeps the whole world (Git repository with rules, seals, pilot ratings and freeze;
+manifest; sources; sets) and prints the exact commands for the round trip of manual check 4.3,
+with every environment variable `gate.py` needs. `test_gate.PublishKeepTest` runs those printed
+commands. Order: `--keep`, then the Phase 4 completion commit with its review fixes (they are rule
+files, so they must be committed before any real render), then the owner's confirmations and 4.3,
+then Phase 5.
+
 ### Success Criteria:
 
 #### Automated Verification:
@@ -949,7 +963,7 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 4.1 Evidence, pilot and gate tests pass
+- [x] 4.1 Evidence, pilot and gate tests pass — 7236987
 
 #### Manual
 

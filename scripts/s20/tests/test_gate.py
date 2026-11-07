@@ -9,6 +9,7 @@ commit, commits its own export and runs the real CLI.
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import stat
@@ -17,6 +18,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -367,6 +369,55 @@ class AuditTest(GateWorld):
         r = self.audit()
         self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
 
+    def test_a_replaced_seal_blocks_audit_as_well_as_the_live_gate(self):
+        self.verdict(0)
+        path = self.w.repo / common.GATE_SEAL
+        path.write_text(path.read_text() + "\nreplaced after ratings\n")
+        self.w.commit(common.GATE_SEAL, message="replace gate seal")
+        r = self.audit()
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        self.assertIn("set: order violation", r.stdout)
+        self.assertNotIn("re-derives PASS", r.stdout)
+        live = self.w.gate()
+        self.assertEqual(live.returncode, 3, live.stdout + live.stderr)
+        self.assertIn("set: order violation", live.stdout)
+
+    def test_dirty_evidence_rule_or_baseline_files_block_audit(self):
+        self.verdict(0)
+        for rel in (common.PILOT_SEAL, common.PILOT_RATINGS, common.FROZEN, common.GATE_SEAL,
+                    common.GATE_RATINGS, common.BASELINES, "scripts/s20/common.py"):
+            with self.subTest(path=rel):
+                path = self.w.repo / rel
+                before = path.read_bytes()
+                try:
+                    path.write_bytes(before + b"\n")
+                    r = self.audit()
+                    self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+                    self.assertIn("set: order violation", r.stdout)
+                finally:
+                    path.write_bytes(before)
+
+    def test_a_seal_and_ratings_in_one_commit_block_audit(self):
+        self.verdict(0)
+        self.w.git("reset", "--soft", "HEAD~2")  # combine the gate seal and its ratings
+        self.w.git("commit", "-q", "-m", "gate seal and ratings together")
+        r = self.audit()
+        self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+        self.assertIn("set: order violation", r.stdout)
+
+    def test_a_valid_gate_re_export_still_re_derives_without_private_images(self):
+        self.verdict(0)
+        doc = self.w.gate_export(self.key)
+        doc["rated_on"] = "2026-11-07"
+        self.w.write_export("gate", doc)
+        r = self.w.gate()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        empty = self.tmp / "re-export-no-private"
+        empty.mkdir(exist_ok=True)
+        r = self.audit({"S19_PRIVATE": str(empty), "S20_PRIVATE": str(empty)})
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("re-derives PASS", r.stdout)
+
     def test_a_tampered_bundle_record_does_not_re_derive(self):
         self.verdict(0)
         rec = next((self.w.repo / common.AUDIT_DIR / "records").iterdir())
@@ -374,6 +425,61 @@ class AuditTest(GateWorld):
         r = self.audit()
         self.assertEqual(r.returncode, 3, r.stdout)
         self.assertIn("binding failed", r.stdout)
+
+    def assert_holdout_read_is_refused(self, bundle):
+        held = next(e["path"] for e in self.w.entries if e["split"] == "validation")
+        original_open = Path.open
+
+        def trap(path, *args, **kwargs):
+            self.assertNotEqual(os.path.realpath(path), os.path.realpath(held), "holdout was opened before refusal")
+            return original_open(path, *args, **kwargs)
+
+        with patch.dict(os.environ, self.w.env), patch.object(Path, "open", trap):
+            with self.assertRaises((common.Blocked, common.BlockedMany)) as cm:
+                gate.audit(bundle)
+        found = cm.exception.found if isinstance(cm.exception, common.BlockedMany) else [cm.exception]
+        self.assertEqual({b.reason for b in found}, {"access refused"})
+
+    def test_holdout_symlinks_in_every_bundle_reader_are_refused_before_open(self):
+        self.verdict(0)
+        bundle = self.w.repo / common.AUDIT_DIR
+        held = next(e["path"] for e in self.w.entries if e["split"] == "validation")
+        paths = [bundle / name for name in ("pilot-key.raw", "pilot-manifest.raw", "gate-key.raw", "gate-manifest.raw")]
+        paths.append(next((bundle / "records").iterdir()))
+        for path in paths:
+            with self.subTest(file=path.name):
+                before = path.read_bytes()
+                path.unlink()
+                path.symlink_to(held)
+                try:
+                    self.assert_holdout_read_is_refused(bundle)
+                    r = self.audit()
+                    self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+                    self.assertIn("access refused", r.stdout)
+                    for leak in LEAKS + (held, "V-01"):
+                        self.assertNotIn(leak, r.stdout + r.stderr)
+                finally:
+                    path.unlink()
+                    path.write_bytes(before)
+
+    def test_a_report_symlink_into_the_holdout_is_refused_before_open(self):
+        self.verdict(0)
+        path = self.w.repo / common.GATE_JSON
+        path.unlink()
+        path.symlink_to(next(e["path"] for e in self.w.entries if e["split"] == "validation"))
+        self.assert_holdout_read_is_refused(self.w.repo / common.AUDIT_DIR)
+
+    def test_a_bundle_directory_link_into_a_holdout_namespace_is_refused(self):
+        self.verdict(0)
+        bundle = self.w.repo / common.AUDIT_DIR
+        held_dir = self.tmp / "V-01" / "metadata-bundle"
+        held_dir.parent.mkdir(exist_ok=True)
+        shutil.copytree(bundle, held_dir)
+        self.addCleanup(shutil.rmtree, held_dir)
+        link = self.tmp / "holdout-bundle-link"
+        link.symlink_to(held_dir, target_is_directory=True)
+        self.addCleanup(link.unlink)
+        self.assert_holdout_read_is_refused(link)
 
     def test_a_report_that_differs_from_the_evidence_does_not_re_derive(self):
         self.verdict(1, {(p, "control-full"): ("tie", "none", "none") for p in PHOTOS})
@@ -387,6 +493,42 @@ class AuditTest(GateWorld):
         self.verdict(0)
         self.assertTrue((self.w.repo / common.AUDIT_DIR).exists())
         self.blocked("uncertain", spec={("T-01", "local"): ("tie", "uncertain", "none")})
+
+
+class PublishKeepTest(unittest.TestCase):
+    """`blind_fixture.py publish --keep`: the owner's round trip (manual check 4.3) runs exactly as
+    the printed commands say: an eight-photo world, 16 pairs, an uncertain pair BLOCKED alone, the
+    resolved re-export decided."""
+
+    def test_the_printed_round_trip_commands_work(self):
+        tmp = Path(tempfile.mkdtemp(prefix="s20-keep-"))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        world, sets = tmp / "world", tmp / "sets"
+        r = subprocess.run([sys.executable, "-B", str(bf.S20 / "tests" / "blind_fixture.py"), "publish",
+                            "--keep", str(world), "--dest", str(sets)], capture_output=True, text=True, cwd=bf.ROOT)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(len([ln for ln in r.stdout.splitlines() if ln.strip().startswith("seal line to paste: S20-SEAL")]), 3)
+        lines = r.stdout.splitlines()
+        cp = next(ln.strip() for ln in lines if ln.strip().startswith("cp ~/Downloads/"))
+        git_line = next(ln.strip() for ln in lines if ln.strip().startswith("git -C "))
+        gate_line = next(ln.strip() for ln in lines if "scripts/s20/gate.py" in ln)
+        target = Path(cp.split()[-1])
+        gate_id = re.search(r"--set (\S+)", gate_line).group(1)
+        key = json.loads((sets / gate_id / common.KEY_NAME).read_text())
+        self.assertEqual(len(key["items"]), 16)
+        shell = lambda cmd: subprocess.run(["bash", "-c", cmd], capture_output=True, text=True, cwd=bf.ROOT)  # noqa: E731
+        uncertain = next(i for i, it in sorted(key["items"].items()) if it["comparison"] == "local")
+        photo = key["items"][uncertain]["photo"]
+        for spec, code in (({(photo, "local"): ("tie", "none", "uncertain")}, 3), (None, 0)):
+            target.write_text(json.dumps(bf.SyntheticWorld.gate_export(key, spec), indent=2) + "\n")
+            g = shell(git_line)
+            self.assertEqual(g.returncode, 0, g.stderr)
+            out = shell(gate_line)
+            self.assertEqual(out.returncode, code, out.stdout + out.stderr)
+            if code == 3:
+                self.assertEqual(re.findall(r"pair (p\d\d)", out.stdout), [uncertain])
+        report = json.loads((target.parent / "step1-gate.json").read_text())
+        self.assertEqual((report["verdict"], report["wins"]), ("PASS", 8))
 
 
 class BaselinesFileTest(unittest.TestCase):

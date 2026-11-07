@@ -8,12 +8,15 @@ the STOP-pilot stale freeze by `test_blind` and `test_gate`.
 
 from __future__ import annotations
 
+import json
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -156,6 +159,25 @@ class OrderTest(Repo):
 
 
 class SealTest(Repo):
+    def test_a_seal_symlink_into_the_holdout_is_refused_before_open(self):
+        held = self.root / "closed-photo.jpg"
+        held.write_bytes(b"synthetic holdout read trap")
+        manifest = self.root / "manifest.json"
+        manifest.write_text(json.dumps({"entries": [{"id": "V-01", "split": "validation", "path": str(held)}]}))
+        seal = self.root / SEAL
+        seal.parent.mkdir(parents=True)
+        seal.symlink_to(held)
+        original_open = Path.open
+
+        def trap(path, *args, **kwargs):
+            self.assertNotEqual(os.path.realpath(path), str(held), "holdout opened before seal guard")
+            return original_open(path, *args, **kwargs)
+
+        with patch.dict(os.environ, {"S19_MANIFEST": str(manifest)}), patch.object(Path, "open", trap):
+            with self.assertRaises(Refused) as cm:
+                evidence.read_seal(SEAL, "pilot", self.root)
+        self.assertIn("validation photo", str(cm.exception))
+
     def test_the_seal_text_round_trips(self):
         self.seal(set_id="pilot-1")
         self.assertEqual(evidence.read_seal(SEAL, "pilot", self.root),

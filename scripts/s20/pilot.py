@@ -126,17 +126,15 @@ def rule(decoded: dict, ks: list[float]) -> dict:
 def evaluate(root: Path | None = None) -> dict:
     """Order step 6 plus the rule. Raises Blocked/BlockedMany; returns the decided pilot."""
     root = root or evidence.repo_root()
-    common.evidence_order(evidence.require_committed_clean, evidence.rule_files(root), root, purpose="the pilot rule")
-    common.evidence_order(evidence.require_write_once, common.PILOT_SEAL, root)
-    common.evidence_order(evidence.require_committed_clean, [common.PILOT_RATINGS], root, purpose="the pilot rule")
-    common.evidence_order(evidence.require_strictly_before, common.PILOT_SEAL, common.PILOT_RATINGS, root)
+    common.require_pilot_order(root)
     sealed = common.load_set(common.PILOT_SEAL, "pilot", root)
     try:
         bind = blind.committed_bind()
     except blind.Blocked as e:
         raise Blocked("provenance mismatch", e.detail)
     check_provenance(sealed["key"], bind)
-    export_raw = (root / common.PILOT_RATINGS).read_bytes()
+    common.file_bindings(sealed, sealed["key"]["items"])
+    export_raw = common.read_bytes(root / common.PILOT_RATINGS)
     decoded = votes(common.strict_json(export_raw, "the pilot export"), sealed, common.expected_photos())
     result = rule(decoded, bind["k"])
     return {**result, "decoded": decoded, "grid_config_sha256": bind["config_sha256"],
@@ -158,9 +156,8 @@ def require_freeze(root: Path | None = None) -> tuple[dict, dict]:
     pilot = evaluate(root)
     if pilot["decision"] == "STOP":
         raise Blocked("pilot stop", "the current sealed pilot is STOP: any freeze is stale")
-    common.evidence_order(evidence.require_write_once, common.FROZEN, root)
-    common.evidence_order(evidence.require_strictly_before, common.PILOT_RATINGS, common.FROZEN, root)
-    raw = (root / common.FROZEN).read_bytes()
+    common.require_freeze_order(root)
+    raw = common.read_bytes(root / common.FROZEN)
     freeze = common.strict_json(raw, "the freeze")
     if freeze != freeze_doc(pilot):
         raise Blocked("stale freeze", "the freeze differs from what the current sealed pilot decides")
@@ -170,7 +167,7 @@ def require_freeze(root: Path | None = None) -> tuple[dict, dict]:
 def write_if_changed(path: Path, doc: dict) -> None:
     """Rewrite only when the parsed content differs, so a re-run never undoes the formatter."""
     try:
-        if json.loads(path.read_text()) == doc:
+        if json.loads(common.guarded_path(path).read_text()) == doc:
             return
     except (OSError, ValueError):
         pass
@@ -189,11 +186,12 @@ def run(set_id: str) -> int:
               "pilot_export_sha256": p["pilot_export_sha256"], "grid_config_sha256": p["grid_config_sha256"],
               "rule": DECIDED}
     frozen = root / common.FROZEN
+    frozen_read = common.guarded_path(frozen)
     if p["decision"] == "SELECTED":
         doc = freeze_doc(p)
-        if frozen.exists():
+        if frozen_read.exists():
             try:
-                same = json.loads(frozen.read_text()) == doc
+                same = json.loads(frozen_read.read_text()) == doc
             except ValueError:
                 same = False
             if not same:
@@ -203,7 +201,7 @@ def run(set_id: str) -> int:
     write_if_changed(root / common.PILOT_RESULT, result)
     if p["decision"] == "STOP":
         print("STOP: no strength received a vote. 1a stops (plan Phase 5): record it in change.md; no gate set.")
-        if frozen.exists():
+        if frozen_read.exists():
             print(f"  {common.FROZEN} exists from an earlier attempt and is unusable for this one.")
         return 1
     print(f"SELECTED k {p['k']:.1f}: counts {counts}, none {p['none']}.\n"
