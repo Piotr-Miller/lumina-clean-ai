@@ -5,12 +5,14 @@ The images are drawn, not photographed: a dark noisy scene with a gradient sky, 
 block "lettering" and edges. `control-full` is a gamma lift; each `nlm-gamma` strength blurs before
 the same lift, more for a larger `k`; Local blurs lightly. Different enough to see in the viewer.
 
-Used by `test_blind.py`, and by the owner for plan manual check 3.3:
+Used by the tests, and by the owner for plan manual checks 3.3 and 4.3:
 
-  python3 scripts/s20/tests/blind_fixture.py publish
+  python3 scripts/s20/tests/blind_fixture.py publish [--keep <empty dir>] [--dest <dir>]
 
-builds a synthetic pilot set and a synthetic gate set in a temporary world and copies them into
-`test-photos/private/s20/synthetic-{pilot,gate}-<UTC stamp>/`, then prints the viewer URLs.
+builds an eight-photo synthetic world (so the gate set has 16 pairs), copies a pilot set, a gate set
+and the same gate pairs under a second set_id into `test-photos/private/s20/`, and prints the viewer
+URLs with their seal lines. `--keep` keeps the whole world and prints the exact `gate.py` commands
+for the round trip.
 """
 
 from __future__ import annotations
@@ -286,27 +288,72 @@ class SyntheticWorld:
                               cwd=ROOT)
 
 
-def publish() -> int:
+ENV_KEYS = ("S19_MANIFEST", "S19_CHANGE_MD", "S19_PRIVATE", "S20_PRIVATE", "S20_REPO")
+
+
+def publish(keep: Path | None = None, dest: Path | None = None) -> int:
+    """Synthetic sets for the owner's manual checks 3.3 and 4.3: eight photos, so the gate set has
+    the 16 pairs `gate.py` requires. With `keep`, the whole world stays (Git repo with rules, seals,
+    pilot ratings and freeze; manifest; sources; sets) and the exact gate.py commands are printed."""
     stamp = _dt.datetime.now(_dt.timezone.utc).strftime("%Y%m%dt%H%M%S")
-    dest = ROOT / "test-photos" / "private" / "s20"
-    with tempfile.TemporaryDirectory(prefix="s20-synthetic-") as t:
-        world = SyntheticWorld(Path(t), size=(640, 427))
-        world.pilot_chain(world.bind["k"][1], set_id=f"synthetic-pilot-{stamp}")
-        world.seal("gate", f"synthetic-gate-{stamp}")
-        for kind in ("pilot", "gate"):
-            set_id = f"synthetic-{kind}-{stamp}"
-            dest.mkdir(parents=True, exist_ok=True)
+    dest = dest or ROOT / "test-photos" / "private" / "s20"
+    if keep is not None:
+        if keep.exists() and any(keep.iterdir()):
+            print(f"refused: {keep} is not empty; pick a new directory", file=sys.stderr)
+            return 1
+        keep.mkdir(parents=True, exist_ok=True)
+        tmp_ctx = None
+        base = keep.resolve()
+    else:
+        tmp_ctx = tempfile.TemporaryDirectory(prefix="s20-synthetic-")
+        base = Path(tmp_ctx.name)
+    try:
+        world = SyntheticWorld(base, size=(640, 427), n_tuning=8)
+        pilot_id, gate_id, gate_b = (f"synthetic-{k}-{stamp}" for k in ("pilot", "gate", "gate-b"))
+        world.pilot_chain(world.bind["k"][1], set_id=pilot_id)
+        world.seal("gate", gate_id)
+        r = world.blind("gate", "--set", gate_b)  # round-trip step 4: the same pairs under a new set_id
+        if r.returncode != 0:
+            print(r.stdout + r.stderr, file=sys.stderr)
+            return 1
+        line_b = next(ln for ln in r.stdout.splitlines() if ln.startswith("S20-SEAL "))
+        dest.mkdir(parents=True, exist_ok=True)
+        for set_id in (pilot_id, gate_id, gate_b):
             shutil.copytree(world.s20 / set_id, dest / set_id)
+        viewer = "context/changes/cloud-classical-denoise/references/compare-s20.html"
+        for kind, set_id in (("pilot", pilot_id), ("gate", gate_id)):
             seal = (world.repo / EVAL / f"{kind}-sealed.md").read_text()
             line = next(ln for ln in seal.splitlines() if ln.startswith("S20-SEAL "))
-            print(f"{kind}: context/changes/cloud-classical-denoise/references/compare-s20.html?set={set_id}\n"
-                  f"  seal line to paste: {line}")
-    print("Synthetic photos only; the keys are synthetic too. Delete the folders when done.")
-    return 0
+            print(f"{kind}: {viewer}?set={set_id}\n  seal line to paste: {line}")
+        print(f"gate, rebuilt under a new set_id (round-trip step 4): {viewer}?set={gate_b}\n"
+              f"  seal line to paste: {line_b}")
+        print("Synthetic photos only; the keys are synthetic too. Delete the set folders when done.")
+        if keep is not None:
+            env = " ".join(f"{k}={world.env[k]}" for k in ENV_KEYS)
+            ratings = world.repo / EVAL / "gate-ratings.json"
+            print(f"""
+Kept world: {base}
+Round trip (manual check 4.3), from the repository root, after each export from the gate set:
+  cp ~/Downloads/{gate_id}-ratings.json {ratings}
+  git -C {world.repo} add -- {EVAL}/gate-ratings.json && git -C {world.repo} commit -q -m "gate ratings"
+  {env} python3 scripts/s20/gate.py --set {gate_id} --export {ratings}
+Expect exit 3 and only the uncertain pair's id after step 2; after step 3 a verdict (0 PASS / 1 FAIL).""")
+        return 0
+    finally:
+        if tmp_ctx is not None:
+            tmp_ctx.cleanup()
+
+
+def main(argv: list[str]) -> int:
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Synthetic S-20 sets for the owner's manual checks.")
+    ap.add_argument("command", choices=["publish"])
+    ap.add_argument("--keep", type=Path, help="keep the whole synthetic world here (manual check 4.3)")
+    ap.add_argument("--dest", type=Path, help="where the set folders go (default test-photos/private/s20)")
+    args = ap.parse_args(argv)
+    return publish(args.keep, args.dest)
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] != ["publish"]:
-        print("usage: python3 scripts/s20/tests/blind_fixture.py publish", file=sys.stderr)
-        sys.exit(2)
-    sys.exit(publish())
+    sys.exit(main(sys.argv[1:]))

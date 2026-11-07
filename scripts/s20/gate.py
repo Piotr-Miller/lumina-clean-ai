@@ -228,51 +228,20 @@ def record_bindings(key: dict, pairs: dict, read: Reader, freeze_k: float, grid_
 def file_reader(item_paths: dict | None = None) -> Reader:
     def read(path: str, sha: str) -> bytes:
         p = Path(path) if Path(path).is_absolute() else common.ROOT / path
-        try:
-            protocol.check_paths([p], validation=False)
-            raw = p.read_bytes()
-        except protocol.Refused as e:
-            raise Blocked("access refused", str(e))
-        except OSError as e:
-            raise Blocked("missing file", f"{p}: {e}")
+        raw = common.read_bytes(p)
         if common.sha_bytes(raw) != sha:
             raise Blocked("binding failed", f"{p} is not the file the key names")
         return raw
     return read
 
 
-def file_bindings(sealed: dict, pairs: dict) -> None:
-    """Presentation pixels against their source: both files re-hashed and re-decoded."""
-    found = []
-    for item in sorted(pairs):
-        for side, s in sorted(sealed["key"]["items"][item]["sources"].items()):
-            pres = sealed["dir"] / s["presentation"]
-            srcp = Path(s["path"]) if Path(s["path"]).is_absolute() else common.ROOT / s["path"]
-            try:
-                protocol.check_paths([pres, srcp], validation=False)
-                if (common.sha_file(pres) != s["presentation_sha256"] or common.sha_file(srcp) != s["sha256"]):
-                    raise Blocked("binding failed", f"{item} {side}: a file changed", item)
-                for f in (pres, srcp):
-                    pixels, dims, _ = blind.decode(f, None)
-                    if common.sha_bytes(pixels) != s["pixels_sha256"] or dims != s["dimensions"]:
-                        raise Blocked("binding failed", f"{item} {side}: {f.name} decodes to other pixels", item)
-            except protocol.Refused as e:
-                found.append(Blocked("access refused", str(e)))
-            except OSError as e:
-                found.append(Blocked("missing file", f"{item} {side}: {e}", item))
-            except blind.Blocked as e:
-                found.append(Blocked("binding failed", e.detail, item))
-            except Blocked as b:
-                found.append(b)
-    if found:
-        raise BlockedMany(found)
-
-
 def baselines(root: Path, photos: list[str]) -> dict:
     try:
-        doc = common.strict_json((root / common.BASELINES).read_bytes(), "local-baselines.json")
-    except OSError as e:
-        raise Blocked("baseline mismatch", f"{common.BASELINES}: {e}")
+        doc = common.strict_json(common.read_bytes(root / common.BASELINES), "local-baselines.json")
+    except Blocked as b:
+        if b.reason == "missing file":
+            raise Blocked("baseline mismatch", b.detail)
+        raise
     m = doc.get("sha256") if isinstance(doc, dict) else None
     if not isinstance(m, dict) or sorted(m) != sorted(photos) or not all(is_hex64(v) for v in m.values()):
         raise Blocked("baseline mismatch", f"{common.BASELINES} must map exactly the tuning photos to sha256s")
@@ -314,11 +283,7 @@ def decide(sealed: dict, pairs: dict, rows: dict) -> dict:
 def evaluate(root: Path, set_id: str) -> tuple[dict, dict]:
     """Every BLOCKED check in order, then the rule. Returns (report, context for the bundle)."""
     pilot, freeze = pilot_rule.require_freeze(root)  # rule files, steps 6 and 8
-    common.evidence_order(evidence.require_write_once, common.GATE_SEAL, root)
-    common.evidence_order(evidence.require_strictly_before, common.FROZEN, common.GATE_SEAL, root)
-    common.evidence_order(evidence.require_committed_clean, [common.GATE_RATINGS, common.BASELINES], root,
-                          purpose="the gate")
-    common.evidence_order(evidence.require_strictly_before, common.GATE_SEAL, common.GATE_RATINGS, root)
+    common.require_gate_order(root)
     sealed = common.load_set(common.GATE_SEAL, "gate", root)
     if sealed["seal"]["set_id"] != set_id:
         raise Blocked("key mismatch", f"--set {set_id} is not the sealed gate set")
@@ -334,13 +299,13 @@ def evaluate(root: Path, set_id: str) -> tuple[dict, dict]:
         raise Blocked("provenance mismatch", e.detail)
     pairs = pairs_of(sealed["key"], photos, freeze["k"])
     base = baselines(root, photos)
-    export_raw = (root / common.GATE_RATINGS).read_bytes()
+    export_raw = common.read_bytes(root / common.GATE_RATINGS)
     found: list[Blocked] = []
     rows = {}
     for check in (lambda: rows.update(ratings_of(common.strict_json(export_raw, "the gate export"), sealed, pairs)),
                   lambda: record_bindings(sealed["key"], pairs, file_reader(), freeze["k"], pilot["grid_config_sha256"],
                                           bind, base),
-                  lambda: file_bindings(sealed, pairs)):
+                  lambda: common.file_bindings(sealed, pairs)):
         try:
             check()
         except BlockedMany as e:
@@ -457,12 +422,13 @@ def write_blocked(root: Path, rows) -> None:
 def audit(bundle: Path) -> int:
     """Re-derive the verdict from metadata only and compare it with the committed report."""
     root = evidence.repo_root()
+    common.require_pilot_order(root)
+    common.require_freeze_order(root)
+    common.require_gate_order(root)
+    bundle = common.guarded_path(bundle)
 
     def raw(name):
-        try:
-            return (bundle / name).read_bytes()
-        except OSError as e:
-            raise Blocked("missing file", f"audit bundle: {e}")
+        return common.read_bytes(bundle / name)
 
     def read(_path: str, sha: str) -> bytes:
         data = raw(f"records/{sha}.raw")
@@ -479,7 +445,7 @@ def audit(bundle: Path) -> int:
     for kind, seal_rel in (("pilot", common.PILOT_SEAL), ("gate", common.GATE_SEAL)):
         seal = common.evidence_order(evidence.read_seal, seal_rel, kind, root, reason="seal invalid")
         sealed[kind] = common.sealed_from(seal, kind, raw(f"{kind}-key.raw"), raw(f"{kind}-manifest.raw"))
-    pilot_raw = (root / common.PILOT_RATINGS).read_bytes()
+    pilot_raw = common.read_bytes(root / common.PILOT_RATINGS)
     pilot_rule.check_provenance(sealed["pilot"]["key"], bind, read)
     decoded = pilot_rule.votes(common.strict_json(pilot_raw, "the pilot export"), sealed["pilot"], photos)
     p = {**pilot_rule.rule(decoded, bind["k"]), "grid_config_sha256": bind["config_sha256"],
@@ -487,21 +453,21 @@ def audit(bundle: Path) -> int:
          "pilot_export_sha256": common.sha_bytes(pilot_raw)}
     if p["decision"] != "SELECTED":
         raise Blocked("pilot stop", "the committed pilot is STOP")
-    freeze_raw = (root / common.FROZEN).read_bytes()
+    freeze_raw = common.read_bytes(root / common.FROZEN)
     if common.strict_json(freeze_raw, "the freeze") != pilot_rule.freeze_doc(p):
         raise Blocked("stale freeze", "the committed freeze is not what the committed pilot decides")
     freeze = {"path": common.FROZEN, "sha256": common.sha_bytes(freeze_raw), "k": p["k"]}
     if sealed["gate"]["key"].get("freeze") != freeze:
         raise Blocked("stale freeze", "the gate key names another freeze")
     pairs = pairs_of(sealed["gate"]["key"], photos, p["k"])
-    gate_raw = (root / common.GATE_RATINGS).read_bytes()
+    gate_raw = common.read_bytes(root / common.GATE_RATINGS)
     rows = ratings_of(common.strict_json(gate_raw, "the gate export"), sealed["gate"], pairs)
     record_bindings(sealed["gate"]["key"], pairs, read, p["k"], p["grid_config_sha256"], bind,
                     baselines(root, photos))
     report = decide(sealed["gate"], pairs, rows)
     report.update(evidence_hashes(sealed["gate"], sealed["pilot"], freeze, gate_raw, p))
     try:
-        recorded = json.loads((root / common.GATE_JSON).read_text())
+        recorded = json.loads(common.read_bytes(root / common.GATE_JSON))
     except (OSError, ValueError) as e:
         raise Blocked("missing file", f"{common.GATE_JSON}: {e}")
     if recorded != report:

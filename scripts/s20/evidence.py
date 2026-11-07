@@ -29,7 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "s19"))
 
-from protocol import Refused  # noqa: E402
+from protocol import Refused, check_paths  # noqa: E402
 
 CALIBRATION_REL = "context/changes/cloud-classical-denoise/evaluations/step1-calibration.md"
 GRID_REL = "scripts/s20/configs/nlm-grid.json"
@@ -178,11 +178,18 @@ SEAL = re.compile(r"^S20-SEAL kind=(pilot|gate) set_id=([a-z0-9][a-z0-9-]{0,63})
                   r"set_digest=([0-9a-f]{64}) key_sha256=([0-9a-f]{64})$")
 
 
+def guarded_path(path: Path) -> Path:
+    """Guard and return the real path that the caller will open, before any file read or stat."""
+    real = Path(os.path.realpath(path))
+    check_paths([real], validation=False)
+    return real
+
+
 def read_seal(path: str, kind: str, root: Path | None = None) -> dict:
     """The seal file's one valid `S20-SEAL` line. A missing, duplicated or malformed line refuses."""
     root = root or repo_root()
     try:
-        lines = (root / path).read_text().splitlines()
+        lines = guarded_path(root / path).read_text().splitlines()
     except OSError as e:
         raise Refused(f"cannot read the seal {path}: {e}. Save blind.py's printed seal file there and commit it")
     tagged = [ln for ln in lines if ln.startswith("S20-SEAL")]
