@@ -974,11 +974,11 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [ ] 5.1 Inputs decode
-- [ ] 5.2 Grid renders
-- [ ] 5.3 Arms render
-- [ ] 5.4 Pilot set builds and prints its digest and key hash
-- [ ] 5.5 Pilot rule decides
+- [x] 5.1 Inputs decode
+- [x] 5.2 Grid renders
+- [x] 5.3 Arms render
+- [x] 5.4 Pilot set builds and prints its digest and key hash
+- [x] 5.5 Pilot rule decides
 
 #### Manual
 
