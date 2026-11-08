@@ -216,9 +216,12 @@
         pointer-events: none;
         z-index: 2;
       }
+      /* A block of its own line: inline, its width (the image name) shifted the image beside it,
+         so the same scroll offset showed a different spot after a flip. */
       .pane.zoom > .label {
         position: sticky;
-        display: inline-block;
+        display: block;
+        width: max-content;
         margin: 8px;
       }
       .missing {
@@ -534,6 +537,7 @@
           bright = false,
           flipShow = 0,
           flipPrev = 1,
+          brightFrom = null, // the image J replaced with the brightened original in flip mode
           drawing = null, // "A" | "B" while a crop is being drawn for that side
           builtFor = null, // { idx, zoomed } of the panes on screen
           flipPane = null, // the one pane of flip mode, holding every image of the item
@@ -867,9 +871,10 @@
           const main = $("main");
           const list = panes();
           const prev = main.querySelector(".pane.zoom");
+          // The centre of the view, not its corner: side and flip panes differ in size.
           const keep =
             zoomed && prev && builtFor && builtFor.idx === idx && builtFor.zoomed
-              ? [prev.scrollLeft, prev.scrollTop]
+              ? [prev.scrollLeft + prev.clientWidth / 2, prev.scrollTop + prev.clientHeight / 2]
               : null;
           builtFor = { idx, zoomed };
           main.className = mode + " n" + list.length;
@@ -887,8 +892,8 @@
           }
           if (keep)
             for (const n of main.querySelectorAll(".pane.zoom")) {
-              n.scrollLeft = keep[0];
-              n.scrollTop = keep[1];
+              n.scrollLeft = keep[0] - n.clientWidth / 2;
+              n.scrollTop = keep[1] - n.clientHeight / 2;
             }
         }
         function render() {
@@ -921,6 +926,7 @@
           drawing = null;
           flipShow = 0;
           flipPrev = 1;
+          brightFrom = null;
           render();
         }
         function show(n) {
@@ -940,7 +946,22 @@
         $("mSide").onclick = () => ((mode = "side"), render());
         $("mFlip").onclick = () => ((mode = "flip"), render());
         $("zoom").onclick = () => ((zoomed = !zoomed), render());
-        $("bright").onclick = () => ((bright = !bright), render());
+        // Turning the brightened original on in flip mode also shows it; turning it off returns to
+        // the image shown before, unless the rater has flipped elsewhere meanwhile.
+        function toggleBright() {
+          bright = !bright;
+          if (bright && mode === "flip" && flipShow !== 0) {
+            brightFrom = flipShow;
+            flipPrev = flipShow;
+            flipShow = 0;
+          } else if (!bright && mode === "flip" && flipShow === 0 && brightFrom !== null) {
+            flipPrev = 0;
+            flipShow = brightFrom;
+          }
+          if (!bright) brightFrom = null;
+          render();
+        }
+        $("bright").onclick = toggleBright;
         window.addEventListener("resize", placeCrops);
         document.addEventListener("keydown", (e) => {
           if (e.target.tagName === "INPUT" || $("dlg").open) return;
@@ -954,8 +975,7 @@
             zoomed = !zoomed;
             render();
           } else if (e.key === "j" || e.key === "J") {
-            bright = !bright;
-            render();
+            toggleBright();
           } else if (e.key === "Escape" && (drawing || drag)) {
             cancelDrag();
             drawing = null;
