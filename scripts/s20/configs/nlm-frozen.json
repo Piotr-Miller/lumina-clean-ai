@@ -1,0 +1,8 @@
+{
+  "decided": "pilot.py: plan \u00a7 Definitions 'Pilot vote' (owner decision 2026-11-05, change.md \u00a7 Owner decisions (2026-11-05) item 5): most votes wins, a tie goes to the weaker k, 'none' counts for no strength",
+  "grid_config_sha256": "34f1a72b3b3bd3a29276a8bafe6792ac58c70d29e2c394655de91ca402fd7b95",
+  "k": 1.0,
+  "pilot_export_sha256": "6fb62f619e80822b47e21ccb53eb9af844fa796e9aaad0e5e7ceba9c07d4161d",
+  "pilot_key_sha256": "4fd22967976b33fa699f78dabaa881dce5b6e65f90c4e488914fc7f459e7febc",
+  "pilot_set_digest": "4af7f264119659185b65bb7e135f7d1b0cd03e224c19daa4cd1cb377bcbdf8a1"
+}
