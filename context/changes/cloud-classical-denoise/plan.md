@@ -924,83 +924,83 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 0.1 OpenCV is importable — 595c87a
-- [x] 0.2 Holdout guard allows the eight tuning ids — 595c87a
+- [x] 0.1 OpenCV is importable — 7ad9b1e
+- [x] 0.2 Holdout guard allows the eight tuning ids — 7ad9b1e
 
 #### Manual
 
-- [x] 0.3 Owner installs OpenCV — accepted at f6b28003605b1c281ac7e951413cc67125227dbb
-- [x] 0.4 Owner reads the premise record and accepts it — accepted at f6b28003605b1c281ac7e951413cc67125227dbb
+- [x] 0.3 Owner installs OpenCV — accepted at f8cdf6ec7c426ad1e5895908836834c967db1b40
+- [x] 0.4 Owner reads the premise record and accepts it — accepted at f8cdf6ec7c426ad1e5895908836834c967db1b40
 
 ### Phase 1: Shared decode and matched arms
 
 #### Automated
 
-- [x] 1.1 Arm tests pass — e79b80d
-- [x] 1.2 S-19 harness tests still pass — e79b80d
-- [x] 1.3 Typecheck passes — e79b80d
-- [x] 1.4 Lint passes — e79b80d
+- [x] 1.1 Arm tests pass — 227a269
+- [x] 1.2 S-19 harness tests still pass — 227a269
+- [x] 1.3 Typecheck passes — 227a269
+- [x] 1.4 Lint passes — 227a269
 
 ### Phase 2: NLM tool, grid and calibration
 
 #### Automated
 
-- [x] 2.1 NLM tests pass — 422ed56
-- [x] 2.2 Grid config holds the pre-registered values — 422ed56
-- [x] 2.3 Calibration runs on synthetic data only — 422ed56
+- [x] 2.1 NLM tests pass — f4e880b
+- [x] 2.2 Grid config holds the pre-registered values — f4e880b
+- [x] 2.3 Calibration runs on synthetic data only — f4e880b
 
 #### Manual
 
-- [ ] 2.4 Owner confirms the grid and the calibration record before Phase 5 renders
+- [x] 2.4 Owner confirms the grid and the calibration record before Phase 5 renders — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
 
 ### Phase 3: Blind sets, sealed keys and the viewer
 
 #### Automated
 
-- [x] 3.1 Blind-set tests pass — b83a7c4
-- [x] 3.2 Viewer is formatted — b83a7c4
+- [x] 3.1 Blind-set tests pass — 2fe96a5
+- [x] 3.2 Viewer is formatted — 2fe96a5
 
 #### Manual
 
-- [ ] 3.3 Owner checks the viewer on a synthetic set in both modes
+- [x] 3.3 Owner checks the viewer on a synthetic set in both modes — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
 
 ### Phase 4: Evidence state, pilot rule and gate rule
 
 #### Automated
 
-- [x] 4.1 Evidence, pilot and gate tests pass — 7236987
+- [x] 4.1 Evidence, pilot and gate tests pass — 234db78
 
 #### Manual
 
-- [ ] 4.2 Owner confirms the coded rules match the decisions before any render
-- [ ] 4.3 Owner runs the round trip on a synthetic gate set
+- [x] 4.2 Owner confirms the coded rules match the decisions before any render — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
+- [x] 4.3 Owner runs the round trip on a synthetic gate set — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
 
 ### Phase 5: Pilot run and freeze
 
 #### Automated
 
-- [x] 5.1 Inputs decode — b586de4
-- [x] 5.2 Grid renders — b586de4
-- [x] 5.3 Arms render — b586de4
-- [x] 5.4 Pilot set builds and prints its digest and key hash — b586de4
-- [x] 5.5 Pilot rule decides — b586de4
+- [x] 5.1 Inputs decode — f311a66
+- [x] 5.2 Grid renders — f311a66
+- [x] 5.3 Arms render — f311a66
+- [x] 5.4 Pilot set builds and prints its digest and key hash — f311a66
+- [x] 5.5 Pilot rule decides — f311a66
 
 #### Manual
 
-- [ ] 5.6 Owner commits the pilot seal before opening the viewer, then rates and exports
-- [ ] 5.7 Owner accepts the pilot result
+- [x] 5.6 Owner commits the pilot seal before opening the viewer, then rates and exports — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
+- [x] 5.7 Owner accepts the pilot result — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
 
 ### Phase 6: Gate run and verdict
 
 #### Automated
 
-- [x] 6.1 Gate set builds from the frozen config — 0b244bd
-- [x] 6.2 Gate verdict reproduces from committed evidence — 0b244bd
-- [x] 6.3 Verdict re-derives from published metadata alone — 0b244bd
-- [x] 6.4 No stale S-20 status pointer remains — 0b244bd
+- [x] 6.1 Gate set builds from the frozen config — 37bfd3f
+- [x] 6.2 Gate verdict reproduces from committed evidence — 37bfd3f
+- [x] 6.3 Verdict re-derives from published metadata alone — 37bfd3f
+- [x] 6.4 No stale S-20 status pointer remains — 37bfd3f
 
 #### Manual
 
-- [ ] 6.5 Owner commits the gate seal before opening the viewer, then rates the 16 pairs
-- [ ] 6.6 Owner accepts the verdict and its decoded table
-- [ ] 6.7 Owner decides on the #347 comment and label change
+- [x] 6.5 Owner commits the gate seal before opening the viewer, then rates the 16 pairs — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
+- [x] 6.6 Owner accepts the verdict and its decoded table — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
+- [x] 6.7 Owner decides on the #347 comment and label change — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
