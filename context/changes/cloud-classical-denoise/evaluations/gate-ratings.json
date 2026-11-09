@@ -1,0 +1,280 @@
+{
+  "viewer": "compare-s20",
+  "version": 1,
+  "kind": "gate",
+  "set_id": "gate-1",
+  "set_digest": "9e1e962409da9adae43d44ce2715dffefb585bab7808acd39a3bed7f1b849737",
+  "rated_on": "2026-11-09",
+  "ratings": [
+    {
+      "pair_id": "p01",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p02",
+      "quality": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p03",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p04",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p05",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p06",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p07",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "significant",
+          "crops": [
+            {
+              "x": 93,
+              "y": 52,
+              "w": 1857,
+              "h": 1307
+            }
+          ],
+          "reason": "Słabsze gwiazdy w ciemnym niebie po lewej są mniej widoczne, a drobne przejścia przy krawędzi pasma zorzy zlewają się po wygładzeniu."
+        }
+      }
+    },
+    {
+      "pair_id": "p08",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p09",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p10",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p11",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p12",
+      "quality": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p13",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "significant",
+          "crops": [
+            {
+              "x": 93,
+              "y": 52,
+              "w": 1857,
+              "h": 1307
+            }
+          ],
+          "reason": "Słabsze gwiazdy w ciemnym niebie po lewej są mniej widoczne, a drobne przejścia przy krawędzi pasma zorzy zlewają się po wygładzeniu."
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p14",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p15",
+      "quality": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p16",
+      "quality": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    }
+  ]
+}
