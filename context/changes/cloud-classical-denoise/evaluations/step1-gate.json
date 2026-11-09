@@ -1,0 +1,241 @@
+{
+  "freeze_sha256": "1ccb9c7492ac610bfd74d09cc246d66a090078e9227a3a11d6bd85c1c8e6c845",
+  "gate_export_sha256": "7069e04d8b28f1c683f3851a94ead874df1f0750cac518771bf20ae3ff665e01",
+  "gate_key_sha256": "120c3f44313b5dcc9aa7f7935885a4f7004f10280150f4e51661f46d81d44b91",
+  "gate_set_digest": "9e1e962409da9adae43d44ce2715dffefb585bab7808acd39a3bed7f1b849737",
+  "gate_set_id": "gate-1",
+  "grid_config_sha256": "34f1a72b3b3bd3a29276a8bafe6792ac58c70d29e2c394655de91ca402fd7b95",
+  "k": 1.0,
+  "photos": {
+    "S17-01": {
+      "control-full": {
+        "nlm_crops": [],
+        "nlm_fidelity": "minor",
+        "nlm_reason": "",
+        "nlm_side": "A",
+        "pair": "p15",
+        "quality": "nlm-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "local": {
+        "nlm_crops": [],
+        "nlm_fidelity": "minor",
+        "nlm_reason": "",
+        "nlm_side": "A",
+        "pair": "p02",
+        "quality": "nlm-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "win": true,
+      "worst_nlm_fidelity": "minor"
+    },
+    "S17-02": {
+      "control-full": {
+        "nlm_crops": [],
+        "nlm_fidelity": "minor",
+        "nlm_reason": "",
+        "nlm_side": "B",
+        "pair": "p01",
+        "quality": "nlm-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "local": {
+        "nlm_crops": [],
+        "nlm_fidelity": "minor",
+        "nlm_reason": "",
+        "nlm_side": "B",
+        "pair": "p08",
+        "quality": "nlm-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "win": true,
+      "worst_nlm_fidelity": "minor"
+    },
+    "S17-03": {
+      "control-full": {
+        "nlm_crops": [
+          {
+            "h": 1307,
+            "w": 1857,
+            "x": 93,
+            "y": 52
+          }
+        ],
+        "nlm_fidelity": "significant",
+        "nlm_reason": "S\u0142absze gwiazdy w ciemnym niebie po lewej s\u0105 mniej widoczne, a drobne przej\u015bcia przy kraw\u0119dzi pasma zorzy zlewaj\u0105 si\u0119 po wyg\u0142adzeniu.",
+        "nlm_side": "B",
+        "pair": "p07",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "local": {
+        "nlm_crops": [
+          {
+            "h": 1307,
+            "w": 1857,
+            "x": 93,
+            "y": 52
+          }
+        ],
+        "nlm_fidelity": "significant",
+        "nlm_reason": "S\u0142absze gwiazdy w ciemnym niebie po lewej s\u0105 mniej widoczne, a drobne przej\u015bcia przy kraw\u0119dzi pasma zorzy zlewaj\u0105 si\u0119 po wyg\u0142adzeniu.",
+        "nlm_side": "A",
+        "pair": "p13",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "win": false,
+      "worst_nlm_fidelity": "significant"
+    },
+    "S17-04": {
+      "control-full": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "A",
+        "pair": "p14",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "local": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "A",
+        "pair": "p05",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "win": false,
+      "worst_nlm_fidelity": "none"
+    },
+    "S17-05": {
+      "control-full": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "A",
+        "pair": "p03",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "local": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "A",
+        "pair": "p10",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "win": false,
+      "worst_nlm_fidelity": "none"
+    },
+    "S17-06": {
+      "control-full": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "B",
+        "pair": "p09",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "local": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "A",
+        "pair": "p04",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "win": false,
+      "worst_nlm_fidelity": "none"
+    },
+    "S17-07": {
+      "control-full": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "B",
+        "pair": "p06",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "local": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "B",
+        "pair": "p12",
+        "quality": "reference-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "win": false,
+      "worst_nlm_fidelity": "none"
+    },
+    "S17-21": {
+      "control-full": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "A",
+        "pair": "p16",
+        "quality": "nlm-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "local": {
+        "nlm_crops": [],
+        "nlm_fidelity": "none",
+        "nlm_reason": "",
+        "nlm_side": "B",
+        "pair": "p11",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": ""
+      },
+      "win": true,
+      "worst_nlm_fidelity": "none"
+    }
+  },
+  "photos_required": 8,
+  "pilot_export_sha256": "6fb62f619e80822b47e21ccb53eb9af844fa796e9aaad0e5e7ceba9c07d4161d",
+  "pilot_key_sha256": "4fd22967976b33fa699f78dabaa881dce5b6e65f90c4e488914fc7f459e7febc",
+  "pilot_set_digest": "4af7f264119659185b65bb7e135f7d1b0cd03e224c19daa4cd1cb377bcbdf8a1",
+  "reasons": ["3 of 8 wins against control-full, 6 required", "significant or severe NLM fidelity loss on S17-03"],
+  "verdict": "FAIL",
+  "wins": 3,
+  "wins_required": 6
+}

@@ -1,37 +1,30 @@
-# Kolejne kroki (stan na 2026-11-05)
+# Kolejne kroki (stan na 2026-11-09)
 
 Produkcja: najnowszy master `4e04923`, deploy zielony (w tym funkcja `enhance` z supabase-js przez npm, #356). Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0`
-od 2026-10-28). Lokalnie: gałąź `master`, czyste drzewo poza tym plikiem.
+od 2026-10-28). Lokalnie: gałąź `feat/cloud-classical-denoise`, wszystkie fazy planu (0–6) zacommitowane.
 
-## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — start 2026-11-05 (właściciel), etap: `/rune-plan`
+## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — krok 1a (NLM): **FAIL**
 
 Hipoteza: ścieżka Cloud to klasyczne, deterministyczne odszumianie w pełnej rozdzielczości po stronie
 serwera, a nie model generujący piksele. Dowodzone offline na harnessie S-19, krok po kroku.
-Opis: `context/changes/cloud-classical-denoise/change.md`; roadmapa: `context/foundation/roadmap.md` § S-20.
+Opis: `context/changes/cloud-classical-denoise/change.md`; plan: `plan.md` (sekcja `## Progress` na końcu);
+roadmapa: `context/foundation/roadmap.md` § S-20.
 
-Zasady kroku 1 ustalone przez właściciela 2026-11-03 (`change.md` § Owner decisions):
+Werdykt bramki 16 par na ślepo (2026-11-09), z tabelą dla każdego zdjęcia, wycinkami i uzasadnieniami:
+[`evaluations/step1-gate.md`](context/changes/cloud-classical-denoise/evaluations/step1-gate.md).
+Paczka audytu (`evaluations/step1-audit/`) odtwarza werdykt z samych metadanych (`gate.py --audit`).
 
-- Bramka: ≥ 6 z 8 wygranych jakościowych nad kontrolą bez odszumiania (remis to nie wygrana) **oraz**
-  zero istotnych strat wierności i zero ciężkich regresji na każdym z 8 zdjęć.
-- O wierności rozstrzyga oryginał. Skala: brak straty / niewielka / **istotna** / **ciężka regresja** /
-  niepewne. Istotna i ciężka zatrzymują próbę; każda wymaga wycinka i uzasadnienia.
-- Przeglądarka do ocen: preferencja estetyczna i skala straty jako dwa osobne pytania.
-- Najpierw NLM (`fastNlMeansDenoisingColored`). BM3D tylko jako ograniczona druga próba, jeśli NLM nie
-  przejdzie (z dowolnego powodu). Zakres strojenia ustalony z góry, te same kryteria.
-- Rozmowa o free/paid zaraz po udanym kroku 1, przed wyborem hostingu.
+Potwierdzenia ręczne (Progress) wpisuję **dopiero po merge'u, przy SHA z mastera** (Twoja zasada):
+2.4, 3.3, 4.2, 4.3, 5.6, 5.7 — zapisane w `change.md` Notes; 6.5–6.7 czekają na Ciebie.
 
-Następne kroki:
+Następne kroki, po kolei:
 
-1. ~~**Ty:** daj znać, kiedy startujemy.~~ Start 2026-11-05.
-2. **Ja:** `/rune-plan cloud-classical-denoise` (w toku). Plan musi objąć: ramię `nlm-gamma` w
-   `scripts/s19/local-arms.ts` (wspólne wejście sRGB → NLM → gamma z Auto Local), przeglądarkę z dwoma
-   pytaniami (wycinek i uzasadnienie obowiązkowe przy stracie istotnej/ciężkiej), uogólnienie `tally.py`
-   z 3 na 8 zdjęć, z góry zapisaną siatkę parametrów NLM.
-3. **Ty:** oceny na ślepo 8 par; potem bramka.
-4. Dalej wg `change.md` § Sequence: tone mapping osobno → chooser (heurystyka vs VLM) → freeze →
-   pomiar czasu 12 MP i cold startu → jednorazowy holdout (osobna zgoda właściciela).
+1. **Ty:** przeczytaj werdykt i tabelę (`step1-gate.md`) i potwierdź je (wiersz 6.6).
+2. **Ty:** zdecyduj o komentarzu i etykiecie na #347 (wiersz 6.7); nic nie publikuję bez Twojej zgody.
+3. **Ty:** rozstrzygnij licencję BM3D (poniżej): od niej zależy, czy w ogóle jest krok 1b. Kroki 2–4 nie ruszają bez zaliczonego kroku 1.
+4. **Ja, po merge'u:** wiersze ręczne jako `accepted at <SHA z mastera>`.
 
-**Otwarte, tylko jeśli NLM nie przejdzie:** licencja BM3D. Pakiet autorów (`pip install bm3d`) jest
+**Otwarte teraz, bo NLM nie przeszedł:** licencja BM3D. Pakiet autorów (`pip install bm3d`) jest
 wyłącznie do niekomercyjnej edukacji i badań; `xphoto::bm3dDenoising` w OpenCV jest za patentem
 (`OPENCV_ENABLE_NONFREE`, nie ma go w paczkach z PyPI). Trzeba rozstrzygnąć, czy nawet próba offline
 mieści się w licencji, albo wybrać inną drugą metodę.
@@ -110,3 +103,5 @@ issue zamknięte. Wynik: `context/archive/2026-09-28-cloud-model-comparison/eval
   `feat/finder-sonnet-effort` (tylko na GitHubie), `feat/finder-verification`. Rebase-merge zmienia SHA, więc
   `git branch -d` odmawia na zmergowanych gałęziach; potrzebne `git branch -D`.
 - **Windows:** uwagi o podmanie/SELinux wyżej dotyczą tylko maszyny z Linuksem.
+- S-20: w `test-photos/private/s20/` leżą stare syntetyczne zestawy `synthetic-*-20261105t221729` (sprzed ekranu
+  pieczęci) — do usunięcia ręcznie. Zestawy z `publish` też są tylko syntetyczne.

@@ -1,0 +1,25 @@
+{
+  "id": "S17-03",
+  "k": 1.5,
+  "sigma_hat_L": 11.06676472781715,
+  "sigma_hat_a": 2.2258108603742373,
+  "sigma_hat_b": 6.123625005314898,
+  "sigma_hat_ab": 4.174717932844568,
+  "h": 16.6,
+  "h_color": 6.26,
+  "windows": {
+    "templateWindowSize": 7,
+    "searchWindowSize": 21
+  },
+  "decoded_record": "test-photos/private/s20/decoded/S17-03.json",
+  "decoded_pixels_sha256": "70138ac8e61921b03fe869b3b404bc33050fb0d31125094087e2fddebc67a5d2",
+  "output_sha256": "c7fbb889eedaf1bccf9f49c592b70c724710cc55dee55b64b6e32a5c8c784406",
+  "dimensions": [
+    3840,
+    2560
+  ],
+  "config_sha256": "34f1a72b3b3bd3a29276a8bafe6792ac58c70d29e2c394655de91ca402fd7b95",
+  "opencv_version": "4.13.0",
+  "implementation_sha256": "ab27728fc7858be9a79a501b70a562d6757fe4ccace10b8eea00dfe48eb19a85",
+  "rendered_at": "2026-11-08T21:26:08Z"
+}

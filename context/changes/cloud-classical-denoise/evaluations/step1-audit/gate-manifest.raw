@@ -1,0 +1,311 @@
+window.S20_SET = {
+ "items": [
+  {
+   "id": "p01",
+   "images": {
+    "A": {
+     "src": "p01-A.png"
+    },
+    "B": {
+     "src": "p01-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3840,
+     2221
+    ],
+    "src": "p01-original.png"
+   },
+   "photo": "S17-02"
+  },
+  {
+   "id": "p02",
+   "images": {
+    "A": {
+     "src": "p02-A.png"
+    },
+    "B": {
+     "src": "p02-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3840,
+     2560
+    ],
+    "src": "p02-original.png"
+   },
+   "photo": "S17-01"
+  },
+  {
+   "id": "p03",
+   "images": {
+    "A": {
+     "src": "p03-A.png"
+    },
+    "B": {
+     "src": "p03-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3072,
+     4080
+    ],
+    "src": "p03-original.png"
+   },
+   "photo": "S17-05"
+  },
+  {
+   "id": "p04",
+   "images": {
+    "A": {
+     "src": "p04-A.png"
+    },
+    "B": {
+     "src": "p04-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     4284,
+     5712
+    ],
+    "src": "p04-original.png"
+   },
+   "photo": "S17-06"
+  },
+  {
+   "id": "p05",
+   "images": {
+    "A": {
+     "src": "p05-A.png"
+    },
+    "B": {
+     "src": "p05-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     4032,
+     3024
+    ],
+    "src": "p05-original.png"
+   },
+   "photo": "S17-04"
+  },
+  {
+   "id": "p06",
+   "images": {
+    "A": {
+     "src": "p06-A.png"
+    },
+    "B": {
+     "src": "p06-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     5145,
+     3431
+    ],
+    "src": "p06-original.png"
+   },
+   "photo": "S17-07"
+  },
+  {
+   "id": "p07",
+   "images": {
+    "A": {
+     "src": "p07-A.png"
+    },
+    "B": {
+     "src": "p07-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3840,
+     2560
+    ],
+    "src": "p07-original.png"
+   },
+   "photo": "S17-03"
+  },
+  {
+   "id": "p08",
+   "images": {
+    "A": {
+     "src": "p08-A.png"
+    },
+    "B": {
+     "src": "p08-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3840,
+     2221
+    ],
+    "src": "p08-original.png"
+   },
+   "photo": "S17-02"
+  },
+  {
+   "id": "p09",
+   "images": {
+    "A": {
+     "src": "p09-A.png"
+    },
+    "B": {
+     "src": "p09-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     4284,
+     5712
+    ],
+    "src": "p09-original.png"
+   },
+   "photo": "S17-06"
+  },
+  {
+   "id": "p10",
+   "images": {
+    "A": {
+     "src": "p10-A.png"
+    },
+    "B": {
+     "src": "p10-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3072,
+     4080
+    ],
+    "src": "p10-original.png"
+   },
+   "photo": "S17-05"
+  },
+  {
+   "id": "p11",
+   "images": {
+    "A": {
+     "src": "p11-A.png"
+    },
+    "B": {
+     "src": "p11-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     6016,
+     4000
+    ],
+    "src": "p11-original.png"
+   },
+   "photo": "S17-21"
+  },
+  {
+   "id": "p12",
+   "images": {
+    "A": {
+     "src": "p12-A.png"
+    },
+    "B": {
+     "src": "p12-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     5145,
+     3431
+    ],
+    "src": "p12-original.png"
+   },
+   "photo": "S17-07"
+  },
+  {
+   "id": "p13",
+   "images": {
+    "A": {
+     "src": "p13-A.png"
+    },
+    "B": {
+     "src": "p13-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3840,
+     2560
+    ],
+    "src": "p13-original.png"
+   },
+   "photo": "S17-03"
+  },
+  {
+   "id": "p14",
+   "images": {
+    "A": {
+     "src": "p14-A.png"
+    },
+    "B": {
+     "src": "p14-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     4032,
+     3024
+    ],
+    "src": "p14-original.png"
+   },
+   "photo": "S17-04"
+  },
+  {
+   "id": "p15",
+   "images": {
+    "A": {
+     "src": "p15-A.png"
+    },
+    "B": {
+     "src": "p15-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3840,
+     2560
+    ],
+    "src": "p15-original.png"
+   },
+   "photo": "S17-01"
+  },
+  {
+   "id": "p16",
+   "images": {
+    "A": {
+     "src": "p16-A.png"
+    },
+    "B": {
+     "src": "p16-B.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     6016,
+     4000
+    ],
+    "src": "p16-original.png"
+   },
+   "photo": "S17-21"
+  }
+ ],
+ "kind": "gate",
+ "set_digest": "9e1e962409da9adae43d44ce2715dffefb585bab7808acd39a3bed7f1b849737",
+ "set_id": "gate-1"
+};
