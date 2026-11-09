@@ -1,0 +1,36 @@
+{
+  "arm": "nlm-gamma",
+  "id": "S17-01",
+  "input": "test-photos/private/s20/nlm/k2.0/S17-01.png",
+  "input_sha256": "1e25f0072b322317643b221b1ac90d7cf092fad6b82a0d2996ecb6872c9b44b1",
+  "source": {
+    "kind": "nlm",
+    "record": "test-photos/private/s20/nlm/k2.0/S17-01.json",
+    "record_sha256": "0a6d1c521c37778be16fdaa96189cd83a0267425c4041482538bcea9ab01752c",
+    "output_sha256": "1e25f0072b322317643b221b1ac90d7cf092fad6b82a0d2996ecb6872c9b44b1",
+    "config_sha256": "34f1a72b3b3bd3a29276a8bafe6792ac58c70d29e2c394655de91ca402fd7b95",
+    "k": 2
+  },
+  "decoded_record": "test-photos/private/s20/decoded/S17-01.json",
+  "decoded_record_sha256": "a3a8fcb3fe75a2571140c0c95049deefcdb815cf75468fb23bdf15db378fad77",
+  "decoded_pixels_sha256": "a0e706cf2903b2f6d28a641149e40abff5defae49af9246c1d4a451ad56fb359",
+  "auto_record": {
+    "common_sha256": "ccd091d867af927e92a4ef0d3289c88eccf0d014ffac490a43af559d231de1cb",
+    "session_id": "f2814060-6827-4342-9c4b-f4edc60d9f2e",
+    "provenance": "recomputed"
+  },
+  "auto_file_sha256": "35edbf99ad1113f754a762fc0f4571bbb89e0993948e7022ed550968db0029ba",
+  "gamma": 1.538559745194226,
+  "tone": {
+    "kind": "gamma"
+  },
+  "lut_sha256": "1b5397bec4e2df3ccc32a8888ed0e5bfaf24e32b738f8bc7aefe446eb88658a7",
+  "blur_sigma_px": 0,
+  "output_sha256": "9962f11e47c262dc14ab8608d914d79387e1d4b27697b8439777a94004a131b1",
+  "dimensions": [
+    3840,
+    2560
+  ],
+  "implementation_sha256": "8664410495ca933964f7902f841ad6041ff31c44a5720521baa29332e04aa21a",
+  "rendered_at": "2026-11-08T21:43:02.886Z"
+}

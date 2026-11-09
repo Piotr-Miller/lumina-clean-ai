@@ -1,0 +1,207 @@
+window.S20_SET = {
+ "items": [
+  {
+   "id": "i01",
+   "images": {
+    "X": {
+     "src": "i01-X.png"
+    },
+    "Y": {
+     "src": "i01-Y.png"
+    },
+    "Z": {
+     "src": "i01-Z.png"
+    },
+    "kontrola": {
+     "src": "i01-kontrola.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3840,
+     2560
+    ],
+    "src": "i01-original.png"
+   },
+   "photo": "S17-01"
+  },
+  {
+   "id": "i02",
+   "images": {
+    "X": {
+     "src": "i02-X.png"
+    },
+    "Y": {
+     "src": "i02-Y.png"
+    },
+    "Z": {
+     "src": "i02-Z.png"
+    },
+    "kontrola": {
+     "src": "i02-kontrola.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3840,
+     2221
+    ],
+    "src": "i02-original.png"
+   },
+   "photo": "S17-02"
+  },
+  {
+   "id": "i03",
+   "images": {
+    "X": {
+     "src": "i03-X.png"
+    },
+    "Y": {
+     "src": "i03-Y.png"
+    },
+    "Z": {
+     "src": "i03-Z.png"
+    },
+    "kontrola": {
+     "src": "i03-kontrola.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3840,
+     2560
+    ],
+    "src": "i03-original.png"
+   },
+   "photo": "S17-03"
+  },
+  {
+   "id": "i04",
+   "images": {
+    "X": {
+     "src": "i04-X.png"
+    },
+    "Y": {
+     "src": "i04-Y.png"
+    },
+    "Z": {
+     "src": "i04-Z.png"
+    },
+    "kontrola": {
+     "src": "i04-kontrola.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     4032,
+     3024
+    ],
+    "src": "i04-original.png"
+   },
+   "photo": "S17-04"
+  },
+  {
+   "id": "i05",
+   "images": {
+    "X": {
+     "src": "i05-X.png"
+    },
+    "Y": {
+     "src": "i05-Y.png"
+    },
+    "Z": {
+     "src": "i05-Z.png"
+    },
+    "kontrola": {
+     "src": "i05-kontrola.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     3072,
+     4080
+    ],
+    "src": "i05-original.png"
+   },
+   "photo": "S17-05"
+  },
+  {
+   "id": "i06",
+   "images": {
+    "X": {
+     "src": "i06-X.png"
+    },
+    "Y": {
+     "src": "i06-Y.png"
+    },
+    "Z": {
+     "src": "i06-Z.png"
+    },
+    "kontrola": {
+     "src": "i06-kontrola.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     4284,
+     5712
+    ],
+    "src": "i06-original.png"
+   },
+   "photo": "S17-06"
+  },
+  {
+   "id": "i07",
+   "images": {
+    "X": {
+     "src": "i07-X.png"
+    },
+    "Y": {
+     "src": "i07-Y.png"
+    },
+    "Z": {
+     "src": "i07-Z.png"
+    },
+    "kontrola": {
+     "src": "i07-kontrola.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     5145,
+     3431
+    ],
+    "src": "i07-original.png"
+   },
+   "photo": "S17-07"
+  },
+  {
+   "id": "i08",
+   "images": {
+    "X": {
+     "src": "i08-X.png"
+    },
+    "Y": {
+     "src": "i08-Y.png"
+    },
+    "Z": {
+     "src": "i08-Z.png"
+    },
+    "kontrola": {
+     "src": "i08-kontrola.png"
+    }
+   },
+   "original": {
+    "dimensions": [
+     6016,
+     4000
+    ],
+    "src": "i08-original.png"
+   },
+   "photo": "S17-21"
+  }
+ ],
+ "kind": "pilot",
+ "set_digest": "4af7f264119659185b65bb7e135f7d1b0cd03e224c19daa4cd1cb377bcbdf8a1",
+ "set_id": "pilot-1"
+};

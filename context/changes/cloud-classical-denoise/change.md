@@ -3,7 +3,7 @@ change_id: cloud-classical-denoise
 title: "Cloud AI as a classical full-resolution denoise pipeline, proven offline against real Local"
 status: implementing
 created: 2026-11-03
-updated: 2026-11-08
+updated: 2026-11-09
 archived_at: null
 issue: 347
 ---
@@ -26,9 +26,9 @@ issue: 347
 - 2026-11-08: owner confirmation recorded, Progress row pending the merge — **5.6** the owner opened `pilot-1` only after its seal was committed (59fea67b419b62f45cb7934715a1bd9e7fb4d812), through `compare-s20.html` over http://localhost, rated the 8 photos and exported; the export was committed separately (a5d1a3e463a22098ac00cc73b1f9022b4ae67001). The seal and the ratings were committed by the agent at the owner's request; the rating was the owner's.
 - 2026-11-08: owner confirmation recorded, Progress row pending the merge — **5.7** the owner accepts the pilot result at b586de453bc389f13e082540c5e6bf810962efe6: SELECTED k 1.0 (k1.0 3, k1.5 2, k2.0 0, none 3), frozen in `scripts/s20/configs/nlm-frozen.json`. Impl review phase 5: APPROVED, no findings (`reviews/impl-review-phase-5-b586de4.md`).
 
-**Registered 2026-11-03, deliberately NOT started.** Owner decision: this change goes first,
-`local-jev-gate` is registered as a stub and waits for this change's step 1. Nothing below has
-been run; no harness code has been written; no owner rating exists.
+**Registered 2026-11-03; implementation began 2026-11-05.** Owner decision: this change goes first,
+`local-jev-gate` is registered as a stub and waits for this change's step 1. Step 1a (NLM) has
+run to a verdict: [`evaluations/step1-gate.md`](evaluations/step1-gate.md).
 
 ### Where this comes from
 
@@ -85,6 +85,9 @@ hosting, integration or product naming decision.
    control on the quality axis, no significant fidelity loss on any photo, zero severe
    regressions, rated on **two axes** (visual quality and fidelity to the original, as in Phase 5)
    from the first round. Exact rules in § Owner decisions.
+   **Status (2026-11-09):** 1a ran its blind gate: **FAIL**, verdict and table in
+   [`evaluations/step1-gate.md`](evaluations/step1-gate.md). 1b waits for the owner's BM3D licence
+   decision; steps 2–4 do not start.
 2. **Tone mapping, separately**, only after step 1 passes: local tone mapping with a black-point
    anchor and highlight protection, on the denoised image, against the same image with plain
    Auto gamma. S-19's Phase 4 curve was neutral (`phase4-curve.md:57-60`), so no exposure gain is

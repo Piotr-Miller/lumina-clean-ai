@@ -989,10 +989,10 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [ ] 6.1 Gate set builds from the frozen config
-- [ ] 6.2 Gate verdict reproduces from committed evidence
-- [ ] 6.3 Verdict re-derives from published metadata alone
-- [ ] 6.4 No stale S-20 status pointer remains
+- [x] 6.1 Gate set builds from the frozen config
+- [x] 6.2 Gate verdict reproduces from committed evidence
+- [x] 6.3 Verdict re-derives from published metadata alone
+- [x] 6.4 No stale S-20 status pointer remains
 
 #### Manual
 
