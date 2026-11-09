@@ -111,6 +111,11 @@ none — no Predecessor line
 - **Reproduction claim, narrowed [F10]:**
   - From a checkout alone, `gate.py --audit` re-derives the verdict from the committed export,
     published keys and records (metadata only).
+    - **Holds only before the archive (impl review full, F1).** The tools hard-code
+      `context/changes/cloud-classical-denoise/`, and the write-once check follows an exact
+      `git mv`, so once the folder is archived the audit no longer runs on current master. Run it
+      in a checkout of the commit before the archive commit:
+      `git worktree add <dir> "$(git rev-parse <archive-commit>^)"`.
   - Full verification also re-hashes the presentation and source images. That needs the private
     workspace inventory listed in `step1-audit/README.md`: `test-photos/private/s19/{inputs,local,arms}`
     and `test-photos/private/s20/`.
