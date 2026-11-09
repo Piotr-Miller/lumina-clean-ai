@@ -1,7 +1,7 @@
 ---
 change_id: cloud-classical-denoise
 title: "Cloud AI as a classical full-resolution denoise pipeline, proven offline against real Local"
-status: implemented
+status: impl_reviewed
 created: 2026-11-03
 updated: 2026-11-09
 archived_at: null
@@ -25,6 +25,7 @@ issue: 347
 - 2026-11-08: owner confirmation recorded, Progress row pending the merge — **4.3** round trip on `synthetic-gate-20261108t194318` at c5a277de1040af2299c71c04e54a3cd1cc03a975: state restored after reload; one `uncertain` side on p02 → `gate.py` BLOCKED, exit 3, naming only p02; p02 resolved and re-exported (by the agent in the viewer, at the owner's request) → the only difference from the first export is p02 fidelity A `uncertain` → `none`, order and header unchanged, `gate.py` FAIL, exit 1 (synthetic ratings); the same pairs under `synthetic-gate-b-20261108t194318` opened empty.
 - 2026-11-08: owner confirmation recorded, Progress row pending the merge — **5.6** the owner opened `pilot-1` only after its seal was committed (59fea67b419b62f45cb7934715a1bd9e7fb4d812), through `compare-s20.html` over http://localhost, rated the 8 photos and exported; the export was committed separately (a5d1a3e463a22098ac00cc73b1f9022b4ae67001). The seal and the ratings were committed by the agent at the owner's request; the rating was the owner's.
 - 2026-11-08: owner confirmation recorded, Progress row pending the merge — **5.7** the owner accepts the pilot result at b586de453bc389f13e082540c5e6bf810962efe6: SELECTED k 1.0 (k1.0 3, k1.5 2, k2.0 0, none 3), frozen in `scripts/s20/configs/nlm-frozen.json`. Impl review phase 5: APPROVED, no findings (`reviews/impl-review-phase-5-b586de4.md`).
+- 2026-11-09: full impl review (`reviews/impl-review-6d73343.md`, F1): `gate.py --audit` reproduces the step-1a verdict only on a pre-archive tree. Its paths are hard-coded under `context/changes/`, and the write-once check would most likely count the archive's `git mv` as a second touch. After archiving, run it in `git worktree add <dir> "$(git rev-parse <archive-commit>^)"`. The generated `step1-audit/README.md` and `step1-gate.md` are left as `gate.py` wrote them. No rule file changed.
 
 **Registered 2026-11-03; implementation began 2026-11-05.** Owner decision: this change goes first,
 `local-jev-gate` is registered as a stub and waits for this change's step 1. Step 1a (NLM) has
