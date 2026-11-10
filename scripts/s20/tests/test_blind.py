@@ -88,7 +88,7 @@ class BlindWorld(unittest.TestCase):
         self.assertEqual(r.returncode, 3, out)
         self.assertIn(f"set: {reason}", out)
         # a class blind.py does not own comes from the rule tools (an order-step-8 refusal)
-        ways = blind.WAY_OUT if reason in blind.WAY_OUT else common.WAY_OUT
+        ways = blind.way_outs(self.t) if reason in blind.WAY_OUT else common.way_outs(self.t)
         self.assertIn(f"Way out: {ways[reason]}.", out, "the refusal names its way out (F7)")
         for leak in LEAKS + (str(self.w.private), str(self.w.s20)):  # F12: no identity in any channel
             self.assertNotIn(leak, out, f"leak {leak!r}")

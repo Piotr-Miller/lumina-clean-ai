@@ -41,26 +41,38 @@ FROZEN = T1A.frozen
 BASELINES = "scripts/s20/configs/local-baselines.json"
 KEY_NAME = ".key-do-not-open.json"
 
-WAY_OUT = {
-    "order violation": "commit the evidence in plan order (rules, seal, ratings, freeze, gate seal, gate ratings); "
-                       "a seal or freeze is write-once and never shares a commit with what it precedes",
-    "seal invalid": "save the seal file exactly as blind.py printed it, with one S20-SEAL line, and commit it",
-    "key mismatch": "the set on disk is not the sealed one; never rebuild a sealed set, start a new set and seal",
-    "schema error": "re-export from compare-s20.html for this set; every item needs every answer",
-    "coverage error": "re-export the whole set once; every expected item exactly once, nothing else",
-    "binding failed": "a rated file no longer matches its records; restore it or start a new set",
-    "provenance mismatch": "re-render with the committed nlm.py, grid and OpenCV, then build a new set",
-    "baseline mismatch": "the Local download differs from local-baselines.json; restore the expected file",
-    "uncertain": "resolve the listed items against the original in the same set, re-export, commit, re-run",
-    "missing evidence": "give each significant/severe rating at least one valid crop and a reason, re-export",
-    "access refused": "only tuning photos may be read; check the manifest split and links into the holdout",
-    "missing file": "restore the named evidence file, or run the step that writes it",
-    "stale freeze": "the freeze does not follow from the current sealed pilot; it is unusable for this attempt",
-    "pilot stop": "the pilot chose no strength: 1a stops (plan Phase 5); no gate set may be built",
-    "freeze exists": "a freeze is write-once; a different result needs a new attempt, never an edit",
-    "interrupted": "re-run; nothing was decided",
-    "internal error": "read the private log; report it if the cause is not in your inputs",
-}
+
+def way_outs(t: Trial = T1A) -> dict[str, str]:
+    """One fixed way out per reason class, for the selected trial: a refusal names that trial's
+    renderer (`nlm.py` for 1a, `wavelet.py` for 1b). The 1a texts are today's, byte for byte."""
+    return {
+        "order violation": "commit the evidence in plan order (rules, seal, ratings, freeze, gate seal, "
+                           "gate ratings); a seal or freeze is write-once and never shares a commit with what it "
+                           "precedes",
+        "seal invalid": "save the seal file exactly as blind.py printed it, with one S20-SEAL line, and commit it",
+        "key mismatch": "the set on disk is not the sealed one; never rebuild a sealed set, start a new set and seal",
+        "schema error": "re-export from compare-s20.html for this set; every item needs every answer",
+        "coverage error": "re-export the whole set once; every expected item exactly once, nothing else",
+        "binding failed": "a rated file no longer matches its records; restore it or start a new set",
+        "provenance mismatch": f"re-render with the committed {t.renderer}, grid and {t.renderer_libs}, "
+                               "then build a new set",
+        "baseline mismatch": "the Local download differs from local-baselines.json; restore the expected file",
+        "uncertain": "resolve the listed items against the original in the same set, re-export, commit, re-run",
+        "missing evidence": "give each significant/severe rating at least one valid crop and a reason, re-export",
+        "access refused": "only tuning photos may be read; check the manifest split and links into the holdout",
+        "missing file": "restore the named evidence file, or run the step that writes it",
+        "stale freeze": "the freeze does not follow from the current sealed pilot; it is unusable for this attempt",
+        "pilot stop": ("the pilot chose no strength: 1a stops (plan Phase 5); no gate set may be built"
+                       if t.name == "1a" else
+                       "the pilot chose no strength: 1b stops and step 1 closes as FAIL (plan Phase 11); "
+                       "no gate set may be built"),
+        "freeze exists": "a freeze is write-once; a different result needs a new attempt, never an edit",
+        "interrupted": "re-run; nothing was decided",
+        "internal error": "read the private log; report it if the cause is not in your inputs",
+    }
+
+
+WAY_OUT = way_outs(T1A)  # 1a's, the name that predates the seam
 
 
 class Blocked(Exception):
@@ -239,7 +251,7 @@ def log_detail(tool: str, text: str) -> str | None:
 
 
 def boundary(tool: str, run: Callable[[], int],
-             write_blocked: Callable[[list[tuple[str | None, str]]], None] | None) -> int:
+             write_blocked: Callable[[list[tuple[str | None, str]]], None] | None, t: Trial = T1A) -> int:
     """Run `run()`; on any exception print sanitized lines, write the sanitized report, exit 3.
     Nothing propagates: no traceback and no chained context reach stdout or stderr. With
     `write_blocked` None the refusal writes nothing and says so."""
@@ -269,8 +281,9 @@ def boundary(tool: str, run: Callable[[], int],
         for item, reason in rows:
             print(f"{'pair ' + item if item and item.startswith('p') else ('item ' + item if item else 'set')}: {reason}")
         print(f"BLOCKED. {report} Way out:")
+        ways = way_outs(t)
         for reason in sorted({r for _, r in rows}):
-            print(f"  {reason}: {WAY_OUT[reason]}.")
+            print(f"  {reason}: {ways[reason]}.")
         print(f"Details in the private S-20 log {log}." if log else "No private log could be written.")
         return 3
 

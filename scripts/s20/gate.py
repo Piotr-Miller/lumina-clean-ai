@@ -418,7 +418,7 @@ def write_blocked(root: Path, rows, t: Trial = T1A) -> None:
     Only the selected trial's audit directory is ever removed."""
     if (root / t.audit_dir).exists():
         shutil.rmtree(root / t.audit_dir)  # an earlier bundle would unblind the set while it is resolved
-    ways = {r: common.WAY_OUT[r] for r in sorted({r for _, r in rows})}
+    ways = {r: common.way_outs(t)[r] for r in sorted({r for _, r in rows})}
     common.write_json(root / t.gate_json, {"verdict": "BLOCKED", "reasons": common.blocked_rows(rows),
                                            "way_out": ways})
     lines = [f"# {t.title} — gate verdict", "", "**Verdict: BLOCKED.** Nothing is decided until every item below",
@@ -523,16 +523,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.audit:
         if args.set_id or args.export:
             ap.error("--audit takes no --set or --export")
-        return common.boundary("gate-audit", lambda: audit(Path(args.audit), t), lambda rows: None)
+        return common.boundary("gate-audit", lambda: audit(Path(args.audit), t), lambda rows: None, t)
     if not (args.set_id and args.export):
         ap.error("--set and --export are required (or --audit <dir>)")
     export = Path(args.export)
     export = export if export.is_absolute() else Path.cwd() / export
     if export.resolve() != (root / t.gate_ratings).resolve():
         ap.error(f"--export must be the committed {t.gate_ratings}")
-    if common.boundary("gate", lambda: refuse_over_stop(root, t), None):
+    if common.boundary("gate", lambda: refuse_over_stop(root, t), None, t):
         return 3  # F29: refused before any write, so neither the STOP bundle nor a BLOCKED report changes
-    return common.boundary("gate", lambda: run(args.set_id, t), lambda rows: write_blocked(root, rows, t))
+    return common.boundary("gate", lambda: run(args.set_id, t), lambda rows: write_blocked(root, rows, t), t)
 
 
 if __name__ == "__main__":

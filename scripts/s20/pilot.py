@@ -367,7 +367,7 @@ def main(argv: list[str] | None = None) -> int:
             ap.error(f"--audit needs a trial with a STOP report (--trial {t.name} has none)")
         if args.set_id or args.export:
             ap.error("--audit takes no --set or --export")
-        return common.boundary("pilot-audit", lambda: audit(Path(args.audit), t), None)
+        return common.boundary("pilot-audit", lambda: audit(Path(args.audit), t), None, t)
     if not (args.set_id and args.export):
         ap.error("the following arguments are required: --set, --export (or --audit <dir>)")
     export = Path(args.export)
@@ -379,9 +379,9 @@ def main(argv: list[str] | None = None) -> int:
         remove_stop_files(root, t)
         common.write_json(root / t.pilot_result, {
             "verdict": "BLOCKED", "reasons": common.blocked_rows(rows),
-            "way_out": {r: common.WAY_OUT[r] for r in sorted({r for _, r in rows})}})
+            "way_out": {r: common.way_outs(t)[r] for r in sorted({r for _, r in rows})}})
 
-    return common.boundary("pilot", lambda: run(args.set_id, t), blocked)
+    return common.boundary("pilot", lambda: run(args.set_id, t), blocked, t)
 
 
 if __name__ == "__main__":

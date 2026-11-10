@@ -89,18 +89,28 @@ COMPRESS_LEVEL = 0
 FILE_TIME_NS = 1_793_836_800 * 1_000_000_000
 BIND_FIELDS = T1A.bind_fields  # 1a's; every check reads the selected trial's row
 # One fixed way out per reason class: printed with the BLOCKED line, so the refusal says what to
-# do without naming an arm, a strength or a private path (impl review phase 3, F7).
-WAY_OUT = {
-    "access refused": "only tuning photos may be read; check the manifest split and that no path links into the holdout",
-    "calibration not committed": "commit the PASS calibration record and nlm-grid.json it names (nlm.py --calibrate)",
-    "missing source": "render the missing step with local-arms.ts and nlm.py, then rebuild",
-    "source binding failed": "re-render the named photo's arms from its current decode, then rebuild",
-    "provenance mismatch": "re-render the NLM grid with the committed nlm.py, grid and OpenCV, then rebuild",
-    "set exists": "pick a new --set: a set_id is never reused",
-    "usage": "run with --set <set_id> matching " + SET_ID.pattern,
-    "interrupted": "rebuild; the interrupted build left no set",
-    "internal error": "read the private log; report it if the cause is not in your inputs",
-}
+# do without naming an arm, a strength or a private path (impl review phase 3, F7). The renderer
+# and its libraries are the selected trial's; the 1a texts are today's, byte for byte.
+
+
+def way_outs(t: Trial = T1A) -> dict[str, str]:
+    return {
+        "access refused": "only tuning photos may be read; check the manifest split and that no path links into "
+                          "the holdout",
+        "calibration not committed": f"commit the PASS calibration record and {Path(t.grid).name} it names "
+                                     f"({t.renderer} --calibrate)",
+        "missing source": f"render the missing step with local-arms.ts and {t.renderer}, then rebuild",
+        "source binding failed": "re-render the named photo's arms from its current decode, then rebuild",
+        "provenance mismatch": f"re-render the {t.label} grid with the committed {t.renderer}, grid and "
+                               f"{t.renderer_libs}, then rebuild",
+        "set exists": "pick a new --set: a set_id is never reused",
+        "usage": "run with --set <set_id> matching " + SET_ID.pattern,
+        "interrupted": "rebuild; the interrupted build left no set",
+        "internal error": "read the private log; report it if the cause is not in your inputs",
+    }
+
+
+WAY_OUT = way_outs(T1A)  # 1a's, the name that predates the seam
 
 
 class Blocked(Exception):
@@ -471,12 +481,12 @@ def main(argv: list[str] | None = None) -> int:
     except BaseException as e:  # noqa: BLE001 - the one boundary: nothing propagates, nothing chains
         import common  # the step-8 refusals carry the rule tools' reason classes
 
-        ways = WAY_OUT
+        ways = way_outs(t)
         if isinstance(e, Blocked):
             reason, photo, detail = e.reason, e.photo, e.detail
         elif isinstance(e, (common.Blocked, common.BlockedMany)):
             first = e.found[0] if isinstance(e, common.BlockedMany) else e
-            reason, photo, detail, ways = first.reason, None, str(e), common.WAY_OUT
+            reason, photo, detail, ways = first.reason, None, str(e), common.way_outs(t)
         elif isinstance(e, protocol.Refused):
             reason, photo, detail = "access refused", None, str(e)
         elif isinstance(e, KeyboardInterrupt):
