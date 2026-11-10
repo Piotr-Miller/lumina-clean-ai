@@ -1599,10 +1599,10 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 10.1 Wavelet tests pass
-- [x] 10.2 Grid config holds the pre-registered values
-- [x] 10.3 Calibration runs on synthetic data only
-- [ ] 10.4 The 1a audit still re-derives FAIL
+- [x] 10.1 Wavelet tests pass — 7dc92f1
+- [x] 10.2 Grid config holds the pre-registered values — 7dc92f1
+- [x] 10.3 Calibration runs on synthetic data only — 7dc92f1
+- [x] 10.4 The 1a audit still re-derives FAIL — 7dc92f1
 
 #### Manual
 
@@ -1612,9 +1612,9 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [ ] 11.1 Grid renders
-- [ ] 11.2 Arms render
-- [ ] 11.3 Pilot set builds and prints its digest and key hash
+- [x] 11.1 Grid renders
+- [x] 11.2 Arms render
+- [x] 11.3 Pilot set builds and prints its digest and key hash
 - [ ] 11.4 Pilot rule decides
 - [ ] 11.5 Only on STOP, the STOP re-derives from published metadata alone
 - [ ] 11.6 Only on STOP, every S-20 pointer links `pilot-stop.md`

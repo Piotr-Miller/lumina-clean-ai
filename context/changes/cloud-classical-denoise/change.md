@@ -33,6 +33,9 @@ issue: 347
 - 2026-11-10: owner confirmation recorded, Progress row pending the merge — **7.4** the owner installed `python3-scikit-image` 0.26.0 and `python3-pywt` 1.8.0 with `sudo dnf install` (reported "installed" in session, 2026-11-10; verified by 7.1 at 30dd1f7).
 - 2026-11-10: reopened 4.2 — was accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130; changed: scripts/s20/gate.py, scripts/s20/pilot.py (Phase 8 trial seam, 69b9c73). The reopening rides with the next commit; it should have been in 69b9c73's commit set (commit-ritual step 2 was run but not acted on).
 - 2026-11-10: reopened 4.3 — was accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130; changed: scripts/s20/gate.py (Phase 8 trial seam, 69b9c73), same note.
+- 2026-11-10: owner confirmation recorded, Progress row pending the merge — **7.5** the owner read and accepted the 1b premise record (`evaluations/step1b/premise.md`) at 7dc92f16b370c98410a4d93e72a1c00e6f2e9bd8.
+- 2026-11-10: owner confirmation recorded, Progress row pending the merge — **10.5** the owner confirmed the 1b grid (`scripts/s20/configs/wavelet-grid.json`) and calibration record (`evaluations/step1b/calibration.md`, PASS) before any Phase 11 render, at 7dc92f16b370c98410a4d93e72a1c00e6f2e9bd8.
+- 2026-11-10: owner decision — the 1b `DECIDED` text in `scripts/s20/trials.py` (embedded in the future `wavelet-frozen.json` and `step1b/pilot-result.json`) is approved unchanged, at 7dc92f16b370c98410a4d93e72a1c00e6f2e9bd8. 4.2 and 4.3 remain reopened: `pilot.py --trial 1b` is not run before 4.2 is re-confirmed.
 
 **Registered 2026-11-03; implementation began 2026-11-05.** Owner decision: this change goes first,
 `local-jev-gate` is registered as a stub and waits for this change's step 1. Step 1a (NLM) has
