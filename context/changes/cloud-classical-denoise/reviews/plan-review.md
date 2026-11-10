@@ -521,3 +521,248 @@ Remaining commands require future S-20 code/evidence or write real outputs and w
 - **Decision**: FIXED — 2026-11-05; plan revised: sanitized BLOCKED reports must exist and are scanned; only decoded reports, key copies, audit bundles and identity-bearing temp files are forbidden.
 
 No plan triage was requested or performed. F15/F16 are the only new findings, both caused by F11–F14 edits. The experiment, numeric vote/gate rules, owner-selected mechanisms and tuning-only/free boundary remain unchanged.
+
+## Re-review 4 (2026-11-09)
+
+- **Mode**: Deep
+- **Scope**: the Step 1b extension only (from "# Step 1b — shift-invariant wavelet BayesShrink" to "## Testing Strategy", plus Progress Phases 7–12), as the owner requested. The hash differs from round 3 because 1a's implementation, its Progress write-backs and the 1b block landed since; Phases 0–6 are implemented and reviewed and were not reopened.
+- **Plan sha256**: `664c4885ca7a2584c23bc47e87598816cb9909c56403014639070c36aae02aad`
+- **Plan sha256 after triage**: `a945bf94778ad1e3431584738bfbebfeb99d3e2d71874f19ff4e9481bcf9ec83`
+- **Verdict**: **RETHINK by the rule (two FAIL dimensions), though no finding asks for a different approach.** Every fix is a targeted plan edit: the trial seam, the candidate and the phase order stand.
+- **Findings**: 3 critical, 4 warnings, 3 observations
+- **Closes**: F15, F16 (both implemented in 1a: `pointers.py` exits 0 on the real H3→H2 layout; the BLOCKED-report leak tests pass in the 156-test suite)
+- **Reviewer note**: the plan was written in the same session; the substance pass was delegated to an independent agent given the plan section and the code, not the author's conclusions, and its top evidence was spot-checked (`evidence.py:96-100`, `nlm.py:98,221,536,545`, `colorconv.py:482-483`, `blind.py:408`, `gate.py:270`).
+
+### Verdicts within this scope
+
+| Dimension              | Verdict |
+| ---------------------- | ------- |
+| Requirement Definition | WARNING |
+| End-State Alignment    | WARNING |
+| Lean Execution         | PASS    |
+| Architectural Fitness  | FAIL    |
+| Blind Spots            | WARNING |
+| Plan Completeness      | FAIL    |
+
+### Grounding
+
+7/7 create paths free, 14/14 modify paths exist; symbols `rule_files`, `require_committed_clean`, `committed_bind`, `BIND_FIELDS`, `freeze_doc`, `pairs_of` found; brief↔plan ✓; commands 11/11 match their recorded status (run at planning in this session, minutes before this round); definitions 9/9 user|plan, 2 flagged (F21, F23). Degenerate walkthrough: done on the diagnostic (clipped corner, all-zero subband, constant plane, finest-level energy).
+
+### Findings
+
+### F17 — Listing 1b's grid and calibration as rule files before they exist blocks every 1a tool in Phases 8–9
+
+- **Severity**: ❌ CRITICAL
+- **Impact**: 🔎 MEDIUM — real tradeoff; pause to reason through it
+- **Dimension**: Architectural Fitness
+- **Location**: Phase 8 — item 2 (`evidence.rule_files`); success criteria 8.1, 8.2, 9.5, 10.4
+- **Detail**: `rule_files` appends the fixed rule files (`evidence.py:37,71`), and `require_committed_clean` refuses a listed path that is "missing and not tracked" (`evidence.py:96-100`). The 1a audit runs that check first (`gate.py:427` → `common.py:111`), so from Phase 8 until Phase 10 commits both 1b files it exits 3 (BLOCKED), not 1: criteria 8.2 and 9.5 fail by construction. `blind_fixture.init_repo` copies every rule file from the checkout (`tests/blind_fixture.py:202-205`), so a missing one raises and the S-20 suite (8.1) errors; `test_nlm.py:38,89-91` builds its repo from a fixed copy list that would then lack the new paths. The same check also blocks the 1a audit whenever any rule file is uncommitted, so the "1a audit still FAIL" rows can only pass after the phase commit.
+- **Fix**: A trial's grid and calibration record join `rule_files` when they exist on disk or in the index (the rule the tools glob already uses, `evidence.py:53-71`), so "not yet created" is no offence and a deleted tracked file still is; `blind_fixture` copies only existing rule files; `test_nlm`'s copy list gains the new paths; every "1a audit still re-derives FAIL" row says it runs after the phase commit.
+  - Strength: Mirrors the existing on-disk-or-in-index rule; no new concept.
+  - Tradeoff: Before Phase 10 a 1b calibration that was never written is indistinguishable from one not yet due; acceptable because no 1b render can run without its bind.
+  - Confidence: HIGH — the refusal path is read directly from `evidence.py:96-100`.
+  - Blind spot: None significant.
+- **Decision**: FIXED — Fix; edited: 1b Critical Implementation Details, Phase 8 item 2, Phase 8 item 3, Phase 8/9/10/12 audit rows; reopened: none
+
+### F18 — `nlm.py` is frozen, but it reads the `evidence` constants Phase 8 replaces
+
+- **Severity**: ❌ CRITICAL
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Architectural Fitness
+- **Location**: Phase 8 — items 1–2 (Contract: "replace the module constants with lookups")
+- **Detail**: `nlm.py:98,221,536,545` reads `evidence.GRID_REL`, `evidence.CALIBRATION_REL` and `evidence.rule_files(root)`. The plan forbids editing `nlm.py` (its sha256 is 1a's `implementation_sha256`), so removing or renaming those names breaks every 1a NLM path with an AttributeError.
+- **Fix**: Phase 8's contract keeps `evidence.GRID_REL`, `evidence.CALIBRATION_REL` and `evidence.rule_files(root)` as stable names bound to the 1a row (and the full rule list), with a `test_trials.py` case importing `nlm` and asserting them.
+- **Decision**: FIXED — Fix; edited: Phase 8 item 1 Contract, Phase 8 item 3; reopened: none
+
+### F19 — The calibration contract multiplies σ̂ by 255 although `rgb2ycbcr` already returns 8-bit units
+
+- **Severity**: ❌ CRITICAL
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Plan Completeness
+- **Location**: Phase 10 — item 3 (calibration record)
+- **Detail**: skimage's `rgb2ycbcr` multiplies float RGB in [0, 1] by `ycbcr_from_rgb = [[65.481, 128.553, 24.966], …]` and adds the 16/128 offsets (`colorconv.py:482-484` @v0.26.0), so Y already spans 16–235. Normalised σ̂ × the plane's range is already in those units; "× 255" makes every gated tolerance fail by a factor of 255. The plan also leaves implicit that `denoise_wavelet` receives the **normalised** σ (k·σ̂_norm), not k times the reported σ̂.
+- **Fix**: Drop "× 255"; state that σ̂ is reported as σ̂_norm × (plane max − min) in `rgb2ycbcr` units and that the filter receives σ = k·σ̂_norm.
+- **Decision**: FIXED — Fix; edited: Phase 10 item 3; reopened: none
+
+### F20 — The 1a row lists fewer literals than the audit depends on
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Architectural Fitness
+- **Location**: Phase 8 — item 1 (Contract)
+- **Detail**: Besides the report keys and reason text, the 1a result depends on: the quality **values** `"nlm-slight"`/`"nlm-clear"` tested for a win (`gate.py:257,270`); the arm match `"nlm-gamma"` (`gate.py:79-86`); the key fields `nlm_record`/`nlm_record_sha256` (`pilot.py:56-59`, `gate.py:193,349`, `blind.py:288`); `DECIDED` in `freeze_doc` (`pilot.py:145-148`). `blind.py:408` also hard-codes `opencv_version` in the key's `calibration_bind`, so a 1b build would raise KeyError unless that dict uses the row's bind fields.
+- **Fix**: Enumerate these in the 1a row's contract (value prefix, arm, record key, `DECIDED`, bind fields) and make `blind.py:408` use the row's bind fields; `test_trials.py` pins each 1a value literally.
+- **Decision**: FIXED — Fix; edited: Phase 8 item 1 Contract, Phase 8 item 2, Phase 8 item 3; reopened: none
+
+### F21 — A constant plane is both refused (σ̂ = 0) and passed through
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Requirement Definition
+- **Location**: 1b Definitions — rows "Strength `k`" and "Plane"; Phase 10 tests
+- **Detail**: The Strength row refuses a σ̂ ≤ 0; the Plane row passes a constant plane (max = min) through unfiltered, whose σ̂ is 0 and whose normalisation is 0/0, since 1b calls `denoise_wavelet` per plane and so never reaches skimage's own skip (`_denoise.py:1002-1004`). The tests "σ̂ = 0 is refused" and "constant plane passes through" expect opposite outcomes on that input.
+- **Fix**: The constant-plane check runs first (no normalisation, no σ̂, plane copied, diagnostic cells `null`); the σ̂ refusal applies only to a non-constant plane. Both rows and both tests say so.
+- **Decision**: FIXED — Fix; edited: 1b Definitions (Strength `k`, Plane), Phase 10 items 2 and 4; reopened: none
+
+### F22 — A 1b STOP has no writer and no pointer target
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🔎 MEDIUM — real tradeoff; pause to reason through it
+- **Dimension**: End-State Alignment
+- **Location**: Phase 11 — "On STOP" paragraph; 1b Desired End State; Phase 12 item 2 and 12.5
+- **Detail**: Phase 11 says "publish the pilot audit" on STOP, but no tool writes one: `write_bundle` runs only after a gate (`gate.py:476-482`), and a STOP refuses any freeze, so Phase 12 never runs. The end state wants the four pointers to link `evaluations/step1b/gate.md`, which does not exist after a STOP, so `pointers.py --trial 1b` cannot pass. The same gap existed in 1a's plan and stayed latent because 1a selected a strength; for 1b, the last trial, STOP closes step 1, so the path must work.
+- **Fix A ⭐ Recommended**: Phase 8 gives `pilot.py --trial 1b` a STOP bundle (`evaluations/step1b/audit/`: pilot key, manifest, records; no images) and a short `step1b/pilot-stop.md`; `pointers.py --trial 1b` accepts `step1b/gate.md` **or** `step1b/pilot-stop.md`; tests cover the STOP path.
+  - Strength: The STOP outcome is as reproducible and as linked as a gate verdict; the writer is a rule file committed before any render, as the order requires.
+  - Tradeoff: Adds a writer and a test to Phase 8 for a path that may never run.
+  - Confidence: HIGH — mirrors `write_bundle`'s existing shape.
+  - Blind spot: The STOP audit is not re-derivable by `gate.py --audit` unless that mode learns the pilot-only bundle; a `pilot.py --audit` would be one more piece.
+- **Fix B**: On STOP, write only `pilot-result.json` (it already exists) and point the pointers at it; no bundle.
+  - Strength: No new writer.
+  - Tradeoff: The STOP cannot be re-derived from a checkout: the key and records stay private, unlike every other S-20 verdict.
+  - Confidence: MED — acceptable only if a STOP is judged not to need an audit.
+  - Blind spot: Breaks the plan's own "publish the pilot audit" promise.
+- **Decision**: FIXED — Fix A; edited: 1b Desired End State, Phase 8 items 2 and 3, Phase 11 item 1, plan-brief Key Decisions; reopened: none
+
+### F23 — Nothing tests that diagnostic level "1" is the finest
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Requirement Definition
+- **Location**: 1b Definitions — row "Level"; Phase 10 item 4
+- **Detail**: `wavedecn` returns detail levels coarsest first (`coeffs[1:]`; skimage estimates σ from `dcoeffs[-1]`, `_denoise.py:746-751`). The planned "record fields" test would accept reversed level labels, and the owner reads the diagnostic by level.
+- **Fix**: Add a fixture with energy only at the finest scale (a ±1 checkerboard) and assert its detail lands in level `"1"`; put it in the Level row's "Verified by".
+- **Decision**: FIXED — Fix; edited: 1b Definitions (Level), Phase 10 item 4; reopened: none
+
+### F24 — The 1b bind neither names its trial nor pins numpy
+
+- **Severity**: ℹ️ OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Blind Spots
+- **Location**: Phase 10 — item 3 (bind line); Phase 8 — trial row
+- **Detail**: `committed_bind` parses `key=value` pairs and ignores unknown ones (`blind.py:141-149`); nothing checks `trial=`, and 1a's line has none (`step1-calibration.md:17`). The bind-field sets differ (`opencv_version` vs `skimage_version`), so cross-acceptance is already prevented by fields, but only implicitly. The record carries `numpy_version` while the bind does not, so a numpy upgrade can change output bytes with the bind still passing.
+- **Fix**: Give each row a `bind_trial` (absent for 1a, `1b` for 1b) required to match exactly, and add `numpy_version` to 1b's bind fields.
+- **Decision**: FIXED — Fix; edited: Phase 8 item 1 Contract, Phase 8 item 3, Phase 10 item 3; reopened: none
+
+### F25 — Three exactness traps in the observing-pass tests
+
+- **Severity**: ℹ️ OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Plan Completeness
+- **Location**: Phase 10 — items 2 and 4
+- **Detail**: Byte equality with skimage holds only if the observing pass repeats skimage's own calls in order (`wavedecn` default mode and `max(dwtn_max_level − 3, 1)` levels, `mean(d*d)` with eps of the coefficients' dtype, `pywt.threshold(..., 'soft')`, `waverecn[original_extent].astype(dtype)`, `_denoise.py:611-617,737-797`). "Set to 0" must be counted from `pywt.threshold`'s output, not from |c| ≤ T. The single-shift comparison must be made on the rolled plane before it is rolled back (`_cycle_spin.py:147-151`). And the test "the render equals `cycle_spin(denoise_wavelet, …)`" is tautological when `wavelet.py` makes that very call.
+- **Fix**: Write those three rules into Phase 10's contract, and replace the tautological test with a byte-determinism test plus a check that the output differs from the input at k = 1.0 on a noisy fixture.
+- **Decision**: FIXED — Fix; edited: Phase 10 items 2 and 4; reopened: none
+
+### F26 — Two small contradictions: "every CLI takes `--trial`", and no way out if a reused 1a input changes
+
+- **Severity**: ℹ️ OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Blind Spots
+- **Location**: 1b Definitions — row "Trial"; 1b What We're NOT Doing (reuse of `decoded`/`control-full`)
+- **Detail**: `nlm.py` is frozen and takes no `--trial`. Separately, reusing 1a's `decoded`/`control-full` is verified against the current S-19 input and Auto files (`blind.py:236-254`); if either changes, 1b refuses and the plan forbids the re-render that would recover.
+- **Fix**: Say "every S-20 CLI except the frozen `nlm.py`"; add one sentence: a changed S-19 input or Auto record stops 1b for an owner decision, it is never re-rendered silently.
+- **Decision**: FIXED — Fix; edited: 1b Definitions (Trial), 1b What We're NOT Doing; reopened: none
+
+## Re-review 5 (2026-11-09)
+
+- **Mode**: Deep, confirming round
+- **Scope**: the sections round 4's FIXED decisions name as edited (the plan hash equals round 4's `Plan sha256 after triage`), plus defects those edits introduced.
+- **Plan sha256**: `a945bf94778ad1e3431584738bfbebfeb99d3e2d71874f19ff4e9481bcf9ec83`
+- **Plan sha256 after triage**: `6d9a7c8aa881a9609093f33fdc4f00d1c7c61ecbdc2abd3463117cf4a86d40a8`
+- **Verdict**: **REVISE — every round-4 fix holds; the new STOP path is unprotected and unverified, and two new test clauses would fail for the wrong reason.** No CRITICAL remains.
+- **Findings**: 0 critical, 5 warnings, 4 observations
+- **Closes**: F17, F18, F19, F20, F21, F23, F24, F26
+- **Partially closes**: F22 (a writer exists; see F29, F30), F25 (see F33)
+- **Reviewer note**: delegated to an independent agent given round 4 and the code; its key evidence spot-checked (`gate.py:408`, `pilot.py:158`, `gate.py:455`, `test_nlm.py:36-40,88-92`, `pilot.py:214-215`). The 1a audit ran: exit 1, "audit re-derives FAIL: 3 of 8 wins, k 1.0".
+
+### Findings
+
+### F27 — The F18 test pins `rule_files` to 1a values, which F17 extends
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Plan Completeness
+- **Location**: Phase 8 items 1 (last bullet) and 3
+- **Detail**: Item 1 says `evidence.rule_files(root)` keeps its "1a meaning" and item 3 asserts it keeps "1a values", while item 2 adds the 1b files once they exist. After Phase 10 commits them, that test fails on the real checkout for the wrong reason.
+- **Fix**: Pin only `GRID_REL` and `CALIBRATION_REL` to 1a; assert `rule_files` ⊇ 1a's list and contains a 1b file only when it exists.
+- **Decision**: FIXED — Fix; edited: Phase 8 items 1 and 3; reopened: none
+
+### F28 — `test_nlm.py`'s copy list cannot "gain the new rule paths" before they exist
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Plan Completeness
+- **Location**: Phase 8 item 2 (F17 bullet)
+- **Detail**: `COPIED` is copied with `shutil.copyfile` (`test_nlm.py:36-40,88-92`); adding the 1b grid or calibration before Phase 10 raises `FileNotFoundError`. It is also unnecessary: the temporary repo's `rule_files` omits absent files under F17's rule.
+- **Fix**: Drop the clause; `test_nlm`'s list stays as it is.
+- **Decision**: FIXED — Fix; edited: Phase 8 item 2; reopened: none
+
+### F29 — After a STOP, `gate.py --trial 1b` would delete the STOP bundle and write a BLOCKED `gate.md` that satisfies the pointer check
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Blind Spots
+- **Location**: Phase 8 item 2 (STOP path, pointers rule)
+- **Detail**: On a STOP pilot, `gate.py` reaches `require_freeze`, which raises "pilot stop" (`pilot.py:158`); the BLOCKED writer then `rmtree`s the trial's audit dir (`gate.py:408`) — which F22 made the STOP bundle's home — and writes a BLOCKED `gate.md`. The pointer rule "`gate.md` **or** `pilot-stop.md`" then passes on that BLOCKED file.
+- **Fix**: `gate.py --trial 1b` refuses without writing anything when `step1b/pilot-stop.md` is tracked; `pointers.py --trial 1b` requires `pilot-stop.md` when the committed `pilot-result.json` says STOP and `gate.md` with a PASS or FAIL verdict otherwise.
+- **Decision**: FIXED — Fix; edited: Phase 8 items 2 and 3; reopened: none
+
+### F30 — Nothing verifies the STOP outcome, and Phase 12's rows have no rule on STOP
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: End-State Alignment
+- **Location**: Phase 11 success criteria; Progress 11.x/12.x; 1b Desired End State
+- **Detail**: Phase 11 has no criterion for `pilot.py --trial 1b --audit …` or `pointers.py --trial 1b`; 12.5 belongs to Phase 12, which never runs on STOP, and nothing says how 12.1–12.8 are marked then. The end-state bullet "`gate.py --trial 1b --audit …` re-derives the 1b verdict" is unconditional, but on STOP it exits 3 (`gate.py:455`).
+- **Fix**: Add Phase 11 criteria "STOP audit re-derives STOP" and "pointers link `pilot-stop.md`", each only on STOP (`[-] — n/a: pilot selected` otherwise); state that on STOP every Phase 12 row is `[-] — n/a: 1b pilot STOP`; make the end-state audit bullet apply on PASS or FAIL.
+- **Decision**: FIXED — Fix; edited: 1b Desired End State, Phase 11 success criteria, Phase 12 overview, Progress Phase 11 (Manual rows renumbered 11.7–11.8, all pending); reopened: none
+
+### F31 — The new `pilot.py --audit` mode has no contract
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Plan Completeness
+- **Location**: Phase 8 item 2 (STOP path)
+- **Detail**: Neither the exit code, nor the committed file it compares against, nor whether it runs the pilot order check is stated; today `--set` and `--export` are required (`pilot.py:214-215`). (`pilot-stop.md`'s own commit order does not matter: its writer runs only after the ratings are committed and clean, `common.py:111-114`.)
+- **Fix**: `pilot.py --trial 1b --audit <bundle>`: `--set`/`--export` not required in this mode; runs `require_pilot_order` first; re-derives from the bundle and the committed seal and ratings; compares with the committed `pilot-result.json`; exit 1 = re-derived STOP, 0 = re-derived SELECTED, 3 = BLOCKED, 2 = usage.
+- **Decision**: FIXED — Fix; edited: Phase 8 items 2 and 3; reopened: none
+
+### F32 — A rerun after a STOP leaves stale STOP files behind
+
+- **Severity**: ℹ️ OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Blind Spots
+- **Location**: Phase 8 item 2 (STOP path)
+- **Detail**: Ratings are not write-once, so a re-exported pilot can end BLOCKED or SELECTED; `pilot.py`'s BLOCKED path writes only the result (`pilot.py:223-226`), so `pilot-stop.md` and the published pilot key would survive.
+- **Fix**: A 1b pilot run that does not end in STOP removes `pilot-stop.md` and the STOP bundle before writing, as `write_blocked` does for the gate.
+- **Decision**: FIXED — Fix; edited: Phase 8 items 2 and 3; reopened: none
+
+### F33 — Two of F25's exactness rules are missing from the Phase 10 contract
+
+- **Severity**: ℹ️ OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Plan Completeness
+- **Location**: Phase 10 item 2 (observing pass)
+- **Detail**: The contract omits `waverecn(…)[original_extent].astype(dtype)` (`_denoise.py:794-795`), without which the reconstruction test fails on odd-sized fixtures for the wrong reason; "compare before the roll-back" appears only in the test bullet.
+- **Fix**: Add both to the observing-pass exactness rules.
+- **Decision**: FIXED — Fix; edited: Phase 10 item 2; reopened: none
+
+### F34 — Grid contract and record fields still leave σ's units implicit; σ_eff's rounding term differs for 1b
+
+- **Severity**: ℹ️ OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Plan Completeness
+- **Location**: Phase 10 items 1–3
+- **Detail**: Item 1 still says "σ_plane = k·σ̂_plane", and the record's `sigma_hat`/`sigma` units are unstated. σ_eff = √(σ² + 1/12) models rounding in the noisy plane, but 1b rounds in RGB, so the rounding term per YCbCr plane is about 0.027–0.028 instead of 1/12 ≈ 0.083 — under 0.3 % at σ = 3, negligible but stated wrongly.
+- **Fix**: Item 1 names σ = k·σ̂_norm; the record holds `sigma_hat` in `rgb2ycbcr` units and `sigma` as the normalised value passed to the filter; item 3 says σ_eff uses each plane's own RGB-rounding term (or keeps 1/12 and states the < 0.3 % approximation).
+- **Decision**: FIXED — Fix; edited: Phase 10 items 1–3; reopened: none
+
+### F35 — "Omitting `--trial` behaves exactly as before" is no longer exact
+
+- **Severity**: ℹ️ OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Requirement Definition
+- **Location**: 1b Definitions — row Trial
+- **Detail**: Under F17, a 1a tool also refuses on a dirty or untracked 1b rule file.
+- **Fix**: Add "except that existing 1b rule files are also checked".
+- **Decision**: FIXED — Fix; edited: 1b Definitions (Trial); reopened: none

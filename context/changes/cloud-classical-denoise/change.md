@@ -1,7 +1,7 @@
 ---
 change_id: cloud-classical-denoise
 title: "Cloud AI as a classical full-resolution denoise pipeline, proven offline against real Local"
-status: impl_reviewed
+status: plan_reviewed
 created: 2026-11-03
 updated: 2026-11-09
 archived_at: null
@@ -29,6 +29,7 @@ issue: 347
 - 2026-11-09: owner confirmation — **6.5** the owner committed the gate seal before opening `gate-1`, and rated the 16 pairs themselves; **6.6** the owner accepts the FAIL verdict and its decoded table in `evaluations/step1-gate.md`. Confirmed in the review session on 2026-11-09.
 - 2026-11-09: **6.7** owner decision — comment on #347 linking the verdict, no label change (`status:proposed` kept, S-20 itself undecided); posted at https://github.com/Piotr-Miller/lumina-clean-ai/issues/347#issuecomment-6750604694. BM3D (1b) licence decision deferred by the owner.
 - 2026-11-09: Progress written after the rebase-merge of PR #364: Manual rows 2.4, 3.3, 4.2, 4.3, 5.6, 5.7, 6.5, 6.6, 6.7 accepted at master c85c5bba8f80575979ed872d9d0a804af1fbd130 (owner confirmations above, each with its own check date); the Automated SHA suffixes and 0.3/0.4's acceptance revision were remapped to their master commits by subject (f6b2800 → f8cdf6e), since the rebase-merge rewrote every branch SHA.
+- 2026-11-09: owner decision — step 1b replaces BM3D with one candidate, shift-invariant wavelet BayesShrink (scikit-image 0.26.0 + PyWavelets 1.8.0), k ∈ {1.0, 1.5, 2.0} unchanged; the renderer records the fraction of zeroed detail coefficients per plane and level as a diagnostic, never a gate criterion; the method's age is sufficient on patents, no manual search. Supersedes the 6.7 note's "BM3D (1b) licence decision deferred". § Owner decisions (2026-11-09, step 1b candidate).
 
 **Registered 2026-11-03; implementation began 2026-11-05.** Owner decision: this change goes first,
 `local-jev-gate` is registered as a stub and waits for this change's step 1. Step 1a (NLM) has
@@ -84,14 +85,16 @@ hosting, integration or product naming decision.
    denoise — **not** the existing `control` arm, which starts from the downscaled NAFNet input on
    5 of 8 photos; corrected 2026-11-05, see § Owner decisions (2026-11-05)) and the **real Local** download. Same exposure on both
    sides, so denoise-vs-blur is the only variable. Candidates, in order: **1a** OpenCV
-   `fastNlMeansDenoisingColored`; **1b** a bounded BM3D trial, only if 1a fails the gate, and only
-   after its licence question is settled. **Gate**, identical for 1a and 1b: ≥ 6 of 8 wins over the
+   `fastNlMeansDenoisingColored`; **1b** a bounded second trial, only if 1a fails the gate: BM3D
+   until 2026-11-09, then replaced by one permissively licensed denoiser (§ Owner decisions
+   (2026-11-09, step 1b candidate)). **Gate**, identical for 1a and 1b: ≥ 6 of 8 wins over the
    control on the quality axis, no significant fidelity loss on any photo, zero severe
    regressions, rated on **two axes** (visual quality and fidelity to the original, as in Phase 5)
    from the first round. Exact rules in § Owner decisions.
    **Status (2026-11-09):** 1a ran its blind gate: **FAIL**, verdict and table in
-   [`evaluations/step1-gate.md`](evaluations/step1-gate.md). 1b waits for the owner's BM3D licence
-   decision; steps 2–4 do not start.
+   [`evaluations/step1-gate.md`](evaluations/step1-gate.md). 1b replaces BM3D with one permissively
+   licensed denoiser, shift-invariant wavelet BayesShrink, under the identical gate (§ Owner
+   decisions (2026-11-09, step 1b candidate)); it is being planned. Steps 2–4 do not start.
 2. **Tone mapping, separately**, only after step 1 passes: local tone mapping with a black-point
    anchor and highlight protection, on the denoised image, against the same image with plain
    Auto gamma. S-19's Phase 4 curve was neutral (`phase4-curve.md:57-60`), so no exposure gain is
@@ -272,6 +275,62 @@ Recorded while planning, before any harness code or render exists. Plan:
    enforced by committed-and-clean seals with ancestor order, and the gate builder recomputes `k`
    from the sealed pilot (F1); the noise estimate lives in OpenCV's own Lab space, with
    h = k·σ̂_L and hColor = k·σ̂_ab, calibrated on synthetic data before the freeze (F8).
+
+### Owner decisions (2026-11-09, step 1b candidate)
+
+Recorded after 1a's FAIL and before any 1b code, config or render. The candidate research is in the
+session of 2026-11-09 (Stage A); this section is its decision record.
+
+1. **BM3D is replaced, not retried.** Both readily available BM3D routes are barred from
+   profit-oriented use (§ Owner decisions (2026-11-03) item 2), so a BM3D win could not ship.
+   Exactly **one** candidate replaces it. This is a substitution, not a tournament: if it fails,
+   step 1 closes as FAIL and there is no third trial.
+2. **Candidate: shift-invariant wavelet BayesShrink.**
+   - Packages: scikit-image 0.26.0 (BSD-3-Clause, `LICENSE.txt` at tag v0.26.0, read 2026-11-09)
+     and PyWavelets 1.8.0 (MIT, `LICENSE` at tag v1.8.0, read 2026-11-09), from Fedora
+     `python3-scikit-image` / `python3-pywt`, installed by the owner.
+   - Space: `skimage.color.rgb2ycbcr` on the shared decoded PNG as float; each of Y, Cb, Cr
+     min–max normalised as skimage's own YCbCr loop does (`src/skimage/restoration/_denoise.py`,
+     v0.26.0, lines 993-1021).
+   - Filter, per plane: `denoise_wavelet(method="BayesShrink", mode="soft", wavelet="db1",
+wavelet_levels=None, rescale_sigma=False)` wrapped in `cycle_spin(max_shifts=3)` (16 shifts).
+     skimage's `convert2ycbcr=True` path is not used: it treats a given σ as RGB noise
+     (`_rescale_sigma_rgb2ycbcr`, lines 830-849), which does not match an estimate made in the
+     filter's own space.
+   - Strength: σ_plane = k·σ̂_plane, with σ̂ from 1a's Immerkær estimator measured on that
+     normalised plane. **k ∈ {1.0, 1.5, 2.0}**, the same grid as 1a, unchanged (owner, 2026-11-09).
+     One `k` for all three planes, as 1a used one `k` for `h` and `hColor`.
+   - Output: `ycbcr2rgb`, clip, round to 8-bit RGB PNG with no metadata.
+   - Calibration: re-run 1a's synthetic fixtures and tolerances through the RGB → YCbCr path
+     before the grid is committed; a failed tolerance revises the grid or the estimator there,
+     never after a real render.
+3. **Diagnostic, not a gate criterion (owner, 2026-11-09).** The renderer also records the
+   fraction of detail coefficients that thresholding set to zero, per plane (Y, Cb, Cr), per
+   wavelet level and per orientation subband, because BayesShrink thresholds each orientation
+   subband separately. Ratio = coefficients set to 0 by thresholding / coefficients nonzero before
+   thresholding, each summed over the 16 shifts; coefficients already exactly 0 before
+   thresholding are counted in their own field and never in the numerator (planning, 2026-11-09).
+   The counts come from a separate observing pass, so the render itself is the decided skimage
+   call. They are written into the render record only. `pilot.py` and `gate.py` never read them,
+   and they are never shown to the rater.
+4. **Patent status: the method's age is sufficient for this candidate (owner, 2026-11-09).**
+   BayesShrink was published in 2000 and cycle spinning in 1995; a patent on either as published
+   would have expired by about 2021. No patent database was searched, and none will be for this
+   candidate. This rests on the age argument, not on a search.
+5. **Pre-registration stands.** A 1a failure does not predict 1b. 1b uses the identical gate
+   (≥ 6 of 8 quality wins over `control-full`, ties are not wins, the worst substantiated fidelity
+   loss across both pairs counts, no significant or severe loss on any photo), the same eight
+   `s17-v2` tuning photos, a grid written into the arm's config before any render, a sealed pilot,
+   then a sealed 16-pair gate.
+6. **No per-photo chooser in 1b.** Not TypeSafe Jev and not an extended `auto-params.ts`
+   heuristic: one strength is frozen by the pilot, as in 1a. Choosing per photo is step 3, the
+   chooser role of `local-jev-gate` (#348). For that later step, the strength is exposed as an
+   optional `denoise: {method, k, chosen_by}` field of an Auto record; the eight existing
+   `local/<id>.auto.json` files are never rewritten, because 1a's arm records and audit bind their
+   exact bytes. In 1b, `k` comes from the frozen config only.
+7. **Harness.** The 1a tools are generalised per trial (separate 1b seals, ratings, freeze,
+   verdict and audit bundle). The generalisation is a rule-file change, committed before any 1b
+   render or seal, and `gate.py --audit` on the 1a bundle must still re-derive FAIL afterwards.
 
 ### Roadmap placement (owner question, 2026-11-03: S-13 or S-14?)
 
