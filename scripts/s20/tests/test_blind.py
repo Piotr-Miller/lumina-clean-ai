@@ -7,6 +7,10 @@ checkout's HEAD, which is what `blind.py` checks provenance against. No real pho
 
 The gate-build refusals of order step 8 (missing, uncommitted or stale freeze) are Phase 4's,
 with the precondition itself (owner decision 2026-11-05).
+
+The CLI classes also run for trial 1b as their `…1b` subclasses (plan Phase 8). Cases that drive
+`blind.main` in this process stay 1a's: this process's `blind.py` reads the bind committed in this
+checkout, while a 1b world runs its tools from their copy, where its synthetic 1b bind is committed.
 """
 
 from __future__ import annotations
@@ -35,9 +39,9 @@ blind = bf.load_blind()
 sys.path.insert(0, str(bf.S20))
 import common  # noqa: E402  (the rule tools' reason classes, raised by order step 8)
 
-LEAKS = ("control-full", "nlm-gamma", "k1.0", "k1.5", "k2.0", '"k"', "test-photos/private", "/arms/",
-         ".key-do-not-open", "Traceback")
-ARM_WORDS = ("control", "nlm", "local", "decoded", "gamma", "arm", "k1.", "k2.", "sigma")
+LEAKS = ("control-full", "nlm-gamma", "wavelet-gamma", "k1.0", "k1.5", "k2.0", '"k"', "test-photos/private",
+         "/arms/", ".key-do-not-open", "Traceback")
+ARM_WORDS = ("control", "nlm", "wavelet", "local", "decoded", "gamma", "arm", "k1.", "k2.", "sigma")
 
 
 def png_chunks(path: Path) -> list[str]:
@@ -63,10 +67,13 @@ def read_manifest(set_dir: Path) -> tuple[str, dict]:
 
 
 class BlindWorld(unittest.TestCase):
+    trial = "1a"
+
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="s20-blind-"))
         self.addCleanup(shutil.rmtree, self.tmp, True)
-        self.w = bf.SyntheticWorld(self.tmp)
+        self.w = bf.SyntheticWorld(self.tmp, trial=self.trial)
+        self.t = self.w.t
         self.w.pilot_chain(1.5)  # a gate set needs order step 8: a committed pilot and freeze
 
     def build(self, kind: str, set_id: str = "s1") -> tuple[Path, dict]:
@@ -135,7 +142,7 @@ class ManifestTest(BlindWorld):
         for i in ids:
             sides = key["items"][i]["sides"]
             self.assertEqual(sorted(sides), ["A", "B"])
-            nlm = [s for s, v in sides.items() if v["arm"] == "nlm-gamma"]
+            nlm = [s for s, v in sides.items() if v["arm"] == self.t.arm]
             self.assertEqual(len(nlm), 1, sides)
             self.assertEqual(sides[nlm[0]]["k"], 1.5, "the frozen k")
         self.assertEqual(key["freeze"]["k"], 1.5)
@@ -277,17 +284,18 @@ class DrawTest(BlindWorld):
 
 class RefusalTest(BlindWorld):
     def nlm_record(self, pid="T-01", k="k1.5") -> Path:
-        return self.w.s20 / "nlm" / k / f"{pid}.json"
+        return self.w.s20 / self.t.raw_dir / k / f"{pid}.json"
 
     def test_provenance_must_match_the_committed_calibration_in_both_modes(self):
-        for field in ("implementation_sha256", "config_sha256", "opencv_version"):
+        self.assertEqual(self.t.bind_fields[:2], ("implementation_sha256", "config_sha256"))
+        for field in self.t.bind_fields:
             for kind in ("pilot", "gate"):
                 with self.subTest(field=field, kind=kind):
                     rec = self.nlm_record()
                     good = rec.read_text()
-                    self.edit(rec, **{field: "0" * 64 if field != "opencv_version" else "4.12.0"})
+                    self.edit(rec, **{field: "0" * 64 if field.endswith("sha256") else "4.12.0"})
                     # keep the arm's binding to the record intact, so only provenance can refuse
-                    arm = self.w.private / "arms" / "nlm-gamma" / "k1.5" / "T-01.json"
+                    arm = self.w.private / "arms" / self.t.arm / "k1.5" / "T-01.json"
                     arm_good = arm.read_text()
                     a = json.loads(arm_good)
                     a["source"]["record_sha256"] = blind.protocol.sha256_file(rec)
@@ -384,7 +392,7 @@ class RefusalTest(BlindWorld):
         self.blocked("pilot", "missing source")
 
     def test_an_arm_from_another_auto_record_or_lut_is_refused(self):
-        arm = self.w.private / "arms" / "nlm-gamma" / "k1.5" / "T-02.json"
+        arm = self.w.private / "arms" / self.t.arm / "k1.5" / "T-02.json"
         for field in ("auto_file_sha256", "lut_sha256"):
             with self.subTest(field=field):
                 good = arm.read_text()
@@ -410,9 +418,9 @@ class RefusalTest(BlindWorld):
         self.edit(self.w.private / "arms" / "control-full" / "T-01.json", decoded_pixels_sha256=x,
                   decoded_record_sha256=sha(dec))
         for kd in ("k1.0", "k1.5", "k2.0"):
-            nlm = self.w.s20 / "nlm" / kd / "T-01.json"
+            nlm = self.w.s20 / self.t.raw_dir / kd / "T-01.json"
             self.edit(nlm, decoded_pixels_sha256=x)
-            arm = self.w.private / "arms" / "nlm-gamma" / kd / "T-01.json"
+            arm = self.w.private / "arms" / self.t.arm / kd / "T-01.json"
             a = json.loads(arm.read_text())
             a.update(decoded_pixels_sha256=x, decoded_record_sha256=sha(dec))
             a["source"]["record_sha256"] = sha(nlm)
@@ -423,7 +431,9 @@ class RefusalTest(BlindWorld):
 
     # ---- order step 8 (plan Phase 4 item 5; moved from Phase 3 by owner decision 2026-11-05)
 
-    FROZEN = "scripts/s20/configs/nlm-frozen.json"
+    @property
+    def FROZEN(self) -> str:  # noqa: N802 - the trial's freeze
+        return self.t.frozen
 
     def test_a_missing_freeze_refuses_a_gate_build(self):
         self.w.git("rm", "-q", "--", self.FROZEN)
@@ -440,7 +450,7 @@ class RefusalTest(BlindWorld):
     def test_a_freeze_whose_k_differs_from_the_recomputed_pilot_refuses_a_gate_build(self):
         tmp = Path(tempfile.mkdtemp(prefix="s20-blind-stale-"))
         self.addCleanup(shutil.rmtree, tmp, True)
-        w = bf.SyntheticWorld(tmp)
+        w = bf.SyntheticWorld(tmp, trial=self.trial)
         w.init_repo()
         key = w.seal("pilot", "pilot-y")
         w.write_export("pilot", w.pilot_export(key, lambda photo, labels: next(l for l, k in labels.items() if k == 1.5)))
@@ -499,6 +509,87 @@ class RefusalTest(BlindWorld):
         logs = list((self.w.s20 / "logs").glob("blind-*.log"))
         self.assertEqual(len(logs), 1)
         self.assertIn("boom", logs[0].read_text(), "the detail goes to the private log")
+
+
+# ---------------------------------------------------------------- trial 1b (plan Phase 8 item 3)
+
+IN_PROCESS = "drives blind.main in this process, whose bind is this checkout's 1a bind; covered for 1a"
+
+
+class ManifestTest1b(ManifestTest):
+    trial = "1b"
+
+
+class PresentationTest1b(PresentationTest):
+    trial = "1b"
+
+
+class RefusalTest1b(RefusalTest):
+    trial = "1b"
+
+    test_a_bind_line_missing_a_field_is_refused = unittest.skip(IN_PROCESS)(
+        RefusalTest.test_a_bind_line_missing_a_field_is_refused)
+    test_a_set_dir_that_appears_during_the_build_is_not_replaced = unittest.skip(IN_PROCESS)(
+        RefusalTest.test_a_set_dir_that_appears_during_the_build_is_not_replaced)
+    test_every_copy_re_guards_the_realpath_it_opens = unittest.skip(IN_PROCESS)(
+        RefusalTest.test_every_copy_re_guards_the_realpath_it_opens)
+    test_the_boundary_never_prints_a_traceback = unittest.skip(IN_PROCESS)(
+        RefusalTest.test_the_boundary_never_prints_a_traceback)
+
+    def test_the_key_binds_the_1b_calibration_fields(self):
+        """F20: the key's `calibration_bind` holds the row's bind fields, not a hard-coded opencv_version."""
+        _, key = self.build("gate")
+        self.assertEqual(set(key["calibration_bind"]), set(self.t.bind_fields))
+        self.assertEqual(key["calibration_bind"], {f: self.w.bind[f] for f in self.t.bind_fields})
+        for it in key["items"].values():
+            treated = next(s for s, v in it["sides"].items() if v["arm"] == self.t.arm)
+            self.assertIn(self.t.record_key, it["sources"][treated])
+            self.assertNotIn("nlm_record", it["sources"][treated])
+
+    def test_the_printed_seal_file_names_the_1b_seal_path_and_heading(self):
+        r = self.w.blind("pilot", "--set", "s9")
+        self.assertIn(f"as {self.t.pilot_seal},", r.stdout)
+        text = r.stdout.split("--- START seal file ---\n", 1)[1]
+        self.assertTrue(text.startswith("# S-20 step 1b — pilot seal\n"))
+
+
+class TrialBindTest(unittest.TestCase):
+    """F24: the bind line's `trial=` must equal the row's exactly: absent for 1a, `1b` for 1b."""
+
+    def committed(self, line: str, grid: bytes = b'{"k": [1.0, 1.5, 2.0]}'):
+        def fake(rel_path):
+            if rel_path.endswith(".md"):
+                return f"# record\n\n{line}\n".encode()
+            return grid
+        return fake
+
+    def line(self, t, trial_token: str | None) -> str:
+        fields = {f: "v" for f in t.bind_fields}
+        fields["config_sha256"] = blind.sha_bytes(b'{"k": [1.0, 1.5, 2.0]}')
+        token = "" if trial_token is None else f" trial={trial_token}"
+        return f"S20-CALIBRATION{token} result=PASS " + " ".join(f"{f}={v}" for f, v in fields.items())
+
+    def test_each_row_accepts_only_its_own_trial_token(self):
+        for name, token, ok in (("1a", None, True), ("1a", "1a", False), ("1a", "1b", False),
+                                ("1b", "1b", True), ("1b", None, False), ("1b", "1a", False), ("1b", "1c", False)):
+            t = bf.TRIALS[name]
+            with self.subTest(trial=name, token=token), mock.patch.object(blind, "committed",
+                                                                         self.committed(self.line(t, token))):
+                if ok:
+                    bind = blind.committed_bind(t)
+                    self.assertEqual(set(bind), set(t.bind_fields) | {"k"})
+                else:
+                    with self.assertRaises(blind.Blocked) as cm:
+                        blind.committed_bind(t)
+                    self.assertEqual(cm.exception.reason, "calibration not committed")
+
+    def test_a_1b_bind_missing_numpy_version_is_refused(self):
+        t = bf.TRIALS["1b"]
+        line = re.sub(r" numpy_version=\S+", "", self.line(t, "1b"))
+        with mock.patch.object(blind, "committed", self.committed(line)):
+            with self.assertRaises(blind.Blocked) as cm:
+                blind.committed_bind(t)
+        self.assertIn("numpy_version", cm.exception.detail)
 
 
 if __name__ == "__main__":

@@ -28,13 +28,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "s19"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from protocol import Refused, check_paths  # noqa: E402
+from trials import TRIALS  # noqa: E402
 
-CALIBRATION_REL = "context/changes/cloud-classical-denoise/evaluations/step1-calibration.md"
-GRID_REL = "scripts/s20/configs/nlm-grid.json"
+# 1a's names and values, read by the frozen nlm.py (nlm.py:98,221,536,545; plan review F18).
+CALIBRATION_REL = TRIALS["1a"].calibration
+GRID_REL = TRIALS["1a"].grid
 # Order step 2: the rule files besides the S-20 tools themselves.
 FIXED_RULE_FILES = (GRID_REL, "scripts/s19/local-arms.ts", "scripts/s19/s19.ts", CALIBRATION_REL)
+# Every other trial's grid and calibration record: rule files once they exist on disk or in the
+# index, so one not yet written is no offence and a tracked one deleted still is (F17).
+TRIAL_RULE_FILES = tuple(f for t in TRIALS.values() for f in (t.grid, t.calibration) if f not in FIXED_RULE_FILES)
 TOOLS_DIR = "scripts/s20"
 
 
@@ -52,7 +58,8 @@ def _git(root: Path, *args: str) -> subprocess.CompletedProcess:
 
 def rule_files(root: Path | None = None) -> list[str]:
     """`scripts/s20/**/*.py` (tools, not tests), found on disk AND in the index, so a new untracked
-    tool and a deleted tracked one are both caught; then the fixed rule files."""
+    tool and a deleted tracked one are both caught; then the fixed rule files; then each trial's
+    grid and calibration record that exists on disk or in the index, by the same rule (F17)."""
     root = root or repo_root()
     tools: set[str] = set()
     base = root / TOOLS_DIR
@@ -68,7 +75,17 @@ def rule_files(root: Path | None = None) -> list[str]:
     for rel in filter(None, r.stdout.split("\0")):
         if rel.endswith(".py") and "/tests/" not in f"/{rel[len(TOOLS_DIR) + 1:]}":
             tools.add(rel)
-    return sorted(tools) + list(FIXED_RULE_FILES)
+    return sorted(tools) + list(FIXED_RULE_FILES) + present(TRIAL_RULE_FILES, root)
+
+
+def present(paths, root: Path | None = None) -> list[str]:
+    """The paths that exist on disk or in the index, in their given order. A Git error refuses."""
+    root = root or repo_root()
+    r = _git(root, "ls-files", "-z", "--", *paths)
+    if r.returncode != 0:
+        raise Refused(f"cannot list tracked files in {root}: {r.stderr.strip()}. A real render needs a Git checkout")
+    indexed = set(filter(None, r.stdout.split("\0")))
+    return [rel for rel in paths if rel in indexed or os.path.lexists(root / rel)]
 
 
 def require_committed_clean(paths: list[str], root: Path | None = None, *, purpose: str) -> None:
@@ -203,8 +220,8 @@ def read_seal(path: str, kind: str, root: Path | None = None) -> dict:
     return {"kind": m.group(1), "set_id": m.group(2), "set_digest": m.group(3), "key_sha256": m.group(4)}
 
 
-def seal_text(kind: str, set_id: str, digest: str, key_sha: str) -> str:
-    return f"""# S-20 step 1a — {kind} seal
+def seal_text(kind: str, set_id: str, digest: str, key_sha: str, trial: str = "1a") -> str:
+    return f"""# {TRIALS[trial].title} — {kind} seal
 
 Commit this file **before** opening the viewer (plan § Implementation Approach, order step 4).
 The tools read exactly one machine line:

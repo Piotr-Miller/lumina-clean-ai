@@ -3,7 +3,7 @@ change_id: cloud-classical-denoise
 title: "Cloud AI as a classical full-resolution denoise pipeline, proven offline against real Local"
 status: implementing
 created: 2026-11-03
-updated: 2026-11-09
+updated: 2026-11-10
 archived_at: null
 issue: 347
 ---
@@ -30,6 +30,7 @@ issue: 347
 - 2026-11-09: **6.7** owner decision — comment on #347 linking the verdict, no label change (`status:proposed` kept, S-20 itself undecided); posted at https://github.com/Piotr-Miller/lumina-clean-ai/issues/347#issuecomment-6750604694. BM3D (1b) licence decision deferred by the owner.
 - 2026-11-09: Progress written after the rebase-merge of PR #364: Manual rows 2.4, 3.3, 4.2, 4.3, 5.6, 5.7, 6.5, 6.6, 6.7 accepted at master c85c5bba8f80575979ed872d9d0a804af1fbd130 (owner confirmations above, each with its own check date); the Automated SHA suffixes and 0.3/0.4's acceptance revision were remapped to their master commits by subject (f6b2800 → f8cdf6e), since the rebase-merge rewrote every branch SHA.
 - 2026-11-09: owner decision — step 1b replaces BM3D with one candidate, shift-invariant wavelet BayesShrink (scikit-image 0.26.0 + PyWavelets 1.8.0), k ∈ {1.0, 1.5, 2.0} unchanged; the renderer records the fraction of zeroed detail coefficients per plane and level as a diagnostic, never a gate criterion; the method's age is sufficient on patents, no manual search. Supersedes the 6.7 note's "BM3D (1b) licence decision deferred". § Owner decisions (2026-11-09, step 1b candidate).
+- 2026-11-10: owner confirmation recorded, Progress row pending the merge — **7.4** the owner installed `python3-scikit-image` 0.26.0 and `python3-pywt` 1.8.0 with `sudo dnf install` (reported "installed" in session, 2026-11-10; verified by 7.1 at 30dd1f7).
 
 **Registered 2026-11-03; implementation began 2026-11-05.** Owner decision: this change goes first,
 `local-jev-gate` is registered as a stub and waits for this change's step 1. Step 1a (NLM) has

@@ -5,6 +5,11 @@ The images are drawn, not photographed: a dark noisy scene with a gradient sky, 
 block "lettering" and edges. `control-full` is a gamma lift; each `nlm-gamma` strength blurs before
 the same lift, more for a larger `k`; Local blurs lightly. Different enough to see in the viewer.
 
+`trial="1b"` builds the same world for the 1b row of `trials.py` (plan Phase 8): wavelet records
+and `wavelet-gamma` arms, and a synthetic 1b grid and PASS calibration bind. Since `blind.py`
+reads its bind from the HEAD of the checkout it runs from, never from an override, a 1b world runs
+the tools from their copy in its own temporary repository, where that bind is committed.
+
 Used by the tests, and by the owner for plan manual checks 3.3 and 4.3:
 
   python3 scripts/s20/tests/blind_fixture.py publish [--keep <empty dir>] [--dest <dir>]
@@ -38,6 +43,14 @@ EVAL = "context/changes/cloud-classical-denoise/evaluations"
 TUNING = ("T-01", "T-02", "T-03")
 VALIDATION = tuple(f"V-{i:02d}" for i in range(1, 4))
 GAMMA = 1.6
+
+sys.path.insert(0, str(S20))
+from trials import TRIALS  # noqa: E402
+
+# The 1b bind a synthetic 1b world commits: no wavelet.py exists before plan Phase 10, so its
+# implementation hash and versions are stand-ins; only their equality with the records matters.
+SYNTHETIC_1B = {"implementation_sha256": hashlib.sha256(b"synthetic wavelet.py").hexdigest(),
+                "skimage_version": "0.26.0", "pywt_version": "1.8.0", "numpy_version": "2.3.5"}
 
 
 def sha(path: Path) -> str:
@@ -94,8 +107,8 @@ def lift(im: Image.Image) -> Image.Image:
 class SyntheticWorld:
     """Everything blind.py reads, under one temporary folder; `env` points the tools at it."""
 
-    def __init__(self, tmp: Path, size: tuple[int, int] = (240, 160), n_tuning: int = 3):
-        self.tmp, self.size = tmp, size
+    def __init__(self, tmp: Path, size: tuple[int, int] = (240, 160), n_tuning: int = 3, trial: str = "1a"):
+        self.tmp, self.size, self.t = tmp, size, TRIALS[trial]
         self.tuning = tuple(f"T-{i:02d}" for i in range(1, n_tuning + 1))
         self.photos, self.private, self.s20, self.repo = tmp / "photos", tmp / "private", tmp / "s20", tmp / "repo"
         self.photos.mkdir(parents=True)
@@ -117,10 +130,15 @@ class SyntheticWorld:
                            env=self.env, cwd=ROOT)
         if r.returncode != 0:
             raise RuntimeError(r.stdout + r.stderr)
-        self.bind = load_blind().committed_bind()
+        self.repo_ready = self.rules_committed = False
+        if self.t.name == "1a":
+            self.tools = S20
+            self.bind = load_blind().committed_bind()
+        else:
+            self.tools = self.repo / "scripts" / "s20"
+            self.bind = self.commit_rules()
         for pid in self.tuning:
             self.render(pid)
-        self.repo_ready = False
 
     # ------------------------------------------------------------ what the real tools write
 
@@ -158,24 +176,27 @@ class SyntheticWorld:
             "output_sha256": sha(ctl_dir / f"{pid}.png")}))
         for k in self.bind["k"]:
             kd = f"k{k:.1f}"
-            nlm_dir = self.s20 / "nlm" / kd
+            nlm_dir = self.s20 / self.t.raw_dir / kd
             nlm_dir.mkdir(parents=True, exist_ok=True)
             den = bare(dec_img.filter(ImageFilter.GaussianBlur(radius=0.6 * k)))
             den.save(nlm_dir / f"{pid}.png", "PNG")
             nlm_rec = nlm_dir / f"{pid}.json"
-            nlm_rec.write_text(json.dumps({
-                "id": pid, "k": k, "sigma_hat_L": 3.0, "sigma_hat_ab": 2.0, "h": round(3 * k, 2),
-                "h_color": round(2 * k, 2), "windows": {"templateWindowSize": 7, "searchWindowSize": 21},
-                "decoded_record": str(dec_json), "decoded_pixels_sha256": pixels,
-                "output_sha256": sha(nlm_dir / f"{pid}.png"), "dimensions": dims,
-                "config_sha256": self.bind["config_sha256"], "opencv_version": self.bind["opencv_version"],
-                "implementation_sha256": self.bind["implementation_sha256"], "rendered_at": "2026-11-05T00:00:00Z"}))
-            arm_dir = self.private / "arms" / "nlm-gamma" / kd
+            if self.t.name == "1a":
+                rec = {"id": pid, "k": k, "sigma_hat_L": 3.0, "sigma_hat_ab": 2.0, "h": round(3 * k, 2),
+                       "h_color": round(2 * k, 2), "windows": {"templateWindowSize": 7, "searchWindowSize": 21}}
+            else:
+                rec = {"id": pid, "k": k, "sigma_hat": {"Y": 3.0, "Cb": 1.0, "Cr": 1.0},
+                       "sigma": {p: round(0.02 * k, 4) for p in ("Y", "Cb", "Cr")}, "wavelet": "db1", "shifts": 16}
+            rec.update({"decoded_record": str(dec_json), "decoded_pixels_sha256": pixels,
+                        "output_sha256": sha(nlm_dir / f"{pid}.png"), "dimensions": dims,
+                        **{f: self.bind[f] for f in self.t.bind_fields}, "rendered_at": "2026-11-05T00:00:00Z"})
+            nlm_rec.write_text(json.dumps(rec))
+            arm_dir = self.private / "arms" / self.t.arm / kd
             arm_dir.mkdir(parents=True, exist_ok=True)
             lift(den).save(arm_dir / f"{pid}.png", "PNG")
             (arm_dir / f"{pid}.json").write_text(json.dumps({
-                "arm": "nlm-gamma", **common_fields,
-                "source": {"kind": "nlm", "record": str(nlm_rec), "record_sha256": sha(nlm_rec),
+                "arm": self.t.arm, **common_fields,
+                "source": {"kind": self.t.source_kind, "record": str(nlm_rec), "record_sha256": sha(nlm_rec),
                            "output_sha256": sha(nlm_dir / f"{pid}.png"), "config_sha256": self.bind["config_sha256"],
                            "k": k},
                 "output_sha256": sha(arm_dir / f"{pid}.png")}))
@@ -192,17 +213,46 @@ class SyntheticWorld:
         self.git("add", "--", *rels)
         self.git("commit", "-q", "-m", message)
 
+    def copy_rules(self) -> list[str]:
+        """The rule files of this checkout that exist (F17: a trial's grid or calibration record not
+        yet written is no rule file anywhere), copied into the temporary repository."""
+        import evidence
+
+        rules = [rel for rel in evidence.rule_files(ROOT) if (ROOT / rel).exists()]
+        for rel in rules:
+            (self.repo / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / rel, self.repo / rel)
+        return rules
+
+    def commit_rules(self) -> dict:
+        """A 1b world, order step 1 before any render: the tools, `protocol.py` they import, and a
+        synthetic 1b grid and PASS bind (replacing any real ones), committed. Returns the bind."""
+        rules = self.copy_rules()
+        shutil.copyfile(S19 / "protocol.py", self.repo / "scripts" / "s19" / "protocol.py")
+        grid = self.repo / self.t.grid
+        grid.parent.mkdir(parents=True, exist_ok=True)
+        grid.write_text(json.dumps({"k": [1.0, 1.5, 2.0], "synthetic": True}, indent=2) + "\n")
+        bind = {**SYNTHETIC_1B, "config_sha256": sha(grid)}
+        cal = self.repo / self.t.calibration
+        cal.parent.mkdir(parents=True, exist_ok=True)
+        cal.write_text("# synthetic 1b calibration\n\n```text\nS20-CALIBRATION trial=1b result=PASS "
+                       + " ".join(f"{f}={bind[f]}" for f in self.t.bind_fields) + "\n```\n")
+        self.git("init", "-q")
+        self.commit(*sorted(set(rules) | {self.t.grid, self.t.calibration}), "scripts/s19/protocol.py",
+                    message="rules")
+        self.rules_committed = True
+        return {**bind, "k": [1.0, 1.5, 2.0]}
+
     def init_repo(self) -> None:
         """Order step 1: the rule files, copied from this checkout, plus this world's Local baselines."""
         if self.repo_ready:
             return
-        sys.path.insert(0, str(S20))
-        import evidence
-
-        rules = evidence.rule_files(ROOT)
-        for rel in rules:
-            (self.repo / rel).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(ROOT / rel, self.repo / rel)
+        if self.rules_committed:  # a 1b world: the rules are in, only the baselines follow
+            self.write_baselines()
+            self.commit("scripts/s20/configs/local-baselines.json", message="baselines")
+            self.repo_ready = True
+            return
+        rules = self.copy_rules()
         self.write_baselines()
         self.git("init", "-q")
         self.commit(*rules, "scripts/s20/configs/local-baselines.json", message="rules")
@@ -221,7 +271,7 @@ class SyntheticWorld:
         if r.returncode != 0:
             raise RuntimeError(r.stdout + r.stderr)
         text = r.stdout.split("--- START seal file ---\n", 1)[1].split("--- END seal file ---", 1)[0]
-        rel = f"{EVAL}/{kind}-sealed.md"
+        rel = self.t.pilot_seal if kind == "pilot" else self.t.gate_seal
         (self.repo / rel).parent.mkdir(parents=True, exist_ok=True)
         (self.repo / rel).write_text(text)
         if commit:
@@ -238,17 +288,22 @@ class SyntheticWorld:
                 "set_digest": key["set_digest"], "rated_on": "2026-11-06", "choices": choices}
 
     def write_export(self, kind: str, doc: dict, commit: bool = True) -> None:
-        rel = f"{EVAL}/{kind}-ratings.json"
+        rel = self.t.pilot_ratings if kind == "pilot" else self.t.gate_ratings
         (self.repo / rel).write_text(json.dumps(doc, indent=2) + "\n")
         if commit:
             self.commit(rel, message=f"{kind} ratings")
 
-    def run_tool(self, tool: str, *args: str) -> subprocess.CompletedProcess:
-        return subprocess.run([sys.executable, "-B", str(S20 / f"{tool}.py"), *args], capture_output=True, text=True,
-                              env=self.env, cwd=ROOT)
+    @property
+    def trial_args(self) -> tuple[str, ...]:
+        """1a runs on the default, so its cases keep exercising the CLI without `--trial`."""
+        return () if self.t.name == "1a" else ("--trial", self.t.name)
+
+    def run_tool(self, tool: str, *args: str, env: dict | None = None) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, "-B", str(self.tools / f"{tool}.py"), *args, *self.trial_args],
+                              capture_output=True, text=True, env={**self.env, **(env or {})}, cwd=ROOT)
 
     def pilot(self, set_id: str = "pilot-x") -> subprocess.CompletedProcess:
-        return self.run_tool("pilot", "--set", set_id, "--export", str(self.repo / EVAL / "pilot-ratings.json"))
+        return self.run_tool("pilot", "--set", set_id, "--export", str(self.repo / self.t.pilot_ratings))
 
     def pilot_chain(self, k: float, set_id: str = "pilot-x") -> dict:
         """Rules, pilot seal, ratings voting k on every photo, pilot.py, committed result and freeze."""
@@ -259,7 +314,7 @@ class SyntheticWorld:
         r = self.pilot(set_id)
         if r.returncode != 0:
             raise RuntimeError(r.stdout + r.stderr)
-        self.commit(f"{EVAL}/pilot-result.json", "scripts/s20/configs/nlm-frozen.json", message="pilot result")
+        self.commit(self.t.pilot_result, self.t.frozen, message="pilot result")
         return key
 
     @staticmethod
@@ -270,7 +325,7 @@ class SyntheticWorld:
         default = default or {"control-full": ("nlm-clear", "none", "none"), "local": ("tie", "none", "none")}
         rows = []
         for item, it in sorted(key["items"].items()):
-            nlm = next(s for s, v in it["sides"].items() if v["arm"] == "nlm-gamma")
+            nlm = next(s for s, v in it["sides"].items() if v["arm"] != it["comparison"])  # the treated side
             ref = "B" if nlm == "A" else "A"
             q, fn, fr = (spec or {}).get((it["photo"], it["comparison"]), default[it["comparison"]])
             quality = "tie" if q == "tie" else (nlm if q.startswith("nlm") else ref) + "-" + q.split("-")[1]
@@ -281,11 +336,10 @@ class SyntheticWorld:
                 "set_digest": key["set_digest"], "rated_on": "2026-11-06", "ratings": rows}
 
     def gate(self, set_id: str = "gate-x") -> subprocess.CompletedProcess:
-        return self.run_tool("gate", "--set", set_id, "--export", str(self.repo / EVAL / "gate-ratings.json"))
+        return self.run_tool("gate", "--set", set_id, "--export", str(self.repo / self.t.gate_ratings))
 
     def blind(self, *args: str) -> subprocess.CompletedProcess:
-        return subprocess.run([sys.executable, "-B", str(BLIND), *args], capture_output=True, text=True, env=self.env,
-                              cwd=ROOT)
+        return self.run_tool("blind", *args)
 
 
 ENV_KEYS = ("S19_MANIFEST", "S19_CHANGE_MD", "S19_PRIVATE", "S20_PRIVATE", "S20_REPO")

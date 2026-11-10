@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""S-20 step 1a blind set builder (`cloud-classical-denoise`, plan Phase 3).
+"""S-20 step 1 blind set builder (`cloud-classical-denoise`, plan Phases 3 and 8).
 
-  python3 scripts/s20/blind.py pilot --set <set_id>
-  python3 scripts/s20/blind.py gate  --set <set_id>
+  python3 scripts/s20/blind.py pilot [--trial 1a|1b] --set <set_id>
+  python3 scripts/s20/blind.py gate  [--trial 1a|1b] --set <set_id>
+
+`--trial` (default `1a`) selects the row of `trials.py` that names the treatment arm, its raw
+renders, its frozen config, its calibration bind and its seal paths (plan Phase 8). The paragraphs
+below name 1a's values; 1b's are the wavelet row's (`wavelet-gamma`, `wavelet/`, …).
 
 Writes `test-photos/private/s20/<set_id>/`: one metadata-free RGB PNG per rater-facing image,
 named only by item id and side, the manifest `manifest.js` (`window.S20_SET = …`) that
@@ -67,8 +71,11 @@ sys.path.insert(0, str(HERE))
 
 import evidence  # noqa: E402
 import protocol  # noqa: E402
+import trials  # noqa: E402
+from trials import TRIALS, Trial  # noqa: E402
 
-FROZEN_REL = "scripts/s20/configs/nlm-frozen.json"
+T1A = TRIALS["1a"]
+FROZEN_REL = T1A.frozen
 KEY_NAME = ".key-do-not-open.json"
 SET_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 PILOT_LABELS = ("X", "Y", "Z")
@@ -80,7 +87,7 @@ SRGB_ICC_SHA256 = {"12afb4d9953adee0607d347daee5b78b18d6b3cab2d572b88970703f5edb
 COMPRESS_LEVEL = 0
 # Every file of a set carries this mtime (2026-11-05T00:00:00Z), so timestamps order nothing.
 FILE_TIME_NS = 1_793_836_800 * 1_000_000_000
-BIND_FIELDS = ("implementation_sha256", "config_sha256", "opencv_version")
+BIND_FIELDS = T1A.bind_fields  # 1a's; every check reads the selected trial's row
 # One fixed way out per reason class: printed with the BLOCKED line, so the refusal says what to
 # do without naming an arm, a strength or a private path (impl review phase 3, F7).
 WAY_OUT = {
@@ -135,23 +142,27 @@ def committed(rel_path: str) -> bytes:
     return r.stdout
 
 
-def committed_bind() -> dict:
-    """The calibration bind line at HEAD of this checkout, and the committed grid it names."""
-    text = committed(evidence.CALIBRATION_REL).decode()
+def committed_bind(t: Trial = T1A) -> dict:
+    """The trial's calibration bind line at HEAD of this checkout, and the committed grid it names.
+    Its `trial=` must be exactly the row's: absent for 1a, `trial=1b` for 1b (F24)."""
+    text = committed(t.calibration).decode()
     binds = [ln[len("S20-CALIBRATION "):] for ln in text.splitlines() if ln.startswith("S20-CALIBRATION ")]
     if len(binds) != 1:
         raise Blocked("calibration not committed", f"{len(binds)} bind lines in the committed calibration record")
     fields = dict(kv.split("=", 1) for kv in binds[0].split() if "=" in kv)
+    if fields.get("trial") != t.bind_trial:
+        raise Blocked("calibration not committed",
+                      f"the committed bind line names trial {fields.get('trial')!r}, not {t.bind_trial!r}")
     if fields.get("result") != "PASS":
         raise Blocked("calibration not committed", f"the committed calibration records {fields.get('result')!r}")
-    for f in BIND_FIELDS:  # a missing field would let a record lacking it pass as None == None
+    for f in t.bind_fields:  # a missing field would let a record lacking it pass as None == None
         if not fields.get(f):
             raise Blocked("calibration not committed", f"the committed bind line has no {f}")
-    grid_raw = committed(evidence.GRID_REL)
+    grid_raw = committed(t.grid)
     if sha_bytes(grid_raw) != fields.get("config_sha256"):
         raise Blocked("calibration not committed", "the committed grid is not the one the committed calibration names")
     grid = json.loads(grid_raw)
-    return {**{f: fields[f] for f in BIND_FIELDS}, "k": [float(k) for k in grid["k"]]}
+    return {**{f: fields[f] for f in t.bind_fields}, "k": [float(k) for k in grid["k"]]}
 
 
 # ---------------------------------------------------------------- sources
@@ -161,15 +172,15 @@ def k_dir(k: float) -> str:
     return f"k{k:.1f}"
 
 
-def paths_for(pid: str, ks: list[float], local: bool) -> dict:
+def paths_for(pid: str, ks: list[float], local: bool, t: Trial = T1A) -> dict:
     s19, s20 = protocol.private_dir(), private_s20()
     p = {
         "sidecar": s19 / "inputs" / f"{pid}.json",
         "decoded": (s20 / "decoded" / f"{pid}.png", s20 / "decoded" / f"{pid}.json"),
         "control": (s19 / "arms" / "control-full" / f"{pid}.png", s19 / "arms" / "control-full" / f"{pid}.json"),
-        "nlm_gamma": {k: (s19 / "arms" / "nlm-gamma" / k_dir(k) / f"{pid}.png",
-                          s19 / "arms" / "nlm-gamma" / k_dir(k) / f"{pid}.json") for k in ks},
-        "nlm": {k: (s20 / "nlm" / k_dir(k) / f"{pid}.png", s20 / "nlm" / k_dir(k) / f"{pid}.json") for k in ks},
+        "arm": {k: (s19 / "arms" / t.arm / k_dir(k) / f"{pid}.png",
+                    s19 / "arms" / t.arm / k_dir(k) / f"{pid}.json") for k in ks},
+        "raw": {k: (s20 / t.raw_dir / k_dir(k) / f"{pid}.png", s20 / t.raw_dir / k_dir(k) / f"{pid}.json") for k in ks},
     }
     if local:
         p["local"] = s19 / "local" / f"{pid}.jpg"
@@ -218,9 +229,9 @@ def need(cond: bool, pid: str, detail: str, reason: str = "source binding failed
         raise Blocked(reason, detail, pid)
 
 
-def verified_sources(pid: str, ks: list[float], bind: dict, *, local: bool) -> dict:
+def verified_sources(pid: str, ks: list[float], bind: dict, *, local: bool, t: Trial = T1A) -> dict:
     """Order step 3 for one photo: every record exists and verifies. Returns the decoded sources."""
-    p = paths_for(pid, ks, local)
+    p = paths_for(pid, ks, local, t)
     protocol.check_paths(flatten(p), validation=False)
     for f in flatten(p):
         need(f.exists(), pid, f"{f} is missing", "missing source")
@@ -243,26 +254,26 @@ def verified_sources(pid: str, ks: list[float], bind: dict, *, local: bool) -> d
     out["control-full"] = source(ctl_png, *decode(ctl_png, pid), record=ctl_json)
 
     for k in ks:
-        arm_png, arm_json = p["nlm_gamma"][k]
-        nlm_png, nlm_json = p["nlm"][k]
+        arm_png, arm_json = p["arm"][k]
+        raw_png, raw_json = p["raw"][k]
         arm = load_json(arm_json, pid)
-        nlm = load_json(nlm_json, pid)
-        check_arm(pid, arm, "nlm-gamma", arm_png, dec, dec_json, dims)
+        raw = load_json(raw_json, pid)
+        check_arm(pid, arm, t.arm, arm_png, dec, dec_json, dims)
         for f in ("auto_file_sha256", "lut_sha256", "gamma"):
             need(arm.get(f) == ctl.get(f), pid, f"{arm_json}: {f} differs from control-full's [F9]")
         src = arm.get("source") or {}
-        need(src.get("kind") == "nlm" and src.get("k") == k
-             and src.get("record_sha256") == protocol.sha256_file(nlm_json)
-             and src.get("output_sha256") == nlm.get("output_sha256"), pid,
-             f"{arm_json} does not name {nlm_json} and its output")
-        need(nlm.get("id") == pid and nlm.get("k") == k and nlm.get("decoded_pixels_sha256") == dec["pixels_sha256"]
-             and nlm.get("dimensions") == dims and protocol.sha256_file(nlm_png) == nlm.get("output_sha256"), pid,
-             f"{nlm_json} does not verify against its output and the shared decode")
-        off = [f for f in BIND_FIELDS if nlm.get(f) != bind[f]]
-        need(not off, pid, f"{nlm_json}: {', '.join(off)} differ from the committed calibration bind",
+        need(src.get("kind") == t.source_kind and src.get("k") == k
+             and src.get("record_sha256") == protocol.sha256_file(raw_json)
+             and src.get("output_sha256") == raw.get("output_sha256"), pid,
+             f"{arm_json} does not name {raw_json} and its output")
+        need(raw.get("id") == pid and raw.get("k") == k and raw.get("decoded_pixels_sha256") == dec["pixels_sha256"]
+             and raw.get("dimensions") == dims and protocol.sha256_file(raw_png) == raw.get("output_sha256"), pid,
+             f"{raw_json} does not verify against its output and the shared decode")
+        off = [f for f in t.bind_fields if raw.get(f) != bind[f]]
+        need(not off, pid, f"{raw_json}: {', '.join(off)} differ from the committed calibration bind",
              "provenance mismatch")
-        out[("nlm-gamma", k)] = source(arm_png, *decode(arm_png, pid), record=arm_json,
-                                       nlm_record=(nlm_json, protocol.sha256_file(nlm_json)))
+        out[(t.arm, k)] = source(arm_png, *decode(arm_png, pid), record=arm_json,
+                                 raw_record=(raw_json, protocol.sha256_file(raw_json)), t=t)
 
     if local:
         lp, ld, lm = decode(p["local"], pid)
@@ -286,15 +297,15 @@ def check_arm(pid: str, rec: dict, arm: str, png: Path, dec: dict, dec_json: Pat
 
 
 def source(path: Path, pixels: bytes, dims: list[int], meta: dict, *, record: Path | None = None,
-           nlm_record: tuple[Path, str] | None = None) -> dict:
+           raw_record: tuple[Path, str] | None = None, t: Trial = T1A) -> dict:
     # Only hashes are kept: write_copy re-decodes and re-verifies, so a build never holds every photo.
     # `_abs` is the realpath the guard just passed; write_copy re-guards and opens exactly that.
     s = {"_abs": os.path.realpath(path), "path": rel(path), "sha256": protocol.sha256_file(path), "dimensions": dims,
          "pixels_sha256": sha_bytes(pixels), "icc_sha256": meta["icc_sha256"]}
     if record:
         s["record"], s["record_sha256"] = rel(record), protocol.sha256_file(record)
-    if nlm_record:
-        s["nlm_record"], s["nlm_record_sha256"] = rel(nlm_record[0]), nlm_record[1]
+    if raw_record:
+        s[t.record_key], s[t.record_sha_key] = rel(raw_record[0]), raw_record[1]
     return s
 
 
@@ -334,27 +345,28 @@ def write_copy(src: dict, out: Path) -> dict:
     return entry
 
 
-def build(kind: str, set_id: str) -> dict:
+def build(kind: str, set_id: str, t: Trial = T1A) -> dict:
     if not SET_ID.fullmatch(set_id):
         raise Blocked("usage", f"set id {set_id!r} must match {SET_ID.pattern}")
     final = private_s20() / set_id
     protocol.check_paths([final], validation=False)
     if final.exists():
         raise Blocked("set exists", f"{final} exists: a set_id is never reused; pick a new one")
-    bind = committed_bind()
+    bind = committed_bind(t)
     ks = bind["k"]
     freeze = None
     if kind == "gate":
         import pilot  # step 8; imported here because pilot imports this module
 
-        _, freeze = pilot.require_freeze(evidence.repo_root())
+        _, freeze = pilot.require_freeze(evidence.repo_root(), t)
         k = freeze["k"]
     manifest = protocol.load_manifest()
     ids = protocol.select_ids(manifest, [], True, False)
     if not ids:
         raise Blocked("missing source", "the benchmark manifest has no tuning photos")
     protocol.require_access(ids)
-    sources = {pid: verified_sources(pid, ks if kind == "pilot" else [k], bind, local=kind == "gate") for pid in ids}
+    sources = {pid: verified_sources(pid, ks if kind == "pilot" else [k], bind, local=kind == "gate", t=t)
+               for pid in ids}
 
     r = rng()
     final.parent.mkdir(parents=True, exist_ok=True)
@@ -372,9 +384,9 @@ def build(kind: str, set_id: str) -> dict:
                 images["kontrola"] = {"src": f"{item}-kontrola.png"}
                 key_labels["kontrola"] = {"arm": "control-full"}
                 for label, k in sorted(zip(labels, ks)):
-                    key_sources[label] = write_copy(src[("nlm-gamma", k)], tmp / f"{item}-{label}.png")
+                    key_sources[label] = write_copy(src[(t.arm, k)], tmp / f"{item}-{label}.png")
                     images[label] = {"src": f"{item}-{label}.png"}
-                    key_labels[label] = {"arm": "nlm-gamma", "k": k}
+                    key_labels[label] = {"arm": t.arm, "k": k}
                 items.append({"id": item, "photo": pid,
                               "original": {"src": f"{item}-original.png", "dimensions": src["original"]["dimensions"]},
                               "images": dict(sorted(images.items()))})
@@ -390,13 +402,13 @@ def build(kind: str, set_id: str) -> dict:
                 # Written in side order, never NLM-first: write order shows in mtimes and inodes.
                 key_sources = {"original": write_copy(src["original"], tmp / f"{item}-original.png")}
                 for side in ("A", "B"):
-                    arm = ("nlm-gamma", k) if side == nlm_side else ref
+                    arm = (t.arm, k) if side == nlm_side else ref
                     key_sources[side] = write_copy(src[arm], tmp / f"{item}-{side}.png")
                 items.append({"id": item, "photo": pid,
                               "original": {"src": f"{item}-original.png", "dimensions": src["original"]["dimensions"]},
                               "images": {"A": {"src": f"{item}-A.png"}, "B": {"src": f"{item}-B.png"}}})
                 key_items[item] = {"photo": pid, "comparison": ref,
-                                   "sides": {nlm_side: {"arm": "nlm-gamma", "k": k}, ref_side: {"arm": ref}},
+                                   "sides": {nlm_side: {"arm": t.arm, "k": k}, ref_side: {"arm": ref}},
                                    "sources": dict(sorted(key_sources.items()))}
         payload = {"set_id": set_id, "kind": kind, "items": items}
         digest = set_digest(payload)
@@ -405,7 +417,7 @@ def build(kind: str, set_id: str) -> dict:
             "window.S20_SET = " + json.dumps(payload, sort_keys=True, indent=1, ensure_ascii=False) + ";\n")
         key = {"set_id": set_id, "kind": kind, "set_digest": digest,
                "built_at": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-               "calibration_bind": {f: bind[f] for f in ("implementation_sha256", "config_sha256", "opencv_version")},
+               "calibration_bind": {f: bind[f] for f in t.bind_fields},
                "freeze": freeze, "items": key_items}
         (tmp / KEY_NAME).write_text(json.dumps(key, sort_keys=True, indent=1) + "\n")
         key_sha = protocol.sha256_file(tmp / KEY_NAME)
@@ -449,11 +461,13 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("kind", choices=("pilot", "gate"))
     ap.add_argument("--set", required=True, dest="set_id", type=set_id_arg)
+    trials.add_argument(ap)
     args = ap.parse_args(argv)
+    t = args.trial
     manifest_ids: set[str] = set()
     try:
         manifest_ids = {e["id"] for e in protocol.load_manifest()["entries"]}
-        out = build(args.kind, args.set_id)
+        out = build(args.kind, args.set_id, t)
     except BaseException as e:  # noqa: BLE001 - the one boundary: nothing propagates, nothing chains
         import common  # the step-8 refusals carry the rule tools' reason classes
 
@@ -469,19 +483,19 @@ def main(argv: list[str] | None = None) -> int:
             reason, photo, detail = "interrupted", None, "interrupted"
         else:
             reason, photo, detail = "internal error", None, "".join(traceback.format_exception(e))
-        log = log_detail(f"blind.py {args.kind} --set {args.set_id}\nreason: {reason}\n\n{detail}\n")
+        log = log_detail(f"blind.py {args.kind}{t.flag} --set {args.set_id}\nreason: {reason}\n\n{detail}\n")
         where = f" (photo {photo})" if photo in manifest_ids else ""
         print(f"set: {reason}{where}. BLOCKED: no set was written. Way out: {ways[reason]}. "
               + (f"Details in the private S-20 log {log}." if log else "No private log could be written."))
         return 3
-    seal_rel = f"context/changes/cloud-classical-denoise/evaluations/{out['kind']}-sealed.md"
+    seal_rel = t.pilot_seal if out["kind"] == "pilot" else t.gate_seal
     print(f"✓ {out['kind']} set {out['set_id']}: {out['items']} items\n"
           f"  set_digest  {out['set_digest']}\n"
           f"  key sha256  {out['key_sha256']}\n"
           f"Save everything between the markers as {seal_rel}, commit it, and only then open\n"
           f"  context/changes/cloud-classical-denoise/references/compare-s20.html?set={out['set_id']}\n"
           "--- START seal file ---\n"
-          + evidence.seal_text(out["kind"], out["set_id"], out["set_digest"], out["key_sha256"])
+          + evidence.seal_text(out["kind"], out["set_id"], out["set_digest"], out["key_sha256"], t.name)
           + "--- END seal file ---")
     return 0
 

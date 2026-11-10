@@ -3,7 +3,8 @@ the plan review's degenerate walkthrough, plus leak scans of every output channe
 
 One 8-photo synthetic world is built per class (rules, sealed pilot, committed freeze, sealed gate
 set, all in a temporary Git repository). Each case resets that repository to the gate seal's
-commit, commits its own export and runs the real CLI.
+commit, commits its own export and runs the real CLI. Every class runs for trial 1a and, as its
+`…1b` subclass, for trial 1b (plan Phase 8); `t` is the class's trial row.
 """
 
 from __future__ import annotations
@@ -32,15 +33,18 @@ from common import BlockedMany  # noqa: E402
 K = 1.5
 PHOTOS = tuple(f"T-{i:02d}" for i in range(1, 9))
 # identities that must never reach a BLOCKED output: arm names, strengths, private locations
-LEAKS = ("control-full", "nlm-gamma", "k1.0", "k1.5", "k2.0", '"k"', "test-photos/private", "/arms/",
-         ".key-do-not-open", "Traceback")
+LEAKS = ("control-full", "nlm-gamma", "wavelet-gamma", "k1.0", "k1.5", "k2.0", '"k"', "test-photos/private",
+         "/arms/", ".key-do-not-open", "Traceback")
 
 
 class GateWorld(unittest.TestCase):
+    trial = "1a"
+
     @classmethod
     def setUpClass(cls):
         cls.tmp = Path(tempfile.mkdtemp(prefix="s20-gate-"))
-        cls.w = bf.SyntheticWorld(cls.tmp, size=(48, 32), n_tuning=8)
+        cls.w = bf.SyntheticWorld(cls.tmp, size=(48, 32), n_tuning=8, trial=cls.trial)
+        cls.t, cls.x = cls.w.t, cls.w.t.prefix
         cls.w.pilot_chain(K)
         cls.key = cls.w.seal("gate", "gate-x")
         cls.base = cls.w.git("rev-parse", "HEAD").strip()
@@ -64,7 +68,7 @@ class GateWorld(unittest.TestCase):
     def verdict(self, code: int, spec=None, default=None) -> dict:
         r = self.run_gate(spec, default=default)
         self.assertEqual(r.returncode, code, r.stdout + r.stderr)
-        return json.loads((self.w.repo / common.GATE_JSON).read_text())
+        return json.loads((self.w.repo / self.t.gate_json).read_text())
 
     def blocked(self, *expect: str, r: subprocess.CompletedProcess | None = None, doc=None, spec=None) -> str:
         r = r or self.run_gate(spec, doc=doc)
@@ -78,11 +82,11 @@ class GateWorld(unittest.TestCase):
     def assert_sanitized(self, out: str) -> None:
         """BLOCKED: the sanitized reports exist and hold nothing decoded; no bundle, no key copy."""
         repo = self.w.repo
-        report = json.loads((repo / common.GATE_JSON).read_text())
+        report = json.loads((repo / self.t.gate_json).read_text())
         self.assertEqual(set(report), {"verdict", "reasons", "way_out"})
         self.assertEqual(report["verdict"], "BLOCKED")
-        md = (repo / common.GATE_MD).read_text()
-        self.assertFalse((repo / common.AUDIT_DIR).exists(), "no audit bundle after BLOCKED")
+        md = (repo / self.t.gate_md).read_text()
+        self.assertFalse((repo / self.t.audit_dir).exists(), "no audit bundle after BLOCKED")
         created = [p for p in repo.rglob("*") if p.is_file() and ".git" not in p.parts]
         for text in [out, md, json.dumps(report)] + [p.read_text(errors="replace") for p in created
                                                        if p.suffix in (".json", ".md", ".raw")
@@ -102,14 +106,14 @@ class QualityTest(GateWorld):
                 ("T-01", "control-full"): ("nlm-slight", "none", "none")}
         report = self.verdict(0, spec)
         self.assertEqual((report["verdict"], report["wins"]), ("PASS", 6))
-        self.assertTrue((self.w.repo / common.AUDIT_DIR / "README.md").exists())
+        self.assertTrue((self.w.repo / self.t.audit_dir / "README.md").exists())
 
     def test_5_wins_3_ties_is_fail_and_local_cannot_supply_a_win(self):
         spec = {(p, "control-full"): ("tie", "none", "none") for p in PHOTOS[5:]}
         spec.update({(p, "local"): ("nlm-clear", "none", "none") for p in PHOTOS})
         report = self.verdict(1, spec)
         self.assertEqual((report["verdict"], report["wins"]), ("FAIL", 5))
-        self.assertTrue(all(d["local"]["quality"] == "nlm-clear" for d in report["photos"].values()))
+        self.assertTrue(all(d["local"]["quality"] == f"{self.x}-clear" for d in report["photos"].values()))
 
     def test_8_ties_is_fail_not_pass_for_no_harm(self):
         report = self.verdict(1, {(p, "control-full"): ("tie", "none", "none") for p in PHOTOS})
@@ -122,9 +126,9 @@ class FidelityTest(GateWorld):
         spec = {("T-03", "control-full"): ("nlm-clear", "minor", "none"),
                 ("T-03", "local"): ("nlm-slight", ("significant", crop, "stars smeared"), "none")}
         report = self.verdict(1, spec)
-        self.assertEqual(report["photos"]["T-03"]["worst_nlm_fidelity"], "significant")
+        self.assertEqual(report["photos"]["T-03"][f"worst_{self.x}_fidelity"], "significant")
         self.assertEqual(report["wins"], 8, "it fails on fidelity alone")
-        md = (self.w.repo / common.GATE_MD).read_text()
+        md = (self.w.repo / self.t.gate_md).read_text()
         self.assertIn("stars smeared", md)
 
     def test_a_severe_loss_on_the_reference_side_alone_is_pass(self):
@@ -168,8 +172,8 @@ class FidelityTest(GateWorld):
         doc = self.w.gate_export(self.key, {("T-06", "control-full"): (
             "nlm-clear", ("significant", [{"x": 0, "y": 0, "w": 1, "h": 1}], "r"), "none")})
         text = json.dumps(doc).replace('"w": 1, "h": 1', '"w": NaN, "h": 1', 1)
-        (self.w.repo / common.GATE_RATINGS).write_text(text)
-        self.w.commit(common.GATE_RATINGS, message="nan")
+        (self.w.repo / self.t.gate_ratings).write_text(text)
+        self.w.commit(self.t.gate_ratings, message="nan")
         self.blocked("set: schema error", r=self.w.gate())
 
 
@@ -203,20 +207,20 @@ class SchemaCoverageTest(GateWorld):
         """A key sealed as built: coverage is derived from the manifest, not from key and export agreeing."""
         tmp = Path(tempfile.mkdtemp(prefix="s20-gate-dup-"))
         self.addCleanup(shutil.rmtree, tmp, True)
-        w = bf.SyntheticWorld(tmp, size=(48, 32), n_tuning=8)
+        w = bf.SyntheticWorld(tmp, size=(48, 32), n_tuning=8, trial=self.trial)
         w.pilot_chain(K)
         key = w.seal("gate", "gate-d", commit=False)
         key_path = w.s20 / "gate-d" / common.KEY_NAME
         k = json.loads(key_path.read_text())
         a, b = sorted(k["items"])[:2]
         k["items"][b]["photo"], k["items"][b]["comparison"] = k["items"][a]["photo"], k["items"][a]["comparison"]
-        k["items"][b]["sides"] = {s: ({"arm": k["items"][a]["comparison"]} if v["arm"] != "nlm-gamma" else v)
+        k["items"][b]["sides"] = {s: ({"arm": k["items"][a]["comparison"]} if v["arm"] != self.t.arm else v)
                                   for s, v in k["items"][b]["sides"].items()}
         key_path.write_text(json.dumps(k, sort_keys=True, indent=1) + "\n")
-        seal = w.repo / bf.EVAL / "gate-sealed.md"
+        seal = w.repo / self.t.gate_seal
         seal.write_text(re.sub(r"key_sha256=[0-9a-f]{64}", f"key_sha256={common.sha_file(key_path)}",
                                seal.read_text()))
-        w.commit(f"{bf.EVAL}/gate-sealed.md", message="seal")
+        w.commit(self.t.gate_seal, message="seal")
         w.write_export("gate", w.gate_export(k))
         r = w.gate("gate-d")
         self.assertEqual(r.returncode, 3, r.stdout)
@@ -281,13 +285,14 @@ class BindingTest(GateWorld):
 
     def test_auto_record_or_lut_changed_between_the_arms_is_blocked(self):
         """F9, on the record bindings themselves: both arms' bytes bind, their Auto file differs."""
+        t = self.t
         key = {"items": {"p01": {"sources": {
             "original": {"sha256": "o", "pixels_sha256": "px", "record": "d", "record_sha256": "d"},
-            "A": {"sha256": "n", "record": "n", "record_sha256": "n", "nlm_record": "r", "nlm_record_sha256": "r"},
+            "A": {"sha256": "n", "record": "n", "record_sha256": "n", t.record_key: "r", t.record_sha_key: "r"},
             "B": {"sha256": "c", "record": "c", "record_sha256": "c"}}}}}
         key["items"]["p02"] = json.loads(json.dumps(key["items"]["p01"]))
         key["items"]["p02"]["sources"]["B"] = {"sha256": "L"}
-        bind = {"implementation_sha256": "i", "config_sha256": "g", "opencv_version": "v"}
+        bind = {**{f: "v" for f in t.bind_fields}, "implementation_sha256": "i", "config_sha256": "g"}
         records = {
             "d": {"output_sha256": "o", "pixels_sha256": "px"},
             "n": {"output_sha256": "n", "source": {"record_sha256": "r", "k": K}, "decoded_pixels_sha256": "px",
@@ -299,13 +304,13 @@ class BindingTest(GateWorld):
                  "p02": {"photo": "T", "comparison": "local", "nlm": "A", "ref": "B"}}
         read = lambda path, sha: json.dumps(records[path]).encode()  # noqa: E731
         with self.assertRaises(BlockedMany) as cm:
-            gate.record_bindings(key, pairs, read, K, "g", bind, {"T": "L" * 64})
+            gate.record_bindings(key, pairs, read, K, "g", bind, {"T": "L" * 64}, t)
         self.assertIn(("p01", "binding failed"), {(b.item, b.reason) for b in cm.exception.found})
         self.assertTrue(any("auto_file_sha256" in b.detail for b in cm.exception.found))
         records["n"]["auto_file_sha256"] = "AUTO-2"
-        records["r"]["opencv_version"] = "other"
+        records["r"][t.bind_fields[-1]] = "other"  # opencv_version for 1a, numpy_version for 1b
         with self.assertRaises(BlockedMany) as cm:
-            gate.record_bindings(key, pairs, read, K, "g", bind, {"T": "L" * 64})
+            gate.record_bindings(key, pairs, read, K, "g", bind, {"T": "L" * 64}, t)
         self.assertEqual({b.reason for b in cm.exception.found}, {"provenance mismatch"})  # refused before its baseline
 
 
@@ -313,18 +318,18 @@ class OrderTest(GateWorld):
     def test_a_gate_seal_and_its_ratings_in_one_commit_are_blocked(self):
         self.w.git("reset", "-q", "--hard", "HEAD~1")  # drop the seal commit, keep the set on disk
         self.w.git("clean", "-qfd")
-        tmp_seal = self.w.repo / bf.EVAL / "gate-sealed.md"
+        tmp_seal = self.w.repo / self.t.gate_seal
         key_sha = common.sha_file(self.w.s20 / "gate-x" / common.KEY_NAME)
-        tmp_seal.write_text(evidence.seal_text("gate", "gate-x", self.key["set_digest"], key_sha))
+        tmp_seal.write_text(evidence.seal_text("gate", "gate-x", self.key["set_digest"], key_sha, self.t.name))
         self.w.write_export("gate", self.w.gate_export(self.key), commit=False)
-        self.w.commit(f"{bf.EVAL}/gate-sealed.md", common.GATE_RATINGS, message="seal and ratings at once")
+        self.w.commit(self.t.gate_seal, self.t.gate_ratings, message="seal and ratings at once")
         self.blocked("set: order violation", r=self.w.gate())
 
     def test_a_replaced_gate_seal_is_blocked(self):
         """Replaced before the ratings: every seal commit still precedes them, so only write-once refuses."""
-        seal = self.w.repo / common.GATE_SEAL
+        seal = self.w.repo / self.t.gate_seal
         seal.write_text(seal.read_text() + "\nedited\n")
-        self.w.commit(common.GATE_SEAL, message="seal again")
+        self.w.commit(self.t.gate_seal, message="seal again")
         self.w.write_export("gate", self.w.gate_export(self.key))
         out = self.blocked("set: order violation", r=self.w.gate())
         log = next((self.w.s20 / "logs").glob("gate-*.log")).read_text()
@@ -346,14 +351,11 @@ class OrderTest(GateWorld):
 
 class AuditTest(GateWorld):
     def audit(self, env_extra=None) -> subprocess.CompletedProcess:
-        env = {**self.w.env, **(env_extra or {})}
-        return subprocess.run([sys.executable, "-B", str(bf.S20 / "gate.py"), "--audit",
-                               str(self.w.repo / common.AUDIT_DIR)], capture_output=True, text=True, env=env,
-                              cwd=bf.ROOT)
+        return self.w.run_tool("gate", "--audit", str(self.w.repo / self.t.audit_dir), env=env_extra)
 
     def test_the_verdict_re_derives_from_metadata_alone(self):
         self.verdict(0)
-        bundle = self.w.repo / common.AUDIT_DIR
+        bundle = self.w.repo / self.t.audit_dir
         names = sorted(p.name for p in bundle.iterdir())
         self.assertEqual(names, ["README.md", "gate-key.raw", "gate-manifest.raw", "pilot-key.raw",
                                  "pilot-manifest.raw", "records"])
@@ -371,9 +373,9 @@ class AuditTest(GateWorld):
 
     def test_a_replaced_seal_blocks_audit_as_well_as_the_live_gate(self):
         self.verdict(0)
-        path = self.w.repo / common.GATE_SEAL
+        path = self.w.repo / self.t.gate_seal
         path.write_text(path.read_text() + "\nreplaced after ratings\n")
-        self.w.commit(common.GATE_SEAL, message="replace gate seal")
+        self.w.commit(self.t.gate_seal, message="replace gate seal")
         r = self.audit()
         self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
         self.assertIn("set: order violation", r.stdout)
@@ -384,8 +386,8 @@ class AuditTest(GateWorld):
 
     def test_dirty_evidence_rule_or_baseline_files_block_audit(self):
         self.verdict(0)
-        for rel in (common.PILOT_SEAL, common.PILOT_RATINGS, common.FROZEN, common.GATE_SEAL,
-                    common.GATE_RATINGS, common.BASELINES, "scripts/s20/common.py"):
+        for rel in (self.t.pilot_seal, self.t.pilot_ratings, self.t.frozen, self.t.gate_seal,
+                    self.t.gate_ratings, common.BASELINES, "scripts/s20/common.py"):
             with self.subTest(path=rel):
                 path = self.w.repo / rel
                 before = path.read_bytes()
@@ -396,6 +398,22 @@ class AuditTest(GateWorld):
                     self.assertIn("set: order violation", r.stdout)
                 finally:
                     path.write_bytes(before)
+
+    def test_a_trial_grid_that_exists_but_is_uncommitted_blocks_audit(self):
+        """F17: absent, the 1b grid is no rule file (the cases above audit without it in a 1a world);
+        once it exists, an uncommitted one blocks every tool, 1a's included."""
+        self.verdict(0)
+        path = self.w.repo / bf.TRIALS["1b"].grid
+        before = path.read_bytes() if path.exists() else None
+        try:
+            path.write_text('{"k": [9.0]}\n')
+            r = self.audit()
+            self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+            self.assertIn("set: order violation", r.stdout)
+        finally:
+            path.unlink()
+            if before is not None:
+                path.write_bytes(before)
 
     def test_a_seal_and_ratings_in_one_commit_block_audit(self):
         self.verdict(0)
@@ -420,13 +438,20 @@ class AuditTest(GateWorld):
 
     def test_a_tampered_bundle_record_does_not_re_derive(self):
         self.verdict(0)
-        rec = next((self.w.repo / common.AUDIT_DIR / "records").iterdir())
+        rec = next((self.w.repo / self.t.audit_dir / "records").iterdir())
         rec.write_bytes(rec.read_bytes() + b" ")
         r = self.audit()
         self.assertEqual(r.returncode, 3, r.stdout)
         self.assertIn("binding failed", r.stdout)
 
     def assert_holdout_read_is_refused(self, bundle):
+        if self.trial != "1a":
+            # The open trap needs the tools in this process; a 1b world's tools run from their copy
+            # (its committed bind lives there), so the 1b case checks the refusal through the CLI.
+            r = self.w.run_tool("gate", "--audit", str(bundle))
+            self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+            self.assertIn("access refused", r.stdout)
+            return
         held = next(e["path"] for e in self.w.entries if e["split"] == "validation")
         original_open = Path.open
 
@@ -436,13 +461,13 @@ class AuditTest(GateWorld):
 
         with patch.dict(os.environ, self.w.env), patch.object(Path, "open", trap):
             with self.assertRaises((common.Blocked, common.BlockedMany)) as cm:
-                gate.audit(bundle)
+                gate.audit(bundle, self.t)
         found = cm.exception.found if isinstance(cm.exception, common.BlockedMany) else [cm.exception]
         self.assertEqual({b.reason for b in found}, {"access refused"})
 
     def test_holdout_symlinks_in_every_bundle_reader_are_refused_before_open(self):
         self.verdict(0)
-        bundle = self.w.repo / common.AUDIT_DIR
+        bundle = self.w.repo / self.t.audit_dir
         held = next(e["path"] for e in self.w.entries if e["split"] == "validation")
         paths = [bundle / name for name in ("pilot-key.raw", "pilot-manifest.raw", "gate-key.raw", "gate-manifest.raw")]
         paths.append(next((bundle / "records").iterdir()))
@@ -464,14 +489,14 @@ class AuditTest(GateWorld):
 
     def test_a_report_symlink_into_the_holdout_is_refused_before_open(self):
         self.verdict(0)
-        path = self.w.repo / common.GATE_JSON
+        path = self.w.repo / self.t.gate_json
         path.unlink()
         path.symlink_to(next(e["path"] for e in self.w.entries if e["split"] == "validation"))
-        self.assert_holdout_read_is_refused(self.w.repo / common.AUDIT_DIR)
+        self.assert_holdout_read_is_refused(self.w.repo / self.t.audit_dir)
 
     def test_a_bundle_directory_link_into_a_holdout_namespace_is_refused(self):
         self.verdict(0)
-        bundle = self.w.repo / common.AUDIT_DIR
+        bundle = self.w.repo / self.t.audit_dir
         held_dir = self.tmp / "V-01" / "metadata-bundle"
         held_dir.parent.mkdir(exist_ok=True)
         shutil.copytree(bundle, held_dir)
@@ -483,7 +508,7 @@ class AuditTest(GateWorld):
 
     def test_a_report_that_differs_from_the_evidence_does_not_re_derive(self):
         self.verdict(1, {(p, "control-full"): ("tie", "none", "none") for p in PHOTOS})
-        path = self.w.repo / common.GATE_JSON
+        path = self.w.repo / self.t.gate_json
         doc = json.loads(path.read_text())
         doc["verdict"] = "PASS"
         path.write_text(json.dumps(doc))
@@ -491,8 +516,85 @@ class AuditTest(GateWorld):
 
     def test_blocked_removes_an_earlier_bundle(self):
         self.verdict(0)
-        self.assertTrue((self.w.repo / common.AUDIT_DIR).exists())
+        self.assertTrue((self.w.repo / self.t.audit_dir).exists())
         self.blocked("uncertain", spec={("T-01", "local"): ("tie", "uncertain", "none")})
+
+
+def tree(root: Path) -> dict:
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()} \
+        if root.exists() else {}
+
+
+class StopGuardTest(GateWorld):
+    """F29: after a 1b STOP the gate refuses before any write, so the STOP bundle survives and no
+    BLOCKED report appears that the pointer check could mistake for a verdict."""
+
+    trial = "1b"
+
+    def stop(self, commit: bool) -> None:
+        pilot_key = json.loads((self.w.s20 / "pilot-x" / common.KEY_NAME).read_text())
+        self.w.write_export("pilot", self.w.pilot_export(pilot_key, lambda p, labels: "none"))
+        r = self.w.pilot()
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertTrue((self.w.repo / self.t.pilot_stop).exists())
+        if commit:
+            self.w.commit(self.t.pilot_result, self.t.pilot_stop, self.t.audit_dir, message="pilot stop")
+
+    def test_after_a_stop_the_gate_refuses_and_writes_nothing(self):
+        for commit in (True, False):
+            with self.subTest(stop_report="tracked" if commit else "on disk only"):
+                self.setUp()
+                self.stop(commit)
+                self.w.write_export("gate", self.w.gate_export(self.key))
+                before = tree(self.w.repo / bf.EVAL)
+                r = self.w.gate()
+                self.assertEqual(r.returncode, 3, r.stdout + r.stderr)
+                self.assertIn("set: pilot stop", r.stdout)
+                self.assertIn("Nothing was written.", r.stdout)
+                for leak in LEAKS:
+                    self.assertNotIn(leak, r.stdout + r.stderr)
+                self.assertEqual(tree(self.w.repo / bf.EVAL), before, "the STOP bundle and report are untouched")
+                self.assertFalse((self.w.repo / self.t.gate_json).exists())
+                self.assertFalse((self.w.repo / self.t.gate_md).exists())
+
+    def test_without_a_stop_report_the_guard_lets_the_gate_run(self):
+        self.assertEqual(self.verdict(0)["verdict"], "PASS")
+
+
+class TrialIsolationTest(GateWorld):
+    """A 1b run never reads, writes or deletes a 1a path, and the reverse (plan Phase 8 item 2)."""
+
+    trial = "1b"
+    other = "1a"
+
+    def sentinels(self) -> dict:
+        o = bf.TRIALS[self.other]
+        out = {}
+        for rel in (o.gate_json, o.gate_md, f"{o.audit_dir}/README.md", f"{o.audit_dir}/records/x.raw"):
+            path = self.w.repo / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f"sentinel {rel}\n")
+            out[rel] = path.read_bytes()
+        self.w.commit(*out, message="the other trial's evidence")
+        return out
+
+    def assert_untouched(self, sentinels: dict) -> None:
+        o = bf.TRIALS[self.other]
+        self.assertEqual({rel: (self.w.repo / rel).read_bytes() for rel in sentinels}, sentinels)
+        self.assertEqual(sorted(tree(self.w.repo / o.audit_dir)), ["README.md", "records/x.raw"])
+
+    def test_a_blocked_and_a_terminal_run_leave_the_other_trials_evidence_untouched(self):
+        sentinels = self.sentinels()
+        self.blocked("uncertain", spec={("T-01", "local"): ("tie", "uncertain", "none")})
+        self.assert_untouched(sentinels)
+        self.verdict(0)
+        self.assertTrue((self.w.repo / self.t.audit_dir / "README.md").exists())
+        self.assert_untouched(sentinels)
+
+
+class TrialIsolation1aTest(TrialIsolationTest):
+    trial = "1a"
+    other = "1b"
 
 
 class PublishKeepTest(unittest.TestCase):
@@ -561,6 +663,33 @@ class BaselinesFileTest(unittest.TestCase):
                     self.assertIn(f"`local/S17-01.jpg` has sha256 `{expected}`", premise)
                 else:
                     self.assertEqual(hashlib.sha256((archive / f"{pid}.jpg").read_bytes()).hexdigest(), expected)
+
+
+# ---------------------------------------------------------------- the same cases for trial 1b (plan Phase 8 item 3)
+
+
+class QualityTest1b(QualityTest):
+    trial = "1b"
+
+
+class FidelityTest1b(FidelityTest):
+    trial = "1b"
+
+
+class SchemaCoverageTest1b(SchemaCoverageTest):
+    trial = "1b"
+
+
+class BindingTest1b(BindingTest):
+    trial = "1b"
+
+
+class OrderTest1b(OrderTest):
+    trial = "1b"
+
+
+class AuditTest1b(AuditTest):
+    trial = "1b"
 
 
 if __name__ == "__main__":
