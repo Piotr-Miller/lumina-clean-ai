@@ -1567,9 +1567,9 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [ ] 7.1 scikit-image and PyWavelets import at the pinned versions
-- [ ] 7.2 The 1a audit re-derives FAIL
-- [ ] 7.3 Holdout guard allows the eight tuning ids
+- [x] 7.1 scikit-image and PyWavelets import at the pinned versions
+- [x] 7.2 The 1a audit re-derives FAIL
+- [x] 7.3 Holdout guard allows the eight tuning ids
 
 #### Manual
 

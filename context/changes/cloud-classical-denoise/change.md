@@ -1,7 +1,7 @@
 ---
 change_id: cloud-classical-denoise
 title: "Cloud AI as a classical full-resolution denoise pipeline, proven offline against real Local"
-status: plan_reviewed
+status: implementing
 created: 2026-11-03
 updated: 2026-11-09
 archived_at: null
