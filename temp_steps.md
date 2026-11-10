@@ -1,9 +1,9 @@
 # Kolejne kroki (stan na 2026-11-09)
 
 Produkcja: najnowszy master `4e04923`, deploy zielony (w tym funkcja `enhance` z supabase-js przez npm, #356). Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0`
-od 2026-10-28). Lokalnie: gałąź `feat/cloud-classical-denoise`, wszystkie fazy planu (0–6) zacommitowane.
+od 2026-10-28). Lokalnie: gałąź `feat/cloud-classical-denoise-1b` (od mastera; 1a zmergowane w #364 i #365).
 
-## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — krok 1a (NLM): **FAIL**
+## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — krok 1a (NLM): **FAIL**, krok 1b w planowaniu
 
 Hipoteza: ścieżka Cloud to klasyczne, deterministyczne odszumianie w pełnej rozdzielczości po stronie
 serwera, a nie model generujący piksele. Dowodzone offline na harnessie S-19, krok po kroku.
@@ -13,21 +13,20 @@ roadmapa: `context/foundation/roadmap.md` § S-20.
 Werdykt bramki 16 par na ślepo (2026-11-09), z tabelą dla każdego zdjęcia, wycinkami i uzasadnieniami:
 [`evaluations/step1-gate.md`](context/changes/cloud-classical-denoise/evaluations/step1-gate.md).
 Paczka audytu (`evaluations/step1-audit/`) odtwarza werdykt z samych metadanych (`gate.py --audit`).
+Wszystkie wiersze ręczne 1a są zapisane przy SHA z mastera (`c85c5bb`).
 
-Potwierdzenia ręczne (Progress) wpisuję **dopiero po merge'u, przy SHA z mastera** (Twoja zasada):
-2.4, 3.3, 4.2, 4.3, 5.6, 5.7 — zapisane w `change.md` Notes; 6.5–6.7 czekają na Ciebie.
+**Krok 1b (decyzja z 2026-11-09):** zamiast BM3D jeden kandydat — falkowy BayesShrink niezmienniczy
+względem przesunięć (scikit-image 0.26.0 + PyWavelets 1.8.0), siatka k ∈ {1.0, 1.5, 2.0}, ta sama
+bramka. Jeśli nie przejdzie, krok 1 zamyka się jako FAIL. Szczegóły: `change.md` § Owner decisions
+(2026-11-09, step 1b candidate).
 
 Następne kroki, po kolei:
 
-1. **Ty:** przeczytaj werdykt i tabelę (`step1-gate.md`) i potwierdź je (wiersz 6.6).
-2. **Ty:** zdecyduj o komentarzu i etykiecie na #347 (wiersz 6.7); nic nie publikuję bez Twojej zgody.
-3. **Ty:** rozstrzygnij licencję BM3D (poniżej): od niej zależy, czy w ogóle jest krok 1b. Kroki 2–4 nie ruszają bez zaliczonego kroku 1.
-4. **Ja, po merge'u:** wiersze ręczne jako `accepted at <SHA z mastera>`.
-
-**Otwarte teraz, bo NLM nie przeszedł:** licencja BM3D. Pakiet autorów (`pip install bm3d`) jest
-wyłącznie do niekomercyjnej edukacji i badań; `xphoto::bm3dDenoising` w OpenCV jest za patentem
-(`OPENCV_ENABLE_NONFREE`, nie ma go w paczkach z PyPI). Trzeba rozstrzygnąć, czy nawet próba offline
-mieści się w licencji, albo wybrać inną drugą metodę.
+1. **Ja:** plan faz 1b (`/rune-plan`), potem przegląd planu (`/rune-plan-review`).
+2. **Ty:** commit `change.md`, `plan.md`, `roadmap.md` i tego pliku.
+3. **Ty:** `sudo dnf install python3-scikit-image python3-pywt`, gdy plan dojdzie do fazy założeń.
+4. **Ja:** implementacja faza po fazie; żadnego renderu przed zacommitowaniem plików z regułami.
+5. **Ty:** commit pieczęci przed otwarciem zestawu, potem obie oceny na ślepo.
 
 Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
 w `test-photos/private/s19/` (do późniejszej „opcji 2”: GPT jako przewodnik tonalny, $0).

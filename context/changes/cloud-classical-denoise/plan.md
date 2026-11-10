@@ -875,6 +875,564 @@ Each links `step1-gate.md` and does not restate its numbers. Grep the old wordin
 
 ---
 
+---
+
+# Step 1b — shift-invariant wavelet BayesShrink (extension, planned 2026-11-09)
+
+> Owner decision: `change.md` § Owner decisions (2026-11-09, step 1b candidate). Phases 0–6 above
+> are step 1a and stay as they are, Progress included; step 1b continues the numbering.
+
+## 1b Overview
+
+Step 1a's NLM failed its gate: 3 of 8 wins against `control-full` (6 required), five ties, and a
+significant fidelity loss on S17-03 ([`evaluations/step1-gate.md`](evaluations/step1-gate.md)).
+Step 1b replaces BM3D with one permissively licensed candidate and asks the same question with the
+same rules: is shift-invariant wavelet BayesShrink, run at full resolution before Local's Auto
+gamma, a visible improvement over Auto gamma alone on the eight `s17-v2` tuning photos, without
+losing scene information? It is the last trial of step 1: a FAIL or a STOP closes step 1 as FAIL.
+
+The plan reuses 1a's machinery as is: shared decode, `control-full`, sealed pilot, freeze, sealed
+16-pair gate, audit. The new pieces are the renderer, its arm, and one seam that lets the tools
+serve two trials without changing a byte of 1a's evidence.
+
+## 1b Current State Analysis
+
+- **The 1a harness is single-trial (origin: `code`).** Paths, arm names, record fields and the
+  calibration bind are module constants: `scripts/s20/common.py:32-38`, `blind.py:71,83,164-176`,
+  `gate.py:82-86`, `evidence.py:311-314`, `scripts/s19/local-arms.ts:94-99,387-390,513,538`.
+- **1a's reproducibility rests on literal bytes (origin: `code`).**
+  - The committed freeze embeds `pilot.py`'s `DECIDED` text; the audit compares the freeze with
+    `freeze_doc(p)` (`gate.py:457`).
+  - `step1-gate.json` holds keys such as `nlm_fidelity` and `worst_nlm_fidelity`, and the reason
+    "significant or severe NLM fidelity loss" (`gate.py:262-278`); the audit requires an exact
+    match (`gate.py:473`).
+  - `gate.py` deletes its audit directory before writing (`:369-370, 407-408`), so a 1b run
+    pointed at `step1-audit/` would destroy 1a's bundle.
+  - `nlm.py`, `nlm-grid.json` and `step1-calibration.md` are bound by sha256; editing any of them
+    breaks the 1a bind.
+- **The viewer is trial-independent.** `compare-s20.html` contains no NLM reference; it checks
+  `kind`, `set_id` and `set_digest`, and the digest is unique per set.
+- **skimage, measured at planning (v0.26.0 source, read as data):**
+  - `denoise_wavelet` thresholds each detail subband of each level with
+    `var / sqrt(max(mean(c²) − var, eps))` (`src/skimage/restoration/_denoise.py:611-617, 763-768`),
+    leaves the approximation untouched (`:793`) and defaults to `wavelet_levels = max_level − 3`
+    (`:737-742`).
+  - Its `convert2ycbcr=True` path treats a given σ as RGB noise (`:830-849, 993-997`); 1b does not
+    use it (owner decision 2026-11-09).
+  - `cycle_spin(max_shifts=3)` on a 2-D plane averages 16 shifts `(dy, dx) ∈ {0..3}²` with
+    `np.roll`, which wraps around at the borders; it uses dask when dask is installed unless
+    `workers` is pinned (`_cycle_spin.py:14-47, 147-171`).
+- **Environment.** skimage and PyWavelets are not installed (Fedora offers
+  `python3-scikit-image` 0.26.0 and `python3-pywt` 1.8.0). 1a's NLM took 13.31 s per photo on
+  S17-06 at 24.5 MP with 8 threads (`evaluations/step1-premise.md`); 1b's time is unmeasured.
+
+### 1b Carried from predecessor
+
+none — no Predecessor line
+
+## 1b Definitions
+
+| Term                     | Decided meaning                                                                                                                                                                                                     | Origin                                    | On degenerate data                                                                                                                                        | Verified by                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Trial                    | `1a` or `1b`, one row of `scripts/s20/trials.py`; every S-20 CLI except the frozen `nlm.py` takes `--trial`, default `1a`                                                                                           | plan (owner choice of seam, 2026-11-09)   | An unknown trial is a usage error (exit 2). Omitting `--trial` behaves as before 1b, except that existing 1b rule files are also checked (F35)            | `test_trials.py` "1a defaults are literal", "unknown trial" |
+| Strength `k`             | One global value from `[1.0, 1.5, 2.0]`; per non-constant plane the filter receives σ = k·σ̂_norm, σ̂_norm measured on the normalised plane                                                                           | user (2026-11-09)                         | A non-finite or ≤ 0 σ̂ on a **non-constant** plane is a technical refusal, never a vote (as 1a); a constant plane never reaches the estimator (row Plane)  | `test_wavelet.py` mapping and refusal cases                 |
+| Plane                    | Y, Cb, Cr of `skimage.color.rgb2ycbcr` on the decoded PNG as float, each min–max normalised before filtering                                                                                                        | user (2026-11-09)                         | The constant-plane check runs **first**: a plane with max = min is copied unfiltered, with no normalisation and no σ̂, and its diagnostic cells are `null` | `test_wavelet.py` "constant plane"                          |
+| Level                    | Wavelet decomposition level, **1 = finest** (PyWavelets lists details coarsest first); the count is skimage's default, `max(max_level − 3, 1)`                                                                      | plan (routine)                            | The record states the number of levels used                                                                                                               | `test_wavelet.py` "checkerboard lands in level 1"           |
+| Orientation              | The three 2-D detail subbands of a level, by PyWavelets' keys `ad`, `da`, `dd`                                                                                                                                      | user (2026-11-09)                         | —                                                                                                                                                         | `test_wavelet.py` record fields                             |
+| Set to 0 by thresholding | A detail coefficient that was nonzero before thresholding and is 0 after                                                                                                                                            | user (2026-11-09)                         | A coefficient already exactly 0 before (clipped black, flat areas) is counted in `already_zero` and never in the numerator                                | `test_wavelet.py` "already-zero corner"                     |
+| Zeroed ratio             | Per plane × level × orientation: Σ set-to-0 / Σ nonzero-before, each summed over the 16 shifts                                                                                                                      | user (2026-11-09)                         | Σ nonzero-before = 0 → ratio `null`, never 0 or NaN                                                                                                       | `test_wavelet.py` "all-zero subband"                        |
+| Shift                    | One of 16 `(dy, dx) ∈ {0..3}²`, applied with `np.roll` (wrap-around), as `cycle_spin` does                                                                                                                          | user (2026-11-09)                         | The 3 px at each border mix with the opposite edge; stated, not corrected                                                                                 | `test_wavelet.py` "observing pass reproduces skimage"       |
+| 1b gate                  | Identical to 1a's rows _Win_, _Quality vs real Local_, _Fidelity loss_, _Crop_, _Photo's fidelity_, _Uncertain_, _Complete evidence_, _Pilot vote_ and _Committed seal_ above, with the wavelet arm in place of NLM | user (2026-11-03, 2026-11-05, 2026-11-09) | As in 1a. A 1b FAIL or STOP closes step 1 as FAIL; there is no third trial                                                                                | `test_gate.py`, `test_pilot.py` run for both trials         |
+
+## 1b Desired End State
+
+- `evaluations/step1b/` holds the premise and calibration records, the pilot and gate seals (each
+  committed before its rating), both rating exports, the pilot result, `gate.json` and `gate.md`
+  with a PASS, FAIL or BLOCKED verdict, and after a terminal verdict `audit/` (keys, manifests,
+  records, no image bytes). `scripts/s20/configs/wavelet-grid.json` and `wavelet-frozen.json`
+  hold the grid and the freeze.
+- On PASS or FAIL, `gate.py --trial 1b --audit
+context/changes/cloud-classical-denoise/evaluations/step1b/audit` re-derives the 1b verdict from
+  metadata alone; on STOP, `pilot.py --trial 1b --audit` re-derives the STOP from the same folder
+  (F30). It holds only before the archive, as for 1a (impl
+  review full, F1).
+- 1a still re-derives FAIL from `evaluations/step1-audit/`, and no 1a evidence file has changed.
+- On a 1b FAIL: `change.md` § Sequence step 1 says step 1 closed as FAIL, and the four S-20
+  pointers link `evaluations/step1b/gate.md`. On a 1b STOP: the same, linking
+  `evaluations/step1b/pilot-stop.md`, with a pilot-only bundle in `step1b/audit/` (impl of
+  plan review F22).
+
+## 1b What We're NOT Doing
+
+- No BM3D, no third denoiser, no retune after a 1b result and no per-photo strength.
+- No TypeSafe Jev, no extended `auto-params.ts`, no write to the existing `local/<id>.auto.json`
+  files, and no work in `local-jev-gate` (#348).
+- No change to `nlm.py`, `nlm-grid.json`, `nlm-frozen.json`, `step1-calibration.md` or anything in
+  `evaluations/` that 1a wrote; no change to `compare-s20.html`.
+- No correction of the border wrap-around and no use of skimage's `convert2ycbcr=True` path.
+- No new renders of `decoded` or `control-full`: 1b reuses 1a's, verified against their records.
+  If an S-19 input or Auto record has changed so that they no longer verify, 1b stops for an owner
+  decision; nothing is re-rendered silently.
+- No step 2–4 work, no holdout access, no paid call, no app or Local change, no patent search.
+
+## 1b Implementation Approach
+
+The order is 1a's order table with the trial named: rules first, renders second, ratings last,
+each transition enforced by a committed seal.
+
+| Order | Step                                                                                                         | Refuses unless                                                                                                                                                                                                                       |
+| ----- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | Phases 7–10 committed: trial seam, arm, renderer, grid, calibration record                                   | —                                                                                                                                                                                                                                    |
+| 2     | `wavelet.py` renders the grid (`--calibrate` exempt)                                                         | every rule file committed and clean (all `scripts/s20/**/*.py` outside `tests/`, both grids, both calibration records, `local-arms.ts`, `s19.ts`); the 1b calibration bind is a PASS for the current `wavelet.py`, grid and versions |
+| 3     | `blind.py pilot --trial 1b`                                                                                  | all 24 wavelet and 24 `wavelet-gamma` records exist and verify, and 1a's 8 `decoded` and 8 `control-full` records still verify; each wavelet record's bind fields equal the committed 1b bind                                        |
+| 4–7   | pilot seal committed → owner rates → ratings committed → `pilot.py --trial 1b` → result and freeze committed | as 1a steps 4–7                                                                                                                                                                                                                      |
+| 8–11  | `blind.py gate --trial 1b` → gate seal committed → owner rates → ratings committed                           | as 1a steps 8–11                                                                                                                                                                                                                     |
+| 12    | `gate.py --trial 1b` rules; on PASS or FAIL it writes `step1b/audit/`                                        | the whole 1b chain, as 1a step 12                                                                                                                                                                                                    |
+
+The merge rule stands: a PR carrying seals or ratings is rebase-merged, never squashed.
+
+## 1b Critical Implementation Details
+
+- **1a literals.** Every string or key that 1a's committed files contain stays in the 1a row of
+  `trials.py`, byte-identical. The 1a audit (`gate.py --audit …/step1-audit`, exit 1 = FAIL) is a
+  success criterion of every 1b phase that touches a rule file, and it runs **after** that phase's
+  commit: the audit refuses while any rule file is uncommitted, by design.
+- **Rule files that do not exist yet** (plan review F17). A trial's grid and calibration record
+  join `evidence.rule_files` only when they exist on disk or in the index, the rule the tools glob
+  already follows (`evidence.py:53-71`). Before Phase 10 they are absent and no offence; once
+  tracked, a deletion or edit blocks every tool as today.
+- **Determinism.** `cycle_spin(..., workers=1)` on each 2-D plane (`channel_axis=None`), so the
+  path never depends on whether dask is installed. Two renders give identical bytes.
+- **Memory.** One float64 plane of 24.5 MP is ~196 MB; the 16-shift accumulation plus the
+  wavelet coefficients put the peak at a few GB (estimate). Phase 7 measures it.
+
+## Phase 7: Premise and environment for 1b
+
+### Overview
+
+Measure what the 1b plan assumes, with no harness code, and write each check's "if this fails"
+consequence before it runs (lesson "A change's own cited evidence can be defective").
+
+### Changes Required:
+
+#### 1. Premise record
+
+**File**: `context/changes/cloud-classical-denoise/evaluations/step1b/premise.md`
+
+**Intent**: a table of checks, each with its command, result and consequence if failed.
+
+1. scikit-image 0.26.0 and PyWavelets 1.8.0 import at exactly those versions; numpy and scipy
+   versions recorded; whether dask is importable recorded. A version mismatch stops 1b until the
+   owner decides.
+2. The installed `skimage/restoration/_denoise.py` and `_cycle_spin.py` behave as the decision
+   record cites: the BayesShrink threshold, untouched approximation, default level count,
+   `_rescale_sigma_rgb2ycbcr` and the 16-shift `np.roll` enumeration. Checked by reading the
+   installed files against the v0.26.0 tag sources. A difference (for example a Fedora patch)
+   stops 1b and is written into `change.md`.
+3. The 1a audit re-derives FAIL before any 1b change (the baseline for Phases 8–12).
+4. **Declared exception to "no render before the rules":** one timed run on S17-06's decoded PNG
+   at k = 1.0 with σ̂ computed as decided, the render and the observing pass timed separately,
+   peak memory recorded.
+   - Path guards run first.
+   - The output goes to a temporary file and is deleted unopened; it is never shown.
+   - Only times and peak memory are kept.
+
+   More than 15 min per photo (render + observing pass) is reported, and the plan continues.
+
+**Contract**: a Markdown table; the exception is stated in the record itself.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- scikit-image and PyWavelets import at the pinned versions: `python3 -I -c "import skimage, pywt; assert (skimage.__version__, pywt.__version__) == ('0.26.0', '1.8.0'), (skimage.__version__, pywt.__version__)"` — at planning: exit 1 — expected until the owner installs the packages
+- The 1a audit re-derives FAIL (exit 1 is the FAIL verdict): `python3 scripts/s20/gate.py --audit context/changes/cloud-classical-denoise/evaluations/step1-audit` — at planning: exit 1, "audit re-derives FAIL: 3 of 8 wins, k 1.0"
+- Holdout guard allows the eight tuning ids: `python3 -B scripts/s19/protocol.py check-access --ids S17-01 S17-02 S17-03 S17-04 S17-05 S17-06 S17-07 S17-21` — at planning: exit 0
+
+#### Manual Verification:
+
+- Owner installs the packages: `sudo dnf install python3-scikit-image python3-pywt`
+- Owner reads the 1b premise record and accepts it — surface: context/changes/cloud-classical-denoise/evaluations/step1b/premise.md
+
+---
+
+## Phase 8: Trial seam with 1a kept literal
+
+### Overview
+
+One table of per-trial values, threaded through every S-20 tool, so 1b reuses all of 1a's evidence
+rules while every 1a output stays byte-identical.
+
+### Changes Required:
+
+#### 1. Trial descriptor
+
+**File**: `scripts/s20/trials.py`
+
+**Intent**: `TRIALS = {"1a": …, "1b": …}`. Each row holds the evidence paths (seals, ratings,
+pilot result, gate JSON and Markdown, audit directory), the freeze, grid and calibration paths,
+the treatment arm and raw-render directory, the record's source kind and key name, the bind tag
+and bind fields, the report key prefix and reason wording, the `DECIDED` text, the seal statement
+and the pointer target.
+
+**Contract**:
+
+- 1a: today's literals exactly — `EVAL` paths, `nlm-frozen.json`, raw dir `nlm`, arm
+  `nlm-gamma` (matched in `gate.pairs_of`, `gate.py:79-86`), key fields `nlm_record` /
+  `nlm_record_sha256`, quality values `nlm-slight` / `nlm-clear` (tested for a win,
+  `gate.py:257,270`), bind fields `implementation_sha256` / `config_sha256` / `opencv_version`
+  and no `trial=` token, `nlm_*` report keys, the current reason strings, `DECIDED`
+  (`pilot.py:44`, embedded in the committed freeze) and the seal statement (impl of plan review
+  F20).
+- 1b: everything under `evaluations/step1b/`, `wavelet-grid.json`, `wavelet-frozen.json`, raw dir
+  `wavelet`, arm `wavelet-gamma`, key fields `wavelet_record` / `wavelet_record_sha256`, quality
+  values `wavelet-slight` / `wavelet-clear`, bind fields `implementation_sha256`,
+  `config_sha256`, `skimage_version`, `pywt_version`, `numpy_version`, with `bind_trial` `1b`
+  (F24); report keys `wavelet_*`.
+- `bind_trial` must match exactly: absent for 1a, `trial=1b` for 1b; a bind line carrying another
+  trial is refused (F24).
+- `evidence.GRID_REL` and `evidence.CALIBRATION_REL` keep their names and 1a values, and
+  `evidence.rule_files(root)` keeps its name and signature, because the frozen `nlm.py` reads all
+  three (`nlm.py:98,221,536,545`; F18). Its result grows by the 1b files once they exist (F17,
+  F27).
+
+#### 2. Tools take `--trial`
+
+**Files**: `scripts/s20/common.py`, `scripts/s20/evidence.py`, `scripts/s20/blind.py`, `scripts/s20/pilot.py`, `scripts/s20/gate.py`, `scripts/s20/pointers.py`, `scripts/s20/tests/blind_fixture.py`
+
+**Intent**: replace the module constants with lookups in the selected trial row; `--trial`
+defaults to `1a`.
+
+- `evidence.rule_files` covers both trials' grids and calibration records **that exist on disk or
+  in the index** (F17); a dirty 1b file then blocks 1a tools, as any dirty rule file does today.
+- `blind.py`'s key `calibration_bind` uses the row's bind fields, not a hard-coded
+  `opencv_version` (`blind.py:408`; F20).
+- `blind_fixture.init_repo` copies only rule files that exist (F17); `test_nlm.py`'s copy list is
+  left as it is, since the temporary repo's `rule_files` omits absent files (F28).
+- **STOP path (F22):** `pilot.py --trial 1b` on STOP writes `evaluations/step1b/pilot-stop.md`
+  (verdict STOP, counts, no identities beyond trusted ids) and a pilot-only bundle in
+  `step1b/audit/` (pilot key, manifest, records; no images). 1a's pilot keeps today's behaviour.
+- **`pilot.py --trial 1b --audit <bundle>` (F31):** `--set` and `--export` are not required in
+  this mode; it runs `require_pilot_order` first, re-derives the decision from the bundle and the
+  committed seal and ratings without opening an image, and compares it with the committed
+  `pilot-result.json`. Exit 1 = re-derived STOP, 0 = re-derived SELECTED, 3 = BLOCKED, 2 = usage.
+- **STOP files are current or absent (F32):** a 1b pilot run that does not end in STOP removes
+  `pilot-stop.md` and the STOP bundle before writing, as the gate's BLOCKED writer does.
+- **The gate never runs over a STOP (F29):** `gate.py --trial 1b` refuses without writing anything
+  when `step1b/pilot-stop.md` is tracked, so it cannot delete the STOP bundle or leave a BLOCKED
+  `gate.md`.
+- `pointers.py --trial 1b` requires, in the four blocks and in addition to 1a's link, a link to
+  `evaluations/step1b/pilot-stop.md` when the committed `pilot-result.json` says STOP, and to
+  `evaluations/step1b/gate.md` carrying a PASS or FAIL verdict otherwise; the old wordings add
+  "BM3D licence decision" (F22, F29).
+- `nlm.py` is not edited (its sha256 is 1a's `implementation_sha256`).
+
+**Contract**: exit codes, BLOCKED sanitising and the single CLI boundary are unchanged. A 1b run
+never reads, writes or deletes a 1a path, and the reverse.
+
+#### 3. Tests
+
+**Files**: `scripts/s20/tests/test_trials.py`, `scripts/s20/tests/test_gate.py`, `scripts/s20/tests/test_pilot.py`, `scripts/s20/tests/test_blind.py`, `scripts/s20/tests/test_pointers.py`
+
+**Intent**:
+
+- the 1a row equals today's literals, field by field, each listed 1a value pinned (F20);
+- `nlm` imports; `evidence.GRID_REL` and `evidence.CALIBRATION_REL` keep their 1a values;
+  `rule_files` contains 1a's list and a 1b file only when it exists (F18, F27);
+- after a synthetic STOP, `gate.py --trial 1b` refuses and writes nothing; `pointers.py --trial
+1b` fails on a BLOCKED `gate.md` and on a missing `pilot-stop.md`; `pilot.py --audit` exits as
+  its contract says; a later SELECTED or BLOCKED pilot removes the STOP files (F29, F31, F32);
+- with the 1b grid and calibration absent, the 1a audit and the synthetic world still run; once
+  they exist, an uncommitted one blocks (F17);
+- a bind line with the wrong `trial=` (or a `trial=` on 1a's) is refused (F24);
+- a synthetic 1b STOP writes `pilot-stop.md` and the pilot-only bundle, `--audit` re-derives it,
+  and nothing in `step1-audit/` changes (F22);
+- an unknown `--trial` exits 2;
+- the existing pilot, gate and blind cases run for both trials on the synthetic world;
+- a 1b BLOCKED run leaves `evaluations/step1-audit/` untouched, and a 1a run never touches
+  `step1b/`;
+- `pointers.py --trial 1b` fails on a block without the 1b link and passes when it is present.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- S-20 suite passes, trial cases included: `TMPDIR=/tmp python3 -B -m unittest discover -s scripts/s20/tests` — at planning: exit 0 (156 tests; the trial cases arrive in Phase 8)
+- The 1a audit still re-derives FAIL after the seam, run after the phase commit: `python3 scripts/s20/gate.py --audit context/changes/cloud-classical-denoise/evaluations/step1-audit` — at planning: exit 1 (FAIL)
+- No 1a evidence or 1a renderer file changed: `git diff --exit-code 3a3f491122ec7400a759842b8fd1667dff55f3c2 HEAD -- context/changes/cloud-classical-denoise/evaluations/step1-audit context/changes/cloud-classical-denoise/evaluations/step1-gate.json context/changes/cloud-classical-denoise/evaluations/step1-gate.md context/changes/cloud-classical-denoise/evaluations/step1-calibration.md scripts/s20/nlm.py scripts/s20/configs/nlm-grid.json scripts/s20/configs/nlm-frozen.json` (base: master after #365, the last commit carrying 1a evidence) — at planning: exit 0
+- 1a pointers still current: `python3 scripts/s20/pointers.py` — at planning: exit 0
+
+---
+
+## Phase 9: Wavelet arm
+
+### Overview
+
+The `wavelet-gamma` arm, matched to `control-full` exactly as `nlm-gamma` is.
+
+### Changes Required:
+
+#### 1. Arm
+
+**Files**: `scripts/s19/local-arms.ts`, `scripts/s19/s19.ts`
+
+**Intent**: `wavelet-gamma --wavelet-k <k>` reads `test-photos/private/s20/wavelet/k<k>/<id>.png`
+and its record, verifies the decoded-pixel hash, output hash and dimensions, and applies Local's
+Auto gamma. Existing arms are unchanged. Every resolved path passes `guardPaths` first.
+
+**Contract**:
+
+- Output: `test-photos/private/s19/arms/wavelet-gamma/k<k>/<id>.png`.
+- The record carries `decoded_pixels_sha256`, `auto_file_sha256`, `lut_sha256` and
+  `source: {kind: "wavelet", record, record_sha256, output_sha256, config_sha256, k}`.
+- `--wavelet-k` joins the valued flags in `s19.ts`, with `formatK`'s one-decimal rule.
+
+#### 2. Tests
+
+**File**: `scripts/s20/tests/test_arms.py`
+
+**Intent**: the 1a cases, repeated for the wavelet arm: an identity denoiser gives a byte-identical
+`control-full`; a changed Auto record makes the pair check refuse; a tampered render or
+pixels-hash mismatch is refused; a size mismatch is refused; the holdout read trap; `nlm-gamma`
+and the old arms still render.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- Arm tests pass: `TMPDIR=/tmp python3 -B -m unittest discover -s scripts/s20/tests -p 'test_arms.py'` — at planning: exit 0 (1a cases; the wavelet cases arrive in Phase 9)
+- S-19 harness tests still pass: `TMPDIR=/tmp python3 -B -m unittest discover -s scripts/s19/tests` — at planning: exit 0, 85 tests
+- Typecheck passes: `npm run typecheck` — at planning: exit 0
+- Lint passes: `npx eslint scripts/s19/local-arms.ts scripts/s19/s19.ts` — at planning: exit 0 (6 `no-console` warnings)
+- The 1a audit still re-derives FAIL, run after the phase commit: `python3 scripts/s20/gate.py --audit context/changes/cloud-classical-denoise/evaluations/step1-audit` — at planning: exit 1 (FAIL)
+
+---
+
+## Phase 10: Wavelet renderer, grid, calibration and diagnostic
+
+### Overview
+
+The renderer, its estimator in its own space, the observing pass, and the whole parameter space
+committed before any real render.
+
+### Changes Required:
+
+#### 1. Grid config
+
+**File**: `scripts/s20/configs/wavelet-grid.json`
+
+**Intent**: freeze every parameter of 1b, citing `change.md` § Owner decisions (2026-11-09, step
+1b candidate).
+
+**Contract**: input (the decoded PNG; its RGB bytes hash to `decoded_pixels_sha256`), space
+(`rgb2ycbcr` on `img_as_float`, per-plane min–max normalisation), estimator (1a's Immerkær kernel
+and formula, on each normalised plane), mapping σ = k·σ̂_norm (the normalised value the filter receives) with the same refusal rule as
+1a, `k` `[1.0, 1.5, 2.0]`, filter (`denoise_wavelet`, `BayesShrink`, `soft`, `db1`,
+`wavelet_levels` null, `rescale_sigma` false), spin (`cycle_spin`, `max_shifts` 3, `workers` 1,
+`channel_axis` null), output (denormalise, `ycbcr2rgb`, clip to [0, 1], `rint(x·255)` to uint8 RGB
+PNG without metadata), and the pinned skimage and PyWavelets versions.
+
+#### 2. Renderer
+
+**File**: `scripts/s20/wavelet.py`
+
+**Intent**: `nlm.py`'s structure for the new filter.
+
+- A real render refuses unless every rule file is committed and clean and the 1b calibration bind
+  is a PASS for the current `wavelet.py`, grid and versions; `--calibrate` and `--estimate-only`
+  render nothing real and are exempt.
+- Per id: `require_access` and `check_paths` first; read and verify the decoded PNG; estimate;
+  render every `k`; run the observing pass; write the PNG and the record.
+- **Observing pass:** for each plane and each of the 16 shifts, roll the plane as `cycle_spin`
+  does, take the same `wavedecn`, compute the same BayesShrink thresholds from the same σ, and
+  count per level and orientation the coefficients set to 0, nonzero before, and already zero.
+  It never feeds the output. Exactness rules (F25): it repeats skimage's own calls in order
+  (`wavedecn` default mode and `max(dwtn_max_level − 3, 1)` levels, `mean(d·d)` with eps of the
+  coefficients' dtype, `pywt.threshold(…, "soft")`, `_denoise.py:611-617,737-797`); "set to 0" is
+  counted from `pywt.threshold`'s output, never from |c| ≤ T; the reconstruction is
+  `waverecn(…)[original_extent].astype(dtype)` (`_denoise.py:794-795`), and any comparison with a
+  shifted skimage result is made on the rolled plane, before the roll-back (F33).
+- **Constant plane first (F21):** a plane with max = min is copied through before normalisation
+  or estimation; only then does the σ̂ refusal apply.
+
+**Contract**:
+
+- Record fields: `id`, `k`, `sigma_hat` per plane (in `rgb2ycbcr` units) and `sigma` per plane (the normalised value passed to the filter; F34), `plane_range` per plane, `wavelet`,
+  `levels`, `shifts`, `decoded_record`, `decoded_pixels_sha256`, `output_sha256`, `dimensions`,
+  `config_sha256`, `skimage_version`, `pywt_version`, `numpy_version`, `implementation_sha256`,
+  `rendered_at`, and `zeroed: {Y|Cb|Cr: {"<level>": {ad|da|dd: {set_to_zero, nonzero_before,
+already_zero, ratio}}}}` with level `"1"` the finest.
+- Exit codes: 0 rendered, 1 refused, 2 usage; each refusal names the subject and the way out.
+
+#### 3. Calibration record
+
+**File**: `context/changes/cloud-classical-denoise/evaluations/step1b/calibration.md`
+
+**Intent**: `wavelet.py --calibrate` runs 1a's fixtures and tolerances, pre-registered here before
+any result: seed 20261105, 1024×1024, σ ∈ {3, 8, 15}, σ_eff = √(σ² + r²), where r² is each
+plane's own variance from rounding to 8-bit **RGB** (about 0.027–0.028 per YCbCr plane, computed
+in the record, not 1/12; F34).
+
+- Noise is added in float to the fixture's Y, Cb and Cr in `rgb2ycbcr` units, then the fixture is
+  converted with `ycbcr2rgb`, rounded and clipped to 8-bit RGB, and the estimator runs its full
+  path from there, as on a photo. `rgb2ycbcr` on float input already returns 8-bit units (Y
+  16–235, `colorconv.py:482-484`), so σ̂ is reported as σ̂_norm × (plane max − min) in those
+  units; the filter itself receives σ = k·σ̂_norm (F19).
+- Flat fixture Y = Cb = Cr = 128: |σ̂ − σ_eff| / σ_eff ≤ 0.10. Texture fixture
+  Y = 128 + 40·sin(2πx/16)·sin(2πy/24): (σ̂ − σ_eff) / σ_eff ≤ 0.35, one-sided. Each tolerance
+  applies to Y, Cb and Cr separately.
+- Dark ramp (Y 16 → 56) and near-clipping rows (Y 18, Y 233) are recorded, not gated; the
+  estimator on the noisy YCbCr itself, with no conversion, is an ungated diagnostic.
+- One bind line `S20-CALIBRATION trial=1b result=… implementation_sha256=… config_sha256=…
+skimage_version=… pywt_version=… numpy_version=…`. A real render is refused unless it is a PASS
+  for trial 1b and all five values match.
+
+If a gated tolerance fails, the grid or the estimator is revised here, before the grid is
+committed, never after a real render. Known limit: synthetic white noise does not reproduce
+correlated camera or JPEG noise.
+
+#### 4. Tests
+
+**File**: `scripts/s20/tests/test_wavelet.py`
+
+**Intent**:
+
+- estimator tolerance on synthetic noise; mapping and refusals (σ̂ = 0 on a non-constant plane is
+  refused);
+- the render is deterministic (two runs, identical bytes) and changes a noisy fixture at k = 1.0
+  (output ≠ input) (F25);
+- the observing pass reproduces skimage: for one shift, reconstructing its thresholded
+  coefficients equals `denoise_wavelet` on that rolled plane, compared before the roll-back
+  (`_cycle_spin.py:147-151`; F25);
+- a ±1 checkerboard fixture puts its detail in level `"1"` (F23);
+- the diagnostic's degenerate cases: an already-zero corner is counted in `already_zero` only; an
+  all-zero subband gives ratio `null`; a constant plane is copied unchanged with `null` cells and
+  is not refused (F21);
+- record fields; a tampered decoded PNG is refused; the read trap; an uncommitted or modified grid
+  refuses a real render while `--calibrate` still runs; two renders give identical bytes;
+- `pilot.py` and `gate.py` never read `zeroed` (a record with the field removed gives the same
+  verdict on the synthetic world).
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- Wavelet tests pass: `TMPDIR=/tmp python3 -B -m unittest discover -s scripts/s20/tests -p 'test_wavelet.py'` — not run: needs Phase 10 output
+- Grid config holds the pre-registered values: `python3 -I -c "import json;c=json.load(open('scripts/s20/configs/wavelet-grid.json'));assert c['k']==[1.0,1.5,2.0] and c['filter']['method']=='BayesShrink' and c['spin']['max_shifts']==3, c"` — not run: needs Phase 10 output
+- Calibration runs on synthetic data only: `python3 scripts/s20/wavelet.py --calibrate` — not run: writes
+- The 1a audit still re-derives FAIL, run after the phase commit: `python3 scripts/s20/gate.py --audit context/changes/cloud-classical-denoise/evaluations/step1-audit` — at planning: exit 1 (FAIL)
+
+#### Manual Verification:
+
+- Owner confirms the 1b grid and calibration record before Phase 11 renders — surface: scripts/s20/configs/wavelet-grid.json, context/changes/cloud-classical-denoise/evaluations/step1b/calibration.md
+
+---
+
+## Phase 11: 1b pilot run and freeze
+
+### Overview
+
+Render the grid, run the blind pilot, freeze one `k` or STOP, following order steps 2–7.
+
+### Changes Required:
+
+#### 1. Renders and pilot evidence
+
+**Files**:
+
+- `context/changes/cloud-classical-denoise/evaluations/step1b/pilot-sealed.md`
+- `context/changes/cloud-classical-denoise/evaluations/step1b/pilot-ratings.json`
+- `context/changes/cloud-classical-denoise/evaluations/step1b/pilot-result.json`
+- `scripts/s20/configs/wavelet-frozen.json`
+
+**Intent**:
+
+1. Render the wavelet grid (×24) and `wavelet-gamma` (×24). `decoded` and `control-full` are
+   reused from 1a and verified, never re-rendered.
+2. Build `pilot-1b`. The owner commits its seal, then opens it, rates the 8 photos and exports;
+   the export is committed.
+3. Run `pilot.py --trial 1b`; commit the result and the freeze.
+
+On STOP: `pilot.py --trial 1b` writes `step1b/pilot-stop.md` and the pilot-only bundle (Phase
+8, F22); commit both; write into `change.md` that 1b failed with no strength preferred over the
+control and that step 1 closes as FAIL; update the pointer set as in Phase 12 item 2, linking
+`pilot-stop.md`; end the plan.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- Grid renders: `python3 scripts/s20/wavelet.py --all` — not run: writes
+- Arms render: `npx tsx scripts/s19/local-arms.ts wavelet-gamma --all --wavelet-k <k>` for each `k` — not run: writes
+- Pilot set builds and prints its digest and key hash: `python3 scripts/s20/blind.py pilot --trial 1b --set pilot-1b` — not run: writes
+- Pilot rule decides: `python3 scripts/s20/pilot.py --trial 1b --set pilot-1b --export context/changes/cloud-classical-denoise/evaluations/step1b/pilot-ratings.json` — not run: needs Phase 11 rating
+- Only on STOP, the STOP re-derives from published metadata alone (exit 1 = STOP): `python3 scripts/s20/pilot.py --trial 1b --audit context/changes/cloud-classical-denoise/evaluations/step1b/audit` — not run: needs Phase 11 output; `[-] — n/a: pilot selected` when a strength is frozen
+- Only on STOP, every S-20 pointer links `pilot-stop.md`: `python3 scripts/s20/pointers.py --trial 1b` — not run: needs Phase 8 output; `[-] — n/a: pilot selected` when a strength is frozen
+
+#### Manual Verification:
+
+- Owner commits the 1b pilot seal before opening the viewer, then rates and exports — surface: context/changes/cloud-classical-denoise/evaluations/step1b/pilot-sealed.md, context/changes/cloud-classical-denoise/evaluations/step1b/pilot-ratings.json
+- Owner accepts the 1b pilot result — surface: context/changes/cloud-classical-denoise/evaluations/step1b/pilot-result.json, scripts/s20/configs/wavelet-frozen.json
+
+---
+
+## Phase 12: 1b gate run, verdict and step 1 outcome
+
+### Overview
+
+Runs only when Phase 11 froze a strength. On a 1b STOP every Phase 12 row is marked
+`[-] — n/a: 1b pilot STOP` (F30).
+
+The 16-pair blind gate on the frozen strength, the verdict, its audit bundle, and the step 1
+outcome in every pointer.
+
+### Changes Required:
+
+#### 1. Gate evidence
+
+**Files**:
+
+- `context/changes/cloud-classical-denoise/evaluations/step1b/gate-sealed.md`
+- `context/changes/cloud-classical-denoise/evaluations/step1b/gate-ratings.json`
+- `context/changes/cloud-classical-denoise/evaluations/step1b/gate.json`
+- `context/changes/cloud-classical-denoise/evaluations/step1b/gate.md`
+- `context/changes/cloud-classical-denoise/evaluations/step1b/audit/`
+
+**Intent**: build `gate-1b` from the frozen `k`'s existing renders (nothing re-rendered); the owner
+commits the seal, rates and the export is committed; run `gate.py --trial 1b`. On BLOCKED the owner
+resolves the listed ids in the same set, re-exports, the export is committed and the gate re-runs.
+After PASS or FAIL the report and the audit bundle are committed.
+
+#### 2. Pointer set
+
+**Files**: `context/changes/cloud-classical-denoise/change.md`, `context/foundation/roadmap.md`, `temp_steps.md`, `context/foundation/github-issues.md`
+
+**Intent**: `change.md` § Sequence step 1, the S-20 Status line and Backlog Handoff row, and
+`temp_steps.md` "Teraz" link `evaluations/step1b/gate.md` and state the step 1 outcome without
+restating its numbers: on FAIL, step 1 closed as FAIL after 1a and 1b; on PASS, the free/paid
+conversation and step 2. A `github-issues.md` Status-updates row records the verdict. That row
+edits Progress 6.7's surface, so 6.7 goes stale by construction and is re-confirmed with 12.8.
+
+**Contract**: a comment or label change on #347 is proposed to the owner, never posted unasked.
+
+### Success Criteria:
+
+#### Automated Verification:
+
+- Gate set builds from the frozen config: `python3 scripts/s20/blind.py gate --trial 1b --set gate-1b` — not run: needs Phase 11 output
+- Gate verdict reproduces from committed evidence: `python3 scripts/s20/gate.py --trial 1b --set gate-1b --export context/changes/cloud-classical-denoise/evaluations/step1b/gate-ratings.json` — not run: needs Phase 12 rating
+- 1b verdict re-derives from published metadata alone: `python3 scripts/s20/gate.py --trial 1b --audit context/changes/cloud-classical-denoise/evaluations/step1b/audit` — not run: needs Phase 12 output
+- The 1a audit still re-derives FAIL, run after the phase commit: `python3 scripts/s20/gate.py --audit context/changes/cloud-classical-denoise/evaluations/step1-audit` — at planning: exit 1 (FAIL)
+- No stale S-20 pointer remains, each block linking the 1b verdict: `python3 scripts/s20/pointers.py --trial 1b` — not run: needs Phase 8 output
+
+#### Manual Verification:
+
+- Owner commits the 1b gate seal before opening the viewer, then rates the 16 pairs — surface: context/changes/cloud-classical-denoise/evaluations/step1b/gate-sealed.md, context/changes/cloud-classical-denoise/evaluations/step1b/gate-ratings.json
+- Owner accepts the 1b verdict, its decoded table and the step 1 outcome — surface: context/changes/cloud-classical-denoise/evaluations/step1b/gate.md
+- Owner decides on the #347 comment and label change, and re-confirms 6.7 — surface: context/foundation/github-issues.md
+
+---
+
 ## Testing Strategy
 
 ### Unit Tests:
@@ -1004,3 +1562,80 @@ That is acceptable offline. Product timing is step 4's question.
 - [x] 6.5 Owner commits the gate seal before opening the viewer, then rates the 16 pairs — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
 - [x] 6.6 Owner accepts the verdict and its decoded table — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
 - [x] 6.7 Owner decides on the #347 comment and label change — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
+
+### Phase 7: Premise and environment for 1b
+
+#### Automated
+
+- [ ] 7.1 scikit-image and PyWavelets import at the pinned versions
+- [ ] 7.2 The 1a audit re-derives FAIL
+- [ ] 7.3 Holdout guard allows the eight tuning ids
+
+#### Manual
+
+- [ ] 7.4 Owner installs the packages
+- [ ] 7.5 Owner reads the 1b premise record and accepts it
+
+### Phase 8: Trial seam with 1a kept literal
+
+#### Automated
+
+- [ ] 8.1 S-20 suite passes, trial cases included
+- [ ] 8.2 The 1a audit still re-derives FAIL after the seam
+- [ ] 8.3 No 1a evidence or 1a renderer file changed
+- [ ] 8.4 1a pointers still current
+
+### Phase 9: Wavelet arm
+
+#### Automated
+
+- [ ] 9.1 Arm tests pass
+- [ ] 9.2 S-19 harness tests still pass
+- [ ] 9.3 Typecheck passes
+- [ ] 9.4 Lint passes
+- [ ] 9.5 The 1a audit still re-derives FAIL
+
+### Phase 10: Wavelet renderer, grid, calibration and diagnostic
+
+#### Automated
+
+- [ ] 10.1 Wavelet tests pass
+- [ ] 10.2 Grid config holds the pre-registered values
+- [ ] 10.3 Calibration runs on synthetic data only
+- [ ] 10.4 The 1a audit still re-derives FAIL
+
+#### Manual
+
+- [ ] 10.5 Owner confirms the 1b grid and calibration record before Phase 11 renders
+
+### Phase 11: 1b pilot run and freeze
+
+#### Automated
+
+- [ ] 11.1 Grid renders
+- [ ] 11.2 Arms render
+- [ ] 11.3 Pilot set builds and prints its digest and key hash
+- [ ] 11.4 Pilot rule decides
+- [ ] 11.5 Only on STOP, the STOP re-derives from published metadata alone
+- [ ] 11.6 Only on STOP, every S-20 pointer links `pilot-stop.md`
+
+#### Manual
+
+- [ ] 11.7 Owner commits the 1b pilot seal before opening the viewer, then rates and exports
+- [ ] 11.8 Owner accepts the 1b pilot result
+
+### Phase 12: 1b gate run, verdict and step 1 outcome
+
+#### Automated
+
+- [ ] 12.1 Gate set builds from the frozen config
+- [ ] 12.2 Gate verdict reproduces from committed evidence
+- [ ] 12.3 1b verdict re-derives from published metadata alone
+- [ ] 12.4 The 1a audit still re-derives FAIL
+- [ ] 12.5 No stale S-20 pointer remains, each block linking the 1b verdict
+
+#### Manual
+
+- [ ] 12.6 Owner commits the 1b gate seal before opening the viewer, then rates the 16 pairs
+- [ ] 12.7 Owner accepts the 1b verdict, its decoded table and the step 1 outcome
+- [ ] 12.8 Owner decides on the #347 comment and label change, and re-confirms 6.7

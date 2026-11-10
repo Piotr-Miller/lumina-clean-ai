@@ -96,3 +96,84 @@ sessions: 8 choices, then 16 pairs.
 - A PASS, FAIL or BLOCKED verdict reproduced from committed evidence, with each rule sealed before
   the result it governs was seen.
 - On PASS: the free/paid conversation, then step 2. On FAIL or STOP: the BM3D licence decision.
+
+---
+
+# S-20 Step 1b (wavelet BayesShrink) — Plan Brief
+
+> Full plan: `context/changes/cloud-classical-denoise/plan.md` § Step 1b, Phases 7–12
+> Decision record: `change.md` § Owner decisions (2026-11-09, step 1b candidate)
+
+## What & Why
+
+1a's NLM failed its gate (3 of 8 wins, five ties, a significant star/aurora-edge loss on
+S17-03). Both BM3D routes are barred from profit-oriented use, so 1b replaces BM3D with **one**
+permissively licensed candidate, shift-invariant wavelet BayesShrink (scikit-image 0.26.0 +
+PyWavelets 1.8.0), under the identical gate. It is the last trial of step 1: a FAIL or a STOP
+closes step 1 as FAIL.
+
+## Starting Point
+
+1a's harness works end to end, but it is single-trial: paths, arm names, record fields and the
+calibration bind are constants, and 1a's committed evidence re-derives only while its literal
+bytes (freeze text, report keys, reason strings) stay as they are.
+
+## Desired End State
+
+A sealed 1b pilot froze one strength (or stopped), a sealed 16-pair gate gave PASS, FAIL or
+BLOCKED in `evaluations/step1b/gate.md`, a metadata-only bundle re-derives it, 1a still
+re-derives FAIL, and every S-20 pointer states the step 1 outcome.
+
+## Key Decisions Made
+
+| Decision                   | Choice                                                                                                                                | Why                                                                 | Source                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | --------------------------- |
+| Candidate                  | BayesShrink, soft, `db1`, default levels, per Y/Cb/Cr plane, `cycle_spin(max_shifts=3, workers=1)`                                    | Multi-scale and per-subband adaptive, where NLM tied; licence-clean | Owner 2026-11-09            |
+| Grid                       | σ_plane = k·σ̂_plane, k ∈ {1.0, 1.5, 2.0}, σ̂ by 1a's estimator on each normalised plane                                                | Same grid as 1a; the estimator lives in the filter's own space (F8) | Owner 2026-11-09            |
+| Patents                    | The method's age is sufficient; no search                                                                                             | BayesShrink 2000, cycle spinning 1995                               | Owner 2026-11-09            |
+| Diagnostic                 | Per plane × level × orientation: set-to-0 / nonzero-before, summed over 16 shifts; already-zero counted apart; never read by the gate | BayesShrink thresholds each orientation subband separately          | Owner 2026-11-09 (planning) |
+| Counting                   | A separate observing pass; the render is the decided skimage call                                                                     | Instrumentation never changes the rated pixels                      | Owner 2026-11-09 (planning) |
+| Harness                    | `trials.py` descriptor, `--trial` default 1a, 1a literals byte-identical, 1a audit re-run in every rule-file phase                    | One set of evidence rules for both trials                           | Owner 2026-11-09 (planning) |
+| Evidence layout            | `evaluations/step1b/` (own seals, ratings, freeze, verdict, `audit/`)                                                                 | `gate.py` deletes its audit dir; 1a's must never be touched         | Plan                        |
+| Reuse                      | 1a's `decoded` and `control-full` renders, verified, not re-rendered                                                                  | They are the same inputs; re-rendering adds nothing                 | Plan                        |
+| Chooser                    | None; one strength frozen by the pilot                                                                                                | Per-photo choice is step 3 (`local-jev-gate`)                       | Owner 2026-11-09            |
+| STOP evidence              | `pilot.py --trial 1b` writes `step1b/pilot-stop.md` and a pilot-only audit; pointers link it                                          | STOP closes step 1, so it must be as reproducible as a verdict      | Plan review F22             |
+| Rule files not yet created | 1b's grid and calibration join the rule-file check only once they exist                                                               | Otherwise every 1a tool refuses until Phase 10                      | Plan review F17             |
+
+## Scope
+
+**In scope:** premise record; trial seam; `wavelet-gamma` arm; renderer, grid, calibration and
+diagnostic; one pilot and one gate run; the 1b audit and pointers.
+
+**Out of scope:** BM3D or any third denoiser; retuning; per-photo strength; Jev; edits to any 1a
+evidence or to `nlm.py`; the viewer; border wrap-around correction; steps 2–4; holdout; paid calls.
+
+## Phases at a Glance
+
+| Phase          | What it delivers                                                                     | Key risk                                                  |
+| -------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| 7. Premise     | Packages at pinned versions, installed source matches the decision, one timed render | A Fedora patch or version drift                           |
+| 8. Trial seam  | `trials.py`, `--trial` everywhere, 1a byte-identical                                 | A changed 1a literal breaks the 1a audit                  |
+| 9. Wavelet arm | `wavelet-gamma` matched to `control-full`                                            | — (mirrors `nlm-gamma`)                                   |
+| 10. Renderer   | `wavelet.py`, grid, calibration in YCbCr, observing pass                             | Calibration may force a grid revision (allowed only here) |
+| 11. Pilot      | 48 renders, sealed pilot, freeze or STOP                                             | Render time at 24.5 MP with 16 shifts                     |
+| 12. Gate       | Sealed 16-pair gate, verdict, audit, step 1 outcome                                  | BLOCKED rounds while resolving `uncertain`                |
+
+**Prerequisites:** the owner installs `python3-scikit-image python3-pywt`.
+**Estimated effort:** about 3–4 implementation sessions for Phases 7–10, plus two rating sessions.
+
+## Open Risks & Assumptions
+
+- Soft thresholding dims point sources; faint stars at noise level can be lost as on S17-03.
+- BayesShrink's threshold rises faster than linearly in `k`; at k ≥ 1.5 noise-dominated subbands
+  are zeroed whole. The diagnostic shows where; the gate decides whether it matters.
+- `cycle_spin` wraps around at the borders: 3 px mix with the opposite edge.
+- The owner has seen these photos in 1a's pilot and gate; blinding cannot hide repeated content.
+- A 1b PASS only lets the experiment continue; the holdout (step 4) is the product test.
+
+## Success Criteria (Summary)
+
+- A PASS, FAIL or BLOCKED 1b verdict reproduced from committed evidence, each rule sealed before
+  the result it governs.
+- 1a re-derives FAIL unchanged after every 1b phase.
+- On FAIL or STOP: step 1 closed as FAIL in every pointer; on PASS: the free/paid conversation.
