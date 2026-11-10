@@ -1530,8 +1530,8 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Manual
 
-- [x] 4.2 Owner confirms the coded rules match the decisions before any render — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
-- [x] 4.3 Owner runs the round trip on a synthetic gate set — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
+- [ ] 4.2 Owner confirms the coded rules match the decisions before any render
+- [ ] 4.3 Owner runs the round trip on a synthetic gate set
 
 ### Phase 5: Pilot run and freeze
 
@@ -1580,19 +1580,19 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 8.1 S-20 suite passes, trial cases included
-- [ ] 8.2 The 1a audit still re-derives FAIL after the seam
-- [x] 8.3 No 1a evidence or 1a renderer file changed
-- [x] 8.4 1a pointers still current
+- [x] 8.1 S-20 suite passes, trial cases included — 69b9c73
+- [x] 8.2 The 1a audit still re-derives FAIL after the seam — 69b9c73
+- [x] 8.3 No 1a evidence or 1a renderer file changed — 69b9c73
+- [x] 8.4 1a pointers still current — 69b9c73
 
 ### Phase 9: Wavelet arm
 
 #### Automated
 
-- [ ] 9.1 Arm tests pass
-- [ ] 9.2 S-19 harness tests still pass
-- [ ] 9.3 Typecheck passes
-- [ ] 9.4 Lint passes
+- [x] 9.1 Arm tests pass
+- [x] 9.2 S-19 harness tests still pass
+- [x] 9.3 Typecheck passes
+- [x] 9.4 Lint passes
 - [ ] 9.5 The 1a audit still re-derives FAIL
 
 ### Phase 10: Wavelet renderer, grid, calibration and diagnostic

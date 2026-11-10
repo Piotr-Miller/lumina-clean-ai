@@ -35,7 +35,10 @@
  *   nlm-gamma     --nlm-k <k>: nlm.py's render test-photos/private/s20/nlm/k<k>/<id>.png → Local
  *                 gamma. Its record must name this photo's decoded pixels, and the output's hash
  *                 and dimensions must match. Output arms/nlm-gamma/k<k>/<id>.png.
- * Both matched arms record `decoded_pixels_sha256`, `auto_file_sha256` (the Auto record file) and
+ *   wavelet-gamma --wavelet-k <k> (step 1b, plan Phase 9): nlm-gamma's path for wavelet.py's render
+ *                 test-photos/private/s20/wavelet/k<k>/<id>.png, with the same checks. Output
+ *                 arms/wavelet-gamma/k<k>/<id>.png.
+ * The matched arms record `decoded_pixels_sha256`, `auto_file_sha256` (the Auto record file) and
  * `lut_sha256` (the 256-byte LUT), so a pair check can prove the two differ only by the denoiser.
  *
  * The curve (curve.ts) is Local's Auto gamma with a limited lift in dark tones and highlights, a
@@ -94,9 +97,10 @@ const ARMS = [
   "decoded",
   "control-full",
   "nlm-gamma",
+  "wavelet-gamma",
 ] as const;
 type Arm = (typeof ARMS)[number];
-const S20_ARMS: readonly Arm[] = ["decoded", "control-full", "nlm-gamma"];
+const S20_ARMS: readonly Arm[] = ["decoded", "control-full", "nlm-gamma", "wavelet-gamma"];
 
 interface Rgb {
   data: Uint8Array;
@@ -346,8 +350,9 @@ interface DecodedRecord {
   rendered_at: string;
 }
 
-/** The fields of an nlm.py record (plan Phase 2) that the nlm-gamma arm binds to. */
-interface NlmRecord {
+/** The fields of an nlm.py record (plan Phase 2) or a wavelet.py record (plan Phase 10) that the
+ * denoised arm binds to. */
+interface DenoiserRecord {
   id: string;
   k: number;
   decoded_record?: string;
@@ -370,12 +375,13 @@ function rel(path: string): string {
   return r.startsWith("..") || isAbsolute(r) ? path : r;
 }
 
-/** The grid's k as the one-decimal string used in directory names (`k1.5`), shared with nlm.py. */
-export function formatK(raw: string): string {
+/** The grid's k as the one-decimal string used in directory names (`k1.5`), shared with nlm.py and
+ * wavelet.py. */
+export function formatK(raw: string, flag: "--nlm-k" | "--wavelet-k"): string {
   const k = Number(raw);
   if (!/^\d+(\.\d+)?$/.test(raw) || !Number.isFinite(k) || k <= 0 || Number(k.toFixed(1)) !== k)
     throw new Refused(
-      `--nlm-k ${raw}: expected a positive number with at most one decimal, one of the grid's k values`,
+      `${flag} ${raw}: expected a positive number with at most one decimal, one of the grid's k values`,
     );
   return k.toFixed(1);
 }
@@ -384,9 +390,26 @@ const decodedPaths = (id: string) => ({
   png: join(PRIVATE_S20, "decoded", `${id}.png`),
   record: join(PRIVATE_S20, "decoded", `${id}.json`),
 });
-const nlmPaths = (id: string, k: string) => ({
-  png: join(PRIVATE_S20, "nlm", `k${k}`, `${id}.png`),
-  record: join(PRIVATE_S20, "nlm", `k${k}`, `${id}.json`),
+/** The arms that apply Local's Auto gamma to a denoiser's render: one code path, one descriptor each.
+ * `dir` is the render's folder under test-photos/private/s20/ and `kind` the record's `source.kind`,
+ * both as trials.py's rows name them (`raw_dir`, `source_kind`). */
+const DENOISED = {
+  "nlm-gamma": { flag: "--nlm-k", dir: "nlm", kind: "nlm", label: "NLM", tool: "nlm.py", a: "an" },
+  "wavelet-gamma": {
+    flag: "--wavelet-k",
+    dir: "wavelet",
+    kind: "wavelet",
+    label: "wavelet",
+    tool: "wavelet.py",
+    a: "a",
+  },
+} as const;
+type DenoisedArm = keyof typeof DENOISED;
+const isDenoised = (arm: Arm): arm is DenoisedArm => arm in DENOISED;
+
+const denoiserPaths = (arm: DenoisedArm, id: string, k: string) => ({
+  png: join(PRIVATE_S20, DENOISED[arm].dir, `k${k}`, `${id}.png`),
+  record: join(PRIVATE_S20, DENOISED[arm].dir, `k${k}`, `${id}.json`),
 });
 const sidecarPath = (id: string) => join(PRIVATE, "inputs", `${id}.json`);
 const autoPath = (id: string) => join(PRIVATE, "local", `${id}.auto.json`);
@@ -483,16 +506,18 @@ async function verifiedDecoded(id: string, commonSha: string): Promise<{ rec: De
   return { rec: rec as DecodedRecord, img };
 }
 
-/** control-full and nlm-gamma: the same decoded pixels, Auto record and LUT; only the denoiser differs. */
-async function renderMatched(arm: "control-full" | "nlm-gamma", id: string, k?: string): Promise<string> {
+/** control-full and a denoised arm (nlm-gamma, wavelet-gamma): the same decoded pixels, Auto record and
+ * LUT; only the denoiser differs. */
+async function renderMatched(arm: "control-full" | DenoisedArm, id: string, k?: string): Promise<string> {
   const dec = decodedPaths(id);
-  const nlm = arm === "nlm-gamma" && k ? nlmPaths(id, k) : undefined;
-  if (arm === "nlm-gamma" && !nlm) throw new Refused("nlm-gamma needs --nlm-k <k>");
-  const dir = nlm ? join(PRIVATE, "arms", "nlm-gamma", `k${String(k)}`) : join(PRIVATE, "arms", "control-full");
+  const d = arm === "control-full" ? undefined : DENOISED[arm];
+  const den = d && k ? denoiserPaths(arm as DenoisedArm, id, k) : undefined;
+  if (d && !den) throw new Refused(`${arm} needs ${d.flag} <k>`);
+  const dir = den ? join(PRIVATE, "arms", arm, `k${String(k)}`) : join(PRIVATE, "arms", "control-full");
   const out = join(dir, `${id}.png`);
   const outRecord = join(dir, `${id}.json`);
   guardPaths(
-    [sidecarPath(id), autoPath(id), dec.png, dec.record, ...(nlm ? [nlm.png, nlm.record] : []), out, outRecord],
+    [sidecarPath(id), autoPath(id), dec.png, dec.record, ...(den ? [den.png, den.record] : []), out, outRecord],
     false,
   );
   const side = readSidecar(id);
@@ -503,41 +528,41 @@ async function renderMatched(arm: "control-full" | "nlm-gamma", id: string, k?: 
   let img = decoded.img;
   let input = dec.png;
   let source: Record<string, unknown> | null = null;
-  if (nlm) {
-    if (!existsSync(nlm.record) || !existsSync(nlm.png))
+  if (den && d) {
+    if (!existsSync(den.record) || !existsSync(den.png))
       throw new Refused(
-        `${id}: no NLM render at ${nlm.record}; run python3 scripts/s20/nlm.py for k ${String(k)} first`,
+        `${id}: no ${d.label} render at ${den.record}; run python3 scripts/s20/${d.tool} for k ${String(k)} first`,
       );
-    const n = JSON.parse(readFileSync(nlm.record, "utf8")) as Untrusted<NlmRecord>;
+    const n = JSON.parse(readFileSync(den.record, "utf8")) as Untrusted<DenoiserRecord>;
     const missing = (
       ["id", "k", "decoded_pixels_sha256", "output_sha256", "dimensions", "config_sha256"] as const
     ).filter((f) => n[f] === undefined || n[f] === null);
     if (missing.length)
-      throw new Refused(`${id}: ${nlm.record} is not an nlm.py record (missing ${missing.join(", ")})`);
+      throw new Refused(`${id}: ${den.record} is not ${d.a} ${d.tool} record (missing ${missing.join(", ")})`);
     if (n.id !== id || n.k !== Number(k))
       throw new Refused(
-        `${id}: ${nlm.record} is for photo ${String(n.id)} at k ${String(n.k)}, not ${id} at k ${String(k)}`,
+        `${id}: ${den.record} is for photo ${String(n.id)} at k ${String(n.k)}, not ${id} at k ${String(k)}`,
       );
     if (n.decoded_record && resolve(repoPath(n.decoded_record)) !== resolve(dec.record))
-      throw new Refused(`${id}: ${nlm.record} names decoded record ${n.decoded_record}, not ${rel(dec.record)}`);
+      throw new Refused(`${id}: ${den.record} names decoded record ${n.decoded_record}, not ${rel(dec.record)}`);
     if (n.decoded_pixels_sha256 !== decoded.rec.pixels_sha256)
       throw new Refused(
-        `${id}: ${nlm.record} was rendered from other decoded pixels than ${rel(dec.record)} (decoded_pixels_sha256); re-render it with nlm.py`,
+        `${id}: ${den.record} was rendered from other decoded pixels than ${rel(dec.record)} (decoded_pixels_sha256); re-render it with ${d.tool}`,
       );
-    if (sha256File(nlm.png) !== n.output_sha256)
+    if (sha256File(den.png) !== n.output_sha256)
       throw new Refused(
-        `${id}: ${nlm.png} is no longer the output its record names (output_sha256); re-render it with nlm.py`,
+        `${id}: ${den.png} is no longer the output its record names (output_sha256); re-render it with ${d.tool}`,
       );
-    img = await decode(nlm.png);
+    img = await decode(den.png);
     if (!sameDims(n.dimensions, img.width, img.height) || !sameDims(decoded.rec.dimensions, img.width, img.height))
       throw new Refused(
-        `${id}: NLM output ${String(img.width)}×${String(img.height)} (record ${JSON.stringify(n.dimensions)}) ≠ decoded ${JSON.stringify(decoded.rec.dimensions)}`,
+        `${id}: ${d.label} output ${String(img.width)}×${String(img.height)} (record ${JSON.stringify(n.dimensions)}) ≠ decoded ${JSON.stringify(decoded.rec.dimensions)}`,
       );
-    input = nlm.png;
+    input = den.png;
     source = {
-      kind: "nlm",
-      record: rel(nlm.record),
-      record_sha256: sha256File(nlm.record),
+      kind: d.kind,
+      record: rel(den.record),
+      record_sha256: sha256File(den.record),
       output_sha256: n.output_sha256,
       config_sha256: n.config_sha256,
       k: n.k,
@@ -609,7 +634,7 @@ async function main(): Promise<number> {
     const arm = args.rest.shift() as Arm | undefined;
     if (!arm || !ARMS.includes(arm)) {
       console.error(
-        `usage: local-arms.ts <${ARMS.join("|")}> <ids…>|--all [--compare-local] [--source <png>] [--attempts <jsonl>] [--curve-config <json>] [--nlm-k <k>]`,
+        `usage: local-arms.ts <${ARMS.join("|")}> <ids…>|--all [--compare-local] [--source <png>] [--attempts <jsonl>] [--curve-config <json>] [--nlm-k <k>] [--wavelet-k <k>]`,
       );
       return 2;
     }
@@ -617,11 +642,15 @@ async function main(): Promise<number> {
     const s20 = S20_ARMS.includes(arm);
     if (s20 && (args.validation || args.allValidation))
       throw new Refused(`${arm} is an S-20 step 1 arm: it covers the tuning photos only and has no validation mode`);
-    const nlmK = args.opts.get("--nlm-k");
-    if (nlmK !== undefined && arm !== "nlm-gamma") throw new Refused("--nlm-k needs the nlm-gamma arm");
-    if (arm === "nlm-gamma" && nlmK === undefined)
-      throw new Refused("nlm-gamma needs --nlm-k <k>, one of the grid's k values");
-    const k = nlmK === undefined ? undefined : formatK(nlmK);
+    for (const [owner, d] of Object.entries(DENOISED))
+      if (args.opts.get(d.flag) !== undefined && arm !== owner) throw new Refused(`${d.flag} needs the ${owner} arm`);
+    let k: string | undefined;
+    if (isDenoised(arm)) {
+      const { flag } = DENOISED[arm];
+      const raw = args.opts.get(flag);
+      if (raw === undefined) throw new Refused(`${arm} needs ${flag} <k>, one of the grid's k values`);
+      k = formatK(raw, flag);
+    }
     const ids = guard(args);
     if (ids.length === 0) throw new Refused("no photos selected: name ids or pass --all");
     if (s20) {
@@ -631,7 +660,7 @@ async function main(): Promise<number> {
           const out =
             arm === "decoded"
               ? await renderDecoded(id)
-              : await renderMatched(arm as "control-full" | "nlm-gamma", id, k);
+              : await renderMatched(arm as "control-full" | DenoisedArm, id, k);
           console.log(`✓ ${id}: ${out}`);
         } catch (e) {
           if (!(e instanceof Refused)) throw e;
