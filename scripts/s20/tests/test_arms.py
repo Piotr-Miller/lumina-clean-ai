@@ -1,9 +1,11 @@
-"""S-20 step 1a, plan Phase 1: the shared decode and the two matched arms of `local-arms.ts`.
+"""S-20 step 1a, plan Phase 1: the shared decode and the two matched arms of `local-arms.ts`; and
+step 1b, plan Phase 9: the `wavelet-gamma` arm, matched to `control-full` exactly as `nlm-gamma` is.
 
 Every case drives the real CLI through tsx in the S-19 fixtures world (`scripts/s19/tests/
 fixtures.py`), with S20_PRIVATE pointing at a temporary folder. No real photo, Auto record or
-render is read. The NLM record here is a stand-in written by the test, carrying only the fields
-`nlm-gamma` binds to; nlm.py itself is plan Phase 2.
+render is read. The NLM and wavelet records here are stand-ins written by the test, carrying the
+fields the arm binds to (and, for the blind.py cross-check, the trial's bind fields); nlm.py is plan
+Phase 2 and wavelet.py plan Phase 10.
 """
 
 from __future__ import annotations
@@ -27,6 +29,9 @@ STATS = {"mean": 0.12, "p05": 0.02, "p25": 0.05, "p50": 0.1, "p75": 0.16, "p95":
          "shadowRatio": 0.8, "highlightRatio": 0.001, "clipRatio": 0.0002}
 PID = "T-01"
 K = "1.5"
+# What a wavelet.py record carries besides the bound fields (plan Phase 10 contract), as stand-ins.
+WAVELET_EXTRA = {"sigma_hat": {"Y": 3.0, "Cb": 1.0, "Cr": 1.0}, "sigma": {"Y": 0.03, "Cb": 0.01, "Cr": 0.01},
+                 "wavelet": "db1", "levels": 3, "shifts": 16}
 
 
 def tsx(code: str) -> str:
@@ -50,7 +55,9 @@ def png_chunks(path: Path) -> list[str]:
     return out
 
 
-class ArmsTest(World):
+class ArmsWorld(World):
+    """The fixtures world and helpers both trials' arm tests share; it holds no test of its own."""
+
     def setUp(self):
         super().setUp()
         self.s20 = self.tmp / "s20"
@@ -101,8 +108,15 @@ class ArmsTest(World):
 
     def fake_nlm(self, image: Image.Image | None = None, **override) -> Path:
         """An nlm.py stand-in: by default the identity denoiser (a byte copy of the decoded PNG)."""
+        return self.fake_render("nlm", image, **override)
+
+    def fake_wavelet(self, image: Image.Image | None = None, **override) -> Path:
+        """A wavelet.py stand-in, laid out as nlm.py's: by default the identity denoiser."""
+        return self.fake_render("wavelet", image, **override)
+
+    def fake_render(self, raw_dir: str, image: Image.Image | None = None, **override) -> Path:
         dec_png, dec = self.decoded()
-        out = self.s20 / "nlm" / f"k{K}" / f"{PID}.png"
+        out = self.s20 / raw_dir / f"k{K}" / f"{PID}.png"
         out.parent.mkdir(parents=True, exist_ok=True)
         if image is None:
             shutil.copyfile(dec_png, out)
@@ -110,14 +124,31 @@ class ArmsTest(World):
             image.save(out, "PNG")
         with Image.open(out) as im:
             dims = list(im.size)
-        rec = {"id": PID, "k": float(K), "sigma_hat_L": 1.0, "sigma_hat_ab": 1.0, "h": 1.5, "h_color": 1.5,
+        extra = WAVELET_EXTRA if raw_dir == "wavelet" else {"sigma_hat_L": 1.0, "sigma_hat_ab": 1.0, "h": 1.5,
+                                                            "h_color": 1.5}
+        rec = {"id": PID, "k": float(K), **extra,
                "decoded_record": str(dec_png.with_suffix(".json")), "decoded_pixels_sha256": dec["pixels_sha256"],
                "output_sha256": sha(out), "dimensions": dims, "config_sha256": "c" * 64}
         rec.update(override)
         out.with_suffix(".json").write_text(json.dumps(rec))
         return out
 
-    # ------------------------------------------------------------ cases
+    def blind_sources(self, trial: str, bind: dict) -> subprocess.CompletedProcess:
+        """blind.py's own order-step-3 check (`verified_sources`) on what the TS arms wrote, for one
+        trial row: the layout, `source.kind` and record fields the row expects."""
+        code = ("import json, sys; sys.path.insert(0, 'scripts/s20'); import blind; from trials import TRIALS\n"
+                "try:\n"
+                f"    out = blind.verified_sources({PID!r}, [{float(K)}], json.loads(sys.argv[1]), local=False,"
+                f" t=TRIALS[{trial!r}])\n"
+                "except blind.Blocked as e:\n"
+                "    print('blocked:', e.args); sys.exit(1)\n"
+                "print(json.dumps(sorted(str(k) for k in out)))\n")
+        return subprocess.run([sys.executable, "-B", "-c", code, json.dumps(bind)], capture_output=True, text=True,
+                              env=self.env, cwd=ROOT)
+
+
+
+class ArmsTest(ArmsWorld):
 
     def test_decoded_is_a_lossless_metadata_free_png_bound_to_the_common_input(self):
         self.arm("decoded")
@@ -250,6 +281,186 @@ class ArmsTest(World):
                 self.assertEqual(rec["arm"], arm)
                 self.assertNotIn("decoded_pixels_sha256", rec, "the S-19 arms' records are unchanged")
         self.assertFalse(self.s20.exists(), "S-19 arms write nothing into the S-20 workspace")
+
+
+# ---------------------------------------------------------------- step 1b: wavelet-gamma (plan Phase 9)
+
+WAVELET_BIND = {"implementation_sha256": "a" * 64, "config_sha256": "c" * 64, "skimage_version": "0.25.2",
+                "pywt_version": "1.8.0", "numpy_version": "2.3.4"}
+NLM_BIND = {"implementation_sha256": "b" * 64, "config_sha256": "c" * 64, "opencv_version": "4.12.0"}
+
+
+class WaveletArmTest(ArmsWorld):
+    def wavelet(self, *extra: str, ok: bool = True) -> subprocess.CompletedProcess:
+        return self.arm("wavelet-gamma", "--wavelet-k", K, *extra, ok=ok)
+
+    def test_identity_denoiser_makes_wavelet_gamma_byte_identical_to_control_full(self):
+        self.arm("decoded")
+        self.arm("control-full")
+        self.fake_wavelet()
+        self.wavelet()
+        ctl_png, ctl = self.arm_out("control-full")
+        wav_png, wav = self.arm_out("wavelet-gamma")
+        self.assertTrue(wav_png.is_relative_to(self.private / "arms" / "wavelet-gamma" / f"k{K}"), wav_png)
+        self.assertEqual(ctl_png.read_bytes(), wav_png.read_bytes())
+        _, dec = self.decoded()
+        self.assertNotEqual(pixels_sha(ctl_png), dec["pixels_sha256"], "the gamma must change the pixels")
+        for f in ("decoded_pixels_sha256", "auto_file_sha256", "lut_sha256", "gamma", "dimensions", "tone",
+                  "blur_sigma_px", "decoded_record_sha256"):
+            self.assertEqual(ctl[f], wav[f], f)
+        self.assertEqual(list(wav), list(ctl), "the wavelet record has control-full's (and nlm-gamma's) fields")
+        self.assertEqual(wav["arm"], "wavelet-gamma")
+        raw = self.s20 / "wavelet" / f"k{K}" / f"{PID}.png"
+        self.assertEqual(wav["source"], {"kind": "wavelet", "record": wav["source"]["record"],
+                                         "record_sha256": sha(raw.with_suffix(".json")),
+                                         "output_sha256": sha(raw), "config_sha256": "c" * 64, "k": 1.5})
+        self.assertEqual(list(wav["source"]), ["kind", "record", "record_sha256", "output_sha256", "config_sha256", "k"])
+        self.assertTrue(wav["source"]["record"].endswith(f"wavelet/k{K}/{PID}.json"), wav["source"]["record"])
+        self.assertEqual(wav["input"], wav["source"]["record"][:-len(".json")] + ".png")
+        self.assertEqual(set(png_chunks(wav_png)), {"IHDR", "IDAT", "IEND"})
+
+    def test_blind_1b_row_accepts_what_wavelet_gamma_writes_and_1a_still_accepts_nlm_gamma(self):
+        self.arm("decoded")
+        self.arm("control-full")
+        self.fake_wavelet(**WAVELET_BIND)
+        self.fake_nlm(**NLM_BIND)
+        self.wavelet()
+        self.arm("nlm-gamma", "--nlm-k", K)
+        for trial, bind, arm in (("1b", WAVELET_BIND, "wavelet-gamma"), ("1a", NLM_BIND, "nlm-gamma")):
+            with self.subTest(trial=trial):
+                r = self.blind_sources(trial, bind)
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+                self.assertEqual(json.loads(r.stdout), sorted(["original", "control-full", str((arm, 1.5))]))
+
+    def test_auto_record_changed_between_the_two_arm_runs_makes_the_pair_check_refuse(self):
+        self.arm("decoded")
+        self.arm("control-full")
+        self.write_auto(session="another-session")
+        self.fake_wavelet(**WAVELET_BIND)
+        self.wavelet()
+        _, ctl = self.arm_out("control-full")
+        _, wav = self.arm_out("wavelet-gamma")
+        self.assertNotEqual(ctl["auto_file_sha256"], wav["auto_file_sha256"])
+        self.assertEqual(ctl["lut_sha256"], wav["lut_sha256"])
+        r = self.blind_sources("1b", WAVELET_BIND)
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertIn("auto_file_sha256 differs from control-full's", r.stdout)
+
+    def test_tampered_decoded_png_is_refused(self):
+        self.arm("decoded")
+        self.fake_wavelet()
+        png, _ = self.decoded()
+        with Image.open(png) as im:
+            im = im.convert("RGB")
+            im.putpixel((0, 0), tuple(255 - v for v in im.getpixel((0, 0))))
+            im.save(png, "PNG")
+        self.assertIn("pixels_sha256", self.refused("wavelet-gamma", "--wavelet-k", K))
+        self.assertFalse((self.private / "arms" / "wavelet-gamma").exists())
+
+    def test_tampered_wavelet_output_is_refused(self):
+        self.arm("decoded")
+        out = self.fake_wavelet()
+        with Image.open(out) as im:
+            im = im.convert("RGB")
+            im.putpixel((1, 1), (0, 0, 0) if im.getpixel((1, 1)) != (0, 0, 0) else (9, 9, 9))
+            im.save(out, "PNG")
+        msg = self.refused("wavelet-gamma", "--wavelet-k", K)
+        self.assertIn("output_sha256", msg)
+        self.assertIn("wavelet.py", msg)
+
+    def test_wavelet_record_from_other_decoded_pixels_is_refused(self):
+        self.arm("decoded")
+        self.fake_wavelet(decoded_pixels_sha256="0" * 64)
+        self.assertIn("decoded_pixels_sha256", self.refused("wavelet-gamma", "--wavelet-k", K))
+
+    def test_wavelet_record_for_another_photo_or_strength_or_missing_a_field_is_refused(self):
+        self.arm("decoded")
+        for override in ({"id": "T-02"}, {"k": 2.0}):
+            with self.subTest(override=override):
+                self.fake_wavelet(**override)
+                self.assertIn("not T-01 at k", self.refused("wavelet-gamma", "--wavelet-k", K))
+        self.fake_wavelet(config_sha256=None)
+        self.assertIn("not a wavelet.py record (missing config_sha256)",
+                      self.refused("wavelet-gamma", "--wavelet-k", K))
+
+    def test_size_mismatch_is_refused(self):
+        self.arm("decoded")
+        _, dec = self.decoded()
+        w, h = dec["dimensions"]
+        self.fake_wavelet(Image.new("RGB", (w - 16, h), (50, 60, 70)))
+        msg = self.refused("wavelet-gamma", "--wavelet-k", K)
+        self.assertIn("wavelet output", msg)
+        self.assertIn("≠ decoded", msg)
+
+    def lock(self, holdout: Path) -> None:
+        mode = holdout.stat().st_mode
+        holdout.chmod(0)  # any open, hash or decode before the guard would fail with EACCES instead
+        self.addCleanup(holdout.chmod, stat.S_IMODE(mode))
+
+    def test_a_sidecar_path_into_the_holdout_is_refused_before_it_is_read(self):
+        self.arm("decoded")
+        self.fake_wavelet()
+        holdout = Path(next(e["path"] for e in self.entries if e["id"] == "V-01"))
+        link = self.tmp / "innocent.jpg"
+        link.symlink_to(holdout)
+        side_path = self.private / "inputs" / f"{PID}.json"
+        side = json.loads(side_path.read_text())
+        side["common"].update(path=str(link), sha256=sha(holdout))
+        side_path.write_text(json.dumps(side))
+        self.lock(holdout)
+        self.assertIn("is a validation photo", self.refused("wavelet-gamma", "--wavelet-k", K))
+        self.assertFalse((self.private / "arms" / "wavelet-gamma").exists())
+
+    def test_a_wavelet_render_linked_into_the_holdout_is_refused_before_it_is_read(self):
+        self.arm("decoded")
+        out = self.fake_wavelet()
+        holdout = Path(next(e["path"] for e in self.entries if e["id"] == "V-01"))
+        out.unlink()
+        out.symlink_to(holdout)
+        self.lock(holdout)
+        self.assertIn("is a validation photo", self.refused("wavelet-gamma", "--wavelet-k", K))
+        self.assertFalse((self.private / "arms" / "wavelet-gamma").exists())
+
+    def test_wavelet_k_is_required_validated_and_scoped(self):
+        self.arm("decoded")
+        self.assertIn("wavelet-gamma needs --wavelet-k", self.refused("wavelet-gamma"))
+        for arm, extra in (("control-full", ()), ("nlm-gamma", ("--nlm-k", K))):
+            with self.subTest(arm=arm):
+                self.assertIn("--wavelet-k needs the wavelet-gamma arm", self.refused(arm, *extra, "--wavelet-k", K))
+        self.assertIn("--nlm-k needs the nlm-gamma arm", self.refused("wavelet-gamma", "--wavelet-k", K, "--nlm-k", K))
+        for bad in ("abc", "0", "1.25", "-1"):
+            with self.subTest(k=bad):
+                # The colon: npm echoes the command line, so the bare flag and value prove nothing.
+                self.assertIn(f"--wavelet-k {bad}: expected a positive number with at most one decimal",
+                              self.refused("wavelet-gamma", "--wavelet-k", bad))
+        self.assertIn("--nlm-k 1.25: expected", self.refused("nlm-gamma", "--nlm-k", "1.25"),
+                      "nlm-gamma's text is unchanged")
+        self.assertIn("no wavelet render", self.refused("wavelet-gamma", "--wavelet-k", "2.0"))
+        self.assertIn("scripts/s20/wavelet.py", self.refused("wavelet-gamma", "--wavelet-k", "2.0"))
+
+    def test_wavelet_gamma_has_no_validation_mode(self):
+        self.assertIn("no validation mode", self.refused("wavelet-gamma", "--wavelet-k", K, "--validation"))
+
+    def test_nlm_gamma_and_the_old_arms_still_render_beside_it(self):
+        self.arm("decoded")
+        self.arm("control-full")
+        self.fake_wavelet()
+        self.fake_nlm()
+        self.wavelet()
+        self.arm("nlm-gamma", "--nlm-k", K)
+        (ctl_png, _), (nlm_png, nlm), (wav_png, wav) = (self.arm_out(a) for a in
+                                                         ("control-full", "nlm-gamma", "wavelet-gamma"))
+        self.assertEqual(nlm_png.read_bytes(), ctl_png.read_bytes())
+        self.assertEqual(wav_png.read_bytes(), ctl_png.read_bytes())
+        self.assertEqual((nlm["arm"], nlm["source"]["kind"]), ("nlm-gamma", "nlm"))
+        self.assertTrue(nlm["source"]["record"].endswith(f"nlm/k{K}/{PID}.json"))
+        self.assertEqual(list(nlm), list(wav))
+        for arm in ("local-equiv", "control"):
+            with self.subTest(arm=arm):
+                self.arm(arm)
+                rec = json.loads((self.private / "arms" / arm / f"{PID}.json").read_text())
+                self.assertEqual(rec["arm"], arm)
+                self.assertNotIn("decoded_pixels_sha256", rec)
 
 
 if __name__ == "__main__":
