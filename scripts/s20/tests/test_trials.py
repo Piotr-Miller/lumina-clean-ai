@@ -53,6 +53,8 @@ ONE_A = {
     "record_sha_key": "nlm_record_sha256",
     "bind_trial": None,
     "bind_fields": ("implementation_sha256", "config_sha256", "opencv_version"),
+    "renderer": "nlm.py",
+    "renderer_libs": "OpenCV",
     "prefix": "nlm",
     "label": "NLM",
     "decided": "pilot.py: plan § Definitions 'Pilot vote' (owner decision 2026-11-05, change.md § Owner decisions "
@@ -83,6 +85,8 @@ ONE_B = {
     "record_sha_key": "wavelet_record_sha256",
     "bind_trial": "1b",
     "bind_fields": ("implementation_sha256", "config_sha256", "skimage_version", "pywt_version", "numpy_version"),
+    "renderer": "wavelet.py",
+    "renderer_libs": "scikit-image, PyWavelets and numpy",
     "prefix": "wavelet",
     "label": "wavelet",
     "pointer": "evaluations/step1b/gate.md",

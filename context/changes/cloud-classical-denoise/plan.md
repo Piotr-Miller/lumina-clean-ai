@@ -1589,19 +1589,19 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 9.1 Arm tests pass
-- [x] 9.2 S-19 harness tests still pass
-- [x] 9.3 Typecheck passes
-- [x] 9.4 Lint passes
-- [ ] 9.5 The 1a audit still re-derives FAIL
+- [x] 9.1 Arm tests pass — 87b2326
+- [x] 9.2 S-19 harness tests still pass — 87b2326
+- [x] 9.3 Typecheck passes — 87b2326
+- [x] 9.4 Lint passes — 87b2326
+- [x] 9.5 The 1a audit still re-derives FAIL — 87b2326
 
 ### Phase 10: Wavelet renderer, grid, calibration and diagnostic
 
 #### Automated
 
-- [ ] 10.1 Wavelet tests pass
-- [ ] 10.2 Grid config holds the pre-registered values
-- [ ] 10.3 Calibration runs on synthetic data only
+- [x] 10.1 Wavelet tests pass
+- [x] 10.2 Grid config holds the pre-registered values
+- [x] 10.3 Calibration runs on synthetic data only
 - [ ] 10.4 The 1a audit still re-derives FAIL
 
 #### Manual

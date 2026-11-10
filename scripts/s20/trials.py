@@ -44,6 +44,8 @@ class Trial:
     record_sha_key: str
     bind_trial: str | None  # the bind line's `trial=` value; None: the line carries no `trial=` (F24)
     bind_fields: tuple[str, ...]
+    renderer: str  # the S-20 tool that writes the raw renders and the calibration record
+    renderer_libs: str  # the pinned libraries a re-render names in its way out
     # report wording
     prefix: str  # report keys `<prefix>_fidelity`, … and quality values `<prefix>-slight`, `<prefix>-clear`
     label: str  # the treatment in prose: "significant or severe <label> fidelity loss"
@@ -83,6 +85,8 @@ TRIALS = {
         record_sha_key="nlm_record_sha256",
         bind_trial=None,
         bind_fields=("implementation_sha256", "config_sha256", "opencv_version"),
+        renderer="nlm.py",
+        renderer_libs="OpenCV",
         prefix="nlm",
         label="NLM",
         decided=("pilot.py: plan § Definitions 'Pilot vote' (owner decision 2026-11-05, change.md § Owner decisions "
@@ -112,6 +116,8 @@ TRIALS = {
         record_sha_key="wavelet_record_sha256",
         bind_trial="1b",
         bind_fields=("implementation_sha256", "config_sha256", "skimage_version", "pywt_version", "numpy_version"),
+        renderer="wavelet.py",
+        renderer_libs="scikit-image, PyWavelets and numpy",
         prefix="wavelet",
         label="wavelet",
         decided=("pilot.py --trial 1b: plan § 1b Definitions '1b gate', which keeps § Definitions 'Pilot vote' "

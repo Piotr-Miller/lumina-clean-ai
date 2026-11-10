@@ -1,0 +1,59 @@
+{
+  "experiment": "S-20 step 1b (cloud-classical-denoise, #347): shift-invariant wavelet BayesShrink at full resolution before Local's Auto gamma",
+  "decided": "Pre-registered by context/changes/cloud-classical-denoise/plan.md § Phase 10 (items 1-3, after plan review rounds 4-5: F19, F21, F23, F24, F25, F33, F34) and the owner decisions of 2026-11-09 (change.md § Owner decisions (2026-11-09, step 1b candidate), items 2 and 3). Committed before any real render; never retuned after a rating.",
+  "skimage_version": "0.26.0",
+  "pywt_version": "1.8.0",
+  "input": {
+    "file": "test-photos/private/s20/decoded/<id>.png",
+    "read": "cv2.imread(path, cv2.IMREAD_COLOR), channels reversed to RGB",
+    "dtype": "uint8",
+    "order": "RGB",
+    "binding": "the RGB bytes hash to the decoded record's decoded_pixels_sha256 (the record's pixels_sha256)"
+  },
+  "space": {
+    "conversion": "skimage.color.rgb2ycbcr(skimage.img_as_float(rgb)), float64; Y 16-235, Cb and Cr 16-240 (rgb2ycbcr units)",
+    "planes": ["Y", "Cb", "Cr"],
+    "constant_plane": "checked first: a plane with max == min is copied unfiltered, with no normalisation and no sigma_hat; its diagnostic cells are null",
+    "normalisation": "per non-constant plane (plane - min) / (max - min), as skimage's own YCbCr loop does (_denoise.py:1002-1008 @v0.26.0)"
+  },
+  "estimator": {
+    "name": "Immerkaer 1996, Fast Noise Variance Estimation, CVIU, doi:10.1006/cviu.1996.0060 (1a's kernel and formula)",
+    "kernel": [
+      [1, -2, 1],
+      [-2, 4, -2],
+      [1, -2, 1]
+    ],
+    "dtype": "float64",
+    "formula": "sigma_hat_norm = sqrt(pi/2) * sum(|P * N|) / (6 * (W - 2) * (H - 2)), over the valid region of the normalised plane P",
+    "reported": "sigma_hat = sigma_hat_norm * (max - min), in rgb2ycbcr units"
+  },
+  "mapping": {
+    "sigma": "k * sigma_hat_norm, the normalised value the filter receives, one k for all three planes",
+    "refusal": "a non-finite or <= 0 sigma_hat or sigma on a non-constant plane is a technical refusal, not a vote; no epsilon is introduced"
+  },
+  "k": [1.0, 1.5, 2.0],
+  "filter": {
+    "function": "skimage.restoration.denoise_wavelet",
+    "method": "BayesShrink",
+    "mode": "soft",
+    "wavelet": "db1",
+    "wavelet_levels": null,
+    "rescale_sigma": false,
+    "convert2ycbcr": false
+  },
+  "spin": {
+    "function": "skimage.restoration.cycle_spin",
+    "max_shifts": 3,
+    "workers": 1,
+    "channel_axis": null
+  },
+  "output": {
+    "denormalise": "x * (max - min) + min, per non-constant plane",
+    "conversion": "skimage.color.ycbcr2rgb",
+    "clip": [0, 1],
+    "quantise": "numpy.rint(x * 255) to uint8",
+    "file": "test-photos/private/s20/wavelet/k<k>/<id>.png, RGB PNG without metadata"
+  },
+  "hypothesis": "Bounded: the pilot picks one global k from these three, or none. The estimator was calibrated on synthetic fixtures before this file was committed.",
+  "calibration": "context/changes/cloud-classical-denoise/evaluations/step1b/calibration.md"
+}
