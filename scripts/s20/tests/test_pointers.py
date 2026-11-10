@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -142,6 +143,101 @@ class PointersTest(unittest.TestCase):
         found = pointers.blocks(S20.parents[1])
         self.assertEqual([name for _, name, _ in found],
                          ["### S-20 section", "Backlog Handoff row", "## Teraz", "### Sequence step 1"])
+
+
+STEP1B = "context/changes/cloud-classical-denoise/evaluations/step1b"
+LINK_1B = {"gate": "[1b verdict](context/changes/cloud-classical-denoise/evaluations/step1b/gate.md)",
+           "stop": "[1b STOP](context/changes/cloud-classical-denoise/evaluations/step1b/pilot-stop.md)"}
+
+
+class Trial1bPointersTest(unittest.TestCase):
+    """`--trial 1b` (plan Phase 8, F22, F29): each block also links the 1b outcome, chosen by the
+    1b pilot result, and that outcome is decided (PASS or FAIL, or a STOP report saying STOP)."""
+
+    setUp, write, run_cli = PointersTest.setUp, PointersTest.write, PointersTest.run_cli
+
+    def outcome(self, pilot: str, gate: str | None = None, stop: bool = False) -> None:
+        d = self.root / STEP1B
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "pilot-result.json").write_text(json.dumps({"verdict": pilot}))
+        if gate:
+            (d / "gate.md").write_text(f"# S-20 step 1b — gate verdict\n\n**Verdict: {gate}.** Wins …\n")
+        if stop:
+            (d / "pilot-stop.md").write_text("# S-20 step 1b — pilot STOP\n\n**Verdict: STOP.** No strength …\n")
+
+    def write_1b(self, which: str, **over) -> None:
+        link = LINK_1B[which]
+        v = {"status": f"done — step 1 closed: {LINK} then {link}", "row": f"done | {LINK} {link}",
+             "teraz": f"S-20 step 1 closed: {LINK}, {link}", "step1": f"Verdict: {LINK}; {link}."}
+        self.write(**{**v, **over})
+
+    def run_1b(self) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, "-B", str(S20 / "pointers.py"), "--root", str(self.root),
+                               "--trial", "1b"], capture_output=True, text=True)
+
+    def test_a_decided_gate_linked_from_every_block_passes(self):
+        for verdict in ("PASS", "FAIL"):
+            with self.subTest(verdict=verdict):
+                self.outcome("SELECTED", gate=verdict)
+                self.write_1b("gate")
+                r = self.run_1b()
+                self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+                self.assertIn("evaluations/step1b/gate.md", r.stdout)
+
+    def test_a_block_without_the_1b_link_fails(self):
+        self.outcome("SELECTED", gate="FAIL")
+        self.write_1b("gate", teraz=f"S-20 step 1 decided: {LINK}")
+        r = self.run_1b()
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("(## Teraz): no link to evaluations/step1b/gate.md", r.stdout)
+
+    def test_a_blocked_gate_md_is_no_verdict(self):
+        self.outcome("SELECTED", gate="BLOCKED")
+        self.write_1b("gate")
+        r = self.run_1b()
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("verdict BLOCKED, expected PASS or FAIL", r.stdout)
+
+    def test_a_missing_gate_md_fails(self):
+        self.outcome("SELECTED")
+        self.write_1b("gate")
+        self.assertEqual(self.run_1b().returncode, 1)
+
+    def test_after_a_stop_the_blocks_link_the_stop_report(self):
+        self.outcome("STOP", stop=True)
+        self.write_1b("stop")
+        r = self.run_1b()
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("evaluations/step1b/pilot-stop.md", r.stdout)
+
+    def test_after_a_stop_a_missing_stop_report_fails(self):
+        self.outcome("STOP", stop=False)
+        self.write_1b("stop")
+        r = self.run_1b()
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("pilot-stop.md: missing", r.stdout)
+
+    def test_after_a_stop_a_blocked_gate_md_does_not_satisfy_the_pointers(self):
+        """F29: the gate's BLOCKED report is no outcome; after a STOP only the STOP report is."""
+        self.outcome("STOP", gate="BLOCKED", stop=True)
+        self.write_1b("gate")
+        r = self.run_1b()
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("no link to evaluations/step1b/pilot-stop.md", r.stdout)
+
+    def test_the_bm3d_wording_is_stale_for_1b_only(self):
+        self.outcome("SELECTED", gate="FAIL")
+        self.write_1b("gate", step1=f"Verdict: {LINK}; {LINK_1B['gate']}; awaiting the BM3D licence decision.")
+        r = self.run_1b()
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertIn("'BM3D licence decision'", r.stdout)
+        self.assertEqual(self.run_cli().returncode, 0, "1a's wordings are unchanged")
+
+    def test_an_unreadable_1b_pilot_result_is_exit_2(self):
+        self.write_1b("gate")
+        r = self.run_1b()
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertIn("pilot-result.json", r.stderr)
 
 
 if __name__ == "__main__":

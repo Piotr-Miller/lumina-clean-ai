@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """S-20 status pointers, checked block by block (`cloud-classical-denoise`, plan Phase 4 item 4).
 
-  python3 scripts/s20/pointers.py [--root <dir>]
+  python3 scripts/s20/pointers.py [--trial 1a|1b] [--root <dir>]
 
 Selects exactly these blocks and fails if any is missing [F13, F15]:
 
@@ -14,6 +14,11 @@ Selects exactly these blocks and fails if any is missing [F13, F15]:
 Each block must link `evaluations/step1-gate.md` and hold none of the old wordings
 (`not started`, `NIE rozpoczęte`, `proposed`, `on hold`, `planning`, any case). A wording elsewhere
 in the file (another slice's `on hold`) is not this check's business.
+
+`--trial 1b` (plan Phase 8, review F22 and F29) also requires, in each block, the 1b outcome: a
+link to `evaluations/step1b/pilot-stop.md` when the 1b pilot result says STOP (and that report
+says STOP), otherwise a link to `evaluations/step1b/gate.md`, whose verdict must be PASS or FAIL:
+a BLOCKED gate decides nothing. Its old wordings add `BM3D licence decision`.
 
 Exit status: 0 every pointer current; 1 a pointer stale (file, block and what was found); 2 a file
 unreadable or a block missing.
@@ -30,9 +35,13 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import evidence  # noqa: E402
+import trials  # noqa: E402
+from trials import CHANGE as CHANGE_DIR, TRIALS, Trial  # noqa: E402
 
-LINK = "evaluations/step1-gate.md"
+LINK = TRIALS["1a"].pointer
 OLD = ("not started", "NIE rozpoczęte", "proposed", "on hold", "planning")
+OLD_AFTER_1A = OLD + ("BM3D licence decision",)
+VERDICT = re.compile(r"^\*\*Verdict: ([A-Z]+)\.\*\*", re.M)
 ROADMAP, TEMP, CHANGE = ("context/foundation/roadmap.md", "temp_steps.md",
                          "context/changes/cloud-classical-denoise/change.md")
 HEADING = re.compile(r"^(#{1,6}) ")
@@ -79,34 +88,73 @@ def blocks(root: Path) -> list[tuple[str, str, str]]:
     return out
 
 
-def stale(blocks_: list[tuple[str, str, str]]) -> list[str]:
+def stale(blocks_: list[tuple[str, str, str]], links: tuple[str, ...] = (LINK,),
+          old_words: tuple[str, ...] = OLD) -> list[str]:
     problems = []
     for rel, name, text in blocks_:
-        if LINK not in text:
-            problems.append(f"{rel} ({name}): no link to {LINK}")
-        for old in OLD:
+        for link in links:
+            if link not in text:
+                problems.append(f"{rel} ({name}): no link to {link}")
+        for old in old_words:
             if old.lower() in text.lower():
                 line = next(ln.strip() for ln in text.splitlines() if old.lower() in ln.lower())
                 problems.append(f"{rel} ({name}): old wording {old!r} in: {line[:160]}")
     return problems
 
 
+def verdict_of(root: Path, rel: str) -> str | None:
+    try:
+        m = VERDICT.search((root / rel).read_text())
+    except OSError:
+        return None
+    return m.group(1) if m else None
+
+
+def outcome(root: Path, t: Trial) -> tuple[str, list[str]]:
+    """The trial's outcome link, and what is wrong with the file it points to. Missing if the
+    trial's pilot result cannot be read, since the rule depends on it."""
+    import json
+
+    try:
+        pilot = json.loads((root / t.pilot_result).read_text())
+    except (OSError, ValueError) as e:
+        raise Missing(f"{t.pilot_result}: {e}")
+    if isinstance(pilot, dict) and pilot.get("verdict") == "STOP":
+        link, want = t.stop_pointer, ("STOP",)
+    else:
+        link, want = t.pointer, ("PASS", "FAIL")
+    target = f"{CHANGE_DIR}/{link}"
+    found = verdict_of(root, target)
+    if found is None:
+        return link, [f"{target}: missing, or no verdict line; the pointers would link nothing decided"]
+    if found not in want:
+        return link, [f"{target}: verdict {found}, expected {' or '.join(want)}"]
+    return link, []
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--root", type=Path, default=None)
+    trials.add_argument(ap)
     args = ap.parse_args(argv)
+    t = args.trial
     root = args.root or evidence.repo_root()
+    links, old_words, problems = (LINK,), OLD, []
     try:
         found = blocks(root)
+        if t.name != trials.DEFAULT:
+            link, problems = outcome(root, t)
+            links, old_words = (LINK, link), OLD_AFTER_1A
     except Missing as e:
         print(f"cannot check the S-20 pointers: {e}. Way out: restore the block, then re-run.", file=sys.stderr)
         return 2
-    problems = stale(found)
+    problems = problems + stale(found, links, old_words)
+    shown = " and ".join(links)
     if problems:
         print("stale S-20 pointer(s):\n  " + "\n  ".join(problems)
-              + f"\nWay out: point each block at {LINK} and drop the old wording.")
+              + f"\nWay out: point each block at {shown} and drop the old wording.")
         return 1
-    print(f"✓ all {len(found)} S-20 pointers link {LINK} and carry no old wording")
+    print(f"✓ all {len(found)} S-20 pointers link {shown} and carry no old wording")
     return 0
 
 

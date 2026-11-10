@@ -1567,9 +1567,9 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [x] 7.1 scikit-image and PyWavelets import at the pinned versions
-- [x] 7.2 The 1a audit re-derives FAIL
-- [x] 7.3 Holdout guard allows the eight tuning ids
+- [x] 7.1 scikit-image and PyWavelets import at the pinned versions — 30dd1f7
+- [x] 7.2 The 1a audit re-derives FAIL — 30dd1f7
+- [x] 7.3 Holdout guard allows the eight tuning ids — 30dd1f7
 
 #### Manual
 
@@ -1580,10 +1580,10 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [ ] 8.1 S-20 suite passes, trial cases included
+- [x] 8.1 S-20 suite passes, trial cases included
 - [ ] 8.2 The 1a audit still re-derives FAIL after the seam
-- [ ] 8.3 No 1a evidence or 1a renderer file changed
-- [ ] 8.4 1a pointers still current
+- [x] 8.3 No 1a evidence or 1a renderer file changed
+- [x] 8.4 1a pointers still current
 
 ### Phase 9: Wavelet arm
 

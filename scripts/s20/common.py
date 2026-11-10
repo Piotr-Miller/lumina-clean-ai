@@ -1,6 +1,8 @@
-"""Shared pieces of the S-20 step 1a rule tools `pilot.py` and `gate.py` (plan Phase 4).
+"""Shared pieces of the S-20 step 1 rule tools `pilot.py` and `gate.py` (plan Phases 4 and 8).
 
-  - the evidence paths, relative to the repository (`evidence.repo_root()`);
+  - the evidence paths, relative to the repository (`evidence.repo_root()`): the selected trial's
+    row of `trials.py` (plan Phase 8); the module names below are the 1a row's, for callers that
+    predate the seam;
   - `Blocked`: a refusal with a fixed reason class (safe to print), an optional trusted item id,
     and a detail that goes only to the private log;
   - `boundary`: the one CLI boundary [F7, F12]. It catches everything, never re-raises, prints
@@ -28,12 +30,14 @@ sys.path.insert(0, str(HERE))
 
 import evidence  # noqa: E402
 import protocol  # noqa: E402
+from trials import TRIALS, Trial  # noqa: E402
 
+T1A = TRIALS["1a"]
 EVAL = "context/changes/cloud-classical-denoise/evaluations"
-PILOT_SEAL, PILOT_RATINGS, PILOT_RESULT = f"{EVAL}/pilot-sealed.md", f"{EVAL}/pilot-ratings.json", f"{EVAL}/pilot-result.json"
-GATE_SEAL, GATE_RATINGS = f"{EVAL}/gate-sealed.md", f"{EVAL}/gate-ratings.json"
-GATE_JSON, GATE_MD, AUDIT_DIR = f"{EVAL}/step1-gate.json", f"{EVAL}/step1-gate.md", f"{EVAL}/step1-audit"
-FROZEN = "scripts/s20/configs/nlm-frozen.json"
+PILOT_SEAL, PILOT_RATINGS, PILOT_RESULT = T1A.pilot_seal, T1A.pilot_ratings, T1A.pilot_result
+GATE_SEAL, GATE_RATINGS = T1A.gate_seal, T1A.gate_ratings
+GATE_JSON, GATE_MD, AUDIT_DIR = T1A.gate_json, T1A.gate_md, T1A.audit_dir
+FROZEN = T1A.frozen
 BASELINES = "scripts/s20/configs/local-baselines.json"
 KEY_NAME = ".key-do-not-open.json"
 
@@ -106,26 +110,26 @@ def evidence_order(fn: Callable, *args, reason: str = "order violation", **kw):
         raise Blocked(reason, str(e))
 
 
-def require_pilot_order(root: Path) -> None:
+def require_pilot_order(root: Path, t: Trial = T1A) -> None:
     """Metadata-only order step 6, shared by the live pilot and the published audit."""
     evidence_order(evidence.require_committed_clean, evidence.rule_files(root), root, purpose="the pilot rule")
-    evidence_order(evidence.require_write_once, PILOT_SEAL, root)
-    evidence_order(evidence.require_committed_clean, [PILOT_RATINGS], root, purpose="the pilot rule")
-    evidence_order(evidence.require_strictly_before, PILOT_SEAL, PILOT_RATINGS, root)
+    evidence_order(evidence.require_write_once, t.pilot_seal, root)
+    evidence_order(evidence.require_committed_clean, [t.pilot_ratings], root, purpose="the pilot rule")
+    evidence_order(evidence.require_strictly_before, t.pilot_seal, t.pilot_ratings, root)
 
 
-def require_freeze_order(root: Path) -> None:
+def require_freeze_order(root: Path, t: Trial = T1A) -> None:
     """The freeze is committed once, clean, and later than every pilot-ratings commit."""
-    evidence_order(evidence.require_write_once, FROZEN, root)
-    evidence_order(evidence.require_strictly_before, PILOT_RATINGS, FROZEN, root)
+    evidence_order(evidence.require_write_once, t.frozen, root)
+    evidence_order(evidence.require_strictly_before, t.pilot_ratings, t.frozen, root)
 
 
-def require_gate_order(root: Path) -> None:
+def require_gate_order(root: Path, t: Trial = T1A) -> None:
     """Metadata-only gate-seal and ratings order, shared by the live gate and audit."""
-    evidence_order(evidence.require_write_once, GATE_SEAL, root)
-    evidence_order(evidence.require_strictly_before, FROZEN, GATE_SEAL, root)
-    evidence_order(evidence.require_committed_clean, [GATE_RATINGS, BASELINES], root, purpose="the gate")
-    evidence_order(evidence.require_strictly_before, GATE_SEAL, GATE_RATINGS, root)
+    evidence_order(evidence.require_write_once, t.gate_seal, root)
+    evidence_order(evidence.require_strictly_before, t.frozen, t.gate_seal, root)
+    evidence_order(evidence.require_committed_clean, [t.gate_ratings, BASELINES], root, purpose="the gate")
+    evidence_order(evidence.require_strictly_before, t.gate_seal, t.gate_ratings, root)
 
 
 def guarded_path(path: Path) -> Path:
@@ -234,9 +238,11 @@ def log_detail(tool: str, text: str) -> str | None:
         return None
 
 
-def boundary(tool: str, run: Callable[[], int], write_blocked: Callable[[list[tuple[str | None, str]]], None]) -> int:
+def boundary(tool: str, run: Callable[[], int],
+             write_blocked: Callable[[list[tuple[str | None, str]]], None] | None) -> int:
     """Run `run()`; on any exception print sanitized lines, write the sanitized report, exit 3.
-    Nothing propagates: no traceback and no chained context reach stdout or stderr."""
+    Nothing propagates: no traceback and no chained context reach stdout or stderr. With
+    `write_blocked` None the refusal writes nothing and says so."""
     try:
         return run()
     except BaseException as e:  # noqa: BLE001 - the one boundary
@@ -253,8 +259,11 @@ def boundary(tool: str, run: Callable[[], int], write_blocked: Callable[[list[tu
         rows = sorted({(b.item, b.reason) for b in found}, key=lambda r: (r[0] or "", r[1]))
         log = log_detail(tool, "\n".join(f"{b.item or 'set'}: {b.reason}: {b.detail}" for b in found) + "\n")
         try:
-            write_blocked(rows)
-            report = "The sanitized report was written."
+            if write_blocked is None:
+                report = "Nothing was written."
+            else:
+                write_blocked(rows)
+                report = "The sanitized report was written."
         except Exception:  # noqa: BLE001
             report = "The sanitized report could not be written."
         for item, reason in rows:

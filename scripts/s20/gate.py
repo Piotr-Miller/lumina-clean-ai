@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-"""S-20 step 1a gate (`cloud-classical-denoise`, plan Phase 4 item 3).
+"""S-20 step 1 gate (`cloud-classical-denoise`, plan Phase 4 item 3 and Phase 8).
 
   python3 scripts/s20/gate.py --set <gate set_id> --export context/changes/cloud-classical-denoise/evaluations/gate-ratings.json
   python3 scripts/s20/gate.py --audit context/changes/cloud-classical-denoise/evaluations/step1-audit
+  python3 scripts/s20/gate.py --trial 1b --set <gate set_id> --export <the trial's gate-ratings.json>
+
+`--trial` (default `1a`) selects the row of `trials.py`: paths, treatment arm, record key, bind,
+report keys and wording. The text below names 1a's values (NLM, `nlm-gamma`, `step1-gate.*`).
+A trial with a STOP report (1b) refuses, writing nothing, while that report exists on disk or in
+the index: the gate never runs over a STOP pilot, so it can neither delete the STOP bundle nor
+leave a BLOCKED report in its place (plan review F29).
 
 Rules in a fixed order (owner decisions 2026-11-03 and 2026-11-05; plan § Definitions):
 
@@ -52,7 +59,11 @@ import evidence  # noqa: E402
 import nlm  # noqa: E402  (md_table: Prettier-stable tables)
 import pilot as pilot_rule  # noqa: E402
 import protocol  # noqa: E402
+import trials  # noqa: E402
 from common import Blocked, BlockedMany  # noqa: E402
+from trials import TRIALS, Trial  # noqa: E402
+
+T1A = TRIALS["1a"]
 
 QUALITY = ("A-clear", "A-slight", "tie", "B-slight", "B-clear")
 LEVELS = ("none", "minor", "significant", "severe", "uncertain")
@@ -72,15 +83,15 @@ def is_hex64(v) -> bool:
 # ---------------------------------------------------------------- coverage and schema
 
 
-def pairs_of(key: dict, photos: list[str], k: float) -> dict:
-    """item -> (photo, comparison, nlm side, reference side), checked against the comparisons
-    derived independently: exactly the tuning photos × {control-full, local}, each once."""
+def pairs_of(key: dict, photos: list[str], k: float, t: Trial = T1A) -> dict:
+    """item -> (photo, comparison, treated side under "nlm", reference side), checked against the
+    comparisons derived independently: exactly the tuning photos × {control-full, local}, each once."""
     expected = {(p, r) for p in photos for r in REFS}
     out, found, seen = {}, [], {}
     for item, it in sorted(key["items"].items()):
         sides = it.get("sides") or {}
-        nlm = [s for s, v in sides.items() if v.get("arm") == "nlm-gamma"]
-        ref = [s for s, v in sides.items() if v.get("arm") != "nlm-gamma"]
+        nlm = [s for s, v in sides.items() if v.get("arm") == t.arm]
+        ref = [s for s, v in sides.items() if v.get("arm") != t.arm]
         comp = (it.get("photo"), it.get("comparison"))
         if (sorted(sides) != ["A", "B"] or len(nlm) != 1 or len(ref) != 1
                 or sides[ref[0]].get("arm") != it.get("comparison") or sides[nlm[0]].get("k") != k):
@@ -170,7 +181,7 @@ def ratings_of(export, sealed: dict, pairs: dict) -> dict:
 
 
 def record_bindings(key: dict, pairs: dict, read: Reader, freeze_k: float, grid_sha: str, bind: dict,
-                    base: dict) -> None:
+                    base: dict, t: Trial = T1A) -> None:
     """Metadata bindings, shared by the gate and the audit: records against the key and each other."""
     found: list[Blocked] = []
     per_photo: dict[str, dict] = {}
@@ -190,19 +201,19 @@ def record_bindings(key: dict, pairs: dict, read: Reader, freeze_k: float, grid_
             if not dec or dec.get("pixels_sha256") != src["original"]["pixels_sha256"]:
                 raise Blocked("binding failed", f"{item}: the original is not its shared decode", item)
             n = src[pr["nlm"]]
-            nlm_rec = common.strict_json(read(n["nlm_record"], n["nlm_record_sha256"]), "an NLM record")
+            nlm_rec = common.strict_json(read(n[t.record_key], n[t.record_sha_key]), f"an {t.label} record")
             arm = recs.get(pr["nlm"]) or {}
             source = arm.get("source") or {}
-            if (source.get("record_sha256") != n["nlm_record_sha256"] or source.get("k") != freeze_k
+            if (source.get("record_sha256") != n[t.record_sha_key] or source.get("k") != freeze_k
                     or nlm_rec.get("k") != freeze_k or nlm_rec.get("decoded_pixels_sha256") != dec["pixels_sha256"]):
                 raise Blocked("binding failed", f"{item}: the NLM side is not the frozen strength's render", item)
             if nlm_rec.get("config_sha256") != grid_sha:
                 raise Blocked("binding failed", f"{item}: the NLM record is not from the frozen grid", item)
-            off = [f for f in blind.BIND_FIELDS if nlm_rec.get(f) != bind[f]]
+            off = [f for f in t.bind_fields if nlm_rec.get(f) != bind[f]]
             if off:
                 raise Blocked("provenance mismatch", f"{item}: {', '.join(off)}", item)
             photo = per_photo.setdefault(pr["photo"], {"nlm": [], "control": None})
-            photo["nlm"].append((item, n["nlm_record_sha256"], arm))
+            photo["nlm"].append((item, n[t.record_sha_key], arm))
             ref = src[pr["ref"]]
             if pr["comparison"] == "control-full":
                 photo["control"] = (item, recs.get(pr["ref"]) or {})
@@ -251,23 +262,24 @@ def baselines(root: Path, photos: list[str]) -> dict:
 # ---------------------------------------------------------------- the rule
 
 
-def decide(sealed: dict, pairs: dict, rows: dict) -> dict:
+def decide(sealed: dict, pairs: dict, rows: dict, t: Trial = T1A) -> dict:
+    x = t.prefix  # 1a: nlm_fidelity, nlm_side, …, worst_nlm_fidelity, nlm-slight, nlm-clear
     photos: dict[str, dict] = {}
     for item, pr in sorted(pairs.items()):
         row = rows[item]
         q = row["quality"]
-        quality = "tie" if q == "tie" else (("nlm-" if q[0] == pr["nlm"] else "reference-") + q.split("-")[1])
+        quality = "tie" if q == "tie" else ((f"{x}-" if q[0] == pr["nlm"] else "reference-") + q.split("-")[1])
         f = row["fidelity"]
         d = photos.setdefault(pr["photo"], {})
-        d[pr["comparison"]] = {"pair": item, "quality": quality, "nlm_fidelity": f[pr["nlm"]]["level"],
-                               "reference_fidelity": f[pr["ref"]]["level"], "nlm_side": pr["nlm"],
-                               "nlm_crops": f[pr["nlm"]]["crops"], "nlm_reason": f[pr["nlm"]]["reason"],
+        d[pr["comparison"]] = {"pair": item, "quality": quality, f"{x}_fidelity": f[pr["nlm"]]["level"],
+                               "reference_fidelity": f[pr["ref"]]["level"], f"{x}_side": pr["nlm"],
+                               f"{x}_crops": f[pr["nlm"]]["crops"], f"{x}_reason": f[pr["nlm"]]["reason"],
                                "reference_crops": f[pr["ref"]]["crops"], "reference_reason": f[pr["ref"]]["reason"]}
     wins, fidelity_fail = 0, []
     for photo, d in sorted(photos.items()):
-        worst = max((d[r]["nlm_fidelity"] for r in REFS), key=lambda lv: SEVERITY[lv])
-        d["worst_nlm_fidelity"] = worst
-        d["win"] = d["control-full"]["quality"] in ("nlm-slight", "nlm-clear")
+        worst = max((d[r][f"{x}_fidelity"] for r in REFS), key=lambda lv: SEVERITY[lv])
+        d[f"worst_{x}_fidelity"] = worst
+        d["win"] = d["control-full"]["quality"] in (f"{x}-slight", f"{x}-clear")
         wins += d["win"]
         if worst in NEEDS_EVIDENCE:
             fidelity_fail.append(photo)
@@ -275,16 +287,16 @@ def decide(sealed: dict, pairs: dict, rows: dict) -> dict:
     if wins < WINS_REQUIRED:
         reasons.append(f"{wins} of {len(photos)} wins against control-full, {WINS_REQUIRED} required")
     if fidelity_fail:
-        reasons.append(f"significant or severe NLM fidelity loss on {', '.join(fidelity_fail)}")
+        reasons.append(f"significant or severe {t.label} fidelity loss on {', '.join(fidelity_fail)}")
     return {"verdict": "FAIL" if reasons else "PASS", "wins": wins, "wins_required": WINS_REQUIRED,
             "photos_required": PHOTOS_REQUIRED, "reasons": reasons, "photos": photos}
 
 
-def evaluate(root: Path, set_id: str) -> tuple[dict, dict]:
+def evaluate(root: Path, set_id: str, t: Trial = T1A) -> tuple[dict, dict]:
     """Every BLOCKED check in order, then the rule. Returns (report, context for the bundle)."""
-    pilot, freeze = pilot_rule.require_freeze(root)  # rule files, steps 6 and 8
-    common.require_gate_order(root)
-    sealed = common.load_set(common.GATE_SEAL, "gate", root)
+    pilot, freeze = pilot_rule.require_freeze(root, t)  # rule files, steps 6 and 8
+    common.require_gate_order(root, t)
+    sealed = common.load_set(t.gate_seal, "gate", root)
     if sealed["seal"]["set_id"] != set_id:
         raise Blocked("key mismatch", f"--set {set_id} is not the sealed gate set")
     if sealed["key"].get("freeze") != freeze:
@@ -292,19 +304,16 @@ def evaluate(root: Path, set_id: str) -> tuple[dict, dict]:
     photos = common.expected_photos()
     if len(photos) != PHOTOS_REQUIRED:
         raise Blocked("coverage error", f"{len(photos)} tuning photos, the gate needs {PHOTOS_REQUIRED}")
-    pilot_sealed = common.load_set(common.PILOT_SEAL, "pilot", root)
-    try:
-        bind = blind.committed_bind()
-    except blind.Blocked as e:
-        raise Blocked("provenance mismatch", e.detail)
-    pairs = pairs_of(sealed["key"], photos, freeze["k"])
+    pilot_sealed = common.load_set(t.pilot_seal, "pilot", root)
+    bind = pilot_rule.committed_bind(t)
+    pairs = pairs_of(sealed["key"], photos, freeze["k"], t)
     base = baselines(root, photos)
-    export_raw = common.read_bytes(root / common.GATE_RATINGS)
+    export_raw = common.read_bytes(root / t.gate_ratings)
     found: list[Blocked] = []
     rows = {}
     for check in (lambda: rows.update(ratings_of(common.strict_json(export_raw, "the gate export"), sealed, pairs)),
                   lambda: record_bindings(sealed["key"], pairs, file_reader(), freeze["k"], pilot["grid_config_sha256"],
-                                          bind, base),
+                                          bind, base, t),
                   lambda: common.file_bindings(sealed, pairs)):
         try:
             check()
@@ -314,7 +323,7 @@ def evaluate(root: Path, set_id: str) -> tuple[dict, dict]:
             found.append(b)
     if found:
         raise BlockedMany(found)
-    report = decide(sealed, pairs, rows)
+    report = decide(sealed, pairs, rows, t)
     report.update(evidence_hashes(sealed, pilot_sealed, freeze, export_raw, pilot))
     return report, {"gate": sealed, "pilot": pilot_sealed}
 
@@ -330,10 +339,11 @@ def evidence_hashes(sealed, pilot_sealed, freeze, export_raw, pilot) -> dict:
 # ---------------------------------------------------------------- outputs
 
 
-def write_reports(root: Path, report: dict) -> None:
-    pilot_rule.write_if_changed(root / common.GATE_JSON, report)
+def write_reports(root: Path, report: dict, t: Trial = T1A) -> None:
+    x = t.prefix
+    pilot_rule.write_if_changed(root / t.gate_json, report)
     lines = [
-        "# S-20 step 1a — gate verdict",
+        f"# {t.title} — gate verdict",
         "",
         f"**Verdict: {report['verdict']}.** Wins against `control-full`: {report['wins']} of "
         f"{report['photos_required']} ({report['wins_required']} required). Frozen `k` = {report['k']:.1f}.",
@@ -341,31 +351,31 @@ def write_reports(root: Path, report: dict) -> None:
     ]
     lines += [f"- {r}" for r in report["reasons"]] + ([""] if report["reasons"] else [])
     lines += [
-        "Written by `scripts/s20/gate.py`; re-derive it with `gate.py --audit "
-        f"{common.AUDIT_DIR}`. Quality is NLM's side: `nlm-*` means NLM preferred; the Local pair is",
-        "diagnostic. Fidelity is judged against the original; the worst NLM side across both pairs counts.",
+        f"Written by `scripts/s20/gate.py`; re-derive it with `gate.py{t.flag} --audit "
+        f"{t.audit_dir}`. Quality is {t.label}'s side: `{x}-*` means {t.label} preferred; the Local pair is",
+        f"diagnostic. Fidelity is judged against the original; the worst {t.label} side across both pairs counts.",
         "",
     ]
     lines += nlm.md_table(
-        ["Photo", "vs control", "vs Local", "NLM fidelity (control / Local)", "Worst",
+        ["Photo", "vs control", "vs Local", f"{t.label} fidelity (control / Local)", "Worst",
          "Reference fidelity (control / Local)"],
         [[photo, d["control-full"]["quality"], d["local"]["quality"],
-          f"{d['control-full']['nlm_fidelity']} / {d['local']['nlm_fidelity']}", d["worst_nlm_fidelity"],
+          f"{d['control-full'][f'{x}_fidelity']} / {d['local'][f'{x}_fidelity']}", d[f"worst_{x}_fidelity"],
           f"{d['control-full']['reference_fidelity']} / {d['local']['reference_fidelity']}"]
          for photo, d in sorted(report["photos"].items())])
     ev = [(photo, comp, who, d[comp][f"{who}_crops"], d[comp][f"{who}_reason"])
-          for photo, d in sorted(report["photos"].items()) for comp in REFS for who in ("nlm", "reference")
+          for photo, d in sorted(report["photos"].items()) for comp in REFS for who in (x, "reference")
           if d[comp][f"{who}_crops"] or d[comp][f"{who}_reason"].strip()]
     if ev:
         lines += ["", "## Crops and reasons", "", "Source pixels, half-open `[x, x+w) × [y, y+h)`.", ""]
         for photo, comp, who, crops, reason in ev:
             cs = "; ".join(f"x {c['x']}, y {c['y']}, {c['w']}×{c['h']}" for c in crops) or "no crop"
             lines.append(f"- {photo}, {who} side vs {comp}: {cs} — {reason.strip() or 'no reason'}")
-    (root / common.GATE_MD).write_text("\n".join(lines) + "\n")
+    (root / t.gate_md).write_text("\n".join(lines) + "\n")
 
 
-def write_bundle(root: Path, ctx: dict) -> None:
-    out = root / common.AUDIT_DIR
+def write_bundle(root: Path, ctx: dict, t: Trial = T1A) -> None:
+    out = root / t.audit_dir
     if out.exists():
         shutil.rmtree(out)
     (out / "records").mkdir(parents=True)
@@ -376,55 +386,68 @@ def write_bundle(root: Path, ctx: dict) -> None:
         (out / f"{kind}-manifest.raw").write_bytes(s["manifest_raw"])
         for it in s["key"]["items"].values():
             for src in it["sources"].values():
-                for path_f, sha_f in (("record", "record_sha256"), ("nlm_record", "nlm_record_sha256")):
+                for path_f, sha_f in (("record", "record_sha256"), (t.record_key, t.record_sha_key)):
                     if path_f in src:
                         (out / "records" / f"{src[sha_f]}.raw").write_bytes(read(src[path_f], src[sha_f]))
-    (out / "README.md").write_text("""# S-20 step 1a — audit bundle
+    pilot_seal, gate_seal = Path(t.pilot_seal).name, Path(t.gate_seal).name
+    (out / "README.md").write_text(f"""# {t.title} — audit bundle
 
 Written by `scripts/s20/gate.py` after a terminal verdict. JSON metadata only: no image bytes.
 
 - `pilot-key.raw`, `gate-key.raw`: the sealed keys, verbatim. Their sha256 equals the `key_sha256`
-  of `../pilot-sealed.md` and `../gate-sealed.md`.
+  of `../{pilot_seal}` and `../{gate_seal}`.
 - `pilot-manifest.raw`, `gate-manifest.raw`: the viewer manifests, verbatim; `set_digest` recomputes.
-- `records/<sha256>.raw`: every decoded, arm and NLM record either key names, named by its sha256.
+- `records/<sha256>.raw`: every decoded, arm and {t.label} record either key names, named by its sha256.
 
 `*.raw` keeps the formatter away from bytes whose hashes are pinned.
 
-**From a checkout alone:** `python3 scripts/s20/gate.py --audit context/changes/cloud-classical-denoise/evaluations/step1-audit`
+**From a checkout alone:** `python3 scripts/s20/gate.py{t.flag} --audit {t.audit_dir}`
 re-derives the verdict from these files, the committed seals, exports, freeze and
 `scripts/s20/configs/local-baselines.json`, without opening an image.
 
 **Full verification** also re-hashes and re-decodes the presentation and source images. It needs
 the private workspace: `test-photos/private/s19/inputs/`, `test-photos/private/s19/local/`,
-`test-photos/private/s19/arms/{control-full,nlm-gamma}/`, and `test-photos/private/s20/` (`decoded/`,
-`nlm/`, and the two set folders named in the seals). Then run `gate.py --set <gate set_id> --export
-context/changes/cloud-classical-denoise/evaluations/gate-ratings.json`.
+`test-photos/private/s19/arms/{{control-full,{t.arm}}}/`, and `test-photos/private/s20/` (`decoded/`,
+`{t.raw_dir}/`, and the two set folders named in the seals). Then run `gate.py{t.flag} --set <gate set_id> --export
+{t.gate_ratings}`.
 """)
 
 
-def write_blocked(root: Path, rows) -> None:
-    """The sanitized report: verdict, trusted pair ids, reason classes, way out. Nothing decoded."""
-    if (root / common.AUDIT_DIR).exists():
-        shutil.rmtree(root / common.AUDIT_DIR)  # an earlier bundle would unblind the set while it is resolved
+def write_blocked(root: Path, rows, t: Trial = T1A) -> None:
+    """The sanitized report: verdict, trusted pair ids, reason classes, way out. Nothing decoded.
+    Only the selected trial's audit directory is ever removed."""
+    if (root / t.audit_dir).exists():
+        shutil.rmtree(root / t.audit_dir)  # an earlier bundle would unblind the set while it is resolved
     ways = {r: common.WAY_OUT[r] for r in sorted({r for _, r in rows})}
-    common.write_json(root / common.GATE_JSON, {"verdict": "BLOCKED", "reasons": common.blocked_rows(rows),
-                                                "way_out": ways})
-    lines = ["# S-20 step 1a — gate verdict", "", "**Verdict: BLOCKED.** Nothing is decided until every item below",
+    common.write_json(root / t.gate_json, {"verdict": "BLOCKED", "reasons": common.blocked_rows(rows),
+                                           "way_out": ways})
+    lines = [f"# {t.title} — gate verdict", "", "**Verdict: BLOCKED.** Nothing is decided until every item below",
              "is resolved; the set stays blind.", ""]
     lines += nlm.md_table(["Item", "Reason"], [[item or "set", reason] for item, reason in rows])
     lines += ["", "## Way out", ""] + [f"- **{r}:** {w}." for r, w in ways.items()]
-    (root / common.GATE_MD).write_text("\n".join(lines) + "\n")
+    (root / t.gate_md).write_text("\n".join(lines) + "\n")
+
+
+def stop_report_exists(root: Path, t: Trial) -> bool:
+    """The trial's STOP report is on disk or in the index (F29): the gate must not run over it."""
+    return t.pilot_stop is not None and bool(common.evidence_order(evidence.present, [t.pilot_stop], root))
+
+
+def refuse_over_stop(root: Path, t: Trial) -> int:
+    if stop_report_exists(root, t):
+        raise Blocked("pilot stop", f"{t.pilot_stop} exists: the pilot is STOP and no gate runs over it")
+    return 0
 
 
 # ---------------------------------------------------------------- audit
 
 
-def audit(bundle: Path) -> int:
+def audit(bundle: Path, t: Trial = T1A) -> int:
     """Re-derive the verdict from metadata only and compare it with the committed report."""
     root = evidence.repo_root()
-    common.require_pilot_order(root)
-    common.require_freeze_order(root)
-    common.require_gate_order(root)
+    common.require_pilot_order(root, t)
+    common.require_freeze_order(root, t)
+    common.require_gate_order(root, t)
     bundle = common.guarded_path(bundle)
 
     def raw(name):
@@ -437,41 +460,38 @@ def audit(bundle: Path) -> int:
         return data
 
     photos = common.expected_photos()
-    try:
-        bind = blind.committed_bind()
-    except blind.Blocked as e:
-        raise Blocked("provenance mismatch", e.detail)
+    bind = pilot_rule.committed_bind(t)
     sealed = {}
-    for kind, seal_rel in (("pilot", common.PILOT_SEAL), ("gate", common.GATE_SEAL)):
+    for kind, seal_rel in (("pilot", t.pilot_seal), ("gate", t.gate_seal)):
         seal = common.evidence_order(evidence.read_seal, seal_rel, kind, root, reason="seal invalid")
         sealed[kind] = common.sealed_from(seal, kind, raw(f"{kind}-key.raw"), raw(f"{kind}-manifest.raw"))
-    pilot_raw = common.read_bytes(root / common.PILOT_RATINGS)
-    pilot_rule.check_provenance(sealed["pilot"]["key"], bind, read)
+    pilot_raw = common.read_bytes(root / t.pilot_ratings)
+    pilot_rule.check_provenance(sealed["pilot"]["key"], bind, read, t)
     decoded = pilot_rule.votes(common.strict_json(pilot_raw, "the pilot export"), sealed["pilot"], photos)
     p = {**pilot_rule.rule(decoded, bind["k"]), "grid_config_sha256": bind["config_sha256"],
          "pilot_set_digest": sealed["pilot"]["seal"]["set_digest"], "pilot_key_sha256": sealed["pilot"]["seal"]["key_sha256"],
          "pilot_export_sha256": common.sha_bytes(pilot_raw)}
     if p["decision"] != "SELECTED":
         raise Blocked("pilot stop", "the committed pilot is STOP")
-    freeze_raw = common.read_bytes(root / common.FROZEN)
-    if common.strict_json(freeze_raw, "the freeze") != pilot_rule.freeze_doc(p):
+    freeze_raw = common.read_bytes(root / t.frozen)
+    if common.strict_json(freeze_raw, "the freeze") != pilot_rule.freeze_doc(p, t):
         raise Blocked("stale freeze", "the committed freeze is not what the committed pilot decides")
-    freeze = {"path": common.FROZEN, "sha256": common.sha_bytes(freeze_raw), "k": p["k"]}
+    freeze = {"path": t.frozen, "sha256": common.sha_bytes(freeze_raw), "k": p["k"]}
     if sealed["gate"]["key"].get("freeze") != freeze:
         raise Blocked("stale freeze", "the gate key names another freeze")
-    pairs = pairs_of(sealed["gate"]["key"], photos, p["k"])
-    gate_raw = common.read_bytes(root / common.GATE_RATINGS)
+    pairs = pairs_of(sealed["gate"]["key"], photos, p["k"], t)
+    gate_raw = common.read_bytes(root / t.gate_ratings)
     rows = ratings_of(common.strict_json(gate_raw, "the gate export"), sealed["gate"], pairs)
     record_bindings(sealed["gate"]["key"], pairs, read, p["k"], p["grid_config_sha256"], bind,
-                    baselines(root, photos))
-    report = decide(sealed["gate"], pairs, rows)
+                    baselines(root, photos), t)
+    report = decide(sealed["gate"], pairs, rows, t)
     report.update(evidence_hashes(sealed["gate"], sealed["pilot"], freeze, gate_raw, p))
     try:
-        recorded = json.loads(common.read_bytes(root / common.GATE_JSON))
+        recorded = json.loads(common.read_bytes(root / t.gate_json))
     except (OSError, ValueError) as e:
-        raise Blocked("missing file", f"{common.GATE_JSON}: {e}")
+        raise Blocked("missing file", f"{t.gate_json}: {e}")
     if recorded != report:
-        raise Blocked("binding failed", f"the re-derived report differs from {common.GATE_JSON}")
+        raise Blocked("binding failed", f"the re-derived report differs from {t.gate_json}")
     print(f"✓ audit re-derives {report['verdict']}: {report['wins']} of {report['photos_required']} wins, "
           f"k {report['k']:.1f}; metadata only, no image opened.")
     return 0 if report["verdict"] == "PASS" else 1
@@ -480,14 +500,14 @@ def audit(bundle: Path) -> int:
 # ---------------------------------------------------------------- CLI
 
 
-def run(set_id: str) -> int:
+def run(set_id: str, t: Trial = T1A) -> int:
     root = evidence.repo_root()
-    report, ctx = evaluate(root, set_id)
-    write_reports(root, report)
-    write_bundle(root, ctx)
+    report, ctx = evaluate(root, set_id, t)
+    write_reports(root, report, t)
+    write_bundle(root, ctx, t)
     print(f"{report['verdict']}: {report['wins']} of {report['photos_required']} wins against control-full "
           f"({report['wins_required']} required)" + (f"; {'; '.join(report['reasons'])}" if report["reasons"] else "")
-          + f".\n  wrote {common.GATE_JSON}, {common.GATE_MD} and {common.AUDIT_DIR}/; commit them.")
+          + f".\n  wrote {t.gate_json}, {t.gate_md} and {t.audit_dir}/; commit them.")
     return 0 if report["verdict"] == "PASS" else 1
 
 
@@ -496,19 +516,23 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--set", dest="set_id", type=blind.set_id_arg)
     ap.add_argument("--export")
     ap.add_argument("--audit")
+    trials.add_argument(ap)
     args = ap.parse_args(argv)
+    t = args.trial
     root = evidence.repo_root()
     if args.audit:
         if args.set_id or args.export:
             ap.error("--audit takes no --set or --export")
-        return common.boundary("gate-audit", lambda: audit(Path(args.audit)), lambda rows: None)
+        return common.boundary("gate-audit", lambda: audit(Path(args.audit), t), lambda rows: None)
     if not (args.set_id and args.export):
         ap.error("--set and --export are required (or --audit <dir>)")
     export = Path(args.export)
     export = export if export.is_absolute() else Path.cwd() / export
-    if export.resolve() != (root / common.GATE_RATINGS).resolve():
-        ap.error(f"--export must be the committed {common.GATE_RATINGS}")
-    return common.boundary("gate", lambda: run(args.set_id), lambda rows: write_blocked(root, rows))
+    if export.resolve() != (root / t.gate_ratings).resolve():
+        ap.error(f"--export must be the committed {t.gate_ratings}")
+    if common.boundary("gate", lambda: refuse_over_stop(root, t), None):
+        return 3  # F29: refused before any write, so neither the STOP bundle nor a BLOCKED report changes
+    return common.boundary("gate", lambda: run(args.set_id, t), lambda rows: write_blocked(root, rows, t))
 
 
 if __name__ == "__main__":
