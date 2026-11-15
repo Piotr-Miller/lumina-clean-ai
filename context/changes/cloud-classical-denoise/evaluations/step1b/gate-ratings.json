@@ -1,0 +1,280 @@
+{
+  "viewer": "compare-s20",
+  "version": 1,
+  "kind": "gate",
+  "set_id": "gate-1b",
+  "set_digest": "a5e8b8a4ac6e8a0faa4a88eba4fc87c83a5add7ca166759bf600a4cad4f7e064",
+  "rated_on": "2026-11-15",
+  "ratings": [
+    {
+      "pair_id": "p01",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p02",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p03",
+      "quality": "B-clear",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p04",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p05",
+      "quality": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p06",
+      "quality": "A-clear",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p07",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p08",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p09",
+      "quality": "B-clear",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p10",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p11",
+      "quality": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p12",
+      "quality": "B-clear",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p13",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p14",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p15",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "significant",
+          "crops": [
+            {
+              "x": 2608,
+              "y": 1024,
+              "w": 304,
+              "h": 274
+            }
+          ],
+          "reason": "Najsłabsze gwiazdy znikają lub rozmywają się w smugi, ziarnista faktura nieba i gruntu wygładzona do plastycznych plam (efekt akwareli)."
+        }
+      }
+    },
+    {
+      "pair_id": "p16",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "significant",
+          "crops": [
+            {
+              "x": 2608,
+              "y": 1024,
+              "w": 304,
+              "h": 274
+            }
+          ],
+          "reason": "Najsłabsze gwiazdy znikają lub rozmywają się w smugi, ziarnista faktura nieba i gruntu wygładzona do plastycznych plam (efekt akwareli)."
+        }
+      }
+    }
+  ]
+}
