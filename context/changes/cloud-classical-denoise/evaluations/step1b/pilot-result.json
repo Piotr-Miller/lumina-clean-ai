@@ -1,0 +1,25 @@
+{
+  "choices": {
+    "S17-01": "k1.5",
+    "S17-02": "k1.5",
+    "S17-03": "k1.0",
+    "S17-04": null,
+    "S17-05": null,
+    "S17-06": null,
+    "S17-07": "k2.0",
+    "S17-21": "k1.5"
+  },
+  "counts": {
+    "k1.0": 1,
+    "k1.5": 3,
+    "k2.0": 1
+  },
+  "grid_config_sha256": "c17de82767e914616412f1f7a49aeb4b7d9f38cb9e2f72509ca749ac12617186",
+  "k": 1.5,
+  "none": 3,
+  "pilot_export_sha256": "51fd0a14d39ccc6e86937eea953aa320f66274808277d442a45248711be846f0",
+  "pilot_key_sha256": "7e2738d81403f7ed906728ce60dd10cd3608c9088bd128459711d22295d83865",
+  "pilot_set_digest": "c9480e90783a6f692f6a2d52a10a81267c49f6d5217e922de01d2acc5d4971e3",
+  "rule": "pilot.py --trial 1b: plan \u00a7 1b Definitions '1b gate', which keeps \u00a7 Definitions 'Pilot vote' (owner decision 2026-11-05, change.md \u00a7 Owner decisions (2026-11-05) item 5): most votes wins, a tie goes to the weaker k, 'none' counts for no strength",
+  "verdict": "SELECTED"
+}
