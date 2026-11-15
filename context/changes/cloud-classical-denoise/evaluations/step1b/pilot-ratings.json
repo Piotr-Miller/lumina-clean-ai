@@ -1,0 +1,50 @@
+{
+  "viewer": "compare-s20",
+  "version": 1,
+  "kind": "pilot",
+  "set_id": "pilot-1b",
+  "set_digest": "c9480e90783a6f692f6a2d52a10a81267c49f6d5217e922de01d2acc5d4971e3",
+  "rated_on": "2026-11-15",
+  "choices": [
+    {
+      "item_id": "i01",
+      "photo": "S17-01",
+      "choice": "X"
+    },
+    {
+      "item_id": "i02",
+      "photo": "S17-02",
+      "choice": "Z"
+    },
+    {
+      "item_id": "i03",
+      "photo": "S17-03",
+      "choice": "Y"
+    },
+    {
+      "item_id": "i04",
+      "photo": "S17-04",
+      "choice": "none"
+    },
+    {
+      "item_id": "i05",
+      "photo": "S17-05",
+      "choice": "none"
+    },
+    {
+      "item_id": "i06",
+      "photo": "S17-06",
+      "choice": "none"
+    },
+    {
+      "item_id": "i07",
+      "photo": "S17-07",
+      "choice": "Y"
+    },
+    {
+      "item_id": "i08",
+      "photo": "S17-21",
+      "choice": "X"
+    }
+  ]
+}
