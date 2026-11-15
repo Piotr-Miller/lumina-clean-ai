@@ -1,0 +1,21 @@
+{
+  "kind": "decoded",
+  "id": "S17-06",
+  "common": {
+    "path": "test-photos/private/s19/inputs/S17-06-common.jpg",
+    "sha256": "b253caa1bcfd05979f5dc01a5e45208578f778e399673070cfa2d6671ea36377"
+  },
+  "common_sha256": "b253caa1bcfd05979f5dc01a5e45208578f778e399673070cfa2d6671ea36377",
+  "pixels_sha256": "18bba3de4200f48132cfc7fc03423b9d52b37c7fcd3b758dd260140589ff6bc9",
+  "output_sha256": "ae3b0f70dc5af5c2ba148eac0f6612296ab7d57082a07361e12b9b4664822a36",
+  "dimensions": [
+    4284,
+    5712
+  ],
+  "decoder": {
+    "sharp": "0.34.5",
+    "vips": "8.17.3"
+  },
+  "implementation_sha256": "8664410495ca933964f7902f841ad6041ff31c44a5720521baa29332e04aa21a",
+  "rendered_at": "2026-11-08T21:24:14.106Z"
+}
