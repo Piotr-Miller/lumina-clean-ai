@@ -1,0 +1,36 @@
+{
+  "arm": "wavelet-gamma",
+  "id": "S17-02",
+  "input": "test-photos/private/s20/wavelet/k1.5/S17-02.png",
+  "input_sha256": "c1fbaa692b6c73c92b6c370b7b004c25c1480511a410c44c02b0c1b5f61524e0",
+  "source": {
+    "kind": "wavelet",
+    "record": "test-photos/private/s20/wavelet/k1.5/S17-02.json",
+    "record_sha256": "0db220f70f5f118c799805d7db4c347dade47842b653acb9725da1b2970811b8",
+    "output_sha256": "c1fbaa692b6c73c92b6c370b7b004c25c1480511a410c44c02b0c1b5f61524e0",
+    "config_sha256": "c17de82767e914616412f1f7a49aeb4b7d9f38cb9e2f72509ca749ac12617186",
+    "k": 1.5
+  },
+  "decoded_record": "test-photos/private/s20/decoded/S17-02.json",
+  "decoded_record_sha256": "3e80ba17a8f33ab2fd11f58c381b962f5cef5ef306c28da7577e027afdf42f2d",
+  "decoded_pixels_sha256": "fcdd4f91752c3970a2f19f9efa62282f2b271d0472968c1be158412bb48d89da",
+  "auto_record": {
+    "common_sha256": "b19c789b32d7686c220330152b897f5257de2296133ed38a0659fdd8d29fc6f2",
+    "session_id": "f2814060-6827-4342-9c4b-f4edc60d9f2e",
+    "provenance": "recomputed"
+  },
+  "auto_file_sha256": "74d838ebf679d72f65cb4ddd7b66220ab1d44400de6f96c96c095f6063474f58",
+  "gamma": 1.0503538133075825,
+  "tone": {
+    "kind": "gamma"
+  },
+  "lut_sha256": "4f8308470d2b82671f5a720f7d609ee80145ed21ea05b8352076d5b00294ce2f",
+  "blur_sigma_px": 0,
+  "output_sha256": "a8ca7a7d6f02aa5f6ee36f5f2686f65b220641c4e5d58130f0c71d361ac7020b",
+  "dimensions": [
+    3840,
+    2221
+  ],
+  "implementation_sha256": "cd13cc330f2e6e79352540aa2da2e546d2abbace7d8d05bdd7e58d03c7f1c85e",
+  "rendered_at": "2026-11-10T22:01:54.689Z"
+}

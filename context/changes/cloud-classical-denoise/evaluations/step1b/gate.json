@@ -1,0 +1,241 @@
+{
+  "freeze_sha256": "8274ee0fa3db743e28d9d74f59d919fbad6caff252e33dbe961ded9b872f1ad7",
+  "gate_export_sha256": "dc72744f1db68cb851528d15c1a3054987603f16d8f94d51cc438441f5f0b8c7",
+  "gate_key_sha256": "f7d3f7dc70d4607fdd73cea89c05e27ef27b4cec41dfa40cae3fe4b01aae78d9",
+  "gate_set_digest": "a5e8b8a4ac6e8a0faa4a88eba4fc87c83a5add7ca166759bf600a4cad4f7e064",
+  "gate_set_id": "gate-1b",
+  "grid_config_sha256": "c17de82767e914616412f1f7a49aeb4b7d9f38cb9e2f72509ca749ac12617186",
+  "k": 1.5,
+  "photos": {
+    "S17-01": {
+      "control-full": {
+        "pair": "p06",
+        "quality": "wavelet-clear",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "minor",
+        "wavelet_reason": "",
+        "wavelet_side": "A"
+      },
+      "local": {
+        "pair": "p03",
+        "quality": "wavelet-clear",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "minor",
+        "wavelet_reason": "",
+        "wavelet_side": "B"
+      },
+      "win": true,
+      "worst_wavelet_fidelity": "minor"
+    },
+    "S17-02": {
+      "control-full": {
+        "pair": "p05",
+        "quality": "wavelet-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "minor",
+        "wavelet_reason": "",
+        "wavelet_side": "A"
+      },
+      "local": {
+        "pair": "p14",
+        "quality": "wavelet-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "minor",
+        "wavelet_reason": "",
+        "wavelet_side": "B"
+      },
+      "win": true,
+      "worst_wavelet_fidelity": "minor"
+    },
+    "S17-03": {
+      "control-full": {
+        "pair": "p16",
+        "quality": "wavelet-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [
+          {
+            "h": 274,
+            "w": 304,
+            "x": 2608,
+            "y": 1024
+          }
+        ],
+        "wavelet_fidelity": "significant",
+        "wavelet_reason": "Najs\u0142absze gwiazdy znikaj\u0105 lub rozmywaj\u0105 si\u0119 w smugi, ziarnista faktura nieba i gruntu wyg\u0142adzona do plastycznych plam (efekt akwareli).",
+        "wavelet_side": "B"
+      },
+      "local": {
+        "pair": "p15",
+        "quality": "wavelet-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [
+          {
+            "h": 274,
+            "w": 304,
+            "x": 2608,
+            "y": 1024
+          }
+        ],
+        "wavelet_fidelity": "significant",
+        "wavelet_reason": "Najs\u0142absze gwiazdy znikaj\u0105 lub rozmywaj\u0105 si\u0119 w smugi, ziarnista faktura nieba i gruntu wyg\u0142adzona do plastycznych plam (efekt akwareli).",
+        "wavelet_side": "B"
+      },
+      "win": true,
+      "worst_wavelet_fidelity": "significant"
+    },
+    "S17-04": {
+      "control-full": {
+        "pair": "p01",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "none",
+        "wavelet_reason": "",
+        "wavelet_side": "B"
+      },
+      "local": {
+        "pair": "p10",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "none",
+        "wavelet_reason": "",
+        "wavelet_side": "A"
+      },
+      "win": false,
+      "worst_wavelet_fidelity": "none"
+    },
+    "S17-05": {
+      "control-full": {
+        "pair": "p07",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "none",
+        "wavelet_reason": "",
+        "wavelet_side": "A"
+      },
+      "local": {
+        "pair": "p08",
+        "quality": "reference-slight",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "none",
+        "wavelet_reason": "",
+        "wavelet_side": "A"
+      },
+      "win": false,
+      "worst_wavelet_fidelity": "none"
+    },
+    "S17-06": {
+      "control-full": {
+        "pair": "p04",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "none",
+        "wavelet_reason": "",
+        "wavelet_side": "A"
+      },
+      "local": {
+        "pair": "p02",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "none",
+        "wavelet_reason": "",
+        "wavelet_side": "A"
+      },
+      "win": false,
+      "worst_wavelet_fidelity": "none"
+    },
+    "S17-07": {
+      "control-full": {
+        "pair": "p11",
+        "quality": "tie",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "none",
+        "wavelet_reason": "",
+        "wavelet_side": "B"
+      },
+      "local": {
+        "pair": "p12",
+        "quality": "reference-clear",
+        "reference_crops": [],
+        "reference_fidelity": "minor",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "none",
+        "wavelet_reason": "",
+        "wavelet_side": "A"
+      },
+      "win": false,
+      "worst_wavelet_fidelity": "none"
+    },
+    "S17-21": {
+      "control-full": {
+        "pair": "p09",
+        "quality": "wavelet-clear",
+        "reference_crops": [],
+        "reference_fidelity": "none",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "minor",
+        "wavelet_reason": "",
+        "wavelet_side": "B"
+      },
+      "local": {
+        "pair": "p13",
+        "quality": "wavelet-slight",
+        "reference_crops": [],
+        "reference_fidelity": "minor",
+        "reference_reason": "",
+        "wavelet_crops": [],
+        "wavelet_fidelity": "minor",
+        "wavelet_reason": "",
+        "wavelet_side": "B"
+      },
+      "win": true,
+      "worst_wavelet_fidelity": "minor"
+    }
+  },
+  "photos_required": 8,
+  "pilot_export_sha256": "51fd0a14d39ccc6e86937eea953aa320f66274808277d442a45248711be846f0",
+  "pilot_key_sha256": "7e2738d81403f7ed906728ce60dd10cd3608c9088bd128459711d22295d83865",
+  "pilot_set_digest": "c9480e90783a6f692f6a2d52a10a81267c49f6d5217e922de01d2acc5d4971e3",
+  "reasons": ["4 of 8 wins against control-full, 6 required", "significant or severe wavelet fidelity loss on S17-03"],
+  "verdict": "FAIL",
+  "wins": 4,
+  "wins_required": 6
+}

@@ -1,0 +1,29 @@
+{
+  "arm": "control-full",
+  "id": "S17-01",
+  "input": "test-photos/private/s20/decoded/S17-01.png",
+  "input_sha256": "c5fa6a1e5051e4724b8b9e2a912f1652c8fdaaea4fabc33061c70f2c9c9a86cd",
+  "source": null,
+  "decoded_record": "test-photos/private/s20/decoded/S17-01.json",
+  "decoded_record_sha256": "a3a8fcb3fe75a2571140c0c95049deefcdb815cf75468fb23bdf15db378fad77",
+  "decoded_pixels_sha256": "a0e706cf2903b2f6d28a641149e40abff5defae49af9246c1d4a451ad56fb359",
+  "auto_record": {
+    "common_sha256": "ccd091d867af927e92a4ef0d3289c88eccf0d014ffac490a43af559d231de1cb",
+    "session_id": "f2814060-6827-4342-9c4b-f4edc60d9f2e",
+    "provenance": "recomputed"
+  },
+  "auto_file_sha256": "35edbf99ad1113f754a762fc0f4571bbb89e0993948e7022ed550968db0029ba",
+  "gamma": 1.538559745194226,
+  "tone": {
+    "kind": "gamma"
+  },
+  "lut_sha256": "1b5397bec4e2df3ccc32a8888ed0e5bfaf24e32b738f8bc7aefe446eb88658a7",
+  "blur_sigma_px": 0,
+  "output_sha256": "43b98d1fab7ccabd4a3e6529dddbeba2d45e18988785d5c248c31e75440b58aa",
+  "dimensions": [
+    3840,
+    2560
+  ],
+  "implementation_sha256": "8664410495ca933964f7902f841ad6041ff31c44a5720521baa29332e04aa21a",
+  "rendered_at": "2026-11-08T21:39:58.250Z"
+}
