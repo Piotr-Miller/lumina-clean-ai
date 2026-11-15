@@ -36,6 +36,14 @@ issue: 347
 - 2026-11-10: owner confirmation recorded, Progress row pending the merge — **7.5** the owner read and accepted the 1b premise record (`evaluations/step1b/premise.md`) at 7dc92f16b370c98410a4d93e72a1c00e6f2e9bd8.
 - 2026-11-10: owner confirmation recorded, Progress row pending the merge — **10.5** the owner confirmed the 1b grid (`scripts/s20/configs/wavelet-grid.json`) and calibration record (`evaluations/step1b/calibration.md`, PASS) before any Phase 11 render, at 7dc92f16b370c98410a4d93e72a1c00e6f2e9bd8.
 - 2026-11-10: owner decision — the 1b `DECIDED` text in `scripts/s20/trials.py` (embedded in the future `wavelet-frozen.json` and `step1b/pilot-result.json`) is approved unchanged, at 7dc92f16b370c98410a4d93e72a1c00e6f2e9bd8. 4.2 and 4.3 remain reopened: `pilot.py --trial 1b` is not run before 4.2 is re-confirmed.
+- 2026-11-15: owner confirmation recorded, Progress row pending the merge — **4.2** re-confirmed at 7fb0cf8e7cbeeb2735a6d5589742b727afa94455 (before `pilot.py --trial 1b` ran): the owner accepted the agent's reading of `git diff c85c5bba 7fb0cf8 -- scripts/s20/pilot.py scripts/s20/gate.py` — Phase 8 changed paths, record keys, the trial switch and the 1b STOP report/audit; `rule()` and the gate thresholds are unchanged and still match the 2026-11-03/05 decisions.
+- 2026-11-15: owner confirmation recorded, Progress row pending the merge — **11.7** the `pilot-1b` seal was committed in ea72006 before the viewer opened it; the owner rated the 8 photos blind on 2026-11-15 and exported, the export committed alone in c7488fa (sha256 51fd0a14…, byte-identical to the download).
+- 2026-11-15: owner confirmation recorded, Progress row pending the merge — **11.8** the owner accepted the 1b pilot result at 8a82ff35a5978a22cef86e7748ee5f7892a5d4ae: SELECTED k 1.5 (k1.0 1, k1.5 3, k2.0 1, none 3), `evaluations/step1b/pilot-result.json` and `scripts/s20/configs/wavelet-frozen.json`.
+- 2026-11-15: owner decision — **4.3** stays reopened and is repeated by hand on a synthetic gate set before the 1b gate set is built (Phase 12), not accepted from tests.
+- 2026-11-15: owner confirmation recorded, Progress row pending the merge — **4.3** round trip repeated on `synthetic-gate-20261115t194040` at 8a82ff35a5978a22cef86e7748ee5f7892a5d4ae (gate.py unchanged since 69b9c73): the owner rated all 16 pairs and the state survived a reload; one `uncertain` side on p03 → `gate.py` BLOCKED, exit 3, naming only p03; p03 resolved and re-exported by the owner → the only difference from the first export is p03 fidelity A `uncertain` → `none`, order and header unchanged, `gate.py` FAIL, exit 1 (synthetic ratings); the same pairs under `synthetic-gate-b-20261115t194040` opened empty.
+- 2026-11-15: owner confirmation recorded, Progress row pending the merge — **12.6** the `gate-1b` seal was committed in c586e2e before the viewer opened it; the owner rated the 16 pairs blind on 2026-11-15 and exported, the export committed alone in c13b56f (sha256 dc72744f…, byte-identical to the download).
+- 2026-11-15: owner confirmation recorded, Progress row pending the merge — **12.7** the owner accepted the 1b verdict at 0a87b309623239cebc42ac7dc4491c93354aee5c: FAIL, 4 of 8 wins against control-full at k 1.5 and significant wavelet fidelity loss on S17-03 (`evaluations/step1b/gate.md` and its decoded table); step 1 closes as FAIL after 1a and 1b, steps 2–4 do not start.
+- 2026-11-15: **12.8** owner decision — comment on #347 linking the 1b verdict, no label change (`status:proposed` kept, what follows for S-20 undecided); posted at https://github.com/Piotr-Miller/lumina-clean-ai/issues/347#issuecomment-6901217066 after the branch push to 0a87b30. 6.7 re-confirmed by the owner with it: its surface `github-issues.md` gained the 2026-11-15 Status-updates row.
 
 **Registered 2026-11-03; implementation began 2026-11-05.** Owner decision: this change goes first,
 `local-jev-gate` is registered as a stub and waits for this change's step 1. Step 1a (NLM) has
@@ -97,10 +105,11 @@ hosting, integration or product naming decision.
    control on the quality axis, no significant fidelity loss on any photo, zero severe
    regressions, rated on **two axes** (visual quality and fidelity to the original, as in Phase 5)
    from the first round. Exact rules in § Owner decisions.
-   **Status (2026-11-09):** 1a ran its blind gate: **FAIL**, verdict and table in
-   [`evaluations/step1-gate.md`](evaluations/step1-gate.md). 1b replaces BM3D with one permissively
-   licensed denoiser, shift-invariant wavelet BayesShrink, under the identical gate (§ Owner
-   decisions (2026-11-09, step 1b candidate)); it is being planned. Steps 2–4 do not start.
+   **Status (2026-11-15):** step 1 closed as **FAIL** after 1a and 1b. 1a (NLM) failed its blind
+   gate, verdict and table in [`evaluations/step1-gate.md`](evaluations/step1-gate.md); 1b
+   (shift-invariant wavelet BayesShrink, in place of BM3D per § Owner decisions (2026-11-09, step 1b
+   candidate)) failed the identical gate, verdict and table in
+   [`evaluations/step1b/gate.md`](evaluations/step1b/gate.md). Steps 2–4 do not start.
 2. **Tone mapping, separately**, only after step 1 passes: local tone mapping with a black-point
    anchor and highlight protection, on the denoised image, against the same image with plain
    Auto gamma. S-19's Phase 4 curve was neutral (`phase4-curve.md:57-60`), so no exposure gain is

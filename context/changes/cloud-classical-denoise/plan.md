@@ -1615,9 +1615,9 @@ That is acceptable offline. Product timing is step 4's question.
 - [x] 11.1 Grid renders
 - [x] 11.2 Arms render
 - [x] 11.3 Pilot set builds and prints its digest and key hash
-- [ ] 11.4 Pilot rule decides
-- [ ] 11.5 Only on STOP, the STOP re-derives from published metadata alone
-- [ ] 11.6 Only on STOP, every S-20 pointer links `pilot-stop.md`
+- [x] 11.4 Pilot rule decides — 8a82ff3
+- [-] 11.5 Only on STOP, the STOP re-derives from published metadata alone — n/a: pilot selected
+- [-] 11.6 Only on STOP, every S-20 pointer links `pilot-stop.md` — n/a: pilot selected
 
 #### Manual
 
@@ -1628,10 +1628,10 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Automated
 
-- [ ] 12.1 Gate set builds from the frozen config
-- [ ] 12.2 Gate verdict reproduces from committed evidence
-- [ ] 12.3 1b verdict re-derives from published metadata alone
-- [ ] 12.4 The 1a audit still re-derives FAIL
+- [x] 12.1 Gate set builds from the frozen config — c586e2e
+- [x] 12.2 Gate verdict reproduces from committed evidence — 0a87b30
+- [x] 12.3 1b verdict re-derives from published metadata alone — 0a87b30
+- [x] 12.4 The 1a audit still re-derives FAIL — 0a87b30
 - [ ] 12.5 No stale S-20 pointer remains, each block linking the 1b verdict
 
 #### Manual
