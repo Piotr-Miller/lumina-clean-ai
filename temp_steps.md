@@ -1,52 +1,31 @@
-# Kolejne kroki (stan na 2026-11-10, przed restartem laptopa)
+# Kolejne kroki (stan na 2026-11-15)
 
-Produkcja: najnowszy master `4e04923`, deploy zielony (w tym funkcja `enhance` z supabase-js przez npm, #356). Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0`
-od 2026-10-28). Lokalnie: gałąź `feat/cloud-classical-denoise-1b` (od mastera; 1a zmergowane w #364 i #365), niewypchnięta;
-ostatni commit `ea72006` (pieczęć `pilot-1b`). Niezacommitowane, celowo: `plan.md` (Progress 9.x–11.3) i
-`change.md` (Notes) — to moje zapisy, wejdą do następnego commita.
+Produkcja: najnowszy master `4e04923`, deploy zielony. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0`
+od 2026-10-28). Lokalnie: gałąź `feat/cloud-classical-denoise-1b` (od mastera; 1a zmergowane w #364 i #365);
+ostatni commit `0a87b30` (werdykt bramki 1b). Niezacommitowane, celowo: `plan.md` (Progress),
+`change.md` (Notes i § Sequence), `roadmap.md`, `github-issues.md` i ten plik — wskaźniki S-20 po werdykcie 1b.
 
-## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — krok 1a (NLM): **FAIL**, krok 1b: pilot zapieczętowany, czeka na Twoją ocenę
+## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — krok 1 zamknięty jako **FAIL** (1a i 1b)
 
 Hipoteza: ścieżka Cloud to klasyczne, deterministyczne odszumianie w pełnej rozdzielczości po stronie
 serwera, a nie model generujący piksele. Dowodzone offline na harnessie S-19, krok po kroku.
 Opis: `context/changes/cloud-classical-denoise/change.md`; plan: `plan.md` (sekcja `## Progress` na końcu);
 roadmapa: `context/foundation/roadmap.md` § S-20.
 
-Werdykt bramki 16 par na ślepo (2026-11-09), z tabelą dla każdego zdjęcia, wycinkami i uzasadnieniami:
-[`evaluations/step1-gate.md`](context/changes/cloud-classical-denoise/evaluations/step1-gate.md).
-Paczka audytu (`evaluations/step1-audit/`) odtwarza werdykt z samych metadanych (`gate.py --audit`).
-Wszystkie wiersze ręczne 1a są zapisane przy SHA z mastera (`c85c5bb`).
+Werdykty bramek 16 par na ślepo, z tabelą dla każdego zdjęcia, wycinkami i uzasadnieniami:
 
-**Krok 1b (decyzja z 2026-11-09):** zamiast BM3D jeden kandydat — falkowy BayesShrink niezmienniczy
-względem przesunięć (scikit-image 0.26.0 + PyWavelets 1.8.0), siatka k ∈ {1.0, 1.5, 2.0}, ta sama
-bramka. Jeśli nie przejdzie, krok 1 zamyka się jako FAIL. Szczegóły: `change.md` § Owner decisions
-(2026-11-09, step 1b candidate).
+- 1a (NLM, 2026-11-09): [`evaluations/step1-gate.md`](context/changes/cloud-classical-denoise/evaluations/step1-gate.md);
+- 1b (falkowy BayesShrink, 2026-11-15): [`evaluations/step1b/gate.md`](context/changes/cloud-classical-denoise/evaluations/step1b/gate.md).
 
-**Stan 1b (2026-11-10):** fazy 7–10 zacommitowane (`30dd1f7`, `69b9c73`, `87b2326`, `7dc92f1`);
-kalibracja PASS (`evaluations/step1b/calibration.md`); wszystkie 24 rendery falkowe i 24 ramiona
-`wavelet-gamma` gotowe (determinizm sprawdzony: S17-06 i S17-21 wyrenderowane dwa razy po przerwaniu,
-bajt w bajt identyczne; przerwane kopie odłożone nieotwarte w
-`test-photos/private/s20/set-aside-20261110-interrupted/`). Zestaw `pilot-1b` zbudowany, pieczęć
-zacommitowana osobno (`ea72006`). Twoje potwierdzenia 7.4, 7.5, 10.5 i tekst `DECIDED` są w
-`change.md` Notes (wiersze Progress dopiero po merge'u). Otwarte: 4.2 i 4.3 (ponownie otwarte, bo faza 8
-zmieniła `pilot.py` / `gate.py`).
+Oba odtwarzają się z samych metadanych (`gate.py --audit` i `gate.py --trial 1b --audit`). Krok 1
+zamyka się jako FAIL po 1a i 1b, zgodnie z decyzją z 2026-11-09; kroki 2–4 nie startują.
 
-Następne kroki, po kolei (po restarcie):
+Następne kroki, po kolei:
 
-1. **Ty:** uruchom serwer z katalogu repo: `cd ~/Source/lumina-clean-ai && python3 -m http.server 8765 --bind 127.0.0.1`
-   (po restarcie stary serwer na 8765 już nie działa).
-2. **Ty:** otwórz <http://127.0.0.1:8765/context/changes/cloud-classical-denoise/references/compare-s20.html?set=pilot-1b>,
-   wklej linię pieczęci (z `evaluations/step1b/pilot-sealed.md`):
-   `S20-SEAL kind=pilot set_id=pilot-1b set_digest=c9480e90783a6f692f6a2d52a10a81267c49f6d5217e922de01d2acc5d4971e3 key_sha256=7e2738d81403f7ed906728ce60dd10cd3608c9088bd128459711d22295d83865`
-3. **Ty:** oceń 8 zdjęć (X/Y/Z albo „none improves on control”; uwaga na cienie i słabe gwiazdy, S17-03),
-   wyeksportuj i zapisz jako `context/changes/cloud-classical-denoise/evaluations/step1b/pilot-ratings.json`.
-   Nie otwieraj klucza ani folderu zestawu.
-4. **Ty:** potwierdź ponownie 4.2 (reguły w `scripts/s20/pilot.py` i `scripts/s20/gate.py`) i zdecyduj o 4.3
-   (powtórzyć round trip: `python3 scripts/s20/tests/blind_fixture.py publish --keep <pusty katalog>`,
-   albo przyjąć z testów).
-5. **Ja (nowa sesja: `/rune-implement cloud-classical-denoise phase 11`):** commit eksportu osobno,
-   `pilot.py --trial 1b --set pilot-1b --export …/step1b/pilot-ratings.json`, commit wyniku i zamrożenia
-   (albo plików STOP → krok 1 zamknięty jako FAIL), potem faza 12 (bramka 16 par).
+1. **Ty:** przyjmij werdykt 1b, jego tabelę i wynik kroku 1 (12.7).
+2. **Ty:** zdecyduj o komentarzu i etykiecie w #347 i potwierdź ponownie 6.7 (12.8).
+3. **Ty:** zacommituj wpisy wskaźników i Progress, potem PR gałęzi `feat/cloud-classical-denoise-1b`.
+4. **Ty:** zdecyduj, co dalej z S-20 i z czekającymi na krok 1 zmianami poniżej.
 
 Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
 w `test-photos/private/s19/` (do późniejszej „opcji 2”: GPT jako przewodnik tonalny, $0).
