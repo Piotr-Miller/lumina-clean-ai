@@ -106,8 +106,8 @@ strength is among them — hence the sequencing.
 
 - `context/archive/2026-09-28-cloud-model-comparison/research.md` § Spike: TypeSafe Jev — the
   only vendor read so far; its figures are dated 2026-10-29.
-- `context/changes/cloud-classical-denoise/` — goes first; its step 3 defines the chooser
-  interface.
+- `context/archive/2026-11-03-cloud-classical-denoise/` — went first; archived 2026-11-15 with step 1 FAIL, so its step 3 (the chooser
+  interface) never ran and no denoise strength is among the parameters to choose.
 - `context/archive/2026-06-18-adaptive-enhancement-parameters/plan.md:36` — the original
   "no vision model / ML for Auto" scope decision this change would revisit; a scope decision,
   not a vendor fact.

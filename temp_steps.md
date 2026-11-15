@@ -1,42 +1,34 @@
 # Kolejne kroki (stan na 2026-11-15)
 
-Produkcja: najnowszy master `4e04923`, deploy zielony. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0`
-od 2026-10-28). Lokalnie: gałąź `feat/cloud-classical-denoise-1b` (od mastera; 1a zmergowane w #364 i #365);
-ostatni commit `0a87b30` (werdykt bramki 1b). Niezacommitowane, celowo: `plan.md` (Progress),
-`change.md` (Notes i § Sequence), `roadmap.md`, `github-issues.md` i ten plik — wskaźniki S-20 po werdykcie 1b.
+Produkcja: master `419d2cb`, deploy zielony. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0` od 2026-10-28).
+Lokalnie: gałąź `chore/archive-cloud-classical-denoise` (archiwum S-20), PR w toku.
 
-## Teraz: S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347)) — krok 1 zamknięty jako **FAIL** (1a i 1b)
+## Teraz: decyzja o Cloud AI po S-20
 
-Hipoteza: ścieżka Cloud to klasyczne, deterministyczne odszumianie w pełnej rozdzielczości po stronie
-serwera, a nie model generujący piksele. Dowodzone offline na harnessie S-19, krok po kroku.
-Opis: `context/changes/cloud-classical-denoise/change.md`; plan: `plan.md` (sekcja `## Progress` na końcu);
-roadmapa: `context/foundation/roadmap.md` § S-20.
-
-Werdykty bramek 16 par na ślepo, z tabelą dla każdego zdjęcia, wycinkami i uzasadnieniami:
-
-- 1a (NLM, 2026-11-09): [`evaluations/step1-gate.md`](context/changes/cloud-classical-denoise/evaluations/step1-gate.md);
-- 1b (falkowy BayesShrink, 2026-11-15): [`evaluations/step1b/gate.md`](context/changes/cloud-classical-denoise/evaluations/step1b/gate.md).
-
-Oba odtwarzają się z samych metadanych (`gate.py --audit` i `gate.py --trial 1b --audit`). Krok 1
-zamyka się jako FAIL po 1a i 1b, zgodnie z decyzją z 2026-11-09; kroki 2–4 nie startują.
+S-20 `cloud-classical-denoise` ([#347](https://github.com/Piotr-Miller/lumina-clean-ai/issues/347), zamknięte)
+zarchiwizowane 2026-11-15 → `context/archive/2026-11-03-cloud-classical-denoise/`: krok 1 **FAIL** po 1a (NLM) i 1b (falkowy BayesShrink). Werdykty:
+[`step1-gate.md`](context/archive/2026-11-03-cloud-classical-denoise/evaluations/step1-gate.md) i
+[`step1b/gate.md`](context/archive/2026-11-03-cloud-classical-denoise/evaluations/step1b/gate.md). Oba odszumiacze wygrywają na tych samych 3–4 zdjęciach,
+remisują na 4 i gubią słabe gwiazdy na S17-03 — wąskim gardłem nie jest wybór odszumiacza.
 
 Następne kroki, po kolei:
 
-1. **Ty:** przyjmij werdykt 1b, jego tabelę i wynik kroku 1 (12.7).
-2. **Ty:** zdecyduj o komentarzu i etykiecie w #347 i potwierdź ponownie 6.7 (12.8).
-3. **Ty:** zacommituj wpisy wskaźników i Progress, potem PR gałęzi `feat/cloud-classical-denoise-1b`.
-4. **Ty:** zdecyduj, co dalej z S-20 i z czekającymi na krok 1 zmianami poniżej.
+1. **Ty:** zdecyduj, czy robimy `gpt-image-26-screen` ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359)),
+   test GPT-Image-2.6 `complexity=low` do $1,50, jako ostatni sprawdzian Cloud.
+2. **Ty:** po #359 albo bez niego — decyzja produktowa o Cloud: zostaje wyłączony z przełącznikiem, przełącznik
+   znika, albo Local jest jedynym silnikiem, a `local-engine-ceiling` (#188) głównym kierunkiem jakości.
 
 Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
-w `test-photos/private/s19/` (do późniejszej „opcji 2”: GPT jako przewodnik tonalny, $0).
+w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą ścieżkę `context/changes/…`
+(jak `scripts/s19/` po S-19) — przed ponownym `gate.py --audit` trzeba ją poprawić.
 
-## Czeka na wynik kroku 1 S-20
+## Czekało na wynik kroku 1 S-20
 
 - **`local-jev-gate`** ([#348](https://github.com/Piotr-Miller/lumina-clean-ai/issues/348)), Parked: Jev
-  jako bramka „już dobre, nie ruszaj” i chooser dla Local. Blokada: TypeSafe nie ma obrazów w produkcji
-  (sito S1). Opis: `context/changes/local-jev-gate/change.md`.
-- **`local-engine-ceiling`** (#188) i druga połowa S-18 (rozdzielczość wyniku Cloud): przesunięte z S-19
-  na S-20.
+  jako bramka „już dobre, nie ruszaj” i chooser dla Local. Nadal blokada dostawcy: TypeSafe nie ma obrazów
+  w produkcji (sito S1). S-20 nie dało siły odszumiania do wyboru.
+- **`local-engine-ceiling`** (#188) i druga połowa S-18 (rozdzielczość wyniku Cloud): zależą teraz od
+  decyzji produktowej o Cloud (krok 2 wyżej).
 
 ## CI — co obserwować
 
