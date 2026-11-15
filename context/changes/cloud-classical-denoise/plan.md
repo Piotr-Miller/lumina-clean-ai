@@ -1530,8 +1530,8 @@ That is acceptable offline. Product timing is step 4's question.
 
 #### Manual
 
-- [ ] 4.2 Owner confirms the coded rules match the decisions before any render
-- [ ] 4.3 Owner runs the round trip on a synthetic gate set
+- [x] 4.2 Owner confirms the coded rules match the decisions before any render — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
+- [x] 4.3 Owner runs the round trip on a synthetic gate set — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
 
 ### Phase 5: Pilot run and freeze
 
@@ -1561,52 +1561,52 @@ That is acceptable offline. Product timing is step 4's question.
 
 - [x] 6.5 Owner commits the gate seal before opening the viewer, then rates the 16 pairs — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
 - [x] 6.6 Owner accepts the verdict and its decoded table — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
-- [x] 6.7 Owner decides on the #347 comment and label change — accepted at c85c5bba8f80575979ed872d9d0a804af1fbd130
+- [x] 6.7 Owner decides on the #347 comment and label change — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
 
 ### Phase 7: Premise and environment for 1b
 
 #### Automated
 
-- [x] 7.1 scikit-image and PyWavelets import at the pinned versions — 30dd1f7
-- [x] 7.2 The 1a audit re-derives FAIL — 30dd1f7
-- [x] 7.3 Holdout guard allows the eight tuning ids — 30dd1f7
+- [x] 7.1 scikit-image and PyWavelets import at the pinned versions — 2c3e209
+- [x] 7.2 The 1a audit re-derives FAIL — 2c3e209
+- [x] 7.3 Holdout guard allows the eight tuning ids — 2c3e209
 
 #### Manual
 
-- [ ] 7.4 Owner installs the packages
-- [ ] 7.5 Owner reads the 1b premise record and accepts it
+- [x] 7.4 Owner installs the packages — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
+- [x] 7.5 Owner reads the 1b premise record and accepts it — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
 
 ### Phase 8: Trial seam with 1a kept literal
 
 #### Automated
 
-- [x] 8.1 S-20 suite passes, trial cases included — 69b9c73
-- [x] 8.2 The 1a audit still re-derives FAIL after the seam — 69b9c73
-- [x] 8.3 No 1a evidence or 1a renderer file changed — 69b9c73
-- [x] 8.4 1a pointers still current — 69b9c73
+- [x] 8.1 S-20 suite passes, trial cases included — c5e473a
+- [x] 8.2 The 1a audit still re-derives FAIL after the seam — c5e473a
+- [x] 8.3 No 1a evidence or 1a renderer file changed — c5e473a
+- [x] 8.4 1a pointers still current — c5e473a
 
 ### Phase 9: Wavelet arm
 
 #### Automated
 
-- [x] 9.1 Arm tests pass — 87b2326
-- [x] 9.2 S-19 harness tests still pass — 87b2326
-- [x] 9.3 Typecheck passes — 87b2326
-- [x] 9.4 Lint passes — 87b2326
-- [x] 9.5 The 1a audit still re-derives FAIL — 87b2326
+- [x] 9.1 Arm tests pass — 3e19208
+- [x] 9.2 S-19 harness tests still pass — 3e19208
+- [x] 9.3 Typecheck passes — 3e19208
+- [x] 9.4 Lint passes — 3e19208
+- [x] 9.5 The 1a audit still re-derives FAIL — 3e19208
 
 ### Phase 10: Wavelet renderer, grid, calibration and diagnostic
 
 #### Automated
 
-- [x] 10.1 Wavelet tests pass — 7dc92f1
-- [x] 10.2 Grid config holds the pre-registered values — 7dc92f1
-- [x] 10.3 Calibration runs on synthetic data only — 7dc92f1
-- [x] 10.4 The 1a audit still re-derives FAIL — 7dc92f1
+- [x] 10.1 Wavelet tests pass — e8bb9e8
+- [x] 10.2 Grid config holds the pre-registered values — e8bb9e8
+- [x] 10.3 Calibration runs on synthetic data only — e8bb9e8
+- [x] 10.4 The 1a audit still re-derives FAIL — e8bb9e8
 
 #### Manual
 
-- [ ] 10.5 Owner confirms the 1b grid and calibration record before Phase 11 renders
+- [x] 10.5 Owner confirms the 1b grid and calibration record before Phase 11 renders — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
 
 ### Phase 11: 1b pilot run and freeze
 
@@ -1615,27 +1615,27 @@ That is acceptable offline. Product timing is step 4's question.
 - [x] 11.1 Grid renders
 - [x] 11.2 Arms render
 - [x] 11.3 Pilot set builds and prints its digest and key hash
-- [x] 11.4 Pilot rule decides — 8a82ff3
+- [x] 11.4 Pilot rule decides — cb7d99e
 - [-] 11.5 Only on STOP, the STOP re-derives from published metadata alone — n/a: pilot selected
 - [-] 11.6 Only on STOP, every S-20 pointer links `pilot-stop.md` — n/a: pilot selected
 
 #### Manual
 
-- [ ] 11.7 Owner commits the 1b pilot seal before opening the viewer, then rates and exports
-- [ ] 11.8 Owner accepts the 1b pilot result
+- [x] 11.7 Owner commits the 1b pilot seal before opening the viewer, then rates and exports — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
+- [x] 11.8 Owner accepts the 1b pilot result — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
 
 ### Phase 12: 1b gate run, verdict and step 1 outcome
 
 #### Automated
 
-- [x] 12.1 Gate set builds from the frozen config — c586e2e
-- [x] 12.2 Gate verdict reproduces from committed evidence — 0a87b30
-- [x] 12.3 1b verdict re-derives from published metadata alone — 0a87b30
-- [x] 12.4 The 1a audit still re-derives FAIL — 0a87b30
-- [ ] 12.5 No stale S-20 pointer remains, each block linking the 1b verdict
+- [x] 12.1 Gate set builds from the frozen config — 96111e1
+- [x] 12.2 Gate verdict reproduces from committed evidence — 8107713
+- [x] 12.3 1b verdict re-derives from published metadata alone — 8107713
+- [x] 12.4 The 1a audit still re-derives FAIL — 8107713
+- [x] 12.5 No stale S-20 pointer remains, each block linking the 1b verdict — c84718d
 
 #### Manual
 
-- [ ] 12.6 Owner commits the 1b gate seal before opening the viewer, then rates the 16 pairs
-- [ ] 12.7 Owner accepts the 1b verdict, its decoded table and the step 1 outcome
-- [ ] 12.8 Owner decides on the #347 comment and label change, and re-confirms 6.7
+- [x] 12.6 Owner commits the 1b gate seal before opening the viewer, then rates the 16 pairs — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
+- [x] 12.7 Owner accepts the 1b verdict, its decoded table and the step 1 outcome — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
+- [x] 12.8 Owner decides on the #347 comment and label change, and re-confirms 6.7 — accepted at c84718d4f7588ad4df2d656297c0949ab448644e
