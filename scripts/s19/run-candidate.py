@@ -35,6 +35,13 @@ blocks separately from final slot failures.
 
 Keys come from the environment only: OPENAI_API_KEY, FAL_KEY.
 
+Caller hooks (change gpt-image-26-screen, Phase 2), all optional with S-19's behaviour as the
+default: a `RunContext` separates the ledger, output and input folders and carries the approval
+check, an admission check run inside the ledger lock, and whether an invalid output is retried;
+a GPT config may add `request_fields` (scalar multipart fields such as `complexity`), validated
+against every runner-owned field before any reservation. A config without `request_fields`
+sends exactly the fields it always did. No hook mutates a module global.
+
 Exit status: 0 every requested slot is now resolved (a valid result, or an explicitly recorded
 technical failure); 1 refused (access, approval, cap, prerequisite, manifest) or a slot left
 unresolved by a budget stop; 2 usage.
@@ -45,8 +52,8 @@ from __future__ import annotations
 import argparse
 import base64
 import contextlib
+import dataclasses
 import datetime as _dt
-import fcntl
 import hashlib
 import io
 import json
@@ -58,6 +65,12 @@ import urllib.error
 import urllib.request
 import uuid
 from pathlib import Path
+from typing import Callable
+
+try:
+    import fcntl
+except ImportError:  # not Unix: the module still imports; every lock refuses with a clear message
+    fcntl = None
 
 from PIL import Image
 
@@ -67,8 +80,27 @@ import protocol  # noqa: E402
 OK, ERROR, UNKNOWN, INVALID = "ok", "error", "unknown", "invalid"
 
 
-def ledger_path() -> Path:
-    return protocol.private_dir() / "attempts.jsonl"
+@dataclasses.dataclass(frozen=True)
+class RunContext:
+    """Where one run reads its inputs and writes its ledger and outputs, and which checks guard
+    it. `default_context()` is S-19's own private folder for all three; a caller such as
+    `scripts/gpt26/run.py` passes its own, so two contexts never share state through a global."""
+
+    ledger_dir: Path
+    output_dir: Path
+    input_dir: Path
+    approve: Callable[[int, float], object] = protocol.check_cap
+    admission_check: Callable[[list[dict], dict], None] | None = None  # raises Refused inside the lock
+    invalid_output_is_transient: bool = True
+
+
+def default_context() -> RunContext:
+    d = protocol.private_dir()
+    return RunContext(ledger_dir=d, output_dir=d, input_dir=d / "inputs")
+
+
+def ledger_path(ctx: RunContext | None = None) -> Path:
+    return (ctx or default_context()).ledger_dir / "attempts.jsonl"
 
 
 def now() -> str:
@@ -133,9 +165,16 @@ def actual_cost(config: dict, usage: dict | None) -> float | None:
 # ---------------------------------------------------------------- ledger
 
 
+def require_locks() -> None:
+    if fcntl is None:
+        raise protocol.Refused("the ledger and slot locks need fcntl, which this platform lacks: "
+                               "nothing reserved or sent — run on the Linux host")
+
+
 @contextlib.contextmanager
-def locked():
-    path = ledger_path()
+def locked(ctx: RunContext | None = None):
+    require_locks()
+    path = ledger_path(ctx)
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path.with_suffix(".lock"), "a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
@@ -146,12 +185,13 @@ def locked():
 
 
 @contextlib.contextmanager
-def slot_lock(key: tuple):
+def slot_lock(key: tuple, ctx: RunContext | None = None):
     """Exclusive, non-blocking OS lock on one logical slot for the whole time a process drives it.
     A second process on the same slot is refused before it reserves or sends anything. The ledger
     alone cannot tell a crashed attempt from one still in flight elsewhere; the OS releases this
     lock when its holder dies, so a crash never blocks a later --resume."""
-    d = ledger_path().parent / "locks"
+    require_locks()
+    d = ledger_path(ctx).parent / "locks"
     d.mkdir(parents=True, exist_ok=True)
     name = hashlib.sha256(json.dumps(list(key)).encode()).hexdigest()[:32]
     with open(d / f"{name}.lock", "a") as lock:
@@ -166,8 +206,8 @@ def slot_lock(key: tuple):
             fcntl.flock(lock, fcntl.LOCK_UN)
 
 
-def read_ledger() -> list[dict]:
-    path = ledger_path()
+def read_ledger(ctx: RunContext | None = None) -> list[dict]:
+    path = ledger_path(ctx)
     if not path.exists():
         return []
     rows = []
@@ -181,8 +221,8 @@ def read_ledger() -> list[dict]:
     return rows
 
 
-def append(row: dict) -> None:
-    with open(ledger_path(), "a") as f:
+def append(row: dict, ctx: RunContext | None = None) -> None:
+    with open(ledger_path(ctx), "a") as f:
         f.write(json.dumps(row, sort_keys=True) + "\n")
         f.flush()
         os.fsync(f.fileno())
@@ -226,13 +266,27 @@ def slot_state(rows: list[dict], key: tuple) -> dict:
     }
 
 
-def admit(phase: int, cap: float, reserve: dict) -> tuple[bool, float]:
-    """Atomically reserve, or refuse when committed + bound would exceed the cap."""
-    with locked():
-        committed, _ = phase_committed(read_ledger(), phase)
+def admit(phase: int, cap: float, reserve: dict, ctx: RunContext | None = None) -> tuple[bool, float]:
+    """Atomically reserve, or refuse when committed + bound would exceed the cap. The context's
+    admission check sees the same rows under the same lock, so its verdict cannot go stale
+    between the check and the reservation. Without a context the calls stay argument-free, as
+    S-19 always made them, so each module function remains individually replaceable (the
+    concurrency negative control in tests/test_budget.py replaces `locked` and `read_ledger`)."""
+    if ctx is None:
+        with locked():
+            committed, _ = phase_committed(read_ledger(), phase)
+            if committed + reserve["reserved_usd"] > cap + 1e-9:
+                return False, committed
+            append(reserve)
+            return True, committed
+    with locked(ctx):
+        rows = read_ledger(ctx)
+        if ctx.admission_check is not None:
+            ctx.admission_check(rows, reserve)
+        committed, _ = phase_committed(rows, phase)
         if committed + reserve["reserved_usd"] > cap + 1e-9:
             return False, committed
-        append(reserve)
+        append(reserve, ctx)
         return True, committed
 
 
@@ -260,6 +314,35 @@ def multipart(fields: dict, files: dict) -> tuple[bytes, str]:
 
 
 KEY_ENV = {"gpt": "OPENAI_API_KEY", "nafnet": "FAL_KEY"}
+# Every multipart field the GPT call assembles itself; a config's request_fields may not name one.
+RUNNER_FIELDS = frozenset({"model", "prompt", "size", "quality", "output_format", "n", "image", "image[]", "mask"})
+
+
+def request_fields(config: dict) -> dict[str, str]:
+    """The config's additional scalar request fields as multipart strings, or Refused. Absent
+    means none: the request body is then exactly what S-19 always sent."""
+    extra = config.get("request_fields")
+    if extra is None:
+        return {}
+    name = config.get("name", "config")
+    if config["kind"] != "gpt":
+        raise protocol.Refused(f"{name}: request_fields are supported for kind gpt only, not "
+                               f"{config['kind']!r} — nothing reserved or sent")
+    if not isinstance(extra, dict) or not extra:
+        raise protocol.Refused(f"{name}: request_fields must be a non-empty object — nothing reserved or sent")
+    out = {}
+    for k, v in extra.items():
+        if not isinstance(k, str) or not k or not k.replace("_", "").isalnum() or not k.isascii():
+            raise protocol.Refused(f"{name}: request field name {k!r} is not a plain ASCII identifier — "
+                                   "nothing reserved or sent")
+        if k in RUNNER_FIELDS:
+            raise protocol.Refused(f"{name}: request field {k!r} collides with a field the runner sets itself; "
+                                   "remove it from request_fields — nothing reserved or sent")
+        if isinstance(v, bool) or not isinstance(v, (str, int, float)) or (isinstance(v, float) and not math.isfinite(v)):
+            raise protocol.Refused(f"{name}: request field {k!r} must be a string or finite number, not "
+                                   f"{type(v).__name__} — nothing reserved or sent")
+        out[k] = str(v)
+    return out
 
 
 def require_key(config: dict) -> None:
@@ -280,7 +363,8 @@ def call_provider(config: dict, image: Path, size: tuple[int, int]) -> dict:
     if config["kind"] == "gpt":
         body, ctype = multipart(
             {"model": config["model"], "prompt": config["prompt"], "size": f"{size[0]}x{size[1]}",
-             "quality": config["quality"], "output_format": config["output_format"], "n": "1"},
+             "quality": config["quality"], "output_format": config["output_format"], "n": "1",
+             **request_fields(config)},
             {"image": (image.name, image.read_bytes(), "image/jpeg")},
         )
         status, raw = http("POST", config["endpoint"],
@@ -357,8 +441,8 @@ def check_prerequisites(series: dict, slots: list[dict]) -> None:
                                        f"{p['config_sha256'][:12]}…; only PASS permits this paid stage")
 
 
-def input_for(photo: str, target: str) -> tuple[Path, dict]:
-    sidecar = protocol.private_dir() / "inputs" / f"{photo}.json"
+def input_for(photo: str, target: str, ctx: RunContext | None = None) -> tuple[Path, dict]:
+    sidecar = (ctx or default_context()).input_dir / f"{photo}.json"
     if not sidecar.exists():
         raise protocol.Refused(f"{photo}: no prepared input ({sidecar}); run inputs.py first")
     meta = json.loads(sidecar.read_text())[target]
@@ -369,13 +453,14 @@ def input_for(photo: str, target: str) -> tuple[Path, dict]:
 
 
 def run_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: int, cap: float,
-             sleep=time.sleep) -> str:
+             sleep=time.sleep, ctx: RunContext | None = None) -> str:
     """Drive one logical slot to a valid result, a terminal failure or a budget stop."""
-    image, meta = input_for(spec["photo"], spec["input"])
+    ctx = ctx or default_context()
+    image, meta = input_for(spec["photo"], spec["input"], ctx)
     check_slot_frozen(config, spec, meta)
     key = slot_key(config_sha, meta["sha256"], spec["photo"], spec["slot"])
-    with slot_lock(key):
-        return _drive_slot(config, config_sha, series, spec, phase, cap, sleep, image, meta, key)
+    with slot_lock(key, ctx):
+        return _drive_slot(config, config_sha, series, spec, phase, cap, sleep, image, meta, key, ctx)
 
 
 def check_slot_frozen(config: dict, spec: dict, meta: dict) -> None:
@@ -383,6 +468,7 @@ def check_slot_frozen(config: dict, spec: dict, meta: dict) -> None:
     prepared input and the config still reproduce them exactly, so nothing is paid for under a
     key or a bound the gate would later reject."""
     where = f"{spec['photo']}/{spec['slot']}"
+    request_fields(config)
     if meta["sha256"] != spec["input_sha256"]:
         raise protocol.Refused(f"{where}: the prepared input hashes to {meta['sha256'][:12]}…, but the series froze "
                                f"{spec['input_sha256'][:12]}…; inputs were re-prepared — nothing sent")
@@ -398,18 +484,20 @@ def check_slot_frozen(config: dict, spec: dict, meta: dict) -> None:
 
 
 def record_response(result: dict, config: dict, spec: dict, attempt_id: str, res: dict,
-                    size: tuple[int, int]) -> None:
+                    size: tuple[int, int], ctx: RunContext | None = None) -> None:
     """Fill `result` for a response that carried an image. The paid bytes are saved before
     anything that could fail, and an unreadable usage block leaves the cost unknown (the full
     reservation stays counted) instead of raising."""
     data = res["output"]
     valid, why, out_meta = validate_output(config, data, size)
-    out_dir = protocol.private_dir() / "runs" / config["name"] / spec["photo"] / str(spec["slot"])
+    ctx = ctx or default_context()
+    out_dir = ctx.output_dir / "runs" / config["name"] / spec["photo"] / str(spec["slot"])
     out_dir.mkdir(parents=True, exist_ok=True)
     ext = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}.get(out_meta.get("format"), "bin")
     out_path = out_dir / f"{attempt_id}.{ext}"
     out_path.write_bytes(data)
-    result.update(status=OK if valid else INVALID, transient=not valid, usage=res.get("usage"),
+    result.update(status=OK if valid else INVALID, transient=not valid and ctx.invalid_output_is_transient,
+                  usage=res.get("usage"),
                   response_model=res.get("response_model"), output_sha256=protocol.sha256_bytes(data),
                   output=out_meta, output_path=str(out_path.relative_to(protocol.ROOT))
                   if out_path.is_relative_to(protocol.ROOT) else str(out_path))
@@ -464,11 +552,11 @@ def retried_error_summary(rows: list[dict], config_sha: str, codes: list[str]) -
 
 
 def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: int, cap: float, sleep,
-                image: Path, meta: dict, key: tuple) -> str:
+                image: Path, meta: dict, key: tuple, ctx: RunContext) -> str:
     size = tuple(spec["request_size"])
     max_attempts = config["retry"]["max_retries"] + 1
     while True:
-        rows = read_ledger()
+        rows = read_ledger(ctx)
         st = slot_state(rows, key)
         if st["ok"]:
             return "done"
@@ -477,10 +565,10 @@ def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: 
         if st["attempts"] >= max_attempts or not st["last_transient"]:
             reason = (f"{st['attempts']} attempt(s) used of {max_attempts}" if st["attempts"] >= max_attempts
                       else "last error was not transient")
-            with locked():
+            with locked(ctx):
                 append({"event": "slot_terminal", "status": "technical_failure", "reason": reason, "at": now(),
                         "phase": phase, "series_id": series["series_id"], "config_sha256": config_sha,
-                        "input_sha256": meta["sha256"], "photo": spec["photo"], "slot": spec["slot"]})
+                        "input_sha256": meta["sha256"], "photo": spec["photo"], "slot": spec["slot"]}, ctx)
             return "technical_failure"
         if st["attempts"]:
             backoff = config["retry"]["backoff_s"]
@@ -493,13 +581,13 @@ def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: 
                    "photo": spec["photo"], "slot": spec["slot"], "ordinal": st["attempts"] + 1,
                    "role": spec["role"], "request_size": list(size), "reserved_usd": spec["cost_bound_usd"],
                    "requested_at": now()}
-        admitted, committed = admit(phase, cap, reserve)
+        admitted, committed = admit(phase, cap, reserve, ctx)
         if not admitted:
-            with locked():
+            with locked(ctx):
                 append({"event": "budget_refusal", "at": now(), "phase": phase, "series_id": series["series_id"],
                         "config_sha256": config_sha, "input_sha256": meta["sha256"], "photo": spec["photo"],
                         "slot": spec["slot"], "committed_usd": committed, "bound_usd": spec["cost_bound_usd"],
-                        "cap_usd": cap})
+                        "cap_usd": cap}, ctx)
             print(f"  {spec['photo']}/{spec['slot']}: NOT SENT — phase {phase} has ${committed:.2f} committed; "
                   f"this call's bound ${spec['cost_bound_usd']:.2f} would exceed the ${cap:g} cap. "
                   "Only an owner-approved numeric amendment raises it.")
@@ -521,7 +609,7 @@ def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: 
                               cost_basis="error response: full reservation kept")
             else:
                 try:
-                    record_response(result, config, spec, attempt_id, res, size)
+                    record_response(result, config, spec, attempt_id, res, size, ctx)
                 except Exception as e:  # noqa: BLE001 — a paid response must always leave a result row
                     # Not transient: a resume must not pay again for a response it already received.
                     result.update(status=UNKNOWN, transient=False, cost_usd=None,
@@ -529,8 +617,8 @@ def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: 
                                   cost_basis="paid response not recorded: full reservation kept")
                     local_failure = e
         result.update(finished_at=now(), wall_s=round(time.time() - t0, 2))
-        with locked():
-            append(result)
+        with locked(ctx):
+            append(result, ctx)
         print(f"  {spec['photo']}/{spec['slot']} attempt {reserve['ordinal']}: {result['status']}"
               f"{' — ' + str(result.get('error'))[:200] if result.get('error') else ''}")
         if local_failure is not None:
@@ -562,6 +650,7 @@ def main(argv: list[str] | None = None, sleep=time.sleep) -> int:
         config_path = protocol.resolve(args.config)
         config = json.loads(config_path.read_text())
         config_sha = protocol.sha256_file(config_path)
+        request_fields(config)
         if args.all_validation and not args.validation:
             raise protocol.Refused("--all-validation needs --validation --access <release.json>")
         manifest = protocol.load_manifest()
@@ -626,7 +715,7 @@ def main(argv: list[str] | None = None, sleep=time.sleep) -> int:
               file=sys.stderr)
         return 1
     try:
-        protocol.check_cap(args.phase, args.cap)
+        default_context().approve(args.phase, args.cap)
         check_prerequisites(series, pending)
         if pending:
             require_key(config)
