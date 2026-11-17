@@ -1,0 +1,103 @@
+{
+  "series_id": "gpt26-screen",
+  "phase": 26,
+  "split": "tuning",
+  "manifest_sha256": "74eb611e2b1e6fcb57f2fbe17a3b4d641be431b9cce97db81fc3a626590dacf8",
+  "fixed_on": "2026-11-17",
+  "note": "Fixed before any call of this series. Six slots (S17-03/04/07 x slots 1, 2); the gate's denominator is always 6. Input hashes and sizes copied from scripts/s19/series/phase5.json; cost bounds recomputed from gpt26-low.json. Checked by scripts/gpt26/check_series.py.",
+  "configs": {
+    "bda91bfbcc01e25635b563ed80dfc19d1e638eeb3612b7e8d904e2d7683bb95d": {
+      "path": "scripts/gpt26/configs/gpt26-low.json",
+      "name": "gpt26-low",
+      "kind": "gpt",
+      "role": "screen"
+    }
+  },
+  "prerequisites": [],
+  "slots": [
+    {
+      "config_sha256": "bda91bfbcc01e25635b563ed80dfc19d1e638eeb3612b7e8d904e2d7683bb95d",
+      "config_name": "gpt26-low",
+      "kind": "gpt",
+      "photo": "S17-03",
+      "slot": 1,
+      "role": "screen",
+      "input": "common",
+      "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+      "input_dimensions": [3840, 2560],
+      "request_size": [2336, 1552],
+      "cost_bound_usd": 0.2,
+      "requires": []
+    },
+    {
+      "config_sha256": "bda91bfbcc01e25635b563ed80dfc19d1e638eeb3612b7e8d904e2d7683bb95d",
+      "config_name": "gpt26-low",
+      "kind": "gpt",
+      "photo": "S17-03",
+      "slot": 2,
+      "role": "screen",
+      "input": "common",
+      "input_sha256": "3fdc9647e9d04998b31350be2af94c4998212709167b60d8a70113307b552087",
+      "input_dimensions": [3840, 2560],
+      "request_size": [2336, 1552],
+      "cost_bound_usd": 0.2,
+      "requires": []
+    },
+    {
+      "config_sha256": "bda91bfbcc01e25635b563ed80dfc19d1e638eeb3612b7e8d904e2d7683bb95d",
+      "config_name": "gpt26-low",
+      "kind": "gpt",
+      "photo": "S17-04",
+      "slot": 1,
+      "role": "screen",
+      "input": "common",
+      "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+      "input_dimensions": [4032, 3024],
+      "request_size": [2192, 1648],
+      "cost_bound_usd": 0.2,
+      "requires": []
+    },
+    {
+      "config_sha256": "bda91bfbcc01e25635b563ed80dfc19d1e638eeb3612b7e8d904e2d7683bb95d",
+      "config_name": "gpt26-low",
+      "kind": "gpt",
+      "photo": "S17-04",
+      "slot": 2,
+      "role": "screen",
+      "input": "common",
+      "input_sha256": "9d5eb8cd0e2b809bf5f0de1a0bcd5faf509d1dc2349f0a671782c9d684aa5df8",
+      "input_dimensions": [4032, 3024],
+      "request_size": [2192, 1648],
+      "cost_bound_usd": 0.2,
+      "requires": []
+    },
+    {
+      "config_sha256": "bda91bfbcc01e25635b563ed80dfc19d1e638eeb3612b7e8d904e2d7683bb95d",
+      "config_name": "gpt26-low",
+      "kind": "gpt",
+      "photo": "S17-07",
+      "slot": 1,
+      "role": "screen",
+      "input": "common",
+      "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+      "input_dimensions": [5145, 3431],
+      "request_size": [2320, 1552],
+      "cost_bound_usd": 0.2,
+      "requires": []
+    },
+    {
+      "config_sha256": "bda91bfbcc01e25635b563ed80dfc19d1e638eeb3612b7e8d904e2d7683bb95d",
+      "config_name": "gpt26-low",
+      "kind": "gpt",
+      "photo": "S17-07",
+      "slot": 2,
+      "role": "screen",
+      "input": "common",
+      "input_sha256": "6902afd19336247a348bf14f115b441a46dff8005586b841f6bb1943d42fd538",
+      "input_dimensions": [5145, 3431],
+      "request_size": [2320, 1552],
+      "cost_bound_usd": 0.2,
+      "requires": []
+    }
+  ]
+}
