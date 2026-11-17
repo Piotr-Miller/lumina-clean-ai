@@ -1,7 +1,8 @@
-# Kolejne kroki (stan na 2026-11-15)
+# Kolejne kroki (stan na 2026-11-17)
 
-Produkcja: master `419d2cb`, deploy zielony. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0` od 2026-10-28).
-Lokalnie: gałąź `chore/archive-cloud-classical-denoise` (archiwum S-20), PR w toku.
+Produkcja: master `a0193b0`, CI zielone. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0` od 2026-10-28).
+Lokalnie: gałąź `gpt-image-26-screen` (faza 1 #359 zacommitowana jako `9d47635`), wypchnięta bez PR-a.
+Lokalny `master` cofnięty do `a0193b0` (= `origin/master`); commit fazy 1 trafił najpierw na `master` przez pomyłkę.
 
 ## Teraz: decyzja o Cloud AI po S-20
 
@@ -13,9 +14,20 @@ remisują na 4 i gubią słabe gwiazdy na S17-03 — wąskim gardłem nie jest w
 
 Następne kroki, po kolei:
 
-1. **Ty:** zdecyduj, czy robimy `gpt-image-26-screen` ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359)),
-   test GPT-Image-2.6 `complexity=low` do $1,50, jako ostatni sprawdzian Cloud.
-2. **Ty:** po #359 albo bez niego — decyzja produktowa o Cloud: zostaje wyłączony z przełącznikiem, przełącznik
+1. **Zrobione 2026-11-17:** decyzja — robimy `gpt-image-26-screen` ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359)).
+   Plan przejrzany (`context/changes/gpt-image-26-screen/plan.md`, 5 faz), `change.md` → `implementing`.
+   **Faza 1 zrobiona** (`9d47635`): `evaluations/vendor-facts.md` (odczyt 2026-11-17 — `complexity=low` i
+   `moderation=auto` przyjmowane przez `v1/images/edits`), config `scripts/gpt26/configs/gpt26-low.json`
+   (sha256 `bda91bfb…`, bramka i protokół ślepej oceny w środku), seria `scripts/gpt26/series/screen.json`
+   (6 slotów, $0,20 każdy, $1,20 łącznie), checker `scripts/gpt26/check_series.py`.
+   Ryzyko z vendor-facts: referencja API nie wymienia 2.6 z nazwy wśród modeli z dowolnym `WIDTHxHEIGHT`
+   (przewodnik obejmuje całą rodzinę Sunburst) — odrzucony rozmiar = slot niedostarczony = FAIL „not delivered”.
+2. **Ty:** akceptacja ręczna fazy 1 — 1.4 (przeczytać `vendor-facts.md`) i 1.5 (przeczytać blok `gate` w configu).
+3. **Następny krok:** `/rune-impl-review @context/changes/gpt-image-26-screen/plan.md phase 1` w świeżej sesji,
+   potem `/rune-implement gpt-image-26-screen phase 2` (runner, `state.py`, testy, harness regresji).
+   Kryteria 2.2 (regresja S-19) i 2.3 (dry run) wymagają hosta z Linuksem (wejścia, Local i ledger S-19
+   są tylko tam). Faza 4 jest płatna: najpierw Twoja linia `GPT26-SPEND` w `change.md`, zacommitowana.
+4. **Ty:** po #359 — decyzja produktowa o Cloud: zostaje wyłączony z przełącznikiem, przełącznik
    znika, albo Local jest jedynym silnikiem, a `local-engine-ceiling` (#188) głównym kierunkiem jakości.
 
 Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
@@ -47,10 +59,8 @@ w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą 
 
 ## Kolejka
 
-- **`gpt-image-26-screen`** ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359), Parked, założone
-  2026-11-05): przesiewowy test `gpt-image-2.6-sunburst` (`complexity=low`) jako wyniku Cloud na S17-03/04/07,
-  po 2 wyniki, limit $1.50, bramka zapisana przed renderem. Niezależny od wyniku NLM; praktycznie po zbudowaniu
-  przeglądarki z kroku 1 S-20. Potem `/rune-plan gpt-image-26-screen`.
+- **`gpt-image-26-screen`** ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359)): w toku,
+  faza 1 z 5 zrobiona — szczegóły i następne kroki w sekcji „Teraz” wyżej.
 
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,
   HTML strony 502 od Replicate). Analiza w `context/changes/cloud-error-message-leak/change.md`.
