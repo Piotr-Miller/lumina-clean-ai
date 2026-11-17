@@ -59,6 +59,11 @@ Practical, not a dependency: run after S-20 step 1 has built its two-question bl
 2.6 is rated with the same tool and scale. Reuse the S-19 harness (`scripts/s19/run-candidate.py`,
 budget ledger, sealed-key protocol); outputs go to the gitignored `test-photos/private/`.
 
+### Progress log
+
+- 2026-11-17: owner confirmation recorded, Progress row pending the merge (owner rule: Manual rows are written after the merge, at the master SHA) — **1.4** the owner confirmed in session that `evaluations/vendor-facts.md` (sha256 51f6c37b…) matches the 2026-11-05 parameter decision, at 9d476358401f7a8b13662a3fb05f33c639a2a302.
+- 2026-11-17: owner confirmation recorded, Progress row pending the merge — **1.5** the owner confirmed in session that the `gate` block of `scripts/gpt26/configs/gpt26-low.json` (sha256 bda91bfb…) states their rules, at 9d476358401f7a8b13662a3fb05f33c639a2a302.
+
 ## GPT26 approvals
 
 <!--
