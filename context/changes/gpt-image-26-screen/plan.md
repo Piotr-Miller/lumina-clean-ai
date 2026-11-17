@@ -825,9 +825,9 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [x] 2.1 Screen runner tests pass
-- [ ] 2.2 S-19 suite still passes
-- [x] 2.3 Dry run on the Linux host lists 6 pending slots bounded ≤ $1.50
+- [x] 2.1 Screen runner tests pass — d69ec55
+- [x] 2.2 S-19 suite still passes — d69ec55
+- [x] 2.3 Dry run on the Linux host lists 6 pending slots bounded ≤ $1.50 — d69ec55
 
 #### Manual
 
