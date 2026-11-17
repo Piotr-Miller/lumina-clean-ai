@@ -130,6 +130,32 @@ def cost_bound(config: dict, size: tuple[int, int]) -> float:
     return math.ceil(usd * 100 - 1e-9) / 100
 
 
+def check_calculation_config(config: object) -> list[str]:
+    """Validate arithmetic inputs before dependent series checks can run."""
+    errs: list[str] = []
+    if not isinstance(config, dict):
+        return [f"{CONFIG}: calculation fields require a config object — restore it from {PHASE5_CONFIG}"]
+    for block in ("size_rule", "cost_bound"):
+        if not isinstance(config.get(block), dict):
+            errs.append(f"{CONFIG}: {block} must be an object — restore it from {PHASE5_CONFIG}")
+    rule = config.get("size_rule")
+    if isinstance(rule, dict):
+        for key in ("multiple", "max_pixels", "min_pixels", "max_edge"):
+            value = rule.get(key)
+            if type(value) is not int or value <= 0:
+                errs.append(f"{CONFIG}: size_rule.{key} must be a positive integer — restore it from {PHASE5_CONFIG}")
+        aspect = rule.get("max_aspect", 3.0)
+        if type(aspect) not in (int, float) or not math.isfinite(aspect) or aspect <= 0:
+            errs.append(f"{CONFIG}: size_rule.max_aspect must be finite and positive — restore it from {PHASE5_CONFIG}")
+    bound = config.get("cost_bound")
+    if isinstance(bound, dict):
+        for key in COST_FIELDS:
+            value = bound.get(key)
+            if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+                errs.append(f"{CONFIG}: cost_bound.{key} must be finite and nonnegative — restore it from {PHASE5_CONFIG}")
+    return errs
+
+
 def check_config(config: object, phase5: dict) -> list[str]:
     errs: list[str] = []
     if not isinstance(config, dict):
@@ -239,16 +265,26 @@ def check_series(series: object, config: dict, config_sha: str, phase5_series: d
         for field in ("input", "input_sha256", "input_dimensions", "request_size"):
             if s.get(field) != src.get(field):
                 errs.append(f"{where}: {field} is {s.get(field)!r}, {PHASE5_SERIES} has {src.get(field)!r}")
-        dims = s.get("input_dimensions")
-        if isinstance(dims, list) and len(dims) == 2 and all(isinstance(d, int) and d > 0 for d in dims):
-            size = request_size(dims[0], dims[1], config["size_rule"])
-            if size is None or list(size) != s.get("request_size"):
-                errs.append(f"{where}: request_size {s.get('request_size')!r} ≠ the size rule's {size!r}")
-            req = s.get("request_size")
-            if isinstance(req, list) and len(req) == 2:
-                want = cost_bound(config, (req[0], req[1]))
-                if s.get("cost_bound_usd") != want:
-                    errs.append(f"{where}: cost_bound_usd is {s.get('cost_bound_usd')!r}, the config gives {want}")
+        valid_dimensions = True
+        for field in ("input_dimensions", "request_size"):
+            dims = s.get(field)
+            if not (
+                isinstance(dims, list)
+                and len(dims) == 2
+                and all(type(d) is int and d > 0 for d in dims)
+            ):
+                errs.append(f"{where}: {field} must be two positive integers — fix the dimensions")
+                valid_dimensions = False
+        if not valid_dimensions:
+            continue
+        dims = s["input_dimensions"]
+        req = s["request_size"]
+        size = request_size(dims[0], dims[1], config["size_rule"])
+        if size is None or list(size) != req:
+            errs.append(f"{where}: request_size {req!r} ≠ the size rule's {size!r}")
+        want = cost_bound(config, (req[0], req[1]))
+        if s.get("cost_bound_usd") != want:
+            errs.append(f"{where}: cost_bound_usd is {s.get('cost_bound_usd')!r}, the config gives {want}")
     for key in EXPECTED_SLOTS:
         if key not in seen:
             errs.append(f"{SERIES}: slot {key[0]}/{key[1]} is missing — the denominator is always {DENOMINATOR}")
@@ -269,11 +305,12 @@ def main() -> int:
         print(f"check_series: REFUSED — {e}", file=sys.stderr)
         return 1
     config_sha = hashlib.sha256(config_raw).hexdigest()
-    errs = check_config(config, phase5)
-    if isinstance(config, dict) and isinstance(config.get("size_rule"), dict) and isinstance(config.get("cost_bound"), dict):
+    calculation_errs = check_calculation_config(config)
+    errs = check_config(config, phase5) + calculation_errs
+    if not calculation_errs:
         errs += check_series(series, config, config_sha, phase5_series)
     else:
-        errs.append(f"{SERIES}: not checked — {CONFIG} lacks a usable size_rule/cost_bound")
+        errs.append(f"{SERIES}: not checked — {CONFIG} has invalid calculation fields")
     if errs:
         print(f"check_series: FAIL — {len(errs)} discrepancy(ies) in the GPT26 registration:", file=sys.stderr)
         for e in errs:
