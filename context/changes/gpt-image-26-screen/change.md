@@ -1,9 +1,9 @@
 ---
 change_id: gpt-image-26-screen
 title: "Screening test of GPT-Image-2.6 Sunburst (complexity=low) as a Cloud AI output"
-status: new
+status: implementing
 created: 2026-11-05
-updated: 2026-11-05
+updated: 2026-11-17
 archived_at: null
 issue: 359
 ---
@@ -58,3 +58,16 @@ a small, separate screening test of gpt-image-2.6-sunburst (quality=high, comple
 Practical, not a dependency: run after S-20 step 1 has built its two-question blind viewer, so
 2.6 is rated with the same tool and scale. Reuse the S-19 harness (`scripts/s19/run-candidate.py`,
 budget ledger, sealed-key protocol); outputs go to the gitignored `test-photos/private/`.
+
+## GPT26 approvals
+
+<!--
+Owner-only record. Only the owner writes an approval line here, and commits it before any paid call.
+scripts/gpt26/run.py strictly parses exactly one line of this grammar and refuses when it is absent,
+malformed, duplicated, uncommitted, or when cap_usd differs from the runner's --cap:
+
+- GPT26-SPEND cap_usd=1.50 decision=approved date=YYYY-MM-DD
+
+The blind-set seal is NOT stored in this mutable lifecycle file. It goes, once, into the write-once
+evaluations/gate-sealed.md as an unbulleted GPT26-SEAL line (plan.md Phase 3 and Phase 5).
+-->
