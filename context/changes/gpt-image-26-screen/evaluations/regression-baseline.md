@@ -59,4 +59,18 @@ Fixture overlay, read from the archive blobs at that revision and verified as by
 
 ## Candidate revision
 
-The Phase 2 commit, run after it landed. Results are recorded in the section below.
+`d69ec557e0b93576b8337220f15adc53013f07ef` (`feat(gpt-image-26-screen): Runner for this screen (p2)`),
+the committed Phase 2 hooks in `scripts/s19/run-candidate.py`.
+
+### S-19 — PASS
+
+`python3 scripts/gpt26/regression.py --suite s19 --revision HEAD` (HEAD = `d69ec55`)
+
+- Result: `Ran 85 tests`, `OK`; exit **0**, in the same environment and with the same lockfile as
+  the pre-hook run.
+- The historical pins were unchanged before and after the hook edits. That covers
+  `scripts/s19/inputs.py`, `scripts/s19/configs/*.json` and `scripts/s19/series/*.json`, compared
+  by sha256.
+
+S-20 was not rerun at the candidate. Phase 2 does not touch `scripts/s20/`, and its criterion
+3.2 waits on the Phase 3 overlay decision.
