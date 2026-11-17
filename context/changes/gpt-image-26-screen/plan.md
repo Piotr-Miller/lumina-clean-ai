@@ -803,9 +803,9 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [x] 1.1 Config parses and prompt matches phase5
-- [x] 1.2 Series names exactly the six slots with phase-5 input hashes
-- [x] 1.3 Prettier is clean on the new files
+- [x] 1.1 Config parses and prompt matches phase5 — 9d47635
+- [x] 1.2 Series names exactly the six slots with phase-5 input hashes — 9d47635
+- [x] 1.3 Prettier is clean on the new files — 9d47635
 
 #### Manual
 
