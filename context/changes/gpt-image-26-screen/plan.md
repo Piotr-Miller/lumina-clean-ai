@@ -447,6 +447,15 @@ are insufficient, stop and report the additional baseline failure; never suppres
 Pillow was the only blocker. Baseline report contains exact commit IDs, versions, fixture hashes,
 test counts and exits. No previously green host checkout substitutes for these actual results.
 
+Node dependencies (owner decision 2026-11-17): the S-19 suite calls `npx --no-install tsx` and
+prettier, and a fresh worktree has no `node_modules`, so 12 tests fail for that reason alone. The
+harness links the live checkout's `node_modules` into the disposable worktree only when that
+revision's `package-lock.json` is byte-identical to the live one, refuses otherwise, and reports
+the lockfile hash. No `npm ci`, no network. S-20 overlay (owner decision 2026-11-17): the four
+files proved insufficient at 1a8ae56 (`blind.py` reads `step1-calibration.md` with
+`git show HEAD:`, and one test needs `step1-premise.md`); the S-20 baseline is recorded red with
+that cause, and the remedy is decided in Phase 3 before criterion 3.2 runs.
+
 **Contract**: exit 0 only when the selected full suite passes on the exact revision. Baseline and
 candidate runs are required before spend; until Linux execution, they remain explicitly not run.
 Raw discovery remains useful diagnostically but has known archive-path failures without this
@@ -816,9 +825,9 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [ ] 2.1 Screen runner tests pass
+- [x] 2.1 Screen runner tests pass
 - [ ] 2.2 S-19 suite still passes
-- [ ] 2.3 Dry run on the Linux host lists 6 pending slots bounded ≤ $1.50
+- [x] 2.3 Dry run on the Linux host lists 6 pending slots bounded ≤ $1.50
 
 #### Manual
 

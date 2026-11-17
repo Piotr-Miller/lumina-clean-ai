@@ -62,6 +62,7 @@ budget ledger, sealed-key protocol); outputs go to the gitignored `test-photos/p
 ### Progress log
 
 - 2026-11-17: owner confirmation recorded, Progress row pending the merge (owner rule: Manual rows are written after the merge, at the master SHA) — **1.4** the owner confirmed in session that `evaluations/vendor-facts.md` (sha256 51f6c37b…) matches the 2026-11-05 parameter decision, at 9d476358401f7a8b13662a3fb05f33c639a2a302.
+- 2026-11-17: owner decision — the regression harness links the live `node_modules` into its disposable worktree only when the revision's `package-lock.json` is byte-identical; the insufficient S-20 four-file overlay is recorded and decided in Phase 3; plan.md § Phase 2 item 5
 - 2026-11-17: owner confirmation recorded, Progress row pending the merge — **1.5** the owner confirmed in session that the `gate` block of `scripts/gpt26/configs/gpt26-low.json` (sha256 bda91bfb…) states their rules, at 9d476358401f7a8b13662a3fb05f33c639a2a302.
 
 ## GPT26 approvals
