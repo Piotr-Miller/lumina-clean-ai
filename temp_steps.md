@@ -1,8 +1,7 @@
 # Kolejne kroki (stan na 2026-11-17)
 
 Produkcja: master `a0193b0`, CI zielone. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0` od 2026-10-28).
-Lokalnie: gałąź `gpt-image-26-screen` (faza 1 #359 zacommitowana jako `9d47635`), wypchnięta bez PR-a.
-Lokalny `master` cofnięty do `a0193b0` (= `origin/master`); commit fazy 1 trafił najpierw na `master` przez pomyłkę.
+Gałąź `gpt-image-26-screen` (#359) wypchnięta bez PR-a: fazy 1–2 zrobione, HEAD po zapisie tego pliku.
 
 ## Teraz: decyzja o Cloud AI po S-20
 
@@ -14,20 +13,25 @@ remisują na 4 i gubią słabe gwiazdy na S17-03 — wąskim gardłem nie jest w
 
 Następne kroki, po kolei:
 
-1. **Zrobione 2026-11-17:** decyzja — robimy `gpt-image-26-screen` ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359)).
-   Plan przejrzany (`context/changes/gpt-image-26-screen/plan.md`, 5 faz), `change.md` → `implementing`.
-   **Faza 1 zrobiona** (`9d47635`): `evaluations/vendor-facts.md` (odczyt 2026-11-17 — `complexity=low` i
-   `moderation=auto` przyjmowane przez `v1/images/edits`), config `scripts/gpt26/configs/gpt26-low.json`
-   (sha256 `bda91bfb…`, bramka i protokół ślepej oceny w środku), seria `scripts/gpt26/series/screen.json`
-   (6 slotów, $0,20 każdy, $1,20 łącznie), checker `scripts/gpt26/check_series.py`.
-   Ryzyko z vendor-facts: referencja API nie wymienia 2.6 z nazwy wśród modeli z dowolnym `WIDTHxHEIGHT`
-   (przewodnik obejmuje całą rodzinę Sunburst) — odrzucony rozmiar = slot niedostarczony = FAIL „not delivered”.
-2. **Ty:** akceptacja ręczna fazy 1 — 1.4 (przeczytać `vendor-facts.md`) i 1.5 (przeczytać blok `gate` w configu).
-3. **Następny krok:** `/rune-impl-review @context/changes/gpt-image-26-screen/plan.md phase 1` w świeżej sesji,
-   potem `/rune-implement gpt-image-26-screen phase 2` (runner, `state.py`, testy, harness regresji).
-   Kryteria 2.2 (regresja S-19) i 2.3 (dry run) wymagają hosta z Linuksem (wejścia, Local i ledger S-19
-   są tylko tam). Faza 4 jest płatna: najpierw Twoja linia `GPT26-SPEND` w `change.md`, zacommitowana.
-4. **Ty:** po #359 — decyzja produktowa o Cloud: zostaje wyłączony z przełącznikiem, przełącznik
+1. **Zrobione 2026-11-17 — faza 1** (`9d47635`, poprawki z przeglądu Codex `1a8ae56`): vendor-facts,
+   config `scripts/gpt26/configs/gpt26-low.json` (sha256 `bda91bfb…`, bramka w środku), seria
+   `scripts/gpt26/series/screen.json` (6 slotów × $0,20), checker. Akceptacje 1.4 i 1.5 potwierdzone
+   (notatki w `change.md`; wiersze Progress wpisuje się po merge'u, przy SHA z mastera).
+2. **Zrobione 2026-11-17 — faza 2** (`d69ec55` + `f6cef55`): `scripts/gpt26/run.py` (runner, własny ledger
+   `test-photos/private/gpt26/`), `state.py` (rekoncyliacja), hooki w `scripts/s19/run-candidate.py`
+   (zgodne wstecz), `regression.py` + `evaluations/regression-baseline.md`. 61 testów OK; S-19 85 testów OK
+   przed hookami (`1a8ae56`) i po (`d69ec55`); dry run: 6 slotów, $1,20 ≤ $1,50, wejścia zweryfikowane.
+3. **Ty:** akceptacja 2.4 — czy dry run (`python3 scripts/gpt26/run.py --dry-run --cap 1.50`) pokazuje
+   właściwe 6 slotów, rozmiary i limity z serii.
+4. **Ty:** zdecyduj, czy fazę 2 przegląda Codex (`$rune-impl-review @context/changes/gpt-image-26-screen/plan.md phase 2 base 1a8ae56`),
+   czy od razu faza 3.
+5. **Faza 3** (`/rune-implement gpt-image-26-screen phase 3`): najpierw decyzja o fixture'ach S-20 —
+   suite S-20 jest czerwony już na `1a8ae56` (56 błędów, 1 porażka): `blind.py` czyta
+   `step1-calibration.md` przez `git show HEAD:`, a jeden test potrzebuje `step1-premise.md`; cztery pliki
+   overlayu nie wystarczają (szczegóły w `regression-baseline.md`). Potem builder, kopia viewera, bramka.
+6. **Faza 4 (płatna, ≤ $1,50):** najpierw Twoja linia `- GPT26-SPEND cap_usd=1.50 decision=approved date=…`
+   w `change.md` § GPT26 approvals, zacommitowana; `OPENAI_API_KEY` w środowisku.
+7. **Ty:** po #359 — decyzja produktowa o Cloud: zostaje wyłączony z przełącznikiem, przełącznik
    znika, albo Local jest jedynym silnikiem, a `local-engine-ceiling` (#188) głównym kierunkiem jakości.
 
 Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
