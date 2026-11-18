@@ -1,7 +1,8 @@
-# Kolejne kroki (stan na 2026-11-17)
+# Kolejne kroki (stan na 2026-11-18)
 
 Produkcja: master `a0193b0`, CI zielone. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0` od 2026-10-28).
 Gałąź `gpt-image-26-screen` (#359) wypchnięta bez PR-a: fazy 1–2 zrobione, HEAD po zapisie tego pliku.
+**Faza 3 idzie na Fedorze** (decyzja 2026-11-18) — gotowy prompt startowy w kroku 5 niżej.
 
 ## Teraz: decyzja o Cloud AI po S-20
 
@@ -25,10 +26,47 @@ Następne kroki, po kolei:
    właściwe 6 slotów, rozmiary i limity z serii.
 4. **Ty:** zdecyduj, czy fazę 2 przegląda Codex (`$rune-impl-review @context/changes/gpt-image-26-screen/plan.md phase 2 base 1a8ae56`),
    czy od razu faza 3.
-5. **Faza 3** (`/rune-implement gpt-image-26-screen phase 3`): najpierw decyzja o fixture'ach S-20 —
-   suite S-20 jest czerwony już na `1a8ae56` (56 błędów, 1 porażka): `blind.py` czyta
-   `step1-calibration.md` przez `git show HEAD:`, a jeden test potrzebuje `step1-premise.md`; cztery pliki
-   overlayu nie wystarczają (szczegóły w `regression-baseline.md`). Potem builder, kopia viewera, bramka.
+5. **Faza 3 — na Fedorze** (sesja na Windows 2026-11-18 niczego w fazie 3 nie zmieniła; tam nie ma
+   Pillow/NumPy/OpenCV ani `fork`/`fcntl`). Nowa sesja Claude Code na Fedorze, wklej to jako pierwszą
+   wiadomość:
+
+   ```text
+   /rune-implement gpt-image-26-screen phase 3
+
+   Przed jakąkolwiek edycją:
+   1. git fetch && git switch gpt-image-26-screen && git pull --ff-only. Potwierdź, że HEAD zawiera
+      6fba5d9 (fazy 1–2) i ten commit z temp_steps.md, a working tree jest czyste.
+   2. Porównaj wersje zależności z context/changes/gpt-image-26-screen/evaluations/regression-baseline.md
+      (Python 3.15.2, Pillow 12.3.0, NumPy 2.5.4, OpenCV 4.13.0, scikit-image 0.26.0, PyWavelets 1.8.0,
+      package-lock.json sha256 120849f1…). Każdą różnicę zgłoś przed startem.
+
+   Decyzje właściciela z 2026-11-18 — wpisz je do plan.md (Phase 2 item 5 / tekst kryterium 3.2,
+   oznaczone "(owner decision 2026-11-18)") i datowaną notkę do change.md Notes, oba w commicie fazy 3:
+
+   A. Host: faza 3 jest implementowana i bramkowana na Fedorze. Wiersze 3.1 i 3.2 zaznaczasz dopiero po
+      rzeczywistym przejściu kontroli.
+   B. Overlay S-20 dla 3.2: regression.py robi JEDEN jednorazowy overlay commit w odłączonym, tymczasowym
+      worktree, z rodzicem = testowana rewizja. Przywraca dokładnie pięć plików metadanych na stare
+      ścieżki context/changes/cloud-classical-denoise/: dotychczasowe cztery (change.md,
+      evaluations/pilot-result.json, evaluations/step1-gate.json, evaluations/step1-calibration.md) plus
+      evaluations/step1-premise.md. Bajty z blobów archiwum tej samej testowanej rewizji, hashe
+      zweryfikowane. Commit zmienia wyłącznie te pięć ścieżek — żadnego kodu, configu ani testów.
+      Identyczna procedura dla baseline (1a8ae56…) i kandydata; 3.2 wymaga przejścia PEŁNEJ suite S-20
+      dla obu. Raport zapisuje: SHA testowanej rewizji, SHA overlay commita (rodzic = testowana rewizja),
+      ścieżki i hashe fixture'ów, wersje zależności, komendę, liczbę testów i rzeczywisty wynik. Nie
+      merge'uj ani nie pushuj overlay commita; nie zmieniaj roboczej gałęzi ani archiwum. Jeśli suite
+      nadal nie przechodzi, zgłoś przyczynę — nie zastępuj kryterium porównaniem zestawów błędów ani
+      pomijaniem testów.
+   C. Porządek: przywróć tytuł w Progress "- [ ] 5.1 (paid) Verdict computed from committed, sealed
+      ratings" — błędnie zmieniony 2026-11-17; plan.md Phase 5 §1 mówi, że tytuł zachowuje "(paid)".
+
+   Otwarte wiersze manualne do zapytania mnie: 1.4 i 1.5 (potwierdzenia są w change.md; wiersze
+   Progress wpisuje się po merge'u, przy SHA z mastera) oraz 2.4 (potwierdzenie dry runu).
+   ```
+
+   Potem: builder, kopia viewera, bramka, testy (3.1), regresja S-20 (3.2), format (3.3), a na koniec
+   Twoja akceptacja 3.4 (viewer na syntetycznym zestawie).
+
 6. **Faza 4 (płatna, ≤ $1,50):** najpierw Twoja linia `- GPT26-SPEND cap_usd=1.50 decision=approved date=…`
    w `change.md` § GPT26 approvals, zacommitowana; `OPENAI_API_KEY` w środowisku.
 7. **Ty:** po #359 — decyzja produktowa o Cloud: zostaje wyłączony z przełącznikiem, przełącznik
@@ -64,7 +102,7 @@ w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą 
 ## Kolejka
 
 - **`gpt-image-26-screen`** ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359)): w toku,
-  faza 1 z 5 zrobiona — szczegóły i następne kroki w sekcji „Teraz” wyżej.
+  fazy 1–2 z 5 zrobione, faza 3 na Fedorze — szczegóły i prompt w sekcji „Teraz” wyżej.
 
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,
   HTML strony 502 od Replicate). Analiza w `context/changes/cloud-error-message-leak/change.md`.
@@ -106,6 +144,9 @@ issue zamknięte. Wynik: `context/archive/2026-09-28-cloud-model-comparison/eval
   `feat/finder-glm-5-3-high`, `feat/finder-model-swap`, `feat/finder-serialization-outage`, `feat/finder-sonnet`,
   `feat/finder-sonnet-effort` (tylko na GitHubie), `feat/finder-verification`. Rebase-merge zmienia SHA, więc
   `git branch -d` odmawia na zmergowanych gałęziach; potrzebne `git branch -D`.
+  **Stan na 2026-11-18:** na GitHubie z tej listy zostały tylko `feat/finder-glm-5-3` i
+  `feat/finder-glm-5-3-high` (ich archiwa są tylko na tych gałęziach). Pozostałe mogą istnieć lokalnie
+  na Fedorze — sprawdzić `git branch` tam, zanim cokolwiek zostanie usunięte.
 - **Windows:** uwagi o podmanie/SELinux wyżej dotyczą tylko maszyny z Linuksem.
 - S-20: w `test-photos/private/s20/` leżą stare syntetyczne zestawy `synthetic-*-20261105t221729` (sprzed ekranu
   pieczęci) — do usunięcia ręcznie. Zestawy z `publish` też są tylko syntetyczne.
