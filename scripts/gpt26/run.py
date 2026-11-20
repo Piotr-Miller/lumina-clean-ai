@@ -85,6 +85,11 @@ class Paths:
     def sidecar(self) -> Path:
         return self.private / "run-state.json"
 
+    @property
+    def local(self) -> Path:
+        """The real Local downloads, next to the prepared inputs (`private/s19/local/`)."""
+        return self.inputs.parent / "local"
+
 
 def default_paths() -> Paths:
     """Derived from the executing code only — never from an S19_* or other environment override."""

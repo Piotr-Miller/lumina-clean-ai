@@ -65,6 +65,8 @@ budget ledger, sealed-key protocol); outputs go to the gitignored `test-photos/p
 - 2026-11-17: owner decision — the regression harness links the live `node_modules` into its disposable worktree only when the revision's `package-lock.json` is byte-identical; the insufficient S-20 four-file overlay is recorded and decided in Phase 3; plan.md § Phase 2 item 5
 - 2026-11-17: owner confirmation recorded, Progress row pending the merge — **1.5** the owner confirmed in session that the `gate` block of `scripts/gpt26/configs/gpt26-low.json` (sha256 bda91bfb…) states their rules, at 9d476358401f7a8b13662a3fb05f33c639a2a302.
 - 2026-11-20: owner confirmation recorded, Progress row pending the merge — **2.4** the owner confirmed in session that `python3 scripts/gpt26/run.py --dry-run --cap 1.50` on the Linux (Fedora) host lists the six series slots with the series' request sizes (S17-03 2336×1552, S17-04 2192×1648, S17-07 2320×1552), $0.20 bounds, $1.20 total within the $1.50 cap, verified inputs, and refuses a paid run without the approval line and key, at 83851c7c911858617afd21c12fed3949e150571b.
+- 2026-11-18: owner decision — Phase 3 is implemented and gated on the Linux (Fedora) host; the S-20 regression uses one disposable overlay commit restoring five metadata files (premise included) for both revisions, and the full suite must pass; Progress 5.1 keeps its `(paid)` title; plan.md § Phase 2 item 5, § Progress
+- 2026-11-20: owner decision — with two sealed passes the private first-pass checkpoint is required by the gate, and a live ledger/sidecar differing from the frozen copy after the seal is BLOCKED; plan.md § Phase 3 items 1 and 3
 
 ## GPT26 approvals
 

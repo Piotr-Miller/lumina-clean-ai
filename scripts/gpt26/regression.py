@@ -12,11 +12,15 @@ live checkout's `node_modules`, linked into the worktree only when the revision'
 `package-lock.json` is byte-identical to the live one (owner decision 2026-11-17); no install,
 no network.
 
-For S-20 only, four metadata files are restored to their pre-archive paths under
+For S-20 only, five metadata files are restored to their pre-archive paths under
 `context/changes/cloud-classical-denoise/` inside that disposable worktree, read from the
 matching `context/archive/2026-11-03-cloud-classical-denoise/` blobs AT THE SAME REVISION.
-Source and copy are compared by SHA-256 and the mapping is logged. Nothing is staged, the
-archive is not touched, and cleanup removes only this run's own worktree.
+Source and copy are compared by SHA-256 and the mapping is logged. Then ONE overlay commit is
+made in the worktree's detached HEAD, its parent the tested revision, changing exactly those
+five paths and nothing else — `blind.py` reads the calibration record with `git show HEAD:`, so
+a file on disk alone is not enough (owner decision 2026-11-18). The overlay commit is never
+merged, pushed or referenced by a branch; the live checkout's index is not staged, the archive
+is not touched, and cleanup removes only this run's own worktree.
 
 Exit status: the suite's own exit status when it ran; 2 when the harness could not run it
 (unknown revision, missing fixture blob, fixture hash mismatch, worktree failure).
@@ -42,7 +46,13 @@ S20_FIXTURES = (
     "evaluations/pilot-result.json",
     "evaluations/step1-gate.json",
     "evaluations/step1-calibration.md",
+    "evaluations/step1-premise.md",
 )
+# The overlay commit's fixed identity. Hooks are switched off for it: the live checkout's
+# pre-commit formatter would rewrite the fixture bytes whose hashes the overlay just verified.
+OVERLAY_IDENTITY = {"GIT_AUTHOR_NAME": "gpt26-regression", "GIT_AUTHOR_EMAIL": "gpt26-regression@invalid",
+                    "GIT_COMMITTER_NAME": "gpt26-regression", "GIT_COMMITTER_EMAIL": "gpt26-regression@invalid",
+                    "GIT_AUTHOR_DATE": "2026-11-18T00:00:00Z", "GIT_COMMITTER_DATE": "2026-11-18T00:00:00Z"}
 DEPENDENCIES = ("Pillow", "numpy", "opencv-python", "opencv-python-headless", "scikit-image", "PyWavelets")
 # Git variables that would point a subprocess at another repository or index.
 GIT_ENV = ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_COMMON_DIR")
@@ -58,9 +68,9 @@ def clean_env() -> dict:
     return env
 
 
-def git(*args: str, cwd: Path | None = None, binary: bool = False):
+def git(*args: str, cwd: Path | None = None, binary: bool = False, env: dict | None = None):
     cwd = cwd or ROOT
-    r = subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, env=clean_env())
+    r = subprocess.run(["git", "-C", str(cwd), *args], capture_output=True, env={**clean_env(), **(env or {})})
     if r.returncode != 0:
         raise HarnessError(f"git {' '.join(args)} failed in {cwd}: {r.stderr.decode(errors='replace').strip()}")
     return r.stdout if binary else r.stdout.decode().strip()
@@ -83,7 +93,7 @@ def dependency_versions() -> dict[str, str]:
 
 
 def restore_s20_fixtures(worktree: Path, revision: str, log) -> list[dict]:
-    """Copy the four archived metadata blobs of `revision` to their legacy paths in `worktree`."""
+    """Copy the five archived metadata blobs of `revision` to their legacy paths in `worktree`."""
     mapping = []
     for rel in S20_FIXTURES:
         source = f"{ARCHIVE}/{rel}"
@@ -107,6 +117,35 @@ def restore_s20_fixtures(worktree: Path, revision: str, log) -> list[dict]:
 
 def write_fixture(target: Path, data: bytes) -> None:
     target.write_bytes(data)
+
+
+def overlay_commit(worktree: Path, revision: str, mapping: list[dict], log) -> str:
+    """Commit the restored fixtures once in the worktree's detached HEAD; return the commit.
+
+    Verified after the fact: its single parent is `revision`, it changes exactly the fixture
+    paths, and each committed blob hashes to the archive blob it was copied from."""
+    paths = [m["target"] for m in mapping]
+    git("add", "--", *paths, cwd=worktree)
+    git("-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false", "commit", "-q", "-m",
+        "gpt26 regression: S-20 metadata fixture overlay (disposable, never merged)", cwd=worktree,
+        env=OVERLAY_IDENTITY)
+    overlay = git("rev-parse", "HEAD", cwd=worktree)
+    parents = git("rev-list", "--parents", "-n", "1", overlay, cwd=worktree).split()[1:]
+    if parents != [revision]:
+        raise HarnessError(f"overlay commit {overlay[:12]} has parents {parents}, not the tested revision "
+                           f"{revision[:12]}: nothing was run")
+    changed = sorted(git("diff-tree", "--no-commit-id", "--name-only", "-r", "--no-renames", revision, overlay,
+                         cwd=worktree).splitlines())
+    if changed != sorted(paths):
+        raise HarnessError(f"overlay commit {overlay[:12]} changes {changed}, not exactly the {len(paths)} fixture "
+                           "paths: nothing was run")
+    for m in mapping:
+        blob = git("show", f"{overlay}:{m['target']}", cwd=worktree, binary=True)
+        if hashlib.sha256(blob).hexdigest() != m["sha256"]:
+            raise HarnessError(f"overlay commit {overlay[:12]} holds {m['target']} with other bytes than "
+                               f"{m['source']}: nothing was run")
+    log(f"overlay commit {overlay} (parent {revision}; changes exactly {len(paths)} fixture paths)")
+    return overlay
 
 
 def link_node_modules(worktree: Path, revision: str, log) -> None:
@@ -137,7 +176,7 @@ def run(suite: str, revision: str, log=print) -> int:
     try:
         link_node_modules(worktree, commit, log)
         if suite == "s20":
-            restore_s20_fixtures(worktree, commit, log)
+            overlay_commit(worktree, commit, restore_s20_fixtures(worktree, commit, log), log)
         cmd = [sys.executable, "-B", "-m", "unittest", "discover", "-s", f"scripts/{suite}/tests"]
         log(f"command (cwd {worktree}): TMPDIR=/tmp {' '.join(cmd)}")
         r = subprocess.run(cmd, cwd=worktree, env=clean_env(), capture_output=True, text=True)
