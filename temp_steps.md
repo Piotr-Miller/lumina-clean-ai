@@ -22,10 +22,12 @@ Następne kroki, po kolei:
    `test-photos/private/gpt26/`), `state.py` (rekoncyliacja), hooki w `scripts/s19/run-candidate.py`
    (zgodne wstecz), `regression.py` + `evaluations/regression-baseline.md`. 61 testów OK; S-19 85 testów OK
    przed hookami (`1a8ae56`) i po (`d69ec55`); dry run: 6 slotów, $1,20 ≤ $1,50, wejścia zweryfikowane.
-3. **Ty:** akceptacja 2.4 — czy dry run (`python3 scripts/gpt26/run.py --dry-run --cap 1.50`) pokazuje
-   właściwe 6 slotów, rozmiary i limity z serii.
-4. **Ty:** zdecyduj, czy fazę 2 przegląda Codex (`$rune-impl-review @context/changes/gpt-image-26-screen/plan.md phase 2 base 1a8ae56`),
-   czy od razu faza 3.
+3. **Zrobione 2026-11-20 — akceptacja 2.4** (dry run na Fedorze: 6 slotów, $1,20 ≤ $1,50; notka w
+   `change.md`, wiersz Progress po merge'u).
+4. **Zrobione 2026-11-20 — przegląd fazy 2 przez Codex** (NEEDS ATTENTION, 3 ostrzeżenia): F1 (NaN w
+   limicie/koszcie), F2 (bindingi w rekoncyliacji), F3 (etykiety zakończenia bez dowodu) poprawione w
+   `b8d1bae`; regresja S-19 na `b8d1bae` 85 testów OK (`bc18d5a`). **Wymóg dla fazy 3 (F2):** builder i
+   bramka podają rekoncyliacji tożsamości z checkoutu, nigdy z sidecara.
 5. **Faza 3 — na Fedorze** (sesja na Windows 2026-11-18 niczego w fazie 3 nie zmieniła; tam nie ma
    Pillow/NumPy/OpenCV ani `fork`/`fcntl`). Nowa sesja Claude Code na Fedorze, wklej to jako pierwszą
    wiadomość:
@@ -35,7 +37,7 @@ Następne kroki, po kolei:
 
    Przed jakąkolwiek edycją:
    1. git fetch && git switch gpt-image-26-screen && git pull --ff-only. Potwierdź, że HEAD zawiera
-      6fba5d9 (fazy 1–2) i ten commit z temp_steps.md, a working tree jest czyste.
+      bc18d5a (fazy 1–2 + poprawki z przeglądu) i ten commit z temp_steps.md, a working tree jest czyste.
    2. Porównaj wersje zależności z context/changes/gpt-image-26-screen/evaluations/regression-baseline.md
       (Python 3.15.2, Pillow 12.3.0, NumPy 2.5.4, OpenCV 4.13.0, scikit-image 0.26.0, PyWavelets 1.8.0,
       package-lock.json sha256 120849f1…). Każdą różnicę zgłoś przed startem.
