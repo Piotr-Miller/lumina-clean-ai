@@ -456,6 +456,20 @@ files proved insufficient at 1a8ae56 (`blind.py` reads `step1-calibration.md` wi
 `git show HEAD:`, and one test needs `step1-premise.md`); the S-20 baseline is recorded red with
 that cause, and the remedy is decided in Phase 3 before criterion 3.2 runs.
 
+S-20 overlay remedy (owner decision 2026-11-18): `regression.py` makes ONE disposable overlay
+commit in the detached temporary worktree, its parent the tested revision. It restores exactly
+five metadata files to the legacy `context/changes/cloud-classical-denoise/` paths: the four
+above plus `evaluations/step1-premise.md`, with bytes from the archive blobs of that same
+revision and verified hashes. The commit changes only those five paths, never code, config or
+tests. The same procedure runs for the baseline (`1a8ae56…`) and the candidate; criterion 3.2
+requires the FULL S-20 suite to pass for both. The report records the tested revision, the
+overlay commit and its parent, fixture paths and hashes, dependency versions, the command, the
+test count and the real result. The overlay commit is never merged or pushed, and neither the
+working branch nor the archive changes. If the suite still fails, report the cause; never
+replace the criterion with a comparison of failure sets or with skipped tests. Phase 3 is
+implemented and gated on the Linux (Fedora) host; rows 3.1 and 3.2 are checked only after the
+checks actually pass there.
+
 **Contract**: exit 0 only when the selected full suite passes on the exact revision. Baseline and
 candidate runs are required before spend; until Linux execution, they remain explicitly not run.
 Raw discovery remains useful diagnostically but has known archive-path failures without this
@@ -494,6 +508,9 @@ synthetic data.
   real Local, hash-checked against `local-baselines.json`.
 - **Precondition:** `state.py` reconciles all six expected slots, attempt limits, bindings, PNGs,
   costs and terminal records. Freeze the reconciled private ledger/state snapshot into the key.
+  After the seal, a live ledger or run-state sidecar that differs from that frozen copy is
+  evidence that the record changed: the gate is BLOCKED until it is restored (owner decision
+  2026-11-20).
 - **Scale:** original and Local are resized with Lanczos to the GPT output's exact size. Record
   separate source SHA-256 and transformed RGB pixel SHA-256, exact dimensions and the transform
   recipe (including ICC conversion and RGB handling). Gate verification recomputes it. Do not
@@ -556,6 +573,8 @@ gate and do not change the archived S-20 viewer or its export schema.
   - expected slot identities and key pairs form an exact, duplicate-free mapping, so six rows
     cannot hide a missing slot or a repeated comparison;
   - any locked first-pass checkpoint matches the final export and sealed pass partition;
+    with two sealed passes the private checkpoint is required, and its absence is BLOCKED
+    (owner decision 2026-11-20);
   - every delivered pair is rated, with no `uncertain` and no missing crop/reason.
 - **Verdict:** applies the gate block from the config and writes `evaluations/verdict.md` and
   `evaluations/verdict.json`.
@@ -837,9 +856,9 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [ ] 3.1 Gate and builder tests pass
+- [x] 3.1 Gate and builder tests pass
 - [ ] 3.2 S-20 suite still passes
-- [ ] 3.3 Format check
+- [x] 3.3 Format check
 
 #### Manual
 
@@ -859,7 +878,7 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [ ] 5.1 Verdict computed from committed, sealed ratings
+- [ ] 5.1 (paid) Verdict computed from committed, sealed ratings
 - [ ] 5.2 No stale status pointer
 
 #### Manual

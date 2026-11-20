@@ -30,16 +30,22 @@ PHASE = 26
 SIDECAR_VERSION = 1
 # Terminal reasons only the sidecar records; technical failures are S-19 `slot_terminal` rows.
 SIDECAR_REASONS = ("not_attempted_budget", "stopped_after_bound_breach")
-# Every runtime file whose bytes decide what a paid run does. Pinned at the first reservation
-# and required unchanged on resume (plan § Critical Implementation Details). Phase 3 extends it
-# with the builder, gate and viewer before any run.
+# Every runtime file whose bytes decide what the screen does, from the paid run to the verdict.
+# Pinned at the first reservation and required unchanged on resume, at build and at the gate
+# (plan § Critical Implementation Details): the GPT26 tools, the copied viewer, and the S-19 and
+# S-20 modules they import (`evidence.py` imports `trials.py`).
 RULE_FILES = (
     "scripts/gpt26/run.py",
     "scripts/gpt26/state.py",
     "scripts/gpt26/check_series.py",
+    "scripts/gpt26/blind.py",
+    "scripts/gpt26/gate.py",
+    "context/changes/gpt-image-26-screen/references/compare-gpt26.html",
     "scripts/s19/run-candidate.py",
     "scripts/s19/protocol.py",
     "scripts/s19/inputs.py",
+    "scripts/s20/evidence.py",
+    "scripts/s20/trials.py",
 )
 REGISTRATION_FILES = ("scripts/gpt26/configs/gpt26-low.json", "scripts/gpt26/series/screen.json")
 OK, INVALID = "ok", "invalid"

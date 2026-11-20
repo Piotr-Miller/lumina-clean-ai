@@ -997,7 +997,7 @@ class IdentityTest(unittest.TestCase):
     def test_rule_inventory_covers_every_imported_runtime_file(self):
         code = ("import sys, json; sys.argv=['x']; sys.path.insert(0, 'scripts/gpt26');"
                 "import importlib.util as u; s=u.spec_from_file_location('r','scripts/gpt26/run.py');"
-                "m=u.module_from_spec(s); s.loader.exec_module(m);"
+                "m=u.module_from_spec(s); s.loader.exec_module(m); import blind, gate;"
                 "print(json.dumps(sorted({str(getattr(v,'__file__','') or '') for v in list(sys.modules.values())})))")
         r = subprocess.run([sys.executable, "-B", "-c", code], cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
@@ -1005,6 +1005,10 @@ class IdentityTest(unittest.TestCase):
                   if f and Path(f).resolve().is_relative_to(ROOT / "scripts")}
         self.assertTrue(loaded, "nothing under scripts/ was imported")
         self.assertLessEqual(loaded, set(state.RULE_FILES))
+        # The builder, the gate and the S-20 modules they import are among them (the runner is
+        # loaded from its file path, outside sys.modules, and pinned explicitly).
+        self.assertLessEqual({"scripts/gpt26/blind.py", "scripts/gpt26/gate.py", "scripts/s20/evidence.py",
+                              "scripts/s20/trials.py"}, loaded)
 
 
 if __name__ == "__main__":
