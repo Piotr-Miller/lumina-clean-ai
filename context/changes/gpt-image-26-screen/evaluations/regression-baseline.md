@@ -74,3 +74,17 @@ the committed Phase 2 hooks in `scripts/s19/run-candidate.py`.
 
 S-20 was not rerun at the candidate. Phase 2 does not touch `scripts/s20/`, and its criterion
 3.2 waits on the Phase 3 overlay decision.
+
+## Review-fix revision
+
+`b8d1bae2673330046fcaf52174352ecfa76e80ac` (`fix(gpt-image-26-screen): phase-2 review fixes F1–F3`),
+which changes `scripts/s19/run-candidate.py` and `scripts/s19/protocol.py` again after the candidate
+above.
+
+### S-19 — PASS (2026-11-20)
+
+`python3 scripts/gpt26/regression.py --suite s19 --revision HEAD` (HEAD = `b8d1bae`)
+
+- Result: `Ran 85 tests`, `OK`; exit **0**, in the same environment and with the same lockfile.
+- `scripts/s19/inputs.py`, `scripts/s19/configs/` and `scripts/s19/series/` are unchanged against
+  the pre-hook revision (`git diff --quiet 1a8ae56 b8d1bae -- …` exit 0).
