@@ -91,8 +91,52 @@ class HarnessTest(unittest.TestCase):
         self.commit()
         code, log = self.run_suite("s20")
         self.assertEqual(code, 0, log)
-        self.assertEqual(sum(line.startswith("fixture ") for line in log), 4)
+        self.assertEqual(sum(line.startswith("fixture ") for line in log), 5)
         self.assertFalse((self.repo / regression.LEGACY).exists())  # the live checkout is untouched
+        self.assertNoWorktreeLeft()
+
+    def test_the_overlay_is_one_commit_on_the_tested_revision(self):
+        self.archive()
+        head_reads = "".join(
+            f"        subprocess.run(['git', 'show', 'HEAD:{regression.LEGACY}/{rel}'], check=True, capture_output=True)\n"
+            for rel in regression.S20_FIXTURES)
+        self.add("scripts/s20/tests/test_x.py",
+                 "import subprocess, unittest\n\nclass T(unittest.TestCase):\n    def test_h(self):\n" + head_reads
+                 + "        out = subprocess.run(['git', 'status', '--porcelain', '--', 'context'], capture_output=True, text=True).stdout\n"
+                 + "        self.assertEqual(out, '')\n")
+        self.commit()
+        tested = subprocess.run(["git", "-C", str(self.repo), "rev-parse", "HEAD"], capture_output=True,
+                                text=True).stdout.strip()
+        branches = subprocess.run(["git", "-C", str(self.repo), "for-each-ref"], capture_output=True, text=True).stdout
+        code, log = self.run_suite("s20")
+        self.assertEqual(code, 0, log)
+        overlay = [ln for ln in log if ln.startswith("overlay commit ")]
+        self.assertEqual(len(overlay), 1, log)
+        self.assertIn(f"(parent {tested};", overlay[0])
+        self.assertIn("changes exactly 5 fixture paths", overlay[0])
+        # Nothing in the live repository moved: no branch or ref points at the overlay commit.
+        self.assertEqual(subprocess.run(["git", "-C", str(self.repo), "for-each-ref"], capture_output=True,
+                                        text=True).stdout, branches)
+        self.assertEqual(subprocess.run(["git", "-C", str(self.repo), "rev-parse", "HEAD"], capture_output=True,
+                                        text=True).stdout.strip(), tested)
+        self.assertNoWorktreeLeft()
+
+    def test_an_overlay_commit_with_extra_paths_is_not_run(self):
+        self.archive()
+        self.add("scripts/s20/tests/test_x.py", PASSING)
+        self.commit()
+        real = regression.restore_s20_fixtures
+
+        def extra(worktree, revision, log):
+            mapping = real(worktree, revision, log)
+            (worktree / "scripts/s20/extra.py").write_text("x = 1\n")
+            subprocess.run(["git", "-C", str(worktree), "add", "scripts/s20/extra.py"], check=True)
+            return mapping
+
+        with mock.patch.object(regression, "restore_s20_fixtures", extra):
+            with self.assertRaises(regression.HarnessError) as cm:
+                self.run_suite("s20")
+        self.assertIn("not exactly the 5 fixture paths", str(cm.exception))
         self.assertNoWorktreeLeft()
 
     def test_a_missing_fixture_blob_is_not_run(self):
