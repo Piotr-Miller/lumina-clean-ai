@@ -145,6 +145,11 @@ def cost_bound(config: dict, size: tuple[int, int]) -> float:
     return math.ceil(usd * 100 - 1e-9) / 100
 
 
+def valid_amount(value) -> bool:
+    """A finite nonnegative number, excluding Booleans and values that overflow a float."""
+    return type(value) in (int, float) and 0 <= value <= sys.float_info.max
+
+
 def actual_cost(config: dict, usage: dict | None) -> float | None:
     """The cost a successful response's usage implies, or None when it cannot be computed (the
     reservation then stays counted)."""
@@ -153,12 +158,13 @@ def actual_cost(config: dict, usage: dict | None) -> float | None:
         out = (usage.get("output_tokens_details") or {}).get("image_tokens", usage.get("output_tokens"))
         img = (usage.get("input_tokens_details") or {}).get("image_tokens")
         txt = (usage.get("input_tokens_details") or {}).get("text_tokens")
-        if None in (out, img, txt):
+        if not all(valid_amount(value) for value in (out, img, txt)):
             return None
-        return round(
+        cost = round(
             (out * b["usd_per_million_output_image_tokens"]
              + img * b["usd_per_million_input_image_tokens"]
              + txt * b["usd_per_million_input_text_tokens"]) / 1e6, 6)
+        return cost if valid_amount(cost) else None
     return None  # fal reports no billed amount; the full reservation stays counted
 
 
@@ -234,12 +240,22 @@ def phase_committed(rows: list[dict], phase: int) -> tuple[float, int]:
     reserves = {r["attempt_id"]: r for r in rows if r["event"] == "reserve" and r["phase"] == phase}
     total, unknown = 0.0, 0
     for aid, res in reserves.items():
+        bound = res.get("reserved_usd")
+        if not valid_amount(bound):
+            raise protocol.Refused(f"attempt {aid}: invalid reserved_usd {bound!r} — repair the ledger "
+                                   "before any call")
         cost = results.get(aid, {}).get("cost_usd")
         if cost is None:
-            total += res["reserved_usd"]
+            total += bound
             unknown += 1
         else:
+            if not valid_amount(cost):
+                raise protocol.Refused(f"attempt {aid}: invalid cost_usd {cost!r} — repair the ledger "
+                                       "before any call")
             total += cost
+    if not valid_amount(total):
+        raise protocol.Refused(f"phase {phase}: committed cost overflows a finite amount — repair the ledger "
+                               "before any call")
     return round(total, 6), unknown
 
 
@@ -266,16 +282,34 @@ def slot_state(rows: list[dict], key: tuple) -> dict:
     }
 
 
+def record_budget_refusal(phase: int, cap: float, reserve: dict, committed: float,
+                          ctx: RunContext | None = None) -> None:
+    """Called inside admission's lock so this row proves the exact decision history."""
+    row = {"event": "budget_refusal", "at": now(), "phase": phase,
+           **{k: reserve.get(k) for k in ("series_id", "config_sha256", "input_sha256", "photo", "slot")},
+           "committed_usd": committed, "bound_usd": reserve["reserved_usd"], "cap_usd": cap}
+    if ctx is None:
+        append(row)
+    else:
+        append(row, ctx)
+
+
 def admit(phase: int, cap: float, reserve: dict, ctx: RunContext | None = None) -> tuple[bool, float]:
     """Atomically reserve, or refuse when committed + bound would exceed the cap. The context's
     admission check sees the same rows under the same lock, so its verdict cannot go stale
-    between the check and the reservation. Without a context the calls stay argument-free, as
+    between the check and the reservation. A refusal is recorded under this same lock, before
+    another result can release headroom. Without a context the calls stay argument-free, as
     S-19 always made them, so each module function remains individually replaceable (the
     concurrency negative control in tests/test_budget.py replaces `locked` and `read_ledger`)."""
+    protocol.require_cap(cap)
+    if not valid_amount(reserve.get("reserved_usd")):
+        raise protocol.Refused(f"attempt {reserve.get('attempt_id')}: invalid reserved_usd "
+                               f"{reserve.get('reserved_usd')!r} — nothing reserved or sent")
     if ctx is None:
         with locked():
             committed, _ = phase_committed(read_ledger(), phase)
             if committed + reserve["reserved_usd"] > cap + 1e-9:
+                record_budget_refusal(phase, cap, reserve, committed)
                 return False, committed
             append(reserve)
             return True, committed
@@ -285,6 +319,7 @@ def admit(phase: int, cap: float, reserve: dict, ctx: RunContext | None = None) 
             ctx.admission_check(rows, reserve)
         committed, _ = phase_committed(rows, phase)
         if committed + reserve["reserved_usd"] > cap + 1e-9:
+            record_budget_refusal(phase, cap, reserve, committed, ctx)
             return False, committed
         append(reserve, ctx)
         return True, committed
@@ -583,11 +618,6 @@ def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: 
                    "requested_at": now()}
         admitted, committed = admit(phase, cap, reserve, ctx)
         if not admitted:
-            with locked(ctx):
-                append({"event": "budget_refusal", "at": now(), "phase": phase, "series_id": series["series_id"],
-                        "config_sha256": config_sha, "input_sha256": meta["sha256"], "photo": spec["photo"],
-                        "slot": spec["slot"], "committed_usd": committed, "bound_usd": spec["cost_bound_usd"],
-                        "cap_usd": cap}, ctx)
             print(f"  {spec['photo']}/{spec['slot']}: NOT SENT — phase {phase} has ${committed:.2f} committed; "
                   f"this call's bound ${spec['cost_bound_usd']:.2f} would exceed the ${cap:g} cap. "
                   "Only an owner-approved numeric amendment raises it.")
@@ -647,6 +677,7 @@ def main(argv: list[str] | None = None, sleep=time.sleep) -> int:
     args = ap.parse_args(argv)
 
     try:
+        protocol.require_cap(args.cap)
         config_path = protocol.resolve(args.config)
         config = json.loads(config_path.read_text())
         config_sha = protocol.sha256_file(config_path)
