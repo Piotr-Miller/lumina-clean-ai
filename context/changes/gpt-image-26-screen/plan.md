@@ -856,9 +856,9 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [x] 3.1 Gate and builder tests pass
-- [ ] 3.2 S-20 suite still passes
-- [x] 3.3 Format check
+- [x] 3.1 Gate and builder tests pass — 624ed60
+- [x] 3.2 S-20 suite still passes — 624ed60
+- [x] 3.3 Format check — 624ed60
 
 #### Manual
 
