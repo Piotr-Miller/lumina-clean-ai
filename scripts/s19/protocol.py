@@ -249,9 +249,17 @@ def spend_approval(phase: int, records: dict | None = None) -> dict:
     return row
 
 
+def require_cap(cap: float) -> None:
+    """Reject invalid caps before approval, file writes or budget comparisons."""
+    if type(cap) not in (int, float) or not 0 < cap <= sys.float_info.max:
+        raise Refused(f"--cap {cap!r} is not a finite positive dollar amount: "
+                      "provide a valid owner-approved cap — nothing reserved or sent")
+
+
 def check_cap(phase: int, cap: float, records: dict | None = None) -> dict:
+    require_cap(cap)
     row = spend_approval(phase, records)
-    if abs(float(row["cap_usd"]) - cap) > 1e-9:
+    if not abs(float(row["cap_usd"]) - cap) <= 1e-9:
         raise Refused(
             f"--cap {cap:g} does not match the owner-approved phase {phase} cap of ${row['cap_usd']} "
             f"(change.md line {row['_line']})"

@@ -22,6 +22,8 @@ import dataclasses
 import hashlib
 import io
 import math
+import re
+import sys
 from pathlib import Path
 
 PHASE = 26
@@ -53,6 +55,7 @@ class Slot:
     status: str = "pending"  # pending | delivered | undelivered
     reason: str | None = None
     output: dict | None = None
+    budget_refusal: dict | None = None
 
     @property
     def label(self) -> str:
@@ -128,8 +131,13 @@ def check_png(path: Path, sha256: str, size: list[int]) -> str | None:
     return None
 
 
+def valid_amount(value) -> bool:
+    """A finite nonnegative number, excluding Booleans and values that overflow a float."""
+    return type(value) in (int, float) and 0 <= value <= sys.float_info.max
+
+
 def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sidecar: dict | None,
-              *, root: Path, check_outputs: bool = True) -> RunState:
+              *, root: Path, check_outputs: bool = True, expected_bindings: dict | None = None) -> RunState:
     """The normalized six-slot state the ledger and sidecar support, with every inconsistency."""
     max_attempts = int(config["retry"]["max_retries"]) + 1
     codes = list(config["retry"].get("retry_error_codes", []))
@@ -147,6 +155,9 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
         if key in slots:
             err(f"series slot {key[0]}/{key[1]} is registered twice")
             continue
+        if not valid_amount(s.get("cost_bound_usd")):
+            err(f"series slot {key[0]}/{key[1]} has invalid cost_bound_usd {s.get('cost_bound_usd')!r}")
+            continue
         slots[key] = Slot(key[0], key[1], list(s["request_size"]), float(s["cost_bound_usd"]))
         specs[key] = s
     if len(slots) != denominator:
@@ -155,6 +166,22 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
     reserves: dict[str, dict] = {}
     results: dict[str, dict] = {}
     s19_terminal: dict[tuple[str, int], dict] = {}
+    budget_refusals: dict[tuple[str, int], dict] = {}
+
+    def committed_so_far() -> float:
+        total = 0.0
+        for aid, rv in reserves.items():
+            cost = results.get(aid, {}).get("cost_usd")
+            total += cost if valid_amount(cost) else rv["reserved_usd"]
+        return round(total, 6)
+
+    def technical_failure_supported(key: tuple[str, int]) -> bool:
+        attempts = slots[key].attempts
+        if not attempts or any(results.get(a["reserve"]["attempt_id"], {}).get("status") == OK for a in attempts):
+            return False
+        last = results.get(attempts[-1]["reserve"]["attempt_id"], {})
+        return (len(attempts) >= max_attempts
+                or (last.get("status") in ("error", "unknown", INVALID) and last.get("transient") is False))
 
     def slot_of(row: dict, what: str) -> tuple[str, int] | None:
         key = (row.get("photo"), row.get("slot"))
@@ -181,9 +208,11 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
             key = slot_of(row, f"reserve {aid}")
             if key is None:
                 continue
+            if key in s19_terminal or key in budget_refusals:
+                err(f"ledger row {n}: {slots[key].label} reserves an attempt after a terminal/refusal decision")
             usd = row.get("reserved_usd")
-            if isinstance(usd, bool) or not isinstance(usd, (int, float)):
-                err(f"ledger row {n}: {slots[key].label} reservation has no numeric reserved_usd ({usd!r})")
+            if not valid_amount(usd):
+                err(f"ledger row {n}: {slots[key].label} reservation has invalid reserved_usd ({usd!r})")
                 continue
             if abs(usd - slots[key].bound_usd) > 1e-9:
                 err(f"ledger row {n}: {slots[key].label} reserved ${usd}, the series bound is "
@@ -207,14 +236,45 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
                 continue
             if key in s19_terminal:
                 err(f"ledger row {n}: a second slot_terminal for {slots[key].label}")
+            if row.get("status") != "technical_failure" or not technical_failure_supported(key):
+                err(f"ledger row {n}: {slots[key].label} technical terminal has no supporting failed/exhausted "
+                    "attempt history")
             s19_terminal[key] = row
         elif event == "budget_refusal":
-            slot_of(row, "budget_refusal")
+            key = slot_of(row, "budget_refusal")
+            amounts_valid = True
+            for field in ("committed_usd", "bound_usd", "cap_usd"):
+                value = row.get(field)
+                if not valid_amount(value) or (field == "cap_usd" and value == 0):
+                    amounts_valid = False
+                    err(f"ledger row {n}: budget_refusal has invalid {field} ({value!r})")
+            if key is not None and amounts_valid:
+                prior = committed_so_far()
+                if (abs(row["committed_usd"] - prior) > 1e-9
+                        or abs(row["bound_usd"] - slots[key].bound_usd) > 1e-9
+                        or prior + slots[key].bound_usd <= row["cap_usd"] + 1e-9):
+                    err(f"ledger row {n}: {slots[key].label} budget_refusal is not supported by its historical "
+                        "committed cost, registered bound and cap")
+                elif key in s19_terminal or technical_failure_supported(key) or any(
+                        results.get(a["reserve"]["attempt_id"], {}).get("status") == OK
+                        for a in slots[key].attempts):
+                    err(f"ledger row {n}: {slots[key].label} budget_refusal follows an already resolved attempt history")
+                else:
+                    budget_refusals[key] = row
         else:
             err(f"ledger row {n}: unknown event {event!r}")
 
     side_terminal: dict[tuple[str, int], dict] = {}
+    if sidecar is None and rows:
+        err("run-state sidecar is missing: restore the pinned registration and rule identities before any call")
     if sidecar is not None:
+        if not isinstance(sidecar, dict):
+            err("run-state sidecar must be an object containing bindings — restore it before any call")
+            sidecar = {}
+        binding_errors = check_bindings(sidecar.get("bindings"), expected_bindings)
+        if binding_errors:
+            err("the registration or rules changed since this run was pinned, or its bindings are incomplete: "
+                + "; ".join(binding_errors) + " — restore the identical registration and rules")
         if sidecar.get("version") != SIDECAR_VERSION:
             err(f"run-state sidecar version {sidecar.get('version')!r}, this reader knows {SIDECAR_VERSION}")
         if sidecar.get("series_id") != series.get("series_id") or sidecar.get("config_sha256") != config_sha:
@@ -231,6 +291,7 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
                 side_terminal[key] = t
 
     for key, slot in slots.items():
+        slot.budget_refusal = budget_refusals.get(key)
         for a in slot.attempts:
             a["result"] = results.get(a["reserve"]["attempt_id"])
         slot.attempts.sort(key=lambda a: a["reserve"].get("ordinal", 0))
@@ -245,7 +306,9 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
         for a in slot.attempts:
             res, rv = a["result"], a["reserve"]
             cost = (res or {}).get("cost_usd")
-            known = isinstance(cost, (int, float)) and not isinstance(cost, bool)
+            known = valid_amount(cost)
+            if cost is not None and not known:
+                err(f"{slot.label}: invalid cost_usd {cost!r} — repair the ledger before any call")
             if known:
                 st.known_usd += cost
                 st.committed_usd += cost
@@ -277,6 +340,14 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
                 err(f"{slot.label}: both an S-19 slot_terminal and a sidecar terminal record")
         elif key in side_terminal:
             slot.status, slot.reason = "undelivered", side_terminal[key]["reason"]
+    for key, terminal in side_terminal.items():
+        reason = terminal["reason"]
+        if reason == "not_attempted_budget" and key not in budget_refusals:
+            err(f"{slots[key].label}: budget terminal has no supporting budget_refusal in the ledger")
+        if reason == "stopped_after_bound_breach" and not st.breaches:
+            err(f"{slots[key].label}: breach-stop terminal has no supporting bound breach in the ledger")
+    if not valid_amount(st.committed_usd) or not valid_amount(st.known_usd):
+        err("ledger cost totals overflow a finite amount — repair the ledger before any call")
     st.committed_usd = round(st.committed_usd, 6)
     st.known_usd = round(st.known_usd, 6)
 
@@ -306,19 +377,49 @@ def admission_refusal(st: RunState, photo: str, slot: int) -> str | None:
         return f"{photo}/{slot} is not a registered slot"
     if s.status != "pending":
         return f"{s.label} is already {s.status}"
+    if s.budget_refusal is not None:
+        return f"{s.label} already has a budget refusal — finalize its terminal record instead of sending"
     if len(s.attempts) >= st.max_attempts:
         return f"{s.label} has used all {st.max_attempts} attempts"
     return None
 
 
-def check_bindings(recorded: dict, current: dict) -> list[str]:
-    """What differs between the identities pinned at the first reservation and now."""
+def check_bindings(recorded: dict | None, current: dict | None) -> list[str]:
+    """Require complete identities and compare pinned registration/rules with expected ones.
+
+    The original HEAD is recorded, not required equal: later unrelated bookkeeping may advance
+    HEAD without changing the registration or executable rules. Callers supply expected identities
+    from the executing checkout; the offline core never derives them from the sidecar itself.
+    """
     out = []
-    if recorded.get("registration_commit") != current.get("registration_commit"):
-        out.append(f"registration commit {str(recorded.get('registration_commit'))[:12]}… was pinned, the "
-                   f"checkout registers {str(current.get('registration_commit'))[:12]}…")
-    rec, cur = recorded.get("files", {}), current.get("files", {})
-    for path in sorted(set(rec) | set(cur)):
-        if rec.get(path) != cur.get(path):
+    required = set((*REGISTRATION_FILES, *RULE_FILES))
+    for label, bindings in (("recorded bindings", recorded), ("expected bindings", current)):
+        if not isinstance(bindings, dict):
+            out.append(f"{label} are missing or not an object")
+            continue
+        for field in ("head", "registration_commit"):
+            value = bindings.get(field)
+            if not isinstance(value, str) or not re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", value):
+                out.append(f"{label}.{field} is missing or not a full Git commit hash")
+        files = bindings.get("files")
+        if not isinstance(files, dict):
+            out.append(f"{label}.files is missing or not an object")
+            continue
+        missing, extra = required - files.keys(), files.keys() - required
+        if missing:
+            out.append(f"{label}.files is missing: {', '.join(sorted(missing))}")
+        if extra:
+            out.append(f"{label}.files has unregistered paths: {', '.join(sorted(map(str, extra)))}")
+        for path, blob in files.items():
+            if not isinstance(blob, str) or not re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", blob):
+                out.append(f"{label}.files[{path!r}] is not a full Git blob hash")
+    if out:
+        return out
+    if recorded["registration_commit"] != current["registration_commit"]:
+        out.append(f"bindings registration commit {recorded['registration_commit'][:12]}… was pinned, the "
+                   f"checkout registers {current['registration_commit'][:12]}…")
+    rec, cur = recorded["files"], current["files"]
+    for path in sorted(required):
+        if rec[path] != cur[path]:
             out.append(f"{path}: pinned blob {str(rec.get(path))[:12]}…, now {str(cur.get(path))[:12]}…")
     return out

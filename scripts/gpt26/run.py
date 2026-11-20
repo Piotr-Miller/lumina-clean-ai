@@ -107,13 +107,13 @@ def git_root(start: Path) -> Path:
     return Path(out).resolve()
 
 
-def check_registration(root: Path) -> dict:
+def check_registration(root: Path, *, include_approval: bool = True) -> dict:
     """Identities of the registration and rule files, or Refused naming each file and its state."""
     top = git_root(root)
     if top != root.resolve():
         raise Refused(f"this code runs from {root}, but its Git checkout is {top}: run it from that checkout")
     problems = []
-    for rel in (*state.REGISTRATION_FILES, *state.RULE_FILES, CHANGE_MD):
+    for rel in (*state.REGISTRATION_FILES, *state.RULE_FILES, *((CHANGE_MD,) if include_approval else ())):
         if git(root, "ls-files", "--error-unmatch", "--", rel)[0] != 0:
             problems.append(f"{rel}: untracked")
             continue
@@ -137,6 +137,7 @@ def check_registration(root: Path) -> dict:
 def spend_approval(text: str, cap: float) -> str:
     """The owner's single GPT26-SPEND line for exactly `cap`, or Refused. HTML comments (the
     grammar example) are not records."""
+    protocol.require_cap(cap)
     lines, in_comment, section, found, found_section = text.splitlines(), False, None, [], False
     for n, line in enumerate(lines, 1):
         if in_comment:
@@ -171,7 +172,7 @@ def spend_approval(text: str, cap: float) -> str:
     n, m = found[0]
     if m.group(2) != "approved":
         raise Refused(f"the GPT26 spend is {m.group(2)} (change.md line {n}): no paid call")
-    if abs(float(m.group(1)) - cap) > 1e-9:
+    if not abs(float(m.group(1)) - cap) <= 1e-9:
         raise Refused(f"--cap {cap:g} does not match the owner-approved cap of ${m.group(1)} (change.md line {n})")
     return m.group(0)
 
@@ -242,7 +243,9 @@ class Screen:
         rows = runner.read_ledger(self.ctx) if rows is None else rows
         if sidecar is None and use_disk_sidecar:
             sidecar = read_sidecar(self.paths)
-        return state.reconcile(self.series, self.config, self.config_sha, rows, sidecar, root=self.paths.root)
+        expected_bindings = check_registration(self.paths.root, include_approval=False) if sidecar is not None else None
+        return state.reconcile(self.series, self.config, self.config_sha, rows, sidecar, root=self.paths.root,
+                               expected_bindings=expected_bindings)
 
     def admission_check(self, rows: list[dict], reserve: dict) -> None:
         """Runs inside the ledger lock, on the rows the reservation would be appended to."""
@@ -349,6 +352,7 @@ def main(argv: list[str] | None = None, *, paths: Paths | None = None, sleep=tim
     args = ap.parse_args(argv)
     paths = paths or default_paths()
     try:
+        protocol.require_cap(args.cap)
         screen = Screen(paths, args.cap)
         st = screen.reconcile()
     except Refused as e:
@@ -358,7 +362,8 @@ def main(argv: list[str] | None = None, *, paths: Paths | None = None, sleep=tim
           f"ledger {runner.ledger_path(screen.ctx)}, cap ${args.cap:.2f}; record {st.status}")
     print_state(st, args.cap)
     if st.errors:
-        print("refused: the run record is BLOCKED — resolve every item above before any call", file=sys.stderr)
+        print("refused: the run record is BLOCKED — " + "; ".join(st.errors)
+              + " — resolve every item before any call", file=sys.stderr)
         return 1
     if args.dry_run:
         return dry_run(screen, st)
@@ -397,6 +402,9 @@ def main(argv: list[str] | None = None, *, paths: Paths | None = None, sleep=tim
         pending = {(s.photo, s.slot) for s in st.pending()}
         for spec in screen.series["slots"]:
             if (spec["photo"], spec["slot"]) not in pending:
+                continue
+            if st.slots[(spec["photo"], spec["slot"])].budget_refusal is not None:
+                screen.mark_terminal(spec["photo"], spec["slot"], "not_attempted_budget")
                 continue
             try:
                 outcome = runner.run_slot(screen.config, screen.config_sha, screen.series, spec, state.PHASE,
