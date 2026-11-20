@@ -88,3 +88,44 @@ above.
 - Result: `Ran 85 tests`, `OK`; exit **0**, in the same environment and with the same lockfile.
 - `scripts/s19/inputs.py`, `scripts/s19/configs/` and `scripts/s19/series/` are unchanged against
   the pre-hook revision (`git diff --quiet 1a8ae56 b8d1bae -- …` exit 0).
+
+## Phase 3 — S-20 with the overlay commit (2026-11-20)
+
+The S-20 remedy of the owner decision 2026-11-18: `scripts/gpt26/regression.py` restores five
+metadata files (the four above plus `evaluations/step1-premise.md`) from the archive blobs of the
+tested revision and makes ONE disposable overlay commit in the detached worktree, its parent the
+tested revision, changing exactly those five paths. The overlay commit is never merged, pushed or
+referenced by a branch; it disappears with the worktree. Same environment and lockfile as above.
+
+| Archive blob → legacy path (`context/changes/cloud-classical-denoise/…`) | sha256                                                             |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `change.md`                                                              | `19a80e39d8f2af7c2d0b5877c34099f07bdaac04a936e88333afd6d68e06acfb` |
+| `evaluations/pilot-result.json`                                          | `66208eeddfa9e749c2792a65b537f691d5370a4abf4b7efa0734f2dc2c034c71` |
+| `evaluations/step1-gate.json`                                            | `4b94fe707d3fdf4f2f7d6a4ab9201e0bd44968d21fd0ee92318a8fbd83a413c5` |
+| `evaluations/step1-calibration.md`                                       | `2f359b79748f7493fdaed07080e762035384e3f2123b4da8ee20535b8811fc21` |
+| `evaluations/step1-premise.md`                                           | `0d13704b1b9ebd3ae9b4252b19ee29e9a052d25cf9a83e606362871ed2fb9dbe` |
+
+The hashes are identical at both revisions below.
+
+### Pre-hook revision — S-20 PASS
+
+`python3 scripts/gpt26/regression.py --suite s20 --revision 1a8ae5698d3156a195be022f7f1b2d17f6bd30e0`
+
+- Overlay commit `2ed062f81cd72f9c5443a377f4bc6f60352d2ef4`, parent `1a8ae5698d3156a195be022f7f1b2d17f6bd30e0`,
+  changes exactly the five fixture paths.
+- Result: `Ran 326 tests`, `OK (skipped=4)`; exit **0**. The harness ran from the working tree, with
+  `scripts/gpt26/regression.py` byte-identical to the one committed in `624ed60`.
+
+### Candidate revision — S-20 PASS
+
+`python3 scripts/gpt26/regression.py --suite s20 --revision HEAD` (HEAD = `624ed607560e10741efeb6864294055e487220bb`,
+`feat(gpt-image-26-screen): Blind set builder and gate rule (p3)`)
+
+- Overlay commit `baec923680c6103f951724ddebf1d7bd961664eb`, parent `624ed607560e10741efeb6864294055e487220bb`,
+  changes exactly the five fixture paths.
+- Result: `Ran 326 tests`, `OK (skipped=4)`; exit **0**.
+
+The four skips are the suite's own static `unittest.skip(IN_PROCESS)` markers
+(`scripts/s20/tests/test_blind.py:530-536`), present at both revisions; nothing was skipped or
+suppressed by the harness. The red run above counted 285 tests; that count is not compared or
+analysed here.
