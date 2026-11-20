@@ -3,7 +3,7 @@ change_id: gpt-image-26-screen
 title: "Screening test of GPT-Image-2.6 Sunburst (complexity=low) as a Cloud AI output"
 status: implementing
 created: 2026-11-05
-updated: 2026-11-17
+updated: 2026-11-20
 archived_at: null
 issue: 359
 ---
@@ -64,6 +64,7 @@ budget ledger, sealed-key protocol); outputs go to the gitignored `test-photos/p
 - 2026-11-17: owner confirmation recorded, Progress row pending the merge (owner rule: Manual rows are written after the merge, at the master SHA) — **1.4** the owner confirmed in session that `evaluations/vendor-facts.md` (sha256 51f6c37b…) matches the 2026-11-05 parameter decision, at 9d476358401f7a8b13662a3fb05f33c639a2a302.
 - 2026-11-17: owner decision — the regression harness links the live `node_modules` into its disposable worktree only when the revision's `package-lock.json` is byte-identical; the insufficient S-20 four-file overlay is recorded and decided in Phase 3; plan.md § Phase 2 item 5
 - 2026-11-17: owner confirmation recorded, Progress row pending the merge — **1.5** the owner confirmed in session that the `gate` block of `scripts/gpt26/configs/gpt26-low.json` (sha256 bda91bfb…) states their rules, at 9d476358401f7a8b13662a3fb05f33c639a2a302.
+- 2026-11-20: owner confirmation recorded, Progress row pending the merge — **2.4** the owner confirmed in session that `python3 scripts/gpt26/run.py --dry-run --cap 1.50` on the Linux (Fedora) host lists the six series slots with the series' request sizes (S17-03 2336×1552, S17-04 2192×1648, S17-07 2320×1552), $0.20 bounds, $1.20 total within the $1.50 cap, verified inputs, and refuses a paid run without the approval line and key, at 83851c7c911858617afd21c12fed3949e150571b.
 
 ## GPT26 approvals
 
