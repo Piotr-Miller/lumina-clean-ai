@@ -45,6 +45,7 @@ Exit status: 0 built; 1 BLOCKED; 2 usage.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as _dt
 import hashlib
 import io
@@ -115,8 +116,16 @@ WAY_OUT = {
     "baseline mismatch": "the Local download differs from local-baselines.json; restore the expected file",
     "access refused": "only tuning photos may be read; check that no path links into the holdout",
     "interrupted": "rebuild; the interrupted build left no set and no seal",
+    "publication failed": "the seal and the set were both rolled back; fix the cause named in the private log and "
+                          "rerun with the same --set",
+    "publication incomplete": "the set was not published, but evaluations/gate-sealed.md is left on disk; the private "
+                              "log says whether this build created it: remove it only then and only while "
+                              "uncommitted, then rerun with the same --set",
     "internal error": "read the private log; report it if the cause is not in your inputs",
 }
+
+# Reasons after which this build may have left a file behind: the boundary must not say "Nothing was written".
+RETAINED = frozenset({"publication incomplete"})
 
 
 class Blocked(Exception):
@@ -402,6 +411,74 @@ never who looked at what.
 """
 
 
+def _open_seal(path: Path) -> int:
+    return os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+
+
+def _write_seal(fd: int, text: str) -> None:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(text)
+        f.flush()
+        os.fsync(f.fileno())
+
+
+def _move_set(tmp: Path, final: Path) -> None:
+    os.rename(tmp, final)
+
+
+def _remove_seal(path: Path) -> None:
+    os.unlink(path)
+
+
+def publish(tmp: Path, final: Path, seal_path: Path, text: str) -> None:
+    """Seal first, then the set. A failure undoes only what this call created, so a failed
+    publication leaves neither the set nor a seal and the same --set can be built again; the
+    redrawn mapping replaces one nobody saw. A seal file this call did not create is never
+    removed. Leftovers this call cannot undo are reported as `publication incomplete`."""
+    if os.path.lexists(final):
+        raise Blocked("set exists", f"{final} appeared during the build: a set_id is never reused")
+    seal_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = _open_seal(seal_path)
+    except FileExistsError:
+        raise Blocked("seal exists", f"{SEAL_REL} appeared during the build; nothing was published")
+    except OSError as e:
+        raise Blocked("publication failed", f"cannot create {SEAL_REL}: {e}; nothing was published")
+    st = os.fstat(fd)
+    mine = (st.st_dev, st.st_ino)
+    written = False
+    try:
+        try:
+            _write_seal(fd, text)
+        finally:
+            written = True  # fdopen owns the descriptor from here on, closed or not
+        if os.path.lexists(final):
+            raise Blocked("set exists", f"{final} appeared during the build: a set_id is never reused")
+        _move_set(tmp, final)
+    except BaseException as e:
+        if not written:
+            with contextlib.suppress(OSError):
+                os.close(fd)
+        try:
+            now = os.lstat(seal_path)
+        except FileNotFoundError:
+            now = None
+        except OSError as stat_error:
+            raise Blocked("publication incomplete", f"cannot inspect {SEAL_REL} after {e!r}: {stat_error}") from e
+        if now is not None and (now.st_dev, now.st_ino) != mine:
+            raise Blocked("publication incomplete",
+                          f"{SEAL_REL} no longer holds the file this build created after {e!r}; left untouched") from e
+        if now is not None:
+            try:
+                _remove_seal(seal_path)
+            except OSError as rm_error:
+                raise Blocked("publication incomplete",
+                              f"cannot remove the {SEAL_REL} this build created after {e!r}: {rm_error}") from e
+        if isinstance(e, (Blocked, KeyboardInterrupt)) or not isinstance(e, Exception):
+            raise
+        raise Blocked("publication failed", f"{e!r}; the seal and the set were rolled back") from e
+
+
 def build(set_id: str, paths: run.Paths | None = None) -> dict:
     paths = paths or run.default_paths()
     root = paths.root
@@ -503,19 +580,11 @@ def build(set_id: str, paths: run.Paths | None = None) -> dict:
         key_sha = protocol.sha256_file(tmp / KEY_NAME)
         for p in tmp.iterdir():  # one timestamp for every file: no file's mtime says when it was drawn
             os.utime(p, ns=(FILE_TIME_NS, FILE_TIME_NS))
-        if os.path.lexists(final):
-            raise Blocked("set exists", f"{final} appeared during the build: a set_id is never reused")
-        os.rename(tmp, final)
+        text = seal_text(set_id, digest, key_sha, len(items))
+        publish(tmp, final, seal_path, text)
     except BaseException:
         shutil.rmtree(tmp, ignore_errors=True)
         raise
-    text = seal_text(set_id, digest, key_sha, len(items))
-    seal_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        with open(seal_path, "x") as f:
-            f.write(text)
-    except FileExistsError:
-        raise Blocked("seal exists", f"{SEAL_REL} appeared during the build; the set {set_id} stays unsealed")
     return {"set_id": set_id, "set_digest": digest, "key_sha256": key_sha, "items": len(items),
             "passes": [len(p) for p in pass_ids], "undelivered": [s.label for s in st.slots.values()
                                                                    if s.status == "undelivered"],
@@ -561,7 +630,8 @@ def boundary(tool: str, fn, private: Path, ways: dict, *, trusted: set[str] = fr
                       key=lambda x: (x[0] or "", x[1]))
         for item, reason in rows:
             print(f"{item or 'set'}: {reason}")
-        print("BLOCKED. Nothing was written. Way out:")
+        partial = any(r in RETAINED for _, r in rows)
+        print("BLOCKED. A partial publication remains. Way out:" if partial else "BLOCKED. Nothing was written. Way out:")
         for reason in sorted({r for _, r in rows}):
             print(f"  {reason}: {ways[reason]}.")
         print(f"Details in the private GPT26 log {log}." if log else "No private log could be written.")
