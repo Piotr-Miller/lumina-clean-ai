@@ -1,0 +1,180 @@
+{
+  "blocks": {
+    "codes": ["moderation_blocked"],
+    "final_undelivered_after_block": 0,
+    "first_attempt_blocks": 0,
+    "recovered_by_retry": 0
+  },
+  "denominator": 6,
+  "gate_id": "gpt26-screen-v1",
+  "guardrail_p95_s": 30,
+  "key_sha256": "ce8fcba3e7fbebbe1ffd0157fe116b648f344e2caf0ffd9bbf8058339f6d0418",
+  "min_tie_pairs": 4,
+  "passes": [3, 3],
+  "ratings_export_sha256": "d73382cd7b5adf3e2b9d55db7bc060a40d5d5a1d85dc8d2b6a2608865963b3b9",
+  "reasons": {
+    "budget_protocol": [],
+    "fidelity": [],
+    "not_delivered": []
+  },
+  "repeated_local_risk": "Each scene's two pairs share the same Local file, so its two resized copies are pixel-identical. Independent per-pair order and A/B draws do not hide that repetition; a rater may recognise the repeated Local side. The two-pass procedure reduces immediate comparison but cannot eliminate recognition or prove compliance. Recorded before spend; restated in the verdict.",
+  "set_digest": "63b743a24e3c9acec6acbbf0fab7bc785ccd6b3e819dcbe7b0d7c9bc2c9c665a",
+  "set_id": "gpt26-screen",
+  "slots": [
+    {
+      "delivered": true,
+      "gpt_crops": [
+        {
+          "h": 391,
+          "w": 861,
+          "x": 1447,
+          "y": 1144
+        }
+      ],
+      "gpt_level": "minor",
+      "gpt_reason": "Brzeg na pierwszym planie przebarwiony: w oryginale ma zielon\u0105 po\u015bwiat\u0119 zorzy, w B jest be\u017cowo-szary, a faktura kamieni wyg\u0142adzona. Poza kadrem: znik\u0142a cz\u0119\u015b\u0107 s\u0142abych gwiazd, zorza wyra\u017anie ciemniejsza, pod ska\u0142\u0105 dorysowane odbicie w wodzie.",
+      "gpt_side": "B",
+      "label": "S17-03/1",
+      "local_crops": [],
+      "local_level": "minor",
+      "local_reason": "",
+      "pair": "p02",
+      "quality": "gpt-slight",
+      "reason": null,
+      "tie": true
+    },
+    {
+      "delivered": true,
+      "gpt_crops": [
+        {
+          "h": 395,
+          "w": 554,
+          "x": 912,
+          "y": 208
+        }
+      ],
+      "gpt_level": "minor",
+      "gpt_reason": "Wi\u0119kszo\u015b\u0107 s\u0142abych gwiazd na tle zorzy wymazana (w oryginale g\u0119ste pole gwiazd, tu pojedyncze punkty). Do tego zmieniona kolorystyka: zielonkawa po\u015bwiata zorzy na \u015bniegu zast\u0105piona neutraln\u0105 biel\u0105, faktura \u015bniegu wyg\u0142adzona.",
+      "gpt_side": "B",
+      "label": "S17-03/2",
+      "local_crops": [],
+      "local_level": "none",
+      "local_reason": "",
+      "pair": "p06",
+      "quality": "gpt-slight",
+      "reason": null,
+      "tie": false
+    },
+    {
+      "delivered": true,
+      "gpt_crops": [
+        {
+          "h": 195,
+          "w": 216,
+          "x": 1724,
+          "y": 1062
+        }
+      ],
+      "gpt_level": "minor",
+      "gpt_reason": "Okno po prawej przemalowane: w oryginale neutralne, z czerwonawymi przedmiotami na parapecie; w B \u017c\u00f3\u0142to pod\u015bwietlone, przedmioty znikn\u0119\u0142y, a odbicia w s\u0105siednim oknie s\u0105 uproszczone. Dodatkowo dorysowane odblaski na pr\u0119tach bramy.",
+      "gpt_side": "B",
+      "label": "S17-04/1",
+      "local_crops": [],
+      "local_level": "minor",
+      "local_reason": "",
+      "pair": "p01",
+      "quality": "gpt-slight",
+      "reason": null,
+      "tie": true
+    },
+    {
+      "delivered": true,
+      "gpt_crops": [
+        {
+          "h": 155,
+          "w": 128,
+          "x": 890,
+          "y": 473
+        }
+      ],
+      "gpt_level": "minor",
+      "gpt_reason": "Flaga dorysowana: w oryginale nieczytelna plama, tu wyra\u017ane pasy i gwiazdy, kt\u00f3rych nie by\u0142o. Podobnie odblaski na pr\u0119tach zamienione na syntetyczne kropki, znikn\u0119\u0142a jasna plamka na niebie, a niebo \u015bci\u0119te do czerni.",
+      "gpt_side": "B",
+      "label": "S17-04/2",
+      "local_crops": [],
+      "local_level": "none",
+      "local_reason": "",
+      "pair": "p04",
+      "quality": "gpt-slight",
+      "reason": null,
+      "tie": false
+    },
+    {
+      "delivered": true,
+      "gpt_crops": [
+        {
+          "h": 225,
+          "w": 191,
+          "x": 702,
+          "y": 356
+        },
+        {
+          "h": 310,
+          "w": 165,
+          "x": 1144,
+          "y": 116
+        }
+      ],
+      "gpt_level": "minor",
+      "gpt_reason": "A1: twarz m\u0119\u017cczyzny narysowana od nowa, ostre rysy, kt\u00f3rych w rozmytym oryginale nie ma (to samo twarz kobiety i plakat po lewej). A2: nieczytelny w oryginale neon zamieniony na wymy\u015blony czytelny napis (BARGAIN BOOKS / 2ND VERSED).",
+      "gpt_side": "A",
+      "label": "S17-07/1",
+      "local_crops": [],
+      "local_level": "minor",
+      "local_reason": "",
+      "pair": "p05",
+      "quality": "gpt-clear",
+      "reason": null,
+      "tie": true
+    },
+    {
+      "delivered": true,
+      "gpt_crops": [
+        {
+          "h": 274,
+          "w": 263,
+          "x": 686,
+          "y": 345
+        },
+        {
+          "h": 217,
+          "w": 183,
+          "x": 1290,
+          "y": 394
+        }
+      ],
+      "gpt_level": "minor",
+      "gpt_reason": "Twarze wygenerowane od nowa: m\u0119\u017cczyzna z brod\u0105 (B1) i kobieta po prawej (B2) maj\u0105 inne rysy, fryzur\u0119 i mimik\u0119 ni\u017c w oryginale, czyli to ju\u017c inne osoby. Przerysowane tak\u017ce ubrania (faktura swetra, kurtka) i w\u0142osy m\u0119\u017cczyzny stoj\u0105cego ty\u0142em.",
+      "gpt_side": "B",
+      "label": "S17-07/2",
+      "local_crops": [],
+      "local_level": "minor",
+      "local_reason": "",
+      "pair": "p03",
+      "quality": "gpt-clear",
+      "reason": null,
+      "tie": true
+    }
+  ],
+  "spend": {
+    "breaches": [],
+    "cap_usd": 1.5,
+    "committed_usd": 0.484252,
+    "known_usd": 0.484252,
+    "unknown_attempts": 0
+  },
+  "ties": 4,
+  "verdict": "PASS",
+  "wall_p95_s": 30.95,
+  "walls_s": [29.98, 30.95, 27.91, 30.55, 29.28, 27.94]
+}

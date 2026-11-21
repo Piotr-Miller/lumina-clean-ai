@@ -868,7 +868,7 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [x] 4.1 (paid) Six slots resolved within the cap
+- [x] 4.1 (paid) Six slots resolved within the cap — 94bb998
 
 #### Manual
 
@@ -878,8 +878,8 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [ ] 5.1 (paid) Verdict computed from committed, sealed ratings
-- [ ] 5.2 No stale status pointer
+- [x] 5.1 (paid) Verdict computed from committed, sealed ratings
+- [x] 5.2 No stale status pointer
 
 #### Manual
 
