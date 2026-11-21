@@ -878,8 +878,8 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [x] 5.1 (paid) Verdict computed from committed, sealed ratings
-- [x] 5.2 No stale status pointer
+- [x] 5.1 (paid) Verdict computed from committed, sealed ratings — ac1cabc
+- [x] 5.2 No stale status pointer — ac1cabc
 
 #### Manual
 

@@ -1,7 +1,7 @@
 ---
 change_id: gpt-image-26-screen
 title: "Screening test of GPT-Image-2.6 Sunburst (complexity=low) as a Cloud AI output"
-status: implementing
+status: implemented
 created: 2026-11-05
 updated: 2026-11-21
 archived_at: null
@@ -70,7 +70,10 @@ budget ledger, sealed-key protocol); outputs go to the gitignored `test-photos/p
 - 2026-11-21: owner confirmation recorded, Progress row pending the merge — **3.4** the owner opened `references/compare-gpt26.html` (sha256 7bab909b…) over local HTTP on the synthetic set `demo-synthetic` (six pairs, two passes, built by `scripts/gpt26/blind.py` in a throwaway repository) and confirmed that the seal is accepted, the two-pass and recognition-risk note shows before the seal and in the rating view, only pass 1 is shown until it is complete and locked, the lock downloads the checkpoint and survives a reload, the export carries `passes` and `locked_pass1`, and the questions and fidelity scale match the archived S-20 viewer, at 611c9989ce92ad3165b36cb58a3b4b86d5cfbe50. The first walk-through found the note only under the seal button; fixed in 611c998 before this confirmation.
 - 2026-11-21: owner confirmation recorded, Progress row pending the merge — **3.4** re-confirmed after the Phase-3 review fixes (the 611c998 confirmation is superseded because the viewer changed): the owner opened `references/compare-gpt26.html` (sha256 d0094ad5…) over local HTTP on a rebuilt synthetic set `demo-synthetic` (fresh origin, no cached state) and confirmed that the seal is asked for and accepted, the note and "Przebieg 1 z 2" show, the pass-1 lock downloads the checkpoint and reveals p04–p06, the state survives a reload, the complete export succeeds, and opening the same set in a second tab switches the first tab off with "Ten zestaw otwarto w innej karcie…", at 1a272717ff5d9393481900ef8c61d3c9f463116f.
 - 2026-11-21: owner confirmation recorded, Progress row pending the merge — **4.2** the owner confirmed in session that `evaluations/run.md` (sha256 e286889a…) matches the paid runner output and that spend ($0.4843 known billed, $0.48 committed) is ≤ $1.50, at 94bb99835b91e85e4460d7a10cf023a7a880f2bf. The Phase-4 review (`reviews/impl-review-phase-4-94bb998.md`) is APPROVED with no findings.
-- 2026-11-21: owner decision — the blind ratings are kept as rated: every GPT side `minor`, although the crop reasons describe generated detail (redrawn faces, invented lettering, removed faint stars) that the S-20 scale's examples place higher; the owner chose to keep PASS rather than record FAIL. Pass 1 was locked, and any re-rating after the verdict would not be blind; plan.md § Phase 5 item 1 (verdict from committed ratings)
+- 2026-11-21: owner decision — the blind ratings are kept as rated: every GPT side `minor`, although the crop reasons describe generated detail (redrawn faces, invented lettering, removed faint stars) that the S-20 scale's examples place higher; the owner chose to keep PASS rather than record FAIL. Pass 1 was locked, and any re-rating after the verdict would not be blind. The owner preferred the GPT results visually and judged the generated detail minor; quality stays a diagnostic and does not decide the verdict; plan.md § Phase 5 item 1 (verdict from committed ratings)
+- 2026-11-21: owner confirmation recorded, Progress row pending the merge — **5.3** the owner rated all six delivered pairs in `references/compare-gpt26.html` in the sealed two-pass order (pass 1 locked, private checkpoint kept); ratings committed in db86de4 after the seal c1fc712, at ac1cabc3b0b32b2eb922ae25f9734f8f7fc1cb13
+- 2026-11-21: owner confirmation recorded, Progress row pending the merge — **5.4** the owner confirmed in session that `evaluations/verdict.md` states the reasons and the block summary correctly (PASS, 4 of 6, no blocks), at ac1cabc3b0b32b2eb922ae25f9734f8f7fc1cb13
+- 2026-11-21: owner confirmation recorded, Progress row pending the merge — **5.5** the owner approved the drafted comment on issue #359; posted as https://github.com/Piotr-Miller/lumina-clean-ai/issues/359#issuecomment-7067536694 (issue left open), at ac1cabc3b0b32b2eb922ae25f9734f8f7fc1cb13
 
 ## Outcome
 
