@@ -1,7 +1,7 @@
-# Kolejne kroki (stan na 2026-11-18)
+# Kolejne kroki (stan na 2026-11-21)
 
 Produkcja: master `a0193b0`, CI zielone. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0` od 2026-10-28).
-Gałąź `gpt-image-26-screen` (#359): fazy 1–5 zrobione 2026-11-21, werdykt w kroku 7 niżej.
+Gałąź `chore/gpt-image-26-wider`: frame + plan + przegląd Codex gotowe 2026-11-21, faza 1 na Fedorze (krok 7).
 
 ## Teraz: decyzja o Cloud AI po S-20
 
@@ -27,54 +27,31 @@ Następne kroki, po kolei:
    limicie/koszcie), F2 (bindingi w rekoncyliacji), F3 (etykiety zakończenia bez dowodu) poprawione w
    `b8d1bae`; regresja S-19 na `b8d1bae` 85 testów OK (`bc18d5a`). **Wymóg dla fazy 3 (F2):** builder i
    bramka podają rekoncyliacji tożsamości z checkoutu, nigdy z sidecara.
-5. **Faza 3 — na Fedorze** (sesja na Windows 2026-11-18 niczego w fazie 3 nie zmieniła; tam nie ma
-   Pillow/NumPy/OpenCV ani `fork`/`fcntl`). Nowa sesja Claude Code na Fedorze, wklej to jako pierwszą
-   wiadomość:
+5. **Zrobione 2026-11-21 — fazy 3–5 `gpt-image-26-screen`** (builder, viewer, bramka; płatny przebieg $0,48;
+   ocena, werdykt **PASS** 4 z 6; archiwum `context/archive/2026-11-05-gpt-image-26-screen/`, dowody pod
+   tagiem `gpt26-screen-evidence`).
+6. **Zrobione 2026-11-21 — frame + plan `gpt-image-26-wider`** (gałąź `chore/gpt-image-26-wider`): frame
+   wykazał, że PASS opiera się na etykietach „drobna” sprzecznych z uzasadnieniami (podmienione twarze,
+   wymyślony napis i flaga, wymazane gwiazdy). Plan najpierw kotwiczy skalę („istotna” = widoczna na całym
+   kadrze bez powiększenia), dodaje porównanie parami (PASS ≥ 8/16 remis-lub-GPT), potem płatny test
+   8 zdjęć × 2 = 16 slotów, limit $3,50. Przegląd Codex: REVISE, F1–F9 FIXED; status `plan_reviewed`.
+7. **Faza 1 `gpt-image-26-wider` — na Fedorze** (testy wymagają Pillow). Nowa sesja Claude Code na Fedorze,
+   wklej jako pierwszą wiadomość:
 
    ```text
-   /rune-implement gpt-image-26-screen phase 3
+   /rune-implement gpt-image-26-wider phase 1
 
    Przed jakąkolwiek edycją:
-   1. git fetch && git switch gpt-image-26-screen && git pull --ff-only. Potwierdź, że HEAD zawiera
-      bc18d5a (fazy 1–2 + poprawki z przeglądu) i ten commit z temp_steps.md, a working tree jest czyste.
-   2. Porównaj wersje zależności z context/changes/gpt-image-26-screen/evaluations/regression-baseline.md
+   1. git fetch && git switch chore/gpt-image-26-wider && git pull --ff-only. Potwierdź, że HEAD zawiera
+      commit z frame/plan/plan-review i ten commit z temp_steps.md, a working tree jest czyste.
+   2. Porównaj wersje zależności z context/archive/2026-11-05-gpt-image-26-screen/evaluations/regression-baseline.md
       (Python 3.15.2, Pillow 12.3.0, NumPy 2.5.4, OpenCV 4.13.0, scikit-image 0.26.0, PyWavelets 1.8.0,
       package-lock.json sha256 120849f1…). Każdą różnicę zgłoś przed startem.
-
-   Decyzje właściciela z 2026-11-18 — wpisz je do plan.md (Phase 2 item 5 / tekst kryterium 3.2,
-   oznaczone "(owner decision 2026-11-18)") i datowaną notkę do change.md Notes, oba w commicie fazy 3:
-
-   A. Host: faza 3 jest implementowana i bramkowana na Fedorze. Wiersze 3.1 i 3.2 zaznaczasz dopiero po
-      rzeczywistym przejściu kontroli.
-   B. Overlay S-20 dla 3.2: regression.py robi JEDEN jednorazowy overlay commit w odłączonym, tymczasowym
-      worktree, z rodzicem = testowana rewizja. Przywraca dokładnie pięć plików metadanych na stare
-      ścieżki context/changes/cloud-classical-denoise/: dotychczasowe cztery (change.md,
-      evaluations/pilot-result.json, evaluations/step1-gate.json, evaluations/step1-calibration.md) plus
-      evaluations/step1-premise.md. Bajty z blobów archiwum tej samej testowanej rewizji, hashe
-      zweryfikowane. Commit zmienia wyłącznie te pięć ścieżek — żadnego kodu, configu ani testów.
-      Identyczna procedura dla baseline (1a8ae56…) i kandydata; 3.2 wymaga przejścia PEŁNEJ suite S-20
-      dla obu. Raport zapisuje: SHA testowanej rewizji, SHA overlay commita (rodzic = testowana rewizja),
-      ścieżki i hashe fixture'ów, wersje zależności, komendę, liczbę testów i rzeczywisty wynik. Nie
-      merge'uj ani nie pushuj overlay commita; nie zmieniaj roboczej gałęzi ani archiwum. Jeśli suite
-      nadal nie przechodzi, zgłoś przyczynę — nie zastępuj kryterium porównaniem zestawów błędów ani
-      pomijaniem testów.
-   C. Porządek: przywróć tytuł w Progress "- [ ] 5.1 (paid) Verdict computed from committed, sealed
-      ratings" — błędnie zmieniony 2026-11-17; plan.md Phase 5 §1 mówi, że tytuł zachowuje "(paid)".
-
-   Otwarte wiersze manualne do zapytania mnie: 1.4 i 1.5 (potwierdzenia są w change.md; wiersze
-   Progress wpisuje się po merge'u, przy SHA z mastera) oraz 2.4 (potwierdzenie dry runu).
+   3. Nie pisz do context/archive/ — viewer wąskiego testu jest tylko źródłem do odczytu.
    ```
 
-   Potem: builder, kopia viewera, bramka, testy (3.1), regresja S-20 (3.2), format (3.3), a na koniec
-   Twoja akceptacja 3.4 (viewer na syntetycznym zestawie).
-
-6. **Faza 4 (płatna, ≤ $1,50):** najpierw Twoja linia `- GPT26-SPEND cap_usd=1.50 decision=approved date=…`
-   w `change.md` § GPT26 approvals, zacommitowana; `OPENAI_API_KEY` w środowisku.
-7. **Ty:** #359 zakończone 2026-11-21: **PASS** — 4 z 6 par co najmniej remis na wierności, $0,48 z $1,50
-   ([werdykt](context/archive/2026-11-05-gpt-image-26-screen/evaluations/verdict.md)). To otwiera tylko szersze porównanie na
-   wszystkich ośmiu zdjęciach tuningowych, nie wdrożenie; Cloud zostaje wstrzymany. Do decyzji: otworzyć to
-   porównanie jako nową zmianę, albo decyzja produktowa o Cloud (zostaje wyłączony z przełącznikiem,
-   przełącznik znika, albo Local jest jedynym silnikiem, a `local-engine-ceiling` (#188) głównym kierunkiem jakości).
+8. **Faza 4 `gpt-image-26-wider` (płatna, ≤ $3,50):** najpierw Twoja linia
+   `- GPT26-SPEND cap_usd=3.50 decision=approved date=…` w `change.md` § GPT26 approvals, zacommitowana.
 
 Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
 w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą ścieżkę `context/changes/…`
