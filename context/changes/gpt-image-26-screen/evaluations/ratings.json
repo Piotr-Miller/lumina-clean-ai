@@ -1,0 +1,241 @@
+{
+  "viewer": "compare-s20",
+  "version": 1,
+  "kind": "gate",
+  "set_id": "gpt26-screen",
+  "set_digest": "63b743a24e3c9acec6acbbf0fab7bc785ccd6b3e819dcbe7b0d7c9bc2c9c665a",
+  "rated_on": "2026-11-21",
+  "ratings": [
+    {
+      "pair_id": "p01",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [
+            {
+              "x": 1724,
+              "y": 1062,
+              "w": 216,
+              "h": 195
+            }
+          ],
+          "reason": "Okno po prawej przemalowane: w oryginale neutralne, z czerwonawymi przedmiotami na parapecie; w B żółto podświetlone, przedmioty zniknęły, a odbicia w sąsiednim oknie są uproszczone. Dodatkowo dorysowane odblaski na prętach bramy."
+        }
+      }
+    },
+    {
+      "pair_id": "p02",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [
+            {
+              "x": 1447,
+              "y": 1144,
+              "w": 861,
+              "h": 391
+            }
+          ],
+          "reason": "Brzeg na pierwszym planie przebarwiony: w oryginale ma zieloną poświatę zorzy, w B jest beżowo-szary, a faktura kamieni wygładzona. Poza kadrem: znikła część słabych gwiazd, zorza wyraźnie ciemniejsza, pod skałą dorysowane odbicie w wodzie."
+        }
+      }
+    },
+    {
+      "pair_id": "p03",
+      "quality": "B-clear",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [
+            {
+              "x": 686,
+              "y": 345,
+              "w": 263,
+              "h": 274
+            },
+            {
+              "x": 1290,
+              "y": 394,
+              "w": 183,
+              "h": 217
+            }
+          ],
+          "reason": "Twarze wygenerowane od nowa: mężczyzna z brodą (B1) i kobieta po prawej (B2) mają inne rysy, fryzurę i mimikę niż w oryginale, czyli to już inne osoby. Przerysowane także ubrania (faktura swetra, kurtka) i włosy mężczyzny stojącego tyłem."
+        }
+      }
+    },
+    {
+      "pair_id": "p04",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [
+            {
+              "x": 890,
+              "y": 473,
+              "w": 128,
+              "h": 155
+            }
+          ],
+          "reason": "Flaga dorysowana: w oryginale nieczytelna plama, tu wyraźne pasy i gwiazdy, których nie było. Podobnie odblaski na prętach zamienione na syntetyczne kropki, zniknęła jasna plamka na niebie, a niebo ścięte do czerni."
+        }
+      }
+    },
+    {
+      "pair_id": "p05",
+      "quality": "A-clear",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [
+            {
+              "x": 702,
+              "y": 356,
+              "w": 191,
+              "h": 225
+            },
+            {
+              "x": 1144,
+              "y": 116,
+              "w": 165,
+              "h": 310
+            }
+          ],
+          "reason": "A1: twarz mężczyzny narysowana od nowa, ostre rysy, których w rozmytym oryginale nie ma (to samo twarz kobiety i plakat po lewej). A2: nieczytelny w oryginale neon zamieniony na wymyślony czytelny napis (BARGAIN BOOKS / 2ND VERSED)."
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p06",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [
+            {
+              "x": 912,
+              "y": 208,
+              "w": 554,
+              "h": 395
+            }
+          ],
+          "reason": "Większość słabych gwiazd na tle zorzy wymazana (w oryginale gęste pole gwiazd, tu pojedyncze punkty). Do tego zmieniona kolorystyka: zielonkawa poświata zorzy na śniegu zastąpiona neutralną bielą, faktura śniegu wygładzona."
+        }
+      }
+    }
+  ],
+  "passes": [
+    ["p01", "p02", "p03"],
+    ["p04", "p05", "p06"]
+  ],
+  "locked_pass1": [
+    {
+      "pair_id": "p01",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [
+            {
+              "x": 1724,
+              "y": 1062,
+              "w": 216,
+              "h": 195
+            }
+          ],
+          "reason": "Okno po prawej przemalowane: w oryginale neutralne, z czerwonawymi przedmiotami na parapecie; w B żółto podświetlone, przedmioty zniknęły, a odbicia w sąsiednim oknie są uproszczone. Dodatkowo dorysowane odblaski na prętach bramy."
+        }
+      }
+    },
+    {
+      "pair_id": "p02",
+      "quality": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [
+            {
+              "x": 1447,
+              "y": 1144,
+              "w": 861,
+              "h": 391
+            }
+          ],
+          "reason": "Brzeg na pierwszym planie przebarwiony: w oryginale ma zieloną poświatę zorzy, w B jest beżowo-szary, a faktura kamieni wygładzona. Poza kadrem: znikła część słabych gwiazd, zorza wyraźnie ciemniejsza, pod skałą dorysowane odbicie w wodzie."
+        }
+      }
+    },
+    {
+      "pair_id": "p03",
+      "quality": "B-clear",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [
+            {
+              "x": 686,
+              "y": 345,
+              "w": 263,
+              "h": 274
+            },
+            {
+              "x": 1290,
+              "y": 394,
+              "w": 183,
+              "h": 217
+            }
+          ],
+          "reason": "Twarze wygenerowane od nowa: mężczyzna z brodą (B1) i kobieta po prawej (B2) mają inne rysy, fryzurę i mimikę niż w oryginale, czyli to już inne osoby. Przerysowane także ubrania (faktura swetra, kurtka) i włosy mężczyzny stojącego tyłem."
+        }
+      }
+    }
+  ]
+}
