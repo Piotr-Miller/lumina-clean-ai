@@ -602,6 +602,30 @@
           },
         };
       }
+      // The rating view keeps the pass number and the residual-risk note on screen, also after a
+      // reload: the seal screen that shows the note first is not shown again once the seal is kept.
+      // The rating footer is rebuilt on every update, so the note is prepended again each time.
+      let gpt26NoteOpen = false;
+      function gpt26NoteHtml(P) {
+        return (
+          "<summary><strong>Przebieg " +
+          P.pass() +
+          " z " +
+          P.count() +
+          ".</strong> Obie pary jednej sceny pokazują ten sam plik Local, więc stronę Local można " +
+          "rozpoznać. Rozwiń, żeby przeczytać zasady.</summary>" +
+          GPT26_NOTE
+        );
+      }
+      function gpt26ShowNote(P, footer) {
+        const el = document.createElement("details");
+        el.id = "gpt26Note";
+        el.open = gpt26NoteOpen;
+        el.ontoggle = () => (gpt26NoteOpen = el.open);
+        el.innerHTML = gpt26NoteHtml(P);
+        footer.prepend(el);
+        return el;
+      }
       function gpt26Download(name, text) {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
@@ -631,7 +655,7 @@
           '<textarea id="sealText" rows="4" aria-label="Linia GPT26-SEAL"></textarea>' +
           '<p><button id="sealCheck">Sprawdź pieczęć</button> <span class="warn" id="sealWarn"></span></p>';
         // GPT26 begin
-        form.insertAdjacentHTML("beforeend", GPT26_NOTE);
+        form.querySelector("textarea").insertAdjacentHTML("beforebegin", GPT26_NOTE);
         // GPT26 end
         main.replaceChildren(form);
         document.getElementById("sealCheck").onclick = () => {
@@ -1042,6 +1066,9 @@
           $("zoom").classList.toggle("on", zoomed);
           $("bright").classList.toggle("on", bright);
           footer();
+          // GPT26 begin
+          gpt26ShowNote(P, $("rating"));
+          // GPT26 end
           const dots = $("dots");
           dots.replaceChildren();
           M.items.forEach((q, i) => {
