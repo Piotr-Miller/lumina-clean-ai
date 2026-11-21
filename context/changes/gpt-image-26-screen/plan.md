@@ -868,7 +868,7 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Automated
 
-- [ ] 4.1 (paid) Six slots resolved within the cap
+- [x] 4.1 (paid) Six slots resolved within the cap
 
 #### Manual
 
