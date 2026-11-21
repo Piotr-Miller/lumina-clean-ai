@@ -15,7 +15,7 @@ Selects exactly these live blocks, each by one selector that must match once:
     `gpt-image-26-screen` (only its Status cell is checked: the Labels cell carries GitHub's
     label names, `status:proposed` among them, which are not a status claim of this file);
   - the same file's `## Status updates` rows for #359: the dated 2026-11-05 `opened for` record
-    must survive unchanged in meaning, and at least one later row must carry the outcome;
+    must survive unchanged in meaning, and the later `screen gate run on` row carries the outcome;
   - `idea-notes.md`: the current quality-status clause, from `**Still not demonstrated` to the
     end of its list item;
   - `temp_steps.md`: the `## Teraz` numbered item about #359, and the `## Kolejka` bullet for
@@ -62,7 +62,7 @@ OLD = {
     "mapping": ("proposed",),
     "idea": ("zdecyduj, czy robimy",),
     "teraz": ("zdecyduj, czy robimy", "Potem /rune-plan", "po #359"),
-    "kolejka": ("w toku", "Potem /rune-plan", "faza 3 na Fedorze", "prompt w sekcji"),
+    "kolejka": ("w toku", "Potem /rune-plan", "faza 3 na Fedorze", "prompt w sekcji", "zostało: epilog"),
     "outcome": ("proposed", "Draft"),
 }
 
@@ -150,8 +150,14 @@ def blocks(root: Path) -> list[tuple[str, str, str, str]]:
            if ln.startswith("| 2") and ISSUE in ln]
     one([ln for ln in log if ln.startswith("| 2026-11-05 ") and f"opened for `{CHANGE_ID}`" in ln],
         f"{ISSUES}: the 2026-11-05 `opened for` row of #359")
-    later = [ln for ln in log if not ln.startswith("| 2026-11-05 ")]
-    out.append((ISSUES, "status-log rows after 2026-11-05", "outcome", "\n".join(later)))
+    outcomes = [
+        row[3] for ln in log if len(row := cells(ln)) == 4
+        and re.fullmatch(r"20\d{2}-\d{2}-\d{2}", row[0])
+        and row[0] > "2026-11-05"
+        and row[3].startswith(f"screen gate run on `{CHANGE_ID}`:")
+    ]
+    block = "status-log outcome row for #359"
+    out.append((ISSUES, block, "outcome", one(outcomes, f"{ISSUES}: {block}") if outcomes else ""))
 
     idea_lines = idea.splitlines()
     starts = [i for i, ln in enumerate(idea_lines) if "**Still not demonstrated" in ln]
@@ -194,7 +200,7 @@ def stale(found: list[tuple[str, str, str, str]], outcome: str) -> list[str]:
         if not text.strip():
             problems.append(f"{where}: no row carries the outcome")
             continue
-        if key != "mapping" and not links_verdict(rel, text):
+        if not links_verdict(rel, text):
             problems.append(f"{where}: no link to {VERDICT_REL}")
         # A table cell states the word plainly; prose states it in bold, so "a PASS would open…"
         # in a FAIL block is not a contradiction.

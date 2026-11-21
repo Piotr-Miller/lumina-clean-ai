@@ -50,3 +50,10 @@ Source: `../reviews/impl-review-phase-2-d69ec55.md`.
   **F1, F2 and F3 are FIXED; no triage remains pending.** All code and review records remain
   uncommitted over 83851c7 for the next implementation commit; the original review verdict
   continues to cover d69ec55.
+
+## Full implementation-review fixes
+
+Source: [Full implementation review](../reviews/impl-review-727264f.md).
+
+- 2026-11-21 — F1. The owner chose Fix now. The gate test now appends a lifecycle note to a synthetic copy of `change.md`, so the commit and verdict assertions run for any status. The full GPT26 suite passed all 147 tests after this fix.
+- 2026-11-21 — F2. The owner chose Fix now. The #359 mapping Status links the canonical verdict. The checker validates the designated outcome row, accepts older #359 entries, and flags the completed epilogue if it appears in the remaining work queue. Four regression cases failed before the fix. All 13 pointer tests and the seven live checks passed after it.

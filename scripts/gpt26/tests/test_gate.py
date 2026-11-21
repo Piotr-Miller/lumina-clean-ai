@@ -617,7 +617,7 @@ class SixTest(unittest.TestCase):
     def test_later_change_md_edits_and_a_rebase_keep_the_verdict(self):
         with self.t.restored():
             md = self.t.repo / blind.run.CHANGE_MD
-            md.write_text(md.read_text().replace("status: implementing", "status: implemented"))
+            md.write_text(md.read_text().rstrip("\n") + "\n\nLifecycle bookkeeping updated.\n")
             git(self.t.repo, "commit", "-q", "-am", "lifecycle")
             self.assertEqual(self.t.evaluate()["verdict"], "PASS")
         with self.t.restored():  # rebase-like rewrite: new SHAs, same order
