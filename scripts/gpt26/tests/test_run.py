@@ -15,6 +15,7 @@ import importlib.util
 import io
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -105,6 +106,10 @@ class Screen(unittest.TestCase):
                     check_series.PHASE5_CONFIG, check_series.PHASE5_SERIES):
             (self.repo / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / rel, self.repo / rel)
+        # The live change.md carries the owner's real approval since 33f2039; each test approves
+        # (or not) on its own, so drop dated records and keep the commented grammar example.
+        change = self.repo / run.CHANGE_MD
+        change.write_text(re.sub(r"(?m)^- GPT26-SPEND .* date=\d{4}-\d{2}-\d{2}\n", "", change.read_text()))
         series = json.loads((ROOT / run.SERIES).read_text())
         phase5 = json.loads((ROOT / check_series.PHASE5_SERIES).read_text())
         hashes = {}
