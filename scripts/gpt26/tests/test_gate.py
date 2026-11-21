@@ -748,6 +748,53 @@ class SixTest(unittest.TestCase):
             self.assertFalse((self.t.repo / blind.SEAL_REL).exists())
             self.assertNotIn(str(self.t.screen.tmp), out + err)
 
+    def test_a_failed_publication_rolls_back_and_the_same_set_can_be_rebuilt(self):
+        def fail(*_a, **_k):
+            raise OSError("disk full")
+
+        def replace_seal(*_a, **_k):  # someone else's seal takes the path before the set moves
+            seal = self.t.repo / blind.SEAL_REL
+            seal.unlink()
+            seal.write_text("foreign\n")
+            raise OSError("rename failed")
+
+        faults = {"before the seal": ("_open_seal", fail, "publication failed"),
+                  "while writing the seal": ("_write_seal", fail, "publication failed"),
+                  "moving the set": ("_move_set", fail, "publication failed"),
+                  "interrupted while moving": ("_move_set", mock.Mock(side_effect=KeyboardInterrupt), "interrupted"),
+                  "the seal cannot be removed": ("_move_set", fail, "publication incomplete"),
+                  "a foreign seal at the path": ("_move_set", replace_seal, "publication incomplete")}
+        for n, (name, (seam, effect, reason)) in enumerate(faults.items(), 1):
+            set_id = f"r{n}"  # restored() keeps new directories, so each case builds its own set
+            self.addCleanup(shutil.rmtree, self.t.private / set_id, True)
+            with self.subTest(name), self.t.restored():
+                git(self.t.repo, "rm", "-q", blind.SEAL_REL)
+                git(self.t.repo, "commit", "-q", "-m", "no seal")
+                seal = self.t.repo / blind.SEAL_REL
+                with contextlib.ExitStack() as stack:
+                    stack.enter_context(mock.patch.object(blind, seam, effect))
+                    if name == "the seal cannot be removed":
+                        stack.enter_context(mock.patch.object(blind, "_remove_seal", fail))
+                    code, out, err = self.t.cli(blind, "--set", set_id)
+                self.assertEqual(code, 1, out)
+                self.assertIn(f"set: {reason}", out)
+                self.assertFalse((self.t.private / set_id).exists())
+                self.assertEqual(list(self.t.private.glob(f".{set_id}-*")), [])
+                if reason == "publication incomplete":
+                    self.assertIn("A partial publication remains", out)
+                    self.assertNotIn("Nothing was written", out)
+                    self.assertTrue(seal.exists())
+                    if name == "a foreign seal at the path":
+                        self.assertEqual(seal.read_text(), "foreign\n")  # never removed
+                    seal.unlink()
+                else:
+                    self.assertIn("Nothing was written", out)
+                    self.assertFalse(seal.exists())
+                code, out, err = self.t.cli(blind, "--set", set_id)  # the same set id, no fault
+                self.assertEqual(code, 0, out + err)
+                self.assertTrue((self.t.private / set_id / blind.MANIFEST).exists())
+                self.assertIn(f"set_id={set_id} ", seal.read_text())
+
     @staticmethod
     def png(size) -> bytes:
         buf = io.BytesIO()
@@ -908,13 +955,65 @@ console.log("ok");
         r = subprocess.run(["node", "-e", harness], capture_output=True, text=True)
         self.assertEqual((r.returncode, r.stdout.strip()), (0, "ok"), r.stderr)
 
+    def test_a_stale_tab_cannot_replace_the_first_lock(self):
+        script = VIEWER.read_text().split("<script>")[1].split("</script>")[0]
+        open_set = script.split("function openSet(M, base)")[1]
+        guard = "if (P.stale()) return fatal(P.stale());"
+        for where, text in (("save", open_set.split("const save = () => {")[1].split("};")[0]),
+                            ("update", open_set.split("function update()")[1].split("function go(")[0]),
+                            ("export", open_set.split('$("export").onclick = () => {')[1].split("exportJson =")[0])):
+            self.assertIn(guard, text, where)
+        self.assertIn("if (!cp && P.stale()) return fatal(P.stale());", open_set)
+        self.assertIn('addEventListener("storage", () => {\n          const why = P.stale();\n          if (why) fatal(why);',
+                      open_set)
+        if not shutil.which("node"):
+            self.skipTest("node is not installed")
+        block = next(b for b in script.split("// GPT26 begin")[1:] if "function gpt26Passes" in b).split("// GPT26 end")[0]
+        consts = "\n".join(ln for ln in script.splitlines() if ln.strip().startswith(("const QUALITY", "const LEVELS")))
+        harness = consts + "\n" + block + r"""
+const assert = require("node:assert/strict");
+const store = new Map();
+globalThis.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)) };
+const items = ["p01", "p02"].map((id) => ({ id }));
+const M = { set_id: "t1", set_digest: "d".repeat(64), items, passes: [["p01"], ["p02"]] };
+const row = (q) => ({ pair_id: "p01", quality: q, fidelity: { A: { level: "none", crops: [], reason: "" }, B: { level: "none", crops: [], reason: "" } } });
+// two tabs opened before either locks: the older one is stale at once
+const older = gpt26Passes(M, "k");
+const newer = gpt26Passes(M, "k");
+assert.match(older.stale(), /innej karcie/);
+assert.equal(newer.stale(), null);
+assert.ok(newer.lock([row("tie")]));
+// the stale tab still believes pass 1 is open, but its lock is refused and the first lock stays
+assert.equal(older.pass(), 1);
+assert.equal(older.lock([row("A-clear")]), null);
+assert.equal(JSON.parse(store.get("k:gpt26-pass1-lock")).ratings[0].quality, "tie");
+// a reload reads the first lock back
+const reloaded = gpt26Passes(M, "k");
+assert.equal(reloaded.pass(), 2);
+assert.equal(reloaded.lockedRows()[0].quality, "tie");
+assert.equal(reloaded.stale(), null);
+// a lock changed outside this tab switches it off
+store.set("k:gpt26-pass1-lock", store.get("k:gpt26-pass1-lock").replace('"tie"', '"A-clear"'));
+assert.match(reloaded.stale(), /zmieniła się/);
+// the older tab locking first is refused too when a newer tab exists
+store.clear();
+const a = gpt26Passes(M, "k2");
+gpt26Passes(M, "k2");
+assert.equal(a.lock([row("tie")]), null);
+assert.equal(store.has("k2:gpt26-pass1-lock"), false);
+console.log("ok");
+"""
+        r = subprocess.run(["node", "-e", harness], capture_output=True, text=True)
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, "ok"), r.stderr)
+
     def test_note_shown_before_the_seal_and_in_every_rating_view(self):
         script = VIEWER.read_text().split("<script>")[1].split("</script>")[0]
         start = script.split("function start(M, base)")[1].split("function openSet")[0]
         self.assertIn('form.querySelector("textarea").insertAdjacentHTML("beforebegin", GPT26_NOTE);', start)
         self.assertLess(start.index("GPT26_NOTE"), start.index("main.replaceChildren(form)"))
         update = script.split("function update()")[1].split("function go(")[0]
-        self.assertIn('footer();\n          // GPT26 begin\n          gpt26ShowNote(P, $("rating"));', update)
+        self.assertIn('footer();\n          // GPT26 begin\n          if (P.stale()) return fatal(P.stale());\n'
+                      '          gpt26ShowNote(P, $("rating"));', update)
         if not shutil.which("node"):
             self.skipTest("node is not installed")
         block = next(b for b in script.split("// GPT26 begin")[1:] if "function gpt26ShowNote" in b).split("// GPT26 end")[0]

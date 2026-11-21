@@ -532,9 +532,19 @@
           ["A", "B"].every((s) => LEVELS.includes(r.fidelity[s].level))
         );
       }
+      // One rating session per set: every controller claims the session, and a controller whose claim
+      // or lock no longer matches storage is stale. A stale tab refuses to lock, save, render or export
+      // and is switched off, so a tab opened earlier cannot replace the first lock. Only a click in the
+      // older tab within the instant the newer one claims could still race; storage offers no atomic
+      // compare-and-set.
       function gpt26Passes(M, key) {
         const lockKey = key + ":gpt26-pass1-lock";
+        const sessionKey = key + ":gpt26-session";
+        const session = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
         const passes = M.passes;
+        try {
+          localStorage.setItem(sessionKey, session);
+        } catch {}
         let lock = null,
           problem = null,
           raw = null;
@@ -564,9 +574,24 @@
               "Zapisana blokada przebiegu 1 jest uszkodzona lub obca. Nie odblokowuję przebiegu 1; " +
               "zgłoś to przed dalszą oceną.";
         }
+        let lockRaw = raw;
         const order = () => (passes.length < 2 ? passes[0] : lock ? passes[1] : passes[0]);
+        const stale = () => {
+          try {
+            const s = localStorage.getItem(sessionKey);
+            if (s !== null && s !== session)
+              return (
+                "Ten zestaw otwarto w innej karcie lub oknie. Ta karta jest wyłączona, żeby nie nadpisać " +
+                "ocen ani blokady przebiegu 1; oceniaj w najnowszej karcie."
+              );
+            if (localStorage.getItem(lockKey) !== lockRaw)
+              return "Blokada przebiegu 1 zmieniła się poza tą kartą. Ta karta jest wyłączona; przeładuj stronę.";
+          } catch {}
+          return null;
+        };
         return {
           problem,
+          stale,
           count: () => passes.length,
           pass: () => (lock ? 2 : 1),
           passes: () => passes,
@@ -580,7 +605,7 @@
           },
           // Refuses (returns null) unless the lock persisted: a lock that a reload forgets is no lock.
           lock(rows) {
-            if (lock || passes.length < 2) return null;
+            if (lock || passes.length < 2 || stale()) return null;
             const doc = {
               viewer: "compare-s20",
               version: 1,
@@ -591,13 +616,15 @@
               passes,
               ratings: rows,
             };
+            const text = JSON.stringify(doc);
             try {
-              localStorage.setItem(lockKey, JSON.stringify(doc));
-              if (localStorage.getItem(lockKey) !== JSON.stringify(doc)) return null;
+              localStorage.setItem(lockKey, text);
+              if (localStorage.getItem(lockKey) !== text) return null;
             } catch {
               return null;
             }
             lock = doc;
+            lockRaw = text;
             return doc;
           },
         };
@@ -677,11 +704,18 @@
         // GPT26 begin
         const P = gpt26Passes(M, KEY);
         if (P.problem) return fatal(P.problem);
+        addEventListener("storage", () => {
+          const why = P.stale();
+          if (why) fatal(why);
+        });
         P.restore(answers);
         const ALL = M.items;
         M.items = P.visible(ALL);
         // GPT26 end
         const save = () => {
+          // GPT26 begin
+          if (P.stale()) return fatal(P.stale());
+          // GPT26 end
           try {
             localStorage.setItem(KEY, JSON.stringify({ version: STATE_VERSION, answers }));
           } catch {}
@@ -1067,6 +1101,7 @@
           $("bright").classList.toggle("on", bright);
           footer();
           // GPT26 begin
+          if (P.stale()) return fatal(P.stale());
           gpt26ShowNote(P, $("rating"));
           // GPT26 end
           const dots = $("dots");
@@ -1173,6 +1208,7 @@
               };
             });
           // GPT26 begin
+          if (P.stale()) return fatal(P.stale());
           doc.ratings = ALL.map((it) => gpt26Row(it.id));
           doc.passes = P.passes();
           doc.locked_pass1 = P.lockedRows();
@@ -1230,6 +1266,7 @@
             return;
           }
           const cp = P.lock(M.items.map((it) => gpt26Row(it.id)));
+          if (!cp && P.stale()) return fatal(P.stale());
           if (!cp) {
             $("banner").textContent = "Nie mogę zapisać blokady w pamięci przeglądarki: przebieg 2 zostaje ukryty.";
             return;
