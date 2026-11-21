@@ -841,8 +841,8 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Manual
 
-- [ ] 1.4 The owner reads vendor-facts and confirms the parameters match the 2026-11-05 decision
-- [ ] 1.5 The owner reads the gate block and confirms it states their rules
+- [x] 1.4 The owner reads vendor-facts and confirms the parameters match the 2026-11-05 decision — accepted at 50d4722d04acb6b993186abd6c9c11c80249974d
+- [x] 1.5 The owner reads the gate block and confirms it states their rules — accepted at 50d4722d04acb6b993186abd6c9c11c80249974d
 
 ### Phase 2: Runner for this screen
 
@@ -854,7 +854,7 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Manual
 
-- [ ] 2.4 The owner confirms the dry-run output on the Linux host
+- [x] 2.4 The owner confirms the dry-run output on the Linux host — accepted at 50d4722d04acb6b993186abd6c9c11c80249974d
 
 ### Phase 3: Blind set builder and gate rule
 
@@ -866,7 +866,7 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Manual
 
-- [ ] 3.4 The owner opens the viewer on a synthetic set and confirms it matches S-20
+- [x] 3.4 The owner opens the viewer on a synthetic set and confirms it matches S-20 — accepted at 50d4722d04acb6b993186abd6c9c11c80249974d
 
 ### Phase 4: Paid run (Linux host)
 
@@ -876,7 +876,7 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Manual
 
-- [ ] 4.2 The owner confirms run.md matches the runner output and spend ≤ $1.50
+- [x] 4.2 The owner confirms run.md matches the runner output and spend ≤ $1.50 — accepted at 50d4722d04acb6b993186abd6c9c11c80249974d
 
 ### Phase 5: Blind rating, verdict and record
 
@@ -887,6 +887,6 @@ owner's separate explicit consent. No archive status or dated historical entry i
 
 #### Manual
 
-- [ ] 5.3 The owner rates all delivered pairs in the viewer
-- [ ] 5.4 The owner reads the verdict and confirms reasons and block summary
-- [ ] 5.5 The owner approves (or declines) the comment on issue #359
+- [x] 5.3 The owner rates all delivered pairs in the viewer — accepted at 50d4722d04acb6b993186abd6c9c11c80249974d
+- [x] 5.4 The owner reads the verdict and confirms reasons and block summary — accepted at 50d4722d04acb6b993186abd6c9c11c80249974d
+- [x] 5.5 The owner approves (or declines) the comment on issue #359 — accepted at 50d4722d04acb6b993186abd6c9c11c80249974d
