@@ -1,10 +1,11 @@
 ---
 change_id: gpt-image-26-screen
 title: "Screening test of GPT-Image-2.6 Sunburst (complexity=low) as a Cloud AI output"
-status: impl_reviewed
+status: archived
+outcome: completed
 created: 2026-11-05
 updated: 2026-11-21
-archived_at: null
+archived_at: 2026-11-21T20:13:45Z
 issue: 359
 ---
 
