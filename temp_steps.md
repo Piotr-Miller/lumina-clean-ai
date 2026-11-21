@@ -71,7 +71,7 @@ Następne kroki, po kolei:
 6. **Faza 4 (płatna, ≤ $1,50):** najpierw Twoja linia `- GPT26-SPEND cap_usd=1.50 decision=approved date=…`
    w `change.md` § GPT26 approvals, zacommitowana; `OPENAI_API_KEY` w środowisku.
 7. **Ty:** #359 zakończone 2026-11-21: **PASS** — 4 z 6 par co najmniej remis na wierności, $0,48 z $1,50
-   ([werdykt](context/changes/gpt-image-26-screen/evaluations/verdict.md)). To otwiera tylko szersze porównanie na
+   ([werdykt](context/archive/2026-11-05-gpt-image-26-screen/evaluations/verdict.md)). To otwiera tylko szersze porównanie na
    wszystkich ośmiu zdjęciach tuningowych, nie wdrożenie; Cloud zostaje wstrzymany. Do decyzji: otworzyć to
    porównanie jako nową zmianę, albo decyzja produktowa o Cloud (zostaje wyłączony z przełącznikiem,
    przełącznik znika, albo Local jest jedynym silnikiem, a `local-engine-ceiling` (#188) głównym kierunkiem jakości).
@@ -106,8 +106,8 @@ w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą 
 ## Kolejka
 
 - **`gpt-image-26-screen`** ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359)): fazy 1–5
-  zrobione, werdykt **PASS** (`context/changes/gpt-image-26-screen/evaluations/verdict.md`). Zostało:
-  PR, wiersze akceptacji po merge'u, archiwum; potem decyzja z kroku 7 w „Teraz”.
+  zrobione, werdykt **PASS** (`context/archive/2026-11-05-gpt-image-26-screen/evaluations/verdict.md`). Zarchiwizowane 2026-11-21
+  (`context/archive/2026-11-05-gpt-image-26-screen/`, #359 zamknięte); dalej decyzja z kroku 7 w „Teraz”.
 
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,
   HTML strony 502 od Replicate). Analiza w `context/changes/cloud-error-message-leak/change.md`.
