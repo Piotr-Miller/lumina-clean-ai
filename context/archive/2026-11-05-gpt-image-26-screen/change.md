@@ -6,6 +6,8 @@ outcome: completed
 created: 2026-11-05
 updated: 2026-11-21
 archived_at: 2026-11-21T20:13:45Z
+archive_commit: 9012276
+sync: done
 issue: 359
 ---
 
