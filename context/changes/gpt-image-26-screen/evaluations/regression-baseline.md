@@ -129,3 +129,13 @@ The four skips are the suite's own static `unittest.skip(IN_PROCESS)` markers
 (`scripts/s20/tests/test_blind.py:530-536`), present at both revisions; nothing was skipped or
 suppressed by the harness. The red run above counted 285 tests; that count is not compared or
 analysed here.
+
+### Review-fix revision — S-20 PASS
+
+`python3 -B scripts/gpt26/regression.py --suite s20 --revision HEAD` (HEAD = `1a272717ff5d9393481900ef8c61d3c9f463116f`,
+`fix(gpt-image-26-screen): Phase-3 review fixes F1–F2 (p3)`), run 2026-11-21 after the phase-3
+implementation review.
+
+- Overlay commit `dab0fbe0173145e89a67305b72f4f9ecf0366cb7`, parent `1a272717ff5d9393481900ef8c61d3c9f463116f`,
+  changes exactly the five fixture paths.
+- Result: `Ran 326 tests`, `OK (skipped=4)`; exit **0**. The same four static skips.
