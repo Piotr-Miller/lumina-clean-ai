@@ -106,7 +106,7 @@ w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą 
 ## Kolejka
 
 - **`gpt-image-26-screen`** ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359)): fazy 1–5
-  zrobione, werdykt **PASS** (`context/changes/gpt-image-26-screen/evaluations/verdict.md`). Zostało: epilog,
+  zrobione, werdykt **PASS** (`context/changes/gpt-image-26-screen/evaluations/verdict.md`). Zostało:
   PR, wiersze akceptacji po merge'u, archiwum; potem decyzja z kroku 7 w „Teraz”.
 
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,

@@ -46,14 +46,14 @@ FILES = {
 | Roadmap ID | Issue | Change ID | Status | Labels |
 | ---------- | ----- | --------- | ------ | ------ |
 | — (change) | [#348](https://github.com/x/y/issues/348) | `local-jev-gate` | proposed | `status:proposed` |
-| — (change) | [#359](https://github.com/x/y/issues/359) | `gpt-image-26-screen` | screened: FAIL | `status:proposed` |
+| — (change) | [#359](https://github.com/x/y/issues/359) | `gpt-image-26-screen` | [screened: FAIL](../changes/gpt-image-26-screen/evaluations/verdict.md) | `status:proposed` |
 
 ## Status updates (post-creation)
 
 | Date | Roadmap ID | Issue | Action |
 | ---- | ---------- | ----- | ------ |
 | 2026-11-05 | — (change) | [#359](https://github.com/x/y/issues/359) | opened for `gpt-image-26-screen` — proposed screen. |
-| 2026-11-21 | — (change) | [#359](https://github.com/x/y/issues/359) | gate run: **FAIL** — [`verdict.md`](../changes/gpt-image-26-screen/evaluations/verdict.md) |
+| 2026-11-21 | — (change) | [#359](https://github.com/x/y/issues/359) | screen gate run on `gpt-image-26-screen`: **FAIL** — [`verdict.md`](../changes/gpt-image-26-screen/evaluations/verdict.md) |
 
 ## Not done
 """,
@@ -153,8 +153,8 @@ class PointersTest(unittest.TestCase):
             ("temp_steps.md", "2. #359", "2. #360", "## Teraz numbered item naming #359"),
             ("idea-notes.md", "**Still not demonstrated", "**Not demonstrated", "Still not demonstrated clause"),
             ("context/foundation/roadmap.md", "## Parked", "## Later", "## Parked"),
-            ("context/foundation/github-issues.md", "`gpt-image-26-screen` | screened",
-             "`gpt26` | screened", "mapping row"),
+            ("context/foundation/github-issues.md", "`gpt-image-26-screen` | [screened",
+             "`gpt26` | [screened", "mapping row"),
             ("context/foundation/github-issues.md", "opened for `gpt-image-26-screen`",
              "created for `gpt-image-26-screen`", "2026-11-05 `opened for` row"),
         ]
@@ -179,6 +179,14 @@ class PointersTest(unittest.TestCase):
                   "(context/changes/gpt-image-26-screen/evaluations/verdict.md)")
         self.assert_stale("roadmap.md (Parked entry): no link to")
 
+    def test_mapping_status_requires_its_own_verdict_link(self):
+        link = "[screened: FAIL](../changes/gpt-image-26-screen/evaluations/verdict.md)"
+        for status in ("screened: FAIL", link.replace("verdict.md", "verdict.json")):
+            with self.subTest(status=status):
+                self.reset()
+                self.edit(pointers.ISSUES, link, status)
+                self.assert_stale("github-issues.md (mapping row (Status cell)): no link to")
+
     def test_contradictory_status(self):
         self.edit("idea-notes.md", "screen was **FAIL**", "screen was **PASS**")
         self.assert_stale("idea-notes.md (Still-not-demonstrated clause): does not state FAIL")
@@ -189,11 +197,12 @@ class PointersTest(unittest.TestCase):
             ("context/foundation/roadmap.md", "see [verdict]", "Draft: see [verdict]", "'Draft:'"),
             ("context/foundation/roadmap.md", "Screened 2026-11-21:",
              "practically after S-20 step 1 builds its blind viewer;", "'builds its blind viewer'"),
-            ("context/foundation/github-issues.md", "| screened: FAIL |", "| proposed **FAIL** |", "'proposed'"),
+            ("context/foundation/github-issues.md", "[screened: FAIL]", "[proposed FAIL]", "'proposed'"),
             ("temp_steps.md", "teraz decyzja", "zdecyduj, czy robimy; decyzja", "'zdecyduj, czy robimy'"),
             ("temp_steps.md", "teraz decyzja", "po #359 decyzja", "'po #359'"),
             ("temp_steps.md", "zostało archiwum", "w toku", "'w toku'"),
             ("temp_steps.md", "zostało archiwum", "Potem /rune-plan", "'Potem /rune-plan'"),
+            ("temp_steps.md", "zostało archiwum", "Zostało: epilog, archiwum", "'zostało: epilog'"),
             ("context/changes/gpt-image-26-screen/change.md", "Screen result", "Draft screen result", "'Draft'"),
         ]
         for rel, old, new, needle in cases:
@@ -204,9 +213,17 @@ class PointersTest(unittest.TestCase):
 
     def test_status_log_needs_an_outcome_row(self):
         self.edit("context/foundation/github-issues.md",
-                  "| 2026-11-21 | — (change) | [#359](https://github.com/x/y/issues/359) | gate run: **FAIL** — "
+                  "| 2026-11-21 | — (change) | [#359](https://github.com/x/y/issues/359) | "
+                  "screen gate run on `gpt-image-26-screen`: **FAIL** — "
                   "[`verdict.md`](../changes/gpt-image-26-screen/evaluations/verdict.md) |\n", "")
         self.assert_stale("no row carries the outcome")
+
+    def test_same_issue_historical_row_is_preserved(self):
+        historical = ("| 2026-11-17 | — (change) | [#359](https://github.com/x/y/issues/359) | "
+                      "proposed screen; planning completed. |\n")
+        self.edit(pointers.ISSUES, "| 2026-11-21 |", historical + "| 2026-11-21 |")
+        code, text = self.run_main()
+        self.assertEqual(code, 0, text)
 
     def test_idea_clause_keeps_unproven_and_paused(self):
         self.edit("idea-notes.md", " Cloud stays paused.", " Cloud may resume.")
