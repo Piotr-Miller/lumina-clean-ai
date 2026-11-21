@@ -74,6 +74,7 @@ budget ledger, sealed-key protocol); outputs go to the gitignored `test-photos/p
 - 2026-11-21: owner confirmation recorded, Progress row pending the merge — **5.3** the owner rated all six delivered pairs in `references/compare-gpt26.html` in the sealed two-pass order (pass 1 locked, private checkpoint kept); ratings committed in db86de4 after the seal c1fc712, at ac1cabc3b0b32b2eb922ae25f9734f8f7fc1cb13
 - 2026-11-21: owner confirmation recorded, Progress row pending the merge — **5.4** the owner confirmed in session that `evaluations/verdict.md` states the reasons and the block summary correctly (PASS, 4 of 6, no blocks), at ac1cabc3b0b32b2eb922ae25f9734f8f7fc1cb13
 - 2026-11-21: owner confirmation recorded, Progress row pending the merge — **5.5** the owner approved the drafted comment on issue #359; posted as https://github.com/Piotr-Miller/lumina-clean-ai/issues/359#issuecomment-7067536694 (issue left open), at ac1cabc3b0b32b2eb922ae25f9734f8f7fc1cb13
+- 2026-11-21: owner decision — integration evidence: the sealed run record pins registration commit 9d47635 by SHA, so the gate is BLOCKED on any rebased history; the annotated tag `gpt26-screen-evidence` (on 1d218f0, pushed) keeps the verifiable history, and after the rebase-merge re-verification is the gate at that tag plus byte-identical `evaluations/` and `scripts/gpt26/` files on master; plan.md § Phase 5 item 1 Contract
 
 ## Outcome
 

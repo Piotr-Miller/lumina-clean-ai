@@ -712,7 +712,11 @@ Seal, rate, compute the verdict, and update every live pointer.
   The Manual rating row is then n/a with the zero-delivery evidence cited, never falsely checked.
 
 **Contract**: `gate.py` checks file-history order. Preserve separate seal/ratings commits across
-transfer and integration (no squash); run the offline gate again after integration. Future
+transfer and integration (no squash); run the offline gate again after integration. Integration
+evidence (owner decision 2026-11-21): the frozen run record pins the registration commit by SHA,
+so the gate re-verifies only on the original history; the annotated tag `gpt26-screen-evidence`
+(on `1d218f0`, pushed) keeps that history. After the rebase-merge, re-verification is the gate at
+that tag plus byte-identical `evaluations/` and `scripts/gpt26/` files on master. Future
 `change.md` outcome/status edits do not touch the dedicated seal. The existing Progress 5.1
 title retains its historical `(paid)` text because reviewed step titles are immutable; the
 computation itself is offline/free and its Automated criterion below has no paid label.
