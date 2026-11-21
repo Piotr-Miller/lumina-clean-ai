@@ -908,6 +908,45 @@ console.log("ok");
         r = subprocess.run(["node", "-e", harness], capture_output=True, text=True)
         self.assertEqual((r.returncode, r.stdout.strip()), (0, "ok"), r.stderr)
 
+    def test_note_shown_before_the_seal_and_in_every_rating_view(self):
+        script = VIEWER.read_text().split("<script>")[1].split("</script>")[0]
+        start = script.split("function start(M, base)")[1].split("function openSet")[0]
+        self.assertIn('form.querySelector("textarea").insertAdjacentHTML("beforebegin", GPT26_NOTE);', start)
+        self.assertLess(start.index("GPT26_NOTE"), start.index("main.replaceChildren(form)"))
+        update = script.split("function update()")[1].split("function go(")[0]
+        self.assertIn('footer();\n          // GPT26 begin\n          gpt26ShowNote(P, $("rating"));', update)
+        if not shutil.which("node"):
+            self.skipTest("node is not installed")
+        block = next(b for b in script.split("// GPT26 begin")[1:] if "function gpt26ShowNote" in b).split("// GPT26 end")[0]
+        consts = "\n".join(ln for ln in script.splitlines() if ln.strip().startswith(("const QUALITY", "const LEVELS")))
+        harness = consts + "\n" + block + r"""
+const assert = require("node:assert/strict");
+const store = new Map();
+globalThis.localStorage = { getItem: (k) => (store.has(k) ? store.get(k) : null), setItem: (k, v) => store.set(k, String(v)) };
+globalThis.document = { createElement: (tag) => ({ tag }) };
+const footer = { kids: [], prepend(el) { this.kids.unshift(el); } };
+const items = ["p01", "p02"].map((id) => ({ id }));
+const M = { set_id: "t1", set_digest: "d".repeat(64), items, passes: [["p01"], ["p02"]] };
+const P = gpt26Passes(M, "k");
+let el = gpt26ShowNote(P, footer);
+assert.equal(footer.kids[0], el);
+assert.equal(el.tag, "details");
+assert.match(el.innerHTML, /^<summary><strong>Przebieg 1 z 2\.<\/strong>/);
+assert.match(el.innerHTML, /Ryzyko rozpoznania/);
+assert.match(el.innerHTML, /Ocena w dwóch przebiegach/);
+// the open state survives the rebuild of the footer
+el.open = true; el.ontoggle();
+assert.equal(gpt26ShowNote(P, footer).open, true);
+const row = { pair_id: "p01", quality: "tie", fidelity: { A: { level: "none", crops: [], reason: "" }, B: { level: "none", crops: [], reason: "" } } };
+assert.ok(P.lock([row]));
+assert.match(gpt26ShowNote(P, footer).innerHTML, /Przebieg 2 z 2\./);
+// after a reload the lock is read back and the note still names pass 2
+assert.match(gpt26ShowNote(gpt26Passes(M, "k"), footer).innerHTML, /Przebieg 2 z 2\./);
+console.log("ok");
+"""
+        r = subprocess.run(["node", "-e", harness], capture_output=True, text=True)
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, "ok"), r.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
