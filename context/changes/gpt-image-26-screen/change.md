@@ -3,7 +3,7 @@ change_id: gpt-image-26-screen
 title: "Screening test of GPT-Image-2.6 Sunburst (complexity=low) as a Cloud AI output"
 status: implementing
 created: 2026-11-05
-updated: 2026-11-20
+updated: 2026-11-21
 archived_at: null
 issue: 359
 ---
@@ -68,6 +68,7 @@ budget ledger, sealed-key protocol); outputs go to the gitignored `test-photos/p
 - 2026-11-18: owner decision — Phase 3 is implemented and gated on the Linux (Fedora) host; the S-20 regression uses one disposable overlay commit restoring five metadata files (premise included) for both revisions, and the full suite must pass; Progress 5.1 keeps its `(paid)` title; plan.md § Phase 2 item 5, § Progress
 - 2026-11-20: owner decision — with two sealed passes the private first-pass checkpoint is required by the gate, and a live ledger/sidecar differing from the frozen copy after the seal is BLOCKED; plan.md § Phase 3 items 1 and 3
 - 2026-11-21: owner confirmation recorded, Progress row pending the merge — **3.4** the owner opened `references/compare-gpt26.html` (sha256 7bab909b…) over local HTTP on the synthetic set `demo-synthetic` (six pairs, two passes, built by `scripts/gpt26/blind.py` in a throwaway repository) and confirmed that the seal is accepted, the two-pass and recognition-risk note shows before the seal and in the rating view, only pass 1 is shown until it is complete and locked, the lock downloads the checkpoint and survives a reload, the export carries `passes` and `locked_pass1`, and the questions and fidelity scale match the archived S-20 viewer, at 611c9989ce92ad3165b36cb58a3b4b86d5cfbe50. The first walk-through found the note only under the seal button; fixed in 611c998 before this confirmation.
+- 2026-11-21: owner confirmation recorded, Progress row pending the merge — **3.4** re-confirmed after the Phase-3 review fixes (the 611c998 confirmation is superseded because the viewer changed): the owner opened `references/compare-gpt26.html` (sha256 d0094ad5…) over local HTTP on a rebuilt synthetic set `demo-synthetic` (fresh origin, no cached state) and confirmed that the seal is asked for and accepted, the note and "Przebieg 1 z 2" show, the pass-1 lock downloads the checkpoint and reveals p04–p06, the state survives a reload, the complete export succeeds, and opening the same set in a second tab switches the first tab off with "Ten zestaw otwarto w innej karcie…", at 1a272717ff5d9393481900ef8c61d3c9f463116f.
 
 ## GPT26 approvals
 
