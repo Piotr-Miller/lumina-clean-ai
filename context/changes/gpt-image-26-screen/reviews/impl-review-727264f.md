@@ -91,3 +91,20 @@ All check stdout/stderr was captured before inspecting excerpts; exit status was
 - **Bounded publication interruption observation, not a blocking finding for the completed set**: an interrupt delivered on return from the real successful rename can leave the final directory and remove its owned seal. Independent synthetic probes reproduced this without images. This is the narrow post-success window of the existing rollback logic, not the ordinary seal-write failure already fixed in phase 3; today's sealed set and recomputed verdict are unaffected. It is a potential future publication-hardening follow-up. No frozen runtime bytes were changed or risk acceptance recorded on the owner's behalf.
 - Mutation testing skipped: these offline Python/HTML evaluation tools do not implement a production failure scenario from the foundation Risk Map/Response Guidance; the configured TypeScript Stryker scope does not cover them.
 - No paid calls, new renders, deployments, publishing or issue changes were made. Analysis leaves only this report and the change.md lifecycle/date stamp uncommitted, recorded in the workflow carry file. For this full review, implemented becomes impl_reviewed as the skill requires; that lifecycle stamp means reviewed, not APPROVED.
+
+## Re-review 2 (2026-11-21)
+
+- **Scope**: full (phases 1–5) — the report's scope
+- **Session**: fresh
+- **Base**: 727264fe1dd1a6d0bd90a573507ad86d24f9b1c3 (previous round)
+- **Head**: a8b5ec129e633be301d9e2c9be77de149ef9fbe9
+- **Worktree**: excluded — `docs/codex-5-hour-usage-comparison.md` is untracked and unrelated to this change
+- **Checks ran at**: a8b5ec129e633be301d9e2c9be77de149ef9fbe9 (current HEAD)
+- **Manual acceptance**: 0 of 8 confirmed — pending: 1.4, 1.5, 2.4, 3.4, 4.2, 5.3, 5.4, 5.5
+- **Verdict**: APPROVED
+- **Findings**: 0 critical, 0 warnings, 0 observations
+- **Closes**: F1, F2
+
+None.
+
+- **Notes**: Incremental surface: a8b5ec1 only (`scripts/gpt26/pointers.py`, `scripts/gpt26/tests/test_gate.py`, `scripts/gpt26/tests/test_pointers.py`, `temp_steps.md`, plus bookkeeping in `context/foundation/github-issues.md` and the change folder). F1 verified: the synthetic lifecycle edit now appends a note unconditionally, the real commit and both verdict/rebase assertions remain, and `TMPDIR=/tmp python3 -B -m unittest discover -s scripts/gpt26/tests` exited 0 (`Ran 149 tests in 225.810s`, `OK`; 147 + the two new pointer regressions). F2 verified: the mapping Status now links `evaluations/verdict.md` and the mapping exemption from `links_verdict` is gone; the status-log selector takes exactly the dated `screen gate run on` row (a second such row fails loudly through `one()`), so the dated 2026-11-17-style history no longer trips the old-wording check; `zostało: epilog` is matched case-insensitively against the current queue, which no longer carries it. `python3 -B scripts/gpt26/pointers.py` exited 0 (all 7 blocks). Scoped Prettier on the changed Markdown exited 0. A read-only `gate.evaluate("gpt26-screen", …)` at this head returned PASS and equals the committed `verdict.json`, so the `status: impl_reviewed` stamp did not disturb the sealed verdict. S-19/S-20 regressions were not re-run: a8b5ec1 touches no `scripts/s19`/`scripts/s20` code, and round 1's evidence stands. The acceptance-state script exited 0 with all eight Manual rows `pending` (owner confirmations are dated in change.md Notes, held for the post-merge recording). Mutation testing skipped for round 1's reason. No paid calls, renders, publishing or issue changes.
