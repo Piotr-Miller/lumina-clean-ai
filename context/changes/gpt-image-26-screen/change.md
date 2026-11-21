@@ -82,3 +82,5 @@ malformed, duplicated, uncommitted, or when cap_usd differs from the runner's --
 The blind-set seal is NOT stored in this mutable lifecycle file. It goes, once, into the write-once
 evaluations/gate-sealed.md as an unbulleted GPT26-SEAL line (plan.md Phase 3 and Phase 5).
 -->
+
+- GPT26-SPEND cap_usd=1.50 decision=approved date=2026-11-21
