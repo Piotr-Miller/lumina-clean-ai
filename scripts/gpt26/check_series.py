@@ -13,7 +13,8 @@ writes nothing. For the study the config registers (`study.py`) it verifies that
     recomputed from the config, no prerequisites, and a first-attempt sum within
     `gate.cap_usd`;
   - the gate block is self-consistent (denominator = number of expected slots, a tie minimum
-    within it, a finite positive cap) and keeps the fixed level, evidence and attempt rules;
+    within it, a finite positive cap, a tie rule kind the gate knows) and keeps the fixed level,
+    evidence and attempt rules;
   - the config keeps the phase-5 prompt byte-for-byte, sends `complexity=low` /
     `moderation=auto`, and records its definitions and blind-rating controls before any spend.
 
@@ -65,6 +66,9 @@ GATE_INVARIANTS = {
     "fidelity_disqualifying_levels": ["significant", "severe"],
     "undelivered_fidelity": "nieoceniona",
 }
+# The tie rules gate.py knows (its RULE_KINDS): `level` (the screen's GPT level <= Local level,
+# version-1 exports) and `preference` (the pairwise fidelity preference, version-2 exports).
+TIE_RULE_KINDS = ("level", "preference")
 BLIND_FIELDS = ("two_pass_rating", "repeated_local_recognition_risk", "owner_commitment", "comparison_scale", "real_local")
 SLOT_FIELDS = {
     "config_sha256",
@@ -214,6 +218,9 @@ def check_config(config: object, phase5: dict, study: study_mod.Study, root: Pat
         if type(denominator) is not int or denominator != n:
             errs.append(f"{CONFIG}: gate.denominator is {denominator!r}; it must equal the {n} expected slots "
                         "(an undelivered slot is never excluded)")
+        if gate.get("tie_rule_kind") not in TIE_RULE_KINDS:
+            errs.append(f"{CONFIG}: gate.tie_rule_kind is {gate.get('tie_rule_kind')!r}; register one of "
+                        f"{list(TIE_RULE_KINDS)} (the gate refuses any other)")
         ties = gate.get("min_tie_pairs")
         if type(ties) is not int or not 1 <= ties <= n:
             errs.append(f"{CONFIG}: gate.min_tie_pairs is {ties!r}; it must be an integer from 1 to {n}")

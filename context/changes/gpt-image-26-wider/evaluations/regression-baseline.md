@@ -48,3 +48,17 @@ run as the phase gate before the phase commit)
 - Result: `Ran 85 tests`, `OK`; exit **0**, in the same environment and with the same lockfile.
 - That SHA is a branch commit and will be rewritten at merge (lesson 279); the result is tied to
   the bytes it tested, which the line above shows to be unchanged for S-19.
+
+## Review-fix revision (2026-12-04)
+
+The phase-1 review fixes (`fix(gpt-image-26-wider): Phase-1 review fixes F1–F6 (p1)`) change
+`scripts/s19/run-candidate.py`: an optional `write_guard` on the S-19 run context, off by default,
+which only GPT26 sets (finding F2). The statement above that Phase 1 changes nothing under
+`scripts/s19/` therefore holds for `3bce55e` only, not for the final Phase 1 state.
+
+`python3 -B scripts/gpt26/regression.py --suite s19 --rev HEAD` (HEAD = `49341050e68cf819bb30863b0b70e896a5498f08`)
+
+- Result: `Ran 85 tests`, `OK`; exit **0**, in the same environment and with the same lockfile
+  (NumPy 2.5.5, `package-lock.json` sha256 `120849f1…`).
+- The GPT26 suite in the working tree of that commit: `Ran 190 tests`, `OK`; exit **0**.
+- S-20 code imports nothing from `scripts/s19/run-candidate.py`, so the S-20 suite is not affected.

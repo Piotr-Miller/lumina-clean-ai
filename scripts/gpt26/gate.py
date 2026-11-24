@@ -3,6 +3,7 @@
 
   python3 scripts/gpt26/gate.py --config <config> --set <set_id> --export <study.change_dir>/evaluations/ratings.json
   python3 scripts/gpt26/gate.py --config <config> --set <set_id>   # zero delivered slots: no viewer, no ratings
+  python3 scripts/gpt26/gate.py --config <config> --set <set_id> --check [--export …]   # recompute, write nothing
 
 The config's `study` object (`study.py`) names the change folder, the private root and the slots.
 
@@ -25,23 +26,36 @@ BLOCKED first, on any of (exit 1, nothing written):
     schema error, a delivered pair rated other than once, an `uncertain` level, or a
     significant/severe level without a crop and a reason; with two sealed passes, a missing or
     different private first-pass checkpoint (owner decision 2026-11-20). With zero delivered slots
-    no ratings export is accepted.
+    no ratings export is accepted;
+  - the export or checkpoint version not the one the registered `gate.tie_rule_kind` reads:
+    `level` reads version 1 (the screen's schema), `preference` reads version 2, whose every row
+    carries exactly one `fidelity_preference` (omitted, null or invalid → BLOCKED, never a tie).
+    An unknown or missing kind is refused.
 
 Otherwise the config's gate block decides: PASS iff every registered slot is delivered, no GPT
-side is significant/severe and at least `gate.min_tie_pairs` pairs are at least a tie (GPT level
-≤ Local level). A cost-bound breach or conservative spend above the approved cap
-forces FAIL as a budget/protocol failure, kept separate from fidelity. Quality and wall time
-are diagnostics. It writes `evaluations/verdict.json` and `evaluations/verdict.md`.
+side is significant/severe and at least `gate.min_tie_pairs` pairs are at least a tie. Under
+`level` a pair is at least a tie when GPT level ≤ Local level; under `preference` (plan
+`gpt-image-26-wider` Phase 2) when the pair's A/B fidelity preference, mapped through the sealed
+key's `gpt_side`, is `tie`, `gpt-slight` or `gpt-clear`, and Local's level is a diagnostic. A
+cost-bound breach or conservative spend above the approved cap forces FAIL as a budget/protocol
+failure, kept separate from fidelity. Quality and wall time are diagnostics. It writes
+`evaluations/verdict.json` and `evaluations/verdict.md`.
+
+`--check` runs the same evaluation from the same evidence and prints the verdict Markdown to
+stdout, byte for byte what the normal run would write, and writes nothing: no verdict file and
+no private log. Its sanitized refusal goes to stderr. It can run at the evidence tag, before a
+verdict file exists.
 
 Errors pass through the sanitized boundary of `blind.py`: reason classes, trusted ids and a fixed
 way out, never a path, hash or arm name.
 
-Exit status: 0 verdict computed (PASS or FAIL); 1 BLOCKED; 2 usage.
+Exit status: 0 verdict computed (PASS or FAIL); 1 BLOCKED; 2 usage. `--check` uses the same codes.
 """
 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import sys
 from pathlib import Path
@@ -56,10 +70,18 @@ study_mod = blind.study_mod
 md_table = run.md_table
 
 QUALITY = ("A-clear", "A-slight", "tie", "B-slight", "B-clear")
+PREFERENCE = QUALITY  # the pairwise fidelity question uses the same five A/B choices
 LEVELS = ("none", "minor", "significant", "severe", "uncertain")
 EXPORT_FIELDS = {"viewer", "version", "kind", "set_id", "set_digest", "rated_on", "ratings", "passes", "locked_pass1"}
 CHECKPOINT_FIELDS = {"viewer", "version", "kind", "set_id", "set_digest", "locked_on", "passes", "ratings"}
 UNRATED = "nieoceniona"
+VIEWER_NAME = "compare-s20"
+# gate.tie_rule_kind -> the one export/checkpoint version it reads and the fields of a rating row.
+RULE_KINDS = {
+    "level": {"version": 1, "row_fields": {"pair_id", "quality", "fidelity"}},
+    "preference": {"version": 2, "row_fields": {"pair_id", "quality", "fidelity_preference", "fidelity"}},
+}
+AT_LEAST_A_TIE = ("tie", "gpt-slight", "gpt-clear")
 
 WAY_OUT = {
     **blind.WAY_OUT,
@@ -75,7 +97,16 @@ WAY_OUT = {
     "uncertain": "resolve the listed pairs against the original, re-export, commit, re-run",
     "missing evidence": "give each significant/severe rating at least one valid crop and a reason, re-export",
     "missing file": "restore the named evidence file, or run the step that writes it",
+    "rule kind": "register gate.tie_rule_kind as 'level' or 'preference' before any paid call",
 }
+
+
+def rule_kind(gate_block: dict) -> str:
+    """The registered tie rule, or Blocked: an unknown or missing kind is never guessed."""
+    kind = gate_block.get("tie_rule_kind") if isinstance(gate_block, dict) else None
+    if kind not in RULE_KINDS:
+        raise Blocked("rule kind", f"gate.tie_rule_kind is {kind!r}, expected one of {sorted(RULE_KINDS)}")
+    return kind
 
 
 def checkpoint_path(paths: run.Paths, set_id: str) -> Path:
@@ -292,13 +323,15 @@ def valid_crop(c, dims) -> bool:
             and c["x"] + c["w"] <= dims[0] and c["y"] + c["h"] <= dims[1])
 
 
-def check_rows(rows, sealed: dict, pairs: dict, *, expect: list[str]) -> dict:
-    """item -> row for exactly the `expect` items, each once, the S-20 row contract."""
+def check_rows(rows, sealed: dict, pairs: dict, *, expect: list[str], kind: str = "level") -> dict:
+    """item -> row for exactly the `expect` items, each once: the S-20 row contract, plus exactly
+    one valid `fidelity_preference` per row under the preference rule."""
     if not isinstance(rows, list):
         raise Blocked("schema error", "ratings is not a list")
+    fields = RULE_KINDS[kind]["row_fields"]
     found, seen, out = [], {}, {}
     for row in rows:
-        if not isinstance(row, dict) or set(row) != {"pair_id", "quality", "fidelity"}:
+        if not isinstance(row, dict) or set(row) != fields:
             found.append(Blocked("schema error", "a rating row has other fields"))
             continue
         item = row["pair_id"]
@@ -310,6 +343,8 @@ def check_rows(rows, sealed: dict, pairs: dict, *, expect: list[str]) -> dict:
         problems = []
         if row["quality"] not in QUALITY:
             problems.append(("schema error", "quality"))
+        if kind == "preference" and row["fidelity_preference"] not in PREFERENCE:
+            problems.append(("schema error", "fidelity preference"))  # omitted, null or invalid: never a tie
         fid = row["fidelity"]
         if not isinstance(fid, dict) or set(fid) != {"A", "B"}:
             problems.append(("schema error", "fidelity sides"))
@@ -341,17 +376,19 @@ def check_rows(rows, sealed: dict, pairs: dict, *, expect: list[str]) -> dict:
     return out
 
 
-def ratings_of(export, checkpoint_raw: bytes | None, sealed: dict, pairs: dict) -> dict:
+def ratings_of(export, checkpoint_raw: bytes | None, sealed: dict, pairs: dict, kind: str = "level") -> dict:
     key, seal_digest = sealed["key"], sealed["key"]["set_digest"]
+    version = RULE_KINDS[kind]["version"]
     if not isinstance(export, dict) or set(export) != EXPORT_FIELDS:
         raise Blocked("schema error", "not a compare-gpt26 gate export (an S-20 export lacks passes/locked_pass1)")
-    if (export["viewer"], export["version"], export["kind"]) != ("compare-s20", 1, "gate"):
-        raise Blocked("schema error", "not a version 1 gate export of the copied viewer")
+    if (export["viewer"], export["version"], export["kind"]) != (VIEWER_NAME, version, "gate"):
+        raise Blocked("schema error", f"not a version {version} gate export of the study's viewer "
+                      f"(the {kind} rule reads version {version} only)")
     if export["set_id"] != key["set_id"] or export["set_digest"] != seal_digest:
         raise Blocked("key mismatch", "the export is for another set or digest than the seal")
     if export["passes"] != key["passes"]:
         raise Blocked("checkpoint error", "the export's passes differ from the sealed passes")
-    rows = check_rows(export["ratings"], sealed, pairs, expect=sorted(pairs))
+    rows = check_rows(export["ratings"], sealed, pairs, expect=sorted(pairs), kind=kind)
     if len(key["passes"]) < 2:
         if export["locked_pass1"] is not None:
             raise Blocked("checkpoint error", "a single-pass set carries a first-pass lock")
@@ -366,7 +403,7 @@ def ratings_of(export, checkpoint_raw: bytes | None, sealed: dict, pairs: dict) 
         raise Blocked("checkpoint error", "two sealed passes and no private first-pass checkpoint")
     cp = strict_json(checkpoint_raw, "the first-pass checkpoint", "checkpoint error")
     if not isinstance(cp, dict) or set(cp) != CHECKPOINT_FIELDS or \
-            (cp["viewer"], cp["version"], cp["kind"]) != ("compare-s20", 1, "gate-pass1-checkpoint") or \
+            (cp["viewer"], cp["version"], cp["kind"]) != (VIEWER_NAME, version, "gate-pass1-checkpoint") or \
             cp["set_id"] != key["set_id"] or cp["set_digest"] != seal_digest or cp["passes"] != key["passes"]:
         raise Blocked("checkpoint error", "the checkpoint is not this set's first-pass checkpoint")
     if cp["ratings"] != locked:
@@ -380,8 +417,11 @@ def ratings_of(export, checkpoint_raw: bytes | None, sealed: dict, pairs: dict) 
 def decide(gate: dict, slots: list[dict], spend: dict) -> dict:
     """The verdict from the study's slot records (pure).
 
-    `slots`: [{label, delivered, gpt_level, local_level, quality}], levels None when undelivered;
-    `spend`: {committed_usd, cap_usd, breaches}. Diagnostics never enter the decision."""
+    `slots`: [{label, delivered, gpt_level, local_level, quality, preference}], levels None when
+    undelivered; `preference` is the GPT-relative fidelity preference (`local-clear … gpt-clear`),
+    read only under the preference rule. `spend`: {committed_usd, cap_usd, breaches}. Diagnostics
+    (quality, wall time, and Local's level under the preference rule) never enter the decision."""
+    kind = rule_kind(gate)
     order_ = {lv: n for n, lv in enumerate(gate["fidelity_levels"])}
     disq = set(gate["fidelity_disqualifying_levels"])
     reasons = {"not_delivered": [], "fidelity": [], "budget_protocol": []}
@@ -392,7 +432,10 @@ def decide(gate: dict, slots: list[dict], spend: dict) -> dict:
                                                                               else ""))
             s["tie"] = None
             continue
-        s["tie"] = order_[s["gpt_level"]] <= order_[s["local_level"]]
+        if kind == "preference":
+            s["tie"] = s.get("preference") in AT_LEAST_A_TIE
+        else:
+            s["tie"] = order_[s["gpt_level"]] <= order_[s["local_level"]]
         ties += s["tie"]
         if s["gpt_level"] in disq:
             reasons["fidelity"].append(f"fidelity: {s['gpt_level']} on {s['label']}")
@@ -408,13 +451,17 @@ def decide(gate: dict, slots: list[dict], spend: dict) -> dict:
                                           f"the ${spend['cap_usd']:.2f} cap")
     flat = [r for k in ("not_delivered", "fidelity", "budget_protocol") for r in reasons[k]]
     return {"verdict": "FAIL" if flat else "PASS", "ties": ties, "min_tie_pairs": gate["min_tie_pairs"],
-            "denominator": gate["denominator"], "reasons": reasons, "slots": slots}
+            "denominator": gate["denominator"], "tie_rule_kind": kind, "reasons": reasons, "slots": slots}
 
 
 def quality_of(q: str, gpt_side: str) -> str:
+    """An A/B choice (`A-clear … B-clear`) mapped through the sealed GPT side to `local-clear … gpt-clear`."""
     if q == "tie":
         return "tie"
     return ("gpt-" if q[0] == gpt_side else "local-") + q.split("-")[1]
+
+
+preference_of = quality_of  # the same five choices, the same mapping
 
 
 def evaluate(set_id: str, export: Path | None, paths: run.Paths, study: study_mod.Study) -> dict:
@@ -426,6 +473,7 @@ def evaluate(set_id: str, export: Path | None, paths: run.Paths, study: study_mo
         raise Blocked("key mismatch", f"--set {set_id} is not the sealed set")
     sealed = load_set(paths, seal)
     config, _config_sha, series, st = run_record(paths, study, sealed["key"])
+    kind = rule_kind(config.get("gate"))
     pairs = pairs_of(sealed["key"], st)
     blind.require_clean(root, [blind.BASELINES], "the gate")
     file_bindings(paths, sealed, pairs, series)
@@ -444,20 +492,21 @@ def evaluate(set_id: str, export: Path | None, paths: run.Paths, study: study_mo
         export_sha = blind.sha_bytes(raw)
         cp = checkpoint_path(paths, set_id)
         cp_raw = cp.read_bytes() if len(sealed["key"]["passes"]) == 2 and cp.exists() else None
-        rows = ratings_of(strict_json(raw, "the ratings export"), cp_raw, sealed, pairs)
+        rows = ratings_of(strict_json(raw, "the ratings export"), cp_raw, sealed, pairs, kind)
     item_of = {(s.photo, s.slot): i for i, s in pairs.items()}
     records = []
     for s in st.slots.values():
         item = item_of.get((s.photo, s.slot))
         if item is None:
             records.append({"label": s.label, "delivered": False, "reason": s.reason, "pair": None,
-                            "gpt_level": None, "local_level": None, "quality": None})
+                            "gpt_level": None, "local_level": None, "quality": None, "preference": None})
             continue
         it, row = sealed["key"]["items"][item], rows[item]
         g, lo = it["gpt_side"], it["local_side"]
         records.append({"label": s.label, "delivered": True, "reason": None, "pair": item,
                         "gpt_level": row["fidelity"][g]["level"], "local_level": row["fidelity"][lo]["level"],
                         "quality": quality_of(row["quality"], g), "gpt_side": g,
+                        "preference": preference_of(row["fidelity_preference"], g) if kind == "preference" else None,
                         "gpt_crops": row["fidelity"][g]["crops"], "gpt_reason": row["fidelity"][g]["reason"],
                         "local_crops": row["fidelity"][lo]["crops"], "local_reason": row["fidelity"][lo]["reason"]})
     spend = {"committed_usd": st.committed_usd, "known_usd": st.known_usd, "unknown_attempts": st.unknown_attempts,
@@ -485,14 +534,27 @@ def verdict_md(report: dict) -> str:
         lines += [f"## {title}", ""]
         lines += [f"- {r}" for r in report["reasons"][key]] or ["- none"]
         lines.append("")
-    lines += ["## Pairs", "",
-              "Fidelity is judged against the original at the GPT output's size; the tie rule is GPT level ≤ Local "
-              "level. Quality is diagnostic only.", ""]
-    lines += md_table(
-        ["Slot", "Pair", "GPT fidelity", "Local fidelity", "At least a tie", "Quality (diagnostic)"],
-        [[s["label"], s.get("pair") or "—", s["gpt_level"] or UNRATED, s["local_level"] or UNRATED,
-          "—" if s["tie"] is None else ("yes" if s["tie"] else "no"), s["quality"] or UNRATED]
-         for s in report["slots"]])
+    tie = lambda s: "—" if s["tie"] is None else ("yes" if s["tie"] else "no")  # noqa: E731
+    if report.get("tie_rule_kind") == "preference":
+        lines += ["## Pairs", "",
+                  "Fidelity is judged against the original at the GPT output's size. A pair is at least a tie when "
+                  "its fidelity preference is tie, gpt-slight or gpt-clear; a GPT side rated significant or severe "
+                  "disqualifies on its own. Local's level and quality are diagnostic only.", ""]
+        lines += md_table(
+            ["Slot", "Pair", "GPT fidelity", "Fidelity preference", "At least a tie", "Local fidelity (diagnostic)",
+             "Quality (diagnostic)"],
+            [[s["label"], s.get("pair") or "—", s["gpt_level"] or UNRATED, s.get("preference") or UNRATED, tie(s),
+              s["local_level"] or UNRATED, s["quality"] or UNRATED]
+             for s in report["slots"]])
+    else:
+        lines += ["## Pairs", "",
+                  "Fidelity is judged against the original at the GPT output's size; the tie rule is GPT level ≤ "
+                  "Local level. Quality is diagnostic only.", ""]
+        lines += md_table(
+            ["Slot", "Pair", "GPT fidelity", "Local fidelity", "At least a tie", "Quality (diagnostic)"],
+            [[s["label"], s.get("pair") or "—", s["gpt_level"] or UNRATED, s["local_level"] or UNRATED, tie(s),
+              s["quality"] or UNRATED]
+             for s in report["slots"]])
     p95 = report["wall_p95_s"]
     lines += ["", "## Run", "",
               f"- Spend: ${sp['committed_usd']:.2f} conservative (known cost, else the full reservation), "
@@ -535,9 +597,12 @@ def main(argv: list[str] | None = None, *, root: Path | None = None) -> int:
     ap.add_argument("--config", required=True, help="the study's config (repo-relative or inside the checkout)")
     ap.add_argument("--set", required=True, dest="set_id", type=blind.set_id_arg)
     ap.add_argument("--export")
+    ap.add_argument("--check", action="store_true",
+                    help="recompute the verdict and print its Markdown to stdout; write nothing")
     args = ap.parse_args(argv)
     root = root or blind.ROOT
-    study = blind.load_study(root, args.config)
+    with contextlib.redirect_stdout(sys.stderr) if args.check else contextlib.nullcontext():
+        study = blind.load_study(root, args.config)
     if study is None:
         return 1
     paths = run.study_paths(root, study)
@@ -550,13 +615,24 @@ def main(argv: list[str] | None = None, *, root: Path | None = None) -> int:
 
     def go():
         report = evaluate(args.set_id, export, paths, study)
+        if args.check:
+            return report, verdict_md(report)
         write_reports(paths.root, study, report)
-        return report
+        return report, None
 
     trusted = blind.slot_labels(study) | {f"p{n:02d}" for n in range(1, len(study.expected_slots) + 1)}
-    code, report = blind.boundary("gate", go, paths, WAY_OUT, trusted=trusted)
+    if args.check:  # sanitized refusal to stderr, no private log: --check writes nothing
+        with contextlib.redirect_stdout(sys.stderr):
+            code, result = blind.boundary("gate", go, paths, WAY_OUT, trusted=trusted, log=False)
+        if code:
+            return code
+        sys.stdout.write(result[1])
+        sys.stdout.flush()
+        return 0
+    code, result = blind.boundary("gate", go, paths, WAY_OUT, trusted=trusted)
     if code:
         return code
+    report = result[0]
     flat = [r for k in ("not_delivered", "fidelity", "budget_protocol") for r in report["reasons"][k]]
     print(f"{report['verdict']}: {report['ties']} of {report['denominator']} pairs at least a tie "
           f"({report['min_tie_pairs']} required)" + (f"; {'; '.join(flat)}" if flat else "")

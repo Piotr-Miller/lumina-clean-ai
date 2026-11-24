@@ -6,7 +6,7 @@
   "fixed_on": "2026-11-17",
   "note": "Test fixture of the screen's six-slot series (S17-03/04/07 x slots 1, 2), bound to tests/fixtures/screen-config.json. Input hashes and sizes copied from scripts/s19/series/phase5.json; the tests rebind them to synthetic inputs.",
   "configs": {
-    "86424655459cf83842036226b3f47af32c9ecddd9b057e80a4c4ec7713f8aab0": {
+    "5332af54a6e0b263a62443e750ee1c4eb45aeaf04cc16b4501d2cfb95bccff03": {
       "path": "scripts/gpt26/tests/fixtures/screen-config.json",
       "name": "gpt26-screen-fixture",
       "kind": "gpt",
@@ -16,7 +16,7 @@
   "prerequisites": [],
   "slots": [
     {
-      "config_sha256": "86424655459cf83842036226b3f47af32c9ecddd9b057e80a4c4ec7713f8aab0",
+      "config_sha256": "5332af54a6e0b263a62443e750ee1c4eb45aeaf04cc16b4501d2cfb95bccff03",
       "config_name": "gpt26-screen-fixture",
       "kind": "gpt",
       "photo": "S17-03",
@@ -30,7 +30,7 @@
       "requires": []
     },
     {
-      "config_sha256": "86424655459cf83842036226b3f47af32c9ecddd9b057e80a4c4ec7713f8aab0",
+      "config_sha256": "5332af54a6e0b263a62443e750ee1c4eb45aeaf04cc16b4501d2cfb95bccff03",
       "config_name": "gpt26-screen-fixture",
       "kind": "gpt",
       "photo": "S17-03",
@@ -44,7 +44,7 @@
       "requires": []
     },
     {
-      "config_sha256": "86424655459cf83842036226b3f47af32c9ecddd9b057e80a4c4ec7713f8aab0",
+      "config_sha256": "5332af54a6e0b263a62443e750ee1c4eb45aeaf04cc16b4501d2cfb95bccff03",
       "config_name": "gpt26-screen-fixture",
       "kind": "gpt",
       "photo": "S17-04",
@@ -58,7 +58,7 @@
       "requires": []
     },
     {
-      "config_sha256": "86424655459cf83842036226b3f47af32c9ecddd9b057e80a4c4ec7713f8aab0",
+      "config_sha256": "5332af54a6e0b263a62443e750ee1c4eb45aeaf04cc16b4501d2cfb95bccff03",
       "config_name": "gpt26-screen-fixture",
       "kind": "gpt",
       "photo": "S17-04",
@@ -72,7 +72,7 @@
       "requires": []
     },
     {
-      "config_sha256": "86424655459cf83842036226b3f47af32c9ecddd9b057e80a4c4ec7713f8aab0",
+      "config_sha256": "5332af54a6e0b263a62443e750ee1c4eb45aeaf04cc16b4501d2cfb95bccff03",
       "config_name": "gpt26-screen-fixture",
       "kind": "gpt",
       "photo": "S17-07",
@@ -86,7 +86,7 @@
       "requires": []
     },
     {
-      "config_sha256": "86424655459cf83842036226b3f47af32c9ecddd9b057e80a4c4ec7713f8aab0",
+      "config_sha256": "5332af54a6e0b263a62443e750ee1c4eb45aeaf04cc16b4501d2cfb95bccff03",
       "config_name": "gpt26-screen-fixture",
       "kind": "gpt",
       "photo": "S17-07",

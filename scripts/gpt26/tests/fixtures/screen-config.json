@@ -92,6 +92,7 @@
     "fidelity_evidence_required_levels": ["significant", "severe"],
     "fidelity_disqualifying_levels": ["significant", "severe"],
     "tie_rule": "a pair is at least a tie iff level(GPT) <= level(Local) in the order none < minor < significant < severe",
+    "tie_rule_kind": "level",
     "min_tie_pairs": 4,
     "cap_usd": 1.5,
     "undelivered_fidelity": "nieoceniona",

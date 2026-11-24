@@ -236,6 +236,28 @@ class CheckSeriesTest(unittest.TestCase):
                 self.write_config(config)
                 self.assert_config_refused(f"size_rule.{field}")
 
+    def test_the_tie_rule_kind_must_be_one_the_gate_knows(self):
+        for value in ("missing", None, "", "levels", "Preference", 1):
+            with self.subTest(value=value):
+                config = copy.deepcopy(self.config)
+                if value == "missing":
+                    del config["gate"]["tie_rule_kind"]
+                else:
+                    config["gate"]["tie_rule_kind"] = value
+                self.write_config(config)
+                result = self.run_checker()
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn("gate.tie_rule_kind", result.stderr)
+                self.assertNotIn("Traceback", result.stderr)
+        for value in ("level", "preference"):  # gate.RULE_KINDS; test_gate pins the two lists equal
+            with self.subTest(value=value):
+                config = copy.deepcopy(self.config)
+                config["gate"]["tie_rule_kind"] = value
+                self.write_config(config)
+                result = self.run_checker()
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertNotIn("tie_rule_kind", result.stdout + result.stderr)
+
     def test_missing_or_invalid_calculation_blocks_have_diagnostics(self):
         for block in ("size_rule", "cost_bound"):
             for value in (None, [], "invalid"):
