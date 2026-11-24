@@ -49,7 +49,7 @@ run as the phase gate before the phase commit)
 - That SHA is a branch commit and will be rewritten at merge (lesson 279); the result is tied to
   the bytes it tested, which the line above shows to be unchanged for S-19.
 
-## Review-fix revision (2026-12-04)
+## Review-fix revision (2026-11-24)
 
 The phase-1 review fixes (`fix(gpt-image-26-wider): Phase-1 review fixes F1–F6 (p1)`) change
 `scripts/s19/run-candidate.py`: an optional `write_guard` on the S-19 run context, off by default,
@@ -62,3 +62,20 @@ which only GPT26 sets (finding F2). The statement above that Phase 1 changes not
   (NumPy 2.5.5, `package-lock.json` sha256 `120849f1…`).
 - The GPT26 suite in the working tree of that commit: `Ran 190 tests`, `OK`; exit **0**.
 - S-20 code imports nothing from `scripts/s19/run-candidate.py`, so the S-20 suite is not affected.
+
+## Phase 2 (2026-11-24)
+
+Plan Phase 2, rows 2.1 and 2.2. Phase 2 changes nothing under `scripts/s19/` or `scripts/s20/`;
+it touches only `scripts/gpt26/` and the change folder.
+
+- **2.1 GPT26 suite**, working tree of the phase commit `ad9584b86ae5c9a5137228ee6e78a952fe0b319d`
+  (`feat(gpt-image-26-wider): Pairwise fidelity and the visible anchor (p2)`): `Ran 228 tests`,
+  `OK`; exit **0**.
+- **2.2 S-20 suite**, `python3 -B scripts/gpt26/regression.py --suite s20 --rev HEAD`:
+  - as the phase gate, before the phase commit (HEAD = `49341050e68cf819bb30863b0b70e896a5498f08`):
+    `Ran 326 tests`, `OK (skipped=4)`; exit **0**;
+  - rerun by the phase-2 implementation review at HEAD = `ad9584b86ae5c9a5137228ee6e78a952fe0b319d`
+    (`reviews/impl-review-phase-2-ad9584b.md`): `Ran 326 tests`, `OK (skipped=4)`; exit **0**; the
+    disposable worktree was removed afterwards.
+- Both SHAs are branch commits and will be rewritten at merge (lesson 279); the S-20 bytes they
+  test are the same, since neither commit changes `scripts/s20/`.

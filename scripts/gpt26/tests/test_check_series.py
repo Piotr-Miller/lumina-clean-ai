@@ -21,6 +21,7 @@ SERIES = "scripts/gpt26/tests/fixtures/screen-series.json"
 CONFIG = "scripts/gpt26/tests/fixtures/screen-config.json"
 VIEWER_FIXTURE = "scripts/gpt26/tests/fixtures/compare-gpt26.html"
 VIEWER = "context/changes/gpt26-screen-fixture/references/compare-gpt26.html"
+WIDER_VIEWER = "context/changes/gpt-image-26-wider/references/compare-gpt26.html"
 
 
 class CheckSeriesTest(unittest.TestCase):
@@ -249,14 +250,39 @@ class CheckSeriesTest(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, result.stdout)
                 self.assertIn("gate.tie_rule_kind", result.stderr)
                 self.assertNotIn("Traceback", result.stderr)
-        for value in ("level", "preference"):  # gate.RULE_KINDS; test_gate pins the two lists equal
+        # gate.RULE_KINDS; test_gate pins the kinds and their export versions equal. The fixture
+        # viewer writes version 1, the wider viewer (pointed at this study's root) version 2.
+        wider = (ROOT / WIDER_VIEWER).read_text(encoding="utf-8").replace(
+            "test-photos/private/gpt26-wider/", "test-photos/private/gpt26/")
+        for value, viewer in (("level", None), ("preference", wider)):
             with self.subTest(value=value):
+                if viewer is not None:
+                    (self.root / VIEWER).write_text(viewer, encoding="utf-8")
                 config = copy.deepcopy(self.config)
                 config["gate"]["tie_rule_kind"] = value
                 self.write_config(config)
                 result = self.run_checker()
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertNotIn("tie_rule_kind", result.stdout + result.stderr)
+
+    def test_the_viewer_must_write_the_version_the_tie_rule_reads(self):
+        fixture = (self.root / VIEWER).read_text(encoding="utf-8")
+        wider = (ROOT / WIDER_VIEWER).read_text(encoding="utf-8").replace(
+            "test-photos/private/gpt26-wider/", "test-photos/private/gpt26/")
+        unresolved = wider.replace("const GPT26_VERSION = 2;", "const GPT26_VERSION = 2 + 0;")
+        for kind, viewer, found, want in (("preference", fixture, "[1, 1]", 2),
+                                          ("level", wider, "[2, 2]", 1),
+                                          ("preference", unresolved, "[None, None]", 2)):
+            with self.subTest(kind=kind, found=found):
+                (self.root / VIEWER).write_text(viewer, encoding="utf-8")
+                config = copy.deepcopy(self.config)
+                config["gate"]["tie_rule_kind"] = kind
+                self.write_config(config)
+                result = self.run_checker()
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn(f"writes checkpoint/export version(s) {found}, but gate.tie_rule_kind "
+                              f"'{kind}' reads version {want}", result.stderr)
+                self.assertNotIn("Traceback", result.stderr)
 
     def test_missing_or_invalid_calculation_blocks_have_diagnostics(self):
         for block in ("size_rule", "cost_bound"):
