@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""GPT26 gate: the screen's verdict from the sealed set, the run record and the ratings (plan Phase 3, item 3).
+"""GPT26 gate: a study's verdict from the sealed set, the run record and the ratings.
 
-  python3 scripts/gpt26/gate.py --set <set_id> --export context/changes/gpt-image-26-screen/evaluations/ratings.json
-  python3 scripts/gpt26/gate.py --set <set_id>        # zero delivered slots only: no viewer, no ratings
+  python3 scripts/gpt26/gate.py --config <config> --set <set_id> --export <study.change_dir>/evaluations/ratings.json
+  python3 scripts/gpt26/gate.py --config <config> --set <set_id>   # zero delivered slots: no viewer, no ratings
+
+The config's `study` object (`study.py`) names the change folder, the private root and the slots.
 
 BLOCKED first, on any of (exit 1, nothing written):
   - the dedicated seal `evaluations/gate-sealed.md` not tracked, committed and clean, touched by
@@ -12,7 +14,9 @@ BLOCKED first, on any of (exit 1, nothing written):
   - the run record: the frozen ledger/sidecar copies not hashing to the key, the live ledger or
     sidecar differing from them (owner decision 2026-11-20), or `state.reconcile` finding any
     inconsistency or an unresolved slot against the registration and rule identities of THIS
-    checkout — never the sidecar's own bindings (impl review phase 2, F2);
+    checkout — never the sidecar's own bindings (impl review phase 2, F2). Identities are file
+    blobs only: the commits that carry them may be rewritten by a rebase-merge (lesson "Never
+    bind sealed or frozen evidence to a branch commit SHA");
   - the key's pairs not being exactly the reconciled delivered slots, each once, or its passes not
     a valid partition (at most one slot of each scene per pass);
   - any presentation file, GPT output, original or Local download changed, or a resized copy that
@@ -23,9 +27,9 @@ BLOCKED first, on any of (exit 1, nothing written):
     different private first-pass checkpoint (owner decision 2026-11-20). With zero delivered slots
     no ratings export is accepted.
 
-Otherwise the gate block of `scripts/gpt26/configs/gpt26-low.json` decides: PASS iff all six
-slots are delivered, no GPT side is significant/severe and at least four pairs are at least a
-tie (GPT level ≤ Local level). A cost-bound breach or conservative spend above the approved cap
+Otherwise the config's gate block decides: PASS iff every registered slot is delivered, no GPT
+side is significant/severe and at least `gate.min_tie_pairs` pairs are at least a tie (GPT level
+≤ Local level). A cost-bound breach or conservative spend above the approved cap
 forces FAIL as a budget/protocol failure, kept separate from fidelity. Quality and wall time
 are diagnostics. It writes `evaluations/verdict.json` and `evaluations/verdict.md`.
 
@@ -40,7 +44,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import unicodedata
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -49,13 +52,13 @@ import blind  # noqa: E402
 from blind import Blocked, BlockedMany  # noqa: E402
 
 run, state, evidence, protocol, Refused = blind.run, blind.state, blind.evidence, blind.protocol, blind.Refused
+study_mod = blind.study_mod
+md_table = run.md_table
 
 QUALITY = ("A-clear", "A-slight", "tie", "B-slight", "B-clear")
 LEVELS = ("none", "minor", "significant", "severe", "uncertain")
 EXPORT_FIELDS = {"viewer", "version", "kind", "set_id", "set_digest", "rated_on", "ratings", "passes", "locked_pass1"}
 CHECKPOINT_FIELDS = {"viewer", "version", "kind", "set_id", "set_digest", "locked_on", "passes", "ratings"}
-VERDICT_JSON = f"{blind.EVAL}/verdict.json"
-VERDICT_MD = f"{blind.EVAL}/verdict.md"
 UNRATED = "nieoceniona"
 
 WAY_OUT = {
@@ -65,9 +68,9 @@ WAY_OUT = {
     "key mismatch": "the set on disk is not the sealed one; never rebuild a sealed set",
     "record changed": "the live ledger or run-state differs from the sealed copy; restore it from the frozen copy",
     "coverage error": "re-export the whole set once; every delivered pair exactly once, nothing else",
-    "schema error": "re-export from compare-gpt26.html for this set; every pair needs every answer",
-    "checkpoint error": "move the first-pass checkpoint the viewer downloaded to test-photos/private/gpt26/ "
-                        "unchanged; it must match the final export",
+    "schema error": "re-export from the study's viewer for this set; every pair needs every answer",
+    "checkpoint error": "move the first-pass checkpoint the viewer downloaded into the study's private root "
+                        "(study.private_root in the config) unchanged; it must match the final export",
     "binding failed": "a rated or source file no longer matches the sealed key; restore it",
     "uncertain": "resolve the listed pairs against the original, re-export, commit, re-run",
     "missing evidence": "give each significant/severe rating at least one valid crop and a reason, re-export",
@@ -106,18 +109,18 @@ def order(fn, *args, reason: str = "order violation", **kw):
 # ---------------------------------------------------------------- seal and set
 
 
-def read_seal(root: Path) -> dict:
+def read_seal(root: Path, seal_rel: str) -> dict:
     """The seal's one unbulleted, well-formed GPT26-SEAL line."""
     try:
-        lines = (root / blind.SEAL_REL).read_text().splitlines()
+        lines = (root / seal_rel).read_text().splitlines()
     except OSError as e:
-        raise Blocked("seal invalid", f"cannot read {blind.SEAL_REL}: {e}")
+        raise Blocked("seal invalid", f"cannot read {seal_rel}: {e}")
     tagged = [ln for ln in lines if "GPT26-SEAL" in ln]
     if len(tagged) != 1:
-        raise Blocked("seal invalid", f"{blind.SEAL_REL} holds {len(tagged)} GPT26-SEAL lines, expected exactly one")
+        raise Blocked("seal invalid", f"{seal_rel} holds {len(tagged)} GPT26-SEAL lines, expected exactly one")
     m = blind.SEAL.fullmatch(tagged[0])
     if not m:
-        raise Blocked("seal invalid", f"{blind.SEAL_REL}: the GPT26-SEAL line is bulleted, indented or malformed")
+        raise Blocked("seal invalid", f"{seal_rel}: the GPT26-SEAL line is bulleted, indented or malformed")
     return {"set_id": m.group(1), "set_digest": m.group(2), "key_sha256": m.group(3)}
 
 
@@ -151,7 +154,7 @@ def load_set(paths: run.Paths, seal: dict) -> dict:
 # ---------------------------------------------------------------- run record
 
 
-def run_record(paths: run.Paths, key: dict) -> tuple[dict, str, dict, state.RunState]:
+def run_record(paths: run.Paths, study: study_mod.Study, key: dict) -> tuple[dict, str, dict, state.RunState]:
     snap = key.get("run_snapshot") or {}
     frozen = {}
     for part, live in (("ledger", paths.private / "attempts.jsonl"), ("sidecar", paths.sidecar)):
@@ -165,11 +168,11 @@ def run_record(paths: run.Paths, key: dict) -> tuple[dict, str, dict, state.RunS
         if live_raw != raw:
             raise Blocked("record changed", f"the live {part} differs from the copy frozen at the seal")
         frozen[part] = raw
-    config, config_sha, series, st, bindings = blind.reconciled(paths, frozen["ledger"], frozen["sidecar"])
+    config, config_sha, series, st, bindings = blind.reconciled(paths, study, frozen["ledger"], frozen["sidecar"])
     if key.get("config_sha256") != config_sha or key.get("series_id") != series["series_id"]:
         raise Blocked("key mismatch", "the key was built for another config or series")
-    if key.get("bindings", {}).get("files") != bindings["files"] or \
-            key.get("bindings", {}).get("registration_commit") != bindings["registration_commit"]:
+    # Blob identities only; the key's head and registration commit are provenance (lesson 279).
+    if (key.get("bindings") or {}).get("files") != bindings["files"]:
         raise Blocked("rules changed", "the rule identities differ from those the set was built with")
     return config, config_sha, series, st
 
@@ -375,7 +378,7 @@ def ratings_of(export, checkpoint_raw: bytes | None, sealed: dict, pairs: dict) 
 
 
 def decide(gate: dict, slots: list[dict], spend: dict) -> dict:
-    """The verdict from six slot records (pure).
+    """The verdict from the study's slot records (pure).
 
     `slots`: [{label, delivered, gpt_level, local_level, quality}], levels None when undelivered;
     `spend`: {committed_usd, cap_usd, breaches}. Diagnostics never enter the decision."""
@@ -414,18 +417,18 @@ def quality_of(q: str, gpt_side: str) -> str:
     return ("gpt-" if q[0] == gpt_side else "local-") + q.split("-")[1]
 
 
-def evaluate(set_id: str, export: Path | None, paths: run.Paths) -> dict:
+def evaluate(set_id: str, export: Path | None, paths: run.Paths, study: study_mod.Study) -> dict:
     root = paths.root
-    order(evidence.require_write_once, blind.SEAL_REL, root)
-    seal = read_seal(root)
+    order(evidence.require_write_once, study.seal_rel, root)
+    seal = read_seal(root, study.seal_rel)
     if seal["set_id"] != set_id:
         raise Blocked("key mismatch", f"--set {set_id} is not the sealed set")
     sealed = load_set(paths, seal)
-    config, _config_sha, series, st = run_record(paths, sealed["key"])
+    config, _config_sha, series, st = run_record(paths, study, sealed["key"])
     pairs = pairs_of(sealed["key"], st)
     blind.require_clean(root, [blind.BASELINES], "the gate")
     file_bindings(paths, sealed, pairs, series)
-    cap = blind.approved_cap(root)
+    cap = blind.approved_cap(root, study)
     rows: dict = {}
     export_sha = None
     if not pairs:
@@ -434,9 +437,9 @@ def evaluate(set_id: str, export: Path | None, paths: run.Paths) -> dict:
     else:
         if export is None:
             raise Blocked("missing file", "delivered pairs need the committed ratings export (--export)")
-        order(evidence.require_committed_clean, [blind.RATINGS_REL], root, purpose="the gate")
-        order(evidence.require_strictly_before, blind.SEAL_REL, blind.RATINGS_REL, root)
-        raw = read(root / blind.RATINGS_REL, "the ratings export")
+        order(evidence.require_committed_clean, [study.ratings_rel], root, purpose="the gate")
+        order(evidence.require_strictly_before, study.seal_rel, study.ratings_rel, root)
+        raw = read(root / study.ratings_rel, "the ratings export")
         export_sha = blind.sha_bytes(raw)
         cp = checkpoint_path(paths, set_id)
         cp_raw = cp.read_bytes() if len(sealed["key"]["passes"]) == 2 and cp.exists() else None
@@ -459,7 +462,7 @@ def evaluate(set_id: str, export: Path | None, paths: run.Paths) -> dict:
     spend = {"committed_usd": st.committed_usd, "known_usd": st.known_usd, "unknown_attempts": st.unknown_attempts,
              "cap_usd": cap, "breaches": list(st.breaches)}
     report = decide(config["gate"], records, spend)
-    report.update(gate_id=config["gate"]["id"], set_id=set_id, set_digest=seal["set_digest"],
+    report.update(gate_id=config["gate"]["id"], series_id=study.series_id, set_id=set_id, set_digest=seal["set_digest"],
                   key_sha256=seal["key_sha256"], ratings_export_sha256=export_sha, spend=spend, blocks=st.blocks,
                   walls_s=st.walls, wall_p95_s=state.p95(st.walls), guardrail_p95_s=run.GUARDRAIL_P95_S,
                   passes=[len(p) for p in sealed["key"]["passes"]],
@@ -470,24 +473,10 @@ def evaluate(set_id: str, export: Path | None, paths: run.Paths) -> dict:
 # ---------------------------------------------------------------- outputs
 
 
-def md_table(header: list[str], rows: list[list[str]]) -> list[str]:
-    """A Markdown table padded the way Prettier pads it, so a re-run stays byte-identical."""
-
-    def width(cell: str) -> int:
-        return sum(1 for ch in cell if not unicodedata.combining(ch))
-
-    cols = [max(3, *(width(r[i]) for r in [header, *rows])) for i in range(len(header))]
-
-    def line(cells: list[str]) -> str:
-        return "| " + " | ".join(c + " " * (cols[i] - width(c)) for i, c in enumerate(cells)) + " |"
-
-    return [line(header), "| " + " | ".join("-" * w for w in cols) + " |", *(line(r) for r in rows)]
-
-
 def verdict_md(report: dict) -> str:
     sp, b = report["spend"], report["blocks"]
     within = not sp["breaches"] and sp["committed_usd"] <= sp["cap_usd"] + 1e-9
-    lines = ["# GPT-Image-2.6 screen — verdict", "",
+    lines = [f"# GPT26 study `{report['series_id']}` — verdict", "",
              f"**Verdict: {report['verdict']}.** Pairs at least a tie: {report['ties']} of {report['denominator']} "
              f"({report['min_tie_pairs']} required). Gate `{report['gate_id']}`, set `{report['set_id']}`.", ""]
     for title, key in (("Not delivered", "not_delivered"), ("Fidelity", "fidelity"),
@@ -528,41 +517,46 @@ def verdict_md(report: dict) -> str:
     return "\n".join(lines)
 
 
-def write_reports(root: Path, report: dict) -> None:
-    (root / VERDICT_JSON).parent.mkdir(parents=True, exist_ok=True)
-    (root / VERDICT_JSON).write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
-    (root / VERDICT_MD).write_text(verdict_md(report))
+def write_reports(root: Path, study: study_mod.Study, report: dict) -> None:
+    (root / study.verdict_json).parent.mkdir(parents=True, exist_ok=True)
+    (root / study.verdict_json).write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    (root / study.verdict_md).write_text(verdict_md(report))
 
 
-def main(argv: list[str] | None = None, *, paths: run.Paths | None = None) -> int:
+def main(argv: list[str] | None = None, *, root: Path | None = None) -> int:
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description="GPT26 gate")
+    ap.add_argument("--config", required=True, help="the study's config (repo-relative or inside the checkout)")
     ap.add_argument("--set", required=True, dest="set_id", type=blind.set_id_arg)
     ap.add_argument("--export")
     args = ap.parse_args(argv)
-    paths = paths or run.default_paths()
+    root = root or blind.ROOT
+    study = blind.load_study(root, args.config)
+    if study is None:
+        return 1
+    paths = run.study_paths(root, study)
     export = None
     if args.export:
         export = Path(args.export)
         export = export if export.is_absolute() else Path.cwd() / export
-        if export.resolve() != (paths.root / blind.RATINGS_REL).resolve():
-            ap.error(f"--export must be the committed {blind.RATINGS_REL}")
+        if export.resolve() != (paths.root / study.ratings_rel).resolve():
+            ap.error(f"--export must be the committed {study.ratings_rel}")
 
     def go():
-        report = evaluate(args.set_id, export, paths)
-        write_reports(paths.root, report)
+        report = evaluate(args.set_id, export, paths, study)
+        write_reports(paths.root, study, report)
         return report
 
-    trusted = blind.slot_labels() | {f"p{n:02d}" for n in range(1, 7)}
+    trusted = blind.slot_labels(study) | {f"p{n:02d}" for n in range(1, len(study.expected_slots) + 1)}
     code, report = blind.boundary("gate", go, paths.private, WAY_OUT, trusted=trusted)
     if code:
         return code
     flat = [r for k in ("not_delivered", "fidelity", "budget_protocol") for r in report["reasons"][k]]
     print(f"{report['verdict']}: {report['ties']} of {report['denominator']} pairs at least a tie "
           f"({report['min_tie_pairs']} required)" + (f"; {'; '.join(flat)}" if flat else "")
-          + f".\n  wrote {VERDICT_JSON} and {VERDICT_MD}; commit them.")
+          + f".\n  wrote {study.verdict_json} and {study.verdict_md}; commit them.")
     return 0
 
 

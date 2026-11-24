@@ -1,0 +1,41 @@
+# Regression baseline — GPT26 and S-19 suites (Linux host)
+
+Plan Phase 1, rows 1.1 and 1.3. The S-19 result comes from `scripts/gpt26/regression.py`, which
+runs the suite in a detached, disposable worktree of the named commit and removes it afterwards.
+The GPT26 suite runs in the live checkout:
+`TMPDIR=/tmp python3 -B -m unittest discover -s scripts/gpt26/tests`.
+
+## Environment (2026-11-24)
+
+| Item              | Value                                                                                                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Host              | Linux 7.3.4-300.fc45.x86_64 (Fedora), the owner's host with the private corpus                                                                                                  |
+| Python            | 3.15.2 (`/usr/bin/python3`)                                                                                                                                                     |
+| Pillow            | 12.3.0                                                                                                                                                                          |
+| NumPy             | **2.5.5** — the screen's baseline recorded 2.5.4; accepted by owner decision 2026-11-24 (`change.md` § Owner decisions)                                                         |
+| OpenCV            | 4.13.0 (`cv2.__version__`; distro package, no pip metadata)                                                                                                                     |
+| scikit-image      | 0.26.0                                                                                                                                                                          |
+| PyWavelets        | 1.8.0                                                                                                                                                                           |
+| Node dependencies | live `node_modules` linked into the worktree; `package-lock.json` sha256 `120849f1603f584d1275797b809201f09960ac95fdc4adf97c913b57ef1896a6`, identical to the screen's baseline |
+
+Compared against `context/archive/2026-11-05-gpt-image-26-screen/evaluations/regression-baseline.md`
+(read only). NumPy is the only difference.
+
+## GPT26 suite
+
+- **Before Phase 1** (HEAD `7387271c79813b6c2922588adb3f74a6f8286947`, clean tree): `Ran 130 tests`,
+  `FAILED (errors=65)`; exit **1**. All 65 errors were `FileNotFoundError` for
+  `context/changes/gpt-image-26-screen/references/compare-gpt26.html`, the screen viewer that moved
+  into the archive. This is the hard-wired path Phase 1 removes.
+- **After Phase 1** (working tree of the phase commit): `Ran 180 tests`, `OK`; exit **0**.
+
+## S-19 suite
+
+`python3 scripts/gpt26/regression.py --suite s19 --rev HEAD` (HEAD = `7387271c79813b6c2922588adb3f74a6f8286947`,
+run as the phase gate before the phase commit)
+
+- Result: `Ran 85 tests`, `OK`; exit **0**.
+- Phase 1 changes nothing under `scripts/s19/` or `scripts/s20/`
+  (`git diff --quiet HEAD -- scripts/s19 scripts/s20` exit 0), and the S-19 suite reads no
+  `scripts/gpt26/` file (the only mentions in `scripts/s19/` are two comments in
+  `run-candidate.py`). The gate run therefore covers the same S-19 bytes as the candidate commit.

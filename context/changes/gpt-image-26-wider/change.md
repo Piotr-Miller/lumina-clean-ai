@@ -1,9 +1,9 @@
 ---
 change_id: gpt-image-26-wider
 title: "Wider blind comparison of GPT-Image-2.6 Sunburst (complexity=low) on all eight tuning photos"
-status: plan_reviewed
+status: implementing
 created: 2026-11-21
-updated: 2026-11-21
+updated: 2026-11-24
 archived_at: null
 ---
 
@@ -28,6 +28,14 @@ paid comparison on S17-01…07 and S17-21, with 2 slots each.
 - **Slots and cap:** 8 × 2 = 16 slots, with a cap of **$3.50**. Σ worst-case bounds are
   ≈ $3.20–3.36, and the expected spend is ≈ $1.30.
 - **Wall time:** diagnostic only (p95 vs 30 s).
+
+### Owner decisions (2026-11-24, /rune-implement phase 1)
+
+- 2026-11-24: owner decision — NumPy 2.5.5 on the Fedora host instead of the 2.5.4 recorded in
+  the screen's regression baseline
+  (`context/archive/2026-11-05-gpt-image-26-screen/evaluations/regression-baseline.md`) is
+  acceptable. Every other pinned dependency and the `package-lock.json` sha256 match; recorded in
+  `evaluations/regression-baseline.md` of this change. No plan text changes.
 
 ## GPT26 approvals
 

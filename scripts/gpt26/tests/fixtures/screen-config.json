@@ -1,0 +1,176 @@
+{
+  "name": "gpt26-screen-fixture",
+  "study": {
+    "change_dir": "context/changes/gpt26-screen-fixture",
+    "series": "scripts/gpt26/tests/fixtures/screen-series.json",
+    "viewer": "context/changes/gpt26-screen-fixture/references/compare-gpt26.html",
+    "private_root": "test-photos/private/gpt26",
+    "series_id": "gpt26-screen"
+  },
+  "kind": "gpt",
+  "vendor": "openai",
+  "endpoint": "https://api.openai.com/v1/images/edits",
+  "model": "gpt-image-2.6-sunburst",
+  "model_snapshot_observed": null,
+  "prompt": "Enhance this low-light photo: reduce noise and correct the exposure while keeping it a natural night scene. Preserve every detail exactly as it is: all text and lettering, faces, geometry and the colours of the light sources. Do not add, remove or change any content. Keep a dark night sky dark: do not turn a black sky blue and do not add clouds, stars or aurora bands that are not clearly visible in the original. Do not sharpen or reshape aurora. Preserve the original shape, colour and glow of neon lights. Do not reconstruct missing or ambiguous neon strokes or lettering.",
+  "quality": "high",
+  "output_format": "png",
+  "n": 1,
+  "request_fields": {
+    "complexity": "low",
+    "moderation": "auto"
+  },
+  "input": "common",
+  "size_rule": {
+    "description": "standard: ≤ 3,686,400 px (2560×1440, OpenAI's non-experimental limit), owner decision 2026-10-31",
+    "max_pixels": 3686400,
+    "min_pixels": 655360,
+    "max_edge": 3840,
+    "multiple": 16,
+    "max_aspect": 3.0,
+    "algorithm": "largest short edge (multiple of 16) whose aspect-rounded long edge fits; no cropping"
+  },
+  "validity": {
+    "format": "PNG",
+    "size": "exactly the requested size"
+  },
+  "retry": {
+    "max_retries": 1,
+    "backoff_s": [60],
+    "transient_http": [408, 429, 500, 502, 503, 504],
+    "timeout_s": 900,
+    "note": "owner decision 2026-10-31: at most one retry per logical slot (two attempts), transient technical failures only; urllib makes no hidden retries; owner decision 2026-11-02: HTTP 400 moderation_blocked is retried once with the identical input, prompt and parameters, within the same two-attempt limit and the cap; a second block, or a cap that leaves no room for the retry, fails the slot. A procedural change from Phase 3: a better gate completion cannot be attributed to the prompt alone.",
+    "retry_error_codes": ["moderation_blocked"]
+  },
+  "cost_bound": {
+    "basis": "No published GPT Image 2.5 token formula exists (OpenAI image-generation guide, read 2026-10-31: 'use the response's usage to measure token consumption'). Bound from the spike's measured usage (research.md § Empirical half): output 2,223 image tokens at 3.15 MP and 2,127 at 3.54 MP, i.e. ≤ 706 tokens/MP; bounded at 1,500 tokens/MP (> 2× the measured density). Input 1,452 and 1,504 image tokens for 12 MP and 17.7 MP inputs; bounded at 3,000. Prompt 71 text tokens; bounded at 200 at $10/M (above any listed text-input rate). Rates $30/M output image, $8/M input image (OpenAI pricing, read 2026-10-29). Plus $0.01 per call for billing rounding; the total is rounded up to the cent. A response whose usage exceeds the bound stops the runner.",
+    "output_image_tokens_per_megapixel": 1500,
+    "input_image_tokens": 3000,
+    "input_text_tokens": 200,
+    "usd_per_million_output_image_tokens": 30,
+    "usd_per_million_input_image_tokens": 8,
+    "usd_per_million_input_text_tokens": 10,
+    "rounding_usd": 0.01,
+    "rates_rechecked": "Numeric fields unchanged from phase5-gpt.json (fixture: the screen's registered bound)."
+  },
+  "implementation": {
+    "scripts/s19/inputs.py": "10c7610ccefee0ee19b1ff6847b15463152b879efd74a51205fc03d9e6f3b3bd"
+  },
+  "gate": {
+    "id": "gpt26-screen-fixture-v1",
+    "statement": "PASS iff all 6 slots are delivered, and no GPT side is significant/severe, and >= 4/6 pairs are at least a tie (GPT fidelity level <= Local's). Otherwise FAIL. An undelivered slot is never excluded or replaced, is recorded as 'nieoceniona' (not rated), and is reported as 'not delivered', not as a fidelity loss. Diagnostic ratings, quality and wall time never change the verdict. A PASS only opens a wider comparison on all eight tuning photos; it never leads to a deployment.",
+    "denominator": 6,
+    "expected_slots": [
+      {
+        "photo": "S17-03",
+        "slot": 1
+      },
+      {
+        "photo": "S17-03",
+        "slot": 2
+      },
+      {
+        "photo": "S17-04",
+        "slot": 1
+      },
+      {
+        "photo": "S17-04",
+        "slot": 2
+      },
+      {
+        "photo": "S17-07",
+        "slot": 1
+      },
+      {
+        "photo": "S17-07",
+        "slot": 2
+      }
+    ],
+    "max_attempts_per_slot": 2,
+    "fidelity_levels": ["none", "minor", "significant", "severe"],
+    "fidelity_blocking_levels": ["uncertain"],
+    "fidelity_evidence_required_levels": ["significant", "severe"],
+    "fidelity_disqualifying_levels": ["significant", "severe"],
+    "tie_rule": "a pair is at least a tie iff level(GPT) <= level(Local) in the order none < minor < significant < severe",
+    "min_tie_pairs": 4,
+    "cap_usd": 1.5,
+    "undelivered_fidelity": "nieoceniona",
+    "diagnostics": [
+      "quality preference (A-clear…B-clear)",
+      "fidelity ratings of delivered outputs when any slot is undelivered",
+      "wall time per call and p95 vs the 30 s guardrail"
+    ],
+    "pass_opens": "a wider comparison on all eight tuning photos; never a deployment",
+    "definitions": [
+      {
+        "term": "slot",
+        "decided_meaning": "One logical render (scene, slot 1 or 2), with **at most two attempts**. The retry after `moderation_blocked` (or a transient HTTP/timeout failure) uses identical input, prompt and parameters and must fit the $1.50 cap.",
+        "origin": "user (2026-11-05, 2026-11-16)",
+        "on_degenerate_data": "A second block, or a cap that leaves no room for the retry, makes the slot **undelivered**."
+      },
+      {
+        "term": "delivered output",
+        "decided_meaning": "A slot whose valid PNG (exact requested size) is in the ledger.",
+        "origin": "user",
+        "on_degenerate_data": "An invalid PNG or a technical failure counts as undelivered, not as a fidelity loss."
+      },
+      {
+        "term": "all 6 outputs (denominator)",
+        "decided_meaning": "Always 6. An undelivered slot is **never** excluded or replaced by an extra slot.",
+        "origin": "user (2026-11-16)",
+        "on_degenerate_data": "5 delivered + 1 blocked → denominator 6 → FAIL."
+      },
+      {
+        "term": "fidelity loss",
+        "decided_meaning": "The S-20 per-side level against the original: `none < minor < significant < severe`; `uncertain` blocks the gate until re-rated. `significant`/`severe` need a crop and a reason.",
+        "origin": "user (S-20 scale, 2026-11-05)",
+        "on_degenerate_data": "An undelivered slot's fidelity is recorded as **\"nieoceniona\"** (not rated), never as `severe`."
+      },
+      {
+        "term": "pair",
+        "decided_meaning": "One delivered GPT output vs real Local of the same scene. Two pairs per scene share the same Local file.",
+        "origin": "user",
+        "on_degenerate_data": "Two near-identical GPT slots on one scene remain two pairs."
+      },
+      {
+        "term": "at least a tie (fidelity)",
+        "decided_meaning": "In a pair, the GPT side's fidelity level ≤ Local's level (e.g. `minor`/`minor` passes, `minor`/`none` fails).",
+        "origin": "user (2026-11-16)",
+        "on_degenerate_data": "Both `none` → tie → passes."
+      },
+      {
+        "term": "majority of pairs",
+        "decided_meaning": "≥ 4 of 6 pairs at least a tie.",
+        "origin": "user (majority of 6)",
+        "on_degenerate_data": "3 of 6 → FAIL."
+      },
+      {
+        "term": "gate verdict",
+        "decided_meaning": "**PASS** iff all 6 slots are delivered, **and** no GPT side is `significant`/`severe`, **and** ≥ 4/6 pairs are at least a tie. Otherwise **FAIL**. Diagnostic ratings of the delivered outputs are recorded even on FAIL but never change the verdict. Quality and wall time are diagnostic only.",
+        "origin": "user",
+        "on_degenerate_data": "A FAIL from undelivered slots is reported as \"not delivered\", not as a fidelity loss."
+      },
+      {
+        "term": "real Local",
+        "decided_meaning": "The pinned Auto-ON downloads in `scripts/s20/configs/local-baselines.json`, byte-identical.",
+        "origin": "product (S-19/S-20 practice)",
+        "on_degenerate_data": "A hash mismatch → refused, nothing built."
+      },
+      {
+        "term": "comparison scale",
+        "decided_meaning": "The GPT output's exact size. Original and Local are downscaled to it (Lanczos), and crops are in that space.",
+        "origin": "user (2026-11-16)",
+        "on_degenerate_data": "GPT and Local aspect differ by multiple-of-16 rounding → resize to exact GPT size; the < 1 % distortion is documented."
+      }
+    ]
+  },
+  "blind_protocol": {
+    "viewer": "scripts/gpt26/tests/fixtures/compare-gpt26.html, copied byte for byte from the archived screen viewer; the tests place it at study.viewer",
+    "comparison_scale": "the GPT output's exact size; original and Local are downscaled to it (Lanczos); crops are in that space",
+    "real_local": "the pinned Auto-ON downloads in scripts/s20/configs/local-baselines.json, byte-identical",
+    "two_pass_rating": "Rate in two passes, one slot per scene per pass. The viewer reveals pass 2 only after all pass-1 answers have been saved and locked, and prevents revisiting/changing pass 1 after that transition. Export the locked first-pass checkpoint privately, then one combined final export for the gate.",
+    "repeated_local_recognition_risk": "Each scene's two pairs share the same Local file, so its two resized copies are pixel-identical. Independent per-pair order and A/B draws do not hide that repetition; a rater may recognise the repeated Local side. The two-pass procedure reduces immediate comparison but cannot eliminate recognition or prove compliance. Recorded before spend; restated in the verdict.",
+    "owner_commitment": "The owner does not open outputs or reveal the key before the GPT26-SEAL commit, and does not inspect the key or cross-pair files/hashes while rating."
+  },
+  "decided": "Test fixture of the screen's six-slot shape (plan gpt-image-26-wider Phase 1 §3): gpt26-low.json with a study block and gate.cap_usd, never used for a paid call."
+}

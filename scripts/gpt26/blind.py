@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
-"""GPT26 blind set builder (plan Phase 3, item 1).
+"""GPT26 blind set builder (screen plan Phase 3, item 1; study-driven since `gpt-image-26-wider`).
 
-  python3 scripts/gpt26/blind.py --set <set_id>
+  python3 scripts/gpt26/blind.py --config <config> --set <set_id>
 
-Builds the sealed blind set of the screen from the complete, reconciled run record and writes
-`test-photos/private/gpt26/<set_id>/`:
+Builds the sealed blind set of the config's study (`study.py`) from the complete, reconciled run
+record and writes `<study.private_root>/<set_id>/`:
 
   - one RGB PNG per rater-facing image, named only by item id and side: `<item>-original.png`,
     `<item>-A.png`, `<item>-B.png`. One side is the delivered GPT output at its exact size, the
     other real Local (`scripts/s20/configs/local-baselines.json`) resized to that size with
     Lanczos; the original is resized the same way (plan § Definitions, comparison scale);
-  - `manifest.js` (`window.S20_SET = …`), the S-20 viewer schema plus `passes`, which
-    `context/changes/gpt-image-26-screen/references/compare-gpt26.html?set=<set_id>` loads;
+  - `manifest.js` (`window.S20_SET = …`), the S-20 viewer schema plus `passes`, which the
+    study's viewer (`<study.viewer>?set=<set_id>`) loads;
   - the sealed key `.key-do-not-open.json` and verbatim frozen copies of the ledger and the
     run-state sidecar, whose sha256 the key binds.
 
-It then writes `context/changes/gpt-image-26-screen/evaluations/gate-sealed.md` exactly once,
+It then writes `<study.change_dir>/evaluations/gate-sealed.md` exactly once,
 with its one `GPT26-SEAL` line and the owner's commitment, and prints it. The owner commits that
 file before opening any output.
 
 Before anything is written the record must reconcile (`state.reconcile`) against the registration
 and rule identities of THIS checkout, never the sidecar's own bindings (impl review phase 2,
-F2), with all six slots resolved and no inconsistency. Every source is hash-checked: the GPT
+F2), with every registered slot resolved and no inconsistency. Every source is hash-checked: the GPT
 output against its ledger row, the original against the series input hash, Local against
 `local-baselines.json`. Undelivered slots are left out of the set and listed in the key. With
 zero delivered slots the set is an empty manifest plus key and seal, and no viewer opens.
@@ -36,7 +36,7 @@ with at most one slot of each scene per pass; pair order and sides are drawn ind
 recognition risk is recorded, not hidden.
 
 One CLI boundary: a refusal prints `set: <reason class>` with a fixed way out and exits 1, with no
-traceback, path or arm name; the detail goes to a private log under `test-photos/private/gpt26/logs/`.
+traceback, path or arm name; the detail goes to a private log under `<study.private_root>/logs/`.
 A failed build leaves no set directory and no seal.
 
 Exit status: 0 built; 1 BLOCKED; 2 usage.
@@ -63,6 +63,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import run  # noqa: E402
 import state  # noqa: E402
+import study as study_mod  # noqa: E402
 
 # scripts/s20/evidence.py (file-history checks) puts scripts/s20 first on sys.path when imported;
 # that directory also holds a blind.py and a gate.py, so the path is restored right after.
@@ -77,10 +78,6 @@ ROOT = run.ROOT
 runner, protocol, Refused = run.runner, run.protocol, run.Refused
 
 SET_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
-EVAL = "context/changes/gpt-image-26-screen/evaluations"
-SEAL_REL = f"{EVAL}/gate-sealed.md"
-RATINGS_REL = f"{EVAL}/ratings.json"
-VIEWER_REL = "context/changes/gpt-image-26-screen/references/compare-gpt26.html"
 BASELINES = "scripts/s20/configs/local-baselines.json"
 KEY_NAME = ".key-do-not-open.json"
 LEDGER_COPY = ".ledger-do-not-open.jsonl"
@@ -105,10 +102,12 @@ WAY_OUT = {
     "usage": "run with --set <set_id> matching " + SET_ID.pattern,
     "set exists": "pick a new --set: a set_id is never reused",
     "seal exists": "a seal is write-once: never rebuild a sealed set; a new set needs a new change",
-    "run not resolved": "finish the run first (python3 scripts/gpt26/run.py --resume --cap <cap>); every slot "
-                        "must be delivered or terminally undelivered",
-    "run record blocked": "the run record does not reconcile: run python3 scripts/gpt26/run.py --dry-run --cap "
-                          "<cap> and resolve every BLOCKED line",
+    "study invalid": "fix the config's study block; python3 scripts/gpt26/check_series.py --config <config> names "
+                     "the field",
+    "run not resolved": "finish the run first (python3 scripts/gpt26/run.py --config <config> --resume --cap "
+                        "<cap>); every slot must be delivered or terminally undelivered",
+    "run record blocked": "the run record does not reconcile: run python3 scripts/gpt26/run.py --config <config> "
+                          "--dry-run --cap <cap> and resolve every BLOCKED line",
     "rules changed": "commit or restore the registration and rule files; they must equal the run's pinned identities",
     "approval invalid": "change.md must hold exactly one approved GPT26-SPEND line",
     "missing source": "restore the named slot's source files (output, prepared input, Local download)",
@@ -167,15 +166,15 @@ def resolve(root: Path, recorded: str) -> Path:
 # ---------------------------------------------------------------- registration and record
 
 
-def approved_cap(root: Path) -> float:
+def approved_cap(root: Path, study: study_mod.Study) -> float:
     """The owner's approved cap: the one GPT26-SPEND line, validated by the runner's own parser."""
     try:
-        text = (root / run.CHANGE_MD).read_text()
+        text = (root / study.change_md).read_text()
     except OSError as e:
-        raise Blocked("approval invalid", f"cannot read {run.CHANGE_MD}: {e}")
+        raise Blocked("approval invalid", f"cannot read {study.change_md}: {e}")
     caps = [m.group(1) for m in map(run.SPEND_LINE.match, text.splitlines()) if m]
     if len(caps) != 1:
-        raise Blocked("approval invalid", f"{len(caps)} GPT26-SPEND lines in {run.CHANGE_MD}")
+        raise Blocked("approval invalid", f"{len(caps)} GPT26-SPEND lines in {study.change_md}")
     try:
         run.spend_approval(text, float(caps[0]))
     except Refused as e:
@@ -196,30 +195,30 @@ def parse_ledger(raw: bytes) -> list[dict]:
     return rows
 
 
-def expected_bindings(root: Path) -> dict:
+def expected_bindings(root: Path, study: study_mod.Study) -> dict:
     """The registration and rule identities of this checkout (never the sidecar's own)."""
     try:
-        return run.check_registration(root, include_approval=False)
+        return run.check_registration(root, study, include_approval=False)
     except Refused as e:
         raise Blocked("rules changed", str(e))
 
 
-def reconciled(paths: run.Paths, ledger_raw: bytes, sidecar_raw: bytes | None) -> tuple[dict, str, dict,
-                                                                                        state.RunState, dict]:
+def reconciled(paths: run.Paths, study: study_mod.Study, ledger_raw: bytes,
+               sidecar_raw: bytes | None) -> tuple[dict, str, dict, state.RunState, dict]:
     """(config, config_sha, series, state, bindings) for a COMPLETE record, or Blocked."""
     try:
-        config, config_sha, series = run.load_registration(paths.root)
+        config, config_sha, series = run.load_registration(paths.root, study)
     except Refused as e:
         raise Blocked("rules changed", str(e))
     if sidecar_raw is None:
-        raise Blocked("run not resolved", "no run-state sidecar: the screen was never run")
+        raise Blocked("run not resolved", "no run-state sidecar: the study was never run")
     try:
         sidecar = json.loads(sidecar_raw.decode("utf-8"))
     except ValueError as e:
         raise Blocked("run record blocked", f"the run-state sidecar is not JSON ({e})")
-    bindings = expected_bindings(paths.root)
+    bindings = expected_bindings(paths.root, study)
     st = state.reconcile(series, config, config_sha, parse_ledger(ledger_raw), sidecar, root=paths.root,
-                         expected_bindings=bindings)
+                         study=study, expected_bindings=bindings)
     if st.errors:
         raise Blocked("run record blocked", "; ".join(st.errors))
     if not st.complete:
@@ -386,11 +385,11 @@ def sources_for(slot: state.Slot, spec: dict, paths: run.Paths, ctx, baselines: 
     return {"gpt": gpt, "original": original, "local": local}
 
 
-def seal_text(set_id: str, digest: str, key_sha: str, delivered: int) -> str:
-    viewer = (f"`{VIEWER_REL}?set={set_id}`" if delivered else
+def seal_text(set_id: str, digest: str, key_sha: str, delivered: int, study: study_mod.Study) -> str:
+    viewer = (f"`{study.viewer}?set={set_id}`" if delivered else
               "no viewer: zero slots were delivered, so the gate computes FAIL from terminal evidence alone "
-              f"(`python3 scripts/gpt26/gate.py --set {set_id}`)")
-    return f"""# GPT-Image-2.6 screen — gate seal
+              f"(`python3 scripts/gpt26/gate.py --config {study.config} --set {set_id}`)")
+    return f"""# GPT26 study `{study.series_id}` — gate seal
 
 Commit this file **before** opening any output (plan § Critical Implementation Details, order
 step 4). It is write-once: the gate requires exactly one commit touching it, strictly before every
@@ -430,7 +429,7 @@ def _remove_seal(path: Path) -> None:
     os.unlink(path)
 
 
-def publish(tmp: Path, final: Path, seal_path: Path, text: str) -> None:
+def publish(tmp: Path, final: Path, seal_path: Path, text: str, seal_rel: str) -> None:
     """Seal first, then the set. A failure undoes only what this call created, so a failed
     publication leaves neither the set nor a seal and the same --set can be built again; the
     redrawn mapping replaces one nobody saw. A seal file this call did not create is never
@@ -441,9 +440,9 @@ def publish(tmp: Path, final: Path, seal_path: Path, text: str) -> None:
     try:
         fd = _open_seal(seal_path)
     except FileExistsError:
-        raise Blocked("seal exists", f"{SEAL_REL} appeared during the build; nothing was published")
+        raise Blocked("seal exists", f"{seal_rel} appeared during the build; nothing was published")
     except OSError as e:
-        raise Blocked("publication failed", f"cannot create {SEAL_REL}: {e}; nothing was published")
+        raise Blocked("publication failed", f"cannot create {seal_rel}: {e}; nothing was published")
     st = os.fstat(fd)
     mine = (st.st_dev, st.st_ino)
     written = False
@@ -464,41 +463,41 @@ def publish(tmp: Path, final: Path, seal_path: Path, text: str) -> None:
         except FileNotFoundError:
             now = None
         except OSError as stat_error:
-            raise Blocked("publication incomplete", f"cannot inspect {SEAL_REL} after {e!r}: {stat_error}") from e
+            raise Blocked("publication incomplete", f"cannot inspect {seal_rel} after {e!r}: {stat_error}") from e
         if now is not None and (now.st_dev, now.st_ino) != mine:
             raise Blocked("publication incomplete",
-                          f"{SEAL_REL} no longer holds the file this build created after {e!r}; left untouched") from e
+                          f"{seal_rel} no longer holds the file this build created after {e!r}; left untouched") from e
         if now is not None:
             try:
                 _remove_seal(seal_path)
             except OSError as rm_error:
                 raise Blocked("publication incomplete",
-                              f"cannot remove the {SEAL_REL} this build created after {e!r}: {rm_error}") from e
+                              f"cannot remove the {seal_rel} this build created after {e!r}: {rm_error}") from e
         if isinstance(e, (Blocked, KeyboardInterrupt)) or not isinstance(e, Exception):
             raise
         raise Blocked("publication failed", f"{e!r}; the seal and the set were rolled back") from e
 
 
-def build(set_id: str, paths: run.Paths | None = None) -> dict:
-    paths = paths or run.default_paths()
+def build(set_id: str, study: study_mod.Study, paths: run.Paths | None = None) -> dict:
+    paths = paths or run.study_paths(run.ROOT, study)
     root = paths.root
     if not SET_ID.fullmatch(set_id):
         raise Blocked("usage", f"set id {set_id!r} must match {SET_ID.pattern}")
     final = paths.private / set_id
     if os.path.lexists(final):
         raise Blocked("set exists", f"{final} exists: a set_id is never reused")
-    seal_path = root / SEAL_REL
-    if os.path.lexists(seal_path) or evidence.present([SEAL_REL], root):
-        raise Blocked("seal exists", f"{SEAL_REL} exists on disk or in the index")
-    cap = approved_cap(root)
-    screen_ctx = runner.RunContext(ledger_dir=paths.private, output_dir=paths.private, input_dir=paths.inputs)
-    ledger_path = runner.ledger_path(screen_ctx)
+    seal_path = root / study.seal_rel
+    if os.path.lexists(seal_path) or evidence.present([study.seal_rel], root):
+        raise Blocked("seal exists", f"{study.seal_rel} exists on disk or in the index")
+    cap = approved_cap(root, study)
+    study_ctx = runner.RunContext(ledger_dir=paths.private, output_dir=paths.private, input_dir=paths.inputs)
+    ledger_path = runner.ledger_path(study_ctx)
     try:
         ledger_raw = ledger_path.read_bytes() if ledger_path.exists() else b""
         sidecar_raw = paths.sidecar.read_bytes() if paths.sidecar.exists() else None
     except OSError as e:
         raise Blocked("run record blocked", f"cannot read the run record: {e}")
-    config, config_sha, series, st, bindings = reconciled(paths, ledger_raw, sidecar_raw)
+    config, config_sha, series, st, bindings = reconciled(paths, study, ledger_raw, sidecar_raw)
     require_clean(root, [BASELINES], "the blind set")
     specs = {(s["photo"], s["slot"]): s for s in series["slots"]}
     delivered = [st.slots[(s["photo"], s["slot"])] for s in series["slots"]
@@ -507,7 +506,7 @@ def build(set_id: str, paths: run.Paths | None = None) -> dict:
     found, srcs = [], {}
     for slot in delivered:
         try:
-            srcs[slot.label] = sources_for(slot, specs[(slot.photo, slot.slot)], paths, screen_ctx, baselines)
+            srcs[slot.label] = sources_for(slot, specs[(slot.photo, slot.slot)], paths, study_ctx, baselines)
         except Blocked as b:
             found.append(b)
     if found:
@@ -580,8 +579,8 @@ def build(set_id: str, paths: run.Paths | None = None) -> dict:
         key_sha = protocol.sha256_file(tmp / KEY_NAME)
         for p in tmp.iterdir():  # one timestamp for every file: no file's mtime says when it was drawn
             os.utime(p, ns=(FILE_TIME_NS, FILE_TIME_NS))
-        text = seal_text(set_id, digest, key_sha, len(items))
-        publish(tmp, final, seal_path, text)
+        text = seal_text(set_id, digest, key_sha, len(items), study)
+        publish(tmp, final, seal_path, text, study.seal_rel)
     except BaseException:
         shutil.rmtree(tmp, ignore_errors=True)
         raise
@@ -638,12 +637,9 @@ def boundary(tool: str, fn, private: Path, ways: dict, *, trusted: set[str] = fr
         return 1, None
 
 
-def slot_labels(config: dict | None = None) -> set[str]:
-    try:
-        config = config or json.loads((ROOT / run.CONFIG).read_text())
-        return {f"{s['photo']}/{s['slot']}" for s in config["gate"]["expected_slots"]}
-    except (OSError, ValueError, KeyError, TypeError):
-        return set()
+def slot_labels(study: study_mod.Study) -> set[str]:
+    """The registered slot labels: safe to print at the boundary."""
+    return set(study.labels)
 
 
 def set_id_arg(value: str) -> str:
@@ -652,25 +648,41 @@ def set_id_arg(value: str) -> str:
     return value
 
 
-def main(argv: list[str] | None = None, *, paths: run.Paths | None = None) -> int:
+def load_study(root: Path, config_arg: str) -> study_mod.Study | None:
+    """The validated study, or None after printing the sanitized refusal (no private root to log to)."""
+    try:
+        return study_mod.load(root, config_arg)[0]
+    except study_mod.StudyError:
+        print("set: study invalid")
+        print(f"BLOCKED. Nothing was written. Way out:\n  study invalid: {WAY_OUT['study invalid']}.")
+        return None
+
+
+def main(argv: list[str] | None = None, *, root: Path | None = None) -> int:
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description="GPT26 blind set builder")
+    ap.add_argument("--config", required=True, help="the study's config (repo-relative or inside the checkout)")
     ap.add_argument("--set", required=True, dest="set_id", type=set_id_arg)
     args = ap.parse_args(argv)
-    paths = paths or run.default_paths()
-    code, out = boundary("blind", lambda: build(args.set_id, paths), paths.private, WAY_OUT,
-                         trusted=slot_labels())
+    root = root or ROOT
+    study = load_study(root, args.config)
+    if study is None:
+        return 1
+    paths = run.study_paths(root, study)
+    code, out = boundary("blind", lambda: build(args.set_id, study, paths), paths.private, WAY_OUT,
+                         trusted=slot_labels(study))
     if code:
         return code
     print(f"✓ gate set {out['set_id']}: {out['items']} pair(s) in {len(out['passes'])} pass(es) "
           f"{out['passes']}; undelivered: {', '.join(out['undelivered']) or 'none'}\n"
           f"  set_digest  {out['set_digest']}\n"
           f"  key sha256  {out['key_sha256']}\n"
-          f"Wrote {SEAL_REL}. Commit it, and only then "
-          + (f"open {VIEWER_REL}?set={out['set_id']}" if out["items"] else
-             f"run python3 scripts/gpt26/gate.py --set {out['set_id']} (zero delivered: no viewer, no ratings)")
+          f"Wrote {study.seal_rel}. Commit it, and only then "
+          + (f"open {study.viewer}?set={out['set_id']}" if out["items"] else
+             f"run python3 scripts/gpt26/gate.py --config {study.config} --set {out['set_id']} (zero delivered: "
+             "no viewer, no ratings)")
           + ".\n--- START seal file ---\n" + out["seal"] + "--- END seal file ---")
     return 0
 

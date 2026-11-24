@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 """GPT26 run-state reconciliation: offline, read-only, shared by runner, builder and gate.
 
-Plan Phase 2, item 3. The expected set is the committed six-slot series, never the number of
-images, ratings or key entries (lesson "A guard metric that only exists on success cannot
-detect failure"). Every reserve/result row of the private ledger and every terminal record of
-the versioned sidecar is matched to one expected slot and attempt; anything else is evidence
-the record cannot explain, and the state is BLOCKED until it is resolved.
+The expected set is the committed series of the study (`study.py`), never the number of images,
+ratings or key entries (lesson "A guard metric that only exists on success cannot detect
+failure"). Every reserve/result row of the private ledger and every terminal record of the
+versioned sidecar is matched to one expected slot and attempt; anything else is evidence the
+record cannot explain, and the state is BLOCKED until it is resolved.
 
 Spend is conservative: a known actual cost where a result reports one, the full reservation
 otherwise (errors, lost responses, crashes, attempts still in flight). A result above its
 bound, flagged or recomputed, is a persistent budget/protocol breach: no further send is
 admitted, also after a resume or a valid PNG.
+
+The run is bound to content, never to a branch commit (lesson "Never bind sealed or frozen
+evidence to a branch commit SHA"): the sidecar pins the Git blob of every registration and rule
+file of the study, and those blobs must equal the executing checkout's. `head` and
+`registration_commit` are recorded as provenance only, so a rebase that keeps the file bytes
+keeps the run verifiable.
 
 This module never touches the network and never writes. The runner owns the locked durable
 reservations (`scripts/s19/run-candidate.py`) and the sidecar writes (`scripts/gpt26/run.py`).
@@ -26,28 +32,12 @@ import re
 import sys
 from pathlib import Path
 
+from study import Study
+
 PHASE = 26
 SIDECAR_VERSION = 1
 # Terminal reasons only the sidecar records; technical failures are S-19 `slot_terminal` rows.
 SIDECAR_REASONS = ("not_attempted_budget", "stopped_after_bound_breach")
-# Every runtime file whose bytes decide what the screen does, from the paid run to the verdict.
-# Pinned at the first reservation and required unchanged on resume, at build and at the gate
-# (plan § Critical Implementation Details): the GPT26 tools, the copied viewer, and the S-19 and
-# S-20 modules they import (`evidence.py` imports `trials.py`).
-RULE_FILES = (
-    "scripts/gpt26/run.py",
-    "scripts/gpt26/state.py",
-    "scripts/gpt26/check_series.py",
-    "scripts/gpt26/blind.py",
-    "scripts/gpt26/gate.py",
-    "context/changes/gpt-image-26-screen/references/compare-gpt26.html",
-    "scripts/s19/run-candidate.py",
-    "scripts/s19/protocol.py",
-    "scripts/s19/inputs.py",
-    "scripts/s20/evidence.py",
-    "scripts/s20/trials.py",
-)
-REGISTRATION_FILES = ("scripts/gpt26/configs/gpt26-low.json", "scripts/gpt26/series/screen.json")
 OK, INVALID = "ok", "invalid"
 
 
@@ -143,15 +133,18 @@ def valid_amount(value) -> bool:
 
 
 def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sidecar: dict | None,
-              *, root: Path, check_outputs: bool = True, expected_bindings: dict | None = None) -> RunState:
-    """The normalized six-slot state the ledger and sidecar support, with every inconsistency."""
+              *, root: Path, study: Study, check_outputs: bool = True,
+              expected_bindings: dict | None = None) -> RunState:
+    """The normalized state of the study's registered slots that the ledger and sidecar support,
+    with every inconsistency."""
     max_attempts = int(config["retry"]["max_retries"]) + 1
     codes = list(config["retry"].get("retry_error_codes", []))
     slots: dict[tuple[str, int], Slot] = {}
     specs: dict[tuple[str, int], dict] = {}
     st = RunState(slots=slots, max_attempts=max_attempts)
     err = st.errors.append
-    denominator = config.get("gate", {}).get("denominator", 6)
+    gate = config.get("gate") if isinstance(config.get("gate"), dict) else {}
+    denominator = gate.get("denominator")
     for s in series.get("slots", []):
         key = (s.get("photo"), s.get("slot"))
         if s.get("config_sha256") != config_sha:
@@ -192,7 +185,7 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
     def slot_of(row: dict, what: str) -> tuple[str, int] | None:
         key = (row.get("photo"), row.get("slot"))
         if key not in slots:
-            err(f"ledger {what} for {key[0]}/{key[1]} is not one of the six registered slots")
+            err(f"ledger {what} for {key[0]}/{key[1]} is not one of the registered slots")
             return None
         spec = specs[key]
         if row.get("config_sha256") != config_sha or row.get("input_sha256") != spec["input_sha256"]:
@@ -277,7 +270,7 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
         if not isinstance(sidecar, dict):
             err("run-state sidecar must be an object containing bindings — restore it before any call")
             sidecar = {}
-        binding_errors = check_bindings(sidecar.get("bindings"), expected_bindings)
+        binding_errors = check_bindings(sidecar.get("bindings"), expected_bindings, study.binding_files)
         if binding_errors:
             err("the registration or rules changed since this run was pinned, or its bindings are incomplete: "
                 + "; ".join(binding_errors) + " — restore the identical registration and rules")
@@ -288,7 +281,7 @@ def reconcile(series: dict, config: dict, config_sha: str, rows: list[dict], sid
         for t in sidecar.get("terminal", []):
             key = (t.get("photo"), t.get("slot"))
             if key not in slots:
-                err(f"sidecar terminal record for {key[0]}/{key[1]} is not one of the six registered slots")
+                err(f"sidecar terminal record for {key[0]}/{key[1]} is not one of the registered slots")
             elif key in side_terminal:
                 err(f"sidecar has two terminal records for {slots[key].label}")
             elif t.get("status") != "undelivered" or t.get("reason") not in SIDECAR_REASONS:
@@ -390,15 +383,17 @@ def admission_refusal(st: RunState, photo: str, slot: int) -> str | None:
     return None
 
 
-def check_bindings(recorded: dict | None, current: dict | None) -> list[str]:
-    """Require complete identities and compare pinned registration/rules with expected ones.
+def check_bindings(recorded: dict | None, current: dict | None, required) -> list[str]:
+    """Require complete identities and compare the pinned registration/rule blobs with expected ones.
 
-    The original HEAD is recorded, not required equal: later unrelated bookkeeping may advance
-    HEAD without changing the registration or executable rules. Callers supply expected identities
-    from the executing checkout; the offline core never derives them from the sidecar itself.
+    `required` is the study's registration and rule inventory (`Study.binding_files`). `head`
+    and `registration_commit` must be full commit hashes but are provenance only: a rebase or a
+    later bookkeeping commit rewrites them without changing a byte the run depends on, so only
+    the file blobs are compared. Callers supply expected identities from the executing checkout;
+    the offline core never derives them from the sidecar itself.
     """
     out = []
-    required = set((*REGISTRATION_FILES, *RULE_FILES))
+    required = set(required)
     for label, bindings in (("recorded bindings", recorded), ("expected bindings", current)):
         if not isinstance(bindings, dict):
             out.append(f"{label} are missing or not an object")
@@ -419,11 +414,8 @@ def check_bindings(recorded: dict | None, current: dict | None) -> list[str]:
         for path, blob in files.items():
             if not isinstance(blob, str) or not re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", blob):
                 out.append(f"{label}.files[{path!r}] is not a full Git blob hash")
-    if out:
-        return out
-    if recorded["registration_commit"] != current["registration_commit"]:
-        out.append(f"bindings registration commit {recorded['registration_commit'][:12]}… was pinned, the "
-                   f"checkout registers {current['registration_commit'][:12]}…")
+    if out or not required:
+        return out or ["no registration or rule files are required: the study inventory is empty"]
     rec, cur = recorded["files"], current["files"]
     for path in sorted(required):
         if rec[path] != cur[path]:

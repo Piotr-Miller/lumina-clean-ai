@@ -687,9 +687,9 @@ tag `gpt26-screen-evidence`.
 
 #### Automated
 
-- [ ] 1.1 GPT26 suite passes on Fedora
-- [ ] 1.2 No tool path names the screen's change folder
-- [ ] 1.3 S-19 regression suite still passes at the candidate
+- [x] 1.1 GPT26 suite passes on Fedora
+- [x] 1.2 No tool path names the screen's change folder
+- [x] 1.3 S-19 regression suite still passes at the candidate
 
 #### Manual
 
