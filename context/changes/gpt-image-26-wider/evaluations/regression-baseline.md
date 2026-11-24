@@ -39,3 +39,12 @@ run as the phase gate before the phase commit)
   (`git diff --quiet HEAD -- scripts/s19 scripts/s20` exit 0), and the S-19 suite reads no
   `scripts/gpt26/` file (the only mentions in `scripts/s19/` are two comments in
   `run-candidate.py`). The gate run therefore covers the same S-19 bytes as the candidate commit.
+
+### At the candidate commit
+
+`python3 scripts/gpt26/regression.py --suite s19 --rev HEAD` (HEAD = `3bce55e3a3f5cebae0849285802f9c0cb79e2e60`,
+`feat(gpt-image-26-wider): Study-driven GPT26 tooling (p1)`), run right after the phase commit.
+
+- Result: `Ran 85 tests`, `OK`; exit **0**, in the same environment and with the same lockfile.
+- That SHA is a branch commit and will be rewritten at merge (lesson 279); the result is tied to
+  the bytes it tested, which the line above shows to be unchanged for S-19.

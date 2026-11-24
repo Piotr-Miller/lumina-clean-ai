@@ -25,6 +25,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -489,8 +490,6 @@ class SealTest(unittest.TestCase):
         return gate.read_seal(Path(self.tmp), STUDY.seal_rel)
 
     def setUp(self):
-        import tempfile
-
         d = tempfile.TemporaryDirectory()
         self.addCleanup(d.cleanup)
         self.tmp = d.name
@@ -507,6 +506,42 @@ class SealTest(unittest.TestCase):
 
 
 # ---------------------------------------------------------------- pipeline: six delivered
+
+
+class ArtifactPathsTest(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        self.paths = blind.run.study_paths(self.root, STUDY)
+
+    def test_builder_refuses_an_aliased_evaluations_directory(self):
+        evaluations = self.root / STUDY.eval_dir
+        evaluations.parent.mkdir(parents=True)
+        sibling = self.root / "other-evaluations"
+        sibling.mkdir()
+        evaluations.symlink_to(sibling, target_is_directory=True)
+        with self.assertRaisesRegex(blind.Refused, "unsafe write path"):
+            blind.build("fixture", STUDY, self.paths)
+        self.assertEqual(list(sibling.iterdir()), [])
+        self.assertFalse(self.paths.private.exists())
+
+    def test_verdict_validates_both_destinations_before_writing(self):
+        markdown = self.root / STUDY.verdict_md
+        markdown.parent.mkdir(parents=True)
+        markdown.symlink_to("other-report.md")
+        with self.assertRaisesRegex(blind.Refused, "unsafe write path"):
+            gate.write_reports(self.root, STUDY, {})
+        self.assertFalse((self.root / STUDY.verdict_json).exists())
+        self.assertFalse(markdown.exists())
+
+    def test_diagnostics_refuse_an_aliased_logs_directory(self):
+        self.paths.private.mkdir(parents=True)
+        sibling = self.root / "other-logs"
+        sibling.mkdir()
+        (self.paths.private / "logs").symlink_to(sibling, target_is_directory=True)
+        self.assertIsNone(blind.log_detail(self.paths, "gate", "synthetic diagnostic"))
+        self.assertEqual(list(sibling.iterdir()), [])
 
 
 class SixTest(unittest.TestCase):

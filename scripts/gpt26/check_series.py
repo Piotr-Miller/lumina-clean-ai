@@ -40,8 +40,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import study as study_mod  # noqa: E402
 
-PHASE5_CONFIG = "scripts/s19/configs/phase5-gpt.json"
-PHASE5_SERIES = "scripts/s19/series/phase5.json"
+PHASE5_CONFIG = study_mod.PHASE5_CONFIG
+PHASE5_SERIES = study_mod.PHASE5_SERIES
 
 REQUEST_FIELDS = {"complexity": "low", "moderation": "auto"}
 MODEL = "gpt-image-2.6-sunburst"
@@ -89,11 +89,10 @@ class Unreadable(Exception):
 
 
 def read_json(rel: str, root: Path = ROOT) -> tuple[bytes, object]:
-    path = root / rel
     try:
-        raw = path.read_bytes()
-    except OSError as e:
-        raise Unreadable(f"{rel}: cannot read ({e.strerror or e}) — restore the file from Git") from e
+        raw = study_mod.read_regular(root, rel)
+    except (OSError, study_mod.StudyError) as e:
+        raise Unreadable(f"{rel}: cannot read ({e}) — restore the file from Git") from e
     try:
         return raw, json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, ValueError) as e:
@@ -159,12 +158,12 @@ def finite_positive(value) -> bool:
     return type(value) in (int, float) and math.isfinite(value) and value > 0
 
 
-def check_viewer(root: Path, study: study_mod.Study) -> list[str]:
+def check_viewer(root: Path, study: study_mod.Study, raw: bytes | None = None) -> list[str]:
     """The registered viewer loads its sets from `study.private_root` (plan Phase 3 §1)."""
     try:
-        text = (root / study.viewer).read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError) as e:
-        return [f"{study.viewer}: cannot read the study's viewer ({e.__class__.__name__}) — restore it"]
+        text = (study_mod.read_regular(root, study.viewer) if raw is None else raw).decode("utf-8")
+    except (OSError, UnicodeDecodeError, study_mod.StudyError) as e:
+        return [f"{study.viewer}: cannot read the study's viewer ({e}) — restore it"]
     bases = VIEWER_BASE.findall(text)
     if len(bases) != 1:
         return [f"{study.viewer}: {len(bases)} manifest base lines (`const base = \"…\" + setId + \"/\";`), "
@@ -176,11 +175,15 @@ def check_viewer(root: Path, study: study_mod.Study) -> list[str]:
     return []
 
 
-def check_config(config: object, phase5: dict, study: study_mod.Study, root: Path = ROOT) -> list[str]:
+def check_config(config: object, phase5: dict, study: study_mod.Study, root: Path = ROOT, *,
+                 viewer_raw: bytes | None = None) -> list[str]:
     CONFIG = study.config
     errs: list[str] = []
     if not isinstance(config, dict):
         return [f"{CONFIG}: top level is not an object — regenerate the config"]
+    name = config.get("name")
+    if not isinstance(name, str) or not study_mod.PATH_COMPONENT.fullmatch(name):
+        errs.append(f"{CONFIG}: name must be a single output directory name using letters, digits, '_' or '-'")
     if config.get("kind") != "gpt":
         errs.append(f"{CONFIG}: kind is {config.get('kind')!r}, expected 'gpt'")
     if config.get("model") != MODEL:
@@ -238,7 +241,7 @@ def check_config(config: object, phase5: dict, study: study_mod.Study, root: Pat
         for key in BLIND_FIELDS:
             if not isinstance(blind.get(key), str) or not blind.get(key).strip():
                 errs.append(f"{CONFIG}: blind_protocol.{key} is missing or empty")
-    return errs + check_viewer(root, study)
+    return errs + check_viewer(root, study, viewer_raw)
 
 
 def check_series(series: object, config: dict, config_sha: str, phase5_series: dict,

@@ -100,6 +100,18 @@ class Paths:
         """The real Local downloads, next to the prepared inputs (`private/s19/local/`)."""
         return self.inputs.parent / "local"
 
+    def private_write(self, path: Path) -> Path:
+        if not path.is_relative_to(self.private):
+            raise Refused(f"{path} is outside the study's private root")
+        return write_path(self.root, path)
+
+
+def write_path(root: Path, path: Path) -> Path:
+    try:
+        return study_mod.unaliased_path(root, path)
+    except (study_mod.StudyError, OSError, RuntimeError) as e:
+        raise Refused(f"unsafe write path: {e}") from e
+
 
 def load_study(root: Path, config_arg) -> study_mod.Study:
     try:
@@ -120,7 +132,8 @@ def study_paths(root: Path, study: study_mod.Study) -> Paths:
 
 def git(root: Path, *args: str) -> tuple[int, str]:
     env = {k: v for k, v in os.environ.items() if k not in GIT_ENV}
-    r = subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=True, env=env)
+    r = subprocess.run(["git", "-C", str(root), "--literal-pathspecs", *args],
+                       capture_output=True, encoding="utf-8", env=env)
     return r.returncode, (r.stdout if r.returncode == 0 else r.stderr).strip()
 
 
@@ -131,31 +144,77 @@ def git_root(start: Path) -> Path:
     return Path(out).resolve()
 
 
-def check_registration(root: Path, study: study_mod.Study, *, include_approval: bool = True) -> dict:
-    """Identities of the study's registration and rule files, or Refused naming each file and its state."""
+def checked_files(root: Path, paths: tuple[str, ...], *,
+                  consumed: dict[str, bytes] | None = None) -> tuple[str, dict[str, str], dict[str, bytes]]:
+    """Check regular, unaliased files against one Git revision and return the verified bytes."""
     top = git_root(root)
     if top != root.resolve():
         raise Refused(f"this code runs from {root}, but its Git checkout is {top}: run it from that checkout")
+    rc, head = git(root, "rev-parse", "HEAD")
+    if rc != 0:
+        raise Refused(f"cannot identify the committed registration: {head}")
+    rc, tree = git(root, "ls-tree", "-rz", "--full-tree", head, "--", *paths)
+    if rc != 0:
+        raise Refused(f"cannot inspect committed files: {tree}")
+    entries = {name: info.split() for info, name in
+               (entry.split("\t", 1) for entry in tree.split("\0") if entry)}
+    rc, changes = git(root, "status", "--porcelain=v1", "--untracked-files=all", "--", *paths)
+    if rc != 0:
+        raise Refused(f"cannot check registration cleanliness: {changes}")
+    files, data = {}, {}
     problems = []
-    for rel in (*study.binding_files, *((study.change_md,) if include_approval else ())):
-        if git(root, "ls-files", "--error-unmatch", "--", rel)[0] != 0:
-            problems.append(f"{rel}: untracked")
+    for rel in paths:
+        if rel not in entries:
+            staged = git(root, "ls-files", "--error-unmatch", "--", rel)[0] == 0
+            problems.append(f"{rel}: {'staged but never committed' if staged else 'untracked'}")
             continue
-        if git(root, "cat-file", "-e", f"HEAD:{rel}")[0] != 0:
-            problems.append(f"{rel}: staged but never committed")
+        mode, kind, oid = entries[rel]
+        if mode not in ("100644", "100755") or kind != "blob":
+            problems.append(f"{rel}: Git must record a regular file, without a symlink")
             continue
-        rc, out = git(root, "status", "--porcelain=v1", "--untracked-files=all", "--", rel)
-        if rc != 0 or out:
-            problems.append(f"{rel}: {'uncommitted changes (' + out[:2].strip() + ')' if rc == 0 else out}")
+        if changes:
+            rc, status = git(root, "status", "--porcelain=v1", "--untracked-files=all", "--", rel)
+            if rc != 0 or status:
+                problems.append(f"{rel}: uncommitted changes ({status})")
+                continue
+        try:
+            raw = study_mod.read_regular(root, rel)
+        except (study_mod.StudyError, OSError, RuntimeError) as e:
+            problems.append(f"{rel}: {e}")
+            continue
+        digest = hashlib.new("sha256" if len(oid) == 64 else "sha1")
+        digest.update(f"blob {len(raw)}\0".encode("ascii"))
+        digest.update(raw)
+        if digest.hexdigest() != oid:
+            problems.append(f"{rel}: uncommitted changes (file bytes differ from Git)")
+        elif consumed is not None and rel in consumed and consumed[rel] != raw:
+            problems.append(f"{rel}: changed while it was being read")
+        else:
+            files[rel], data[rel] = oid, raw
     if problems:
-        raise Refused("registration and rule files must be tracked, committed and clean before any reservation:\n    "
-                      + "\n    ".join(problems) + "\n  commit them (or restore them), then rerun — nothing reserved or sent")
-    files = {rel: git(root, "rev-parse", f"HEAD:{rel}")[1] for rel in study.binding_files}
-    rc, reg = git(root, "log", "-1", "--format=%H", "--", *study.registration_files)
-    return {"head": git(root, "rev-parse", "HEAD")[1], "registration_commit": reg if rc == 0 else None, "files": files}
+        raise Refused("expected tracked, committed, clean regular files:\n    " + "\n    ".join(problems))
+    return head, files, data
+
+
+def check_registration(root: Path, study: study_mod.Study, *, include_approval: bool = True,
+                       consumed: dict[str, bytes] | None = None) -> dict:
+    paths = (*study.binding_files, *((study.change_md,) if include_approval else ()))
+    head, files, _ = checked_files(root, paths, consumed=consumed)
+    rc, reg = git(root, "log", "-1", "--format=%H", head, "--", *study.registration_files)
+    if include_approval:
+        del files[study.change_md]
+    return {"head": head, "registration_commit": reg if rc == 0 else None, "files": files}
 
 
 # ---------------------------------------------------------------- approval
+
+
+def approval_text(root: Path, study: study_mod.Study) -> str:
+    _, _, data = checked_files(root, (study.change_md,))
+    try:
+        return data[study.change_md].decode("utf-8")
+    except UnicodeDecodeError as e:
+        raise Refused(f"{study.change_md}: approval file is not UTF-8") from e
 
 
 def spend_approval(text: str, cap: float) -> str:
@@ -204,26 +263,34 @@ def spend_approval(text: str, cap: float) -> str:
 # ---------------------------------------------------------------- registration, sidecar, context
 
 
-def load_registration(root: Path, study: study_mod.Study) -> tuple[dict, str, dict]:
-    def read(rel):
+def load_registration(root: Path, study: study_mod.Study, *,
+                      consumed: dict[str, bytes], verified: dict[str, bytes] | None = None) -> tuple[dict, str, dict]:
+    def read(rel: str) -> bytes:
         try:
-            raw = (root / rel).read_bytes()
-            return raw, json.loads(raw.decode("utf-8"))
-        except (OSError, UnicodeDecodeError, ValueError) as e:
+            raw = study_mod.read_regular(root, rel) if verified is None else verified[rel]
+        except (OSError, study_mod.StudyError, RuntimeError) as e:
+            raise Refused(f"{rel}: cannot read ({e}) — restore it from Git") from e
+        consumed[rel] = raw
+        return raw
+
+    def read_json(rel: str):
+        try:
+            return json.loads(read(rel).decode("utf-8"))
+        except ValueError as e:
             raise Refused(f"{rel}: cannot read ({e}) — restore it from Git") from e
 
-    config_raw, config = read(study.config)
+    config = read_json(study.config)
     try:
         if study_mod.from_config(root, study.config, config) != study:
             raise Refused(f"{study.config} changed while it was being read: rerun")
     except study_mod.StudyError as e:
         raise Refused(f"the study is not valid: {e}") from e
-    _, series = read(study.series)
-    _, phase5 = read(check_series.PHASE5_CONFIG)
-    _, phase5_series = read(check_series.PHASE5_SERIES)
-    config_sha = hashlib.sha256(config_raw).hexdigest()
+    series = read_json(study.series)
+    phase5 = read_json(check_series.PHASE5_CONFIG)
+    phase5_series = read_json(check_series.PHASE5_SERIES)
+    config_sha = hashlib.sha256(consumed[study.config]).hexdigest()
     calc = check_series.check_calculation_config(config, study.config)
-    errs = check_series.check_config(config, phase5, study, root) + calc
+    errs = check_series.check_config(config, phase5, study, root, viewer_raw=read(study.viewer)) + calc
     if not calc:
         errs += check_series.check_series(series, config, config_sha, phase5_series, study)
     if errs:
@@ -235,7 +302,7 @@ def load_registration(root: Path, study: study_mod.Study) -> tuple[dict, str, di
 
 def read_sidecar(paths: Paths) -> dict | None:
     try:
-        return json.loads(paths.sidecar.read_text())
+        return json.loads(paths.private_write(paths.sidecar).read_text())
     except FileNotFoundError:
         return None
     except (OSError, ValueError) as e:
@@ -243,13 +310,14 @@ def read_sidecar(paths: Paths) -> dict | None:
 
 
 def write_sidecar(paths: Paths, data: dict) -> None:
-    paths.sidecar.parent.mkdir(parents=True, exist_ok=True)
-    tmp = paths.sidecar.with_suffix(".tmp")
+    sidecar = paths.private_write(paths.sidecar)
+    tmp = paths.private_write(sidecar.with_suffix(".tmp"))
+    sidecar.parent.mkdir(parents=True, exist_ok=True)
     with open(tmp, "w") as f:
         f.write(json.dumps(data, indent=2, sort_keys=True) + "\n")
         f.flush()
         os.fsync(f.fileno())
-    os.replace(tmp, paths.sidecar)
+    os.replace(tmp, sidecar)
 
 
 def now() -> str:
@@ -259,26 +327,40 @@ def now() -> str:
 class Session:
     """One run of a study: its registration, paths and S-19 context."""
 
-    def __init__(self, paths: Paths, study: study_mod.Study, cap: float):
+    def __init__(self, paths: Paths, study: study_mod.Study, cap: float, *,
+                 verified: dict[str, bytes] | None = None):
         self.paths, self.study, self.cap = paths, study, cap
-        self.config, self.config_sha, self.series = load_registration(paths.root, study)
+        self.consumed: dict[str, bytes] = {}
+        self.config, self.config_sha, self.series = load_registration(
+            paths.root, study, consumed=self.consumed, verified=verified)
         self.ctx = runner.RunContext(
             ledger_dir=paths.private, output_dir=paths.private, input_dir=paths.inputs,
-            approve=lambda _phase, c: spend_approval((paths.root / study.change_md).read_text(), c),
-            admission_check=self.admission_check, invalid_output_is_transient=False)
+            approve=lambda _phase, c: spend_approval(approval_text(paths.root, study), c),
+            admission_check=self.admission_check, invalid_output_is_transient=False, write_guard=paths.private_write)
 
     def reconcile(self, rows: list[dict] | None = None, sidecar: dict | None = None,
-                  use_disk_sidecar: bool = True) -> state.RunState:
+                  use_disk_sidecar: bool = True, *, for_report: bool = False) -> state.RunState:
         rows = runner.read_ledger(self.ctx) if rows is None else rows
         if sidecar is None and use_disk_sidecar:
             sidecar = read_sidecar(self.paths)
-        expected_bindings = (check_registration(self.paths.root, self.study, include_approval=False)
-                             if sidecar is not None else None)
-        return state.reconcile(self.series, self.config, self.config_sha, rows, sidecar, root=self.paths.root,
-                               study=self.study, expected_bindings=expected_bindings)
+        bindings, registration_error = None, None
+        if sidecar is not None or for_report:
+            try:
+                bindings = check_registration(self.paths.root, self.study, include_approval=False,
+                                              consumed=self.consumed)
+            except Refused as e:
+                if not for_report:
+                    raise
+                registration_error = " ".join(str(e).split())
+        st = state.reconcile(self.series, self.config, self.config_sha, rows, sidecar, root=self.paths.root,
+                             study=self.study, expected_bindings=bindings)
+        if registration_error:
+            st.errors.insert(0, "registration provenance could not be verified: " + registration_error)
+        return st
 
     def admission_check(self, rows: list[dict], reserve: dict) -> None:
         """Runs inside the ledger lock, on the rows the reservation would be appended to."""
+        self.ctx.approve(state.PHASE, self.cap)
         st = self.reconcile(rows)
         why = state.admission_refusal(st, reserve["photo"], reserve["slot"])
         if why:
@@ -301,6 +383,14 @@ class Session:
     def stop_after_breach(self, st: state.RunState) -> None:
         for s in st.pending():
             self.mark_terminal(s.photo, s.slot, "stopped_after_bound_breach")
+
+    def check_write_paths(self) -> None:
+        ledger = runner.ledger_path(self.ctx)
+        for path in (ledger, ledger.with_suffix(".lock"), ledger.parent / "locks",
+                     self.paths.sidecar, self.paths.sidecar.with_suffix(".tmp")):
+            self.paths.private_write(path)
+        for spec in self.series["slots"]:
+            self.paths.private_write(runner.output_dir(self.ctx, self.config, spec))
 
 
 # ---------------------------------------------------------------- reporting
@@ -368,7 +458,7 @@ def report_md(session: Session, st: state.RunState, cap: float, approval: str) -
                      str(unknown), ", ".join(f"{t:g}" for t in times) or "—"])
     lines = [f"# GPT26 run — `{study.series_id}`", "",
              f"Written by `python3 scripts/gpt26/run.py --config {study.config} --cap {cap:.2f} --report` from the "
-             "committed registration and the private run record. Offline: no provider call, no reservation, no "
+             "registration files and the private run record. Offline: no provider call, no reservation, no "
              "ledger or sidecar write.", "",
              f"- Config: `{study.config}` (sha256 `{session.config_sha}`), series `{study.series}`, "
              f"{len(st.slots)} registered slots.",
@@ -408,20 +498,16 @@ def write_report(session: Session, st: state.RunState) -> int:
     """Write `evaluations/run.md`; 0 when written, 1 otherwise. Never touches the run record."""
     root, study = session.paths.root, session.study
     try:
-        approval = f"`{spend_approval((root / study.change_md).read_text(), session.cap)}`"
+        approval = f"`{spend_approval(approval_text(root, study), session.cap)}`"
     except (Refused, OSError) as e:
-        approval = f"not usable for --cap {session.cap:.2f} — {e}"
-    target = root / study.run_report
-    if not study_mod.within(os.path.realpath(target), os.path.realpath(root / study.change_dir)):
-        print(f"refused: {study.run_report} resolves outside {study.change_dir} (a symlink?); no report written",
-              file=sys.stderr)
-        return 1
-    text = report_md(session, st, session.cap, approval)
+        approval = f"not usable for --cap {session.cap:.2f} — {' '.join(str(e).split())}"
     try:
+        target = write_path(root, root / study.run_report)
+        text = report_md(session, st, session.cap, approval)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
-    except OSError as e:
-        print(f"refused: cannot write {study.run_report} ({e.strerror or e}); no report written", file=sys.stderr)
+    except (Refused, OSError) as e:
+        print(f"refused: cannot write {study.run_report} ({e}); no report written", file=sys.stderr)
         return 1
     print(f"wrote {study.run_report} (record {st.status}); commit it with the run's records")
     return 0
@@ -433,8 +519,9 @@ def write_report(session: Session, st: state.RunState) -> int:
 def dry_run(session: Session, st: state.RunState) -> int:
     paths, cap, study = session.paths, session.cap, session.study
     for label, check in (
-        ("registration", lambda: check_registration(paths.root, study) and "tracked, committed and clean"),
-        ("approval", lambda: f"{spend_approval((paths.root / study.change_md).read_text(), cap)}"),
+        ("registration", lambda: check_registration(paths.root, study, consumed=session.consumed)
+         and "tracked, committed and clean"),
+        ("approval", lambda: session.ctx.approve(state.PHASE, cap)),
     ):
         try:
             print(f"  {label}: {check()}")
@@ -479,8 +566,11 @@ def main(argv: list[str] | None = None, *, root: Path | None = None, sleep=time.
         protocol.require_cap(args.cap)
         study = load_study(root, args.config)
         paths = study_paths(root, study)
-        session = Session(paths, study, args.cap)
-        st = session.reconcile()
+        verified = None
+        if not (args.dry_run or args.report):
+            _, _, verified = checked_files(root, study.binding_files)
+        session = Session(paths, study, args.cap, verified=verified)
+        st = session.reconcile(for_report=args.report)
     except Refused as e:
         print(f"refused: {e}", file=sys.stderr)
         return 1
@@ -502,7 +592,8 @@ def main(argv: list[str] | None = None, *, root: Path | None = None, sleep=time.
               file=sys.stderr)
         return 1
     try:
-        bindings = check_registration(paths.root, study)
+        session.check_write_paths()
+        bindings = check_registration(paths.root, study, consumed=session.consumed)
         session.ctx.approve(state.PHASE, args.cap)
         sidecar = read_sidecar(paths)
         if sidecar is not None:

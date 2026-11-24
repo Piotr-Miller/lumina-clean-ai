@@ -279,7 +279,7 @@ indicates whether the report was produced. The paid invocation retains its exist
 
 #### Manual Verification:
 
-- The owner reads the study descriptor and confirms that only paths moved and the runner's spend behaviour is unchanged — surface: scripts/gpt26/run.py, scripts/gpt26/state.py
+- The owner checks the study descriptor and confirms that each paid call needs a committed owner approval for the matching cap, that admission counts known costs or the full reservation under the ledger lock, that each slot gets at most one eligible retry within the cap, and that a cost-bound breach stops further calls. Resume may cross a history rewrite when the pinned file blobs match — surface: scripts/gpt26/study.py, scripts/gpt26/run.py, scripts/gpt26/state.py, scripts/s19/run-candidate.py
 
 ---
 
@@ -687,9 +687,9 @@ tag `gpt26-screen-evidence`.
 
 #### Automated
 
-- [x] 1.1 GPT26 suite passes on Fedora
-- [x] 1.2 No tool path names the screen's change folder
-- [x] 1.3 S-19 regression suite still passes at the candidate
+- [x] 1.1 GPT26 suite passes on Fedora — 3bce55e
+- [x] 1.2 No tool path names the screen's change folder — 3bce55e
+- [x] 1.3 S-19 regression suite still passes at the candidate — 3bce55e
 
 #### Manual
 

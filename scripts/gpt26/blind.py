@@ -169,8 +169,8 @@ def resolve(root: Path, recorded: str) -> Path:
 def approved_cap(root: Path, study: study_mod.Study) -> float:
     """The owner's approved cap: the one GPT26-SPEND line, validated by the runner's own parser."""
     try:
-        text = (root / study.change_md).read_text()
-    except OSError as e:
+        text = run.approval_text(root, study)
+    except Refused as e:
         raise Blocked("approval invalid", f"cannot read {study.change_md}: {e}")
     caps = [m.group(1) for m in map(run.SPEND_LINE.match, text.splitlines()) if m]
     if len(caps) != 1:
@@ -195,10 +195,10 @@ def parse_ledger(raw: bytes) -> list[dict]:
     return rows
 
 
-def expected_bindings(root: Path, study: study_mod.Study) -> dict:
+def expected_bindings(root: Path, study: study_mod.Study, consumed: dict[str, bytes]) -> dict:
     """The registration and rule identities of this checkout (never the sidecar's own)."""
     try:
-        return run.check_registration(root, study, include_approval=False)
+        return run.check_registration(root, study, include_approval=False, consumed=consumed)
     except Refused as e:
         raise Blocked("rules changed", str(e))
 
@@ -206,8 +206,10 @@ def expected_bindings(root: Path, study: study_mod.Study) -> dict:
 def reconciled(paths: run.Paths, study: study_mod.Study, ledger_raw: bytes,
                sidecar_raw: bytes | None) -> tuple[dict, str, dict, state.RunState, dict]:
     """(config, config_sha, series, state, bindings) for a COMPLETE record, or Blocked."""
+    consumed: dict[str, bytes] = {}
     try:
-        config, config_sha, series = run.load_registration(paths.root, study)
+        _, _, verified = run.checked_files(paths.root, study.binding_files)
+        config, config_sha, series = run.load_registration(paths.root, study, consumed=consumed, verified=verified)
     except Refused as e:
         raise Blocked("rules changed", str(e))
     if sidecar_raw is None:
@@ -216,7 +218,7 @@ def reconciled(paths: run.Paths, study: study_mod.Study, ledger_raw: bytes,
         sidecar = json.loads(sidecar_raw.decode("utf-8"))
     except ValueError as e:
         raise Blocked("run record blocked", f"the run-state sidecar is not JSON ({e})")
-    bindings = expected_bindings(paths.root, study)
+    bindings = expected_bindings(paths.root, study, consumed)
     st = state.reconcile(series, config, config_sha, parse_ledger(ledger_raw), sidecar, root=paths.root,
                          study=study, expected_bindings=bindings)
     if st.errors:
@@ -228,8 +230,9 @@ def reconciled(paths: run.Paths, study: study_mod.Study, ledger_raw: bytes,
 
 def load_baselines(root: Path, photos: list[str]) -> dict:
     try:
-        doc = json.loads((root / BASELINES).read_text())
-    except (OSError, ValueError) as e:
+        _, _, data = run.checked_files(root, (BASELINES,))
+        doc = json.loads(data[BASELINES].decode("utf-8"))
+    except (Refused, ValueError) as e:
         raise Blocked("baseline mismatch", f"{BASELINES}: {e}")
     m = doc.get("sha256") if isinstance(doc, dict) else None
     if not isinstance(m, dict) or not all(isinstance(m.get(p), str) and re.fullmatch(r"[0-9a-f]{64}", m[p])
@@ -240,9 +243,9 @@ def load_baselines(root: Path, photos: list[str]) -> dict:
 
 def require_clean(root: Path, rels: list[str], purpose: str) -> None:
     try:
-        evidence.require_committed_clean(rels, root, purpose=purpose)
+        run.checked_files(root, tuple(rels))
     except Refused as e:
-        raise Blocked("rules changed", str(e))
+        raise Blocked("rules changed", f"{purpose}: {e}")
 
 
 # ---------------------------------------------------------------- images
@@ -483,18 +486,19 @@ def build(set_id: str, study: study_mod.Study, paths: run.Paths | None = None) -
     root = paths.root
     if not SET_ID.fullmatch(set_id):
         raise Blocked("usage", f"set id {set_id!r} must match {SET_ID.pattern}")
-    final = paths.private / set_id
+    final = paths.private_write(paths.private / set_id)
     if os.path.lexists(final):
         raise Blocked("set exists", f"{final} exists: a set_id is never reused")
-    seal_path = root / study.seal_rel
+    seal_path = run.write_path(root, root / study.seal_rel)
     if os.path.lexists(seal_path) or evidence.present([study.seal_rel], root):
         raise Blocked("seal exists", f"{study.seal_rel} exists on disk or in the index")
     cap = approved_cap(root, study)
     study_ctx = runner.RunContext(ledger_dir=paths.private, output_dir=paths.private, input_dir=paths.inputs)
-    ledger_path = runner.ledger_path(study_ctx)
+    ledger_path = paths.private_write(runner.ledger_path(study_ctx))
+    sidecar = paths.private_write(paths.sidecar)
     try:
         ledger_raw = ledger_path.read_bytes() if ledger_path.exists() else b""
-        sidecar_raw = paths.sidecar.read_bytes() if paths.sidecar.exists() else None
+        sidecar_raw = sidecar.read_bytes() if sidecar.exists() else None
     except OSError as e:
         raise Blocked("run record blocked", f"cannot read the run record: {e}")
     config, config_sha, series, st, bindings = reconciled(paths, study, ledger_raw, sidecar_raw)
@@ -514,8 +518,9 @@ def build(set_id: str, study: study_mod.Study, paths: run.Paths | None = None) -
 
     r = rng()
     passes = partition(delivered, r)
-    paths.private.mkdir(parents=True, exist_ok=True)
-    tmp = Path(tempfile.mkdtemp(prefix=f".{set_id}-", dir=paths.private))
+    private = paths.private_write(paths.private)
+    private.mkdir(parents=True, exist_ok=True)
+    tmp = Path(tempfile.mkdtemp(prefix=f".{set_id}-", dir=private))
     try:
         items, key_items, pass_ids, n = [], {}, [], 0
         for number, members in enumerate(passes, 1):
@@ -580,7 +585,7 @@ def build(set_id: str, study: study_mod.Study, paths: run.Paths | None = None) -
         for p in tmp.iterdir():  # one timestamp for every file: no file's mtime says when it was drawn
             os.utime(p, ns=(FILE_TIME_NS, FILE_TIME_NS))
         text = seal_text(set_id, digest, key_sha, len(items), study)
-        publish(tmp, final, seal_path, text, study.seal_rel)
+        publish(tmp, paths.private_write(final), run.write_path(root, seal_path), text, study.seal_rel)
     except BaseException:
         shutil.rmtree(tmp, ignore_errors=True)
         raise
@@ -593,18 +598,19 @@ def build(set_id: str, study: study_mod.Study, paths: run.Paths | None = None) -
 # ---------------------------------------------------------------- the one CLI boundary
 
 
-def log_detail(private: Path, tool: str, text: str) -> str | None:
+def log_detail(paths: run.Paths, tool: str, text: str) -> str | None:
     try:
-        logs = private / "logs"
-        logs.mkdir(parents=True, exist_ok=True)
         name = f"{tool}-{_dt.datetime.now(_dt.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')}.log"
-        (logs / name).write_text(text)
+        path = paths.private_write(paths.private / "logs" / name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("x", encoding="utf-8") as stream:
+            stream.write(text)
         return f"logs/{name}"
     except Exception:  # noqa: BLE001
         return None
 
 
-def boundary(tool: str, fn, private: Path, ways: dict, *, trusted: set[str] = frozenset()) -> tuple[int, object]:
+def boundary(tool: str, fn, paths: run.Paths, ways: dict, *, trusted: set[str] = frozenset()) -> tuple[int, object]:
     """Run `fn()`; on any exception print sanitized lines only and return exit 1.
 
     Printed: the reason class, an item id only when it is a trusted anonymous id or registered
@@ -624,7 +630,7 @@ def boundary(tool: str, fn, private: Path, ways: dict, *, trusted: set[str] = fr
         else:
             found = [Blocked("internal error", "".join(traceback.format_exception(e)))]
         found = [b if b.reason in ways else Blocked("internal error", f"{b.reason}: {b.detail}") for b in found]
-        log = log_detail(private, tool, "\n".join(f"{b.item or 'set'}: {b.reason}: {b.detail}" for b in found) + "\n")
+        log = log_detail(paths, tool, "\n".join(f"{b.item or 'set'}: {b.reason}: {b.detail}" for b in found) + "\n")
         rows = sorted({((b.item if b.item in trusted else None), b.reason) for b in found},
                       key=lambda x: (x[0] or "", x[1]))
         for item, reason in rows:
@@ -671,7 +677,7 @@ def main(argv: list[str] | None = None, *, root: Path | None = None) -> int:
     if study is None:
         return 1
     paths = run.study_paths(root, study)
-    code, out = boundary("blind", lambda: build(args.set_id, study, paths), paths.private, WAY_OUT,
+    code, out = boundary("blind", lambda: build(args.set_id, study, paths), paths, WAY_OUT,
                          trusted=slot_labels(study))
     if code:
         return code

@@ -78,10 +78,12 @@ def read(root: Path, rel: str) -> str:
         raise Missing(f"{rel}: cannot read ({e.__class__.__name__})")
 
 
-def section(text: str, start: re.Pattern, what: str) -> list[str]:
+def section(text: str, start: re.Pattern, what: str, *, optional: bool = False) -> list[str]:
     """The lines from the one heading `start` matches up to the next heading of the same or a higher level."""
     lines = text.splitlines()
     hits = [i for i, line in enumerate(lines) if start.match(line)]
+    if optional and not hits:
+        return []
     if len(hits) != 1:
         raise Missing(f"{what}: {len(hits)} matching headings, expected one")
     i = hits[0]
@@ -175,10 +177,7 @@ def blocks(root: Path, study: study_mod.Study) -> list[tuple[str, str, str, str]
 def issue_blocks(issues: str, study: study_mod.Study) -> list[tuple[str, str, str, str]]:
     """The mapping Status cell and the dated outcome row, only when this change has an issue."""
     cid = study.change_id
-    try:
-        mapping = section(issues, re.compile(r"^## Final mapping\b"), f"{ISSUES}: ## Final mapping")
-    except Missing:
-        return []
+    mapping = section(issues, re.compile(r"^## Final mapping\b"), f"{ISSUES}: ## Final mapping", optional=True)
     rows = [ln for ln in mapping if ln.startswith("|") and len(cells(ln)) >= 4 and cells(ln)[2] == f"`{cid}`"]
     numbered = [(ln, m.group(1)) for ln in rows if (m := ISSUE_NUMBER.search(cells(ln)[1]))]
     if not numbered:
