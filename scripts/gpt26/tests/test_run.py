@@ -1,9 +1,11 @@
-"""run.py and state.py offline: a fake provider, synthetic inputs and PNGs, a throwaway Git repo.
+"""run.py, state.py and study.py offline: a fake provider, synthetic inputs and PNGs, a throwaway Git repo.
 
 Nothing here reads the private corpus, a provider key or the network (a socket guard fails any
-real connection). Each test builds its own repository holding copies of the registration and
-rule files, with the series' input hashes rebound to generated images, and drives the runner
-through `run.main(argv, paths=...)`.
+real connection). Each test builds its own repository holding copies of a fixture study's
+registration and rule files (`tests/fixtures/`, the screen's six-slot shape; or a generated
+16-slot study), with the series' input hashes rebound to generated images, and drives the runner
+through `run.main(["--config", <config>, ...], root=<repo>)`. Private roots live inside the
+throwaway repository, gitignored, exactly where the study descriptor derives them.
 """
 
 from __future__ import annotations
@@ -43,6 +45,24 @@ run = load("gpt26_run", GPT26 / "run.py")
 state = run.state
 runner = run.runner
 check_series = run.check_series
+study_mod = run.study_mod
+
+FIXTURES = GPT26 / "tests" / "fixtures"
+CONFIG = "scripts/gpt26/tests/fixtures/screen-config.json"
+VIEWER_FIXTURE = FIXTURES / "compare-gpt26.html"
+STUDY = study_mod.load(ROOT, CONFIG)[0]
+CHANGE_MD = """# Fixture change
+
+## Notes
+
+A throwaway study for the GPT26 tests.
+
+## GPT26 approvals
+
+<!--
+- GPT26-SPEND cap_usd=1.50 decision=approved date=YYYY-MM-DD
+-->
+"""
 
 SPEND = "- GPT26-SPEND cap_usd={cap} decision=approved date=2026-11-17"
 USAGE_OK = {"output_tokens_details": {"image_tokens": 2000},
@@ -92,25 +112,31 @@ class Fake:
 
 
 class Screen(unittest.TestCase):
-    """A throwaway repository with the registration rebound to synthetic inputs."""
+    """A throwaway repository with a fixture study's registration rebound to synthetic inputs."""
+
+    CONFIG = CONFIG
 
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.tmp = Path(tmp.name)
         self.repo = self.tmp / "repo"
-        self.inputs = self.tmp / "inputs"
-        self.private = self.tmp / "private"
-        self.inputs.mkdir()
-        for rel in (*state.REGISTRATION_FILES, *state.RULE_FILES, run.CHANGE_MD,
-                    check_series.PHASE5_CONFIG, check_series.PHASE5_SERIES):
-            (self.repo / rel).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(ROOT / rel, self.repo / rel)
-        # The live change.md carries the owner's real approval since 33f2039; each test approves
-        # (or not) on its own, so drop dated records and keep the commented grammar example.
-        change = self.repo / run.CHANGE_MD
-        change.write_text(re.sub(r"(?m)^- GPT26-SPEND .* date=\d{4}-\d{2}-\d{2}\n", "", change.read_text()))
-        series = json.loads((ROOT / run.SERIES).read_text())
+        self.repo.mkdir()
+        self.write(".gitignore", "test-photos/private/\n")
+        self.register()
+        self.study = study_mod.load(self.repo, self.CONFIG)[0]
+        for rel in (*self.study.rule_files, check_series.PHASE5_CONFIG, check_series.PHASE5_SERIES):
+            target = self.repo / rel
+            if target.exists():
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(VIEWER_FIXTURE if rel == self.study.viewer else ROOT / rel, target)
+        (self.repo / self.study.change_md).parent.mkdir(parents=True, exist_ok=True)
+        self.write(self.study.change_md, CHANGE_MD)
+        self.paths = run.study_paths(self.repo, self.study)
+        self.private, self.inputs = self.paths.private, self.paths.inputs
+        self.inputs.mkdir(parents=True)
+        series = json.loads((self.repo / self.study.series).read_text())
         phase5 = json.loads((ROOT / check_series.PHASE5_SERIES).read_text())
         hashes = {}
         for s in series["slots"]:
@@ -126,25 +152,33 @@ class Screen(unittest.TestCase):
         for s in phase5["slots"]:
             if s["photo"] in hashes:
                 s["input_sha256"] = hashes[s["photo"]]
-        self.write(run.SERIES, json.dumps(series, indent=2) + "\n")
+        self.write(self.study.series, json.dumps(series, indent=2) + "\n")
         self.write(check_series.PHASE5_SERIES, json.dumps(phase5, indent=2) + "\n")
         self.git("init", "-q")
         self.commit("registration")
-        self.paths = run.Paths(self.repo, self.private, self.inputs)
         for p in (mock.patch.object(socket.socket, "connect", no_network),
                   mock.patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"})):
             p.start()
             self.addCleanup(p.stop)
 
+    def register(self) -> None:
+        """Place the study's config and series in the throwaway repository."""
+        study = study_mod.load(ROOT, self.CONFIG)[0]
+        for rel in study.registration_files:
+            (self.repo / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / rel, self.repo / rel)
+
     # ------------------------------------------------------------ helpers
 
     def write(self, rel: str, text: str) -> None:
+        (self.repo / rel).parent.mkdir(parents=True, exist_ok=True)
         (self.repo / rel).write_text(text)
 
-    def git(self, *args: str) -> str:
-        env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
-        env.update(GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@t")
-        r = subprocess.run(["git", "-C", str(self.repo), *args], capture_output=True, text=True, env=env)
+    def git(self, *args: str, env: dict | None = None) -> str:
+        e = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        e.update(GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@t")
+        e.update(env or {})
+        r = subprocess.run(["git", "-C", str(self.repo), *args], capture_output=True, text=True, env=e)
         if r.returncode:
             raise AssertionError(r.stderr)
         return r.stdout
@@ -154,17 +188,17 @@ class Screen(unittest.TestCase):
         self.git("commit", "-q", "-m", msg)
 
     def approve(self, cap: str = "1.50", commit: bool = True) -> None:
-        text = (self.repo / run.CHANGE_MD).read_text().rstrip("\n") + "\n\n" + SPEND.format(cap=cap) + "\n"
-        self.write(run.CHANGE_MD, text)
+        text = (self.repo / self.study.change_md).read_text().rstrip("\n") + "\n\n" + SPEND.format(cap=cap) + "\n"
+        self.write(self.study.change_md, text)
         if commit:
             self.commit("approval")
 
-    def main(self, *args: str, fake: Fake | None = None) -> tuple[int, str, str]:
+    def main(self, *args: str, fake: Fake | None = None, config: str | None = None) -> tuple[int, str, str]:
         fake = fake if fake is not None else Fake()
         out, err = io.StringIO(), io.StringIO()
         with mock.patch.object(runner, "call_provider", fake), contextlib.redirect_stdout(out), \
                 contextlib.redirect_stderr(err):
-            code = run.main(list(args), paths=self.paths, sleep=lambda s: None)
+            code = run.main(["--config", config or self.CONFIG, *args], root=self.repo, sleep=lambda s: None)
         return code, out.getvalue(), err.getvalue()
 
     def rows(self) -> list[dict]:
@@ -174,12 +208,29 @@ class Screen(unittest.TestCase):
     def reserves(self) -> list[dict]:
         return [r for r in self.rows() if r["event"] == "reserve"]
 
+    def session(self, cap: float = 1.5) -> run.Session:
+        return run.Session(self.paths, self.study, cap)
+
     def st(self) -> state.RunState:
-        screen = run.Screen(self.paths, 1.5)
-        return screen.reconcile()
+        return self.session().reconcile()
 
     def status(self) -> dict[str, str]:
         return {s.label: s.status for s in self.st().slots.values()}
+
+    def rewrite_history(self) -> tuple[str, str]:
+        """Recreate every commit, the registration commit included, with the same trees in the same
+        order but new SHAs (a rebase-merge's effect); check it out. Returns (old, new) registration commits."""
+        reg = lambda: self.git("log", "-1", "--format=%H", "--", *self.study.registration_files).strip()  # noqa: E731
+        old = reg()
+        new = None
+        for n, commit in enumerate(self.git("rev-list", "--reverse", "HEAD").split()):
+            tree = self.git("rev-parse", f"{commit}^{{tree}}").strip()
+            parent = ["-p", new] if new else []
+            new = self.git("commit-tree", tree, *parent, "-m", f"rewritten {n}",
+                           env={"GIT_AUTHOR_DATE": "2030-01-01T00:00:00Z",
+                                "GIT_COMMITTER_DATE": "2030-01-01T00:00:00Z"}).strip()
+        self.git("checkout", "-q", "-f", "--detach", new)
+        return old, reg()
 
 
 # ---------------------------------------------------------------- numeric budget boundaries
@@ -217,7 +268,7 @@ class NumericTest(Screen):
                 self.assertIn("finite positive", err.getvalue())
 
     def test_invalid_usage_components_keep_the_full_reservation(self):
-        config = json.loads((ROOT / run.CONFIG).read_text())
+        config = json.loads((ROOT / CONFIG).read_text())
         for section, field in (("output_tokens_details", "image_tokens"),
                                ("input_tokens_details", "image_tokens"),
                                ("input_tokens_details", "text_tokens")):
@@ -254,7 +305,7 @@ class NumericTest(Screen):
         self.approve()
         self.main("--cap", "1.50")
         rows = self.rows()
-        screen = run.Screen(self.paths, 1.5)
+        screen = self.session()
         for event, field in (("result", "cost_usd"), ("reserve", "reserved_usd")):
             for bad in (float("nan"), float("inf"), -float("inf"), -1, True, False, "0.01", 10**400):
                 with self.subTest(event=event, field=field, bad=bad):
@@ -286,7 +337,7 @@ class NumericTest(Screen):
                         lock.assert_not_called()
 
     def test_invalid_series_and_refusal_amounts_block(self):
-        screen = run.Screen(self.paths, 1.5)
+        screen = self.session()
         spec = screen.series["slots"][0]
         refusal = {"event": "budget_refusal", "photo": spec["photo"], "slot": spec["slot"],
                    "phase": state.PHASE, "series_id": screen.series["series_id"],
@@ -296,7 +347,8 @@ class NumericTest(Screen):
             with self.subTest(series_bound=bad):
                 series = copy.deepcopy(screen.series)
                 series["slots"][0]["cost_bound_usd"] = bad
-                st = state.reconcile(series, screen.config, screen.config_sha, [], None, root=self.repo)
+                st = state.reconcile(series, screen.config, screen.config_sha, [], None, root=self.repo,
+                                     study=self.study)
                 self.assertEqual(st.status, "BLOCKED")
                 self.assertIn("cost_bound_usd", " ".join(st.errors))
             for field in ("committed_usd", "bound_usd", "cap_usd"):
@@ -453,26 +505,27 @@ class RefusalTest(Screen):
     def test_uncommitted_approval_refused(self):
         self.approve(commit=False)
         code, _, err = self.main("--cap", "1.50")
-        self.assertRefusedUnreserved(code, err, f"{run.CHANGE_MD}: uncommitted changes")
+        self.assertRefusedUnreserved(code, err, f"{self.study.change_md}: uncommitted changes")
 
     def test_uncommitted_config_refused(self):
         self.approve()
-        self.git("rm", "-q", "--cached", run.CONFIG)
+        self.git("rm", "-q", "--cached", self.study.config)
         self.git("commit", "-q", "-m", "untrack config")
         code, _, err = self.main("--cap", "1.50")
-        self.assertRefusedUnreserved(code, err, f"{run.CONFIG}: untracked")
+        self.assertRefusedUnreserved(code, err, f"{self.study.config}: untracked")
 
     def test_staged_only_series_refused(self):
         self.approve()
-        self.git("rm", "-q", "--cached", run.SERIES)
+        self.git("rm", "-q", "--cached", self.study.series)
         self.git("commit", "-q", "-m", "drop series")
-        self.git("add", run.SERIES)
+        self.git("add", self.study.series)
         code, _, err = self.main("--cap", "1.50")
-        self.assertRefusedUnreserved(code, err, f"{run.SERIES}: staged but never committed")
+        self.assertRefusedUnreserved(code, err, f"{self.study.series}: staged but never committed")
 
     def test_dirty_rule_file_refused(self):
         self.approve()
-        for rel in ("scripts/gpt26/state.py", "scripts/s19/run-candidate.py"):
+        for rel in ("scripts/gpt26/state.py", "scripts/gpt26/study.py", "scripts/s19/run-candidate.py",
+                    STUDY.viewer):
             with self.subTest(rel=rel):
                 original = (self.repo / rel).read_text()
                 self.write(rel, original + "\n# edited\n")
@@ -542,13 +595,13 @@ class BindingTest(Screen):
         self.approve()
         code, _, err = self.main("--cap", "1.50")
         self.assertEqual(code, 0, err)
-        screen = run.Screen(self.paths, 1.5)
-        return screen, self.rows(), run.read_sidecar(self.paths), run.check_registration(self.repo)
+        screen = self.session()
+        return screen, self.rows(), run.read_sidecar(self.paths), run.check_registration(self.repo, self.study)
 
     def test_missing_sidecar_blocks_a_complete_ledger(self):
         screen, rows, _, _ = self.complete_record()
         st = state.reconcile(screen.series, screen.config, screen.config_sha, rows, None,
-                             root=self.repo, check_outputs=False)
+                             root=self.repo, study=self.study, check_outputs=False)
         self.assertEqual(st.status, "BLOCKED")
         self.assertIn("sidecar is missing", " ".join(st.errors))
 
@@ -592,12 +645,41 @@ class BindingTest(Screen):
     def test_expected_identities_are_required_for_started_records(self):
         screen, rows, good, _ = self.complete_record()
         st = state.reconcile(screen.series, screen.config, screen.config_sha, rows, good,
-                             root=self.repo, check_outputs=False)
+                             root=self.repo, study=self.study, check_outputs=False)
         self.assertEqual(st.status, "BLOCKED")
         self.assertIn("expected bindings", " ".join(st.errors))
 
     def test_binding_comparison_does_not_accept_two_empty_inventories(self):
-        self.assertTrue(state.check_bindings({}, {}))
+        self.assertTrue(state.check_bindings({}, {}, self.study.binding_files))
+        empty = {"head": "0" * 40, "registration_commit": "0" * 40, "files": {}}
+        self.assertTrue(state.check_bindings(empty, empty, ()))
+
+    def test_the_registration_commit_and_head_are_provenance_only(self):
+        screen, rows, good, current = self.complete_record()
+        moved = copy.deepcopy(good)
+        moved["bindings"]["registration_commit"] = "1" * 40
+        moved["bindings"]["head"] = "2" * 40
+        self.assertEqual(state.check_bindings(moved["bindings"], current, self.study.binding_files), [])
+        st = screen.reconcile(rows, moved, use_disk_sidecar=False)
+        self.assertEqual(st.status, "complete", st.errors)
+
+    def test_resume_after_a_rewrite_that_includes_the_registration_commit(self):
+        self.approve()
+        with self.assertRaises(KeyboardInterrupt):
+            self.main("--cap", "1.50", fake=Fake({"S17-04": ["crash"]}))
+        pinned = run.read_sidecar(self.paths)["bindings"]["registration_commit"]
+        old, new = self.rewrite_history()
+        self.assertEqual(old, pinned)
+        self.assertNotEqual(new, old)
+        code, out, err = self.main("--resume", "--cap", "1.50")
+        self.assertEqual(code, 0, out + err)
+        self.assertEqual(set(self.status().values()), {"delivered"})
+        # ... and a changed rule blob on the rewritten history still refuses the resume.
+        self.write("scripts/gpt26/gate.py", (self.repo / "scripts/gpt26/gate.py").read_text() + "\n# changed\n")
+        self.commit("rule change after the rewrite")
+        code, out, err = self.main("--resume", "--cap", "1.50")
+        self.assertEqual(code, 1)
+        self.assertIn("scripts/gpt26/gate.py", out + err)
 
     def test_resume_blocks_changed_sidecar_before_any_send(self):
         self.approve()
@@ -614,9 +696,10 @@ class BindingTest(Screen):
 
     def test_unrelated_head_and_mutable_notes_do_not_invalidate_identities(self):
         screen, rows, good, _ = self.complete_record()
-        self.write(run.CHANGE_MD, (self.repo / run.CHANGE_MD).read_text() + "\nBookkeeping only.\n")
+        md = self.study.change_md
+        self.write(md, (self.repo / md).read_text() + "\nBookkeeping only.\n")
         self.commit("unrelated bookkeeping after the run")
-        self.write(run.CHANGE_MD, (self.repo / run.CHANGE_MD).read_text() + "\nUncommitted lifecycle note.\n")
+        self.write(md, (self.repo / md).read_text() + "\nUncommitted lifecycle note.\n")
         st = screen.reconcile(rows, good, use_disk_sidecar=False)
         self.assertEqual(st.status, "complete", st.errors)
 
@@ -704,7 +787,7 @@ class ResumeTest(Screen):
     def test_admission_rechecks_inside_the_lock(self):
         self.approve()
         code, _, _ = self.main("--cap", "1.50", fake=Fake({"S17-03": ["over"]}))
-        screen = run.Screen(self.paths, 1.5)
+        screen = self.session()
         with self.assertRaises(run.Refused) as cm:
             runner.admit(state.PHASE, 1.5, {"photo": "S17-04", "slot": 1, "reserved_usd": 0.2}, screen.ctx)
         self.assertIn("exceeded its cost bound", str(cm.exception))
@@ -716,8 +799,8 @@ class ResumeTest(Screen):
 class TerminalTest(Screen):
     def screen_and_sidecar(self):
         self.approve()
-        screen = run.Screen(self.paths, 1.5)
-        return screen, screen.new_sidecar(run.check_registration(self.repo))
+        screen = self.session()
+        return screen, screen.new_sidecar(run.check_registration(self.repo, self.study))
 
     def test_unsupported_sidecar_terminals_block_without_sending(self):
         screen, sc = self.screen_and_sidecar()
@@ -751,7 +834,7 @@ class TerminalTest(Screen):
     def budget_record(self):
         self.approve("0.30")
         self.main("--cap", "0.30", fake=Fake(default="ok-nocost"))
-        return run.Screen(self.paths, 0.3), self.rows(), run.read_sidecar(self.paths)
+        return self.session(0.3), self.rows(), run.read_sidecar(self.paths)
 
     def test_budget_refusal_must_match_historical_cost_bound_and_cap(self):
         screen, rows, sc = self.budget_record()
@@ -813,16 +896,113 @@ class TerminalTest(Screen):
         self.assertEqual([r["event"] for r in self.rows()], ["budget_refusal"])
 
 
+# ---------------------------------------------------------------- offline run report
+
+
+class ReportTest(Screen):
+    def record_bytes(self) -> dict:
+        return {p: p.read_bytes() for p in (self.private / "attempts.jsonl", self.paths.sidecar) if p.exists()}
+
+    def report(self, *extra: str, fake: Fake | None = None) -> tuple[int, str, str, str | None]:
+        fake = fake if fake is not None else Fake(default="crash")
+        code, out, err = self.main("--cap", "1.50", "--report", *extra, fake=fake)
+        self.assertEqual(fake.calls, [], "--report must never call the provider")
+        target = self.repo / self.study.run_report
+        return code, out, err, target.read_text(encoding="utf-8") if target.exists() else None
+
+    def test_report_of_an_undelivered_slot_and_an_unknown_reservation(self):
+        self.approve()
+        code, _, err = self.main("--cap", "1.50", fake=Fake({"S17-07": ["moderation", "moderation"],
+                                                             "S17-04": ["ok-nocost"]}))
+        self.assertEqual(code, 0, err)
+        before = self.record_bytes()
+        with mock.patch.dict(os.environ, {}, clear=True):  # no API key needed
+            code, out, err, md = self.report()
+        self.assertEqual(code, 0, out + err)
+        self.assertEqual(self.record_bytes(), before, "the ledger and the sidecar are never written")
+        table = {c[0]: c for c in ([x.strip() for x in ln.strip("|").split("|")] for ln in md.splitlines()
+                                   if ln.startswith("| S17-"))}
+        self.assertEqual(sorted(table), sorted(STUDY.labels))
+        # Slot, size, bound, status, terminal reason, attempts, without known cost, wall times.
+        self.assertEqual(table["S17-04/1"][3:7], ["delivered", "—", "1", "1"])
+        self.assertEqual(table["S17-03/1"][3:7], ["delivered", "—", "1", "0"])
+        self.assertEqual(table["S17-07/1"][3], "undelivered")
+        self.assertTrue(table["S17-07/1"][4].startswith("technical_failure"))
+        self.assertEqual(table["S17-07/1"][5:7], ["2", "2"])
+        self.assertEqual(len(table["S17-07/1"][7].split(", ")), 2)
+        self.assertIn("- Record: **complete**.", md)
+        self.assertIn("moderation_blocked: 1 first-attempt block(s), 0 recovered by the retry, 1 final undelivered", md)
+        # S17-04/1's unknown cost and S17-07/1's two blocks keep their full reservations.
+        self.assertIn("- Unknown reservations: 3 attempt(s) without a known cost", md)
+        st = self.st()
+        self.assertIn(f"- Known billed: ${st.known_usd:.4f}.", md)
+        self.assertIn(f"- Conservative: ${st.committed_usd:.2f} (known cost, else the full reservation) of the $1.50 cap"
+                      " — within the cap.", md)
+        self.assertIn("vs the 30 s guardrail (diagnostic only)", md)
+        self.assertIn("- Every slot resolved; no inconsistency and no cost-bound breach.", md)
+        self.assertIn(f"`{SPEND.format(cap='1.50')}`", md)
+        code, _, _, again = self.report()
+        self.assertEqual((code, again), (0, md), "a rerun writes the same bytes")
+
+    def test_report_names_an_unresolved_and_a_breached_state(self):
+        self.approve()
+        with self.assertRaises(KeyboardInterrupt):
+            self.main("--cap", "1.50", fake=Fake({"S17-04": ["crash"]}))
+        code, out, err, md = self.report()
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("- Record: **incomplete**.", md)
+        self.assertIn("- Unresolved: S17-04/1, S17-04/2, S17-07/1, S17-07/2.", md)
+        self.assertIn("| S17-04/1 ", md)
+        self.assertIn("unresolved", md)
+        self.main("--resume", "--cap", "1.50", fake=Fake({"S17-04": ["over"]}))
+        code, out, err, md = self.report()
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("BREACHED", md)
+        self.assertIn("above its bound", md)
+        self.assertIn("stopped_after_bound_breach", md)
+
+    def test_report_of_a_blocked_record_without_approval(self):
+        self.approve()
+        self.main("--cap", "1.50")
+        rows = self.rows()
+        rows.append({"event": "mystery"})
+        (self.private / "attempts.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+        self.write(self.study.change_md, CHANGE_MD)  # the approval line removed (uncommitted)
+        code, out, err, md = self.report()
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("- Record: **BLOCKED**.", md)
+        self.assertIn("- BLOCKED: ledger row", md)
+        self.assertIn("- Approval: not usable for --cap 1.50", md)
+
+    def test_report_is_exclusive_with_dry_run_and_resume(self):
+        self.approve()
+        for other in ("--dry-run", "--resume"):
+            with self.subTest(other=other), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as cm:
+                    self.main("--cap", "1.50", "--report", other)
+                self.assertEqual(cm.exception.code, 2)
+        self.assertFalse((self.repo / self.study.run_report).exists())
+
+    def test_report_refuses_a_target_outside_the_change(self):
+        outside = self.tmp / "elsewhere"
+        outside.mkdir()
+        os.symlink(outside, self.repo / self.study.eval_dir)
+        code, out, err, _ = self.report()
+        self.assertEqual(code, 1)
+        self.assertIn("no report written", err)
+        self.assertEqual(list(outside.iterdir()), [])
+
+
 # ---------------------------------------------------------------- reconciliation
 
 
 class ReconcileTest(Screen):
     def recon(self, rows, sidecar=None, check_outputs=False):
-        screen = run.Screen(self.paths, 1.5)
+        screen = self.session()
         sidecar = run.read_sidecar(self.paths) if sidecar is None else sidecar
         return state.reconcile(screen.series, screen.config, screen.config_sha, rows, sidecar,
-                               root=self.repo, check_outputs=check_outputs,
-                               expected_bindings=run.check_registration(self.repo))
+                               root=self.repo, study=self.study, check_outputs=check_outputs,
+                               expected_bindings=run.check_registration(self.repo, self.study))
 
     def base_rows(self):
         self.approve()
@@ -854,13 +1034,13 @@ class ReconcileTest(Screen):
                 self.assertEqual(self.recon(case).status, "BLOCKED")
 
     def test_missing_slot_in_series_blocks(self):
-        screen = run.Screen(self.paths, 1.5)
+        screen = self.session()
         series = copy.deepcopy(screen.series)
         series["slots"] = series["slots"][:5]
-        st = state.reconcile(series, screen.config, screen.config_sha, [], None, root=self.repo)
+        st = state.reconcile(series, screen.config, screen.config_sha, [], None, root=self.repo, study=self.study)
         self.assertEqual(st.status, "BLOCKED")
         series["slots"] = series["slots"][:4] + [series["slots"][0]]
-        st = state.reconcile(series, screen.config, screen.config_sha, [], None, root=self.repo)
+        st = state.reconcile(series, screen.config, screen.config_sha, [], None, root=self.repo, study=self.study)
         self.assertIn("registered twice", " ".join(st.errors))
 
     def test_unknown_cost_keeps_the_full_reservation(self):
@@ -883,8 +1063,8 @@ class ReconcileTest(Screen):
 
     def test_sidecar_terminal_records_are_validated(self):
         rows = self.base_rows()
-        screen = run.Screen(self.paths, 1.5)
-        good = screen.new_sidecar(run.check_registration(self.repo))
+        screen = self.session()
+        good = screen.new_sidecar(run.check_registration(self.repo, self.study))
         for name, term in {"delivered slot": {"photo": "S17-04", "slot": 1, "status": "undelivered",
                                               "reason": "not_attempted_budget"},
                            "foreign slot": {"photo": "S17-01", "slot": 1, "status": "undelivered",
@@ -900,7 +1080,7 @@ class ReconcileTest(Screen):
 
 class HookTest(unittest.TestCase):
     def setUp(self):
-        self.config = json.loads((ROOT / run.CONFIG).read_text())
+        self.config = json.loads((ROOT / CONFIG).read_text())
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.image = Path(tmp.name) / "in.jpg"
@@ -994,7 +1174,7 @@ class IdentityTest(unittest.TestCase):
         self.addCleanup(shutil.rmtree, bogus)
         with mock.patch.dict(os.environ, {"GIT_DIR": bogus, "GIT_WORK_TREE": bogus, "S19_PRIVATE": bogus}):
             self.assertEqual(run.git_root(ROOT), ROOT.resolve())
-            paths = run.default_paths()
+            paths = run.study_paths(ROOT, STUDY)
         self.assertEqual(paths.root, ROOT)
         self.assertEqual(paths.private, ROOT / "test-photos" / "private" / "gpt26")
         self.assertEqual(paths.inputs, ROOT / "test-photos" / "private" / "s19" / "inputs")
@@ -1009,11 +1189,14 @@ class IdentityTest(unittest.TestCase):
         loaded = {Path(f).resolve().relative_to(ROOT).as_posix() for f in json.loads(r.stdout)
                   if f and Path(f).resolve().is_relative_to(ROOT / "scripts")}
         self.assertTrue(loaded, "nothing under scripts/ was imported")
-        self.assertLessEqual(loaded, set(state.RULE_FILES))
-        # The builder, the gate and the S-20 modules they import are among them (the runner is
-        # loaded from its file path, outside sys.modules, and pinned explicitly).
-        self.assertLessEqual({"scripts/gpt26/blind.py", "scripts/gpt26/gate.py", "scripts/s20/evidence.py",
-                              "scripts/s20/trials.py"}, loaded)
+        self.assertLessEqual(loaded, set(STUDY.rule_files))
+        # The builder, the gate, the study descriptor and the S-20 modules they import are among
+        # them (the runner is loaded from its file path, outside sys.modules, and pinned explicitly).
+        self.assertLessEqual({"scripts/gpt26/blind.py", "scripts/gpt26/gate.py", "scripts/gpt26/study.py",
+                              "scripts/s20/evidence.py", "scripts/s20/trials.py"}, loaded)
+        # Every study pins its own viewer in place of another study's.
+        self.assertIn(STUDY.viewer, STUDY.rule_files)
+        self.assertFalse(any("gpt-image-26-screen" in f for f in STUDY.rule_files))
 
 
 if __name__ == "__main__":

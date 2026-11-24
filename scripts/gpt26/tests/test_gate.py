@@ -7,7 +7,8 @@ Three kinds of test:
     fake paid run, one real build of the blind set, the seal and a ratings export committed in
     order. Each test that mutates a template restores it (files by bytes, Git by reset), so the
     expensive build happens once per template;
-  - the viewer copy: an allowlist diff against the archived S-20 viewer, and its two-pass
+  - the viewer copy: the Phase 1 fixture `tests/fixtures/compare-gpt26.html` (the screen's viewer,
+    byte for byte), an allowlist diff against the archived S-20 viewer, and its two-pass
     controller exercised in Node.
 """
 
@@ -40,7 +41,8 @@ import gate  # noqa: E402
 import test_run  # noqa: E402
 
 state = blind.state
-VIEWER = ROOT / blind.VIEWER_REL
+CONFIG, STUDY = test_run.CONFIG, test_run.STUDY
+VIEWER = test_run.VIEWER_FIXTURE
 S20_VIEWER = ROOT / "context/archive/2026-11-03-cloud-classical-denoise/references/compare-s20.html"
 HEX64 = re.compile(r"[0-9a-f]{64}")
 CROP = {"x": 1, "y": 2, "w": 3, "h": 4}
@@ -81,10 +83,10 @@ class Template:
     def __init__(self, script: dict | None = None, default: str = "ok", ratings: bool = True):
         self.screen = s = test_run.Screen("setUp")
         s.setUp()
-        self.repo, self.paths, self.private = s.repo, s.paths, s.private
+        self.repo, self.paths, self.private, self.study = s.repo, s.paths, s.private, s.study
         local = s.paths.local
         local.mkdir(parents=True, exist_ok=True)
-        series = json.loads((self.repo / blind.run.SERIES).read_text())
+        series = json.loads((self.repo / self.study.series).read_text())
         shas = {}
         for spec in series["slots"]:
             if spec["photo"] in shas:
@@ -105,15 +107,15 @@ class Template:
             return real(pixels, size, out)
 
         with mock.patch.object(blind, "rng", lambda: random.Random(7)), mock.patch.object(blind, "write_png", logged):
-            self.built = blind.build("t1", self.paths)
+            self.built = blind.build("t1", self.study, self.paths)
         self.set_dir = self.private / "t1"
-        git(self.repo, "add", blind.SEAL_REL)
+        git(self.repo, "add", self.study.seal_rel)
         git(self.repo, "commit", "-q", "-m", "seal")
         self.seal_commit = git(self.repo, "rev-parse", "HEAD")
         self.key = json.loads((self.set_dir / blind.KEY_NAME).read_text())
         if ratings and self.key["items"]:
             self.write_ratings()
-            git(self.repo, "add", blind.RATINGS_REL)
+            git(self.repo, "add", self.study.ratings_rel)
             git(self.repo, "commit", "-q", "-m", "ratings")
         self.head = git(self.repo, "rev-parse", "HEAD")
 
@@ -147,25 +149,33 @@ class Template:
 
     def write_ratings(self, levels: dict | None = None, quality: str = "tie") -> None:
         doc = self.export(self.rows(levels, quality))
-        (self.repo / blind.RATINGS_REL).write_text(json.dumps(doc, indent=2) + "\n")
+        (self.repo / self.study.ratings_rel).write_text(json.dumps(doc, indent=2) + "\n")
         if doc["locked_pass1"] is not None:
             gate.checkpoint_path(self.paths, "t1").write_text(json.dumps(self.checkpoint(doc["locked_pass1"])))
 
     def commit_ratings(self, levels: dict | None = None, quality: str = "tie") -> None:
         self.write_ratings(levels, quality)
-        git(self.repo, "add", blind.RATINGS_REL)
+        git(self.repo, "add", self.study.ratings_rel)
         git(self.repo, "commit", "-q", "-m", "ratings again")
 
     # ------------------------------------------------------------ evaluation and restore
 
     def evaluate(self, export: bool = True) -> dict:
-        return gate.evaluate("t1", (self.repo / blind.RATINGS_REL) if export else None, self.paths)
+        return gate.evaluate("t1", (self.repo / self.study.ratings_rel) if export else None, self.paths, self.study)
 
     def cli(self, tool, *args: str) -> tuple[int, str, str]:
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = tool.main(list(args), paths=self.paths)
+            code = tool.main(["--config", CONFIG, *args], root=self.repo)
         return code, out.getvalue(), err.getvalue()
+
+    @property
+    def ratings(self) -> Path:
+        return self.repo / self.study.ratings_rel
+
+    @property
+    def seal(self) -> Path:
+        return self.repo / self.study.seal_rel
 
     @contextlib.contextmanager
     def restored(self):
@@ -225,7 +235,7 @@ def blocked_reasons(fn) -> set[str]:
 # ---------------------------------------------------------------- the rule (pure)
 
 
-GATE = json.loads((ROOT / "scripts/gpt26/configs/gpt26-low.json").read_text())["gate"]
+GATE = json.loads((ROOT / CONFIG).read_text())["gate"]
 LABELS = [f"{p}/{n}" for p in ("S17-03", "S17-04", "S17-07") for n in (1, 2)]
 SPEND_OK = {"committed_usd": 0.6, "cap_usd": 1.5, "breaches": []}
 
@@ -305,7 +315,7 @@ class RuleTest(unittest.TestCase):
 
     @staticmethod
     def extra(r):
-        return {"gate_id": "g", "set_id": "t1", "spend": {**SPEND_OK, "known_usd": 0.0, "unknown_attempts": 0},
+        return {"gate_id": "g", "series_id": "gpt26-screen", "set_id": "t1", "spend": {**SPEND_OK, "known_usd": 0.0, "unknown_attempts": 0},
                 "blocks": {"codes": ["moderation_blocked"], "first_attempt_blocks": 0, "recovered_by_retry": 0,
                            "final_undelivered_after_block": 0}, "walls_s": [], "wall_p95_s": None,
                 "guardrail_p95_s": 30, "passes": [], "repeated_local_risk": "risk", "ratings_export_sha256": None}
@@ -473,10 +483,10 @@ class SealTest(unittest.TestCase):
     LINE = f"GPT26-SEAL kind=gate set_id=t1 set_digest={'a' * 64} key_sha256={'b' * 64}"
 
     def parse(self, text: str):
-        tmp = Path(self.tmp) / blind.SEAL_REL
+        tmp = Path(self.tmp) / STUDY.seal_rel
         tmp.parent.mkdir(parents=True, exist_ok=True)
         tmp.write_text(text)
-        return gate.read_seal(Path(self.tmp))
+        return gate.read_seal(Path(self.tmp), STUDY.seal_rel)
 
     def setUp(self):
         import tempfile
@@ -554,18 +564,18 @@ class SixTest(unittest.TestCase):
         for needle in ("gpt", "local", "Local", str(self.t.screen.tmp), "attempt", "runs/"):
             self.assertNotIn(needle, manifest, needle)
         self.assertEqual(HEX64.findall(manifest), [self.t.key["set_digest"]])
-        export = (self.t.repo / blind.RATINGS_REL).read_text()
+        export = self.t.ratings.read_text()
         for needle in ("gpt", "local", str(self.t.screen.tmp)):
             self.assertNotIn(needle, export)
 
     def test_verdict_written_with_six_ties(self):
         with self.t.restored():
-            code, out, err = self.t.cli(gate, "--set", "t1", "--export", str(self.t.repo / blind.RATINGS_REL))
+            code, out, err = self.t.cli(gate, "--set", "t1", "--export", str(self.t.ratings))
             self.assertEqual(code, 0, out + err)
             self.assertTrue(out.startswith("PASS: 6 of 6 pairs at least a tie"), out)
-            report = json.loads((self.t.repo / gate.VERDICT_JSON).read_text())
+            report = json.loads((self.t.repo / STUDY.verdict_json).read_text())
             self.assertEqual((report["verdict"], report["ties"]), ("PASS", 6))
-            md = (self.t.repo / gate.VERDICT_MD).read_text()
+            md = (self.t.repo / STUDY.verdict_md).read_text()
             for label in LABELS:
                 self.assertIn(f"| {label} ", md)
             self.assertIn("Within the cap and no bound breach.", md)
@@ -583,30 +593,29 @@ class SixTest(unittest.TestCase):
 
     def test_ratings_before_seal_or_in_the_seal_commit_blocked(self):
         base = git(self.t.repo, "rev-parse", f"{self.t.seal_commit}~1")
-        ratings = (self.t.repo / blind.RATINGS_REL).read_bytes()
-        seal = (self.t.repo / blind.SEAL_REL).read_bytes()
+        ratings = self.t.ratings.read_bytes()
+        seal = self.t.seal.read_bytes()
         for order in ("same commit", "ratings first"):
             with self.subTest(order), self.t.restored():
                 git(self.t.repo, "checkout", "-q", "--detach", base)
-                (self.t.repo / blind.SEAL_REL).parent.mkdir(parents=True, exist_ok=True)
+                self.t.seal.parent.mkdir(parents=True, exist_ok=True)
                 if order == "ratings first":
-                    (self.t.repo / blind.RATINGS_REL).write_bytes(ratings)
-                    git(self.t.repo, "add", blind.RATINGS_REL)
+                    self.t.ratings.write_bytes(ratings)
+                    git(self.t.repo, "add", STUDY.ratings_rel)
                     git(self.t.repo, "commit", "-q", "-m", "ratings")
-                (self.t.repo / blind.SEAL_REL).write_bytes(seal)
-                (self.t.repo / blind.RATINGS_REL).write_bytes(ratings)
-                git(self.t.repo, "add", blind.SEAL_REL, blind.RATINGS_REL)
+                self.t.seal.write_bytes(seal)
+                self.t.ratings.write_bytes(ratings)
+                git(self.t.repo, "add", STUDY.seal_rel, STUDY.ratings_rel)
                 git(self.t.repo, "commit", "-q", "-m", "both")
                 self.assertEqual(blocked_reasons(self.t.evaluate), {"order violation"})
 
     def test_seal_replacement_and_uncommitted_evidence_blocked(self):
         cases = {
-            "seal touched twice": lambda: ((self.t.repo / blind.SEAL_REL).write_text(
-                (self.t.repo / blind.SEAL_REL).read_text() + "\nedited\n"),
-                git(self.t.repo, "commit", "-q", "-am", "edit seal")),
-            "seal dirty": lambda: (self.t.repo / blind.SEAL_REL).write_text("x\n"),
-            "ratings dirty": lambda: (self.t.repo / blind.RATINGS_REL).write_text("{}\n"),
-            "ratings untracked": lambda: (git(self.t.repo, "rm", "-q", "--cached", blind.RATINGS_REL),
+            "seal touched twice": lambda: (self.t.seal.write_text(self.t.seal.read_text() + "\nedited\n"),
+                                           git(self.t.repo, "commit", "-q", "-am", "edit seal")),
+            "seal dirty": lambda: self.t.seal.write_text("x\n"),
+            "ratings dirty": lambda: self.t.ratings.write_text("{}\n"),
+            "ratings untracked": lambda: (git(self.t.repo, "rm", "-q", "--cached", STUDY.ratings_rel),
                                           git(self.t.repo, "commit", "-q", "-m", "untrack")),
         }
         for name, mutate in cases.items():
@@ -616,7 +625,7 @@ class SixTest(unittest.TestCase):
 
     def test_later_change_md_edits_and_a_rebase_keep_the_verdict(self):
         with self.t.restored():
-            md = self.t.repo / blind.run.CHANGE_MD
+            md = self.t.repo / STUDY.change_md
             md.write_text(md.read_text().rstrip("\n") + "\n\nLifecycle bookkeeping updated.\n")
             git(self.t.repo, "commit", "-q", "-am", "lifecycle")
             self.assertEqual(self.t.evaluate()["verdict"], "PASS")
@@ -629,6 +638,42 @@ class SixTest(unittest.TestCase):
             git(self.t.repo, "cherry-pick", self.t.seal_commit, self.t.head)
             self.assertNotEqual(git(self.t.repo, "rev-parse", "HEAD"), self.t.head)
             self.assertEqual(self.t.evaluate()["verdict"], "PASS")
+
+    def test_a_rewrite_that_includes_the_registration_commit_keeps_the_verdict(self):
+        # Lesson "Never bind sealed or frozen evidence to a branch commit SHA": every commit is
+        # recreated, the registration commit first, with the same bytes and the same order.
+        with self.t.restored():
+            before = self.t.evaluate()
+            old, new = self.t.screen.rewrite_history()
+            self.assertNotEqual(old, new)
+            self.assertEqual(self.t.key["bindings"]["registration_commit"], old)  # recorded, never compared
+            self.assertNotIn(self.t.seal_commit, git(self.t.repo, "rev-list", "HEAD").split())
+            after = self.t.evaluate()
+            self.assertEqual({k: after[k] for k in ("verdict", "ties", "reasons")},
+                             {k: before[k] for k in ("verdict", "ties", "reasons")})
+            code, out, err = self.t.cli(gate, "--set", "t1", "--export", str(self.t.ratings))
+            self.assertEqual(code, 0, out + err)
+            self.assertTrue(out.startswith("PASS: 6 of 6"), out)
+            # A changed rule blob still blocks the gate on the rewritten history.
+            p = self.t.repo / "scripts/gpt26/state.py"
+            p.write_text(p.read_text() + "\n# changed\n")
+            git(self.t.repo, "commit", "-q", "-am", "rule change after the rewrite")
+            self.assertEqual(blocked_reasons(self.t.evaluate), {"run record blocked"})
+
+    def test_runner_builder_and_gate_share_the_study_private_root(self):
+        private = self.t.repo / STUDY.private_root
+        derived = blind.run.study_paths(self.t.repo, self.t.study)  # blind's run module, not test_run's copy
+        self.assertEqual((derived.root, derived.private, derived.inputs),
+                         (self.t.paths.root, self.t.paths.private, self.t.paths.inputs))
+        self.assertEqual(self.t.paths.private, private)
+        self.assertTrue((private / "attempts.jsonl").is_file())  # the runner's ledger ...
+        self.assertTrue((private / "run-state.json").is_file())  # ... and sidecar
+        self.assertEqual(self.t.set_dir, private / "t1")  # the builder's set
+        self.assertTrue((private / "t1" / blind.MANIFEST).is_file())
+        self.assertEqual(gate.checkpoint_path(self.t.paths, "t1").parent, private)  # the gate's checkpoint
+        self.assertEqual(blind.run.check_series.check_viewer(self.t.repo, STUDY), [])  # the viewer's base
+        self.assertEqual(self.t.paths.inputs, self.t.repo / "test-photos/private/s19/inputs")  # S-19's root kept
+        self.assertEqual(self.t.paths.local, self.t.repo / "test-photos/private/s19/local")
 
     def test_png_corruption_and_wrong_dimensions_at_gate_time(self):
         item = "p01"
@@ -713,16 +758,16 @@ class SixTest(unittest.TestCase):
             raise RuntimeError(f"decoder failed on {self.t.set_dir}/p01-A.png sha {'c' * 64}")
 
         with self.t.restored(), mock.patch.object(blind, "decode", boom):
-            code, out, err = self.t.cli(gate, "--set", "t1", "--export", str(self.t.repo / blind.RATINGS_REL))
+            code, out, err = self.t.cli(gate, "--set", "t1", "--export", str(self.t.ratings))
         self.assertEqual(code, 1)
         for text in (out, err):
             for needle in (str(self.t.screen.tmp), "Traceback", "c" * 64, "p01-A", "RuntimeError"):
                 self.assertNotIn(needle, text)
         self.assertIn("set: internal error", out)
-        self.assertFalse((self.t.repo / gate.VERDICT_JSON).exists())
+        self.assertFalse((self.t.repo / STUDY.verdict_json).exists())
         with self.t.restored():
             (self.t.set_dir / "p02-B.png").write_bytes(b"not a png")
-            code, out, err = self.t.cli(gate, "--set", "t1", "--export", str(self.t.repo / blind.RATINGS_REL))
+            code, out, err = self.t.cli(gate, "--set", "t1", "--export", str(self.t.ratings))
         self.assertEqual(code, 1)
         self.assertIn("p02: binding failed", out)
         self.assertNotIn(str(self.t.screen.tmp), out + err)
@@ -736,7 +781,7 @@ class SixTest(unittest.TestCase):
             code, out, _ = self.t.cli(blind, "--set", "t1")
             self.assertIn("set: set exists", out)
         with self.t.restored():  # local_hash_mismatch_refused: no seal yet, a wrong pinned Local
-            git(self.t.repo, "rm", "-q", blind.SEAL_REL)
+            git(self.t.repo, "rm", "-q", STUDY.seal_rel)
             git(self.t.repo, "commit", "-q", "-m", "no seal")
             local = self.t.paths.local / "S17-04.jpg"
             Image.new("RGB", (64, 48), (9, 9, 9)).save(local, "JPEG")
@@ -745,7 +790,7 @@ class SixTest(unittest.TestCase):
             self.assertIn("S17-04/1: baseline mismatch", out)
             self.assertIn("S17-04/2: baseline mismatch", out)
             self.assertFalse((self.t.private / "t3").exists())
-            self.assertFalse((self.t.repo / blind.SEAL_REL).exists())
+            self.assertFalse(self.t.seal.exists())
             self.assertNotIn(str(self.t.screen.tmp), out + err)
 
     def test_a_failed_publication_rolls_back_and_the_same_set_can_be_rebuilt(self):
@@ -753,7 +798,7 @@ class SixTest(unittest.TestCase):
             raise OSError("disk full")
 
         def replace_seal(*_a, **_k):  # someone else's seal takes the path before the set moves
-            seal = self.t.repo / blind.SEAL_REL
+            seal = self.t.seal
             seal.unlink()
             seal.write_text("foreign\n")
             raise OSError("rename failed")
@@ -768,9 +813,9 @@ class SixTest(unittest.TestCase):
             set_id = f"r{n}"  # restored() keeps new directories, so each case builds its own set
             self.addCleanup(shutil.rmtree, self.t.private / set_id, True)
             with self.subTest(name), self.t.restored():
-                git(self.t.repo, "rm", "-q", blind.SEAL_REL)
+                git(self.t.repo, "rm", "-q", STUDY.seal_rel)
                 git(self.t.repo, "commit", "-q", "-m", "no seal")
-                seal = self.t.repo / blind.SEAL_REL
+                seal = self.t.seal
                 with contextlib.ExitStack() as stack:
                     stack.enter_context(mock.patch.object(blind, seam, effect))
                     if name == "the seal cannot be removed":
@@ -814,13 +859,13 @@ class UndeliveredTest(unittest.TestCase):
         with t.restored():
             code, out, err = t.cli(gate, "--set", "t1")
             self.assertEqual(code, 0, out + err)
-            report = json.loads((t.repo / gate.VERDICT_JSON).read_text())
+            report = json.loads((t.repo / STUDY.verdict_json).read_text())
             self.assertEqual(report["verdict"], "FAIL")
             self.assertEqual(len(report["reasons"]["not_delivered"]), 6)
             self.assertTrue(all(s["gpt_level"] is None for s in report["slots"]))
-            self.assertEqual((t.repo / gate.VERDICT_MD).read_text().count(gate.UNRATED), 18)
+            self.assertEqual((t.repo / STUDY.verdict_md).read_text().count(gate.UNRATED), 18)
         with t.restored():
-            (t.repo / blind.RATINGS_REL).write_text("{}\n")
+            t.ratings.write_text("{}\n")
             self.assertEqual(blocked_reasons(t.evaluate), {"schema error"})
         self.assertIn("no viewer", t.built["seal"])
 
@@ -852,10 +897,10 @@ class UndeliveredTest(unittest.TestCase):
         s.approve()
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
-            code = blind.main(["--set", "t1"], paths=s.paths)
+            code = blind.main(["--config", CONFIG, "--set", "t1"], root=s.repo)
         self.assertEqual(code, 1)
         self.assertIn("set: run not resolved", out.getvalue())
-        self.assertFalse((s.repo / blind.SEAL_REL).exists())
+        self.assertFalse((s.repo / STUDY.seal_rel).exists())
 
 
 # ---------------------------------------------------------------- the viewer copy
@@ -893,7 +938,7 @@ class ViewerTest(unittest.TestCase):
             self.assertEqual((s20.count(needle), gpt.count(needle)), (1, 1), needle)
         self.assertIn('kind: "gate-pass1-checkpoint"', gpt)
         self.assertIn('M.set_id + "-pass1-checkpoint.json"', gpt)
-        self.assertEqual(gate.checkpoint_path(blind.run.default_paths(), "x").name, "x-pass1-checkpoint.json")
+        self.assertEqual(gate.checkpoint_path(blind.run.study_paths(ROOT, STUDY), "x").name, "x-pass1-checkpoint.json")
 
     def test_two_pass_controller(self):
         if not shutil.which("node"):
