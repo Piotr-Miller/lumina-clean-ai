@@ -610,12 +610,13 @@ def log_detail(paths: run.Paths, tool: str, text: str) -> str | None:
         return None
 
 
-def boundary(tool: str, fn, paths: run.Paths, ways: dict, *, trusted: set[str] = frozenset()) -> tuple[int, object]:
+def boundary(tool: str, fn, paths: run.Paths, ways: dict, *, trusted: set[str] = frozenset(),
+             log: bool = True) -> tuple[int, object]:
     """Run `fn()`; on any exception print sanitized lines only and return exit 1.
 
     Printed: the reason class, an item id only when it is a trusted anonymous id or registered
     slot label, and one fixed way out per class. Never a path, a hash, a traceback or an arm.
-    The detail goes to the private log."""
+    The detail goes to the private log, unless `log` is false (a read-only check writes nothing)."""
     try:
         return 0, fn()
     except BaseException as e:  # noqa: BLE001 - the one boundary
@@ -630,7 +631,8 @@ def boundary(tool: str, fn, paths: run.Paths, ways: dict, *, trusted: set[str] =
         else:
             found = [Blocked("internal error", "".join(traceback.format_exception(e)))]
         found = [b if b.reason in ways else Blocked("internal error", f"{b.reason}: {b.detail}") for b in found]
-        log = log_detail(paths, tool, "\n".join(f"{b.item or 'set'}: {b.reason}: {b.detail}" for b in found) + "\n")
+        detail = "\n".join(f"{b.item or 'set'}: {b.reason}: {b.detail}" for b in found) + "\n"
+        logged = log_detail(paths, tool, detail) if log else None
         rows = sorted({((b.item if b.item in trusted else None), b.reason) for b in found},
                       key=lambda x: (x[0] or "", x[1]))
         for item, reason in rows:
@@ -639,7 +641,10 @@ def boundary(tool: str, fn, paths: run.Paths, ways: dict, *, trusted: set[str] =
         print("BLOCKED. A partial publication remains. Way out:" if partial else "BLOCKED. Nothing was written. Way out:")
         for reason in sorted({r for _, r in rows}):
             print(f"  {reason}: {ways[reason]}.")
-        print(f"Details in the private GPT26 log {log}." if log else "No private log could be written.")
+        if not log:
+            print("No private log was written (read-only check).")
+        else:
+            print(f"Details in the private GPT26 log {logged}." if logged else "No private log could be written.")
         return 1, None
 
 

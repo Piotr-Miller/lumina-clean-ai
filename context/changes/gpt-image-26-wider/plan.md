@@ -699,8 +699,8 @@ tag `gpt26-screen-evidence`.
 
 #### Automated
 
-- [ ] 2.1 GPT26 suite passes on Fedora
-- [ ] 2.2 S-20 regression suite still passes at the candidate
+- [x] 2.1 GPT26 suite passes on Fedora
+- [x] 2.2 S-20 regression suite still passes at the candidate
 
 #### Manual
 
