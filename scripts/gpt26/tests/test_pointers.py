@@ -173,6 +173,11 @@ class PointersTest(unittest.TestCase):
         self.edit("context/foundation/github-issues.md", ISSUE_LOG, ISSUE_LOG.replace("400", "359"))
         self.assert_stale("no row carries the outcome")
 
+    def test_duplicate_issue_mapping_heading_is_ambiguous(self):
+        self.add_issue()
+        self.edit("context/foundation/github-issues.md", "## Status updates", "## Final mapping\n\n## Status updates")
+        self.assert_missing("## Final mapping: 2 matching headings, expected one")
+
     def test_a_mapping_row_without_an_issue_number_is_not_checked(self):
         row = "| — (change) | — | `gpt-image-26-wider` | proposed | — |\n"
         self.edit("context/foundation/github-issues.md", "\n\n## Status updates",

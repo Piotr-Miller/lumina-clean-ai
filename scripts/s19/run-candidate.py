@@ -92,6 +92,10 @@ class RunContext:
     approve: Callable[[int, float], object] = protocol.check_cap
     admission_check: Callable[[list[dict], dict], None] | None = None  # raises Refused inside the lock
     invalid_output_is_transient: bool = True
+    write_guard: Callable[[Path], Path] | None = None
+
+    def guarded_path(self, path: Path) -> Path:
+        return path if self.write_guard is None else self.write_guard(path)
 
 
 def default_context() -> RunContext:
@@ -180,9 +184,9 @@ def require_locks() -> None:
 @contextlib.contextmanager
 def locked(ctx: RunContext | None = None):
     require_locks()
-    path = ledger_path(ctx)
+    path = (ctx or default_context()).guarded_path(ledger_path(ctx).with_suffix(".lock"))
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path.with_suffix(".lock"), "a") as lock:
+    with open(path, "a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         try:
             yield
@@ -198,9 +202,10 @@ def slot_lock(key: tuple, ctx: RunContext | None = None):
     lock when its holder dies, so a crash never blocks a later --resume."""
     require_locks()
     d = ledger_path(ctx).parent / "locks"
-    d.mkdir(parents=True, exist_ok=True)
     name = hashlib.sha256(json.dumps(list(key)).encode()).hexdigest()[:32]
-    with open(d / f"{name}.lock", "a") as lock:
+    path = (ctx or default_context()).guarded_path(d / f"{name}.lock")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
@@ -213,7 +218,7 @@ def slot_lock(key: tuple, ctx: RunContext | None = None):
 
 
 def read_ledger(ctx: RunContext | None = None) -> list[dict]:
-    path = ledger_path(ctx)
+    path = (ctx or default_context()).guarded_path(ledger_path(ctx))
     if not path.exists():
         return []
     rows = []
@@ -228,7 +233,7 @@ def read_ledger(ctx: RunContext | None = None) -> list[dict]:
 
 
 def append(row: dict, ctx: RunContext | None = None) -> None:
-    with open(ledger_path(ctx), "a") as f:
+    with open((ctx or default_context()).guarded_path(ledger_path(ctx)), "a") as f:
         f.write(json.dumps(row, sort_keys=True) + "\n")
         f.flush()
         os.fsync(f.fileno())
@@ -518,6 +523,13 @@ def check_slot_frozen(config: dict, spec: dict, meta: dict) -> None:
                                f"${spec['cost_bound_usd']:.2f} — nothing sent")
 
 
+OUTPUT_EXTENSIONS = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}
+
+
+def output_dir(ctx: RunContext, config: dict, spec: dict) -> Path:
+    return ctx.output_dir / "runs" / config["name"] / spec["photo"] / str(spec["slot"])
+
+
 def record_response(result: dict, config: dict, spec: dict, attempt_id: str, res: dict,
                     size: tuple[int, int], ctx: RunContext | None = None) -> None:
     """Fill `result` for a response that carried an image. The paid bytes are saved before
@@ -526,10 +538,9 @@ def record_response(result: dict, config: dict, spec: dict, attempt_id: str, res
     data = res["output"]
     valid, why, out_meta = validate_output(config, data, size)
     ctx = ctx or default_context()
-    out_dir = ctx.output_dir / "runs" / config["name"] / spec["photo"] / str(spec["slot"])
-    out_dir.mkdir(parents=True, exist_ok=True)
-    ext = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}.get(out_meta.get("format"), "bin")
-    out_path = out_dir / f"{attempt_id}.{ext}"
+    ext = OUTPUT_EXTENSIONS.get(out_meta.get("format"), "bin")
+    out_path = ctx.guarded_path(output_dir(ctx, config, spec) / f"{attempt_id}.{ext}")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_bytes(data)
     result.update(status=OK if valid else INVALID, transient=not valid and ctx.invalid_output_is_transient,
                   usage=res.get("usage"),
@@ -611,6 +622,9 @@ def _drive_slot(config: dict, config_sha: str, series: dict, spec: dict, phase: 
         if protocol.sha256_file(image) != meta["sha256"]:
             raise protocol.Refused(f"{image} no longer matches its prepared hash")
         attempt_id = uuid.uuid4().hex
+        if ctx.write_guard is not None:
+            for ext in (*OUTPUT_EXTENSIONS.values(), "bin"):
+                ctx.guarded_path(output_dir(ctx, config, spec) / f"{attempt_id}.{ext}")
         reserve = {"event": "reserve", "attempt_id": attempt_id, "phase": phase, "series_id": series["series_id"],
                    "config_sha256": config_sha, "config_name": config["name"], "input_sha256": meta["sha256"],
                    "photo": spec["photo"], "slot": spec["slot"], "ordinal": st["attempts"] + 1,

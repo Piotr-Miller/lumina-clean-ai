@@ -109,11 +109,11 @@ def order(fn, *args, reason: str = "order violation", **kw):
 # ---------------------------------------------------------------- seal and set
 
 
-def read_seal(root: Path, seal_rel: str) -> dict:
+def read_seal(root: Path, seal_rel: str, raw: bytes | None = None) -> dict:
     """The seal's one unbulleted, well-formed GPT26-SEAL line."""
     try:
-        lines = (root / seal_rel).read_text().splitlines()
-    except OSError as e:
+        lines = ((root / seal_rel).read_bytes() if raw is None else raw).decode("utf-8").splitlines()
+    except (OSError, UnicodeDecodeError) as e:
         raise Blocked("seal invalid", f"cannot read {seal_rel}: {e}")
     tagged = [ln for ln in lines if "GPT26-SEAL" in ln]
     if len(tagged) != 1:
@@ -164,7 +164,7 @@ def run_record(paths: run.Paths, study: study_mod.Study, key: dict) -> tuple[dic
         raw = read(paths.private / key["set_id"] / entry["name"], f"frozen {part} copy")
         if blind.sha_bytes(raw) != entry.get("sha256"):
             raise Blocked("key mismatch", f"the frozen {part} copy does not hash to the key")
-        live_raw = read(live, f"live {part}", "record changed")
+        live_raw = read(paths.private_write(live), f"live {part}", "record changed")
         if live_raw != raw:
             raise Blocked("record changed", f"the live {part} differs from the copy frozen at the seal")
         frozen[part] = raw
@@ -420,7 +420,8 @@ def quality_of(q: str, gpt_side: str) -> str:
 def evaluate(set_id: str, export: Path | None, paths: run.Paths, study: study_mod.Study) -> dict:
     root = paths.root
     order(evidence.require_write_once, study.seal_rel, root)
-    seal = read_seal(root, study.seal_rel)
+    _, _, sealed_bytes = order(run.checked_files, root, (study.seal_rel,), reason="seal invalid")
+    seal = read_seal(root, study.seal_rel, sealed_bytes[study.seal_rel])
     if seal["set_id"] != set_id:
         raise Blocked("key mismatch", f"--set {set_id} is not the sealed set")
     sealed = load_set(paths, seal)
@@ -437,9 +438,9 @@ def evaluate(set_id: str, export: Path | None, paths: run.Paths, study: study_mo
     else:
         if export is None:
             raise Blocked("missing file", "delivered pairs need the committed ratings export (--export)")
-        order(evidence.require_committed_clean, [study.ratings_rel], root, purpose="the gate")
+        _, _, rated_bytes = order(run.checked_files, root, (study.ratings_rel,))
         order(evidence.require_strictly_before, study.seal_rel, study.ratings_rel, root)
-        raw = read(root / study.ratings_rel, "the ratings export")
+        raw = rated_bytes[study.ratings_rel]
         export_sha = blind.sha_bytes(raw)
         cp = checkpoint_path(paths, set_id)
         cp_raw = cp.read_bytes() if len(sealed["key"]["passes"]) == 2 and cp.exists() else None
@@ -518,9 +519,12 @@ def verdict_md(report: dict) -> str:
 
 
 def write_reports(root: Path, study: study_mod.Study, report: dict) -> None:
-    (root / study.verdict_json).parent.mkdir(parents=True, exist_ok=True)
-    (root / study.verdict_json).write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
-    (root / study.verdict_md).write_text(verdict_md(report))
+    json_path = run.write_path(root, root / study.verdict_json)
+    md_path = run.write_path(root, root / study.verdict_md)
+    markdown = verdict_md(report)
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    json_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    md_path.write_text(markdown, encoding="utf-8")
 
 
 def main(argv: list[str] | None = None, *, root: Path | None = None) -> int:
@@ -550,7 +554,7 @@ def main(argv: list[str] | None = None, *, root: Path | None = None) -> int:
         return report
 
     trusted = blind.slot_labels(study) | {f"p{n:02d}" for n in range(1, len(study.expected_slots) + 1)}
-    code, report = blind.boundary("gate", go, paths.private, WAY_OUT, trusted=trusted)
+    code, report = blind.boundary("gate", go, paths, WAY_OUT, trusted=trusted)
     if code:
         return code
     flat = [r for k in ("not_delivered", "fidelity", "budget_protocol") for r in report["reasons"][k]]

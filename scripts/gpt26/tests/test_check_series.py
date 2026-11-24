@@ -100,6 +100,14 @@ class CheckSeriesTest(unittest.TestCase):
                 self.write_config(config)
                 self.assert_refused("gate.cap_usd")
 
+    def test_config_name_must_be_a_single_output_directory(self):
+        config = copy.deepcopy(self.config)
+        config["name"] = "nested/output"
+        self.write_config(config)
+        for slot in self.series["slots"]:
+            slot["config_name"] = config["name"]
+        self.assert_refused("name must be a single output directory name")
+
     def test_gate_values_come_from_the_config_and_must_agree(self):
         cases = {
             "denominator differs from the slots": (("denominator", 5), "gate.denominator is 5"),

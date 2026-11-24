@@ -507,6 +507,28 @@ class RefusalTest(Screen):
         code, _, err = self.main("--cap", "1.50")
         self.assertRefusedUnreserved(code, err, f"{self.study.change_md}: uncommitted changes")
 
+    def test_git_checks_reject_committed_links_for_approval_and_viewer(self):
+        for rel in (self.study.change_md, self.study.viewer):
+            with self.subTest(path=rel):
+                path = self.repo / rel
+                source = path.with_name("fixture-copy" + path.suffix)
+                path.rename(source)
+                path.symlink_to(source.name)
+                self.commit("fixture with aliased file")
+                with self.assertRaisesRegex(run.Refused, rf"{re.escape(rel)}: Git must record a regular file"):
+                    run.check_registration(self.repo, self.study)
+                path.unlink()
+                source.rename(path)
+                self.commit("restore regular file")
+
+    def test_checked_registration_binds_the_bytes_already_read(self):
+        session = self.session()
+        series = self.repo / self.study.series
+        series.write_bytes(series.read_bytes() + b"\n")
+        self.commit("update series in another revision")
+        with self.assertRaisesRegex(run.Refused, "changed while it was being read"):
+            run.check_registration(self.repo, self.study, consumed=session.consumed)
+
     def test_uncommitted_config_refused(self):
         self.approve()
         self.git("rm", "-q", "--cached", self.study.config)
@@ -525,13 +547,26 @@ class RefusalTest(Screen):
     def test_dirty_rule_file_refused(self):
         self.approve()
         for rel in ("scripts/gpt26/state.py", "scripts/gpt26/study.py", "scripts/s19/run-candidate.py",
+                    check_series.PHASE5_CONFIG, check_series.PHASE5_SERIES,
                     STUDY.viewer):
             with self.subTest(rel=rel):
                 original = (self.repo / rel).read_text()
-                self.write(rel, original + "\n# edited\n")
+                self.write(rel, original + "\n")
                 code, _, err = self.main("--cap", "1.50")
                 self.assertRefusedUnreserved(code, err, f"{rel}: uncommitted changes")
                 self.write(rel, original)
+
+    def test_the_paid_runner_validates_output_directories_before_reserving(self):
+        self.approve()
+        outside = self.tmp / "other-private-output"
+        outside.mkdir()
+        self.private.mkdir()
+        (self.private / "runs").symlink_to(outside, target_is_directory=True)
+        fake = Fake(default="crash")
+        code, _, err = self.main("--cap", "1.50", fake=fake)
+        self.assertRefusedUnreserved(code, err, "unsafe write path")
+        self.assertEqual(fake.calls, [])
+        self.assertEqual(list(outside.iterdir()), [])
 
     def test_untracked_rule_file_refused(self):
         self.approve()
@@ -974,6 +1009,18 @@ class ReportTest(Screen):
         self.assertIn("- BLOCKED: ledger row", md)
         self.assertIn("- Approval: not usable for --cap 1.50", md)
 
+    def test_report_labels_unverified_registration_and_approval_without_sidecar(self):
+        self.approve(commit=False)
+        series = self.repo / self.study.series
+        series.write_bytes(series.read_bytes() + b"\n")
+        code, out, err, md = self.report()
+        self.assertEqual(code, 0, out + err)
+        self.assertIn("- Record: **BLOCKED**.", md)
+        self.assertIn("registration provenance could not be verified", md)
+        self.assertIn("- Approval: not usable for --cap 1.50", md)
+        self.assertNotIn("decision=approved", md)
+        self.assertFalse(self.private.exists())
+
     def test_report_is_exclusive_with_dry_run_and_resume(self):
         self.approve()
         for other in ("--dry-run", "--resume"):
@@ -991,6 +1038,17 @@ class ReportTest(Screen):
         self.assertEqual(code, 1)
         self.assertIn("no report written", err)
         self.assertEqual(list(outside.iterdir()), [])
+
+    def test_report_refuses_a_symlink_even_within_the_change(self):
+        approval = self.repo / self.study.change_md
+        original = approval.read_bytes()
+        target = self.repo / self.study.run_report
+        target.parent.mkdir()
+        target.symlink_to(approval)
+        code, _, err, _ = self.report()
+        self.assertEqual(code, 1)
+        self.assertIn("no report written", err)
+        self.assertEqual(approval.read_bytes(), original)
 
 
 # ---------------------------------------------------------------- reconciliation

@@ -37,10 +37,13 @@ from pathlib import Path, PurePosixPath
 STUDY_FIELDS = ("change_dir", "series", "viewer", "private_root", "series_id")
 KEBAB = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 SERIES_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+PATH_COMPONENT = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]*")
 CHANGES, ARCHIVE, PRIVATE = "context/changes", "context/archive", "test-photos/private"
 # Roots other studies own: the S-19 prepared inputs and Local downloads, the S-20 sets.
 RESERVED_PRIVATE = ("s19", "s20")
 S19_INPUTS = f"{PRIVATE}/s19/inputs"
+PHASE5_CONFIG = "scripts/s19/configs/phase5-gpt.json"
+PHASE5_SERIES = "scripts/s19/series/phase5.json"
 # The runtime files whose bytes decide what a study does, from the paid run to the verdict,
 # except its viewer, which each study registers itself. Pinned at the first reservation and
 # required unchanged on resume, at build and at the gate (plan § Critical Implementation Details).
@@ -54,6 +57,8 @@ BASE_RULE_FILES = (
     "scripts/s19/run-candidate.py",
     "scripts/s19/protocol.py",
     "scripts/s19/inputs.py",
+    PHASE5_CONFIG,
+    PHASE5_SERIES,
     "scripts/s20/evidence.py",
     "scripts/s20/trials.py",
 )
@@ -131,6 +136,31 @@ def within(path: str, base: str) -> bool:
     return path == base or path.startswith(base.rstrip(os.sep) + os.sep)
 
 
+def unaliased_path(root: Path, path: Path) -> Path:
+    """Require a checkout path with no symlinks below its root, including dangling links."""
+    root, path = root.absolute(), path.absolute()
+    if not path.is_relative_to(root) or ".." in path.relative_to(root).parts:
+        raise StudyError(f"{path} is outside {root}")
+    relative = path.relative_to(root)
+    current = root
+    for part in relative.parts:
+        current /= part
+        if current.is_symlink():
+            raise StudyError(f"{relative.as_posix()}: symlink at {current.relative_to(root).as_posix()}")
+        if current != path and current.exists() and not current.is_dir():
+            raise StudyError(f"{relative.as_posix()}: {current.relative_to(root).as_posix()} is not a directory")
+    if path.resolve() != root.resolve() / relative:
+        raise StudyError(f"{relative.as_posix()}: resolves outside its expected location")
+    return path
+
+
+def read_regular(root: Path, rel: str) -> bytes:
+    path = unaliased_path(root, root / rel)
+    if not path.is_file():
+        raise StudyError(f"{rel}: expected a regular file")
+    return path.read_bytes()
+
+
 def rel_path(value, what: str) -> PurePosixPath:
     """A normalized repo-relative POSIX path, or StudyError."""
     if not isinstance(value, str) or not value or value != value.strip():
@@ -201,6 +231,8 @@ def from_config(root: Path, config_path: str, config) -> Study:
         if within(real_private, _real(root / PRIVATE / name)):
             raise StudyError(f"{where}.private_root {s['private_root']!r} resolves into {PRIVATE}/{name}/, "
                              "which another study owns")
+    for rel in (change, private):
+        unaliased_path(root, root / rel)
 
     if not isinstance(s["series_id"], str) or not SERIES_ID.fullmatch(s["series_id"]):
         raise StudyError(f"{where}.series_id {s['series_id']!r} must match {SERIES_ID.pattern}")
@@ -212,7 +244,7 @@ def from_config(root: Path, config_path: str, config) -> Study:
     expected = []
     for n, e in enumerate(slots):
         if not (isinstance(e, dict) and set(e) == {"photo", "slot"} and isinstance(e["photo"], str)
-                and e["photo"] and type(e["slot"]) is int and e["slot"] > 0):
+                and PATH_COMPONENT.fullmatch(e["photo"]) and type(e["slot"]) is int and e["slot"] > 0):
             raise StudyError(f"{config_path}: gate.expected_slots[{n}] must be {{photo: <id>, slot: <positive int>}}")
         expected.append((e["photo"], e["slot"]))
     if len(set(expected)) != len(expected):
@@ -225,7 +257,7 @@ def from_config(root: Path, config_path: str, config) -> Study:
 
 def read_config(root: Path, config_path: str) -> tuple[bytes, object]:
     try:
-        raw = (root / config_path).read_bytes()
+        raw = read_regular(root, config_path)
     except OSError as e:
         raise StudyError(f"{config_path}: cannot read ({e.strerror or e}) — restore it from Git") from e
     try:

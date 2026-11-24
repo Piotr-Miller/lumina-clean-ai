@@ -3,7 +3,7 @@ change_id: gpt-image-26-wider
 title: "Wider blind comparison of GPT-Image-2.6 Sunburst (complexity=low) on all eight tuning photos"
 status: implementing
 created: 2026-11-21
-updated: 2026-11-24
+updated: 2026-12-04
 archived_at: null
 ---
 
