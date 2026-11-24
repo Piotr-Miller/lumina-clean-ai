@@ -1256,6 +1256,8 @@ class PreferenceRuleTest(unittest.TestCase):
                 self.assertEqual(blocked_reasons(lambda: gate.decide(g, records16(["tie"] * 16), SPEND16)),
                                  {"rule kind"})
         self.assertEqual(sorted(gate.RULE_KINDS), sorted(blind.run.check_series.TIE_RULE_KINDS))
+        self.assertEqual({k: v["version"] for k, v in gate.RULE_KINDS.items()},
+                         blind.run.check_series.TIE_RULE_VERSIONS)
 
     def test_p95_above_the_guardrail_does_not_change_the_verdict(self):
         r = gate.decide(GATE16, records16(["tie"] * 16), SPEND16)
@@ -1378,9 +1380,13 @@ class PreferencePipelineTest(unittest.TestCase):
         labels = sorted(self.t.label_of(i) for i in self.t.key["items"])
         prefs = dict(zip(labels, ["gpt-clear", "gpt-slight", "tie", "local-slight", "local-clear", "tie"]))
         with self.t.restored():
-            self.t.commit_ratings(levels={labels[4]: ("none", "severe")}, prefs=prefs)  # Local's level: diagnostic
+            # Local's level is a diagnostic: a tie preference counts although GPT's level (minor) is
+            # worse than Local's (none) on labels[2], and Local's severe on labels[4] changes nothing.
+            self.t.commit_ratings(levels={labels[2]: ("minor", "none"), labels[4]: ("none", "severe")}, prefs=prefs)
             r = self.t.evaluate()
             self.assertEqual((r["verdict"], r["ties"], r["tie_rule_kind"]), ("PASS", 4, "preference"))
+            worse = next(s for s in r["slots"] if s["label"] == labels[2])
+            self.assertEqual((worse["gpt_level"], worse["local_level"], worse["tie"]), ("minor", "none", True))
             self.assertEqual({s["label"]: s["preference"] for s in r["slots"]}, prefs)
             md = gate.verdict_md(r)
             self.assertIn("Fidelity preference", md)

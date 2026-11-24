@@ -6,8 +6,10 @@
 Reads only repository files — no Pillow, private corpus, API key, network or runner import — and
 writes nothing. For the study the config registers (`study.py`) it verifies that:
 
-  - the study's paths are valid, its change folder is not archived, and its viewer's manifest
-    base resolves to `study.private_root`;
+  - the study's paths are valid, its change folder is not archived, its viewer's manifest
+    base resolves to `study.private_root`, and the viewer's checkpoint and export carry the
+    version the registered `gate.tie_rule_kind` reads (1 for `level`, 2 for `preference`), so a
+    mismatch is refused before spend rather than BLOCKED at the gate;
   - the series registers exactly the config's `gate.expected_slots`, once each, with the input
     hashes and source/request sizes of `scripts/s19/series/phase5.json`, per-call cost bounds
     recomputed from the config, no prerequisites, and a first-attempt sum within
@@ -66,9 +68,11 @@ GATE_INVARIANTS = {
     "fidelity_disqualifying_levels": ["significant", "severe"],
     "undelivered_fidelity": "nieoceniona",
 }
-# The tie rules gate.py knows (its RULE_KINDS): `level` (the screen's GPT level <= Local level,
-# version-1 exports) and `preference` (the pairwise fidelity preference, version-2 exports).
-TIE_RULE_KINDS = ("level", "preference")
+# The tie rules gate.py knows (its RULE_KINDS), each with the export version it reads: `level`
+# (the screen's GPT level <= Local level, version-1 exports) and `preference` (the pairwise
+# fidelity preference, version-2 exports). The registered viewer must write that version.
+TIE_RULE_VERSIONS = {"level": 1, "preference": 2}
+TIE_RULE_KINDS = tuple(TIE_RULE_VERSIONS)
 BLIND_FIELDS = ("two_pass_rating", "repeated_local_recognition_risk", "owner_commitment", "comparison_scale", "real_local")
 SLOT_FIELDS = {
     "config_sha256",
@@ -86,6 +90,9 @@ SLOT_FIELDS = {
 }
 # The viewer's one manifest base line, as the S-20 viewer writes it.
 VIEWER_BASE = re.compile(r'^\s*const base = "([^"]*)" \+ setId \+ "/";\s*$', re.M)
+# The `version:` lines of the objects the viewer writes for the gate (its checkpoint and its
+# export), as a literal or a named constant; the browser-state object keeps its version inline.
+VIEWER_VERSION = re.compile(r"^\s*version: ([A-Za-z_][A-Za-z0-9_]*|\d+),\s*$", re.M)
 
 
 class Unreadable(Exception):
@@ -162,8 +169,22 @@ def finite_positive(value) -> bool:
     return type(value) in (int, float) and math.isfinite(value) and value > 0
 
 
-def check_viewer(root: Path, study: study_mod.Study, raw: bytes | None = None) -> list[str]:
-    """The registered viewer loads its sets from `study.private_root` (plan Phase 3 §1)."""
+def viewer_versions(text: str) -> list[int | None]:
+    """The version each gate-facing object in the viewer writes; None when it cannot be resolved."""
+    out: list[int | None] = []
+    for value in VIEWER_VERSION.findall(text):
+        if value.isdigit():
+            out.append(int(value))
+            continue
+        consts = re.findall(rf"^\s*const {re.escape(value)} = (\d+);\s*$", text, re.M)
+        out.append(int(consts[0]) if len(consts) == 1 else None)
+    return out
+
+
+def check_viewer(root: Path, study: study_mod.Study, raw: bytes | None = None,
+                 tie_rule_kind: object = None) -> list[str]:
+    """The registered viewer loads its sets from `study.private_root` (plan Phase 3 §1) and, when
+    the tie rule kind is known, writes the export version that kind's gate reads."""
     try:
         text = (study_mod.read_regular(root, study.viewer) if raw is None else raw).decode("utf-8")
     except (OSError, UnicodeDecodeError, study_mod.StudyError) as e:
@@ -176,6 +197,12 @@ def check_viewer(root: Path, study: study_mod.Study, raw: bytes | None = None) -
     if resolved != study.private_root:
         return [f"{study.viewer}: the manifest base {bases[0]!r} resolves to {resolved!r}, not the study's "
                 f"private_root {study.private_root!r} — point the viewer at the study's sets"]
+    if tie_rule_kind in TIE_RULE_VERSIONS:
+        want = TIE_RULE_VERSIONS[tie_rule_kind]
+        found = viewer_versions(text)
+        if not found or any(v != want for v in found):
+            return [f"{study.viewer}: writes checkpoint/export version(s) {found!r}, but gate.tie_rule_kind "
+                    f"{tie_rule_kind!r} reads version {want} — register the viewer that rule needs, or the other kind"]
     return []
 
 
@@ -248,7 +275,8 @@ def check_config(config: object, phase5: dict, study: study_mod.Study, root: Pat
         for key in BLIND_FIELDS:
             if not isinstance(blind.get(key), str) or not blind.get(key).strip():
                 errs.append(f"{CONFIG}: blind_protocol.{key} is missing or empty")
-    return errs + check_viewer(root, study, viewer_raw)
+    kind = gate.get("tie_rule_kind") if isinstance(gate, dict) else None
+    return errs + check_viewer(root, study, viewer_raw, kind)
 
 
 def check_series(series: object, config: dict, config_sha: str, phase5_series: dict,
