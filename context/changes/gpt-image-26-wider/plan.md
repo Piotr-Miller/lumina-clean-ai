@@ -693,7 +693,7 @@ tag `gpt26-screen-evidence`.
 
 #### Manual
 
-- [ ] 1.4 The owner confirms only paths moved and spend behaviour is unchanged
+- [x] 1.4 The owner confirms only paths moved and spend behaviour is unchanged — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
 
 ### Phase 2: Pairwise fidelity and the visible anchor
 
@@ -704,7 +704,7 @@ tag `gpt26-screen-evidence`.
 
 #### Manual
 
-- [ ] 2.3 The owner sees the anchor text and the required fidelity-preference question in the viewer copy
+- [x] 2.3 The owner sees the anchor text and the required fidelity-preference question in the viewer copy — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
 
 ### Phase 3: Pre-registration
 
@@ -738,6 +738,6 @@ tag `gpt26-screen-evidence`.
 
 #### Manual
 
-- [ ] 5.4 The owner rates all 16 pairs in the sealed two-pass order
-- [ ] 5.5 The owner confirms the verdict states each result class separately
+- [x] 5.4 The owner rates all 16 pairs in the sealed two-pass order — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
+- [x] 5.5 The owner confirms the verdict states each result class separately — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
 - [ ] 5.6 The owner decides on the GitHub issue
