@@ -42,6 +42,10 @@ paid comparison on S17-01…07 and S17-21, with 2 slots each.
 - 2026-11-25: owner decision — GPT-Image-2.6 Sunburst goes to production despite the gate's FAIL;
   the verdict stays FAIL. Recorded in `## Outcome`; delivery is a separate change. No plan text
   changes.
+- 2026-11-25: owner decision — no GitHub issue for this study (Progress 5.6); the production
+  delivery change may get its own. No plan text changes.
+- 2026-11-25: owner decision — 5.6 gets an explicit surface (`context/foundation/github-issues.md`)
+  so its acceptance can be recorded; plan.md Phase 5 Manual Verification.
 
 ## Outcome
 

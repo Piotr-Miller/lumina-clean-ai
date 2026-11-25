@@ -622,7 +622,7 @@ target because the tag predates the generated verdict.
 
 - The owner rates every delivered pair in sealed order, saves the private checkpoint before pass 2 when there are two passes, and commits the export after the seal. At zero delivery, record n/a against the terminal run evidence — surface: context/changes/gpt-image-26-wider/evaluations/ratings.json
 - The owner reads `verdict.md` and confirms that undelivered slots, disqualifications, the 8/16 count and the diagnostics are stated separately — surface: context/changes/gpt-image-26-wider/evaluations/verdict.md
-- The owner decides whether to open or close a GitHub issue for this change (outward-facing; asked once)
+- The owner decides whether to open or close a GitHub issue for this change (outward-facing; asked once) (owner decision 2026-11-25: explicit surface) — surface: context/foundation/github-issues.md
 
 ---
 
