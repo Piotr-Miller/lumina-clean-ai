@@ -1,7 +1,7 @@
 # Kolejne kroki (stan na 2026-11-25)
 
 Produkcja: master `a0193b0`, CI zielone. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0` od 2026-10-28).
-Gałąź `chore/gpt-image-26-wider`: fazy 1–5 zrobione 2026-11-25, werdykt FAIL (krok 6).
+`gpt-image-26-wider` zmergowane (#373) i zarchiwizowane 2026-11-25, werdykt FAIL (krok 6).
 
 ## Teraz: decyzja o Cloud AI po S-20
 
@@ -35,11 +35,11 @@ Następne kroki, po kolei:
    zakotwiczył skalę („istotna” = widoczna na całym kadrze bez powiększenia) i dodał porównanie parami.
    Płatny przebieg: 16 z 16 slotów, $1,48 z $3,50. Ślepa ocena 16 par → werdykt **FAIL**: 7 z 16 par
    co najmniej remis (wymagane 8), Local wierniejszy w pozostałych 9; żadna strona GPT nie „istotna”.
-   Werdykt: [`verdict.md`](context/changes/gpt-image-26-wider/evaluations/verdict.md), tag
+   Werdykt: [`verdict.md`](context/archive/2026-11-21-gpt-image-26-wider/evaluations/verdict.md), tag
    `gpt26-wider-evidence` na origin. **Decyzja właściciela 2026-11-25:** GPT-Image-2.6 Sunburst idzie na
    produkcję mimo FAIL (werdykt bez zmian; `change.md` § Outcome). Wdrożenie to osobna zmiana
-   (`/rune-new`); do tego czasu Cloud nadal wstrzymany. Zostało: akceptacje 5.4–5.6, PR, merge,
-   powtórna weryfikacja przy tagu po merge'u (5.3), archiwum.
+   (`/rune-new`); do tego czasu Cloud nadal wstrzymany. PR #373 zmergowany (`42446ef`), 5.3 potwierdzone przy tagu po merge'u, akceptacje
+   zapisane; zarchiwizowane 2026-11-25 (`context/archive/2026-11-21-gpt-image-26-wider/`).
 
 Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
 w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą ścieżkę `context/changes/…`
@@ -75,8 +75,8 @@ w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą 
   (`context/archive/2026-11-05-gpt-image-26-screen/`, #359 zamknięte); szerszy test to krok 6 w „Teraz”.
 
 - **`gpt-image-26-wider`**: fazy 1–5 zrobione, werdykt **FAIL** (7 z 16 par co najmniej remis, wymagane 8;
-  [`verdict.md`](context/changes/gpt-image-26-wider/evaluations/verdict.md)). Następnie: PR → merge →
-  powtórna weryfikacja przy tagu `gpt26-wider-evidence` → `/rune-archive gpt-image-26-wider`. Decyzja właściciela
+  [`verdict.md`](context/archive/2026-11-21-gpt-image-26-wider/evaluations/verdict.md)). Zmergowane (#373) i
+  zarchiwizowane 2026-11-25. Decyzja właściciela
   2026-11-25: GPT na produkcję mimo FAIL → nowa zmiana wdrożeniowa przez `/rune-new`.
 
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,
