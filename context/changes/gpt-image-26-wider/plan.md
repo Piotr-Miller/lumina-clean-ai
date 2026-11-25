@@ -710,8 +710,8 @@ tag `gpt26-screen-evidence`.
 
 #### Automated
 
-- [x] 3.1 Registration is complete
-- [x] 3.2 Dry run on Fedora resolves all 16 inputs within the cap
+- [x] 3.1 Registration is complete — 2a5f468
+- [x] 3.2 Dry run on Fedora resolves all 16 inputs within the cap — 2a5f468
 
 #### Manual
 
