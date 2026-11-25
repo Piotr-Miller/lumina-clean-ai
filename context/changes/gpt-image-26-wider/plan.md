@@ -740,4 +740,4 @@ tag `gpt26-screen-evidence`.
 
 - [x] 5.4 The owner rates all 16 pairs in the sealed two-pass order — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
 - [x] 5.5 The owner confirms the verdict states each result class separately — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
-- [ ] 5.6 The owner decides on the GitHub issue
+- [x] 5.6 The owner decides on the GitHub issue — accepted at 8cceb6f9705b91ff620ba72b8b6e741929d15e92
