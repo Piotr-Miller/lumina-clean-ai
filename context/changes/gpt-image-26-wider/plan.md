@@ -732,8 +732,8 @@ tag `gpt26-screen-evidence`.
 
 #### Automated
 
-- [x] 5.1 (paid) Gate computes a verdict from the sealed set and committed ratings
-- [x] 5.2 No stale pointer
+- [x] 5.1 (paid) Gate computes a verdict from the sealed set and committed ratings — 863cf53
+- [x] 5.2 No stale pointer — 863cf53
 - [ ] 5.3 Verdict re-verifies at the evidence tag after integration
 
 #### Manual

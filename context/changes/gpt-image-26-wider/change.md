@@ -37,6 +37,12 @@ paid comparison on S17-01…07 and S17-21, with 2 slots each.
   acceptable. Every other pinned dependency and the `package-lock.json` sha256 match; recorded in
   `evaluations/regression-baseline.md` of this change. No plan text changes.
 
+### Owner decisions (2026-11-25, /rune-implement phase 5)
+
+- 2026-11-25: owner decision — GPT-Image-2.6 Sunburst goes to production despite the gate's FAIL;
+  the verdict stays FAIL. Recorded in `## Outcome`; delivery is a separate change. No plan text
+  changes.
+
 ## Outcome
 
 2026-11-25: the wider blind comparison came out **FAIL**
@@ -52,8 +58,18 @@ paid comparison on S17-01…07 and S17-21, with 2 slots each.
   p95 wall time 36.7 s vs the 30 s guardrail.
 - **Evidence:** seal `b70963f`, ratings `847587c`, tag `gpt26-wider-evidence` on origin.
 
-The earlier screen's PASS (2026-11-21, archived) stays a sealed historical result. Cloud stays
-paused; this outcome opens no deployment.
+**Owner decision (2026-11-25): GPT-Image-2.6 Sunburst goes to production despite this FAIL.**
+The gate's verdict stays FAIL and is not re-decided: the decision is the owner's product call,
+made after the verdict, weighing the diagnostics above: the fidelity losses were all `minor` and
+every lost preference only `local-slight`, while quality favoured GPT on 15 of 16 pairs. It does
+not turn this study into evidence that GPT is as faithful as Local.
+
+Delivery is out of scope here (plan § What We're NOT Doing). It needs its own change, opened with
+`/rune-new`, which settles the production parameters (this study tested `quality=high`,
+`complexity=low`, `moderation=auto`), cost, the daily cap and the risk of altered content on users'
+photos. Cloud stays paused until that change ships.
+
+The earlier screen's PASS (2026-11-21, archived) stays a sealed historical result.
 
 ## GPT26 approvals
 

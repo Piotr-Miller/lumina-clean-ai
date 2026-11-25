@@ -36,7 +36,9 @@ Następne kroki, po kolei:
    Płatny przebieg: 16 z 16 slotów, $1,48 z $3,50. Ślepa ocena 16 par → werdykt **FAIL**: 7 z 16 par
    co najmniej remis (wymagane 8), Local wierniejszy w pozostałych 9; żadna strona GPT nie „istotna”.
    Werdykt: [`verdict.md`](context/changes/gpt-image-26-wider/evaluations/verdict.md), tag
-   `gpt26-wider-evidence` na origin. Cloud nadal wstrzymany. Zostało: akceptacje 5.5/5.6, PR, merge,
+   `gpt26-wider-evidence` na origin. **Decyzja właściciela 2026-11-25:** GPT-Image-2.6 Sunburst idzie na
+   produkcję mimo FAIL (werdykt bez zmian; `change.md` § Outcome). Wdrożenie to osobna zmiana
+   (`/rune-new`); do tego czasu Cloud nadal wstrzymany. Zostało: akceptacje 5.4–5.6, PR, merge,
    powtórna weryfikacja przy tagu po merge'u (5.3), archiwum.
 
 Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
@@ -74,7 +76,8 @@ w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą 
 
 - **`gpt-image-26-wider`**: fazy 1–5 zrobione, werdykt **FAIL** (7 z 16 par co najmniej remis, wymagane 8;
   [`verdict.md`](context/changes/gpt-image-26-wider/evaluations/verdict.md)). Następnie: PR → merge →
-  powtórna weryfikacja przy tagu `gpt26-wider-evidence` → `/rune-archive gpt-image-26-wider`.
+  powtórna weryfikacja przy tagu `gpt26-wider-evidence` → `/rune-archive gpt-image-26-wider`. Decyzja właściciela
+  2026-11-25: GPT na produkcję mimo FAIL → nowa zmiana wdrożeniowa przez `/rune-new`.
 
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,
   HTML strony 502 od Replicate). Analiza w `context/changes/cloud-error-message-leak/change.md`.
