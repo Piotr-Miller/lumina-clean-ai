@@ -1,7 +1,7 @@
 ---
 change_id: gpt-image-26-wider
 title: "Wider blind comparison of GPT-Image-2.6 Sunburst (complexity=low) on all eight tuning photos"
-status: implementing
+status: implemented
 created: 2026-11-21
 updated: 2026-11-25
 archived_at: null
@@ -46,6 +46,16 @@ paid comparison on S17-01…07 and S17-21, with 2 slots each.
   delivery change may get its own. No plan text changes.
 - 2026-11-25: owner decision — 5.6 gets an explicit surface (`context/foundation/github-issues.md`)
   so its acceptance can be recorded; plan.md Phase 5 Manual Verification.
+- 2026-11-25: PR #373 rebase-merged as `42446ef`; Progress SHAs repointed to their master
+  equivalents by patch-id; 5.3 re-verified at the evidence tag from the integrated checkout.
+- 2026-11-25: re-confirmed 1.4 — was accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25; accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- 2026-11-25: re-confirmed 2.3 — was accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25; accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- 2026-11-25: re-confirmed 3.3 — was accepted at ea8d88e8e3c7d444d156327d119b87ad0e0e3103; accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- 2026-11-25: re-confirmed 3.4 — was accepted at ea8d88e8e3c7d444d156327d119b87ad0e0e3103; accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- 2026-11-25: re-confirmed 4.2 — was accepted at d2cedd40d659ea4b714b5ef1cfcc7d23b8bd4508; accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- 2026-11-25: re-confirmed 5.4 — was accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25; accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- 2026-11-25: re-confirmed 5.5 — was accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25; accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- 2026-11-25: re-confirmed 5.6 — was accepted at 8cceb6f9705b91ff620ba72b8b6e741929d15e92; accepted at 42446ef825e4400cf4a4db78266cc9179c919449
 
 ## Outcome
 

@@ -687,57 +687,57 @@ tag `gpt26-screen-evidence`.
 
 #### Automated
 
-- [x] 1.1 GPT26 suite passes on Fedora — 3bce55e
-- [x] 1.2 No tool path names the screen's change folder — 3bce55e
-- [x] 1.3 S-19 regression suite still passes at the candidate — 3bce55e
+- [x] 1.1 GPT26 suite passes on Fedora — 5858c44
+- [x] 1.2 No tool path names the screen's change folder — 5858c44
+- [x] 1.3 S-19 regression suite still passes at the candidate — 5858c44
 
 #### Manual
 
-- [x] 1.4 The owner confirms only paths moved and spend behaviour is unchanged — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
+- [x] 1.4 The owner confirms only paths moved and spend behaviour is unchanged — accepted at 42446ef825e4400cf4a4db78266cc9179c919449
 
 ### Phase 2: Pairwise fidelity and the visible anchor
 
 #### Automated
 
-- [x] 2.1 GPT26 suite passes on Fedora — ad9584b
-- [x] 2.2 S-20 regression suite still passes at the candidate — ad9584b
+- [x] 2.1 GPT26 suite passes on Fedora — a32e42e
+- [x] 2.2 S-20 regression suite still passes at the candidate — a32e42e
 
 #### Manual
 
-- [x] 2.3 The owner sees the anchor text and the required fidelity-preference question in the viewer copy — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
+- [x] 2.3 The owner sees the anchor text and the required fidelity-preference question in the viewer copy — accepted at 42446ef825e4400cf4a4db78266cc9179c919449
 
 ### Phase 3: Pre-registration
 
 #### Automated
 
-- [x] 3.1 Registration is complete — 2a5f468
-- [x] 3.2 Dry run on Fedora resolves all 16 inputs within the cap — 2a5f468
+- [x] 3.1 Registration is complete — af118bf
+- [x] 3.2 Dry run on Fedora resolves all 16 inputs within the cap — af118bf
 
 #### Manual
 
-- [x] 3.3 The owner confirms the gate block and definitions state their rules — accepted at ea8d88e8e3c7d444d156327d119b87ad0e0e3103
-- [x] 3.4 The owner confirms the 16 slots and inputs — accepted at ea8d88e8e3c7d444d156327d119b87ad0e0e3103
+- [x] 3.3 The owner confirms the gate block and definitions state their rules — accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- [x] 3.4 The owner confirms the 16 slots and inputs — accepted at 42446ef825e4400cf4a4db78266cc9179c919449
 
 ### Phase 4: Paid run (Fedora)
 
 #### Automated
 
-- [x] 4.1 (paid) All 16 slots resolved within the cap — d2cedd4
+- [x] 4.1 (paid) All 16 slots resolved within the cap — 115b0cc
 
 #### Manual
 
-- [x] 4.2 The owner checks run.md — accepted at d2cedd40d659ea4b714b5ef1cfcc7d23b8bd4508
+- [x] 4.2 The owner checks run.md — accepted at 42446ef825e4400cf4a4db78266cc9179c919449
 
 ### Phase 5: Seal, rating, verdict, pointers
 
 #### Automated
 
-- [x] 5.1 (paid) Gate computes a verdict from the sealed set and committed ratings — 863cf53
-- [x] 5.2 No stale pointer — 863cf53
-- [ ] 5.3 Verdict re-verifies at the evidence tag after integration
+- [x] 5.1 (paid) Gate computes a verdict from the sealed set and committed ratings — 04ae8b1
+- [x] 5.2 No stale pointer — 04ae8b1
+- [x] 5.3 Verdict re-verifies at the evidence tag after integration — no-diff
 
 #### Manual
 
-- [x] 5.4 The owner rates all 16 pairs in the sealed two-pass order — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
-- [x] 5.5 The owner confirms the verdict states each result class separately — accepted at 2a728b0cd4f1d445bb68957f9ec097b4f7f4ba25
-- [x] 5.6 The owner decides on the GitHub issue — accepted at 8cceb6f9705b91ff620ba72b8b6e741929d15e92
+- [x] 5.4 The owner rates all 16 pairs in the sealed two-pass order — accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- [x] 5.5 The owner confirms the verdict states each result class separately — accepted at 42446ef825e4400cf4a4db78266cc9179c919449
+- [x] 5.6 The owner decides on the GitHub issue — accepted at 42446ef825e4400cf4a4db78266cc9179c919449
