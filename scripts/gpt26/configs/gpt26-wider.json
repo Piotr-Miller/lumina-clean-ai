@@ -1,0 +1,231 @@
+{
+  "name": "gpt26-wider",
+  "study": {
+    "change_dir": "context/changes/gpt-image-26-wider",
+    "series": "scripts/gpt26/series/wider.json",
+    "viewer": "context/changes/gpt-image-26-wider/references/compare-gpt26.html",
+    "private_root": "test-photos/private/gpt26-wider",
+    "series_id": "gpt26-wider"
+  },
+  "kind": "gpt",
+  "vendor": "openai",
+  "endpoint": "https://api.openai.com/v1/images/edits",
+  "model": "gpt-image-2.6-sunburst",
+  "model_snapshot_observed": null,
+  "prompt": "Enhance this low-light photo: reduce noise and correct the exposure while keeping it a natural night scene. Preserve every detail exactly as it is: all text and lettering, faces, geometry and the colours of the light sources. Do not add, remove or change any content. Keep a dark night sky dark: do not turn a black sky blue and do not add clouds, stars or aurora bands that are not clearly visible in the original. Do not sharpen or reshape aurora. Preserve the original shape, colour and glow of neon lights. Do not reconstruct missing or ambiguous neon strokes or lettering.",
+  "quality": "high",
+  "output_format": "png",
+  "n": 1,
+  "request_fields": {
+    "complexity": "low",
+    "moderation": "auto"
+  },
+  "input": "common",
+  "size_rule": {
+    "description": "standard: ≤ 3,686,400 px (2560×1440, OpenAI's non-experimental limit), owner decision 2026-10-31",
+    "max_pixels": 3686400,
+    "min_pixels": 655360,
+    "max_edge": 3840,
+    "multiple": 16,
+    "max_aspect": 3.0,
+    "algorithm": "largest short edge (multiple of 16) whose aspect-rounded long edge fits; no cropping"
+  },
+  "validity": {
+    "format": "PNG",
+    "size": "exactly the requested size"
+  },
+  "retry": {
+    "max_retries": 1,
+    "backoff_s": [60],
+    "transient_http": [408, 429, 500, 502, 503, 504],
+    "timeout_s": 900,
+    "note": "owner decision 2026-10-31: at most one retry per logical slot (two attempts), transient technical failures only; urllib makes no hidden retries; owner decision 2026-11-02: HTTP 400 moderation_blocked is retried once with the identical input, prompt and parameters, within the same two-attempt limit and the cap; a second block, or a cap that leaves no room for the retry, fails the slot. A procedural change from Phase 3: a better gate completion cannot be attributed to the prompt alone.",
+    "retry_error_codes": ["moderation_blocked"]
+  },
+  "cost_bound": {
+    "basis": "No published GPT Image 2.5 token formula exists (OpenAI image-generation guide, read 2026-10-31: 'use the response's usage to measure token consumption'). Bound from the spike's measured usage (research.md § Empirical half): output 2,223 image tokens at 3.15 MP and 2,127 at 3.54 MP, i.e. ≤ 706 tokens/MP; bounded at 1,500 tokens/MP (> 2× the measured density). Input 1,452 and 1,504 image tokens for 12 MP and 17.7 MP inputs; bounded at 3,000. Prompt 71 text tokens; bounded at 200 at $10/M (above any listed text-input rate). Rates $30/M output image, $8/M input image (OpenAI pricing, read 2026-10-29). Plus $0.01 per call for billing rounding; the total is rounded up to the cent. A response whose usage exceeds the bound stops the runner.",
+    "output_image_tokens_per_megapixel": 1500,
+    "input_image_tokens": 3000,
+    "input_text_tokens": 200,
+    "usd_per_million_output_image_tokens": 30,
+    "usd_per_million_input_image_tokens": 8,
+    "usd_per_million_input_text_tokens": 10,
+    "rounding_usd": 0.01,
+    "rates_rechecked": "2026-11-17 against context/changes/gpt-image-26-screen/evaluations/vendor-facts.md: gpt-image-2.6-sunburst image output $30/M and image input $8/M equal the bound's rates; text input is $5/M, below the bound's $10/M. The token densities are GPT Image 2.5's measured usage; 2.6's usage is unknown, so a response above the bound still stops the runner. Numeric fields unchanged from phase5-gpt.json."
+  },
+  "implementation": {
+    "scripts/s19/inputs.py": "10c7610ccefee0ee19b1ff6847b15463152b879efd74a51205fc03d9e6f3b3bd"
+  },
+  "gate": {
+    "id": "gpt26-wider-v1",
+    "statement": "PASS iff all 16 slots are delivered, and no GPT side is significant/severe, and >= 8/16 pairs are at least a tie (the pair's fidelity preference, mapped through the sealed key, is tie, gpt-slight or gpt-clear), and there is no cost-bound breach and conservative spend <= cap. Otherwise FAIL. An undelivered slot is never excluded or replaced, is recorded as 'nieoceniona' (not rated), and is reported as 'not delivered', not as a fidelity loss. Quality preference, per-side levels of Local and wall time are diagnostics and never change the verdict. A PASS opens a further decision only; it never leads to a deployment, and Cloud stays paused.",
+    "denominator": 16,
+    "expected_slots": [
+      {
+        "photo": "S17-01",
+        "slot": 1
+      },
+      {
+        "photo": "S17-01",
+        "slot": 2
+      },
+      {
+        "photo": "S17-02",
+        "slot": 1
+      },
+      {
+        "photo": "S17-02",
+        "slot": 2
+      },
+      {
+        "photo": "S17-03",
+        "slot": 1
+      },
+      {
+        "photo": "S17-03",
+        "slot": 2
+      },
+      {
+        "photo": "S17-04",
+        "slot": 1
+      },
+      {
+        "photo": "S17-04",
+        "slot": 2
+      },
+      {
+        "photo": "S17-05",
+        "slot": 1
+      },
+      {
+        "photo": "S17-05",
+        "slot": 2
+      },
+      {
+        "photo": "S17-06",
+        "slot": 1
+      },
+      {
+        "photo": "S17-06",
+        "slot": 2
+      },
+      {
+        "photo": "S17-07",
+        "slot": 1
+      },
+      {
+        "photo": "S17-07",
+        "slot": 2
+      },
+      {
+        "photo": "S17-21",
+        "slot": 1
+      },
+      {
+        "photo": "S17-21",
+        "slot": 2
+      }
+    ],
+    "max_attempts_per_slot": 2,
+    "fidelity_levels": ["none", "minor", "significant", "severe"],
+    "fidelity_blocking_levels": ["uncertain"],
+    "fidelity_evidence_required_levels": ["significant", "severe"],
+    "fidelity_disqualifying_levels": ["significant", "severe"],
+    "tie_rule_kind": "preference",
+    "tie_rule": "a pair is at least a tie iff its fidelity preference (A-clear / A-slight / tie / B-slight / B-clear), mapped through the sealed key's gpt_side, is tie, gpt-slight or gpt-clear; local-slight and local-clear count against GPT; a missing, null or invalid preference blocks the gate and never counts as a tie",
+    "min_tie_pairs": 8,
+    "cap_usd": 3.5,
+    "undelivered_fidelity": "nieoceniona",
+    "diagnostics": [
+      "quality preference (A-clear…B-clear)",
+      "per-side fidelity levels of Local",
+      "fidelity ratings of delivered outputs when any slot is undelivered",
+      "wall time per call and p95 vs the 30 s guardrail"
+    ],
+    "pass_opens": "a further decision only; never a deployment",
+    "definitions": [
+      {
+        "term": "slot",
+        "decided_meaning": "One logical render (photo, slot 1 or 2), at most two attempts; the retry after `moderation_blocked` or a transient failure uses identical input, prompt and parameters and must fit the cap",
+        "origin": "user (screen 2026-11-05/16, carried)",
+        "on_degenerate_data": "A second block, or no budget left for the retry → undelivered"
+      },
+      {
+        "term": "denominator",
+        "decided_meaning": "Always 16 (S17-01…07, S17-21 × slots 1, 2); an undelivered slot is never excluded or replaced",
+        "origin": "user (8 × 2, 2026-11-21)",
+        "on_degenerate_data": "15 delivered + 1 blocked → denominator 16 → FAIL"
+      },
+      {
+        "term": "fidelity level (per side)",
+        "decided_meaning": "`none < minor < significant < severe`, judged against the original at comparison scale. **significant** = the change is noticeable with the whole frame fitted to the viewer, without zoom. **minor** = found only when zoomed in. The same rule applies to invented or altered content (identity, legible text, objects) and to removed real detail or a changed colour character, on both sides. **severe** = visible without zoom and changing the scene as a whole. `uncertain` blocks the gate until re-rated.",
+        "origin": "user (graded by size/visibility; \"visible without zoom\", 2026-11-21); severe's wording: plan (it has no gate consequence beyond significant)",
+        "on_degenerate_data": "A redrawn face visible only at zoom → `minor`; the same face visible at full frame → `significant` → FAIL"
+      },
+      {
+        "term": "evidence",
+        "decided_meaning": "`significant`/`severe` need at least one crop and a reason; the reason states what is visible without zoom",
+        "origin": "user (S-20 scale) + plan (reason wording)",
+        "on_degenerate_data": "A `significant` without a crop → BLOCKED"
+      },
+      {
+        "term": "fidelity preference",
+        "decided_meaning": "Per pair, which side is more faithful to the original: `A-clear / A-slight / tie / B-slight / B-clear`, mapped through the sealed key to `local-clear … gpt-clear`; required for every pair, no `uncertain`",
+        "origin": "user (pairwise like S-19, 2026-11-21)",
+        "on_degenerate_data": "Missing on one pair → BLOCKED, not counted as a tie"
+      },
+      {
+        "term": "at least a tie",
+        "decided_meaning": "The pair's mapped preference is `tie`, `gpt-slight` or `gpt-clear`",
+        "origin": "user (2026-11-21)",
+        "on_degenerate_data": "`local-slight` counts against GPT"
+      },
+      {
+        "term": "majority",
+        "decided_meaning": "≥ 8 of 16 pairs at least a tie",
+        "origin": "user (\"≥ half\", 2026-11-21)",
+        "on_degenerate_data": "7 of 16 → FAIL"
+      },
+      {
+        "term": "gate verdict",
+        "decided_meaning": "**PASS** iff all 16 slots are delivered, **and** no GPT side is `significant`/`severe`, **and** ≥ 8/16 pairs are at least a tie, **and** there is no cost-bound breach and conservative spend ≤ cap. Otherwise **FAIL**. Quality preference, per-side levels of Local and wall time are diagnostics.",
+        "origin": "user",
+        "on_degenerate_data": "A FAIL from undelivered slots is reported as \"not delivered\", not as a fidelity loss"
+      },
+      {
+        "term": "wall time",
+        "decided_meaning": "p95 per call against the 30 s guardrail; diagnostic only",
+        "origin": "user (2026-11-21)",
+        "on_degenerate_data": "p95 31 s on a PASS → reported, verdict unchanged"
+      },
+      {
+        "term": "comparison scale",
+        "decided_meaning": "The GPT output's exact size; original and Local are Lanczos-downscaled to it; crops are in that space",
+        "origin": "user (screen 2026-11-16, carried)",
+        "on_degenerate_data": "< 1 % aspect distortion from multiple-of-16 rounding is documented"
+      },
+      {
+        "term": "real Local",
+        "decided_meaning": "The pinned files in `scripts/s20/configs/local-baselines.json`, byte-identical",
+        "origin": "product",
+        "on_degenerate_data": "A hash mismatch → refused, nothing built"
+      },
+      {
+        "term": "cap",
+        "decided_meaning": "$3.50, covering all 16 first attempts at their worst-case bounds",
+        "origin": "user (2026-11-21)",
+        "on_degenerate_data": "Σ first-attempt bounds > $3.50 → `check_series` exit 1"
+      }
+    ]
+  },
+  "blind_protocol": {
+    "viewer": "context/changes/gpt-image-26-wider/references/compare-gpt26.html (the screen viewer copy with the size/visibility anchor under the level buttons and the required pairwise fidelity preference; version-2 checkpoint and export)",
+    "anchor_text": "istotna = widoczna przy całym kadrze bez powiększenia; drobna = tylko po powiększeniu; dotyczy też treści dodanej lub zmienionej (twarze, napisy, obiekty) i usuniętego detalu lub koloru",
+    "comparison_scale": "the GPT output's exact size; original and Local are downscaled to it (Lanczos); crops are in that space",
+    "real_local": "the pinned Auto-ON downloads in scripts/s20/configs/local-baselines.json, byte-identical",
+    "two_pass_rating": "Rate in two passes, one slot per photo per pass (up to 16 delivered pairs; undelivered slots stay in the denominator of 16 and out of the viewer). The viewer reveals pass 2 only after all pass-1 answers, including every fidelity preference, have been saved and locked, and prevents revisiting/changing pass 1 after that transition. Save the locked first-pass checkpoint in the registered private root before rating pass 2, then one combined final export for the gate.",
+    "repeated_local_recognition_risk": "Each photo's two pairs share the same Local file, so its two resized copies are pixel-identical. Independent per-pair order and A/B draws do not hide that repetition; a rater may recognise the repeated Local side, which bears on the pairwise preference as much as on the per-side levels. The two-pass procedure reduces immediate comparison but cannot eliminate recognition or prove compliance. Recorded before spend; restated in the verdict.",
+    "owner_commitment": "The owner does not open outputs or reveal the key before the GPT26-SEAL commit, and does not inspect the key or cross-pair files/hashes while rating."
+  },
+  "decided": "owner decisions 2026-11-21 (change.md, plan.md Definitions): gpt-image-2.6-sunburst, quality=high, complexity=low, moderation=auto, S17-01…07 and S17-21 x 2 slots, phase-5 prompt unchanged, cap $3.50, pairwise fidelity preference with a majority of 8/16, the size/visibility anchor, wall time diagnostic only. Copied from scripts/gpt26/configs/gpt26-low.json; only name, study, gate, blind_protocol and decided differ."
+}
