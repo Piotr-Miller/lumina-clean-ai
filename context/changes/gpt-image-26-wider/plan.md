@@ -699,8 +699,8 @@ tag `gpt26-screen-evidence`.
 
 #### Automated
 
-- [x] 2.1 GPT26 suite passes on Fedora
-- [x] 2.2 S-20 regression suite still passes at the candidate
+- [x] 2.1 GPT26 suite passes on Fedora — ad9584b
+- [x] 2.2 S-20 regression suite still passes at the candidate — ad9584b
 
 #### Manual
 
@@ -710,8 +710,8 @@ tag `gpt26-screen-evidence`.
 
 #### Automated
 
-- [ ] 3.1 Registration is complete
-- [ ] 3.2 Dry run on Fedora resolves all 16 inputs within the cap
+- [x] 3.1 Registration is complete
+- [x] 3.2 Dry run on Fedora resolves all 16 inputs within the cap
 
 #### Manual
 
