@@ -3,7 +3,7 @@ change_id: local-jev-gate
 title: 'TypeSafe Jev as an "already good, leave it" gate and Auto chooser for the Local engine'
 status: new
 created: 2026-11-03
-updated: 2026-11-03
+updated: 2026-11-25
 archived_at: null
 issue: 348
 ---
@@ -55,6 +55,59 @@ the free path without any pixel-generating model.
 - **Precondition for any app change:** TypeSafe's own documentation lists image input as
   production-ready, without the danger-zone header. Until then this change may only produce an
   offline finding.
+
+### Vendor re-check 2026-11-25 (Jev 1.14)
+
+Read on 2026-11-25 from https://docs.typesafe.ai/images, https://docs.typesafe.ai/primitives/box
+and https://typesafe.ai/blog/jev-1-14 (the post shows "Oct 14, 2026" while its metadata says
+published Nov 16, 2026). No API call was made. Re-read the live docs before planning; the vendor
+says the request format, the answers and the limits can change between releases.
+
+- **S1 still fails.** Images and Box are labelled "Dreamer-ready": "Images and Box questions
+  aren't yet up to our standards to call ready for production". The blog adds "all models (Jev
+  included) perform worse on multimodality over pure text". The header
+  `TypeSafe-Danger-Zone-Images: true` is still required on every request with an image or a Box
+  question; without it the API answers `400`.
+- **Models.** `jev-1.13.0` and `jev-1.14.0` accept images; **Box needs `jev-1.14.0`**. The blog
+  released 1.14 as `jev-preview` and said `jev-latest` would follow a week later, so name the
+  version explicitly. Deprecation is announced as an intention only (60 days' warning for 1.13,
+  30 for 1.14).
+- **Box** (new): one box per question, the four edges as fractions 0–1 of width and height from
+  the top-left corner, plus `confidence`. There is no "not found" answer, so pair it with a Noul
+  ("Is there a … in `photo`?"). Small targets in large images can be missed; the docs recommend
+  tiling. No recommended confidence threshold yet.
+- **Limits unchanged from the 2026-10-29 read:** PNG/JPEG stills only (animated PNG rejected);
+  each side 280–1568 px; 78,400–2,458,624 px total; 16 MiB per file, 32 MiB per request. An
+  image outside the limits is rejected, never resized, and one rejected image fails the whole
+  request (no partial answers). Metadata is stripped and EXIF orientation is not applied.
+- **Cost.** Images count as input tokens at the text price; no separate image charge. The vendor
+  promises image-token estimation guidance "soon", so measure `usage.input_tokens` per call.
+- **Data terms.** The blog adds opt-in query sharing and says "We will still not train on your
+  queries". Retention is still not read from the vendor's own terms, so the rule below stands:
+  only licensed benchmark photos go out unless the owner explicitly consents for a test.
+- **Long context** is a separate opt-in header, `TypeSafe-Danger-Zone-Long-Context: true`; not
+  needed here.
+- **Agent skill.** TypeSafe publishes an agent skill, `typesafe-ai` in
+  https://github.com/typesafe-ai/skills (v0.6.2, commit `302eea6`). Its rules fit this change:
+  Jev makes judgments and code makes the decision (a truth table), pair Box/Choice with a Noul
+  for the null case, start Noul thresholds at 0.7 / 0.3, don't gate on `confidence`, and ask the
+  owner for permission and a budget before live probes.
+
+### Candidate uses beyond this change (recorded 2026-11-25, not started)
+
+- **Altered-content guard for a GPT-Image-2.6 delivery.** The owner decided on 2026-11-25 to take
+  GPT-Image-2.6 Sunburst to production through a separate change
+  (`context/archive/2026-11-21-gpt-image-26-wider/change.md` § Outcome). That study and the screen
+  found invented or changed content: redrawn faces, invented lettering and flags, removed faint
+  stars. Jev can compare the original with the GPT result using typed questions, for example a
+  Noul "Does `after` show lettering that is not in `before`?" or "Is the face in `after` the same
+  person as in `before`?", with a Box to locate the change. Offline first: the owner's 16 blind
+  ratings with crop notes (`context/archive/2026-11-21-gpt-image-26-wider/evaluations/ratings.json`)
+  are ready-made labels. Those are the owner's private photos, so sending them needs the owner's
+  consent. In the app, this waits for S1 like everything else here.
+- **Gate and chooser (this change).** S-20 closed on 2026-11-15 without a denoise strength, so the
+  parameters to choose are still gamma + blur. The proposed test below can run as an offline
+  finding.
 
 ### Pipeline facts this change has to handle (not the denoise change's problem)
 
