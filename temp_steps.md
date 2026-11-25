@@ -49,7 +49,9 @@ w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą 
 
 - **`local-jev-gate`** ([#348](https://github.com/Piotr-Miller/lumina-clean-ai/issues/348)), Parked: Jev
   jako bramka „już dobre, nie ruszaj” i chooser dla Local. Nadal blokada dostawcy: TypeSafe nie ma obrazów
-  w produkcji (sito S1). S-20 nie dało siły odszumiania do wyboru.
+  w produkcji (sito S1, sprawdzone ponownie 2026-11-25 dla Jev 1.14: nadal „Dreamer-ready”). S-20 nie dało
+  siły odszumiania do wyboru. Nowe fakty (Box, limity, koszt) i drugi kandydat — strażnik zmienionej
+  treści dla wdrożenia GPT — zapisane w `context/changes/local-jev-gate/change.md`.
 - **`local-engine-ceiling`** (#188) i druga połowa S-18 (rozdzielczość wyniku Cloud): zależą teraz od
   decyzji produktowej o Cloud (krok 2 wyżej).
 
