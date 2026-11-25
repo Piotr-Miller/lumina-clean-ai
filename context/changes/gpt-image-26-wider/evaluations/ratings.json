@@ -1,0 +1,424 @@
+{
+  "viewer": "compare-s20",
+  "version": 2,
+  "kind": "gate",
+  "set_id": "gpt26-wider",
+  "set_digest": "6beeaa30c6e6a0dc9b631a0f545b999129f294baa4787ab2bb16c6fb82bac1b6",
+  "rated_on": "2026-11-25",
+  "ratings": [
+    {
+      "pair_id": "p01",
+      "quality": "B-clear",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p02",
+      "quality": "A-clear",
+      "fidelity_preference": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p03",
+      "quality": "B-clear",
+      "fidelity_preference": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p04",
+      "quality": "A-slight",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p05",
+      "quality": "A-slight",
+      "fidelity_preference": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p06",
+      "quality": "B-clear",
+      "fidelity_preference": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p07",
+      "quality": "A-slight",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p08",
+      "quality": "A-clear",
+      "fidelity_preference": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p09",
+      "quality": "A-clear",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p10",
+      "quality": "B-slight",
+      "fidelity_preference": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p11",
+      "quality": "B-slight",
+      "fidelity_preference": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p12",
+      "quality": "A-clear",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p13",
+      "quality": "B-clear",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p14",
+      "quality": "B-clear",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p15",
+      "quality": "B-slight",
+      "fidelity_preference": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p16",
+      "quality": "A-clear",
+      "fidelity_preference": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    }
+  ],
+  "passes": [
+    ["p01", "p02", "p03", "p04", "p05", "p06", "p07", "p08"],
+    ["p09", "p10", "p11", "p12", "p13", "p14", "p15", "p16"]
+  ],
+  "locked_pass1": [
+    {
+      "pair_id": "p01",
+      "quality": "B-clear",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p02",
+      "quality": "A-clear",
+      "fidelity_preference": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p03",
+      "quality": "B-clear",
+      "fidelity_preference": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p04",
+      "quality": "A-slight",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p05",
+      "quality": "A-slight",
+      "fidelity_preference": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p06",
+      "quality": "B-clear",
+      "fidelity_preference": "A-slight",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p07",
+      "quality": "A-slight",
+      "fidelity_preference": "tie",
+      "fidelity": {
+        "A": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    },
+    {
+      "pair_id": "p08",
+      "quality": "A-clear",
+      "fidelity_preference": "B-slight",
+      "fidelity": {
+        "A": {
+          "level": "minor",
+          "crops": [],
+          "reason": ""
+        },
+        "B": {
+          "level": "none",
+          "crops": [],
+          "reason": ""
+        }
+      }
+    }
+  ]
+}
