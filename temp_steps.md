@@ -1,7 +1,7 @@
-# Kolejne kroki (stan na 2026-11-21)
+# Kolejne kroki (stan na 2026-11-25)
 
 Produkcja: master `a0193b0`, CI zielone. Cloud AI nadal wstrzymany (`CLOUD_DAILY_CAP=0` od 2026-10-28).
-Gałąź `chore/gpt-image-26-wider`: frame + plan + przegląd Codex gotowe 2026-11-21, faza 1 na Fedorze (krok 7).
+Gałąź `chore/gpt-image-26-wider`: fazy 1–5 zrobione 2026-11-25, werdykt FAIL (krok 6).
 
 ## Teraz: decyzja o Cloud AI po S-20
 
@@ -30,28 +30,14 @@ Następne kroki, po kolei:
 5. **Zrobione 2026-11-21 — fazy 3–5 `gpt-image-26-screen`** (builder, viewer, bramka; płatny przebieg $0,48;
    ocena, werdykt **PASS** 4 z 6; archiwum `context/archive/2026-11-05-gpt-image-26-screen/`, dowody pod
    tagiem `gpt26-screen-evidence`).
-6. **Zrobione 2026-11-21 — frame + plan `gpt-image-26-wider`** (gałąź `chore/gpt-image-26-wider`): frame
-   wykazał, że PASS opiera się na etykietach „drobna” sprzecznych z uzasadnieniami (podmienione twarze,
-   wymyślony napis i flaga, wymazane gwiazdy). Plan najpierw kotwiczy skalę („istotna” = widoczna na całym
-   kadrze bez powiększenia), dodaje porównanie parami (PASS ≥ 8/16 remis-lub-GPT), potem płatny test
-   8 zdjęć × 2 = 16 slotów, limit $3,50. Przegląd Codex: REVISE, F1–F9 FIXED; status `plan_reviewed`.
-7. **Faza 1 `gpt-image-26-wider` — na Fedorze** (testy wymagają Pillow). Nowa sesja Claude Code na Fedorze,
-   wklej jako pierwszą wiadomość:
-
-   ```text
-   /rune-implement gpt-image-26-wider phase 1
-
-   Przed jakąkolwiek edycją:
-   1. git fetch && git switch chore/gpt-image-26-wider && git pull --ff-only. Potwierdź, że HEAD zawiera
-      commit z frame/plan/plan-review i ten commit z temp_steps.md, a working tree jest czyste.
-   2. Porównaj wersje zależności z context/archive/2026-11-05-gpt-image-26-screen/evaluations/regression-baseline.md
-      (Python 3.15.2, Pillow 12.3.0, NumPy 2.5.4, OpenCV 4.13.0, scikit-image 0.26.0, PyWavelets 1.8.0,
-      package-lock.json sha256 120849f1…). Każdą różnicę zgłoś przed startem.
-   3. Nie pisz do context/archive/ — viewer wąskiego testu jest tylko źródłem do odczytu.
-   ```
-
-8. **Faza 4 `gpt-image-26-wider` (płatna, ≤ $3,50):** najpierw Twoja linia
-   `- GPT26-SPEND cap_usd=3.50 decision=approved date=…` w `change.md` § GPT26 approvals, zacommitowana.
+6. **Zrobione 2026-11-21 – 2026-11-25 — `gpt-image-26-wider`** (gałąź `chore/gpt-image-26-wider`): frame
+   wykazał, że PASS wąskiego testu opierał się na etykietach „drobna” sprzecznych z uzasadnieniami. Plan
+   zakotwiczył skalę („istotna” = widoczna na całym kadrze bez powiększenia) i dodał porównanie parami.
+   Płatny przebieg: 16 z 16 slotów, $1,48 z $3,50. Ślepa ocena 16 par → werdykt **FAIL**: 7 z 16 par
+   co najmniej remis (wymagane 8), Local wierniejszy w pozostałych 9; żadna strona GPT nie „istotna”.
+   Werdykt: [`verdict.md`](context/changes/gpt-image-26-wider/evaluations/verdict.md), tag
+   `gpt26-wider-evidence` na origin. Cloud nadal wstrzymany. Zostało: akceptacje 5.5/5.6, PR, merge,
+   powtórna weryfikacja przy tagu po merge'u (5.3), archiwum.
 
 Holdout `s17-v2` (12 zdjęć walidacyjnych) nadal nieotwarty. 21 płatnych wyników GPT/NAFNet z S-19 leży
 w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą ścieżkę `context/changes/…`
@@ -84,7 +70,11 @@ w `test-photos/private/s19/`. Narzędzia `scripts/s20/` mają na sztywno starą 
 
 - **`gpt-image-26-screen`** ([#359](https://github.com/Piotr-Miller/lumina-clean-ai/issues/359)): fazy 1–5
   zrobione, werdykt **PASS** (`context/archive/2026-11-05-gpt-image-26-screen/evaluations/verdict.md`). Zarchiwizowane 2026-11-21
-  (`context/archive/2026-11-05-gpt-image-26-screen/`, #359 zamknięte); dalej decyzja z kroku 7 w „Teraz”.
+  (`context/archive/2026-11-05-gpt-image-26-screen/`, #359 zamknięte); szerszy test to krok 6 w „Teraz”.
+
+- **`gpt-image-26-wider`**: fazy 1–5 zrobione, werdykt **FAIL** (7 z 16 par co najmniej remis, wymagane 8;
+  [`verdict.md`](context/changes/gpt-image-26-wider/evaluations/verdict.md)). Następnie: PR → merge →
+  powtórna weryfikacja przy tagu `gpt26-wider-evidence` → `/rune-archive gpt-image-26-wider`.
 
 - **`cloud-error-message-leak`** (status `new`): użytkownik widzi surowy tekst błędu (`Signal timed out.`,
   HTML strony 502 od Replicate). Analiza w `context/changes/cloud-error-message-leak/change.md`.

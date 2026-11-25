@@ -37,6 +37,24 @@ paid comparison on S17-01…07 and S17-21, with 2 slots each.
   acceptable. Every other pinned dependency and the `package-lock.json` sha256 match; recorded in
   `evaluations/regression-baseline.md` of this change. No plan text changes.
 
+## Outcome
+
+2026-11-25: the wider blind comparison came out **FAIL**
+([`evaluations/verdict.md`](evaluations/verdict.md), gate `gpt26-wider-v1`, set `gpt26-wider`).
+
+- **Fidelity majority:** 7 of 16 pairs at least a tie (8 required). Real Local was preferred as
+  more faithful (`local-slight`) on the other 9, and no pair favoured GPT on fidelity.
+- **Disqualifications:** none. No GPT side was rated significant or severe; 10 GPT sides `minor`,
+  6 `none`.
+- **Delivery and budget:** 16 of 16 slots delivered (one moderation block recovered by its
+  retry), $1.48 conservative ($1.2831 billed) of the $3.50 cap, no bound breach.
+- **Diagnostics:** quality preference favoured GPT on 15 of 16 pairs; every Local side `none`;
+  p95 wall time 36.7 s vs the 30 s guardrail.
+- **Evidence:** seal `b70963f`, ratings `847587c`, tag `gpt26-wider-evidence` on origin.
+
+The earlier screen's PASS (2026-11-21, archived) stays a sealed historical result. Cloud stays
+paused; this outcome opens no deployment.
+
 ## GPT26 approvals
 
 <!--

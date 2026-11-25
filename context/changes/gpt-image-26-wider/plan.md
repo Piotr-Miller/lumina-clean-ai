@@ -722,18 +722,18 @@ tag `gpt26-screen-evidence`.
 
 #### Automated
 
-- [x] 4.1 (paid) All 16 slots resolved within the cap
+- [x] 4.1 (paid) All 16 slots resolved within the cap — d2cedd4
 
 #### Manual
 
-- [ ] 4.2 The owner checks run.md
+- [x] 4.2 The owner checks run.md — accepted at d2cedd40d659ea4b714b5ef1cfcc7d23b8bd4508
 
 ### Phase 5: Seal, rating, verdict, pointers
 
 #### Automated
 
-- [ ] 5.1 (paid) Gate computes a verdict from the sealed set and committed ratings
-- [ ] 5.2 No stale pointer
+- [x] 5.1 (paid) Gate computes a verdict from the sealed set and committed ratings
+- [x] 5.2 No stale pointer
 - [ ] 5.3 Verdict re-verifies at the evidence tag after integration
 
 #### Manual
