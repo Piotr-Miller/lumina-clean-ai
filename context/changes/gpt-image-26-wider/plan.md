@@ -715,14 +715,14 @@ tag `gpt26-screen-evidence`.
 
 #### Manual
 
-- [ ] 3.3 The owner confirms the gate block and definitions state their rules
-- [ ] 3.4 The owner confirms the 16 slots and inputs
+- [x] 3.3 The owner confirms the gate block and definitions state their rules — accepted at ea8d88e8e3c7d444d156327d119b87ad0e0e3103
+- [x] 3.4 The owner confirms the 16 slots and inputs — accepted at ea8d88e8e3c7d444d156327d119b87ad0e0e3103
 
 ### Phase 4: Paid run (Fedora)
 
 #### Automated
 
-- [ ] 4.1 (paid) All 16 slots resolved within the cap
+- [x] 4.1 (paid) All 16 slots resolved within the cap
 
 #### Manual
 
