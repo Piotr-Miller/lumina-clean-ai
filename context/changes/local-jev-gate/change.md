@@ -3,7 +3,7 @@ change_id: local-jev-gate
 title: 'TypeSafe Jev as an "already good, leave it" gate and Auto chooser for the Local engine'
 status: new
 created: 2026-11-03
-updated: 2026-11-25
+updated: 2026-11-26
 archived_at: null
 issue: 348
 ---
@@ -108,6 +108,49 @@ says the request format, the answers and the limits can change between releases.
 - **Gate and chooser (this change).** S-20 closed on 2026-11-15 without a denoise strength, so the
   parameters to choose are still gamma + blur. The proposed test below can run as an offline
   finding.
+- **Cloud advisor (recorded 2026-11-26, not started).** Before a signed-in user sends a photo to
+  Cloud, Jev judges the photo and code shows a hint; the user decides, and the hint never changes
+  the selected engine. It is **not a cost filter**: at `jev-1.14.0`'s $0.042 per million input
+  tokens (price confirmed by the owner 2026-11-26) a ~5k-token photo costs about $0.00021 (the
+  83-photo jev-photo-cull run gave a separate estimate of $0.00024). Against Bread (≈ $0.0006 a
+  run, #192) that is about a third of the call it would save; against GPT-Image-2.6 (≈ $0.075 a
+  call) the gross saving is capped at $0.225 a day by the prod cap of 3. A job declined before the
+  model call already costs no cap slot in `admit_cloud_job`, so the advisor protects nothing there.
+  - **Questions** (one request, `state.photo` only, never the image in criteria): Nouls
+    `is_photo` (a camera photograph, not a screenshot, scan or graphic), `low_light`,
+    `visible_noise` (grain or coloured speckle in the dark areas), `subject_too_dark` (the main
+    part of the scene is too dark to see clearly) and `sharp`; `has_faces` only feeds the
+    altered-content guard above. No "one clear subject" question: night-sky photos, the core of
+    the S17 set, often have none. Prepare the image as jev-photo-cull's `prepare()` does (EXIF
+    upright, ≤ 1568 px a side, baseline JPEG), since the API does not apply EXIF.
+  - **Decision table** (Noul yes > 0.7, no < 0.3, between = unsettled):
+
+    | Condition                                                                  | Hint                                          |
+    | -------------------------------------------------------------------------- | --------------------------------------------- |
+    | API error or timeout                                                       | none; logged as an error, never read as "no"  |
+    | `is_photo` no                                                              | "this does not look like a photo"             |
+    | `is_photo` yes and `low_light`, `visible_noise`, `subject_too_dark` all no | "Local is likely enough"                      |
+    | `is_photo` yes and `visible_noise` or `subject_too_dark` yes               | "Cloud may help" (wording waits for the test) |
+    | anything else, including `low_light` yes alone and any unsettled answer    | none                                          |
+    | `sharp` no, added to any row above                                         | "denoising does not remove blur"              |
+
+    Night alone is not evidence that Cloud helps (S-19: real Local was the most faithful result in
+    every blind comparison), so `low_light` yes on its own gives no hint.
+
+  - **Offline test first.** Licensed photos only (`test-photos/licensed/`), night sky and day
+    scenes, hard cap $0.01; it still sends those images to TypeSafe. Before the run the owner
+    labels each photo `local_enough`, `cloud_significant` or `ambiguous` — "needs processing" does
+    not settle whether Cloud beats Local. Measure the hint against those labels; the worst error
+    is "Local is likely enough" on a `cloud_significant` photo. Open question: a
+    `cloud_significant` label needs a Cloud output to compare, and GPT outputs exist today only
+    for the owner's private eight, so labelling licensed photos may need Cloud runs outside the
+    $0.01 cap.
+  - **In the app** (waits for S1): the analysis runs only after the user clicks "Check whether
+    Cloud will help", with a notice before the photo is sent; a server-side API route holds the
+    key; model pinned to `jev-1.14.0`; privacy policy updated for a new processor. Per the
+    owner's reading on 2026-11-26, TypeSafe processes data in the USA, states no fixed retention
+    period and enables Zero Data Retention on request
+    (https://help.typesafe.ai/articles/5974925716, https://help.typesafe.ai/articles/9520184411).
 
 ### Pipeline facts this change has to handle (not the denoise change's problem)
 
