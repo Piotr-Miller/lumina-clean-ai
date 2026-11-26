@@ -157,6 +157,20 @@ says the request format, the answers and the limits can change between releases.
     (owner, open side-by-side comparison, not blind). One `cloud_significant` (S17-01), two
     `local_enough` (S17-03, S17-07), five `ambiguous`. With a single `cloud_significant` photo the
     pilot can show whether Jev wrongly suggests Local for it, not how often that error occurs.
+  - **Pilot result 2026-11-26: the input-only advisor does not discriminate on night photos.**
+    Eight requests to `jev-1.14.0` (licensed originals only, prepared ≤ 1568 px), 40,072 input
+    and 856 output tokens, about $0.0017 at the input price (bound with output at 10× input:
+    $0.00204, cap $0.01). Every photo got "Cloud may help": `visible_noise` was yes on all eight
+    (0.77–0.93), `low_light` 0.97–0.99, `subject_too_dark` never yes. The worst error did not
+    occur (S17-01, `cloud_significant`, got "Cloud may help"), but both `local_enough` photos
+    (S17-03, S17-07) got it too, so the hint carries no information on this set. The owner's
+    reasons for `local_enough` and `ambiguous` are about what Cloud does to the photo (removed
+    faint stars, redrawn faces, shifted violet tones), which questions about the input alone
+    cannot see. One signal matches a reason: `has_faces` was 0.93 on S17-07, whose label rests on
+    redrawn faces, and ≤ 0.04 elsewhere; one photo is not evidence for a rule. `sharp` was 0.29 on
+    S17-21 (blur warning) and unsettled on S17-06 and S17-07. Requests, responses and the hint per
+    photo: `evaluations/advisor-pilot/`. No question wording or threshold was changed after the
+    run.
   - **In the app** (waits for S1): the analysis runs only after the user clicks "Check whether
     Cloud will help", with a notice before the photo is sent; a server-side API route holds the
     key; model pinned to `jev-1.14.0`; privacy policy updated for a new processor. Per the

@@ -1,0 +1,33 @@
+{
+  "model": "jev-1.14.0",
+  "answers": {
+    "is_photo": {
+      "type": "noul",
+      "noul": 0.95
+    },
+    "low_light": {
+      "type": "noul",
+      "noul": 0.97
+    },
+    "visible_noise": {
+      "type": "noul",
+      "noul": 0.83
+    },
+    "subject_too_dark": {
+      "type": "noul",
+      "noul": 0.11
+    },
+    "sharp": {
+      "type": "noul",
+      "noul": 0.5
+    },
+    "has_faces": {
+      "type": "noul",
+      "noul": 0.04
+    }
+  },
+  "usage": {
+    "input_tokens": 5345,
+    "output_tokens": 107
+  }
+}

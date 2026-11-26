@@ -1,0 +1,215 @@
+{
+  "model": "jev-1.14.0",
+  "thresholds": [0.7, 0.3],
+  "spent_usd_bound": 0.002043,
+  "rows": [
+    {
+      "photo": "S17-01",
+      "label": "cloud_significant",
+      "hint": "cloud_may_help",
+      "blur_warning": false,
+      "noul": {
+        "is_photo": 0.92,
+        "low_light": 0.99,
+        "visible_noise": 0.9,
+        "subject_too_dark": 0.19,
+        "sharp": 0.77,
+        "has_faces": 0.04
+      },
+      "levels": {
+        "is_photo": "yes",
+        "low_light": "yes",
+        "visible_noise": "yes",
+        "subject_too_dark": "no",
+        "sharp": "yes",
+        "has_faces": "no"
+      },
+      "usage": {
+        "input_tokens": 4897,
+        "output_tokens": 107
+      }
+    },
+    {
+      "photo": "S17-02",
+      "label": "ambiguous",
+      "hint": "cloud_may_help",
+      "blur_warning": false,
+      "noul": {
+        "is_photo": 0.85,
+        "low_light": 0.98,
+        "visible_noise": 0.77,
+        "subject_too_dark": 0.11,
+        "sharp": 0.84,
+        "has_faces": 0.02
+      },
+      "levels": {
+        "is_photo": "yes",
+        "low_light": "yes",
+        "visible_noise": "yes",
+        "subject_too_dark": "no",
+        "sharp": "yes",
+        "has_faces": "no"
+      },
+      "usage": {
+        "input_tokens": 4337,
+        "output_tokens": 107
+      }
+    },
+    {
+      "photo": "S17-03",
+      "label": "local_enough",
+      "hint": "cloud_may_help",
+      "blur_warning": false,
+      "noul": {
+        "is_photo": 0.91,
+        "low_light": 0.99,
+        "visible_noise": 0.81,
+        "subject_too_dark": 0.17,
+        "sharp": 0.8,
+        "has_faces": 0.02
+      },
+      "levels": {
+        "is_photo": "yes",
+        "low_light": "yes",
+        "visible_noise": "yes",
+        "subject_too_dark": "no",
+        "sharp": "yes",
+        "has_faces": "no"
+      },
+      "usage": {
+        "input_tokens": 4897,
+        "output_tokens": 107
+      }
+    },
+    {
+      "photo": "S17-04",
+      "label": "ambiguous",
+      "hint": "cloud_may_help",
+      "blur_warning": false,
+      "noul": {
+        "is_photo": 0.94,
+        "low_light": 0.98,
+        "visible_noise": 0.93,
+        "subject_too_dark": 0.07,
+        "sharp": 0.72,
+        "has_faces": 0.04
+      },
+      "levels": {
+        "is_photo": "yes",
+        "low_light": "yes",
+        "visible_noise": "yes",
+        "subject_too_dark": "no",
+        "sharp": "yes",
+        "has_faces": "no"
+      },
+      "usage": {
+        "input_tokens": 5345,
+        "output_tokens": 107
+      }
+    },
+    {
+      "photo": "S17-05",
+      "label": "ambiguous",
+      "hint": "cloud_may_help",
+      "blur_warning": false,
+      "noul": {
+        "is_photo": 0.97,
+        "low_light": 0.98,
+        "visible_noise": 0.93,
+        "subject_too_dark": 0.05,
+        "sharp": 0.82,
+        "has_faces": 0.03
+      },
+      "levels": {
+        "is_photo": "yes",
+        "low_light": "yes",
+        "visible_noise": "yes",
+        "subject_too_dark": "no",
+        "sharp": "yes",
+        "has_faces": "no"
+      },
+      "usage": {
+        "input_tokens": 5457,
+        "output_tokens": 107
+      }
+    },
+    {
+      "photo": "S17-06",
+      "label": "ambiguous",
+      "hint": "cloud_may_help",
+      "blur_warning": false,
+      "noul": {
+        "is_photo": 0.95,
+        "low_light": 0.97,
+        "visible_noise": 0.83,
+        "subject_too_dark": 0.11,
+        "sharp": 0.5,
+        "has_faces": 0.04
+      },
+      "levels": {
+        "is_photo": "yes",
+        "low_light": "yes",
+        "visible_noise": "yes",
+        "subject_too_dark": "no",
+        "sharp": "unsettled",
+        "has_faces": "no"
+      },
+      "usage": {
+        "input_tokens": 5345,
+        "output_tokens": 107
+      }
+    },
+    {
+      "photo": "S17-07",
+      "label": "local_enough",
+      "hint": "cloud_may_help",
+      "blur_warning": false,
+      "noul": {
+        "is_photo": 0.9,
+        "low_light": 0.98,
+        "visible_noise": 0.88,
+        "subject_too_dark": 0.32,
+        "sharp": 0.48,
+        "has_faces": 0.93
+      },
+      "levels": {
+        "is_photo": "yes",
+        "low_light": "yes",
+        "visible_noise": "yes",
+        "subject_too_dark": "unsettled",
+        "sharp": "unsettled",
+        "has_faces": "yes"
+      },
+      "usage": {
+        "input_tokens": 4897,
+        "output_tokens": 107
+      }
+    },
+    {
+      "photo": "S17-21",
+      "label": "ambiguous",
+      "hint": "cloud_may_help",
+      "blur_warning": true,
+      "noul": {
+        "is_photo": 0.97,
+        "low_light": 0.98,
+        "visible_noise": 0.93,
+        "subject_too_dark": 0.41,
+        "sharp": 0.29,
+        "has_faces": 0.03
+      },
+      "levels": {
+        "is_photo": "yes",
+        "low_light": "yes",
+        "visible_noise": "yes",
+        "subject_too_dark": "unsettled",
+        "sharp": "no",
+        "has_faces": "no"
+      },
+      "usage": {
+        "input_tokens": 4897,
+        "output_tokens": 107
+      }
+    }
+  ]
+}
