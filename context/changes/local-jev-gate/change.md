@@ -153,6 +153,10 @@ says the request format, the answers and the limits can change between releases.
     Jev call. Wider covers only night scenes; Cloud results for licensed day scenes come from the
     Sunburst delivery change's test at its production settings. The $0.01 cap covers only the Jev
     run.
+  - **Pilot labels fixed 2026-11-26**, before any Jev call: `evaluations/advisor-labels.json`
+    (owner, open side-by-side comparison, not blind). One `cloud_significant` (S17-01), two
+    `local_enough` (S17-03, S17-07), five `ambiguous`. With a single `cloud_significant` photo the
+    pilot can show whether Jev wrongly suggests Local for it, not how often that error occurs.
   - **In the app** (waits for S1): the analysis runs only after the user clicks "Check whether
     Cloud will help", with a notice before the photo is sent; a server-side API route holds the
     key; model pinned to `jev-1.14.0`; privacy policy updated for a new processor. Per the

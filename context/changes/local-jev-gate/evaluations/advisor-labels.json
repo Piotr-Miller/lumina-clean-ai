@@ -1,0 +1,74 @@
+{
+  "study": "local-jev-gate cloud-advisor pilot",
+  "labelled_on": "2026-11-26",
+  "labelled_by": "owner",
+  "method": "Open (not blind) side-by-side of the original, the verified Local result and both GPT-Image-2.6 Sunburst renders from gpt-image-26-wider. Rule: cloud_significant only when both renders clearly beat Local and keep the original's essential content; ambiguous when the renders lead to different assessments. Fixed before any Jev call.",
+  "jev_input": "the licensed original only (the advisor judges a photo before Cloud), prepared as EXIF upright, <= 1568 px a side, baseline JPEG",
+  "limits": "One cloud_significant photo in eight: the pilot can show whether Jev wrongly suggests Local for it, but cannot estimate how often that error occurs. Night scenes only.",
+  "labels": [
+    {
+      "photo": "S17-01",
+      "source": "test-photos/licensed/01-aurora-fjord-kirkjufell.jpg",
+      "source_sha256": "f9e70296c5a24195b95d591b9108b423b4d12635519d00ecf0a4349b72ea4cd8",
+      "licence": "CC BY-SA 4.0",
+      "label": "cloud_significant",
+      "reason": "Both renders clearly reduce sky noise and keep the aurora's shape, the reflection and the foreground."
+    },
+    {
+      "photo": "S17-02",
+      "source": "test-photos/licensed/02-aurora-frozen-lake-norway.jpg",
+      "source_sha256": "aa646ac5952cc0dbffa72ef65f7c74109ca869d43cb6b45ea3ec64f01034710b",
+      "licence": "CC BY 4.0",
+      "label": "ambiguous",
+      "reason": "The sky is cleaner, but the gain over Local is marginal and the foreground darkens."
+    },
+    {
+      "photo": "S17-03",
+      "source": "test-photos/licensed/03-aurora-reykjanes-snow-lava.jpg",
+      "source_sha256": "e0ef395b60c33599771fa1b1e55de6f3a7aa3090064b82e792af1ac2b05bc531",
+      "licence": "CC0",
+      "label": "local_enough",
+      "reason": "Local keeps more faint stars and the shoreline colour; Cloud's smoother sky is not enough of a gain."
+    },
+    {
+      "photo": "S17-04",
+      "source": "test-photos/licensed/04-phone-whitehouse-iphone13pro.jpg",
+      "source_sha256": "c0022a812c6a96c9ffa443a1f91b76bc46b5e82c058f79f09cf02d0dbd322f4d",
+      "licence": "CC BY-SA 4.0",
+      "label": "ambiguous",
+      "reason": "Both renders make the facade easier to read, but the second one more clearly redraws the flag and changes the colour of the window light."
+    },
+    {
+      "photo": "S17-05",
+      "source": "test-photos/licensed/05-phone-walgreens-pixel7.jpg",
+      "source_sha256": "9debe50cec8657b3f147bd134f3c45ad583f5e19ada9993995871a3739c016f7",
+      "licence": "CC BY 2.0",
+      "label": "ambiguous",
+      "reason": "Both renders keep the lettering readable, but remove much of the violet glow visible in the original."
+    },
+    {
+      "photo": "S17-06",
+      "source": "test-photos/licensed/06-phone-rain-galaxys24ultra.jpg",
+      "source_sha256": "660535e3ec11613277db8e3dee72b5f8e324ff1367250fcb332d6aa9556de910",
+      "licence": "CC BY 4.0",
+      "label": "ambiguous",
+      "reason": "Cloud tames the lamp flare and darkens the sky; the gain depends on how much night atmosphere should be kept. Both renders are rated fidelity minor in the archive."
+    },
+    {
+      "photo": "S17-07",
+      "source": "test-photos/licensed/07-night-portrait.jpg",
+      "source_sha256": "66ae1afaa3af1cb9f5c78824751001c142237f2324ad822334996a4494cdb005",
+      "licence": "CC BY 2.0",
+      "label": "local_enough",
+      "reason": "Local brightens the scene enough to read it; both Cloud renders redraw the people's features and gazes."
+    },
+    {
+      "photo": "S17-21",
+      "source": "test-photos/licensed/21-kangchenjunga.jpg",
+      "source_sha256": "b37babf00e7c81537db2879a66decab351f8c5470f903774d8c1805bc06a306f",
+      "licence": "CC BY 4.0",
+      "label": "ambiguous",
+      "reason": "Cloud gives cleaner shadows and sharper peaks, but shifts the scene's violet tone."
+    }
+  ]
+}
