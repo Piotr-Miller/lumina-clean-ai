@@ -1,0 +1,66 @@
+{
+  "payload": {
+    "model": "jev-1.14.0",
+    "state": {
+      "photo": "<photo-S17-06>"
+    },
+    "questions": {
+      "is_photo": {
+        "type": "noul",
+        "instructions": "Is `photo` a camera photograph of a real scene?",
+        "criteria": {
+          "true": "A photo taken with a camera or a phone.",
+          "false": "A screenshot, a scanned document, a drawing or a graphic."
+        }
+      },
+      "low_light": {
+        "type": "noul",
+        "instructions": "Was `photo` taken at night or in dim light?",
+        "criteria": {
+          "true": "A night sky, a street at night, a dim interior or dusk.",
+          "false": "Daylight, or a brightly lit room."
+        }
+      },
+      "visible_noise": {
+        "type": "noul",
+        "instructions": "Is there visible grain or coloured speckle in the dark areas of `photo`?",
+        "criteria": {
+          "true": "The shadows look grainy or are full of small coloured dots.",
+          "false": "The shadows are smooth, even where they are dark."
+        }
+      },
+      "subject_too_dark": {
+        "type": "noul",
+        "instructions": "Is the main part of the scene in `photo` too dark to see clearly?",
+        "criteria": {
+          "true": "You have to strain to see what is there.",
+          "false": "The scene is easy to read, even if it is dark and moody."
+        }
+      },
+      "sharp": {
+        "type": "noul",
+        "instructions": "Is the scene in `photo` in focus and free of motion blur?",
+        "criteria": {
+          "true": "Edges, lights and stars are crisp.",
+          "false": "Everything is soft, smeared or shaken."
+        }
+      },
+      "has_faces": {
+        "type": "noul",
+        "instructions": "Does `photo` show a recognisable human face?",
+        "criteria": {
+          "true": "A face is large enough to recognise the person.",
+          "false": "No people, or only distant figures whose faces cannot be made out."
+        }
+      }
+    },
+    "assets": {
+      "<photo-S17-06>": {
+        "type": "image",
+        "part": "photo"
+      }
+    }
+  },
+  "image_sha256": "7643d18b47a05401fcf699834031c8652d48ecfa94a7d3d562ff50b61a9b5008",
+  "image_size": [1176, 1568]
+}
