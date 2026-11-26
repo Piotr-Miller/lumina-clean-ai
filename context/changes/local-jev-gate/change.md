@@ -103,8 +103,11 @@ says the request format, the answers and the limits can change between releases.
   Noul "Does `after` show lettering that is not in `before`?" or "Is the face in `after` the same
   person as in `before`?", with a Box to locate the change. Offline first: the owner's 16 blind
   ratings with crop notes (`context/archive/2026-11-21-gpt-image-26-wider/evaluations/ratings.json`)
-  are ready-made labels. Those are the owner's private photos, so sending them needs the owner's
-  consent. In the app, this waits for S1 like everything else here.
+  are ready-made labels. _Corrected 2026-11-26:_ an earlier wording here called these the owner's
+  private photos. They are not: all eight inputs (S17-01…07, S17-21) are licensed CC/CC0 photos in
+  `test-photos/licensed/`, each matching its `s17-benchmark-v2.json` hash, and only the derived
+  inputs and GPT renders are kept in `test-photos/private/gpt26-wider/`. In the app, this waits
+  for S1 like everything else here.
 - **Gate and chooser (this change).** S-20 closed on 2026-11-15 without a denoise strength, so the
   parameters to choose are still gamma + blur. The proposed test below can run as an offline
   finding.
@@ -141,10 +144,15 @@ says the request format, the answers and the limits can change between releases.
     scenes, hard cap $0.01; it still sends those images to TypeSafe. Before the run the owner
     labels each photo `local_enough`, `cloud_significant` or `ambiguous` — "needs processing" does
     not settle whether Cloud beats Local. Measure the hint against those labels; the worst error
-    is "Local is likely enough" on a `cloud_significant` photo. Open question: a
-    `cloud_significant` label needs a Cloud output to compare, and GPT outputs exist today only
-    for the owner's private eight, so labelling licensed photos may need Cloud runs outside the
-    $0.01 cap.
+    is "Local is likely enough" on a `cloud_significant` photo.
+  - **Label sources (owner decision 2026-11-26).** The first batch is the eight night tuning
+    photos of `gpt-image-26-wider`: their 16 existing GPT-Image-2.6 Sunburst renders and verified
+    Local results, so no new GPT call is needed. A photo is `cloud_significant` when **both**
+    renders are a clear improvement over Local and keep the original's essential content; when
+    the two renders lead to different assessments it is `ambiguous`. Labels are fixed before any
+    Jev call. Wider covers only night scenes; Cloud results for licensed day scenes come from the
+    Sunburst delivery change's test at its production settings. The $0.01 cap covers only the Jev
+    run.
   - **In the app** (waits for S1): the analysis runs only after the user clicks "Check whether
     Cloud will help", with a notice before the photo is sent; a server-side API route holds the
     key; model pinned to `jev-1.14.0`; privacy policy updated for a new processor. Per the
