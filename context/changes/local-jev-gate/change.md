@@ -171,6 +171,9 @@ says the request format, the answers and the limits can change between releases.
     S17-21 (blur warning) and unsettled on S17-06 and S17-07. Requests, responses and the hint per
     photo: `evaluations/advisor-pilot/`. No question wording or threshold was changed after the
     run.
+  - **Parked by the owner on 2026-11-26** after the pilot. Open options when this change is picked
+    up again: drop the advisor, or reframe it around output risks (for example faces in the frame),
+    tested on photos other than these eight; or pilot the altered-content guard first.
   - **In the app** (waits for S1): the analysis runs only after the user clicks "Check whether
     Cloud will help", with a notice before the photo is sent; a server-side API route holds the
     key; model pinned to `jev-1.14.0`; privacy policy updated for a new processor. Per the
